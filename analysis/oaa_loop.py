@@ -141,50 +141,81 @@ class OAALoop:
         for anomaly in anomalies:
             if not isinstance(anomaly, dict):
                 continue
+
             key = anomaly.get("key")
             if not key:
                 continue
+
             seen_keys.add(key)
             self.anomaly_counts[key] = self.anomaly_counts.get(key, 0) + 1
             iteration_history.record_anomaly(key)
+
             if self.anomaly_counts[key] >= self.hysteresis_threshold:
                 actionable.append(anomaly)
 
+        # A disappeared anomaly must reset both forms of state:
+        # transient anomaly history and persistent hysteresis.
         for key in list(self.anomaly_counts):
             if key not in seen_keys:
                 self.anomaly_counts[key] = 0
-                iteration_history.reset_hysteresis(key)
+                iteration_history.reset_anomaly_state(key)
 
         for section in sections if isinstance(sections, list) else []:
             if not isinstance(section, dict):
                 continue
+
             ensure_section_id(section)
-            if self.section_splitter.is_too_simple(section, knowledge_base):
+
+            if self.section_splitter.is_too_simple(
+                section,
+                knowledge_base,
+            ):
                 sid = section["section_id"]
                 actionable.append({
                     "type": "too_simple",
                     "section_id": sid,
                     "section": section.get("title", ""),
-                    "detail": f"Section has {len(str(section.get('content', '')).split())} words",
+                    "detail": (
+                        "Section has "
+                        f"{len(str(section.get('content', '')).split())} "
+                        "words"
+                    ),
                     "key": f"too_simple:{sid}",
                 })
 
         for idx1, idx2, overlap in self.section_merger.find_merge_candidates(sections):
-            if not self.section_merger.should_merge(sections, overlap):
+            if not self.section_merger.should_merge(
+                sections,
+                overlap,
+            ):
                 continue
+
             s1, s2 = sections[idx1], sections[idx2]
             ensure_section_id(s1)
             ensure_section_id(s2)
+
             actionable.append({
                 "type": "merge_candidate",
-                "section_ids": [s1["section_id"], s2["section_id"]],
-                "sections": [s1.get("title", ""), s2.get("title", "")],
+                "section_ids": [
+                    s1["section_id"],
+                    s2["section_id"],
+                ],
+                "sections": [
+                    s1.get("title", ""),
+                    s2.get("title", ""),
+                ],
                 "indices": [idx1, idx2],
                 "detail": f"Overlap: {overlap:.2f}",
-                "key": self._pair_key("merge", s1, s2),
+                "key": self._pair_key(
+                    "merge",
+                    s1,
+                    s2,
+                ),
             })
 
-        self.save_persisted_state(iteration_history)
+        self.save_persisted_state(
+            iteration_history
+        )
         return actionable
 
     def adjust(self, actionable_anomalies: List[Dict]) -> Optional[Dict]:
@@ -197,74 +228,147 @@ class OAALoop:
             "repetition": 2,
             "length_imbalance": 3,
         }
+
         candidates = [
-            anomaly for anomaly in actionable_anomalies
-            if isinstance(anomaly, dict) and anomaly.get("type") in priority
+            anomaly
+            for anomaly in actionable_anomalies
+            if (
+                isinstance(anomaly, dict)
+                and anomaly.get("type") in priority
+            )
         ]
+
         if not candidates:
             return None
 
-        candidates.sort(key=lambda anomaly: priority[anomaly["type"]])
+        candidates.sort(
+            key=lambda anomaly: priority[
+                anomaly["type"]
+            ]
+        )
+
         anomaly = candidates[0]
         kind = anomaly["type"]
 
         if kind == "too_simple":
             return {
                 "action": "split_section",
-                "section_id": anomaly.get("section_id"),
-                "section": anomaly.get("section", ""),
-                "reason": anomaly.get("detail", ""),
+                "section_id": anomaly.get(
+                    "section_id"
+                ),
+                "section": anomaly.get(
+                    "section",
+                    "",
+                ),
+                "reason": anomaly.get(
+                    "detail",
+                    "",
+                ),
             }
+
         if kind == "merge_candidate":
             return {
                 "action": "merge_sections",
-                "section_ids": anomaly.get("section_ids", []),
-                "sections": anomaly.get("sections", []),
-                "indices": anomaly.get("indices", []),
-                "reason": anomaly.get("detail", ""),
+                "section_ids": anomaly.get(
+                    "section_ids",
+                    [],
+                ),
+                "sections": anomaly.get(
+                    "sections",
+                    [],
+                ),
+                "indices": anomaly.get(
+                    "indices",
+                    [],
+                ),
+                "reason": anomaly.get(
+                    "detail",
+                    "",
+                ),
             }
+
         if kind == "repetition":
             return {
                 "action": "deduplicate",
-                "section_ids": anomaly.get("section_ids", []),
-                "sections": anomaly.get("sections", []),
-                "reason": anomaly.get("detail", ""),
+                "section_ids": anomaly.get(
+                    "section_ids",
+                    [],
+                ),
+                "sections": anomaly.get(
+                    "sections",
+                    [],
+                ),
+                "reason": anomaly.get(
+                    "detail",
+                    "",
+                ),
             }
+
         if kind == "length_imbalance":
             return {
                 "action": "expand_shorter",
-                "section_ids": anomaly.get("section_ids", []),
-                "sections": anomaly.get("sections", []),
-                "reason": anomaly.get("detail", ""),
+                "section_ids": anomaly.get(
+                    "section_ids",
+                    [],
+                ),
+                "sections": anomaly.get(
+                    "sections",
+                    [],
+                ),
+                "reason": anomaly.get(
+                    "detail",
+                    "",
+                ),
             }
+
         return None
 
     @staticmethod
-    def _find_by_id(sections: List[Dict], section_id: str) -> Optional[Dict]:
+    def _find_by_id(
+        sections: List[Dict],
+        section_id: str,
+    ) -> Optional[Dict]:
         if not section_id:
             return None
         for section in sections:
-            if isinstance(section, dict) and get_section_id(section) == section_id:
+            if (
+                isinstance(section, dict)
+                and get_section_id(section) == section_id
+            ):
                 return section
         return None
 
     @staticmethod
-    def _reset_adjustment_state(iteration_history, key: str) -> None:
+    def _reset_adjustment_state(
+        iteration_history,
+        key: str,
+    ) -> None:
         reset_state = getattr(
             iteration_history,
             "reset_anomaly_state",
             None,
         )
+
         if callable(reset_state):
             reset_state(key)
         else:
             iteration_history.reset_anomaly(key)
 
-    def execute_adjustment(self, adjustment: Dict, sections: List[Dict], provider, parser, iteration_history) -> List[Dict]:
+    def execute_adjustment(
+        self,
+        adjustment: Dict,
+        sections: List[Dict],
+        provider,
+        parser,
+        iteration_history,
+    ) -> List[Dict]:
         if not adjustment:
             return sections
 
-        action = adjustment.get("action")
+        action = adjustment.get(
+            "action"
+        )
+
         if action not in SUPPORTED_ACTIONS:
             return sections
 
@@ -314,37 +418,64 @@ class OAALoop:
 
             index = sections.index(target)
             sections[index:index + 1] = children
+
             self._reset_adjustment_state(
                 iteration_history,
                 f"too_simple:{target_id}",
             )
-            self.anomaly_counts[f"too_simple:{target_id}"] = 0
+            self.anomaly_counts[
+                f"too_simple:{target_id}"
+            ] = 0
             return sections
 
         if action == "merge_sections":
-            ids = adjustment.get("section_ids", [])
+            ids = adjustment.get(
+                "section_ids",
+                [],
+            )
+
             if len(ids) == 2:
-                s1 = self._find_by_id(sections, ids[0])
-                s2 = self._find_by_id(sections, ids[1])
+                s1 = self._find_by_id(
+                    sections,
+                    ids[0],
+                )
+                s2 = self._find_by_id(
+                    sections,
+                    ids[1],
+                )
             else:
                 s1 = s2 = None
 
             if s1 is None or s2 is None:
-                indices = adjustment.get("indices", [])
+                indices = adjustment.get(
+                    "indices",
+                    [],
+                )
+
                 if len(indices) != 2:
                     return sections
+
                 try:
                     i1, i2 = sorted(
-                        (int(indices[0]), int(indices[1]))
+                        (
+                            int(indices[0]),
+                            int(indices[1]),
+                        )
                     )
+
                     if (
                         i1 < 0
                         or i2 >= len(sections)
                         or i1 == i2
                     ):
                         return sections
+
                     s1, s2 = sections[i1], sections[i2]
-                except (TypeError, ValueError):
+
+                except (
+                    TypeError,
+                    ValueError,
+                ):
                     return sections
 
             id1 = ensure_section_id(s1)
@@ -372,7 +503,10 @@ class OAALoop:
             ]
 
             sections.insert(
-                min(original_index, len(sections)),
+                min(
+                    original_index,
+                    len(sections),
+                ),
                 merged,
             )
 
@@ -380,37 +514,64 @@ class OAALoop:
                 iteration_history,
                 f"merge:{id1}:{id2}",
             )
-            self.anomaly_counts[f"merge:{id1}:{id2}"] = 0
+            self.anomaly_counts[
+                f"merge:{id1}:{id2}"
+            ] = 0
             return sections
 
         if action == "deduplicate":
-            ids = adjustment.get("section_ids", [])
+            ids = adjustment.get(
+                "section_ids",
+                [],
+            )
+
             if len(ids) != 2:
                 return sections
 
-            s1 = self._find_by_id(sections, ids[0])
-            s2 = self._find_by_id(sections, ids[1])
+            s1 = self._find_by_id(
+                sections,
+                ids[0],
+            )
+            s2 = self._find_by_id(
+                sections,
+                ids[1],
+            )
 
             if s1 is None or s2 is None:
                 return sections
 
-            c1 = str(s1.get("content", ""))
-            c2 = str(s2.get("content", ""))
+            c1 = str(
+                s1.get(
+                    "content",
+                    "",
+                )
+            )
+            c2 = str(
+                s2.get(
+                    "content",
+                    "",
+                )
+            )
 
             if len(c1) >= len(c2):
                 s2["content"] = ""
                 s2["status"] = "needs_rewrite"
-                s2["deduplicate_from_id"] = ensure_section_id(s1)
+                s2[
+                    "deduplicate_from_id"
+                ] = ensure_section_id(s1)
             else:
                 s1["content"] = ""
                 s1["status"] = "needs_rewrite"
-                s1["deduplicate_from_id"] = ensure_section_id(s2)
+                s1[
+                    "deduplicate_from_id"
+                ] = ensure_section_id(s2)
 
             key = self._pair_key(
                 "repetition",
                 s1,
                 s2,
             )
+
             self._reset_adjustment_state(
                 iteration_history,
                 key,
@@ -419,12 +580,22 @@ class OAALoop:
             return sections
 
         if action == "expand_shorter":
-            ids = adjustment.get("section_ids", [])
+            ids = adjustment.get(
+                "section_ids",
+                [],
+            )
+
             if len(ids) != 2:
                 return sections
 
-            s1 = self._find_by_id(sections, ids[0])
-            s2 = self._find_by_id(sections, ids[1])
+            s1 = self._find_by_id(
+                sections,
+                ids[0],
+            )
+            s2 = self._find_by_id(
+                sections,
+                ids[1],
+            )
 
             if s1 is None or s2 is None:
                 return sections
@@ -449,16 +620,21 @@ class OAALoop:
 
             if n1 < n2:
                 s1["status"] = "needs_expansion"
-                s1["expansion_target_id"] = ensure_section_id(s2)
+                s1[
+                    "expansion_target_id"
+                ] = ensure_section_id(s2)
             else:
                 s2["status"] = "needs_expansion"
-                s2["expansion_target_id"] = ensure_section_id(s1)
+                s2[
+                    "expansion_target_id"
+                ] = ensure_section_id(s1)
 
             key = self._pair_key(
                 "length",
                 s1,
                 s2,
             )
+
             self._reset_adjustment_state(
                 iteration_history,
                 key,
@@ -468,12 +644,23 @@ class OAALoop:
 
         return sections
 
-    def run(self, sections: List[Dict], iteration_history, knowledge_base: Dict) -> Optional[Dict]:
-        anomalies = self.observe(sections)
+    def run(
+        self,
+        sections: List[Dict],
+        iteration_history,
+        knowledge_base: Dict,
+    ) -> Optional[Dict]:
+        anomalies = self.observe(
+            sections
+        )
+
         actionable = self.analyze(
             anomalies,
             iteration_history,
             sections,
             knowledge_base,
         )
-        return self.adjust(actionable)
+
+        return self.adjust(
+            actionable
+        )
