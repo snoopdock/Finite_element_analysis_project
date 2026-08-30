@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""Iteration History - Tracks audits and anomalies across cycles."""
+"""Iteration History - Tracks audits, anomalies, and OAA state across cycles."""
+
+from typing import Dict, List, Optional
+
 
 class IterationHistory:
     def __init__(self):
-        self.audits = {}
-        self.anomalies = {}
+        self.audits: Dict[str, List[bool]] = {}
+        self.anomalies: Dict[str, int] = {}
+        self.anomaly_counts: Dict[str, int] = {}  # FIX #8: Persistent OAA anomaly counts
 
     def record_clean_audit(self, section: str):
         self.audits.setdefault(section, []).append(True)
@@ -24,17 +28,22 @@ class IterationHistory:
         for key in self.anomalies:
             self.anomalies[key] = 0
 
-    def get_clean_audit_count(self, section: str) -> int:
-        audits = self.audits.get(section, [])
-        count = 0
-        for a in reversed(audits):
-            if a: count += 1
-            else: break
-        return count
+    def get_anomaly_counts(self) -> Dict[str, int]:
+        """FIX #8: Get persisted OAA anomaly counts."""
+        return dict(self.anomaly_counts)
 
-    def to_dict(self):
-        return {"audits": self.audits, "anomalies": self.anomalies}
+    def set_anomaly_counts(self, counts: Dict[str, int]):
+        """FIX #8: Set OAA anomaly counts from persisted state."""
+        self.anomaly_counts = dict(counts)
 
-    def load_from_dict(self, data: dict):
+    def to_dict(self) -> Dict:
+        return {
+            "audits": self.audits,
+            "anomalies": self.anomalies,
+            "anomaly_counts": self.anomaly_counts,  # FIX #8: Persist OAA counts
+        }
+
+    def load_from_dict(self, data: Dict):
         self.audits = data.get("audits", {})
         self.anomalies = data.get("anomalies", {})
+        self.anomaly_counts = data.get("anomaly_counts", {})  # FIX #8: Load OAA counts
