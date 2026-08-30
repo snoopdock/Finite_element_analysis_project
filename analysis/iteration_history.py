@@ -11,10 +11,10 @@ class IterationHistory:
         self.audits: Dict[str, List[bool]] = {}
         self.anomalies: Dict[str, int] = {}
         self.anomaly_counts: Dict[str, int] = {}
+        self.section_titles: Dict[str, str] = {}
 
     @staticmethod
     def _section_key(section) -> str:
-        """Return UUID for a section, with legacy string compatibility."""
         if isinstance(section, dict):
             section_id = get_section_id(section)
             if section_id:
@@ -22,14 +22,29 @@ class IterationHistory:
             return str(section.get("title", ""))
         return str(section or "")
 
-    def record_clean_audit(self, section) -> None:
+    def register_section(self, section) -> str:
         key = self._section_key(section)
+        if isinstance(section, dict):
+            title = str(section.get("title", "")).strip()
+            section_id = get_section_id(section)
+            if title and section_id:
+                self.section_titles[title] = section_id
+        return key
+
+    def resolve_section_key(self, section_or_title) -> str:
+        if isinstance(section_or_title, dict):
+            return self._section_key(section_or_title)
+        title = str(section_or_title or "")
+        return self.section_titles.get(title, title)
+
+    def record_clean_audit(self, section) -> None:
+        key = self.register_section(section)
         if not key:
             return
         self.audits.setdefault(key, []).append(True)
 
     def record_failed_audit(self, section) -> None:
-        key = self._section_key(section)
+        key = self.register_section(section)
         if not key:
             return
         self.audits.setdefault(key, []).append(False)
@@ -70,6 +85,7 @@ class IterationHistory:
             "audits": self.audits,
             "anomalies": self.anomalies,
             "anomaly_counts": self.anomaly_counts,
+            "section_titles": self.section_titles,
         }
 
     def load_from_dict(self, data: Dict) -> None:
@@ -77,6 +93,8 @@ class IterationHistory:
             return
         audits = data.get("audits", {})
         anomalies = data.get("anomalies", {})
+        titles = data.get("section_titles", {})
         self.audits = audits if isinstance(audits, dict) else {}
         self.anomalies = anomalies if isinstance(anomalies, dict) else {}
         self.set_anomaly_counts(data.get("anomaly_counts", {}))
+        self.section_titles = titles if isinstance(titles, dict) else {}
