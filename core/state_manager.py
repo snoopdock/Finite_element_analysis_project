@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""State management with schema versioning."""
+"""State management with schema versioning and stable section identity."""
+
+from __future__ import annotations
 
 import json
 import pathlib
@@ -11,7 +13,6 @@ SCHEMA_VERSION = 4
 
 
 def initialize_state(paths: Dict, config: Dict) -> Dict:
-    """Load state and migrate it to the current schema."""
     state_path = pathlib.Path(paths["state"])
 
     if state_path.exists():
@@ -35,9 +36,8 @@ def initialize_state(paths: Dict, config: Dict) -> Dict:
     if stored_version < SCHEMA_VERSION:
         state = _migrate_state(state, stored_version, SCHEMA_VERSION)
 
-    # Also normalize current state. This makes the migration robust when a
-    # state file was manually edited or produced by an older writer.
     state["sections"] = normalize_sections(state.get("sections", []))
+    _normalize_iteration_history(state)
     state["schema_version"] = SCHEMA_VERSION
     return state
 
@@ -61,38 +61,32 @@ def _default_state(config: Dict) -> Dict:
 
 
 def _migrate_state(state: Dict, from_version: int, to_version: int) -> Dict:
-    """Apply sequential state migrations."""
     if from_version < 2:
         state = _migrate_v1_to_v2(state)
         from_version = 2
-
     if from_version < 3:
         state = _migrate_v2_to_v3(state)
         from_version = 3
-
     if from_version < 4:
         state = _migrate_v3_to_v4(state)
-        from_version = 4
-
     state["schema_version"] = to_version
     return state
 
 
 def _migrate_v1_to_v2(state: Dict) -> Dict:
-    """Migration: v1 -> v2. Added reading state tracking."""
     if "reading_state" not in state:
         state["reading_state"] = {}
     return state
 
 
 def _migrate_v2_to_v3(state: Dict) -> Dict:
-    """Migration: v2 -> v3. Added section status tracking."""
     for section in state.get("sections", []):
         if not isinstance(section, dict):
             continue
         if "status" not in section:
             content = section.get("content", "")
-            if content and len(str(content).split()) >= 100:
+            word_count = len(str(content).split()) if content else 0
+            if word_count >= 100:
                 section["status"] = "complete"
             elif content:
                 section["status"] = "incomplete"
@@ -102,18 +96,80 @@ def _migrate_v2_to_v3(state: Dict) -> Dict:
 
 
 def _migrate_v3_to_v4(state: Dict) -> Dict:
-    """Migration: v3 -> v4. Added stable UUID section identity."""
+    """Assign UUIDs and migrate title-keyed iteration history where possible."""
     state["sections"] = normalize_sections(state.get("sections", []))
+    _normalize_iteration_history(state)
     return state
 
 
+def _title_to_id(state: Dict) -> Dict[str, str]:
+    mapping = {}
+    for section in state.get("sections", []):
+        if not isinstance(section, dict):
+            continue
+        title = str(section.get("title", "")).strip()
+        section_id = section.get("section_id")
+        if title and section_id:
+            mapping[title] = section_id
+    return mapping
+
+
+def _replace_title_tokens(key: str, title_to_id: Dict[str, str]) -> str:
+    """Convert known title fragments in legacy anomaly keys to UUIDs."""
+    if not isinstance(key, str):
+        return key
+
+    # Longest-first prevents a short title from being substituted inside a
+    # longer title that contains it.
+    for title in sorted(title_to_id, key=len, reverse=True):
+        if title in key:
+            key = key.replace(title, title_to_id[title])
+    return key
+
+
+def _normalize_iteration_history(state: Dict) -> None:
+    history = state.get("iteration_history_data")
+    if not isinstance(history, dict):
+        return
+
+    title_to_id = _title_to_id(state)
+    if not title_to_id:
+        return
+
+    audits = history.get("audits", {})
+    if isinstance(audits, dict):
+        migrated_audits = {}
+        for key, values in audits.items():
+            new_key = title_to_id.get(key, key)
+            if not isinstance(values, list):
+                values = []
+            if new_key in migrated_audits:
+                migrated_audits[new_key].extend(values)
+            else:
+                migrated_audits[new_key] = list(values)
+        history["audits"] = migrated_audits
+
+    for field in ("anomalies", "anomaly_counts"):
+        data = history.get(field, {})
+        if not isinstance(data, dict):
+            history[field] = {}
+            continue
+        migrated = {}
+        for key, value in data.items():
+            new_key = _replace_title_tokens(str(key), title_to_id)
+            try:
+                numeric = int(value)
+            except (TypeError, ValueError):
+                numeric = 0
+            migrated[new_key] = migrated.get(new_key, 0) + numeric
+        history[field] = migrated
+
+
 def save_state(paths: Dict, state: Dict):
-    """Normalize and save state to disk."""
     state_path = pathlib.Path(paths["state"])
     state_path.parent.mkdir(parents=True, exist_ok=True)
-
     state["sections"] = normalize_sections(state.get("sections", []))
+    _normalize_iteration_history(state)
     state["schema_version"] = SCHEMA_VERSION
-
     with open(state_path, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
