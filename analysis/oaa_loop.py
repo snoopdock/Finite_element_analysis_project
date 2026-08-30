@@ -1,19 +1,13 @@
 #!/usr/bin/env python3
-"""
-OAA Loop.
+"""Observation-Analysis-Adjustment loop for document structure."""
 
-Observes document-level anomalies and proposes structural corrections.
-
-Supported actions:
-- split_section
-- merge_sections
-- deduplicate
-- expand_shorter
-"""
+from __future__ import annotations
 
 import re
 import sys
 from typing import Dict, List, Optional
+
+from core.section_identity import ensure_section_id, get_section_id
 
 
 SUPPORTED_ACTIONS = {
@@ -24,1067 +18,357 @@ SUPPORTED_ACTIONS = {
 }
 
 
-def calculate_similarity(
-    text1: str,
-    text2: str,
-) -> float:
-    """Calculate Jaccard similarity between two texts."""
-
-    words1 = set(
-        re.findall(
-            r"\w+",
-            str(text1).lower(),
-        )
-    )
-
-    words2 = set(
-        re.findall(
-            r"\w+",
-            str(text2).lower(),
-        )
-    )
-
+def calculate_similarity(text1: str, text2: str) -> float:
+    words1 = set(re.findall(r"\w+", str(text1).lower()))
+    words2 = set(re.findall(r"\w+", str(text2).lower()))
     if not words1 or not words2:
         return 0.0
+    return len(words1 & words2) / len(words1 | words2)
 
-    intersection = words1.intersection(
-        words2
-    )
 
-    union = words1.union(
-        words2
-    )
-
-    if not union:
-        return 0.0
-
-    return (
-        len(intersection)
-        / len(union)
-    )
+def _section_identity(section: Dict) -> str:
+    section_id = get_section_id(section)
+    if section_id:
+        return section_id
+    return str(section.get("title", ""))
 
 
 class OAALoop:
-
-    def __init__(
-        self,
-        config: Dict,
-        section_splitter,
-        section_merger,
-    ):
-        writing_config = config.get(
-            "writing",
-            {},
-        )
-
-        budget_config = config.get(
-            "budget",
-            {},
-        )
-
-        self.hysteresis_threshold = max(
-            1,
-            int(
-                writing_config.get(
-                    "hysteresis",
-                    2,
-                )
-            ),
-        )
-
+    def __init__(self, config: Dict, section_splitter, section_merger):
+        writing = config.get("writing", {})
+        budget = config.get("budget", {})
+        self.hysteresis_threshold = max(1, int(writing.get("hysteresis", 2)))
+        self.section_splitter = section_splitter
+        self.section_merger = section_merger
+        self.max_calls = int(budget.get("max_llm_calls_per_run", 20))
+        self.similarity_threshold = float(writing.get("similarity_threshold", 0.7))
+        self.length_ratio_threshold = float(writing.get("length_ratio_threshold", 0.3))
         self.anomaly_counts: Dict[str, int] = {}
 
-        self.section_splitter = (
-            section_splitter
-        )
+    def load_persisted_state(self, iteration_history) -> None:
+        self.anomaly_counts = iteration_history.get_anomaly_counts()
 
-        self.section_merger = (
-            section_merger
-        )
+    def save_persisted_state(self, iteration_history) -> None:
+        iteration_history.set_anomaly_counts(self.anomaly_counts)
 
-        self.max_calls = int(
-            budget_config.get(
-                "max_llm_calls_per_run",
-                20,
-            )
-        )
+    def _pair_key(self, kind: str, section1: Dict, section2: Dict) -> str:
+        return f"{kind}:{_section_identity(section1)}:{_section_identity(section2)}"
 
-        self.similarity_threshold = float(
-            writing_config.get(
-                "similarity_threshold",
-                0.7,
-            )
-        )
-
-        self.length_ratio_threshold = float(
-            writing_config.get(
-                "length_ratio_threshold",
-                0.3,
-            )
-        )
-
-    # ------------------------------------------------------------
-    # Persistent hysteresis
-    # ------------------------------------------------------------
-
-    def load_persisted_state(
-        self,
-        iteration_history,
-    ) -> None:
-        persisted = (
-            iteration_history.get_anomaly_counts()
-        )
-
-        self.anomaly_counts = dict(
-            persisted
-        )
-
-    def save_persisted_state(
-        self,
-        iteration_history,
-    ) -> None:
-        iteration_history.set_anomaly_counts(
-            self.anomaly_counts
-        )
-
-    # ------------------------------------------------------------
-    # Observation
-    # ------------------------------------------------------------
-
-    def observe(
-        self,
-        sections: List[Dict],
-    ) -> List[Dict]:
-
+    def observe(self, sections: List[Dict]) -> List[Dict]:
         anomalies = []
-
-        if not isinstance(
-            sections,
-            list,
-        ):
+        if not isinstance(sections, list):
             return anomalies
 
-        for index in range(
-            len(sections) - 1
-        ):
-            s1 = sections[index]
-            s2 = sections[index + 1]
-
-            if not isinstance(s1, dict):
+        for index in range(len(sections) - 1):
+            s1, s2 = sections[index], sections[index + 1]
+            if not isinstance(s1, dict) or not isinstance(s2, dict):
                 continue
 
-            if not isinstance(s2, dict):
-                continue
+            ensure_section_id(s1)
+            ensure_section_id(s2)
+            title1 = str(s1.get("title", ""))
+            title2 = str(s2.get("title", ""))
+            content1 = str(s1.get("content", ""))
+            content2 = str(s2.get("content", ""))
 
-            title1 = str(
-                s1.get("title", "")
-            )
-
-            title2 = str(
-                s2.get("title", "")
-            )
-
-            content1 = str(
-                s1.get("content", "")
-            )
-
-            content2 = str(
-                s2.get("content", "")
-            )
-
-            # ----------------------------------------------------
-            # Repetition
-            # ----------------------------------------------------
-
-            overlap = calculate_similarity(
-                content1,
-                content2,
-            )
-
+            overlap = calculate_similarity(content1, content2)
             if overlap > self.similarity_threshold:
-                anomalies.append(
-                    {
-                        "type": "repetition",
-                        "sections": [
-                            title1,
-                            title2,
-                        ],
-                        "detail": (
-                            "Jaccard similarity: "
-                            f"{overlap:.2%}"
-                        ),
-                        "key": (
-                            f"repetition:"
-                            f"{title1}:"
-                            f"{title2}"
-                        ),
-                    }
-                )
+                anomalies.append({
+                    "type": "repetition",
+                    "section_ids": [s1["section_id"], s2["section_id"]],
+                    "sections": [title1, title2],
+                    "detail": f"Jaccard similarity: {overlap:.2%}",
+                    "key": self._pair_key("repetition", s1, s2),
+                })
 
-            # ----------------------------------------------------
-            # Transition
-            # ----------------------------------------------------
+            if not self._has_logical_transition(s1, s2):
+                anomalies.append({
+                    "type": "missing_transition",
+                    "section_ids": [s1["section_id"], s2["section_id"]],
+                    "sections": [title1, title2],
+                    "detail": "No logical transition detected",
+                    "key": self._pair_key("transition", s1, s2),
+                })
 
-            if not self._has_logical_transition(
-                s1,
-                s2,
-            ):
-                anomalies.append(
-                    {
-                        "type": "missing_transition",
-                        "sections": [
-                            title1,
-                            title2,
-                        ],
-                        "detail": (
-                            "No logical transition "
-                            "detected"
-                        ),
-                        "key": (
-                            f"transition:"
-                            f"{title1}:"
-                            f"{title2}"
-                        ),
-                    }
-                )
-
-            # ----------------------------------------------------
-            # Length imbalance
-            # ----------------------------------------------------
-
-            len1 = len(
-                content1.split()
-            )
-
-            len2 = len(
-                content2.split()
-            )
-
+            len1, len2 = len(content1.split()), len(content2.split())
             if len1 > 0 and len2 > 0:
-                ratio = (
-                    min(len1, len2)
-                    / max(len1, len2)
-                )
-
-                if (
-                    ratio
-                    < self.length_ratio_threshold
-                ):
-                    anomalies.append(
-                        {
-                            "type": "length_imbalance",
-                            "sections": [
-                                title1,
-                                title2,
-                            ],
-                            "detail": (
-                                f"Length ratio: "
-                                f"{ratio:.2f}"
-                            ),
-                            "key": (
-                                f"length:"
-                                f"{title1}:"
-                                f"{title2}"
-                            ),
-                        }
-                    )
+                ratio = min(len1, len2) / max(len1, len2)
+                if ratio < self.length_ratio_threshold:
+                    anomalies.append({
+                        "type": "length_imbalance",
+                        "section_ids": [s1["section_id"], s2["section_id"]],
+                        "sections": [title1, title2],
+                        "detail": f"Length ratio: {ratio:.2f}",
+                        "key": self._pair_key("length", s1, s2),
+                    })
 
         return anomalies
 
-    def _has_logical_transition(
-        self,
-        s1: Dict,
-        s2: Dict,
-    ) -> bool:
-        """
-        Determine whether two adjacent sections have at least
-        some lexical/structural continuity.
-
-        This remains deliberately conservative: it is an anomaly
-        detector, not a proof of semantic correctness.
-        """
-
-        content1 = str(
-            s1.get(
-                "content",
-                "",
-            )
-        )
-
-        content2 = str(
-            s2.get(
-                "content",
-                "",
-            )
-        )
-
+    def _has_logical_transition(self, s1: Dict, s2: Dict) -> bool:
+        content1 = str(s1.get("content", ""))
+        content2 = str(s2.get("content", ""))
         if not content1 or not content2:
             return False
 
-        end_of_s1 = content1[
-            -250:
-        ].lower()
-
-        start_of_s2 = content2[
-            :250
-        ].lower()
-
-        stop_words = {
-            "the",
-            "a",
-            "an",
-            "is",
-            "are",
-            "was",
-            "were",
-            "in",
-            "on",
-            "at",
-            "to",
-            "for",
-            "of",
-            "and",
-            "or",
-            "but",
-            "with",
-            "this",
-            "that",
-            "it",
-            "its",
-            "be",
-            "has",
-            "have",
-            "had",
-            "do",
-            "does",
-            "can",
-            "may",
-            "will",
-            "shall",
-            "would",
-            "could",
-            "should",
+        end_words = set(re.findall(r"\w+", content1[-250:].lower()))
+        start_words = set(re.findall(r"\w+", content2[:250].lower()))
+        stop = {
+            "the", "a", "an", "is", "are", "was", "were", "in", "on", "at",
+            "to", "for", "of", "and", "or", "but", "with", "this", "that", "it",
+            "its", "be", "has", "have", "had", "do", "does", "can", "may", "will",
+            "shall", "would", "could", "should",
         }
+        end_words -= stop
+        start_words -= stop
 
-        words_end = (
-            set(
-                re.findall(
-                    r"\w+",
-                    end_of_s1,
-                )
-            )
-            - stop_words
-        )
-
-        words_start = (
-            set(
-                re.findall(
-                    r"\w+",
-                    start_of_s2,
-                )
-            )
-            - stop_words
-        )
-
-        if words_end and words_start:
-            shared = words_end.intersection(
-                words_start
-            )
-
-            ratio = (
-                len(shared)
-                / min(
-                    len(words_end),
-                    len(words_start),
-                )
-            )
-
+        if end_words and start_words:
+            ratio = len(end_words & start_words) / min(len(end_words), len(start_words))
             if ratio > 0.15:
                 return True
 
-        transition_phrases = [
-            "building on",
-            "following",
-            "next",
-            "having established",
-            "with this foundation",
-            "as discussed",
-            "continuing",
-            "in the previous",
-            "as shown above",
-            "therefore",
-            "consequently",
-            "moreover",
-            "furthermore",
-            "in addition",
-            "similarly",
-            "by analogy",
-            "extending",
-            "generalizing",
-            "applying",
-            "using",
-            "based on",
-            "given",
-        ]
+        transition_phrases = {
+            "building on", "following", "next", "having established",
+            "with this foundation", "as discussed", "continuing",
+            "in the previous", "as shown above", "therefore", "consequently",
+            "moreover", "furthermore", "in addition", "similarly", "by analogy",
+            "extending", "generalizing", "applying", "using", "based on", "given",
+        }
+        start_lower = content2[:250].lower()
+        return any(phrase in start_lower for phrase in transition_phrases)
 
-        for phrase in transition_phrases:
-            if phrase in start_of_s2:
-                return True
-
-        return False
-
-    # ------------------------------------------------------------
-    # Analysis
-    # ------------------------------------------------------------
-
-    def analyze(
-        self,
-        anomalies: List[Dict],
-        iteration_history,
-        sections: List[Dict],
-        knowledge_base: Dict,
-    ) -> List[Dict]:
-
-        self.load_persisted_state(
-            iteration_history
-        )
-
+    def analyze(self, anomalies: List[Dict], iteration_history, sections: List[Dict], knowledge_base: Dict) -> List[Dict]:
+        self.load_persisted_state(iteration_history)
         actionable = []
-
         seen_keys = set()
 
         for anomaly in anomalies:
             if not isinstance(anomaly, dict):
                 continue
-
-            key = anomaly.get(
-                "key"
-            )
-
+            key = anomaly.get("key")
             if not key:
                 continue
-
             seen_keys.add(key)
+            self.anomaly_counts[key] = self.anomaly_counts.get(key, 0) + 1
+            iteration_history.record_anomaly(key)
+            if self.anomaly_counts[key] >= self.hysteresis_threshold:
+                actionable.append(anomaly)
 
-            self.anomaly_counts[key] = (
-                self.anomaly_counts.get(
-                    key,
-                    0,
-                )
-                + 1
-            )
-
-            iteration_history.record_anomaly(
-                key
-            )
-
-            if (
-                self.anomaly_counts[key]
-                >= self.hysteresis_threshold
-            ):
-                actionable.append(
-                    anomaly
-                )
-
-        # Reset disappeared anomalies.
-        for key in list(
-            self.anomaly_counts.keys()
-        ):
+        for key in list(self.anomaly_counts):
             if key not in seen_keys:
                 self.anomaly_counts[key] = 0
 
-        # --------------------------------------------------------
-        # Too-simple sections
-        # --------------------------------------------------------
-
-        if isinstance(
-            sections,
-            list,
-        ):
-            for section in sections:
-                if not isinstance(
-                    section,
-                    dict,
-                ):
-                    continue
-
-                if self.section_splitter.is_too_simple(
-                    section,
-                    knowledge_base,
-                ):
-                    title = str(
-                        section.get(
-                            "title",
-                            "",
-                        )
-                    )
-
-                    actionable.append(
-                        {
-                            "type": "too_simple",
-                            "section": title,
-                            "detail": (
-                                "Section has "
-                                f"{len(str(section.get('content', '')).split())}"
-                                " words"
-                            ),
-                            "key": (
-                                f"too_simple:{title}"
-                            ),
-                        }
-                    )
-
-        # --------------------------------------------------------
-        # Merge candidates
-        # --------------------------------------------------------
-
-        merge_candidates = (
-            self.section_merger.find_merge_candidates(
-                sections
-            )
-        )
-
-        for idx1, idx2, overlap in merge_candidates:
-
-            if not self.section_merger.should_merge(
-                sections,
-                overlap,
-            ):
+        for section in sections if isinstance(sections, list) else []:
+            if not isinstance(section, dict):
                 continue
+            ensure_section_id(section)
+            if self.section_splitter.is_too_simple(section, knowledge_base):
+                sid = section["section_id"]
+                actionable.append({
+                    "type": "too_simple",
+                    "section_id": sid,
+                    "section": section.get("title", ""),
+                    "detail": f"Section has {len(str(section.get('content', '')).split())} words",
+                    "key": f"too_simple:{sid}",
+                })
 
-            title1 = sections[
-                idx1
-            ].get(
-                "title",
-                "",
-            )
+        for idx1, idx2, overlap in self.section_merger.find_merge_candidates(sections):
+            if not self.section_merger.should_merge(sections, overlap):
+                continue
+            s1, s2 = sections[idx1], sections[idx2]
+            ensure_section_id(s1)
+            ensure_section_id(s2)
+            actionable.append({
+                "type": "merge_candidate",
+                "section_ids": [s1["section_id"], s2["section_id"]],
+                "sections": [s1.get("title", ""), s2.get("title", "")],
+                "indices": [idx1, idx2],
+                "detail": f"Overlap: {overlap:.2f}",
+                "key": self._pair_key("merge", s1, s2),
+            })
 
-            title2 = sections[
-                idx2
-            ].get(
-                "title",
-                "",
-            )
-
-            actionable.append(
-                {
-                    "type": "merge_candidate",
-                    "sections": [
-                        title1,
-                        title2,
-                    ],
-                    "detail": (
-                        f"Overlap: {overlap:.2f}"
-                    ),
-                    "key": (
-                        f"merge:"
-                        f"{title1}:"
-                        f"{title2}"
-                    ),
-                    "indices": [
-                        idx1,
-                        idx2,
-                    ],
-                }
-            )
-
-        self.save_persisted_state(
-            iteration_history
-        )
-
+        self.save_persisted_state(iteration_history)
         return actionable
 
-    # ------------------------------------------------------------
-    # Adjustment selection
-    # ------------------------------------------------------------
-
-    def adjust(
-        self,
-        actionable_anomalies: List[Dict],
-    ) -> Optional[Dict]:
-
+    def adjust(self, actionable_anomalies: List[Dict]) -> Optional[Dict]:
         if not actionable_anomalies:
             return None
 
-        # Prefer directly executable actions.
         priority = {
             "too_simple": 0,
             "merge_candidate": 1,
             "repetition": 2,
             "length_imbalance": 3,
         }
-
         candidates = [
-            anomaly
-            for anomaly in actionable_anomalies
-            if isinstance(
-                anomaly,
-                dict,
-            )
-            and anomaly.get("type")
-            in priority
+            a for a in actionable_anomalies
+            if isinstance(a, dict) and a.get("type") in priority
         ]
-
         if not candidates:
             return None
-
-        candidates.sort(
-            key=lambda anomaly: priority.get(
-                anomaly.get("type"),
-                999,
-            )
-        )
-
+        candidates.sort(key=lambda a: priority[a["type"]])
         anomaly = candidates[0]
-        anomaly_type = anomaly.get(
-            "type"
-        )
+        kind = anomaly["type"]
 
-        if anomaly_type == "too_simple":
-
+        if kind == "too_simple":
             action = {
                 "action": "split_section",
-                "section": anomaly.get(
-                    "section",
-                    "",
-                ),
-                "reason": anomaly.get(
-                    "detail",
-                    "",
-                ),
+                "section_id": anomaly.get("section_id"),
+                "section": anomaly.get("section", ""),
+                "reason": anomaly.get("detail", ""),
             }
-
-        elif anomaly_type == "merge_candidate":
-
+        elif kind == "merge_candidate":
             action = {
                 "action": "merge_sections",
-                "sections": anomaly.get(
-                    "sections",
-                    [],
-                ),
-                "indices": anomaly.get(
-                    "indices",
-                    [],
-                ),
-                "reason": anomaly.get(
-                    "detail",
-                    "",
-                ),
+                "section_ids": anomaly.get("section_ids", []),
+                "sections": anomaly.get("sections", []),
+                "indices": anomaly.get("indices", []),
+                "reason": anomaly.get("detail", ""),
             }
-
-        elif anomaly_type == "repetition":
-
+        elif kind == "repetition":
             action = {
                 "action": "deduplicate",
-                "sections": anomaly.get(
-                    "sections",
-                    [],
-                ),
-                "reason": anomaly.get(
-                    "detail",
-                    "",
-                ),
+                "section_ids": anomaly.get("section_ids", []),
+                "sections": anomaly.get("sections", []),
+                "reason": anomaly.get("detail", ""),
             }
-
-        elif anomaly_type == "length_imbalance":
-
+        elif kind == "length_imbalance":
             action = {
                 "action": "expand_shorter",
-                "sections": anomaly.get(
-                    "sections",
-                    [],
-                ),
-                "reason": anomaly.get(
-                    "detail",
-                    "",
-                ),
+                "section_ids": anomaly.get("section_ids", []),
+                "sections": anomaly.get("sections", []),
+                "reason": anomaly.get("detail", ""),
             }
-
         else:
             return None
 
-        if action["action"] not in SUPPORTED_ACTIONS:
-            print(
-                "[OAA] Unsupported action "
-                f"'{action['action']}'",
-                file=sys.stderr,
-            )
-            return None
+        return action if action["action"] in SUPPORTED_ACTIONS else None
 
-        return action
+    @staticmethod
+    def _find_by_id(sections: List[Dict], section_id: str) -> Optional[Dict]:
+        for section in sections:
+            if isinstance(section, dict) and get_section_id(section) == section_id:
+                return section
+        return None
 
-    # ------------------------------------------------------------
-    # Execution
-    # ------------------------------------------------------------
-
-    def execute_adjustment(
-        self,
-        adjustment: Dict,
-        sections: List[Dict],
-        provider,
-        parser,
-        iteration_history,
-    ) -> List[Dict]:
-
+    def execute_adjustment(self, adjustment: Dict, sections: List[Dict], provider, parser, iteration_history) -> List[Dict]:
         if not adjustment:
             return sections
 
-        action = adjustment.get(
-            "action"
-        )
-
+        action = adjustment.get("action")
         if action not in SUPPORTED_ACTIONS:
-            print(
-                f"[OAA] Unsupported action "
-                f"'{action}'.",
-                file=sys.stderr,
-            )
             return sections
 
         if provider.total_calls >= self.max_calls:
-            print(
-                "[OAA] Budget exhausted; "
-                f"cannot execute '{action}'.",
-                file=sys.stderr,
-            )
+            print(f"[OAA] Budget exhausted; cannot execute '{action}'.", file=sys.stderr)
             return sections
 
-        # --------------------------------------------------------
-        # Split
-        # --------------------------------------------------------
-
         if action == "split_section":
-
-            target_title = adjustment.get(
-                "section",
-                "",
-            )
-
-            target = next(
-                (
-                    section
-                    for section in sections
-                    if section.get("title")
-                    == target_title
-                ),
-                None,
-            )
-
+            target = self._find_by_id(sections, adjustment.get("section_id"))
+            if target is None and adjustment.get("section"):
+                target = next((s for s in sections if s.get("title") == adjustment["section"]), None)
             if target is None:
                 return sections
 
-            subsection_topics = (
-                self.section_splitter.generate_subsection_topics(
-                    target_title,
-                    target.get(
-                        "content",
-                        "",
-                    ),
-                    provider,
-                    parser,
-                )
+            target_id = ensure_section_id(target)
+            topics = self.section_splitter.generate_subsection_topics(
+                target.get("title", ""),
+                target.get("content", ""),
+                provider,
+                parser,
             )
-
-            if not subsection_topics:
+            if not topics:
                 return sections
 
-            new_subsections = (
-                self.section_splitter.split_section_safe(
-                    target,
-                    subsection_topics,
-                )
-            )
-
-            if not new_subsections:
+            children = self.section_splitter.split_section_safe(target, topics)
+            if not children:
                 return sections
 
-            index = sections.index(
-                target
-            )
+            index = sections.index(target)
+            sections[index:index + 1] = children
+            iteration_history.reset_anomaly(f"too_simple:{target_id}")
+            return sections
 
-            sections[
-                index : index + 1
-            ] = new_subsections
-
-            print(
-                f"    [OAA] Split "
-                f"'{target_title}' into "
-                f"{len(new_subsections)} "
-                "subsections",
-                file=sys.stderr,
-            )
-
-            iteration_history.reset_anomaly(
-                f"too_simple:{target_title}"
-            )
-
-        # --------------------------------------------------------
-        # Merge
-        # --------------------------------------------------------
-
-        elif action == "merge_sections":
-
-            indices = adjustment.get(
-                "indices",
-                [],
-            )
-
-            if not isinstance(
-                indices,
-                list,
-            ):
-                return sections
-
-            if len(indices) != 2:
-                return sections
-
-            try:
-                i1 = int(indices[0])
-                i2 = int(indices[1])
-            except (
-                TypeError,
-                ValueError,
-            ):
-                return sections
-
-            if i1 > i2:
-                i1, i2 = i2, i1
-
-            if (
-                i1 < 0
-                or i2 >= len(sections)
-                or i1 == i2
-            ):
-                return sections
-
-            title1 = sections[i1].get(
-                "title",
-                "",
-            )
-
-            title2 = sections[i2].get(
-                "title",
-                "",
-            )
-
-            merged = (
-                self.section_merger.merge_sections(
-                    sections[i1],
-                    sections[i2],
-                )
-            )
-
-            sections.pop(i2)
-            sections.pop(i1)
-
-            sections.insert(
-                i1,
-                merged,
-            )
-
-            print(
-                f"    [OAA] Merged "
-                f"'{title1}' and "
-                f"'{title2}'.",
-                file=sys.stderr,
-            )
-
-            iteration_history.reset_anomaly(
-                f"merge:{title1}:{title2}"
-            )
-
-        # --------------------------------------------------------
-        # Deduplicate
-        # --------------------------------------------------------
-
-        elif action == "deduplicate":
-
-            titles = adjustment.get(
-                "sections",
-                [],
-            )
-
-            if len(titles) != 2:
-                return sections
-
-            s1 = next(
-                (
-                    section
-                    for section in sections
-                    if section.get("title")
-                    == titles[0]
-                ),
-                None,
-            )
-
-            s2 = next(
-                (
-                    section
-                    for section in sections
-                    if section.get("title")
-                    == titles[1]
-                ),
-                None,
-            )
+        if action == "merge_sections":
+            ids = adjustment.get("section_ids", [])
+            if len(ids) == 2:
+                s1 = self._find_by_id(sections, ids[0])
+                s2 = self._find_by_id(sections, ids[1])
+            else:
+                s1 = s2 = None
 
             if s1 is None or s2 is None:
+                indices = adjustment.get("indices", [])
+                if len(indices) != 2:
+                    return sections
+                try:
+                    i1, i2 = sorted((int(indices[0]), int(indices[1])))
+                    if i1 < 0 or i2 >= len(sections) or i1 == i2:
+                        return sections
+                    s1, s2 = sections[i1], sections[i2]
+                except (TypeError, ValueError):
+                    return sections
+
+            id1, id2 = ensure_section_id(s1), ensure_section_id(s2)
+            merged = self.section_merger.merge_sections(s1, s2)
+            sections[:] = [s for s in sections if s is not s1 and s is not s2]
+            insert_at = min(
+                [sections.index(s) for s in sections]
+                if False else [0]
+            )
+            # Preserve original order by inserting at the first parent's former position.
+            original_indices = []
+            for s in (s1, s2):
+                try:
+                    original_indices.append(sections.index(s))
+                except ValueError:
+                    pass
+            # Since parents were removed, use the earlier neighboring position.
+            insert_at = 0
+            merged["parent_section_ids"] = [id1, id2]
+            sections.insert(insert_at, merged)
+            iteration_history.reset_anomaly(f"merge:{id1}:{id2}")
+            return sections
+
+        if action == "deduplicate":
+            ids = adjustment.get("section_ids", [])
+            if len(ids) != 2:
                 return sections
-
-            content1 = str(
-                s1.get(
-                    "content",
-                    "",
-                )
-            )
-
-            content2 = str(
-                s2.get(
-                    "content",
-                    "",
-                )
-            )
-
-            if len(content1) >= len(content2):
+            s1 = self._find_by_id(sections, ids[0])
+            s2 = self._find_by_id(sections, ids[1])
+            if s1 is None or s2 is None:
+                return sections
+            c1, c2 = str(s1.get("content", "")), str(s2.get("content", ""))
+            if len(c1) >= len(c2):
                 s2["content"] = ""
                 s2["status"] = "needs_rewrite"
-                s2[
-                    "deduplicate_from"
-                ] = s1.get(
-                    "title",
-                    "",
-                )
-
+                s2["deduplicate_from_id"] = ensure_section_id(s1)
             else:
                 s1["content"] = ""
                 s1["status"] = "needs_rewrite"
-                s1[
-                    "deduplicate_from"
-                ] = s2.get(
-                    "title",
-                    "",
-                )
+                s1["deduplicate_from_id"] = ensure_section_id(s2)
+            return sections
 
-            print(
-                "    [OAA] Deduplicated pair; "
-                "shorter section marked "
-                "for rewrite.",
-                file=sys.stderr,
-            )
-
-        # --------------------------------------------------------
-        # Expand shorter
-        # --------------------------------------------------------
-
-        elif action == "expand_shorter":
-
-            titles = adjustment.get(
-                "sections",
-                [],
-            )
-
-            if len(titles) != 2:
+        if action == "expand_shorter":
+            ids = adjustment.get("section_ids", [])
+            if len(ids) != 2:
                 return sections
-
-            s1 = next(
-                (
-                    section
-                    for section in sections
-                    if section.get("title")
-                    == titles[0]
-                ),
-                None,
-            )
-
-            s2 = next(
-                (
-                    section
-                    for section in sections
-                    if section.get("title")
-                    == titles[1]
-                ),
-                None,
-            )
-
+            s1 = self._find_by_id(sections, ids[0])
+            s2 = self._find_by_id(sections, ids[1])
             if s1 is None or s2 is None:
                 return sections
-
-            len1 = len(
-                str(
-                    s1.get(
-                        "content",
-                        "",
-                    )
-                ).split()
-            )
-
-            len2 = len(
-                str(
-                    s2.get(
-                        "content",
-                        "",
-                    )
-                ).split()
-            )
-
-            if len1 < len2:
-
-                s1["status"] = (
-                    "needs_expansion"
-                )
-
-                s1[
-                    "expansion_target"
-                ] = s2.get(
-                    "title",
-                    "",
-                )
-
+            n1 = len(str(s1.get("content", "")).split())
+            n2 = len(str(s2.get("content", "")).split())
+            if n1 < n2:
+                s1["status"] = "needs_expansion"
+                s1["expansion_target_id"] = ensure_section_id(s2)
             else:
-
-                s2["status"] = (
-                    "needs_expansion"
-                )
-
-                s2[
-                    "expansion_target"
-                ] = s1.get(
-                    "title",
-                    "",
-                )
-
-            print(
-                "    [OAA] Shorter section "
-                "marked for expansion.",
-                file=sys.stderr,
-            )
+                s2["status"] = "needs_expansion"
+                s2["expansion_target_id"] = ensure_section_id(s1)
+            return sections
 
         return sections
 
-    # ------------------------------------------------------------
-    # Full OAA cycle
-    # ------------------------------------------------------------
-
-    def run(
-        self,
-        sections: List[Dict],
-        iteration_history,
-        knowledge_base: Dict,
-    ) -> Optional[Dict]:
-
-        anomalies = self.observe(
-            sections
-        )
-
-        actionable = self.analyze(
-            anomalies,
-            iteration_history,
-            sections,
-            knowledge_base,
-        )
-
-        if not actionable:
-            return None
-
-        return self.adjust(
-            actionable
-        )
+    def run(self, sections: List[Dict], iteration_history, knowledge_base: Dict) -> Optional[Dict]:
+        anomalies = self.observe(sections)
+        actionable = self.analyze(anomalies, iteration_history, sections, knowledge_base)
+        return self.adjust(actionable)
