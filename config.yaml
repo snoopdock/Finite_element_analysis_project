@@ -71,15 +71,13 @@ merging:
   min_section_count: 3
   
 cloudflare_models:
-  # 1. The Math & LaTeX Specialist (7B - Highly efficient, fixes your CoCalc errors)
-  - "@cf/deepseek-ai/deepseek-math-7b-instruct"
-  
-  # 2. The Strict JSON Specialist (7B - Highly efficient, fixes parser retries)
+  # The Strict JSON Specialist (Excellent at formatting)
   - "@hf/nousresearch/hermes-2-pro-mistral-7b"
   
-  # 3. Your reliable fallbacks (8B/7B - Standard efficiency)
+  # The Reliable All-Rounders (Proven to write great content in your logs)
   - "@cf/meta/llama-3.1-8b-instruct"
   - "@cf/mistral/mistral-7b-instruct-v0.1"
+  - "@cf/meta/llama-3.2-3b-instruct"
 
 state:
   path: state/current_state.json
