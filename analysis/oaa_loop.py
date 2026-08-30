@@ -9,7 +9,6 @@ from typing import Dict, List, Optional
 
 from core.section_identity import ensure_section_id, get_section_id
 
-
 SUPPORTED_ACTIONS = {
     "split_section",
     "merge_sections",
@@ -28,9 +27,7 @@ def calculate_similarity(text1: str, text2: str) -> float:
 
 def _section_identity(section: Dict) -> str:
     section_id = get_section_id(section)
-    if section_id:
-        return section_id
-    return str(section.get("title", ""))
+    return section_id if section_id else str(section.get("title", ""))
 
 
 class OAALoop:
@@ -200,48 +197,46 @@ class OAALoop:
             "length_imbalance": 3,
         }
         candidates = [
-            a for a in actionable_anomalies
-            if isinstance(a, dict) and a.get("type") in priority
+            anomaly for anomaly in actionable_anomalies
+            if isinstance(anomaly, dict) and anomaly.get("type") in priority
         ]
         if not candidates:
             return None
-        candidates.sort(key=lambda a: priority[a["type"]])
+
+        candidates.sort(key=lambda anomaly: priority[anomaly["type"]])
         anomaly = candidates[0]
         kind = anomaly["type"]
 
         if kind == "too_simple":
-            action = {
+            return {
                 "action": "split_section",
                 "section_id": anomaly.get("section_id"),
                 "section": anomaly.get("section", ""),
                 "reason": anomaly.get("detail", ""),
             }
-        elif kind == "merge_candidate":
-            action = {
+        if kind == "merge_candidate":
+            return {
                 "action": "merge_sections",
                 "section_ids": anomaly.get("section_ids", []),
                 "sections": anomaly.get("sections", []),
                 "indices": anomaly.get("indices", []),
                 "reason": anomaly.get("detail", ""),
             }
-        elif kind == "repetition":
-            action = {
+        if kind == "repetition":
+            return {
                 "action": "deduplicate",
                 "section_ids": anomaly.get("section_ids", []),
                 "sections": anomaly.get("sections", []),
                 "reason": anomaly.get("detail", ""),
             }
-        elif kind == "length_imbalance":
-            action = {
+        if kind == "length_imbalance":
+            return {
                 "action": "expand_shorter",
                 "section_ids": anomaly.get("section_ids", []),
                 "sections": anomaly.get("sections", []),
                 "reason": anomaly.get("detail", ""),
             }
-        else:
-            return None
-
-        return action if action["action"] in SUPPORTED_ACTIONS else None
+        return None
 
     @staticmethod
     def _find_by_id(sections: List[Dict], section_id: str) -> Optional[Dict]:
@@ -253,7 +248,6 @@ class OAALoop:
     def execute_adjustment(self, adjustment: Dict, sections: List[Dict], provider, parser, iteration_history) -> List[Dict]:
         if not adjustment:
             return sections
-
         action = adjustment.get("action")
         if action not in SUPPORTED_ACTIONS:
             return sections
@@ -309,23 +303,11 @@ class OAALoop:
                     return sections
 
             id1, id2 = ensure_section_id(s1), ensure_section_id(s2)
+            original_index = min(sections.index(s1), sections.index(s2))
             merged = self.section_merger.merge_sections(s1, s2)
-            sections[:] = [s for s in sections if s is not s1 and s is not s2]
-            insert_at = min(
-                [sections.index(s) for s in sections]
-                if False else [0]
-            )
-            # Preserve original order by inserting at the first parent's former position.
-            original_indices = []
-            for s in (s1, s2):
-                try:
-                    original_indices.append(sections.index(s))
-                except ValueError:
-                    pass
-            # Since parents were removed, use the earlier neighboring position.
-            insert_at = 0
+            sections[:] = [section for section in sections if section is not s1 and section is not s2]
             merged["parent_section_ids"] = [id1, id2]
-            sections.insert(insert_at, merged)
+            sections.insert(min(original_index, len(sections)), merged)
             iteration_history.reset_anomaly(f"merge:{id1}:{id2}")
             return sections
 
@@ -337,7 +319,8 @@ class OAALoop:
             s2 = self._find_by_id(sections, ids[1])
             if s1 is None or s2 is None:
                 return sections
-            c1, c2 = str(s1.get("content", "")), str(s2.get("content", ""))
+            c1 = str(s1.get("content", ""))
+            c2 = str(s2.get("content", ""))
             if len(c1) >= len(c2):
                 s2["content"] = ""
                 s2["status"] = "needs_rewrite"
