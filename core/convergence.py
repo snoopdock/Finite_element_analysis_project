@@ -11,7 +11,6 @@ from typing import Dict, List, Tuple
 from core.section_identity import ensure_section_id
 from analysis.citation_validator import validate_document_citations
 
-
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
@@ -24,14 +23,8 @@ class ConvergenceDetector:
         self.minimum_reading_coverage = float(convergence_config.get("minimum_reading_coverage_percent", 80.0))
         self.minimum_citation_coverage = float(convergence_config.get("minimum_citation_coverage_percent", 80.0))
 
-        configured_path = pathlib.Path(
-            convergence_config.get("evidence_path", "output/evidence.json")
-        )
-        self.evidence_path = (
-            configured_path
-            if configured_path.is_absolute()
-            else ROOT / configured_path
-        )
+        configured_path = pathlib.Path(convergence_config.get("evidence_path", "output/evidence.json"))
+        self.evidence_path = configured_path if configured_path.is_absolute() else ROOT / configured_path
         self.consecutive_convergence = 0
 
     @staticmethod
@@ -53,16 +46,7 @@ class ConvergenceDetector:
         except (OSError, json.JSONDecodeError):
             return []
 
-    def check_convergence(
-        self,
-        iteration_history,
-        writing_indicator,
-        section_topics: List[str],
-        recent_actions: List[str],
-        sections: List[Dict] = None,
-        reading_summary: Dict = None,
-        evidence: List[Dict] = None,
-    ) -> Tuple[bool, Dict]:
+    def check_convergence(self, iteration_history, writing_indicator, section_topics: List[str], recent_actions: List[str], sections: List[Dict] = None, reading_summary: Dict = None, evidence: List[Dict] = None) -> Tuple[bool, Dict]:
         sections = sections or []
         recent_actions = recent_actions or []
         if evidence is None:
@@ -127,11 +111,8 @@ class ConvergenceDetector:
             content = section.get("content", "")
             content = content if isinstance(content, str) else str(content)
             status = section.get("status", "")
-            if len(content.split()) < self.min_words_per_section:
+            if len(content.split()) < self.min_words_per_section or status in {"needs_generation", "needs_rewrite", "needs_expansion", "incomplete"}:
                 incomplete_sections += 1
-            elif status in {"needs_generation", "needs_rewrite", "needs_expansion", "incomplete"}:
-                incomplete_sections += 1
-
         diagnostics["incomplete_sections"] = incomplete_sections
 
         reading_coverage = float((reading_summary or {}).get("reading_coverage_percent", 0.0))
@@ -149,10 +130,7 @@ class ConvergenceDetector:
             "all_sections_stable": unstable_sections == 0,
             "all_sections_complete": incomplete_sections == 0,
             "sufficient_reading": reading_coverage >= self.minimum_reading_coverage,
-            "sufficient_citations": (
-                citation_summary.get("valid", False)
-                and citation_coverage >= self.minimum_citation_coverage
-            ),
+            "sufficient_citations": citation_summary.get("valid", False) and citation_coverage >= self.minimum_citation_coverage,
         }
 
         if not evidence:
