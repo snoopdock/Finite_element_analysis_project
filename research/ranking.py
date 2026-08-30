@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
-"""Deterministic evidence ranking utilities.
-
-Ranking is intentionally independent from retrieval so that source selection
-can be inspected, tuned, and tested without changing the providers.
-"""
+"""Deterministic evidence ranking utilities."""
 
 from __future__ import annotations
 
 import math
 import re
 from collections import Counter
-from typing import Dict, Iterable, List, Sequence, Set
-
+from typing import Dict, List, Sequence, Set
 
 DEFAULT_STOP_WORDS: Set[str] = {
     "a", "an", "and", "are", "as", "at", "be", "by", "for",
@@ -19,7 +14,6 @@ DEFAULT_STOP_WORDS: Set[str] = {
     "the", "this", "to", "was", "were", "with", "method", "finite",
     "element", "elements", "using", "used", "use", "can", "may",
 }
-
 
 SOURCE_QUALITY = {
     "peer_reviewed": 1.00,
@@ -38,7 +32,6 @@ SOURCE_QUALITY = {
 
 
 def tokenize(text: str) -> List[str]:
-    """Normalize technical prose into lowercase word tokens."""
     if not isinstance(text, str):
         text = str(text or "")
     return [
@@ -49,13 +42,8 @@ def tokenize(text: str) -> List[str]:
 
 
 def lexical_score(query: str, text: str) -> float:
-    """Compute a bounded weighted lexical relevance score.
-
-    Title/name matches receive more weight than generic body matches.
-    """
     query_tokens = set(tokenize(query))
     text_tokens = tokenize(text)
-
     if not query_tokens or not text_tokens:
         return 0.0
 
@@ -64,16 +52,11 @@ def lexical_score(query: str, text: str) -> float:
     if not matched:
         return 0.0
 
-    score = 0.0
-    for token in matched:
-        # Diminishing returns for repeated words.
-        score += 1.0 + math.log1p(frequencies[token])
-
+    score = sum(1.0 + math.log1p(frequencies[token]) for token in matched)
     return min(1.0, score / (2.5 * len(query_tokens)))
 
 
 def source_quality_score(item: Dict) -> float:
-    """Return an evidence-quality prior from explicit source metadata."""
     source_type = str(
         item.get("source_type")
         or item.get("provider")
@@ -91,19 +74,12 @@ def source_quality_score(item: Dict) -> float:
         return SOURCE_QUALITY["journal"]
     if "book" in source_type:
         return SOURCE_QUALITY["book"]
-
     return SOURCE_QUALITY.get(source_type, SOURCE_QUALITY["unknown"])
 
 
-def section_relevance_score(
-    topic: str,
-    section_type: str,
-    text: str,
-) -> float:
-    """Prefer article sections whose type/content is relevant to the topic."""
+def section_relevance_score(topic: str, section_type: str, text: str) -> float:
     if not section_type:
         return lexical_score(topic, text)
-
     section_tokens = set(tokenize(section_type))
     topic_tokens = set(tokenize(topic))
     overlap = len(section_tokens.intersection(topic_tokens))
@@ -121,7 +97,7 @@ def rank_items(
     section_weight: float = 0.10,
     citation_weight: float = 0.20,
 ) -> List[Dict]:
-    """Rank evidence or knowledge-base items and annotate their scores."""
+    """Rank items for one query and annotate component scores."""
     if not isinstance(items, Sequence):
         return []
 
@@ -147,9 +123,7 @@ def rank_items(
             str(item.get("section_type") or ""),
             combined,
         )
-
-        citations = item.get("source_ids", [])
-        citation_support = 1.0 if citations else 0.0
+        citation_support = 1.0 if item.get("source_ids") else 0.0
 
         score = (
             lexical_weight * lex
@@ -172,13 +146,49 @@ def rank_items(
     return [row[2] for row in prepared[:max(0, int(top_k))]]
 
 
-def rank_knowledge_items(
-    topic: str,
-    knowledge_base: Dict,
+def rank_items_for_queries(
+    queries: Sequence[str],
+    items: Sequence[Dict],
     *,
-    top_k: int = 6,
+    top_k: int = 4,
 ) -> List[Dict]:
-    """Rank heterogeneous knowledge-base records for a writing topic."""
+    """Score each item against all queries, retaining its best query score."""
+    if not queries or not items:
+        return []
+
+    best: Dict[str, Dict] = {}
+    order: Dict[str, int] = {}
+
+    for query_index, query in enumerate(queries):
+        ranked = rank_items(
+            str(query),
+            items,
+            top_k=len(items),
+            lexical_weight=0.65,
+            source_weight=0.25,
+            section_weight=0.10,
+            citation_weight=0.0,
+        )
+
+        for item_index, item in enumerate(ranked):
+            source_id = str(item.get("source_id") or f"__item_{query_index}_{item_index}")
+            score = float(item.get("ranking", {}).get("score", 0.0))
+            current = best.get(source_id)
+            if current is None or score > float(current.get("ranking", {}).get("score", 0.0)):
+                annotated = dict(item)
+                ranking = dict(annotated.get("ranking", {}))
+                ranking["best_query"] = str(query)
+                ranking["query_index"] = query_index
+                annotated["ranking"] = ranking
+                best[source_id] = annotated
+                order.setdefault(source_id, query_index)
+
+    result = list(best.values())
+    result.sort(key=lambda item: (-float(item.get("ranking", {}).get("score", 0.0)), str(item.get("source_id", ""))))
+    return result[:max(0, int(top_k))]
+
+
+def rank_knowledge_items(topic: str, knowledge_base: Dict, *, top_k: int = 6) -> List[Dict]:
     items = []
     if not isinstance(knowledge_base, dict):
         return []
