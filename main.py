@@ -7,10 +7,22 @@ import pathlib
 import sys
 import traceback
 
-from utils.text import utcnow, ensure_base_dirs, load_yaml, load_json, save_json, save_text
+from utils.text import (
+    utcnow,
+    ensure_base_dirs,
+    load_yaml,
+    load_json,
+    save_json,
+    save_text,
+)
 from core.state_manager import initialize_state, save_state
 from core.budget import check_budget
-from core.pipeline import phase_research, phase_extract, phase_write, phase_assemble
+from core.pipeline import (
+    phase_research,
+    phase_extract,
+    phase_write,
+    phase_assemble,
+)
 from processing.llm_parser import UniversalLLMJSONParser
 from providers.cloudflare import CloudflareProvider
 from analysis.iteration_history import IterationHistory
@@ -21,19 +33,35 @@ from writing.section_merger import SectionMerger
 from analysis.oaa_loop import OAALoop
 from analysis.writing_indicator import WritingIndicator
 
+from research.reading_tracker import load_reading_state
+from research.evidence import get_reading_summary
+
 ROOT = pathlib.Path(__file__).resolve().parent
 
 
 def main():
     ensure_base_dirs(ROOT)
+
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--config", default="config.yaml")
     args = arg_parser.parse_args()
 
     try:
-        config = load_yaml(args.config)
+        config_path = pathlib.Path(args.config)
+        if not config_path.is_absolute():
+            config_path = ROOT / config_path
+
+        config = load_yaml(config_path)
+
+        if not isinstance(config, dict):
+            raise RuntimeError("Configuration file did not produce a dictionary.")
+
         paths = {
-            "state": ROOT / config.get("state", {}).get("path", "state/current_state.json"),
+            "state": ROOT
+            / config.get("state", {}).get(
+                "path",
+                "state/current_state.json",
+            ),
             "evidence": ROOT / "output" / "evidence.json",
             "research": ROOT / "output" / "research.json",
             "sections": ROOT / "output" / "sections.json",
@@ -43,6 +71,7 @@ def main():
 
         state = initialize_state(paths, config)
         errors = []
+
         delay = int(config.get("phase_delay_seconds", 5))
         budget_config = config.get("budget", {})
 
@@ -51,23 +80,51 @@ def main():
 
         if not account_id:
             raise RuntimeError("CLOUDFLARE_ACCOUNT_ID is not set.")
+
         if not api_token:
             raise RuntimeError("CLOUDFLARE_API_TOKEN is not set.")
 
-        llm_parser_instance = UniversalLLMJSONParser(enable_repair=False, repair_provider=None, verbose=True)
+        llm_parser_instance = UniversalLLMJSONParser(
+            enable_repair=False,
+            repair_provider=None,
+            verbose=True,
+        )
+
+        # ------------------------------------------------------------
+        # Persistent iteration state
+        # ------------------------------------------------------------
 
         iteration_history = IterationHistory()
+
         if "iteration_history_data" in state:
-            iteration_history.load_from_dict(state["iteration_history_data"])
+            iteration_history.load_from_dict(
+                state["iteration_history_data"]
+            )
+
+        # ------------------------------------------------------------
+        # Controllers
+        # ------------------------------------------------------------
 
         convergence_detector = ConvergenceDetector(config)
         gap_detector = GapDetector(config)
+
+        # SectionSplitter currently performs its own LLM call through
+        # generate_subsection_topics(), so no prompt generator object
+        # is required here.
         section_splitter = SectionSplitter(config)
         section_merger = SectionMerger(config)
-        oaa_loop = OAALoop(config, section_splitter, section_merger)
 
-        # Build leverage map from config
+        oaa_loop = OAALoop(
+            config,
+            section_splitter,
+            section_merger,
+        )
+
+        # Ensure OAA hysteresis state is restored from persistent history.
+        oaa_loop.load_persisted_state(iteration_history)
+
         section_leverage = config.get("section_leverage", {})
+
         writing_indicator = WritingIndicator(
             w_L=config.get("writing", {}).get("w_L", 0.4),
             w_U=config.get("writing", {}).get("w_U", 0.4),
@@ -75,136 +132,470 @@ def main():
             leverage_map=section_leverage if section_leverage else None,
         )
 
-        print("\n=== BUDGET CHECK (Local) ===", file=sys.stderr)
-        budget_config = check_budget(config)
-        budget_msg = f"Local limit: {budget_config.get('max_llm_calls_per_run', 20)} calls"
-        state["last_budget_check"] = {"time": utcnow(), "type": "local", "message": budget_msg}
+        # ------------------------------------------------------------
+        # Budget
+        # ------------------------------------------------------------
 
-        # Unified section_topics (config + existing dynamic sections)
-        config_topics = config.get("section_topics", [
-            "Introduction and Scope of the Finite Element Method",
-            "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
-            "The Finite Element Procedure",
-            "Rules for Modeling Physical Phenomena with FEM",
-            "Verification, Validation, and Best Practices",
-        ])
+        print("\n=== BUDGET CHECK (Local) ===", file=sys.stderr)
+
+        budget_config = check_budget(config)
+
+        budget_msg = (
+            f"Local limit: "
+            f"{budget_config.get('max_llm_calls_per_run', 20)} calls"
+        )
+
+        state["last_budget_check"] = {
+            "time": utcnow(),
+            "type": "local",
+            "message": budget_msg,
+        }
+
+        # ------------------------------------------------------------
+        # Section topics
+        # ------------------------------------------------------------
+
+        config_topics = config.get(
+            "section_topics",
+            [
+                "Introduction and Scope of the Finite Element Method",
+                "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+                "The Finite Element Procedure",
+                "Rules for Modeling Physical Phenomena with FEM",
+                "Verification, Validation, and Best Practices",
+            ],
+        )
+
+        if not isinstance(config_topics, list):
+            raise RuntimeError("section_topics must be a list.")
+
         existing_sections = state.get("sections", [])
-        existing_titles = [s.get("title") for s in existing_sections if s.get("title")]
+
+        if not isinstance(existing_sections, list):
+            existing_sections = []
+            state["sections"] = existing_sections
+
+        existing_titles = [
+            s.get("title")
+            for s in existing_sections
+            if isinstance(s, dict) and s.get("title")
+        ]
 
         section_topics = list(config_topics)
+
         for title in existing_titles:
             if title not in section_topics:
                 section_topics.append(title)
 
-        recent_actions = [state.get("pending_adjustment", {}).get("action")] if state.get("pending_adjustment") else []
+        # ------------------------------------------------------------
+        # Reading state / convergence
+        # ------------------------------------------------------------
 
-        # Pass existing_sections for completeness check
-        is_converged, convergence_diag = convergence_detector.check_convergence(
-            iteration_history, writing_indicator, section_topics, recent_actions, existing_sections
+        reading_state = load_reading_state()
+
+        existing_evidence = load_json(
+            paths["evidence"],
+            [],
         )
 
-        print(f"\n=== CONVERGENCE CHECK ===", file=sys.stderr)
-        print(f"  Converged: {is_converged}", file=sys.stderr)
-        print(f"  Diagnostics: {convergence_diag}", file=sys.stderr)
+        if not isinstance(existing_evidence, list):
+            existing_evidence = []
 
-        models = config.get("cloudflare_models", ["@cf/meta/llama-3.1-8b-instruct"])
-        max_tokens = budget_config.get("max_tokens_per_call", 2500)
-        provider = CloudflareProvider(account_id, api_token, models, max_tokens)
+        reading_summary = get_reading_summary(
+            existing_evidence,
+            reading_state,
+        )
+
+        recent_actions = []
+
+        pending_adjustment = state.get("pending_adjustment")
+
+        if isinstance(pending_adjustment, dict):
+            action = pending_adjustment.get("action")
+
+            if action:
+                recent_actions.append(action)
+
+        is_converged, convergence_diag = (
+            convergence_detector.check_convergence(
+                iteration_history,
+                writing_indicator,
+                section_topics,
+                recent_actions,
+                existing_sections,
+                reading_summary,
+            )
+        )
+
+        print("\n=== CONVERGENCE CHECK ===", file=sys.stderr)
+        print(f"  Converged: {is_converged}", file=sys.stderr)
+        print(
+            f"  Reading coverage: "
+            f"{reading_summary.get('reading_coverage_percent', 0.0):.2f}%",
+            file=sys.stderr,
+        )
+        print(
+            f"  Diagnostics: {convergence_diag}",
+            file=sys.stderr,
+        )
+
+        # ------------------------------------------------------------
+        # LLM provider
+        # ------------------------------------------------------------
+
+        models = config.get(
+            "cloudflare_models",
+            ["@cf/meta/llama-3.1-8b-instruct"],
+        )
+
+        max_tokens = budget_config.get(
+            "max_tokens_per_call",
+            2500,
+        )
+
+        provider = CloudflareProvider(
+            account_id,
+            api_token,
+            models,
+            max_tokens,
+        )
 
         print(f"\nModels: {models}", file=sys.stderr)
-        print(f"Max tokens per call: {max_tokens}", file=sys.stderr)
-        print(f"Max calls per run: {budget_config.get('max_llm_calls_per_run', 10)}", file=sys.stderr)
-        print("\n" + "="*60, file=sys.stderr)
+        print(
+            f"Max tokens per call: {max_tokens}",
+            file=sys.stderr,
+        )
+        print(
+            "Max calls per run: "
+            f"{budget_config.get('max_llm_calls_per_run', 20)}",
+            file=sys.stderr,
+        )
+
+        print("\n" + "=" * 60, file=sys.stderr)
         print("STARTING FULL CYCLE", file=sys.stderr)
-        print("="*60, file=sys.stderr)
+        print("=" * 60, file=sys.stderr)
 
-        skip_gap = is_converged and not state.get("pending_adjustment")
-        evidence, new_sources = phase_research(config, state, paths, errors, gap_detector, provider, llm_parser_instance, skip_gap_analysis=skip_gap)
+        # ------------------------------------------------------------
+        # Phase 1: Research
+        # ------------------------------------------------------------
 
-        skip_write = convergence_detector.should_skip_write_phase(is_converged, new_sources)
+        skip_gap = (
+            is_converged
+            and not state.get("pending_adjustment")
+        )
+
+        evidence, new_sources = phase_research(
+            config,
+            state,
+            paths,
+            errors,
+            gap_detector,
+            provider,
+            llm_parser_instance,
+            skip_gap_analysis=skip_gap,
+        )
+
+        # Recalculate reading summary because research may have
+        # introduced new evidence sources.
+        reading_state = load_reading_state()
+
+        reading_summary = get_reading_summary(
+            evidence,
+            reading_state,
+        )
+
+        # ------------------------------------------------------------
+        # Decide whether writing/extraction should be skipped
+        # ------------------------------------------------------------
+
+        skip_write = convergence_detector.should_skip_write_phase(
+            is_converged,
+            new_sources,
+        )
+
+        sections = state.get("sections", [])
+        kb = state.get("knowledge_base", {})
+
+        extracted = False
+        written = False
+        adjustment = None
 
         if skip_write:
-            print("\n=== SKIPPING WRITE PHASE (Converged + No new sources) ===", file=sys.stderr)
-            kb = state.get("knowledge_base", {})
-            extracted = False
-            sections = state.get("sections", [])
-            written = False
-            adjustment = None
+            print(
+                "\n=== SKIPPING WRITE PHASE "
+                "(Converged + No new sources) ===",
+                file=sys.stderr,
+            )
         else:
+            # --------------------------------------------------------
+            # Phase 2: Extract
+            # --------------------------------------------------------
+
+            processed_extracted = set(
+                state.get(
+                    "processed_sources_extracted",
+                    [],
+                )
+            )
+
             unprocessed = [
-                e for e in evidence
-                if isinstance(e, dict) and e.get("source_id") not in set(state.get("processed_sources_extracted", []))
+                e
+                for e in evidence
+                if (
+                    isinstance(e, dict)
+                    and e.get("source_id")
+                    and e.get("source_id")
+                    not in processed_extracted
+                )
             ]
-            skip_extract = convergence_detector.should_skip_extract_phase(len(unprocessed))
+
+            skip_extract = (
+                convergence_detector.should_skip_extract_phase(
+                    len(unprocessed)
+                )
+                and not state.get("pending_adjustment")
+            )
 
             if skip_extract:
-                print("\n=== SKIPPING EXTRACT PHASE (No unprocessed sources) ===", file=sys.stderr)
-                kb = state.get("knowledge_base", {})
-                extracted = False
+                print(
+                    "\n=== SKIPPING EXTRACT PHASE "
+                    "(No unprocessed sources) ===",
+                    file=sys.stderr,
+                )
             else:
-                kb, extracted = phase_extract(config, state, paths, provider, llm_parser_instance, errors, delay, budget_config)
+                kb, extracted = phase_extract(
+                    config,
+                    state,
+                    paths,
+                    provider,
+                    llm_parser_instance,
+                    errors,
+                    delay,
+                    budget_config,
+                )
+
                 state["knowledge_base"] = kb
 
-            sections, written, adjustment = phase_write(config, state, paths, provider, llm_parser_instance, errors, delay, budget_config, iteration_history, oaa_loop, section_topics)
+            # --------------------------------------------------------
+            # Phase 3: Write + OAA proposal
+            # --------------------------------------------------------
+
+            sections, written, adjustment = phase_write(
+                config,
+                state,
+                paths,
+                provider,
+                llm_parser_instance,
+                errors,
+                delay,
+                budget_config,
+                iteration_history,
+                oaa_loop,
+                section_topics,
+            )
+
+            state["sections"] = sections
+
+            # --------------------------------------------------------
+            # Phase 3b: Execute OAA adjustment
+            # --------------------------------------------------------
 
             if adjustment:
-                print(f"\n=== EXECUTING ADJUSTMENT: {adjustment['action']} ===", file=sys.stderr)
-                sections = oaa_loop.execute_adjustment(adjustment, sections, provider, llm_parser_instance, iteration_history)
+                print(
+                    f"\n=== EXECUTING ADJUSTMENT: "
+                    f"{adjustment.get('action', 'unknown')} ===",
+                    file=sys.stderr,
+                )
+
+                sections = oaa_loop.execute_adjustment(
+                    adjustment,
+                    sections,
+                    provider,
+                    llm_parser_instance,
+                    iteration_history,
+                )
+
                 state["sections"] = sections
-                save_json(paths["sections"], sections)
 
-        assembled = phase_assemble(state, paths)
+                save_json(
+                    paths["sections"],
+                    sections,
+                )
 
-        state["cycle"] = int(state.get("cycle", 0)) + 1
-        state["iteration"] = int(state.get("iteration", 0)) + 1
+                # The pending adjustment has now been consumed.
+                state.pop("pending_adjustment", None)
+
+            else:
+                # There is no newly requested adjustment in this cycle.
+                state.pop("pending_adjustment", None)
+
+        # ------------------------------------------------------------
+        # Phase 4: Assemble
+        # ------------------------------------------------------------
+
+        assembled = phase_assemble(
+            state,
+            paths,
+        )
+
+        # ------------------------------------------------------------
+        # Update persistent state
+        # ------------------------------------------------------------
+
+        state["cycle"] = int(
+            state.get("cycle", 0)
+        ) + 1
+
+        state["iteration"] = int(
+            state.get("iteration", 0)
+        ) + 1
+
         state["last_run"] = utcnow()
-        state["last_run_status"] = "success" if not errors else "partial"
-        state["model_usage"] = provider.get_stats() if not skip_write else state.get("model_usage", {})
-        state["parser_stats"] = llm_parser_instance.get_stats()
-        state["iteration_history_data"] = iteration_history.to_dict()
-        state["convergence_diagnostics"] = convergence_diag
 
-        save_state(paths, state)
+        state["last_run_status"] = (
+            "success"
+            if not errors
+            else "partial"
+        )
 
-        # Generate report
-        kb = state.get("knowledge_base", {})
-        stats = provider.get_stats() if not skip_write else state.get("model_usage", {})
+        state["model_usage"] = (
+            provider.get_stats()
+            if not skip_write
+            else state.get("model_usage", {})
+        )
+
+        state["parser_stats"] = (
+            llm_parser_instance.get_stats()
+        )
+
+        # Persist OAA anomaly counters into iteration history.
+        oaa_loop.save_persisted_state(
+            iteration_history
+        )
+
+        state["iteration_history_data"] = (
+            iteration_history.to_dict()
+        )
+
+        # Recompute reading summary after extraction.
+        final_reading_state = load_reading_state()
+
+        final_evidence = load_json(
+            paths["evidence"],
+            [],
+        )
+
+        if not isinstance(final_evidence, list):
+            final_evidence = []
+
+        final_reading_summary = get_reading_summary(
+            final_evidence,
+            final_reading_state,
+        )
+
+        convergence_diag["reading_coverage"] = (
+            final_reading_summary.get(
+                "reading_coverage_percent",
+                0.0,
+            )
+        )
+
+        state["convergence_diagnostics"] = (
+            convergence_diag
+        )
+
+        save_state(
+            paths,
+            state,
+        )
+
+        # ------------------------------------------------------------
+        # Cycle report
+        # ------------------------------------------------------------
+
+        stats = (
+            provider.get_stats()
+            if not skip_write
+            else state.get("model_usage", {})
+        )
 
         report_lines = [
-            "# FEA Pipeline - Cycle Report", "",
+            "# FEA Pipeline - Cycle Report",
+            "",
             f"**Time:** {utcnow()}",
             f"**Cycle:** {state.get('cycle', 0)}",
             f"**Total Iterations:** {state.get('iteration', 0)}",
-            f"**Converged:** {is_converged}", "",
+            f"**Converged:** {is_converged}",
+            "",
             "## Convergence Diagnostics",
-            f"- Eta variance: {convergence_diag.get('eta_variance')}",
-            f"- Invariant violations: {convergence_diag.get('invariant_violations')}",
-            f"- Adjust actions: {convergence_diag.get('adjust_actions')}",
-            f"- Incomplete sections: {convergence_diag.get('incomplete_sections')}", "",
+            "",
+            f"- Eta variance: "
+            f"{convergence_diag.get('eta_variance')}",
+            f"- Invariant violations: "
+            f"{convergence_diag.get('invariant_violations')}",
+            f"- Adjust actions: "
+            f"{convergence_diag.get('adjust_actions')}",
+            f"- Incomplete sections: "
+            f"{convergence_diag.get('incomplete_sections')}",
+            f"- Unstable sections: "
+            f"{convergence_diag.get('unstable_sections')}",
+            f"- Reading coverage: "
+            f"{convergence_diag.get('reading_coverage', 0.0):.2f}%",
+            "",
             "## This Cycle",
+            "",
             f"- New sources found: {new_sources}",
+            f"- Extracted: {extracted}",
             f"- Sections written: {written}",
-            f"- Adjustment executed: {adjustment['action'] if adjustment else 'none'}",
-            f"- Write phase skipped: {skip_write}", "",
+            f"- Adjustment executed: "
+            f"{adjustment.get('action') if adjustment else 'none'}",
+            f"- Write phase skipped: {skip_write}",
+            f"- LaTeX assembled: {assembled}",
+            "",
         ]
 
         if errors:
             report_lines.append("## Errors")
-            for e in errors:
-                report_lines.append(f"- {e}")
+            report_lines.append("")
+
+            for error in errors:
+                report_lines.append(
+                    f"- {error}"
+                )
         else:
-            report_lines.append("## Status: SUCCESS")
+            report_lines.extend(
+                [
+                    "## Status: SUCCESS",
+                    "",
+                ]
+            )
 
-        save_text(paths["report"], "\n".join(report_lines))
+        save_text(
+            paths["report"],
+            "\n".join(report_lines),
+        )
 
-        print("\n" + "="*60, file=sys.stderr)
-        print(f"CYCLE COMPLETE. Iterations: {state.get('iteration', 0)}", file=sys.stderr)
-        print("="*60 + "\n", file=sys.stderr)
+        print("\n" + "=" * 60, file=sys.stderr)
+        print(
+            f"CYCLE COMPLETE. "
+            f"Iterations: {state.get('iteration', 0)}",
+            file=sys.stderr,
+        )
+        print("=" * 60 + "\n", file=sys.stderr)
 
     except Exception:
         error_text = traceback.format_exc()
-        save_text(ROOT / "output" / "error.txt", error_text)
-        print(error_text, file=sys.stderr)
+
+        save_text(
+            ROOT / "output" / "error.txt",
+            error_text,
+        )
+
+        print(
+            error_text,
+            file=sys.stderr,
+        )
+
         sys.exit(1)
 
 
