@@ -51,8 +51,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: output/raw_text
-          key: raw-text-cache-${{ github.run_id }}
+          key: raw-text-cache-${{ runner.os }}-${{ hashFiles('config.yaml', 'requirements.txt') }}
           restore-keys: |
+            raw-text-cache-${{ runner.os }}-
             raw-text-cache-
 
       - name: Run FEA Pipeline
@@ -60,8 +61,24 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           FEA_MAX_LLM_CALLS: 20
+          FEA_CACHE_MAX_SIZE_MB: 500
         run: |
           python main.py --config config.yaml
+
+      - name: Report raw-text cache usage
+        if: always()
+        run: |
+          if [ -d output/raw_text ]; then
+            echo "Raw-text cache size:"
+            du -sh output/raw_text || true
+            echo "Largest cache files:"
+            find output/raw_text -maxdepth 1 -type f -printf '%s %p\n' 2>/dev/null \
+              | sort -nr \
+              | head -10 \
+              | awk '{printf "%.1f MB %s\n", $1/1024/1024, $2}'
+          else
+            echo "Raw-text cache directory does not exist."
+          fi
 
       - name: Commit generated state and outputs
         run: |
