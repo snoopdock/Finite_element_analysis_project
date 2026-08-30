@@ -32,6 +32,11 @@ budget:
   max_llm_calls_per_run: 20
   max_tokens_per_call: 2500
 
+cache:
+  # Maximum local full-text cache. Cached text is gitignored and does not
+  # belong in repository history. The default implementation uses 500 MB.
+  max_size_mb: 500
+
 writing:
   w_L: 0.4
   w_U: 0.4
