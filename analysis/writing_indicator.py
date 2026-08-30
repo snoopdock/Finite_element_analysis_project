@@ -24,44 +24,42 @@ class WritingIndicator:
     def _title(section: Any) -> str:
         return str(section.get("title", "")) if isinstance(section, dict) else str(section or "")
 
-    @staticmethod
-    def _section_id(section: Any):
-        return get_section_id(section) if isinstance(section, dict) else None
+    def _history_key(self, section: Any, history) -> str:
+        if isinstance(section, dict):
+            return get_section_id(section) or self._title(section)
+        title = str(section or "")
+        resolver = getattr(history, "resolve_section_key", None)
+        if callable(resolver):
+            return resolver(title)
+        return title
 
     def _leverage(self, title: str) -> float:
         value = self.leverage_map.get(title)
         if value is not None:
             return float(value)
-
         if ": " in title:
             parent = title.split(": ", 1)[0]
             value = self.leverage_map.get(parent)
             if value is not None:
                 return float(value)
-
-        print(
-            f"  [Indicator] Warning: '{title}' not in leverage_map, using default L=0.5",
-            file=sys.stderr,
-        )
+        print(f"  [Indicator] Warning: '{title}' not in leverage_map, using default L=0.5", file=sys.stderr)
         return 0.5
 
     def compute(self, section: Any, history) -> float:
         title = self._title(section)
-        section_id = self._section_id(section)
-        history_key = section_id or title
-
+        history_key = self._history_key(section, history)
         L = self._leverage(title)
 
         audits = history.audits.get(history_key, [])
         window = audits[-3:]
         U = 1.0 - (sum(bool(value) for value in window) / len(window)) if window else 1.0
 
-        identity_tokens = [token for token in (section_id, title) if token]
+        identities = [history_key, title]
         A = 0.0
         for key, count in history.anomalies.items():
             if count <= 0:
                 continue
-            if any(token in key for token in identity_tokens):
+            if any(identity and identity in key for identity in identities):
                 A = 1.0
                 break
 
