@@ -5,13 +5,13 @@ import json
 import pathlib
 from typing import Dict
 
-SCHEMA_VERSION = 3
+from core.section_identity import normalize_sections
+
+SCHEMA_VERSION = 4
 
 
 def initialize_state(paths: Dict, config: Dict) -> Dict:
-    """
-    FIX #9: Initialize state with schema versioning and migration support.
-    """
+    """Load state and migrate it to the current schema."""
     state_path = pathlib.Path(paths["state"])
 
     if state_path.exists():
@@ -23,12 +23,22 @@ def initialize_state(paths: Dict, config: Dict) -> Dict:
     else:
         state = _default_state(config)
 
-    # FIX #9: Schema migration
+    if not isinstance(state, dict):
+        state = _default_state(config)
+
     stored_version = state.get("schema_version", 1)
+    try:
+        stored_version = int(stored_version)
+    except (TypeError, ValueError):
+        stored_version = 1
+
     if stored_version < SCHEMA_VERSION:
         state = _migrate_state(state, stored_version, SCHEMA_VERSION)
-        state["schema_version"] = SCHEMA_VERSION
 
+    # Also normalize current state. This makes the migration robust when a
+    # state file was manually edited or produced by an older writer.
+    state["sections"] = normalize_sections(state.get("sections", []))
+    state["schema_version"] = SCHEMA_VERSION
     return state
 
 
@@ -51,17 +61,20 @@ def _default_state(config: Dict) -> Dict:
 
 
 def _migrate_state(state: Dict, from_version: int, to_version: int) -> Dict:
-    """
-    FIX #9: Migrate state from older schema versions.
-    """
-    if from_version == 1:
+    """Apply sequential state migrations."""
+    if from_version < 2:
         state = _migrate_v1_to_v2(state)
         from_version = 2
 
-    if from_version == 2:
+    if from_version < 3:
         state = _migrate_v2_to_v3(state)
         from_version = 3
 
+    if from_version < 4:
+        state = _migrate_v3_to_v4(state)
+        from_version = 4
+
+    state["schema_version"] = to_version
     return state
 
 
@@ -75,9 +88,11 @@ def _migrate_v1_to_v2(state: Dict) -> Dict:
 def _migrate_v2_to_v3(state: Dict) -> Dict:
     """Migration: v2 -> v3. Added section status tracking."""
     for section in state.get("sections", []):
+        if not isinstance(section, dict):
+            continue
         if "status" not in section:
             content = section.get("content", "")
-            if content and len(content.split()) >= 100:
+            if content and len(str(content).split()) >= 100:
                 section["status"] = "complete"
             elif content:
                 section["status"] = "incomplete"
@@ -86,10 +101,19 @@ def _migrate_v2_to_v3(state: Dict) -> Dict:
     return state
 
 
+def _migrate_v3_to_v4(state: Dict) -> Dict:
+    """Migration: v3 -> v4. Added stable UUID section identity."""
+    state["sections"] = normalize_sections(state.get("sections", []))
+    return state
+
+
 def save_state(paths: Dict, state: Dict):
-    """Save state to disk."""
+    """Normalize and save state to disk."""
     state_path = pathlib.Path(paths["state"])
     state_path.parent.mkdir(parents=True, exist_ok=True)
+
+    state["sections"] = normalize_sections(state.get("sections", []))
     state["schema_version"] = SCHEMA_VERSION
+
     with open(state_path, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
