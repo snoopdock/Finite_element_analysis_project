@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Cloudflare Workers AI provider implementation."""
 
+import os
 import sys
 import time
 
@@ -15,7 +16,7 @@ CF_BASE = "https://api.cloudflare.com/client/v4"
 
 
 class CloudflareProvider:
-    def __init__(self, account_id, api_token, models, max_tokens_per_call=2500):
+    def __init__(self, account_id, api_token, models, max_tokens_per_call=2500, max_logical_calls=None):
         self.account_id = account_id
         self.api_token = api_token
         self.models = models if models else ["@cf/meta/llama-3.1-8b-instruct"]
@@ -25,9 +26,15 @@ class CloudflareProvider:
         self.successful_calls = 0
         self.failed_calls = 0
         self.http_attempts = 0
-        # Backward-compatible alias used throughout the existing pipeline.
         self.total_calls = 0
         self.max_tokens_per_call = max_tokens_per_call
+        env_limit = os.environ.get("FEA_MAX_LLM_CALLS")
+        if max_logical_calls is None and env_limit:
+            try:
+                max_logical_calls = int(env_limit)
+            except ValueError:
+                max_logical_calls = None
+        self.max_logical_calls = max_logical_calls
         self.extractor = LLMResponseExtractor(verbose=False)
 
     def get_next_model(self):
@@ -37,8 +44,17 @@ class CloudflareProvider:
         self.model_index = (self.model_index + 1) % len(self.models)
         return model
 
+    def budget_exhausted(self) -> bool:
+        return (
+            self.max_logical_calls is not None
+            and self.logical_calls >= self.max_logical_calls
+        )
+
     def chat(self, messages, temperature=0.2, max_tokens=None, model=None):
-        """Send one logical LLM call; HTTP retries do not count as new logical calls."""
+        """Send one logical LLM call and allow only transport-level retries."""
+        if self.budget_exhausted():
+            return None, "Local logical-call budget exhausted"
+
         self.logical_calls += 1
         self.total_calls = self.logical_calls
 
@@ -127,6 +143,7 @@ class CloudflareProvider:
             "failed_calls": self.failed_calls,
             "http_attempts": self.http_attempts,
             "per_model": dict(self.call_counts),
+            "max_logical_calls": self.max_logical_calls,
             "extraction_stats": self.extractor.get_stats(),
             "learned_paths": self.extractor.get_learned_paths(),
         }
