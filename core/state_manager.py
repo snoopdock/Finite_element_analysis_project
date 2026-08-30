@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import json
+import os
 import pathlib
+import tempfile
 from typing import Dict
 
 from core.section_identity import normalize_sections
@@ -14,7 +16,6 @@ SCHEMA_VERSION = 4
 
 def initialize_state(paths: Dict, config: Dict) -> Dict:
     state_path = pathlib.Path(paths["state"])
-
     if state_path.exists():
         try:
             with open(state_path, "r", encoding="utf-8") as f:
@@ -96,7 +97,6 @@ def _migrate_v2_to_v3(state: Dict) -> Dict:
 
 
 def _migrate_v3_to_v4(state: Dict) -> Dict:
-    """Assign UUIDs and migrate title-keyed iteration history."""
     state["sections"] = normalize_sections(state.get("sections", []))
     _normalize_iteration_history(state)
     return state
@@ -129,7 +129,6 @@ def _normalize_iteration_history(state: Dict) -> None:
         return
 
     title_to_id = _title_to_id(state)
-
     section_titles = history.get("section_titles", {})
     if not isinstance(section_titles, dict):
         section_titles = {}
@@ -167,10 +166,27 @@ def _normalize_iteration_history(state: Dict) -> None:
 
 
 def save_state(paths: Dict, state: Dict):
+    """Normalize and atomically save state."""
     state_path = pathlib.Path(paths["state"])
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state["sections"] = normalize_sections(state.get("sections", []))
     _normalize_iteration_history(state)
     state["schema_version"] = SCHEMA_VERSION
-    with open(state_path, "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2, ensure_ascii=False)
+
+    fd, tmp_path = tempfile.mkstemp(
+        dir=state_path.parent,
+        suffix=".tmp",
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(state, handle, indent=2, ensure_ascii=False)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_path, state_path)
+    except Exception:
+        try:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
