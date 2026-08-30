@@ -35,11 +35,16 @@ def _strip_bad_citations(text: str, allowed_sources: Set[str]) -> str:
 
 
 def _extract_equations(content: str) -> List[str]:
-    """Extract equations from display and inline LaTeX forms."""
     equations: List[str] = []
     equations.extend(re.findall(r"\\\[(.+?)\\\]", content, re.DOTALL))
     equations.extend(re.findall(r"\$\$(.+?)\$\$", content, re.DOTALL))
-    equations.extend(re.findall(r"(?<!\$)\$(?!\$)(.+?)(?<!\$)\$(?!\$)", content, re.DOTALL))
+    equations.extend(
+        re.findall(
+            r"(?<!\$)\$(?!\$)(.+?)(?<!\$)\$(?!\$)",
+            content,
+            re.DOTALL,
+        )
+    )
 
     result = []
     seen = set()
@@ -51,10 +56,15 @@ def _extract_equations(content: str) -> List[str]:
     return result
 
 
-def _extract_citations(content: str, allowed_sources: Optional[Set[str]] = None) -> List[str]:
-    """Extract citation IDs and optionally restrict them to known IDs."""
+def _extract_citations(
+    content: str,
+    allowed_sources: Optional[Set[str]] = None,
+) -> List[str]:
     allowed_sources = allowed_sources or set()
-    citations = re.findall(r"\[([\w.\-]+(?:,\s*[\w.\-]+)*)\]", content)
+    citations = re.findall(
+        r"\[([\w.\-]+(?:,\s*[\w.\-]+)*)\]",
+        content,
+    )
     result = set()
     for group in citations:
         for part in group.split(","):
@@ -68,7 +78,14 @@ def _extract_citations(content: str, allowed_sources: Optional[Set[str]] = None)
 
 
 class DynamicWriter:
-    def __init__(self, provider, parser, config, iteration_history, writing_indicator: Optional[WritingIndicator] = None):
+    def __init__(
+        self,
+        provider,
+        parser,
+        config,
+        iteration_history,
+        writing_indicator: Optional[WritingIndicator] = None,
+    ):
         self.provider = provider
         self.parser = parser
         self.config = config
@@ -84,73 +101,146 @@ class DynamicWriter:
             leverage_map=config.get("section_leverage") or None,
         )
 
-        self.theta = float(writing_config.get("theta", 0.75))
-        self.tau = float(writing_config.get("tau", 0.6))
-        self.max_calls = int(budget_config.get("max_llm_calls_per_run", 20))
-        self.max_tokens = int(budget_config.get("max_tokens_per_call", 2500))
-        self.max_retries_per_paragraph = max(1, int(writing_config.get("max_retries_per_paragraph", 2)))
-        self.top_k_evidence = max(1, int(writing_config.get("top_k_knowledge_items", 6)))
+        self.theta = float(
+            writing_config.get("theta", 0.75)
+        )
+        self.tau = float(
+            writing_config.get("tau", 0.6)
+        )
+        self.max_calls = int(
+            budget_config.get("max_llm_calls_per_run", 20)
+        )
+        self.max_tokens = int(
+            budget_config.get("max_tokens_per_call", 2500)
+        )
+        self.max_retries_per_paragraph = max(
+            1,
+            int(
+                writing_config.get(
+                    "max_retries_per_paragraph",
+                    2,
+                )
+            ),
+        )
+        self.top_k_evidence = max(
+            1,
+            int(
+                writing_config.get(
+                    "top_k_knowledge_items",
+                    6,
+                )
+            ),
+        )
 
     def select_model(self, eta: float) -> str:
-        models = self.config.get("cloudflare_models", ["@cf/meta/llama-3.1-8b-instruct"])
+        models = self.config.get(
+            "cloudflare_models",
+            ["@cf/meta/llama-3.1-8b-instruct"],
+        )
         if not isinstance(models, list) or not models:
-            raise RuntimeError("cloudflare_models must contain at least one model.")
+            raise RuntimeError(
+                "cloudflare_models must contain at least one model."
+            )
         return models[0] if eta >= self.tau else models[-1]
 
-    def mark_sections(self, section_topics: List[str]) -> List[str]:
+    def mark_sections(
+        self,
+        section_topics: List[str],
+    ) -> List[str]:
         indicators: List[Tuple[str, float]] = []
+
         for topic in section_topics:
             if not topic:
                 continue
-            eta = float(self.indicator.compute(topic, self.history))
-            indicators.append((topic, eta))
+            eta = float(
+                self.indicator.compute(
+                    topic,
+                    self.history,
+                )
+            )
+            indicators.append(
+                (topic, eta)
+            )
 
-        indicators.sort(key=lambda pair: (-pair[1], pair[0]))
+        indicators.sort(
+            key=lambda pair: (-pair[1], pair[0])
+        )
+
         if not indicators:
             return []
 
-        total_eta = sum(eta for _, eta in indicators)
+        total_eta = sum(
+            eta
+            for _, eta in indicators
+        )
+
         if total_eta <= 0:
-            return [topic for topic, _ in indicators[:2]]
+            return [
+                topic
+                for topic, _ in indicators[:2]
+            ]
 
         target = self.theta * total_eta
         selected = []
         cumulative = 0.0
+
         for topic, eta in indicators:
             selected.append(topic)
             cumulative += eta
             if cumulative >= target:
                 break
+
         return selected
 
-    def _get_relevant_concepts(self, topic: str, kb: Dict) -> List[Dict]:
+    def _get_relevant_concepts(
+        self,
+        topic: str,
+        kb: Dict,
+    ) -> List[Dict]:
         ranked = rank_knowledge_items(
             topic,
             kb,
             top_k=self.top_k_evidence,
         )
+
         relevant = []
+
         for item in ranked:
-            item_type = item.get("item_type", "concept")
+            item_type = item.get(
+                "item_type",
+                "concept",
+            )
+
             name = (
                 item.get("name")
                 or item.get("title")
                 or item.get("rule")
                 or "Unknown"
             )
+
             explanation = (
                 item.get("explanation")
                 or item.get("description")
                 or ""
             )
+
             math = (
                 item.get("mathematical_formulation")
                 or item.get("latex")
                 or ""
             )
-            sources = item.get("source_ids", [])
-            if not isinstance(sources, list):
+
+            sources = item.get(
+                "source_ids",
+                [],
+            )
+
+            if not isinstance(
+                sources,
+                list,
+            ):
                 sources = []
+
             relevant.append(
                 {
                     "type": str(item_type),
@@ -162,9 +252,13 @@ class DynamicWriter:
                         for source in sources
                         if source
                     ],
-                    "ranking": item.get("ranking", {}),
+                    "ranking": item.get(
+                        "ranking",
+                        {},
+                    ),
                 }
             )
+
         return relevant
 
     def write_section(
@@ -179,7 +273,9 @@ class DynamicWriter:
             existing_section or topic,
             self.history,
         )
+
         model = self.select_model(eta)
+
         print(
             f"    [DynamicWriter] Section: {topic}, "
             f"eta={eta:.2f}, model={model}",
@@ -191,6 +287,7 @@ class DynamicWriter:
             kb,
             model,
         )
+
         if not outline:
             errors.append(
                 f"Section '{topic}': outline generation failed"
@@ -199,11 +296,13 @@ class DynamicWriter:
 
         paragraphs = []
 
-        for index, paragraph_topic in enumerate(outline):
+        for index, paragraph_topic in enumerate(
+            outline
+        ):
             if self.provider.budget_exhausted():
                 print(
-                    f"    [DynamicWriter] Budget exhausted at "
-                    f"paragraph {index + 1}",
+                    "    [DynamicWriter] Budget exhausted "
+                    f"at paragraph {index + 1}",
                     file=sys.stderr,
                 )
                 break
@@ -231,7 +330,9 @@ class DynamicWriter:
                     time.sleep(1)
 
             if paragraph:
-                paragraphs.append(paragraph)
+                paragraphs.append(
+                    paragraph
+                )
             else:
                 errors.append(
                     f"Section '{topic}': paragraph "
@@ -259,6 +360,13 @@ class DynamicWriter:
             ):
                 if key in existing_section:
                     section[key] = existing_section[key]
+
+            if "parent_content_reference" in existing_section:
+                section[
+                    "parent_content_reference"
+                ] = existing_section[
+                    "parent_content_reference"
+                ]
         else:
             ensure_section_id(section)
             section["generated_from"] = "writer"
@@ -292,8 +400,8 @@ class DynamicWriter:
         )
 
         concept_names = [
-            c["name"]
-            for c in concepts[:6]
+            concept["name"]
+            for concept in concepts[:6]
         ]
 
         kb_display = kb_to_prompt_text(
@@ -301,13 +409,16 @@ class DynamicWriter:
             max_chars=2000,
         )
 
-        prompt = f'''Generate exactly 3 distinct paragraph topics for a section titled "{topic}".
-Available ranked concepts: {', '.join(concept_names)}
-Knowledge base summary:
-{kb_display}
-Ensure the topics are mutually exclusive and collectively cover the section.
-Return ONLY valid JSON:
-{{"outline": ["topic 1", "topic 2", "topic 3"]}}'''
+        prompt = (
+            f'Generate exactly 3 distinct paragraph topics for a section '
+            f'titled "{topic}".\n'
+            f"Available ranked concepts: {', '.join(concept_names)}\n"
+            f"Knowledge base summary:\n{kb_display}\n"
+            "Ensure the topics are mutually exclusive and collectively "
+            "cover the section.\n"
+            "Return ONLY valid JSON:\n"
+            '{"outline": ["topic 1", "topic 2", "topic 3"]}'
+        )
 
         messages = [
             {
@@ -334,7 +445,9 @@ Return ONLY valid JSON:
             return None
 
         if isinstance(result, dict):
-            outline = result.get("outline")
+            outline = result.get(
+                "outline"
+            )
         elif isinstance(result, list):
             outline = result
         else:
@@ -398,6 +511,7 @@ Return ONLY valid JSON:
                 "source_ids",
                 [],
             )
+
             allowed_sources.update(
                 sources
             )
@@ -408,7 +522,8 @@ Return ONLY valid JSON:
             )
 
             evidence_blocks.append(
-                f"- {concept['type'].upper()}: {concept['name']}\n"
+                f"- {concept['type'].upper()}: "
+                f"{concept['name']}\n"
                 f"  Fact: {concept['explanation'][:500]}\n"
                 f"  Math: {concept.get('math', '')}\n"
                 f"  Allowed Citation: {source_text}\n"
@@ -421,11 +536,13 @@ Return ONLY valid JSON:
         )
 
         previous_context = ""
+
         if previous_paragraphs:
             previous_context = (
                 "\nALREADY WRITTEN IN THIS SECTION "
                 "(do NOT repeat):\n"
             )
+
             for index, previous in enumerate(
                 previous_paragraphs
             ):
@@ -435,8 +552,12 @@ Return ONLY valid JSON:
                 )
 
         doc_context = ""
+
         if document_map:
-            doc_context = "\nPREVIOUS SECTIONS IN DOCUMENT:\n"
+            doc_context = (
+                "\nPREVIOUS SECTIONS IN DOCUMENT:\n"
+            )
+
             for item in document_map:
                 doc_context += (
                     f"- {item['title']}: "
@@ -574,6 +695,7 @@ CRITICAL RULES:
         title = section.get(
             "title"
         )
+
         content = section.get(
             "content",
             "",
@@ -594,7 +716,10 @@ CRITICAL RULES:
         max_tokens=1000,
     ):
         if self.provider.budget_exhausted():
-            return None, "Local logical-call budget exhausted"
+            return (
+                None,
+                "Local logical-call budget exhausted",
+            )
 
         text, error = self.provider.chat(
             messages,
@@ -634,6 +759,31 @@ CRITICAL RULES:
         except Exception as exc:
             return None, f"Parse error: {exc}"
 
+    @staticmethod
+    def _retired_section_ids(
+        sections: List[Dict],
+    ) -> Set[str]:
+        """IDs of sections that have become parents of live sections."""
+        retired = set()
+
+        for section in sections:
+            if not isinstance(
+                section,
+                dict,
+            ):
+                continue
+
+            for parent_id in section.get(
+                "parent_section_ids",
+                [],
+            ):
+                if parent_id:
+                    retired.add(
+                        str(parent_id)
+                    )
+
+        return retired
+
     def run(
         self,
         section_topics: List[str],
@@ -646,28 +796,20 @@ CRITICAL RULES:
             file=sys.stderr,
         )
 
-        marked = self.mark_sections(
-            section_topics
-        )
-
-        print(
-            f"  Marked {len(marked)}/{len(section_topics)} sections: {marked}",
-            file=sys.stderr,
-        )
+        existing_sections = [
+            section
+            for section in existing_sections
+            if isinstance(section, dict)
+        ]
 
         existing_by_id = {}
         existing_by_title = {}
 
         for section in existing_sections:
-            if not isinstance(
-                section,
-                dict,
-            ):
-                continue
-
             section_id = ensure_section_id(
                 section
             )
+
             existing_by_id[
                 section_id
             ] = section
@@ -687,6 +829,45 @@ CRITICAL RULES:
             self.history.register_section(
                 section
             )
+
+        retired_ids = self._retired_section_ids(
+            existing_sections
+        )
+
+        marked = self.mark_sections(
+            section_topics
+        )
+
+        # A topic whose historical section ID is now a parent of a live
+        # section is retired. Do not recreate it from configuration.
+        active_topics = []
+
+        for topic in marked:
+            history_key = (
+                self.history.resolve_section_key(
+                    topic
+                )
+            )
+
+            if (
+                history_key in retired_ids
+                and history_key not in existing_by_id
+            ):
+                print(
+                    "    [DynamicWriter] Skipping retired "
+                    f"section topic: {topic}",
+                    file=sys.stderr,
+                )
+                continue
+
+            active_topics.append(topic)
+
+        marked = active_topics
+
+        print(
+            f"  Marked {len(marked)}/{len(section_topics)} sections: {marked}",
+            file=sys.stderr,
+        )
 
         all_sections = list(
             existing_sections
@@ -716,7 +897,9 @@ CRITICAL RULES:
 
             document_map.append(
                 {
-                    "section_id": section.get("section_id"),
+                    "section_id": section.get(
+                        "section_id"
+                    ),
                     "title": str(
                         section.get(
                             "title",
@@ -735,8 +918,10 @@ CRITICAL RULES:
                 )
                 break
 
-            history_key = self.history.resolve_section_key(
-                topic
+            history_key = (
+                self.history.resolve_section_key(
+                    topic
+                )
             )
 
             existing = existing_by_id.get(
@@ -770,8 +955,9 @@ CRITICAL RULES:
             ):
                 if (
                     isinstance(candidate, dict)
-                    and candidate.get("section_id")
-                    == section_id
+                    and candidate.get(
+                        "section_id"
+                    ) == section_id
                 ):
                     all_sections[index] = section
                     replaced = True
