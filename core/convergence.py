@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convergence detection based on document state and reading coverage."""
+"""Convergence detection based on document state and evidence coverage."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import statistics
 from typing import Dict, List, Tuple
 
 from core.section_identity import ensure_section_id
+from analysis.citation_validator import validate_document_citations
 
 
 class ConvergenceDetector:
@@ -17,6 +18,9 @@ class ConvergenceDetector:
         self.min_words_per_section = int(convergence_config.get("min_words_per_section", 150))
         self.minimum_reading_coverage = float(
             convergence_config.get("minimum_reading_coverage_percent", 80.0)
+        )
+        self.minimum_citation_coverage = float(
+            convergence_config.get("minimum_citation_coverage_percent", 80.0)
         )
         self.consecutive_convergence = 0
 
@@ -39,9 +43,11 @@ class ConvergenceDetector:
         recent_actions: List[str],
         sections: List[Dict] = None,
         reading_summary: Dict = None,
+        evidence: List[Dict] = None,
     ) -> Tuple[bool, Dict]:
         sections = sections or []
         recent_actions = recent_actions or []
+        evidence = evidence or []
 
         diagnostics = {
             "eta_variance": None,
@@ -51,20 +57,19 @@ class ConvergenceDetector:
             "incomplete_sections": 0,
             "unstable_sections": 0,
             "reading_coverage": 0.0,
+            "citation_coverage": 0.0,
+            "invalid_citation_sections": 0,
             "converged": False,
             "reasons": [],
         }
 
         eta_values = []
-        resolved_sections = []
         for topic in section_topics:
             if not topic:
                 continue
             section = self._section_for_topic(topic, sections)
             target = section if section is not None else topic
             eta_values.append(float(writing_indicator.compute(target, iteration_history)))
-            if section is not None:
-                resolved_sections.append(section)
 
         variance = statistics.variance(eta_values) if len(eta_values) > 1 else 0.0
         diagnostics["eta_variance"] = variance
@@ -76,7 +81,7 @@ class ConvergenceDetector:
             if not topic:
                 continue
             section = self._section_for_topic(topic, sections)
-            history_key = section.get("section_id") if section else topic
+            history_key = section.get("section_id") if section else iteration_history.resolve_section_key(topic) if hasattr(iteration_history, "resolve_section_key") else topic
             audits = iteration_history.audits.get(history_key, [])
 
             if not audits:
@@ -96,27 +101,42 @@ class ConvergenceDetector:
             if not isinstance(section, dict):
                 incomplete_sections += 1
                 continue
-
             content = section.get("content", "")
             content = content if isinstance(content, str) else str(content)
             status = section.get("status", "")
-
             if len(content.split()) < self.min_words_per_section:
                 incomplete_sections += 1
                 continue
-
             if status in {"needs_generation", "needs_rewrite", "needs_expansion", "incomplete"}:
                 incomplete_sections += 1
-
         diagnostics["incomplete_sections"] = incomplete_sections
 
-        if reading_summary is None:
-            reading_coverage = 0.0
-            diagnostics["reasons"].append("reading_summary_missing")
-        else:
-            reading_coverage = float(reading_summary.get("reading_coverage_percent", 0.0))
-
+        reading_coverage = float((reading_summary or {}).get("reading_coverage_percent", 0.0))
         diagnostics["reading_coverage"] = reading_coverage
+
+        citation_summary = validate_document_citations(
+            sections,
+            evidence,
+        )
+        citation_coverage = float(
+            citation_summary.get(
+                "citation_coverage_percent",
+                0.0,
+            )
+        )
+        diagnostics["citation_coverage"] = citation_coverage
+        diagnostics["invalid_citation_sections"] = len(
+            citation_summary.get(
+                "invalid_sections",
+                [],
+            )
+        )
+
+        sufficient_reading = reading_coverage >= self.minimum_reading_coverage
+        sufficient_citations = (
+            citation_summary.get("valid", False)
+            and citation_coverage >= self.minimum_citation_coverage
+        )
 
         conditions = {
             "variance_ok": variance_ok,
@@ -124,7 +144,8 @@ class ConvergenceDetector:
             "no_actions": len(recent_actions) == 0,
             "all_sections_stable": unstable_sections == 0,
             "all_sections_complete": incomplete_sections == 0,
-            "sufficient_reading": reading_coverage >= self.minimum_reading_coverage,
+            "sufficient_reading": sufficient_reading,
+            "sufficient_citations": sufficient_citations,
         }
 
         for name, passed in conditions.items():
@@ -135,7 +156,6 @@ class ConvergenceDetector:
         self.consecutive_convergence = self.consecutive_convergence + 1 if is_converged else 0
         diagnostics["consecutive_clean_cycles"] = self.consecutive_convergence
         diagnostics["converged"] = is_converged
-
         return is_converged, diagnostics
 
     def should_skip_write_phase(self, is_converged: bool, new_sources_found: bool) -> bool:
