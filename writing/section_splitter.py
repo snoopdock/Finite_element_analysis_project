@@ -76,30 +76,17 @@ Return ONLY valid JSON: {{"subsections": ["topic 1", "topic 2", "topic 3"]}}"""
             name = concept.get("name", "").lower()
 
     def split_section_safe(self, section: Dict, subsection_topics: List[str]) -> List[Dict]:
-    """
-    FIX #6: Split a section without duplicating content.
-    Creates subsections with explicit state tracking.
-    The parent content is preserved as reference but not copied into subsections.
-    """
-    parent_title = section.get("title", "Untitled")
-    parent_content = section.get("content", "")
+        """
+        CRITICAL FIX: Split a section without duplicating content.
+        Creates subsections with explicit state tracking.
+        The parent content is preserved as reference but not copied into subsections.
+        """
+        parent_title = section.get("title", "Untitled")
+        parent_content = section.get("content", "")
 
-    subsections = []
-    for i, topic in enumerate(subsection_topics):
-        subsection = {
-            "title": f"{parent_title}: {topic}",
-            "content": "",  # FIX #6: Start empty, don't duplicate parent content
-            "status": "needs_generation",  # FIX #6: Explicit state
-            "parent_section": parent_title,
-            "parent_content_reference": parent_content[:200] + "..." if len(parent_content) > 200 else parent_content,
-            "generated_from": "split",
-            "subsection_index": i,
-            "key_equations": [],
-            "citations_used": [],
-        }
-        subsections.append(subsection)
-
-    return subsections
-            if name and name in content_lower:
-                count += 1
-        return count
+        subsections = []
+        for i, topic in enumerate(subsection_topics):
+            subsection = {
+                "title": f"{parent_title}: {topic}",
+                "content": "",  # Start empty, don't duplicate parent content
+                "status": "needs_generation",  # Explicit state
