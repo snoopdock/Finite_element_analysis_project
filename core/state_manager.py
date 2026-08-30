@@ -1,32 +1,95 @@
 #!/usr/bin/env python3
-"""State management utilities."""
+"""State management with schema versioning."""
 
+import json
 import pathlib
+from typing import Dict
 
-from utils.text import load_json, save_json
+SCHEMA_VERSION = 3
 
 
-def initialize_state(paths, config):
-    """Initialize pipeline state."""
-    state = load_json(paths["state"], {
+def initialize_state(paths: Dict, config: Dict) -> Dict:
+    """
+    FIX #9: Initialize state with schema versioning and migration support.
+    """
+    state_path = pathlib.Path(paths["state"])
+
+    if state_path.exists():
+        try:
+            with open(state_path, "r", encoding="utf-8") as f:
+                state = json.load(f)
+        except Exception:
+            state = _default_state(config)
+    else:
+        state = _default_state(config)
+
+    # FIX #9: Schema migration
+    stored_version = state.get("schema_version", 1)
+    if stored_version < SCHEMA_VERSION:
+        state = _migrate_state(state, stored_version, SCHEMA_VERSION)
+        state["schema_version"] = SCHEMA_VERSION
+
+    return state
+
+
+def _default_state(config: Dict) -> Dict:
+    return {
+        "schema_version": SCHEMA_VERSION,
         "topic": config.get("topic", ""),
         "objective": config.get("objective", ""),
         "cycle": 0,
         "iteration": 0,
-        "processed_sources": [],
-        "processed_sources_extracted": [],
+        "last_run": None,
+        "last_run_status": None,
         "knowledge_base": {},
         "sections": [],
-    })
-    
-    for k in ["processed_sources", "processed_sources_extracted"]:
-        state.setdefault(k, [])
-    state.setdefault("knowledge_base", {})
-    state.setdefault("sections", [])
-    
+        "processed_sources": [],
+        "processed_sources_extracted": [],
+        "iteration_history_data": {},
+        "convergence_diagnostics": {},
+    }
+
+
+def _migrate_state(state: Dict, from_version: int, to_version: int) -> Dict:
+    """
+    FIX #9: Migrate state from older schema versions.
+    """
+    if from_version == 1:
+        state = _migrate_v1_to_v2(state)
+        from_version = 2
+
+    if from_version == 2:
+        state = _migrate_v2_to_v3(state)
+        from_version = 3
+
     return state
 
 
-def save_state(paths, state):
-    """Save pipeline state to disk."""
-    save_json(paths["state"], state)
+def _migrate_v1_to_v2(state: Dict) -> Dict:
+    """Migration: v1 -> v2. Added reading state tracking."""
+    if "reading_state" not in state:
+        state["reading_state"] = {}
+    return state
+
+
+def _migrate_v2_to_v3(state: Dict) -> Dict:
+    """Migration: v2 -> v3. Added section status tracking."""
+    for section in state.get("sections", []):
+        if "status" not in section:
+            content = section.get("content", "")
+            if content and len(content.split()) >= 100:
+                section["status"] = "complete"
+            elif content:
+                section["status"] = "incomplete"
+            else:
+                section["status"] = "needs_generation"
+    return state
+
+
+def save_state(paths: Dict, state: Dict):
+    """Save state to disk."""
+    state_path = pathlib.Path(paths["state"])
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state["schema_version"] = SCHEMA_VERSION
+    with open(state_path, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2, ensure_ascii=False)
