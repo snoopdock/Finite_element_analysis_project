@@ -8,18 +8,22 @@ def build_latex_document(state, sections, evidence):
     topic = state.get("topic", "Finite Element Method Guideline")
     objective = state.get("objective", "")
 
+    # Build a clean, numbered bibliography
     refs = []
     for i, source in enumerate(evidence[:25]):
-        title = escape_latex(source.get("title", "Unknown"))
-        stype = source.get("source_type", "misc")
+        title = escape_latex(source.get("title", "Unknown Title"))
+        
+        # Clean up the source type (e.g., "research.wikipedia" -> "Wikipedia")
+        stype = source.get("retriever_module", "misc").replace("research.", "").title()
         
         # URLs often contain %, &, # which break LaTeX if not escaped
         url = source.get("url", "")
         url = url.replace("%", r"\%").replace("&", r"\&").replace("#", r"\#")
         
         refs.append(
-            f"  \\bibitem{{ref{i + 1}}} {title}. [{stype}] \\url{{{url}}}"
+            f"  \\bibitem{{ref{i + 1}}} \\textit{{{title}}}. [{stype}] Available at: \\url{{{url}}}"
         )
+        
     refs_text = "\n".join(refs) if refs else "  \\bibitem{none} No sources retrieved."
 
     body_parts = []
@@ -39,13 +43,12 @@ def build_latex_document(state, sections, evidence):
         )
     body = "\n\n".join(body_parts) if body_parts else "% No content generated."
 
-    # UPGRADED PREAMBLE: Fixes layout warnings, adds math packages, and includes Unicode safety nets
-        # UPGRADED PREAMBLE: Fixes layout warnings, scalable fonts, underscores, and math mode errors
+    # UPGRADED PREAMBLE: Fonts, layout fixes, math safety nets, and NUMERIC CITATIONS
     doc_lines = [
         r"\documentclass[12pt, a4paper]{article}",
         r"\usepackage[utf8]{inputenc}",
         r"\usepackage[T1]{fontenc}",
-        r"\usepackage{lmodern}",  % FIX 1: Scalable fonts required for microtype
+        r"\usepackage{lmodern}",  % Scalable fonts required for microtype
         r"\usepackage{amsmath, amssymb, amsfonts, bm, mathtools}",
         r"\usepackage{geometry}",
         r"\geometry{margin=1in}",
@@ -54,14 +57,14 @@ def build_latex_document(state, sections, evidence):
         r"\usepackage{booktabs}",
         r"\usepackage{enumitem}",
         r"\usepackage{newunicodechar}",
-        r"\usepackage[strings]{underscore}",  % FIX 2: Allows _ in normal text for source IDs
+        r"\usepackage[strings]{underscore}",  % Allows _ in normal text for source IDs
+        r"\usepackage{cite}",  % NEW: Sorts and compresses numeric citations (e.g., [1-3])
         "",
         r"% Fix layout warnings (overfull/underfull hbox)",
         r"\setlength{\emergencystretch}{3em}",
         r"\sloppy",
         "",
-        r"% FIX 3: Compatibility layer for math commands used outside math mode",
-        r"% If the LLM forgets $ $ around \in or \nabla, this saves the compilation.",
+        r"% Compatibility layer for math commands used outside math mode",
         r"\makeatletter",
         r"\newcommand{\@safemath}[1]{%",
         r"  \expandafter\let\csname orig@#1\expandafter\endcsname\csname #1\endcsname",
