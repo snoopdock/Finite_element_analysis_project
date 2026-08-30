@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""LaTeX document building utilities."""
+"""LaTeX document building utilities with provenance tracking."""
 
 import sys
+from datetime import datetime
 from utils.latex import escape_latex, sanitize_latex_content
 
 def build_latex_document(state, sections, evidence):
@@ -12,11 +13,8 @@ def build_latex_document(state, sections, evidence):
     refs = []
     for i, source in enumerate(evidence[:25]):
         title = escape_latex(source.get("title", "Unknown Title"))
-        
-        # Clean up the source type (e.g., "research.wikipedia" -> "Wikipedia")
         stype = source.get("retriever_module", "misc").replace("research.", "").title()
         
-        # URLs often contain %, &, # which break LaTeX if not escaped
         url = source.get("url", "")
         url = url.replace("%", r"\%").replace("&", r"\&").replace("#", r"\#")
         
@@ -26,6 +24,29 @@ def build_latex_document(state, sections, evidence):
         
     refs_text = "\n".join(refs) if refs else "  \\bibitem{none} No sources retrieved."
 
+    # Build the Provenance Appendix
+    provenance_rows = []
+    for i, source in enumerate(evidence[:25]):
+        sid = escape_latex(source.get("source_id", "unknown"))
+        title = escape_latex(source.get("title", "Unknown"))
+        retrieved = source.get("retrieved_at", "N/A")
+        url = source.get("url", "").replace("%", r"\%").replace("&", r"\&").replace("#", r"\#")
+        stype = source.get("retriever_module", "misc").replace("research.", "").title()
+        
+        # Format retrieved date nicely
+        if retrieved != "N/A":
+            try:
+                dt = datetime.fromisoformat(retrieved.replace("Z", "+00:00"))
+                retrieved = dt.strftime("%Y-%m-%d %H:%M UTC")
+            except Exception:
+                pass
+        
+        provenance_rows.append(
+            f"  {i+1} & \\texttt{{{sid}}} & {title[:60]} & {stype} & {retrieved} \\\\"
+        )
+    
+    provenance_table = "\n".join(provenance_rows) if provenance_rows else "No sources."
+
     body_parts = []
     for s in sections:
         content = s.get("content", "").strip()
@@ -34,7 +55,6 @@ def build_latex_document(state, sections, evidence):
                   f"'{s.get('title', 'Untitled')}'", file=sys.stderr)
             continue
 
-        # Sanitize LLM-generated prose (fixes Unicode math, $$, %, &)
         sanitized_content = sanitize_latex_content(content)
 
         body_parts.append(
@@ -43,12 +63,11 @@ def build_latex_document(state, sections, evidence):
         )
     body = "\n\n".join(body_parts) if body_parts else "% No content generated."
 
-    # UPGRADED PREAMBLE: Fonts, layout fixes, math safety nets, and NUMERIC CITATIONS
     doc_lines = [
         r"\documentclass[12pt, a4paper]{article}",
         r"\usepackage[utf8]{inputenc}",
         r"\usepackage[T1]{fontenc}",
-        r"\usepackage{lmodern}",  % Scalable fonts required for microtype
+        r"\usepackage{lmodern}",
         r"\usepackage{amsmath, amssymb, amsfonts, bm, mathtools}",
         r"\usepackage{geometry}",
         r"\geometry{margin=1in}",
@@ -57,14 +76,16 @@ def build_latex_document(state, sections, evidence):
         r"\usepackage{booktabs}",
         r"\usepackage{enumitem}",
         r"\usepackage{newunicodechar}",
-        r"\usepackage[strings]{underscore}",  % Allows _ in normal text for source IDs
-        r"\usepackage{cite}",  % NEW: Sorts and compresses numeric citations (e.g., [1-3])
+        r"\usepackage[strings]{underscore}",
+        r"\usepackage{cite}",
+        r"\usepackage{longtable}",
+        r"\usepackage{array}",
         "",
-        r"% Fix layout warnings (overfull/underfull hbox)",
+        r"% Fix layout warnings",
         r"\setlength{\emergencystretch}{3em}",
         r"\sloppy",
         "",
-        r"% Compatibility layer for math commands used outside math mode",
+        r"% Math compatibility layer",
         r"\makeatletter",
         r"\newcommand{\@safemath}[1]{%",
         r"  \expandafter\let\csname orig@#1\expandafter\endcsname\csname #1\endcsname",
@@ -78,7 +99,7 @@ def build_latex_document(state, sections, evidence):
         r"\renewcommand{\mathbf}[1]{\ensuremath{\orig@mathbf{#1}}}",
         r"\makeatother",
         "",
-        r"% Safety net for Unicode symbols that slip past Python",
+        r"% Unicode safety net",
         r"\newunicodechar{∫}{\ensuremath{\int}}",
         r"\newunicodechar{∑}{\ensuremath{\sum}}",
         r"\newunicodechar{σ}{\ensuremath{\sigma}}",
@@ -116,6 +137,38 @@ def build_latex_document(state, sections, evidence):
         refs_text,
         r"\end{thebibliography}",
         "",
+        r"\newpage",
+        r"\section*{Appendix: Source Provenance}",
+        r"\addcontentsline{toc}{section}{Appendix: Source Provenance}",
+        r"\small",
+        r"The following table provides the complete retrieval receipt for each source used in this document.",
+        r"It records when each source was fetched, from which provider, and its unique identifier.",
+        r"\vspace{1em}",
+        r"",
+        r"\begin{longtable}{@{} p{0.5cm} p{3.5cm} p{5cm} p{1.5cm} p{3cm} @{}}",
+        r"\toprule",
+        r"\textbf{\#} & \textbf{Source ID} & \textbf{Title} & \textbf{Type} & \textbf{Retrieved At} \\",
+        r"\midrule",
+        r"\endfirsthead",
+        r"\toprule",
+        r"\textbf{\#} & \textbf{Source ID} & \textbf{Title} & \textbf{Type} & \textbf{Retrieved At} \\",
+        r"\midrule",
+        r"\endhead",
+        r"\bottomrule",
+        r"\endfoot",
+        provenance_table,
+        r"\end{longtable}",
+        r"",
+        r"\normalsize",
+        r"\vspace{1em}",
+        r"\textbf{Information Type Classification:}",
+        r"\begin{itemize}",
+        r"  \item \textbf{General Knowledge}: Textbook-level facts common across FEM literature. No specific citation required.",
+        r"  \item \textbf{Attributed Knowledge}: Specific claims borrowed from another author's work. Cited with source reference.",
+        r"  \item \textbf{Novel Contribution}: Original results unique to the source paper. Cited as primary source.",
+        r"  \item \textbf{Synthesized Knowledge}: Conclusions derived by combining multiple sources. All contributing sources cited.",
+        r"\end{itemize}",
+        r"",
         r"\end{document}",
     ]
     return "\n".join(doc_lines)
