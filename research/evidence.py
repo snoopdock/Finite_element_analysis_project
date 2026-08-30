@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
-"""
-Evidence Orchestrator
-Routes queries to all retrievers, merges results.
-"""
+"""Evidence management, retrieval, and merging with provenance tracking."""
 
 import os
-import sys
+from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict
-
 from utils.text import clean_text
 from research.arxiv_fulltext import search_arxiv
 from research.wikipedia import search_wikipedia
@@ -17,12 +12,13 @@ from research.archive_org import search_archive_org
 from research.content_cache import cleanup_cache
 
 
-def retrieve_evidence_parallel(queries: List[str], max_items: int = 6, max_workers: int = 4) -> List[Dict]:
-    """Retrieve evidence from all sources in parallel."""
+def retrieve_evidence_parallel(queries, max_items=4, max_workers=3):
+    """Retrieve evidence from all sources in parallel with full provenance."""
     cleanup_cache(max_size_kb=5000)
 
     evidence = []
     seen = set()
+    retrieval_timestamp = datetime.now(timezone.utc).isoformat()
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = []
@@ -30,20 +26,24 @@ def retrieve_evidence_parallel(queries: List[str], max_items: int = 6, max_worke
             futures.append(executor.submit(search_arxiv, q, 2))
             futures.append(executor.submit(search_semantic_scholar, q, 2))
             futures.append(executor.submit(search_wikipedia, q, 2))
+            # futures.append(executor.submit(search_archive_org, q, 1))
 
         for fut in as_completed(futures):
             try:
                 for item in fut.result():
                     if item["source_id"] not in seen:
                         seen.add(item["source_id"])
+                        # Stamp retrieval provenance
+                        item["retrieved_at"] = retrieval_timestamp
+                        item["query_context"] = queries[0] if queries else "unknown"
                         evidence.append(item)
             except Exception as e:
-                print(f"  [Evidence] Retrieval error: {e}", file=sys.stderr)
+                print(f"  [Evidence] Retrieval error: {e}")
 
     return evidence[:max_items]
 
 
-def get_smart_excerpt(source_item: Dict, max_chars: int = 3000) -> str:
+def get_smart_excerpt(source_item, max_chars=3000):
     """Reads full text if available, otherwise falls back to abstract."""
     full_text_path = source_item.get("full_text_path")
 
@@ -51,7 +51,6 @@ def get_smart_excerpt(source_item: Dict, max_chars: int = 3000) -> str:
         try:
             with open(full_text_path, "r", encoding="utf-8") as f:
                 text = f.read()
-
             if len(text) > max_chars:
                 snippet = text[:max_chars]
                 last_para = snippet.rfind("\n\n")
@@ -65,7 +64,7 @@ def get_smart_excerpt(source_item: Dict, max_chars: int = 3000) -> str:
     return source_item.get("metadata", {}).get("abstract", "No text available.")
 
 
-def evidence_to_text(evidence: List[Dict], max_sources: int = 4, chars_per_source: int = 3000) -> str:
+def evidence_to_text(evidence, max_sources=4, chars_per_source=3000):
     """Convert evidence to text format for LLM consumption."""
     blocks = []
     for item in evidence[-max_sources:]:
@@ -80,8 +79,8 @@ def evidence_to_text(evidence: List[Dict], max_sources: int = 4, chars_per_sourc
     return "\n\n".join(blocks)
 
 
-def merge_evidence(old: List[Dict], new: List[Dict], max_keep: int = 200) -> List[Dict]:
-    """Merge old and new evidence, keeping most recent."""
+def merge_evidence(old, new, max_keep=200):
+    """Merge old and new evidence, keeping most recent. Preserves provenance."""
     merged = {}
     for item in old:
         if isinstance(item, dict) and item.get("source_id"):
@@ -92,7 +91,7 @@ def merge_evidence(old: List[Dict], new: List[Dict], max_keep: int = 200) -> Lis
     return list(merged.values())[-max_keep:]
 
 
-def merge_knowledge(existing_kb: Dict, new_extraction: Dict) -> Dict:
+def merge_knowledge(existing_kb, new_extraction):
     """Merge new extraction into existing knowledge base."""
     if not isinstance(new_extraction, dict):
         return existing_kb
