@@ -2,7 +2,10 @@
 """Core pipeline orchestration - phase sequencing only."""
 
 import sys
+import time
+
 from processing.llm_parser import LLMJSONParseError
+
 from research.evidence import (
     retrieve_evidence_parallel,
     merge_evidence,
@@ -12,131 +15,1013 @@ from research.evidence import (
     get_articles_needing_more_reading,
     get_reading_summary,
 )
-from research.reading_tracker import load_reading_state, save_reading_state
-from processing.latex_builder import build_latex_document
-from utils.text import load_json, save_json, save_text
+
+from research.reading_tracker import (
+    load_reading_state,
+    save_reading_state,
+)
+
+from processing.latex_builder import (
+    build_latex_document,
+)
+
+from utils.text import (
+    load_json,
+    save_json,
+    save_text,
+)
+
 
 EXTRACT_SYSTEM = """You are a senior computational mechanics researcher.
-Extract detailed knowledge from provided sources about the Finite Element Method.
-CRITICAL: Respond with ONLY valid JSON. No markdown code fences, no explanation.
-Use double quotes for all keys and string values. No single quotes. No trailing commas.
-Return this exact JSON structure:
+
+Extract detailed knowledge from the provided sources about the
+Finite Element Method.
+
+CRITICAL:
+Respond with ONLY valid JSON.
+No markdown code fences.
+No explanation outside the JSON.
+
+Return exactly this structure:
+
 {
-  "concepts": [{"name": "Concept name", "explanation": "At least 4 sentences", "mathematical_formulation": "LaTeX or empty string", "source_ids": ["source_id"]}],
-  "procedures": [{"step_number": 1, "title": "Step title", "description": "At least 4 sentences", "equations": ["LaTeX"], "source_ids": ["source_id"]}],
-  "equations": [{"name": "Equation name", "latex": "Full LaTeX equation", "explanation": "Every term explained", "source_ids": ["source_id"]}],
-  "rules": [{"rule": "Modeling rule", "explanation": "Why it matters", "source_ids": ["source_id"]}]
-}"""
+  "concepts": [
+    {
+      "name": "Concept name",
+      "explanation": "At least 4 sentences",
+      "mathematical_formulation": "LaTeX or empty string",
+      "source_ids": ["source_id"]
+    }
+  ],
+  "procedures": [
+    {
+      "step_number": 1,
+      "title": "Step title",
+      "description": "At least 4 sentences",
+      "equations": ["LaTeX"],
+      "source_ids": ["source_id"]
+    }
+  ],
+  "equations": [
+    {
+      "name": "Equation name",
+      "latex": "Full LaTeX equation",
+      "explanation": "Every term explained",
+      "source_ids": ["source_id"]
+    }
+  ],
+  "rules": [
+    {
+      "rule": "Modeling rule",
+      "explanation": "Why it matters",
+      "source_ids": ["source_id"]
+    }
+  ]
+}
 
-def call_llm_json(provider, parser, messages, temperature=0.2, max_tokens=2500, delay=5, max_retries=4):
-    import time
-    for attempt in range(max_retries):
-        text, error = provider.chat(messages, temperature, max_tokens)
+Rules:
+- Use only information supported by the provided source text.
+- source_ids must contain only the supplied source IDs.
+- Do not invent source IDs.
+- Do not return duplicate entries.
+"""
+
+
+def call_llm_json(
+    provider,
+    parser,
+    messages,
+    temperature=0.2,
+    max_tokens=2500,
+    delay=5,
+    max_retries=4,
+):
+    """Call the LLM and parse a JSON response."""
+
+    for attempt in range(
+        max_retries
+    ):
+        text, error = provider.chat(
+            messages,
+            temperature,
+            max_tokens,
+        )
+
         if error:
-            print(f"  [LLM] API error on attempt {attempt+1}: {error}", file=sys.stderr)
-            time.sleep(delay)
+            print(
+                f"  [LLM] API error on attempt "
+                f"{attempt + 1}: {error}",
+                file=sys.stderr,
+            )
+
+            if attempt + 1 < max_retries:
+                time.sleep(delay)
+
             continue
-        if not text or not isinstance(text, str) or not text.strip():
-            print(f"  [LLM] Empty response on attempt {attempt+1}", file=sys.stderr)
-            time.sleep(delay)
+
+        if (
+            not text
+            or not isinstance(text, str)
+            or not text.strip()
+        ):
+            print(
+                f"  [LLM] Empty response on "
+                f"attempt {attempt + 1}",
+                file=sys.stderr,
+            )
+
+            if attempt + 1 < max_retries:
+                time.sleep(delay)
+
             continue
+
         try:
-            obj = parser.parse(text, model_name="cloudflare")
+            obj = parser.parse(
+                text,
+                model_name="cloudflare",
+            )
+
             if isinstance(obj, list):
-                if len(obj) > 0 and isinstance(obj[0], dict): obj = obj[0]
-                else: time.sleep(delay); continue
-            return obj, None
-        except LLMJSONParseError as e:
-            print(f"  [LLM] JSON parse failed on attempt {attempt+1}: {e.message}", file=sys.stderr)
-            time.sleep(delay)
-    return None, "Failed after all retries"
 
-def validate_extraction(extraction):
-    if not isinstance(extraction, dict): return False, None, "Not a dict"
-    cleaned = {}
-    for category in ["concepts", "procedures", "equations", "rules"]:
-        items = extraction.get(category, [])
-        if not isinstance(items, list): items = []
-        valid_items = []
-        for item in items:
-            if not isinstance(item, dict): continue
-            if "source_ids" not in item: item["source_ids"] = []
-            elif not isinstance(item["source_ids"], list): item["source_ids"] = [item["source_ids"]]
-            valid_items.append(item)
-        cleaned[category] = valid_items
-    return True, cleaned, None
+                if (
+                    len(obj) > 0
+                    and isinstance(obj[0], dict)
+                ):
+                    obj = obj[0]
 
-def phase_research(config, state, paths, errors, gap_detector, provider=None, parser=None, skip_gap_analysis=False):
-    print("\n=== PHASE 1: RESEARCH ===", file=sys.stderr)
-    queries = list(config.get("seed_queries", ["finite element method"]))
-    
-    if not skip_gap_analysis and provider is not None and parser is not None:
-        kb = state.get("knowledge_base", {})
-        missing_topics, gap_queries = gap_detector.detect_gaps(knowledge_base=kb, provider=provider, parser=parser)
+                else:
+
+                    if attempt + 1 < max_retries:
+                        time.sleep(delay)
+
+                    continue
+
+            if not isinstance(obj, dict):
+                raise LLMJSONParseError(
+                    "Parsed result is not a dictionary."
+                )
+
+            return (
+                obj,
+                None,
+            )
+
+        except LLMJSONParseError as exc:
+
+            print(
+                f"  [LLM] JSON parse failed on "
+                f"attempt {attempt + 1}: "
+                f"{getattr(exc, 'message', str(exc))}",
+                file=sys.stderr,
+            )
+
+            if attempt + 1 < max_retries:
+                time.sleep(delay)
+
+        except Exception as exc:
+
+            print(
+                f"  [LLM] Parser error on "
+                f"attempt {attempt + 1}: {exc}",
+                file=sys.stderr,
+            )
+
+            if attempt + 1 < max_retries:
+                time.sleep(delay)
+
+    return (
+        None,
+        "Failed after all retries",
+    )
+
+
+def _normalize_source_ids(
+    source_ids,
+):
+    """Return a clean list of string source IDs."""
+
+    if source_ids is None:
+        return []
+
+    if isinstance(
+        source_ids,
+        str,
+    ):
+        source_ids = [
+            source_ids
+        ]
+
+    if not isinstance(
+        source_ids,
+        list,
+    ):
+        return []
+
+    cleaned = []
+
+    seen = set()
+
+    for source_id in source_ids:
+
+        if not isinstance(
+            source_id,
+            str,
+        ):
+            continue
+
+        source_id = (
+            source_id.strip()
+        )
+
+        if not source_id:
+            continue
+
+        if source_id in seen:
+            continue
+
+        seen.add(
+            source_id
+        )
+
+        cleaned.append(
+            source_id
+        )
+
+    return cleaned
+
+
+def validate_extraction(
+    extraction,
+    allowed_source_ids=None,
+):
+    """
+    Validate and normalize extraction structure.
+
+    Returns:
+        (is_valid, cleaned, error)
+    """
+
+    if not isinstance(
+        extraction,
+        dict,
+    ):
+        return (
+            False,
+            None,
+            "Extraction is not a dictionary.",
+        )
+
+    if allowed_source_ids is None:
+        allowed_source_ids = set()
+
+    allowed_source_ids = set(
+        str(x)
+        for x in allowed_source_ids
+    )
+
+    cleaned = {
+        "concepts": [],
+        "procedures": [],
+        "equations": [],
+        "rules": [],
+    }
+
+    # ------------------------------------------------------------
+    # Concepts
+    # ------------------------------------------------------------
+
+    concepts = extraction.get(
+        "concepts",
+        [],
+    )
+
+    if not isinstance(
+        concepts,
+        list,
+    ):
+        concepts = []
+
+    for item in concepts:
+
+        if not isinstance(
+            item,
+            dict,
+        ):
+            continue
+
+        name = item.get(
+            "name",
+            "",
+        )
+
+        explanation = item.get(
+            "explanation",
+            "",
+        )
+
+        if not isinstance(
+            name,
+            str,
+        ):
+            continue
+
+        if not isinstance(
+            explanation,
+            str,
+        ):
+            explanation = str(
+                explanation
+            )
+
+        name = name.strip()
+        explanation = explanation.strip()
+
+        if not name or not explanation:
+            continue
+
+        source_ids = _normalize_source_ids(
+            item.get(
+                "source_ids",
+                [],
+            )
+        )
+
+        source_ids = [
+            sid
+            for sid in source_ids
+            if sid in allowed_source_ids
+        ]
+
+        if not source_ids:
+            continue
+
+        cleaned["concepts"].append(
+            {
+                "name": name,
+                "explanation": explanation,
+                "mathematical_formulation": str(
+                    item.get(
+                        "mathematical_formulation",
+                        "",
+                    )
+                    or ""
+                ),
+                "source_ids": source_ids,
+            }
+        )
+
+    # ------------------------------------------------------------
+    # Procedures
+    # ------------------------------------------------------------
+
+    procedures = extraction.get(
+        "procedures",
+        [],
+    )
+
+    if not isinstance(
+        procedures,
+        list,
+    ):
+        procedures = []
+
+    for item in procedures:
+
+        if not isinstance(
+            item,
+            dict,
+        ):
+            continue
+
+        title = item.get(
+            "title",
+            "",
+        )
+
+        description = item.get(
+            "description",
+            "",
+        )
+
+        if not isinstance(
+            title,
+            str,
+        ):
+            continue
+
+        if not isinstance(
+            description,
+            str,
+        ):
+            description = str(
+                description
+            )
+
+        title = title.strip()
+        description = description.strip()
+
+        if not title or not description:
+            continue
+
+        source_ids = _normalize_source_ids(
+            item.get(
+                "source_ids",
+                [],
+            )
+        )
+
+        source_ids = [
+            sid
+            for sid in source_ids
+            if sid in allowed_source_ids
+        ]
+
+        if not source_ids:
+            continue
+
+        equations = item.get(
+            "equations",
+            [],
+        )
+
+        if not isinstance(
+            equations,
+            list,
+        ):
+            equations = []
+
+        equations = [
+            str(eq).strip()
+            for eq in equations
+            if str(eq).strip()
+        ]
+
+        try:
+            step_number = int(
+                item.get(
+                    "step_number",
+                    len(
+                        cleaned[
+                            "procedures"
+                        ]
+                    )
+                    + 1,
+                )
+            )
+        except (
+            TypeError,
+            ValueError,
+        ):
+            step_number = (
+                len(
+                    cleaned[
+                        "procedures"
+                    ]
+                )
+                + 1
+            )
+
+        cleaned["procedures"].append(
+            {
+                "step_number": step_number,
+                "title": title,
+                "description": description,
+                "equations": equations,
+                "source_ids": source_ids,
+            }
+        )
+
+    # ------------------------------------------------------------
+    # Equations
+    # ------------------------------------------------------------
+
+    equations = extraction.get(
+        "equations",
+        [],
+    )
+
+    if not isinstance(
+        equations,
+        list,
+    ):
+        equations = []
+
+    for item in equations:
+
+        if not isinstance(
+            item,
+            dict,
+        ):
+            continue
+
+        name = item.get(
+            "name",
+            "",
+        )
+
+        latex = item.get(
+            "latex",
+            "",
+        )
+
+        explanation = item.get(
+            "explanation",
+            "",
+        )
+
+        if not isinstance(
+            name,
+            str,
+        ):
+            continue
+
+        if not isinstance(
+            latex,
+            str,
+        ):
+            continue
+
+        if not isinstance(
+            explanation,
+            str,
+        ):
+            explanation = str(
+                explanation
+            )
+
+        name = name.strip()
+        latex = latex.strip()
+        explanation = (
+            explanation.strip()
+        )
+
+        if (
+            not name
+            or not latex
+            or not explanation
+        ):
+            continue
+
+        source_ids = _normalize_source_ids(
+            item.get(
+                "source_ids",
+                [],
+            )
+        )
+
+        source_ids = [
+            sid
+            for sid in source_ids
+            if sid in allowed_source_ids
+        ]
+
+        if not source_ids:
+            continue
+
+        cleaned["equations"].append(
+            {
+                "name": name,
+                "latex": latex,
+                "explanation": explanation,
+                "source_ids": source_ids,
+            }
+        )
+
+    # ------------------------------------------------------------
+    # Rules
+    # ------------------------------------------------------------
+
+    rules = extraction.get(
+        "rules",
+        [],
+    )
+
+    if not isinstance(
+        rules,
+        list,
+    ):
+        rules = []
+
+    for item in rules:
+
+        if not isinstance(
+            item,
+            dict,
+        ):
+            continue
+
+        rule = item.get(
+            "rule",
+            "",
+        )
+
+        explanation = item.get(
+            "explanation",
+            "",
+        )
+
+        if not isinstance(
+            rule,
+            str,
+        ):
+            continue
+
+        if not isinstance(
+            explanation,
+            str,
+        ):
+            explanation = str(
+                explanation
+            )
+
+        rule = rule.strip()
+        explanation = explanation.strip()
+
+        if not rule or not explanation:
+            continue
+
+        source_ids = _normalize_source_ids(
+            item.get(
+                "source_ids",
+                [],
+            )
+        )
+
+        source_ids = [
+            sid
+            for sid in source_ids
+            if sid in allowed_source_ids
+        ]
+
+        if not source_ids:
+            continue
+
+        cleaned["rules"].append(
+            {
+                "rule": rule,
+                "explanation": explanation,
+                "source_ids": source_ids,
+            }
+        )
+
+    total_items = sum(
+        len(cleaned[category])
+        for category in cleaned
+    )
+
+    if total_items == 0:
+        return (
+            False,
+            None,
+            "Extraction contained no valid "
+            "source-supported items.",
+        )
+
+    return (
+        True,
+        cleaned,
+        None,
+    )
+
+
+def phase_research(
+    config,
+    state,
+    paths,
+    errors,
+    gap_detector,
+    provider=None,
+    parser=None,
+    skip_gap_analysis=False,
+):
+    print(
+        "\n=== PHASE 1: RESEARCH ===",
+        file=sys.stderr,
+    )
+
+    queries = list(
+        config.get(
+            "seed_queries",
+            ["finite element method"],
+        )
+    )
+
+    if (
+        not skip_gap_analysis
+        and provider is not None
+        and parser is not None
+    ):
+        kb = state.get(
+            "knowledge_base",
+            {},
+        )
+
+        try:
+            missing_topics, gap_queries = (
+                gap_detector.detect_gaps(
+                    knowledge_base=kb,
+                    provider=provider,
+                    parser=parser,
+                )
+            )
+
+        except Exception as exc:
+            errors.append(
+                f"Gap detection error: {exc}"
+            )
+
+            missing_topics = []
+            gap_queries = []
+
         if missing_topics:
-            print(f"  [Gap Detection] {gap_detector.get_gap_report(missing_topics)}", file=sys.stderr)
-            queries.extend(gap_queries)
+
+            print(
+                "  [Gap Detection] "
+                f"{gap_detector.get_gap_report(missing_topics)}",
+                file=sys.stderr,
+            )
+
+            queries.extend(
+                gap_queries
+            )
+
         else:
-            print(f"  [Gap Detection] No gaps detected", file=sys.stderr)
+
+            print(
+                "  [Gap Detection] "
+                "No gaps detected",
+                file=sys.stderr,
+            )
+
     else:
-        print(f"  [Gap Detection] Skipped (converged or no provider)", file=sys.stderr)
-    
-    max_items = int(config.get("daily_limits", {}).get("max_evidence_items", 4))
-    processed = set(state.get("processed_sources", []))
-    old_evidence = load_json(paths["evidence"], [])
-    old_ids = {e.get("source_id") for e in old_evidence if isinstance(e, dict)}
-    
-    new_evidence = retrieve_evidence_parallel(queries, max_items=max_items, max_workers=2)
-    truly_new = [item for item in new_evidence if item.get("source_id") and item["source_id"] not in processed and item["source_id"] not in old_ids]
-    
-    all_evidence = merge_evidence(old_evidence, truly_new, max_keep=200)
-    save_json(paths["evidence"], all_evidence)
-    
-    new_ids = {item.get("source_id") for item in truly_new if item.get("source_id")}
-    state["processed_sources"] = sorted(list(processed | old_ids | new_ids))
-    
-    print(f"Found {len(truly_new)} new sources. Total: {len(all_evidence)}", file=sys.stderr)
-    return all_evidence, len(truly_new) > 0
 
-def phase_extract(config, state, paths, provider, parser, errors, delay, budget):
-    """
-    CRITICAL FIX: Section-aware extraction that only marks sources actually processed.
-    """
-    print("\n=== PHASE 2: EXTRACT (Section-Aware) ===", file=sys.stderr)
-    evidence = load_json(paths["evidence"], [])
-    processed = set(state.get("processed_sources_extracted", []))
+        print(
+            "  [Gap Detection] Skipped "
+            "(converged or no provider)",
+            file=sys.stderr,
+        )
 
-    # Load reading state for section-aware reading
+    max_items = int(
+        config.get(
+            "daily_limits",
+            {},
+        ).get(
+            "max_evidence_items",
+            4,
+        )
+    )
+
+    processed = set(
+        state.get(
+            "processed_sources",
+            [],
+        )
+    )
+
+    old_evidence = load_json(
+        paths["evidence"],
+        [],
+    )
+
+    if not isinstance(
+        old_evidence,
+        list,
+    ):
+        old_evidence = []
+
+    old_ids = {
+        e.get("source_id")
+        for e in old_evidence
+        if (
+            isinstance(e, dict)
+            and e.get("source_id")
+        )
+    }
+
+    try:
+        new_evidence = (
+            retrieve_evidence_parallel(
+                queries,
+                max_items=max_items,
+                max_workers=2,
+            )
+        )
+
+    except Exception as exc:
+        errors.append(
+            f"Evidence retrieval error: {exc}"
+        )
+
+        new_evidence = []
+
+    truly_new = [
+        item
+        for item in new_evidence
+        if (
+            isinstance(item, dict)
+            and item.get("source_id")
+            and item["source_id"]
+            not in processed
+            and item["source_id"]
+            not in old_ids
+        )
+    ]
+
+    all_evidence = merge_evidence(
+        old_evidence,
+        truly_new,
+        max_keep=200,
+    )
+
+    save_json(
+        paths["evidence"],
+        all_evidence,
+    )
+
+    new_ids = {
+        item.get("source_id")
+        for item in truly_new
+        if item.get("source_id")
+    }
+
+    state["processed_sources"] = sorted(
+        processed
+        | old_ids
+        | new_ids
+    )
+
+    print(
+        f"Found {len(truly_new)} new sources. "
+        f"Total: {len(all_evidence)}",
+        file=sys.stderr,
+    )
+
+    return (
+        all_evidence,
+        bool(truly_new),
+    )
+
+
+def phase_extract(
+    config,
+    state,
+    paths,
+    provider,
+    parser,
+    errors,
+    delay,
+    budget,
+):
+    """
+    Section-aware knowledge extraction.
+
+    A section is marked read only after:
+    1. the LLM call succeeds,
+    2. the returned extraction is valid,
+    3. the extraction references at least one supplied source.
+    """
+
+    print(
+        "\n=== PHASE 2: EXTRACT "
+        "(Section-Aware) ===",
+        file=sys.stderr,
+    )
+
+    evidence = load_json(
+        paths["evidence"],
+        [],
+    )
+
+    if not isinstance(
+        evidence,
+        list,
+    ):
+        evidence = []
+
+    processed = set(
+        state.get(
+            "processed_sources_extracted",
+            [],
+        )
+    )
+
     reading_state = load_reading_state()
 
-    # Find sources that still have unread sections
+    # ------------------------------------------------------------
+    # Find unread sources
+    # ------------------------------------------------------------
+
     unprocessed = [
-        e for e in evidence
-        if isinstance(e, dict) and e.get("source_id") not in processed
+        item
+        for item in evidence
+        if (
+            isinstance(item, dict)
+            and item.get("source_id")
+            and item.get("source_id")
+            not in processed
+        )
     ]
 
     if not unprocessed:
-        # Check if any already-processed sources still have unread sections
-        needs_more_reading = get_articles_needing_more_reading(evidence, reading_state)
+
+        needs_more_reading = (
+            get_articles_needing_more_reading(
+                evidence,
+                reading_state,
+            )
+        )
+
         if needs_more_reading:
+
+            needed_ids = set(
+                needs_more_reading
+            )
+
             unprocessed = [
-                e for e in evidence
-                if isinstance(e, dict) and e.get("source_id") in set(needs_more_reading)
+                item
+                for item in evidence
+                if (
+                    isinstance(item, dict)
+                    and item.get("source_id")
+                    in needed_ids
+                )
             ]
-            print(f"  Found {len(unprocessed)} sources with unread sections.", file=sys.stderr)
+
+            print(
+                "  Found "
+                f"{len(unprocessed)} sources "
+                "with unread sections.",
+                file=sys.stderr,
+            )
+
         else:
-            print("  No new sources to extract.", file=sys.stderr)
-            return state.get("knowledge_base", {}), False
 
-    if provider.total_calls >= budget.get("max_llm_calls_per_run", 20):
-        print("  Budget exhausted. Skipping extract.", file=sys.stderr)
-        return state.get("knowledge_base", {}), False
+            print(
+                "  No new or unread sources "
+                "to extract.",
+                file=sys.stderr,
+            )
 
-    max_context = int(config.get("limits", {}).get("max_evidence_context", 4))
-    chars_per_source = int(config.get("limits", {}).get("chars_per_source", 3000))
+            return (
+                state.get(
+                    "knowledge_base",
+                    {},
+                ),
+                False,
+            )
 
-    # Use section-aware reading instead of legacy full-text approach
-    evidence_text, updated_reading_state, sections_read_this_cycle = evidence_to_text_section_aware(
+    max_llm_calls = int(
+        budget.get(
+            "max_llm_calls_per_run",
+            20,
+        )
+    )
+
+    if provider.total_calls >= max_llm_calls:
+
+        print(
+            "  Budget exhausted. "
+            "Skipping extract.",
+            file=sys.stderr,
+        )
+
+        return (
+            state.get(
+                "knowledge_base",
+                {},
+            ),
+            False,
+        )
+
+    # ------------------------------------------------------------
+    # Select unread sections
+    # ------------------------------------------------------------
+
+    max_context = int(
+        config.get(
+            "limits",
+            {},
+        ).get(
+            "max_evidence_context",
+            4,
+        )
+    )
+
+    chars_per_source = int(
+        config.get(
+            "limits",
+            {},
+        ).get(
+            "chars_per_source",
+            3000,
+        )
+    )
+
+    (
+        evidence_text,
+        updated_reading_state,
+        sections_read_this_cycle,
+    ) = evidence_to_text_section_aware(
         unprocessed,
         reading_state,
         max_sources=max_context,
@@ -144,104 +1029,418 @@ def phase_extract(config, state, paths, provider, parser, errors, delay, budget)
     )
 
     if not evidence_text:
-        print("  No unread content available for extraction.", file=sys.stderr)
-        return state.get("knowledge_base", {}), False
 
-    # Count how many sources are actually being sent to the LLM
-    selected_source_ids = set()
-    for section_info in sections_read_this_cycle:
-        selected_source_ids.add(section_info["article_id"])
+        print(
+            "  No unread content available "
+            "for extraction.",
+            file=sys.stderr,
+        )
+
+        return (
+            state.get(
+                "knowledge_base",
+                {},
+            ),
+            False,
+        )
+
+    # These are the only sources actually placed into the prompt.
+    selected_source_ids = {
+        str(info["article_id"])
+        for info in sections_read_this_cycle
+        if (
+            isinstance(info, dict)
+            and info.get("article_id")
+        )
+    }
+
+    if not selected_source_ids:
+
+        print(
+            "  No source IDs were selected "
+            "for extraction.",
+            file=sys.stderr,
+        )
+
+        return (
+            state.get(
+                "knowledge_base",
+                {},
+            ),
+            False,
+        )
+
+    # ------------------------------------------------------------
+    # Prompt
+    # ------------------------------------------------------------
 
     extract_user = (
-        "Topic: " + state.get("topic", "") + "\nObjective: " +
-        state.get("objective", "") + "\n\nNEW evidence sources:\n" +
-        evidence_text + "\n\nExtract DETAILED technical knowledge about FEM."
+        "Topic: "
+        + str(
+            state.get(
+                "topic",
+                "",
+            )
+        )
+        + "\nObjective: "
+        + str(
+            state.get(
+                "objective",
+                "",
+            )
+        )
+        + "\n\nEvidence sources:\n"
+        + evidence_text
+        + "\n\n"
+        "Extract detailed technical knowledge "
+        "about the Finite Element Method."
     )
+
     messages = [
-        {"role": "system", "content": EXTRACT_SYSTEM},
-        {"role": "user", "content": extract_user}
+        {
+            "role": "system",
+            "content": EXTRACT_SYSTEM,
+        },
+        {
+            "role": "user",
+            "content": extract_user,
+        },
     ]
 
-    max_tokens = budget.get("max_tokens_per_call", 2500)
-    extraction, error = call_llm_json(provider, parser, messages, 0.2, max_tokens, delay)
+    max_tokens = int(
+        budget.get(
+            "max_tokens_per_call",
+            2500,
+        )
+    )
+
+    extraction, error = call_llm_json(
+        provider,
+        parser,
+        messages,
+        temperature=0.2,
+        max_tokens=max_tokens,
+        delay=delay,
+    )
 
     if error or extraction is None:
-        errors.append(f"Extract error: {error}")
-        return state.get("knowledge_base", {}), False
 
-    is_valid, cleaned, validation_error = validate_extraction(extraction)
+        errors.append(
+            f"Extract error: {error}"
+        )
+
+        return (
+            state.get(
+                "knowledge_base",
+                {},
+            ),
+            False,
+        )
+
+    # ------------------------------------------------------------
+    # Validate extraction
+    # ------------------------------------------------------------
+
+    (
+        is_valid,
+        cleaned,
+        validation_error,
+    ) = validate_extraction(
+        extraction,
+        allowed_source_ids=selected_source_ids,
+    )
+
     if not is_valid:
-        errors.append(f"Extract validation failed: {validation_error}")
-        return state.get("knowledge_base", {}), False
 
-    # Count what was extracted per source for provenance tracking
+        errors.append(
+            "Extract validation failed: "
+            f"{validation_error}"
+        )
+
+        return (
+            state.get(
+                "knowledge_base",
+                {},
+            ),
+            False,
+        )
+
+    # ------------------------------------------------------------
+    # Provenance count
+    # ------------------------------------------------------------
+
     extracted_per_source = {}
-    for category in ["concepts", "procedures", "equations", "rules"]:
-        for item in cleaned.get(category, []):
-            for sid in item.get("source_ids", []):
+
+    for category in (
+        "concepts",
+        "procedures",
+        "equations",
+        "rules",
+    ):
+
+        for item in cleaned.get(
+            category,
+            [],
+        ):
+
+            for sid in item.get(
+                "source_ids",
+                [],
+            ):
+
+                if sid not in selected_source_ids:
+                    continue
+
                 if sid not in extracted_per_source:
-                    extracted_per_source[sid] = {"concepts": 0, "procedures": 0, "equations": 0, "rules": 0}
-                extracted_per_source[sid][category] += 1
+                    extracted_per_source[sid] = {
+                        "concepts": 0,
+                        "procedures": 0,
+                        "equations": 0,
+                        "rules": 0,
+                    }
 
-    # CRITICAL FIX: Only mark sources that were ACTUALLY included in the extraction prompt
-    # AND only confirm sections that were successfully read
-    reading_state = confirm_sections_read(
-        sections_read_this_cycle,
-        extracted_per_source,
-        updated_reading_state,
+                extracted_per_source[sid][
+                    category
+                ] += 1
+
+    # Require at least one extracted item to be
+    # attributable to the selected source(s).
+    if not extracted_per_source:
+
+        errors.append(
+            "Extraction succeeded syntactically "
+            "but produced no source-supported "
+            "knowledge."
+        )
+
+        return (
+            state.get(
+                "knowledge_base",
+                {},
+            ),
+            False,
+        )
+
+    # ------------------------------------------------------------
+    # Confirm reading only now
+    # ------------------------------------------------------------
+
+    reading_state = (
+        confirm_sections_read(
+            sections_read_this_cycle,
+            extracted_per_source,
+            updated_reading_state,
+        )
     )
-    save_reading_state(reading_state)
 
-    # CRITICAL FIX: Only mark the selected sources as processed (not ALL unprocessed)
-    newly_extracted_ids = selected_source_ids
-    state["processed_sources_extracted"] = sorted(
-        list(processed | newly_extracted_ids)
+    save_reading_state(
+        reading_state
     )
 
-    existing_kb = state.get("knowledge_base", {})
-    updated_kb = merge_knowledge(existing_kb, cleaned)
-    save_json(paths["research"], updated_kb)
+    # Only sources actually sent to the LLM
+    # are marked processed.
+    processed |= selected_source_ids
 
-    # Print reading summary
-    reading_summary = get_reading_summary(evidence, reading_state)
-    print(f"Knowledge base: {len(updated_kb.get('concepts', []))} concepts, "
-          f"{len(updated_kb.get('equations', []))} equations", file=sys.stderr)
-    print(f"Reading progress: {reading_summary['reading_coverage_percent']}% of all sections read", file=sys.stderr)
+    state[
+        "processed_sources_extracted"
+    ] = sorted(
+        processed
+    )
 
-    return updated_kb, True
+    # ------------------------------------------------------------
+    # Merge knowledge
+    # ------------------------------------------------------------
 
-def phase_write(config, state, paths, provider, parser, errors, delay, budget, iteration_history, oaa_loop, section_topics):
-    """Write phase with section-aware dynamic writer."""
-    print("\n=== PHASE 3: WRITE (Dynamic) ===", file=sys.stderr)
-    kb = state.get("knowledge_base", {})
-    existing_sections = state.get("sections", [])
-    
-    from writing.dynamic_writer import DynamicWriter
-    writer = DynamicWriter(provider, parser, config, iteration_history)
-    all_sections, sections_written = writer.run(section_topics, kb, existing_sections, errors)
-    
-    adjustment = oaa_loop.run(all_sections, iteration_history, kb)
-    
+    existing_kb = state.get(
+        "knowledge_base",
+        {},
+    )
+
+    updated_kb = merge_knowledge(
+        existing_kb,
+        cleaned,
+    )
+
+    state[
+        "knowledge_base"
+    ] = updated_kb
+
+    save_json(
+        paths["research"],
+        updated_kb,
+    )
+
+    reading_summary = get_reading_summary(
+        evidence,
+        reading_state,
+    )
+
+    print(
+        "Knowledge base: "
+        f"{len(updated_kb.get('concepts', []))} "
+        "concepts, "
+        f"{len(updated_kb.get('equations', []))} "
+        "equations",
+        file=sys.stderr,
+    )
+
+    print(
+        "Reading progress: "
+        f"{reading_summary.get('reading_coverage_percent', 0.0):.2f}% "
+        "of all sections read",
+        file=sys.stderr,
+    )
+
+    return (
+        updated_kb,
+        True,
+    )
+
+
+def phase_write(
+    config,
+    state,
+    paths,
+    provider,
+    parser,
+    errors,
+    delay,
+    budget,
+    iteration_history,
+    oaa_loop,
+    section_topics,
+):
+    """Write phase with the dynamic writer."""
+
+    print(
+        "\n=== PHASE 3: WRITE (Dynamic) ===",
+        file=sys.stderr,
+    )
+
+    kb = state.get(
+        "knowledge_base",
+        {},
+    )
+
+    existing_sections = state.get(
+        "sections",
+        [],
+    )
+
+    from writing.dynamic_writer import (
+        DynamicWriter,
+    )
+
+    writer = DynamicWriter(
+        provider,
+        parser,
+        config,
+        iteration_history,
+    )
+
+    all_sections, sections_written = (
+        writer.run(
+            section_topics,
+            kb,
+            existing_sections,
+            errors,
+        )
+    )
+
+    adjustment = oaa_loop.run(
+        all_sections,
+        iteration_history,
+        kb,
+    )
+
     if adjustment:
-        print(f"  [OAA] Adjustment needed: {adjustment['action']}", file=sys.stderr)
-        state["pending_adjustment"] = adjustment
-    else:
-        state.pop("pending_adjustment", None)
-    
-    state["sections"] = all_sections
-    save_json(paths["sections"], all_sections)
-    
-    print(f"Phase 3 complete. {len(all_sections)} sections, {sections_written} written this cycle.", file=sys.stderr)
-    return all_sections, sections_written > 0, adjustment
 
-def phase_assemble(state, paths):
-    print("\n=== PHASE 4: ASSEMBLE (no LLM) ===", file=sys.stderr)
-    sections = state.get("sections", [])
-    evidence = load_json(paths["evidence"], [])
+        print(
+            "  [OAA] Adjustment needed: "
+            f"{adjustment.get('action')}",
+            file=sys.stderr,
+        )
+
+        state[
+            "pending_adjustment"
+        ] = adjustment
+
+    else:
+
+        state.pop(
+            "pending_adjustment",
+            None,
+        )
+
+    state[
+        "sections"
+    ] = all_sections
+
+    save_json(
+        paths["sections"],
+        all_sections,
+    )
+
+    print(
+        "Phase 3 complete. "
+        f"{len(all_sections)} sections, "
+        f"{sections_written} written this cycle.",
+        file=sys.stderr,
+    )
+
+    return (
+        all_sections,
+        sections_written > 0,
+        adjustment,
+    )
+
+
+def phase_assemble(
+    state,
+    paths,
+):
+    print(
+        "\n=== PHASE 4: ASSEMBLE "
+        "(no LLM) ===",
+        file=sys.stderr,
+    )
+
+    sections = state.get(
+        "sections",
+        [],
+    )
+
+    evidence = load_json(
+        paths["evidence"],
+        [],
+    )
+
     if not sections:
-        print("  No sections to assemble.", file=sys.stderr)
+
+        print(
+            "  No sections to assemble.",
+            file=sys.stderr,
+        )
+
         return False
-    tex_content = build_latex_document(state, sections, evidence)
-    save_text(paths["latex"], tex_content)
-    print(f"LaTeX assembled. {len(sections)} sections.", file=sys.stderr)
+
+    tex_content = (
+        build_latex_document(
+            state,
+            sections,
+            evidence,
+        )
+    )
+
+    save_text(
+        paths["latex"],
+        tex_content,
+    )
+
+    print(
+        f"LaTeX assembled. "
+        f"{len(sections)} sections.",
+        file=sys.stderr,
+    )
+
     return True
