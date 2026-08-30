@@ -1,0 +1,269 @@
+{
+  "concepts": [
+    {
+      "name": "Finite Element Method (FEM) Theory",
+      "explanation": "The FEM is a numerical technique used to solve partial differential equations (PDEs) by discretizing the domain into smaller elements and approximating the solution within each element. The method is based on the principle of virtual work, which states that the work done by external forces on a system is equal to the work done by internal forces. The FEM discretizes the domain into smaller elements, such as triangles or quadrilaterals, and approximates the solution within each element using a set of basis functions. The solution is obtained by solving a system of linear equations, which represents the equilibrium of the system.",
+      "mathematical_formulation": "The FEM is based on the Galerkin method, which involves finding an approximate solution that satisfies the PDEs at each node. The solution is then assembled from the local solutions at each node to form the global solution.",
+      "source_ids": [
+        "arxiv_1509.00440v1",
+        "wikipedia_finite_element_method",
+        "wikipedia_variational_multiscale_method"
+      ]
+    },
+    {
+      "name": "Finite Element Method (FEM) in Structural Mechanics",
+      "explanation": "In structural mechanics, the FEM is used to analyze the behavior of complex systems under various loads. The method involves modeling the system as a set of finite elements interconnected at discrete points called nodes. Each element has physical properties such as thickness, coefficient of thermal expansion, density, Young's modulus, shear modulus, and Poisson's ratio.",
+      "mathematical_formulation": "The FEM in structural mechanics is based on the principle of virtual work, which states that the work done by external forces on a system is equal to the work done by internal forces. The method involves solving a system of linear equations to find the displacement and stress fields in the system.",
+      "source_ids": [
+        "wikipedia_finite_element_method_in_structural_mechanics"
+      ]
+    },
+    {
+      "name": "Variational Multiscale Method (VMS)",
+      "explanation": "The VMS is a technique used for deriving models and numerical methods for multiscale phenomena. The VMS framework has been mainly applied to design stabilized finite element methods in which stability of the standard Galerkin method is not ensured both in terms of singular perturbation and of compatibility conditions with the finite element spaces. The VMS involves two scales: a coarse scale that represents the overall behavior of the system, and a fine scale that represents the local behavior of the system. The VMS uses a combination of the coarse and fine scales to derive a model that captures the essential features of the system.",
+      "mathematical_formulation": "The VMS involves two scales: a coarse scale \\phi and a fine scale \\psi, such that the solution u can be expressed as u = \\phi + \\psi. The VMS uses a combination of the coarse and fine scales to derive a model that captures the essential features of the system.",
+      "source_ids": [
+        "wikipedia_variational_multiscale_method"
+      ]
+    },
+    {
+      "name": "Energy Release Rate (Fracture Mechanics)",
+      "explanation": "The energy release rate is a measure of the rate at which energy is released as a material undergoes fracture. It is a central concept in fracture mechanics and is used to estimate material properties related to fracture and fatigue. The energy release rate can be expressed mathematically as: G = \frac{\\Delta U}{\\Delta A}, where G is the energy release rate, \\Delta U is the change in total potential energy, and \\Delta A is the increase in fracture surface area.",
+      "mathematical_formulation": "The energy release rate can be expressed mathematically as: G = \frac{\\Delta U}{\\Delta A} = \frac{\\int_{V} \\sigma \\epsilon dx}{\\int_{S} \\gamma dS}, where \\sigma is the stress, \\epsilon is the strain, V is the domain, S is the fracture surface, and \\gamma is the fracture energy.",
+      "source_ids": [
+        "wikipedia_energy_release_rate_fracture_mechanics_"
+      ]
+    },
+    {
+      "name": "Finite Element Method (FEM)",
+      "explanation": "The Finite Element Method is a numerical technique used to solve partial differential equations (PDEs) that describe the behavior of physical systems. It is based on the idea of dividing the system into smaller subdomains called finite elements, which are then analyzed separately to obtain the overall solution. The FEM is widely used in various fields such as engineering, physics, and computer science.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wikipedia_fem",
+        "book_fem"
+      ]
+    },
+    {
+      "name": "Direct Stiffness Method",
+      "explanation": "The Direct Stiffness Method is a structural analysis technique that is particularly suited for computer-automated analysis of complex structures. It is a matrix method that makes use of the members' stiffness relations for computing member forces and displacements in structures. The method is based on the idea of modeling the system as a set of simpler, idealized elements interconnected at the nodes.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wikipedia_direct_stiffness_method"
+      ]
+    },
+    {
+      "name": "Finite Element Method (FEM) Overview",
+      "explanation": "The FEM is a numerical technique used to solve partial differential equations (PDEs) in various fields such as structural mechanics, heat transfer, fluid flow, and electromagnetic potential. It involves dividing a complex system into smaller, simpler parts called finite elements and solving the equations for each element separately.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_finite_element_method_in_structural_mechanics",
+        "wiki_finite_element_method"
+      ]
+    },
+    {
+      "name": "Finite Element Concepts",
+      "explanation": "Finite element concepts were developed in the 1950s based on engineering methods. The method obtained its real impetus in the 1960s and 1970s by John Argyris, Ray W. Clough, Olgierd Zienkiewicz, and co-workers.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_finite_element_method_in_structural_mechanics"
+      ]
+    }
+  ],
+  "procedures": [
+    {
+      "step_number": 1,
+      "title": "Step 1: Discretization",
+      "description": "The first step in the FEM is to discretize the domain into smaller elements. This is done by dividing the domain into smaller regions called elements, each of which has its own set of nodes.",
+      "equations": [
+        "LaTeX"
+      ],
+      "source_ids": [
+        "arxiv_1509.00440v1",
+        "book_fem",
+        "wiki_finite_element_method",
+        "wikipedia_finite_element_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Step 2: Assembling the Global System",
+      "description": "Once the elements have been discretized, the global system of equations is assembled. This involves combining the local equations from each element to form the global equation.",
+      "equations": [
+        "LaTeX"
+      ],
+      "source_ids": [
+        "arxiv_1509.00440v1"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Step 3: Solving the Global System",
+      "description": "The final step is to solve the global system of equations. This is typically done using a linear solver, which finds the displacement and stress fields in the system.",
+      "equations": [
+        "LaTeX"
+      ],
+      "source_ids": [
+        "arxiv_1509.00440v1"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Step 2: Assembly",
+      "description": "The second step in the FEM is to assemble the local equations from each element into a global equation. The assembly process involves summing up the local equations from each element, such that the global equation represents the equilibrium of the system.",
+      "equations": [
+        "\\sum_{i=1}^{n} K_{ij} u_j = F_j"
+      ],
+      "source_ids": [
+        "wikipedia_finite_element_method"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Step 3: Solution",
+      "description": "The third step in the FEM is to solve the global equation for the unknowns. The solution can be obtained using a variety of methods, such as Gaussian elimination or iterative methods.",
+      "equations": [
+        "u = K^{-1} F"
+      ],
+      "source_ids": [
+        "wikipedia_finite_element_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Step 2: Assembling the Stiffness Matrix",
+      "description": "The second step is to assemble the stiffness matrix, which is a matrix that describes the relationship between the displacements and forces of the finite elements. This is done by using the stiffness relations of the individual elements.",
+      "equations": [],
+      "source_ids": [
+        "wikipedia_direct_stiffness_method"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Step 3: Solving the System of Equations",
+      "description": "The third step is to solve the system of equations that results from the assembled stiffness matrix. This is typically done using linear algebra techniques such as Gaussian elimination or LU decomposition.",
+      "equations": [],
+      "source_ids": [
+        "book_fem",
+        "wiki_finite_element_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Step 2: Assembling the Global Stiffness Matrix",
+      "description": "Assemble the global stiffness matrix by combining the local stiffness matrices of each element. This is done using the Galerkin method or the direct method.",
+      "equations": [],
+      "source_ids": [
+        "wiki_finite_element_method"
+      ]
+    }
+  ],
+  "equations": [
+    {
+      "name": "Galerkin Method",
+      "latex": "LaTeX",
+      "explanation": "The Galerkin method is a numerical method used to solve the FEM equations. It involves approximating the solution using a set of basis functions and then projecting the residual onto the basis functions.",
+      "source_ids": [
+        "arxiv_1509.00440v1",
+        "wiki_finite_element_method"
+      ]
+    },
+    {
+      "name": "Principle of Virtual Work",
+      "latex": "LaTeX",
+      "explanation": "The principle of virtual work is a fundamental concept in structural mechanics. It states that the work done by external forces on a system is equal to the work done by internal forces.",
+      "source_ids": [
+        "wikipedia_finite_element_method_in_structural_mechanics"
+      ]
+    },
+    {
+      "name": "Virtual Work Principle",
+      "latex": "\\int_{V} \\delta u \\cdot F dx = 0",
+      "explanation": "The virtual work principle is a fundamental concept in the FEM. It states that the work done by external forces on a system is equal to the work done by internal forces. The virtual work principle can be expressed mathematically as: \\int_{V} \\delta u \\cdot F dx = 0.",
+      "source_ids": [
+        "wikipedia_finite_element_method"
+      ]
+    },
+    {
+      "name": "Energy Release Rate",
+      "latex": "\\frac{\\Delta U}{\\Delta A}",
+      "explanation": "The energy release rate is a measure of the rate at which energy is released as a material undergoes fracture. It can be expressed mathematically as: \\frac{\\Delta U}{\\Delta A} = \\frac{\\int_{V} \\sigma \\epsilon dx}{\\int_{S} \\gamma dS}.",
+      "source_ids": [
+        "wikipedia_energy_release_rate_fracture_mechanics_"
+      ]
+    },
+    {
+      "name": "Stiffness Matrix Equation",
+      "latex": "\\mathbf{K} \\mathbf{u} = \\mathbf{F}",
+      "explanation": "The stiffness matrix equation is a fundamental equation in the Finite Element Method. It describes the relationship between the displacements and forces of the finite elements.",
+      "source_ids": [
+        "wikipedia_fem"
+      ]
+    },
+    {
+      "name": "Direct Method",
+      "latex": "\\nabla u = \\int_{\\Omega} \\frac{\\partial \\phi}{\\partial x} \\frac{\\partial u}{\\partial \\phi} d\\Omega",
+      "explanation": "The direct method is another numerical method used to solve the FEM equations. It involves solving the system of equations directly using a numerical method such as Gaussian elimination or LU decomposition.",
+      "source_ids": [
+        "wiki_finite_element_method"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule": "Conservation of Local Fluxes",
+      "explanation": "The FEM is based on the principle of conservation of local fluxes. This means that the flux of a quantity through a control volume is equal to the sum of the fluxes into and out of the control volume.",
+      "source_ids": [
+        "arxiv_1509.00440v1"
+      ]
+    },
+    {
+      "rule": "Stability in Convection-Dominated Cases",
+      "explanation": "The FEM can be unstable in convection-dominated cases. To address this, an upwind option can be used to ensure stability.",
+      "source_ids": [
+        "arxiv_1509.00440v1"
+      ]
+    },
+    {
+      "rule": "Stability",
+      "explanation": "The stability of the FEM is a critical concept in the design of stabilized finite element methods. The stability of the FEM can be ensured by using a combination of the variational multiscale method and the energy release rate. The stability of the FEM can be checked by analyzing the energy release rate and the stability of the system.",
+      "source_ids": [
+        "wikipedia_variational_multiscale_method"
+      ]
+    },
+    {
+      "rule": "Compatibility",
+      "explanation": "The compatibility of the FEM is a critical concept in the design of finite element methods. The compatibility of the FEM can be ensured by using a combination of the variational multiscale method and the energy release rate. The compatibility of the FEM can be checked by analyzing the energy release rate and the compatibility of the system.",
+      "source_ids": [
+        "wikipedia_variational_multiscale_method"
+      ]
+    },
+    {
+      "rule": "Modeling Rule 1",
+      "explanation": "The first rule of the Finite Element Method is to model the system as a set of simpler, idealized elements interconnected at the nodes. This allows for the use of linear algebra techniques to solve the system of equations.",
+      "source_ids": [
+        "wikipedia_direct_stiffness_method"
+      ]
+    },
+    {
+      "rule": "Modeling Rule 2",
+      "explanation": "The second rule is to use the stiffness relations of the individual elements to assemble the stiffness matrix. This allows for the computation of the member forces and displacements in structures.",
+      "source_ids": [
+        "wikipedia_direct_stiffness_method"
+      ]
+    },
+    {
+      "rule": "Mesh Independence",
+      "explanation": "The mesh independence rule states that the solution should be independent of the mesh size. This means that the solution should converge to the exact solution as the mesh size approaches zero.",
+      "source_ids": [
+        "wiki_finite_element_method"
+      ]
+    },
+    {
+      "rule": "Convergence",
+      "explanation": "The convergence rule states that the solution should converge to the exact solution as the number of elements increases. This means that the solution should get closer to the exact solution as the mesh is refined.",
+      "source_ids": [
+        "wiki_finite_element_method"
+      ]
+    }
+  ]
+}

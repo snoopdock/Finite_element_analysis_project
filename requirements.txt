@@ -1,0 +1,12 @@
+requests>=2.31.0,<3.0.0
+pyyaml>=6.0.0,<7.0.0
+PyMuPDF>=1.23.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+pytesseract>=0.3.10
+Pillow>=10.0.0
+
+# Formal layer dependencies (add when ready)
+# python-sat          # SAT solving
+# z3-solver           # SMT solving  
+# ortools             # CP-SAT

@@ -1,0 +1,85 @@
+topic: Finite Element Method Theory Implementation and Modeling Rules
+
+objective: >
+  Produce a comprehensive technical guideline explaining how the Finite
+  Element Method works including mathematical foundation, step-by-step
+  procedure, and rules for modeling physical phenomena.
+
+seed_queries:
+  - finite element method structural mechanics stiffness matrix
+  - finite element weak form variational formulation
+  - finite element shape functions isoparametric elements
+  - finite element assembly global stiffness boundary conditions
+
+# Add after seed_queries:
+
+# FIX #9: Single source of truth for section topics
+section_topics:
+  - "Introduction and Scope of the Finite Element Method"
+  - "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method"
+  - "The Finite Element Procedure"
+  - "Rules for Modeling Physical Phenomena with FEM"
+  - "Verification, Validation, and Best Practices"
+# Leverage values for each section (auto-generated if omitted)
+# Higher leverage = more downstream dependency = higher priority
+section_leverage:
+  "Introduction and Scope of the Finite Element Method": 1.0
+  "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method": 0.8
+  "The Finite Element Procedure": 0.6
+  "Rules for Modeling Physical Phenomena with FEM": 0.4
+  "Verification, Validation, and Best Practices": 0.2
+
+# Update budget section:
+budget:
+  daily_neuron_limit: 10000
+  max_llm_calls_per_run: 20    # FIX #10: Increased from 6
+  max_tokens_per_call: 2500
+
+# Update writing section:
+writing:
+  w_L: 0.4
+  w_U: 0.4
+  w_A: 0.2
+  theta: 0.75
+  tau: 0.6
+  hysteresis: 2
+  max_retries_per_paragraph: 2   # Add this
+
+# Add these new sections:
+
+convergence:
+  window: 3
+  eta_variance_threshold: 0.1
+
+gap_detection:
+  max_wikipedia_topics: 30
+  max_gap_queries_per_cycle: 3
+  min_concepts_per_topic: 2
+  wikipedia_pages:
+    - Finite element method
+    - Weak formulation
+    - Galerkin method
+    - Structural mechanics
+
+splitting:
+  min_word_count: 300
+  min_concept_coverage: 3
+  max_subsections: 3
+
+merging:
+  overlap_threshold: 0.6
+  min_section_count: 3
+  
+cloudflare_models:
+  # 1. The Math & LaTeX Specialist (7B - Highly efficient, fixes your CoCalc errors)
+  - "@cf/deepseek-ai/deepseek-math-7b-instruct"
+  
+  # 2. The Strict JSON Specialist (7B - Highly efficient, fixes parser retries)
+  - "@hf/nousresearch/hermes-2-pro-mistral-7b"
+  
+  # 3. Your reliable fallbacks (8B/7B - Standard efficiency)
+  - "@cf/meta/llama-3.1-8b-instruct"
+  - "@cf/mistral/mistral-7b-instruct-v0.1"
+
+state:
+  path: state/current_state.json

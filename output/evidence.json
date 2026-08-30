@@ -1,0 +1,140 @@
+[
+  {
+    "source_id": "wikipedia_finite_element_method_in_structural_mechanics",
+    "title": "Finite element method in structural mechanics",
+    "abstract": "The finite element method (FEM) is a powerful technique originally developed for the numerical solution of complex problems in structural mechanics, and it remains the method of choice for analyzing complex systems. In FEM, the structural system is modeled by a set of appropriate finite elements interconnected at discrete points called nodes. Elements may have physical properties such as thickness, coefficient of thermal expansion, density, Young's modulus, shear modulus and Poisson's ratio.",
+    "url": "https://en.wikipedia.org/wiki/Finite_element_method_in_structural_mechanics",
+    "source_type": "wikipedia"
+  },
+  {
+    "source_id": "wikipedia_finite_element_method",
+    "title": "Finite element method",
+    "abstract": "Finite element method (FEM) is a popular method for numerically solving differential equations arising in engineering and mathematical modeling. Typical problem areas of interest include the traditional fields of structural analysis, heat transfer, fluid flow, mass transport, and electromagnetic potential. Computers are usually used to perform the calculations required. With high-speed supercomputers, better solutions can be achieved and are often required to solve the largest and most complex problems.",
+    "url": "https://en.wikipedia.org/wiki/Finite_element_method",
+    "source_type": "wikipedia"
+  },
+  {
+    "source_id": "arxiv_1509.00440v1",
+    "title": "A non-symmetric coupling of the finite volume method and the boundary element method",
+    "abstract": "As model problem we consider the prototype for flow and transport of a concentration in porous media in an interior domain and couple it with a diffusion process in the corresponding unbounded exterior domain. To solve the problem we develop a new non-symmetric coupling between the vertex-centered finite volume and boundary element method. This discretization provides naturally conservation of local fluxes and with an upwind option also stability in the convection dominated case. We aim to provide a first rigorous analysis of the system for different model parameters; stability, convergence, and a~priori estimates. This includes the use of an implicit stabilization, known from the finite element and boundary element method coupling. Some numerical experiments conclude the work and confirm the theoretical results.",
+    "url": "http://arxiv.org/abs/1509.00440v1",
+    "source_type": "arxiv"
+  },
+  {
+    "source_id": "arxiv_2501.00258v1",
+    "title": "Optimal design of frame structures with mixed categorical and continuous design variables using the Gumbel-Softmax method",
+    "abstract": "In optimizing real-world structures, due to fabrication or budgetary restraints, the design variables may be restricted to a set of standard engineering choices. Such variables, commonly called categorical variables, are discrete and unordered in essence, precluding the utilization of gradient-based optimizers for the problems containing them. In this paper, incorporating the Gumbel-Softmax (GSM) method, we propose a new gradient-based optimizer for handling such variables in the optimal design of large-scale frame structures. The GSM method provides a means to draw differentiable samples from categorical distributions, thereby enabling sensitivity analysis for the variables generated from such distributions. The sensitivity information can greatly reduce the computational cost of traversing high-dimensional and discrete design spaces in comparison to employing gradient-free optimization methods. In addition, since the developed optimizer is gradient-based, it can naturally handle the simultaneous optimization of categorical and continuous design variables. Through three numerical case studies, different aspects of the proposed optimizer are studied and its advantages over population-based optimizers, specifically a genetic algorithm, are demonstrated.",
+    "url": "http://arxiv.org/abs/2501.00258v1",
+    "source_type": "arxiv"
+  },
+  {
+    "source_id": "wikipedia_variational_multiscale_method",
+    "title": "Variational multiscale method",
+    "abstract": "The variational multiscale method (VMS) is a technique used for deriving models and numerical methods for multiscale phenomena. The VMS framework has been mainly applied to design stabilized finite element methods in which stability of the standard Galerkin method is not ensured both in terms of singular perturbation and of compatibility conditions with the finite element spaces.",
+    "url": "https://en.wikipedia.org/wiki/Variational_multiscale_method",
+    "source_type": "wikipedia"
+  },
+  {
+    "source_id": "wikipedia_energy_release_rate_fracture_mechanics_",
+    "title": "Energy release rate (fracture mechanics)",
+    "abstract": "In fracture mechanics, the energy release rate, , is the rate at which energy is transformed as a material undergoes fracture. Mathematically, the energy release rate is expressed as the decrease in total potential energy per increase in fracture surface area, and is thus expressed in terms of energy per unit area. Various energy balances can be constructed relating the energy released during fracture to the energy of the resulting new surface, as well as other dissipative processes such as plasticity and heat generation. The energy release rate is central to the field of fracture mechanics when solving problems and estimating material properties related to fracture and fatigue.",
+    "url": "https://en.wikipedia.org/wiki/Energy_release_rate_(fracture_mechanics)",
+    "source_type": "wikipedia"
+  },
+  {
+    "source_id": "wikipedia_direct_stiffness_method",
+    "title": "Direct stiffness method",
+    "abstract": "In structural engineering, the direct stiffness method, also known as the matrix stiffness method, is a structural analysis technique particularly suited for computer-automated analysis of complex structures including the statically indeterminate type. It is a matrix method that makes use of the members' stiffness relations for computing member forces and displacements in structures. The direct stiffness method is the most common implementation of the finite element method (FEM). In applying the method, the system must be modeled as a set of simpler, idealized elements interconnected at the nodes. The material stiffness properties of these elements are then, through linear algebra, compiled into a single matrix equation which governs the behaviour of the entire idealized structure. The structure’s unknown displacements and forces can then be determined by solving this equation. The direct stiffness method forms the basis for most finite element software.",
+    "url": "https://en.wikipedia.org/wiki/Direct_stiffness_method",
+    "source_type": "wikipedia"
+  },
+  {
+    "source_id": "wiki_finite_element_method_in_structural_mechanics",
+    "url": "https://en.wikipedia.org/wiki/Finite_element_method_in_structural_mechanics",
+    "retrieved_at": "2026-08-30T17:29:15.095105+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Finite element method in structural mechanics",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "The <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (FEM) is a powerful technique originally developed for the numerical solution of complex problems in <span class=\"searchmatch\">structural</span> <span class=\"searchmatch\">mechanics</span>, and",
+      "word_count": 2256
+    },
+    "full_text_path": "output/raw_text/wiki_finite_element_method_in_structural_mechanics.txt",
+    "status": "parsed_full_text"
+  },
+  {
+    "source_id": "wiki_finite_element_method",
+    "url": "https://en.wikipedia.org/wiki/Finite_element_method",
+    "retrieved_at": "2026-08-30T17:29:16.706366+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Finite element method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "element <span class=\"searchmatch\">method</span> <span class=\"searchmatch\">Finite</span> difference <span class=\"searchmatch\">method</span> <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">element</span> machine <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> in <span class=\"searchmatch\">structural</span> <span class=\"searchmatch\">mechanics</span> <span class=\"searchmatch\">Finite</span> volume <span class=\"s",
+      "word_count": 6417
+    },
+    "full_text_path": "output/raw_text/wiki_finite_element_method.txt",
+    "status": "parsed_full_text"
+  },
+  {
+    "source_id": "arxiv_1605.07031v1",
+    "url": "https://arxiv.org/pdf/1605.07031v1.pdf",
+    "retrieved_at": "2026-08-30T17:29:23.234259+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "content_type": "application/pdf",
+    "title": "An adaptive non-symmetric finite volume and boundary element coupling method for a fluid mechanics interface problem",
+    "authors": [
+      "Christoph Erath",
+      "Robert Schorr"
+    ],
+    "metadata": {
+      "abstract": "We consider an interface problem often arising in transport problems: a coupled system of partial differential equations with one (elliptic) transport equation on a bounded domain and one equation (in this case the Laplace problem) on the complement, an unbounded domain. Based on the non-symmetric coupling of the finite volume method and boundary element method of [Erath et al., arXiv:1509.00440, 2015] we introduce a robust residual error estimator. The upper bound of the error in an energy (semi)norm is robust against variation of the model data. The lower bound, however, additionally depends on the Peclet number. In several examples we use the local contributions of the a~posteriori error estimator to steer an adaptive mesh-refining algorithm. The adaptive FVM-BEM coupling turns out to be an efficient method especially to solve problems from fluid mechanics, mainly because of the local flux conservation and the stable approximation of convection dominated problems.",
+      "published": "2016-05-23T14:32:59Z",
+      "word_count": 8519
+    },
+    "full_text_path": "output/raw_text/arxiv_1605.07031v1.txt",
+    "status": "parsed_full_text"
+  },
+  {
+    "source_id": "arxiv_2504.21007v3",
+    "url": "https://arxiv.org/pdf/2504.21007v3.pdf",
+    "retrieved_at": "2026-08-30T18:09:40.863892+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "content_type": "application/pdf",
+    "title": "Small Primitive Normal Elements in Finite Fields",
+    "authors": [
+      "N. A. Carella"
+    ],
+    "metadata": {
+      "abstract": "Let $q=p^k$ be a prime power, let $\\mathbb{F}_q$ be a finite field and let $n\\geq2$ be an integer. This note investigates the existence small primitive normal elements in finite field extensions $\\mathbb{F}_{q^n}$. It is shown that a small nonstructured subset $\\mathcal{A}\\subset \\mathbb{F}_{q^n}$ of cardinality $\\#\\mathcal{A}\\gg (\\log q^n) (\\log\\log q^n)^{1+\\varepsilon}) $, where $\\varepsilon>0$ is a small number, contains a primitive normal element.",
+      "published": "2025-04-12T15:23:03Z",
+      "word_count": 14769
+    },
+    "full_text_path": "output/raw_text/arxiv_2504.21007v3.txt",
+    "status": "cached_full_text"
+  },
+  {
+    "source_id": "arxiv_2602.09048v1",
+    "url": "https://arxiv.org/pdf/2602.09048v1.pdf",
+    "retrieved_at": "2026-08-30T18:09:40.864864+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "content_type": "application/pdf",
+    "title": "Equidistribution of Primitive Normal Elements in Finite Fields",
+    "authors": [
+      "N. A. Carella"
+    ],
+    "metadata": {
+      "abstract": "Let $q=p^k$ be a prime power, let $n\\geq2$ be an integer and let $\\mathbb{F}_{q^n}$ be a finite field. It is shown that the set of primitive normal elements is a Salem set. Furthermore, it is proved that this set is strongly equidistributed in the finite field. Similar results are proved for the set of quadratic residues and the set of primitive roots modulo a large prime $p\\geq 3$.",
+      "published": "2026-02-06T20:02:33Z",
+      "word_count": 5742
+    },
+    "full_text_path": "output/raw_text/arxiv_2602.09048v1.txt",
+    "status": "cached_full_text"
+  }
+]

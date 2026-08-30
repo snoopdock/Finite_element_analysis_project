@@ -1,0 +1,44 @@
+# === RAW CONTENT CACHE (NEVER COMMIT) ===
+output/raw_text/
+*.pdf
+*.djvu
+*.epub
+
+# === PYTHON CACHE ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# === STATE FILES (tracked, but ignore temp) ===
+state/*.tmp
+output/*.tmp
+
+# === OS FILES ===
+.DS_Store
+Thumbs.db
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
