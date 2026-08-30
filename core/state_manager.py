@@ -96,7 +96,7 @@ def _migrate_v2_to_v3(state: Dict) -> Dict:
 
 
 def _migrate_v3_to_v4(state: Dict) -> Dict:
-    """Assign UUIDs and migrate title-keyed iteration history where possible."""
+    """Assign UUIDs and migrate title-keyed iteration history."""
     state["sections"] = normalize_sections(state.get("sections", []))
     _normalize_iteration_history(state)
     return state
@@ -115,12 +115,8 @@ def _title_to_id(state: Dict) -> Dict[str, str]:
 
 
 def _replace_title_tokens(key: str, title_to_id: Dict[str, str]) -> str:
-    """Convert known title fragments in legacy anomaly keys to UUIDs."""
     if not isinstance(key, str):
         return key
-
-    # Longest-first prevents a short title from being substituted inside a
-    # longer title that contains it.
     for title in sorted(title_to_id, key=len, reverse=True):
         if title in key:
             key = key.replace(title, title_to_id[title])
@@ -133,6 +129,14 @@ def _normalize_iteration_history(state: Dict) -> None:
         return
 
     title_to_id = _title_to_id(state)
+
+    section_titles = history.get("section_titles", {})
+    if not isinstance(section_titles, dict):
+        section_titles = {}
+    for title, section_id in title_to_id.items():
+        section_titles[title] = section_id
+    history["section_titles"] = section_titles
+
     if not title_to_id:
         return
 
@@ -143,10 +147,7 @@ def _normalize_iteration_history(state: Dict) -> None:
             new_key = title_to_id.get(key, key)
             if not isinstance(values, list):
                 values = []
-            if new_key in migrated_audits:
-                migrated_audits[new_key].extend(values)
-            else:
-                migrated_audits[new_key] = list(values)
+            migrated_audits.setdefault(new_key, []).extend(values)
         history["audits"] = migrated_audits
 
     for field in ("anomalies", "anomaly_counts"):
