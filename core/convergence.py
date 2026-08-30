@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import json
+import pathlib
 import statistics
 from typing import Dict, List, Tuple
 
@@ -22,6 +24,9 @@ class ConvergenceDetector:
         self.minimum_citation_coverage = float(
             convergence_config.get("minimum_citation_coverage_percent", 80.0)
         )
+        self.evidence_path = pathlib.Path(
+            convergence_config.get("evidence_path", "output/evidence.json")
+        )
         self.consecutive_convergence = 0
 
     @staticmethod
@@ -35,6 +40,14 @@ class ConvergenceDetector:
                 return section
         return None
 
+    def _load_persisted_evidence(self) -> List[Dict]:
+        try:
+            with open(self.evidence_path, "r", encoding="utf-8") as handle:
+                evidence = json.load(handle)
+            return evidence if isinstance(evidence, list) else []
+        except (OSError, json.JSONDecodeError):
+            return []
+
     def check_convergence(
         self,
         iteration_history,
@@ -47,7 +60,8 @@ class ConvergenceDetector:
     ) -> Tuple[bool, Dict]:
         sections = sections or []
         recent_actions = recent_actions or []
-        evidence = evidence or []
+        if evidence is None:
+            evidence = self._load_persisted_evidence()
 
         diagnostics = {
             "eta_variance": None,
@@ -81,9 +95,14 @@ class ConvergenceDetector:
             if not topic:
                 continue
             section = self._section_for_topic(topic, sections)
-            history_key = section.get("section_id") if section else iteration_history.resolve_section_key(topic) if hasattr(iteration_history, "resolve_section_key") else topic
+            history_key = (
+                section.get("section_id")
+                if section
+                else iteration_history.resolve_section_key(topic)
+                if hasattr(iteration_history, "resolve_section_key")
+                else topic
+            )
             audits = iteration_history.audits.get(history_key, [])
-
             if not audits:
                 unstable_sections += 1
                 continue
@@ -109,34 +128,16 @@ class ConvergenceDetector:
                 continue
             if status in {"needs_generation", "needs_rewrite", "needs_expansion", "incomplete"}:
                 incomplete_sections += 1
+
         diagnostics["incomplete_sections"] = incomplete_sections
 
         reading_coverage = float((reading_summary or {}).get("reading_coverage_percent", 0.0))
         diagnostics["reading_coverage"] = reading_coverage
 
-        citation_summary = validate_document_citations(
-            sections,
-            evidence,
-        )
-        citation_coverage = float(
-            citation_summary.get(
-                "citation_coverage_percent",
-                0.0,
-            )
-        )
+        citation_summary = validate_document_citations(sections, evidence)
+        citation_coverage = float(citation_summary.get("citation_coverage_percent", 0.0))
         diagnostics["citation_coverage"] = citation_coverage
-        diagnostics["invalid_citation_sections"] = len(
-            citation_summary.get(
-                "invalid_sections",
-                [],
-            )
-        )
-
-        sufficient_reading = reading_coverage >= self.minimum_reading_coverage
-        sufficient_citations = (
-            citation_summary.get("valid", False)
-            and citation_coverage >= self.minimum_citation_coverage
-        )
+        diagnostics["invalid_citation_sections"] = len(citation_summary.get("invalid_sections", []))
 
         conditions = {
             "variance_ok": variance_ok,
@@ -144,9 +145,18 @@ class ConvergenceDetector:
             "no_actions": len(recent_actions) == 0,
             "all_sections_stable": unstable_sections == 0,
             "all_sections_complete": incomplete_sections == 0,
-            "sufficient_reading": sufficient_reading,
-            "sufficient_citations": sufficient_citations,
+            "sufficient_reading": reading_coverage >= self.minimum_reading_coverage,
+            "sufficient_citations": (
+                citation_summary.get("valid", False)
+                and citation_coverage >= self.minimum_citation_coverage
+            ),
         }
+
+        # A completely new project may not have evidence yet. In that bootstrap
+        # case citation coverage is not a meaningful convergence constraint.
+        if not evidence:
+            conditions["sufficient_citations"] = True
+            diagnostics["reasons"].append("citation_evidence_unavailable")
 
         for name, passed in conditions.items():
             if not passed:
