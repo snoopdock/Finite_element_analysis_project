@@ -124,80 +124,182 @@ class DynamicWriter:
         return selected
 
     def _get_relevant_concepts(self, topic: str, kb: Dict) -> List[Dict]:
-        ranked = rank_knowledge_items(topic, kb, top_k=self.top_k_evidence)
+        ranked = rank_knowledge_items(
+            topic,
+            kb,
+            top_k=self.top_k_evidence,
+        )
         relevant = []
         for item in ranked:
             item_type = item.get("item_type", "concept")
-            name = item.get("name") or item.get("title") or item.get("rule") or "Unknown"
-            explanation = item.get("explanation") or item.get("description") or ""
-            math = item.get("mathematical_formulation") or item.get("latex") or ""
+            name = (
+                item.get("name")
+                or item.get("title")
+                or item.get("rule")
+                or "Unknown"
+            )
+            explanation = (
+                item.get("explanation")
+                or item.get("description")
+                or ""
+            )
+            math = (
+                item.get("mathematical_formulation")
+                or item.get("latex")
+                or ""
+            )
             sources = item.get("source_ids", [])
             if not isinstance(sources, list):
                 sources = []
-            relevant.append({
-                "type": str(item_type),
-                "name": str(name),
-                "explanation": str(explanation),
-                "math": str(math),
-                "source_ids": [str(source) for source in sources if source],
-                "ranking": item.get("ranking", {}),
-            })
+            relevant.append(
+                {
+                    "type": str(item_type),
+                    "name": str(name),
+                    "explanation": str(explanation),
+                    "math": str(math),
+                    "source_ids": [
+                        str(source)
+                        for source in sources
+                        if source
+                    ],
+                    "ranking": item.get("ranking", {}),
+                }
+            )
         return relevant
 
-    def write_section(self, topic: str, kb: Dict, errors: List[str], document_map: List[Dict], existing_section: Optional[Dict] = None) -> Optional[Dict]:
-        eta = self.indicator.compute(topic, self.history)
+    def write_section(
+        self,
+        topic: str,
+        kb: Dict,
+        errors: List[str],
+        document_map: List[Dict],
+        existing_section: Optional[Dict] = None,
+    ) -> Optional[Dict]:
+        eta = self.indicator.compute(
+            existing_section or topic,
+            self.history,
+        )
         model = self.select_model(eta)
-        print(f"    [DynamicWriter] Section: {topic}, eta={eta:.2f}, model={model}", file=sys.stderr)
+        print(
+            f"    [DynamicWriter] Section: {topic}, "
+            f"eta={eta:.2f}, model={model}",
+            file=sys.stderr,
+        )
 
-        outline = self._generate_outline(topic, kb, model)
+        outline = self._generate_outline(
+            topic,
+            kb,
+            model,
+        )
         if not outline:
-            errors.append(f"Section '{topic}': outline generation failed")
+            errors.append(
+                f"Section '{topic}': outline generation failed"
+            )
             return None
 
         paragraphs = []
+
         for index, paragraph_topic in enumerate(outline):
-            if self.provider.total_calls >= self.max_calls:
-                print(f"    [DynamicWriter] Budget exhausted at paragraph {index + 1}", file=sys.stderr)
+            if self.provider.budget_exhausted():
+                print(
+                    f"    [DynamicWriter] Budget exhausted at "
+                    f"paragraph {index + 1}",
+                    file=sys.stderr,
+                )
                 break
 
             paragraph = None
-            for retry in range(self.max_retries_per_paragraph):
-                paragraph = self._draft_paragraph(topic, paragraph_topic, kb, model, index, len(outline), paragraphs, document_map)
+
+            for retry in range(
+                self.max_retries_per_paragraph
+            ):
+                paragraph = self._draft_paragraph(
+                    topic,
+                    paragraph_topic,
+                    kb,
+                    model,
+                    index,
+                    len(outline),
+                    paragraphs,
+                    document_map,
+                )
+
                 if paragraph is not None:
                     break
+
                 if retry + 1 < self.max_retries_per_paragraph:
                     time.sleep(1)
 
             if paragraph:
                 paragraphs.append(paragraph)
             else:
-                errors.append(f"Section '{topic}': paragraph {index + 1} failed after {self.max_retries_per_paragraph} attempts")
+                errors.append(
+                    f"Section '{topic}': paragraph "
+                    f"{index + 1} failed after "
+                    f"{self.max_retries_per_paragraph} attempts"
+                )
 
         if not paragraphs:
             return None
 
-        section = self._assemble_section(topic, paragraphs)
+        section = self._assemble_section(
+            topic,
+            paragraphs,
+        )
 
         if existing_section is not None:
-            section["section_id"] = ensure_section_id(existing_section)
-            for key in ("parent_section_ids", "generated_from", "subsection_index"):
+            section["section_id"] = ensure_section_id(
+                existing_section
+            )
+
+            for key in (
+                "parent_section_ids",
+                "generated_from",
+                "subsection_index",
+            ):
                 if key in existing_section:
                     section[key] = existing_section[key]
         else:
             ensure_section_id(section)
             section["generated_from"] = "writer"
 
-        section["status"] = "complete" if self._validate_section(section) else "incomplete"
+        section["status"] = (
+            "complete"
+            if self._validate_section(section)
+            else "incomplete"
+        )
+
         if section["status"] == "complete":
-            self.history.record_clean_audit(section)
+            self.history.record_clean_audit(
+                section
+            )
         else:
-            self.history.record_failed_audit(section)
+            self.history.record_failed_audit(
+                section
+            )
+
         return section
 
-    def _generate_outline(self, topic: str, kb: Dict, model: str) -> Optional[List[str]]:
-        concepts = self._get_relevant_concepts(topic, kb)
-        concept_names = [c["name"] for c in concepts[:6]]
-        kb_display = kb_to_prompt_text(kb, max_chars=2000)
+    def _generate_outline(
+        self,
+        topic: str,
+        kb: Dict,
+        model: str,
+    ) -> Optional[List[str]]:
+        concepts = self._get_relevant_concepts(
+            topic,
+            kb,
+        )
+
+        concept_names = [
+            c["name"]
+            for c in concepts[:6]
+        ]
+
+        kb_display = kb_to_prompt_text(
+            kb,
+            max_chars=2000,
+        )
 
         prompt = f'''Generate exactly 3 distinct paragraph topics for a section titled "{topic}".
 Available ranked concepts: {', '.join(concept_names)}
@@ -208,39 +310,103 @@ Return ONLY valid JSON:
 {{"outline": ["topic 1", "topic 2", "topic 3"]}}'''
 
         messages = [
-            {"role": "system", "content": "You generate section outlines. Return ONLY valid JSON."},
-            {"role": "user", "content": prompt},
+            {
+                "role": "system",
+                "content": (
+                    "You generate section outlines. "
+                    "Return ONLY valid JSON."
+                ),
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
         ]
 
-        result, error = self._call_llm(messages, model, temperature=0.3, max_tokens=500)
+        result, error = self._call_llm(
+            messages,
+            model,
+            temperature=0.3,
+            max_tokens=500,
+        )
+
         if error or not result:
             return None
 
-        outline = result.get("outline") if isinstance(result, dict) else result if isinstance(result, list) else None
-        if not isinstance(outline, list):
+        if isinstance(result, dict):
+            outline = result.get("outline")
+        elif isinstance(result, list):
+            outline = result
+        else:
+            outline = None
+
+        if not isinstance(
+            outline,
+            list,
+        ):
             return None
 
         cleaned = []
         seen = set()
+
         for item in outline:
-            if not isinstance(item, str):
+            if not isinstance(
+                item,
+                str,
+            ):
                 continue
-            item = re.sub(r"\s+", " ", item.strip())
+
+            item = re.sub(
+                r"\s+",
+                " ",
+                item.strip(),
+            )
+
             key = item.lower()
+
             if item and key not in seen:
                 seen.add(key)
                 cleaned.append(item)
-        return cleaned[:3] if len(cleaned) >= 3 else None
 
-    def _draft_paragraph(self, section_topic: str, para_topic: str, kb: Dict, model: str, para_index: int, total_paras: int, previous_paragraphs: List[str], document_map: List[Dict]) -> Optional[str]:
-        concepts = self._get_relevant_concepts(para_topic + " " + section_topic, kb)
+        return (
+            cleaned[:3]
+            if len(cleaned) >= 3
+            else None
+        )
+
+    def _draft_paragraph(
+        self,
+        section_topic: str,
+        para_topic: str,
+        kb: Dict,
+        model: str,
+        para_index: int,
+        total_paras: int,
+        previous_paragraphs: List[str],
+        document_map: List[Dict],
+    ) -> Optional[str]:
+        concepts = self._get_relevant_concepts(
+            para_topic + " " + section_topic,
+            kb,
+        )
+
         allowed_sources: Set[str] = set()
         evidence_blocks = []
 
         for concept in concepts:
-            sources = concept.get("source_ids", [])
-            allowed_sources.update(sources)
-            source_text = ", ".join(f"[{sid}]" for sid in sources)
+            sources = concept.get(
+                "source_ids",
+                [],
+            )
+            allowed_sources.update(
+                sources
+            )
+
+            source_text = ", ".join(
+                f"[{sid}]"
+                for sid in sources
+            )
+
             evidence_blocks.append(
                 f"- {concept['type'].upper()}: {concept['name']}\n"
                 f"  Fact: {concept['explanation'][:500]}\n"
@@ -248,21 +414,42 @@ Return ONLY valid JSON:
                 f"  Allowed Citation: {source_text}\n"
             )
 
-        evidence_text = "\n".join(evidence_blocks) if evidence_blocks else "No directly matched knowledge-base item was found."
+        evidence_text = (
+            "\n".join(evidence_blocks)
+            if evidence_blocks
+            else "No directly matched knowledge-base item was found."
+        )
 
         previous_context = ""
         if previous_paragraphs:
-            previous_context = "\nALREADY WRITTEN IN THIS SECTION (do NOT repeat):\n"
-            for index, previous in enumerate(previous_paragraphs):
-                previous_context += f"  Para {index + 1}: {previous[:250]}...\n"
+            previous_context = (
+                "\nALREADY WRITTEN IN THIS SECTION "
+                "(do NOT repeat):\n"
+            )
+            for index, previous in enumerate(
+                previous_paragraphs
+            ):
+                previous_context += (
+                    f"  Para {index + 1}: "
+                    f"{previous[:250]}...\n"
+                )
 
         doc_context = ""
         if document_map:
             doc_context = "\nPREVIOUS SECTIONS IN DOCUMENT:\n"
             for item in document_map:
-                doc_context += f"- {item['title']}: {item['summary']}\n"
+                doc_context += (
+                    f"- {item['title']}: "
+                    f"{item['summary']}\n"
+                )
 
-        allowed_text = ", ".join(sorted(allowed_sources)) if allowed_sources else "none"
+        allowed_text = (
+            ", ".join(
+                sorted(allowed_sources)
+            )
+            if allowed_sources
+            else "none"
+        )
 
         prompt = f'''Write ONE academic paragraph of 100-150 words about: {para_topic}
 Section: {section_topic}
@@ -284,48 +471,141 @@ CRITICAL RULES:
 '''
 
         messages = [
-            {"role": "system", "content": "You are an academic technical writer. Use only the supplied evidence and valid citations."},
-            {"role": "user", "content": prompt},
+            {
+                "role": "system",
+                "content": (
+                    "You are an academic technical writer. "
+                    "Use only the supplied evidence and valid citations."
+                ),
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
         ]
 
-        result, error = self._call_llm(messages, model, temperature=0.4, max_tokens=800)
+        result, error = self._call_llm(
+            messages,
+            model,
+            temperature=0.4,
+            max_tokens=800,
+        )
+
         if error:
             return None
 
         if isinstance(result, dict):
-            result = result.get("content", "")
-        if not isinstance(result, str):
+            result = result.get(
+                "content",
+                "",
+            )
+
+        if not isinstance(
+            result,
+            str,
+        ):
             return None
 
         text = result.strip()
-        if any(calculate_word_overlap(text, previous) > 0.50 for previous in previous_paragraphs):
+
+        if any(
+            calculate_word_overlap(
+                text,
+                previous,
+            ) > 0.50
+            for previous in previous_paragraphs
+        ):
             return None
 
-        text = _strip_bad_citations(text, allowed_sources)
-        text = re.sub(r"(?i)^\s*This (?:chapter|section|document|paragraph) (?:provides|discusses|explores|covers|outlines).*?\.\s*", "", text)
-        text = re.sub(r"(?i)^\s*In this (?:chapter|section), we will.*?\.\s*", "", text)
-        text = re.sub(r"\s+", " ", text).strip()
+        text = _strip_bad_citations(
+            text,
+            allowed_sources,
+        )
 
-        return text if len(text.split()) > 20 else None
+        text = re.sub(
+            r"(?i)^\s*This (?:chapter|section|document|paragraph) "
+            r"(?:provides|discusses|explores|covers|outlines).*?\.\s*",
+            "",
+            text,
+        )
 
-    def _assemble_section(self, topic: str, paragraphs: List[str]) -> Dict:
-        content = "\n\n".join(paragraphs)
+        text = re.sub(
+            r"(?i)^\s*In this (?:chapter|section), we will.*?\.\s*",
+            "",
+            text,
+        )
+
+        text = re.sub(
+            r"\s+",
+            " ",
+            text,
+        ).strip()
+
+        return (
+            text
+            if len(text.split()) > 20
+            else None
+        )
+
+    def _assemble_section(
+        self,
+        topic: str,
+        paragraphs: List[str],
+    ) -> Dict:
+        content = "\n\n".join(
+            paragraphs
+        )
+
         return {
             "title": topic,
             "content": content,
-            "key_equations": _extract_equations(content)[:5],
-            "citations_used": _extract_citations(content),
+            "key_equations": _extract_equations(
+                content
+            )[:5],
+            "citations_used": _extract_citations(
+                content
+            ),
         }
 
-    def _validate_section(self, section: Dict) -> bool:
-        title = section.get("title")
-        content = section.get("content", "")
-        return isinstance(title, str) and bool(title.strip()) and isinstance(content, str) and len(content.split()) >= 100
+    def _validate_section(
+        self,
+        section: Dict,
+    ) -> bool:
+        title = section.get(
+            "title"
+        )
+        content = section.get(
+            "content",
+            "",
+        )
 
-    def _call_llm(self, messages, model, temperature=0.3, max_tokens=1000):
-        text, error = self.provider.chat(messages, temperature, max_tokens, model=model)
+        return (
+            isinstance(title, str)
+            and bool(title.strip())
+            and isinstance(content, str)
+            and len(content.split()) >= 100
+        )
+
+    def _call_llm(
+        self,
+        messages,
+        model,
+        temperature=0.3,
+        max_tokens=1000,
+    ):
+        if self.provider.budget_exhausted():
+            return None, "Local logical-call budget exhausted"
+
+        text, error = self.provider.chat(
+            messages,
+            temperature,
+            max_tokens,
+            model=model,
+        )
+
         if error:
             return None, error
+
         if not text or not str(text).strip():
             return None, "Empty response"
 
@@ -335,62 +615,199 @@ CRITICAL RULES:
             if message.get("role") == "user"
         )
 
-        expects_json = "Return ONLY valid JSON" in user_content
+        expects_json = (
+            "Return ONLY valid JSON"
+            in user_content
+        )
+
         if not expects_json:
             return str(text).strip(), None
 
         try:
-            return self.parser.parse(text, model_name=model), None
+            return (
+                self.parser.parse(
+                    text,
+                    model_name=model,
+                ),
+                None,
+            )
         except Exception as exc:
             return None, f"Parse error: {exc}"
 
-    def run(self, section_topics: List[str], kb: Dict, existing_sections: List[Dict], errors: List[str]) -> Tuple[List[Dict], int]:
-        print("\n=== PHASE 3: DYNAMIC WRITE ===", file=sys.stderr)
-        marked = self.mark_sections(section_topics)
-        print(f"  Marked {len(marked)}/{len(section_topics)} sections: {marked}", file=sys.stderr)
+    def run(
+        self,
+        section_topics: List[str],
+        kb: Dict,
+        existing_sections: List[Dict],
+        errors: List[str],
+    ) -> Tuple[List[Dict], int]:
+        print(
+            "\n=== PHASE 3: DYNAMIC WRITE ===",
+            file=sys.stderr,
+        )
 
+        marked = self.mark_sections(
+            section_topics
+        )
+
+        print(
+            f"  Marked {len(marked)}/{len(section_topics)} sections: {marked}",
+            file=sys.stderr,
+        )
+
+        existing_by_id = {}
         existing_by_title = {}
-        for section in existing_sections:
-            if not isinstance(section, dict):
-                continue
-            title = str(section.get("title", "")).strip().lower()
-            if title:
-                existing_by_title[title] = section
 
-        all_sections = list(existing_sections)
+        for section in existing_sections:
+            if not isinstance(
+                section,
+                dict,
+            ):
+                continue
+
+            section_id = ensure_section_id(
+                section
+            )
+            existing_by_id[
+                section_id
+            ] = section
+
+            title = str(
+                section.get(
+                    "title",
+                    "",
+                )
+            ).strip().lower()
+
+            if title:
+                existing_by_title[
+                    title
+                ] = section
+
+            self.history.register_section(
+                section
+            )
+
+        all_sections = list(
+            existing_sections
+        )
+
         sections_written = 0
 
         document_map = []
+
         for section in existing_sections:
-            content = str(section.get("content", ""))
-            summary = content[:200].replace("\n", " ") + ("..." if len(content) > 200 else "")
-            document_map.append({"title": str(section.get("title", "")), "summary": summary})
+            content = str(
+                section.get(
+                    "content",
+                    "",
+                )
+            )
+
+            summary = (
+                content[:200]
+                .replace("\n", " ")
+                + (
+                    "..."
+                    if len(content) > 200
+                    else ""
+                )
+            )
+
+            document_map.append(
+                {
+                    "section_id": section.get("section_id"),
+                    "title": str(
+                        section.get(
+                            "title",
+                            "",
+                        )
+                    ),
+                    "summary": summary,
+                }
+            )
 
         for topic in marked:
-            if self.provider.total_calls >= self.max_calls:
-                print("  Budget exhausted. Stopping.", file=sys.stderr)
+            if self.provider.budget_exhausted():
+                print(
+                    "  Budget exhausted. Stopping.",
+                    file=sys.stderr,
+                )
                 break
 
-            existing = existing_by_title.get(topic.lower())
-            section = self.write_section(topic, kb, errors, document_map, existing_section=existing)
+            history_key = self.history.resolve_section_key(
+                topic
+            )
+
+            existing = existing_by_id.get(
+                history_key
+            )
+
+            if existing is None:
+                existing = existing_by_title.get(
+                    str(topic).strip().lower()
+                )
+
+            section = self.write_section(
+                topic,
+                kb,
+                errors,
+                document_map,
+                existing_section=existing,
+            )
+
             if section is None:
                 continue
 
-            section_id = ensure_section_id(section)
+            section_id = ensure_section_id(
+                section
+            )
+
             replaced = False
-            for index, candidate in enumerate(all_sections):
-                if isinstance(candidate, dict) and candidate.get("section_id") == section_id:
+
+            for index, candidate in enumerate(
+                all_sections
+            ):
+                if (
+                    isinstance(candidate, dict)
+                    and candidate.get("section_id")
+                    == section_id
+                ):
                     all_sections[index] = section
                     replaced = True
                     break
+
             if not replaced:
-                all_sections.append(section)
+                all_sections.append(
+                    section
+                )
 
             sections_written += 1
-            content = str(section.get("content", ""))
-            document_map.append({
-                "title": topic,
-                "summary": content[:200].replace("\n", " ") + ("..." if len(content) > 200 else ""),
-            })
 
-        return all_sections, sections_written
+            content = str(
+                section.get(
+                    "content",
+                    "",
+                )
+            )
+
+            document_map.append(
+                {
+                    "section_id": section_id,
+                    "title": topic,
+                    "summary": (
+                        content[:200]
+                        .replace("\n", " ")
+                        + (
+                            "..."
+                            if len(content) > 200
+                            else ""
+                        )
+                    ),
+                }
+            )
+
+        return (
+            all_sections,
+            sections_written,
+        )
