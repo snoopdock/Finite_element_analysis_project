@@ -65,6 +65,25 @@ jobs:
         run: |
           python main.py --config config.yaml
 
+      - name: Enforce raw-text cache limit
+        if: always()
+        env:
+          FEA_CACHE_MAX_SIZE_MB: 500
+        run: |
+          python - <<'PY'
+          from research.content_cache import cleanup_cache, get_cache_stats
+
+          stats = cleanup_cache()
+          print(
+              "Cache: "
+              f"{stats['total_size_mb']:.2f} MB / "
+              f"{stats['max_size_mb']:.2f} MB "
+              f"({stats['total_files']} files)"
+          )
+          if stats["total_size_mb"] > stats["max_size_mb"] + 1e-6:
+              raise SystemExit("Raw-text cache remains above configured limit")
+          PY
+
       - name: Report raw-text cache usage
         if: always()
         run: |
