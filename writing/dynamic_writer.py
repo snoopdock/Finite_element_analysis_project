@@ -310,7 +310,9 @@ CRITICAL RULES:
         return True
 
     def _call_llm(self, messages, model, temperature=0.3, max_tokens=1000):
-        """Pass model directly instead of mutating shared state."""
+        """
+        FIX #14: Proper error handling. Parser failures are NOT silently converted to success.
+        """
         text, error = self.provider.chat(messages, temperature, max_tokens, model=model)
         if error:
             return None, error
@@ -319,8 +321,10 @@ CRITICAL RULES:
         try:
             result = self.parser.parse(text, model_name=model)
             return result, None
-        except Exception:
-            return text, None
+        except Exception as exc:
+            # FIX #14: Do NOT return raw text as a successful result.
+            # Return an error so the caller knows parsing failed.
+            return None, f"Parse error: {exc}"
 
     def run(self, section_topics: List[str], kb: Dict, existing_sections: List[Dict], errors: List[str]) -> Tuple[List[Dict], int]:
         print("\n=== PHASE 3: DYNAMIC WRITE ===", file=sys.stderr)
