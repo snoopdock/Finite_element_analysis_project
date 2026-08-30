@@ -114,3 +114,6 @@ def balanced_braces(text: str) -> str:
     elif close_count > open_count:
         text = '{' * (close_count - open_count) + text
     return text
+
+# Alias for backward compatibility with test_pure_functions.py
+check_balanced_braces = balanced_braces
