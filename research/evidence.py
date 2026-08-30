@@ -1,124 +1,151 @@
 #!/usr/bin/env python3
-"""
-Evidence management, retrieval, and merging with section-aware reading and provenance tracking.
-"""
+"""Evidence retrieval, provenance, section-aware reading, and merging."""
+
+from __future__ import annotations
 
 import os
 import sys
-from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from utils.text import clean_text
 from research.arxiv_fulltext import search_arxiv
 from research.wikipedia import search_wikipedia
 from research.semantic_scholar import search_semantic_scholar
-from research.archive_org import search_archive_org
 from research.content_cache import cleanup_cache
 from research.article_sectioner import split_article_into_sections, get_unread_sections
-from research.reading_tracker import load_reading_state, save_reading_state, mark_section_read
+from research.reading_tracker import mark_section_read
+from research.ranking import rank_items_for_queries
 
 
-def retrieve_evidence_parallel(queries: List[str], max_items: int = 4, max_workers: int = 3) -> List[Dict]:
-    """
-    Retrieve evidence from all sources in parallel with full provenance metadata.
-    """
+def retrieve_evidence_parallel(
+    queries: List[str],
+    max_items: int = 4,
+    max_workers: int = 3,
+) -> List[Dict]:
+    """Retrieve evidence concurrently, preserving exact query/provider provenance."""
     cleanup_cache(max_size_kb=5000)
 
-    evidence = []
-    seen = set()
+    normalized_queries = [
+        str(query).strip()
+        for query in queries or []
+        if str(query).strip()
+    ]
+
+    if not normalized_queries:
+        return []
+
     retrieval_timestamp = datetime.now(timezone.utc).isoformat()
+    futures = {}
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = []
-        for q in queries:
-            futures.append(executor.submit(search_arxiv, q, 2))
-            futures.append(executor.submit(search_semantic_scholar, q, 2))
-            futures.append(executor.submit(search_wikipedia, q, 2))
-            # Uncomment when Archive.org integration is ready:
-            # futures.append(executor.submit(search_archive_org, q, 1))
+        for query in normalized_queries:
+            futures[executor.submit(search_arxiv, query, 2)] = ("arxiv", query, "preprint")
+            futures[executor.submit(search_semantic_scholar, query, 2)] = ("semantic_scholar", query, "academic")
+            futures[executor.submit(search_wikipedia, query, 2)] = ("wikipedia", query, "wikipedia")
 
-        for fut in as_completed(futures):
+        candidates = []
+        seen = set()
+
+        for future in as_completed(futures):
+            provider_name, query, source_type = futures[future]
             try:
-                for item in fut.result():
-                    if item["source_id"] not in seen:
-                        seen.add(item["source_id"])
-                        # Stamp retrieval provenance
-                        item["retrieved_at"] = retrieval_timestamp
-                        item["query_context"] = queries[0] if queries else "unknown"
-                        evidence.append(item)
-            except Exception as e:
-                print(f"  [Evidence] Retrieval error: {e}", file=sys.stderr)
+                results = future.result()
+            except Exception as exc:
+                print(
+                    f"  [Evidence] {provider_name} retrieval error for '{query}': {exc}",
+                    file=sys.stderr,
+                )
+                continue
 
-    return evidence[:max_items]
+            if not isinstance(results, list):
+                continue
+
+            for item in results:
+                if not isinstance(item, dict):
+                    continue
+
+                source_id = item.get("source_id")
+                if not source_id:
+                    continue
+
+                source_id = str(source_id)
+                if source_id in seen:
+                    continue
+                seen.add(source_id)
+
+                enriched = dict(item)
+                enriched["source_id"] = source_id
+                enriched["provider"] = provider_name
+                enriched["source_type"] = source_type
+                enriched["query_context"] = query
+                enriched["retrieved_at"] = retrieval_timestamp
+                candidates.append(enriched)
+
+    ranked = rank_items_for_queries(
+        normalized_queries,
+        candidates,
+        top_k=max(0, int(max_items)),
+    )
+
+    return ranked
 
 
-def get_next_unread_content(source_item: Dict, reading_state: Dict, max_chars: int = 3000) -> Optional[Dict]:
-    """
-    Get the next unread section of an article instead of just the first 3000 chars.
-    This ensures no article is thrown away after a single read.
-    
-    Args:
-        source_item: The evidence dict for this source
-        reading_state: The current reading state tracking what has been read
-        max_chars: Maximum characters to return for this section
-        
-    Returns:
-        Dict with section content, type, and position, or None if fully read.
-    """
+def get_next_unread_content(
+    source_item: Dict,
+    reading_state: Dict,
+    max_chars: int = 3000,
+) -> Optional[Dict]:
+    """Return the next unread section of an article."""
     full_text_path = source_item.get("full_text_path")
-    article_id = source_item.get("source_id", "unknown")
-    
+    article_id = str(source_item.get("source_id", "unknown"))
+
     if not full_text_path or not os.path.exists(full_text_path):
-        # Fallback to abstract if no cached text exists
         abstract = source_item.get("metadata", {}).get("abstract", "")
         if abstract:
+            content = str(abstract)[:max_chars]
             return {
                 "section_type": "abstract",
-                "content": abstract[:max_chars],
+                "content": content,
                 "char_start": 0,
-                "char_end": len(abstract[:max_chars]),
+                "char_end": len(content),
             }
         return None
-    
-    with open(full_text_path, "r", encoding="utf-8") as f:
-        full_text = f.read()
-    
-    if not full_text or not full_text.strip():
+
+    try:
+        with open(full_text_path, "r", encoding="utf-8") as handle:
+            full_text = handle.read()
+    except OSError:
         return None
-    
-    # Split the article into logical sections
+
+    if not full_text.strip():
+        return None
+
     sections = split_article_into_sections(full_text)
-    
-    # Get only the sections that haven't been read yet
     unread = get_unread_sections(article_id, sections, reading_state)
-    
     if not unread:
-        return None  # Article has been fully read
-    
-    # Return the first unread section (truncated to max_chars for the LLM)
+        return None
+
     next_section = unread[0]
-    content = next_section["content"][:max_chars]
-    
+    content = str(next_section.get("content", ""))[:max_chars]
+
     return {
-        "section_type": next_section["section_type"],
+        "section_type": next_section.get("section_type", "unknown"),
         "content": content,
-        "char_start": next_section["char_start"],
-        "char_end": next_section.get("char_end", next_section["char_start"] + len(content)),
+        "char_start": next_section.get("char_start", 0),
+        "char_end": next_section.get("char_end", next_section.get("char_start", 0) + len(content)),
     }
 
 
 def get_smart_excerpt(source_item: Dict, max_chars: int = 3000) -> str:
-    """
-    Legacy function: Reads full text if available, otherwise falls back to abstract.
-    Use get_next_unread_content() for section-aware reading.
-    """
+    """Legacy full-text/abstract excerpt helper."""
     full_text_path = source_item.get("full_text_path")
 
     if full_text_path and os.path.exists(full_text_path):
         try:
-            with open(full_text_path, "r", encoding="utf-8") as f:
-                text = f.read()
+            with open(full_text_path, "r", encoding="utf-8") as handle:
+                text = handle.read()
             if len(text) > max_chars:
                 snippet = text[:max_chars]
                 last_para = snippet.rfind("\n\n")
@@ -126,7 +153,7 @@ def get_smart_excerpt(source_item: Dict, max_chars: int = 3000) -> str:
                     snippet = snippet[:last_para]
                 return snippet + "\n[... text truncated ...]"
             return text
-        except Exception:
+        except OSError:
             pass
 
     return source_item.get("metadata", {}).get("abstract", "No text available.")
@@ -136,127 +163,149 @@ def evidence_to_text_section_aware(
     evidence: List[Dict],
     reading_state: Dict,
     max_sources: int = 4,
-    chars_per_source: int = 3000
+    chars_per_source: int = 3000,
 ) -> tuple:
-    """
-    Convert evidence to text format for LLM consumption using section-aware reading.
-    Reads the next unread section of each article instead of always reading the beginning.
-    
-    Args:
-        evidence: List of evidence dicts
-        reading_state: Current reading state
-        max_sources: Maximum number of sources to process
-        chars_per_source: Max characters per source
-        
-    Returns:
-        Tuple of (text_for_llm, updated_reading_state, sections_read_this_cycle)
-    """
+    """Select the next unread section from ranked evidence."""
     blocks = []
     sections_read_this_cycle = []
     updated_state = reading_state
-    
-    for item in evidence[-max_sources:]:
-        article_id = item.get("source_id", "unknown")
-        
-        # Try to get the next unread section
-        next_content = get_next_unread_content(item, updated_state, chars_per_source)
-        
-        if next_content is None:
-            # Article fully read or no content available
+
+    count = 0
+    for item in evidence:
+        if count >= max_sources:
+            break
+        if not isinstance(item, dict):
             continue
-        
+
+        article_id = str(item.get("source_id", "unknown"))
+        next_content = get_next_unread_content(
+            item,
+            updated_state,
+            chars_per_source,
+        )
+
+        if next_content is None:
+            continue
+
         section_type = next_content["section_type"]
         content = next_content["content"]
         char_start = next_content["char_start"]
         char_end = next_content["char_end"]
-        
-        # Build the text block for the LLM
+
         block = (
             f'<source id="{article_id}" '
             f'title="{clean_text(item.get("title", ""), 200)}" '
-            f'section="{section_type}" '
-            f'status="{item.get("status", "unknown")}">\n'
+            f'section="{clean_text(str(section_type), 100)}" '
+            f'status="{clean_text(str(item.get("status", "unknown")), 50)}">\n'
             f'{clean_text(content, chars_per_source)}\n'
             f'</source>'
         )
+
         blocks.append(block)
-        
-        # Record what we're about to read (will be confirmed after extraction)
         sections_read_this_cycle.append({
             "article_id": article_id,
             "section_type": section_type,
             "char_start": char_start,
             "char_end": char_end,
         })
-    
-    text = "\n\n".join(blocks)
-    return text, updated_state, sections_read_this_cycle
+        count += 1
+
+    return "\n\n".join(blocks), updated_state, sections_read_this_cycle
 
 
-def evidence_to_text(evidence: List[Dict], max_sources: int = 4, chars_per_source: int = 3000) -> str:
-    """
-    Legacy function: Convert evidence to text format for LLM consumption.
-    Kept for backward compatibility. Use evidence_to_text_section_aware() for new code.
-    """
+def evidence_to_text(
+    evidence: List[Dict],
+    max_sources: int = 4,
+    chars_per_source: int = 3000,
+) -> str:
+    """Legacy full-text formatter retained for compatibility."""
     blocks = []
-    for item in evidence[-max_sources:]:
+    for item in evidence[:max_sources]:
         excerpt = get_smart_excerpt(item, max_chars=chars_per_source)
-        block = (
-            '<source id="' + item.get("source_id", "unknown") + '" title="' +
-            clean_text(item.get("title", ""), 200) + '" status="' + item.get("status", "") + '">\n' +
-            clean_text(excerpt, chars_per_source) +
-            "\n</source>"
+        blocks.append(
+            '<source id="'
+            + str(item.get("source_id", "unknown"))
+            + '" title="'
+            + clean_text(item.get("title", ""), 200)
+            + '" status="'
+            + str(item.get("status", ""))
+            + '">\n'
+            + clean_text(excerpt, chars_per_source)
+            + "\n</source>"
         )
-        blocks.append(block)
     return "\n\n".join(blocks)
 
 
 def merge_evidence(old: List[Dict], new: List[Dict], max_keep: int = 200) -> List[Dict]:
-    """Merge old and new evidence, keeping most recent. Preserves provenance metadata."""
+    """Merge evidence by source_id while preserving latest metadata."""
     merged = {}
-    for item in old:
+    for item in old or []:
         if isinstance(item, dict) and item.get("source_id"):
-            merged[item["source_id"]] = item
-    for item in new:
+            merged[str(item["source_id"])] = item
+    for item in new or []:
         if isinstance(item, dict) and item.get("source_id"):
-            merged[item["source_id"]] = item
-    return list(merged.values())[-max_keep:]
+            merged[str(item["source_id"])] = item
+
+    # Preserve ranking order when new records carry ranking; otherwise preserve insertion order.
+    values = list(merged.values())
+    values.sort(
+        key=lambda item: (
+            -float(item.get("ranking", {}).get("score", 0.0)),
+            str(item.get("retrieved_at", "")),
+        )
+    )
+    return values[:max_keep]
 
 
 def merge_knowledge(existing_kb: Dict, new_extraction: Dict) -> Dict:
-    """Merge new extraction into existing knowledge base."""
+    """Merge extracted knowledge while retaining all known source IDs."""
     if not isinstance(new_extraction, dict):
-        return existing_kb
+        return existing_kb or {}
 
-    kb = dict(existing_kb) if existing_kb else {}
+    kb = dict(existing_kb) if isinstance(existing_kb, dict) else {}
 
-    for category in ["concepts", "procedures", "equations", "rules"]:
+    for category in ("concepts", "procedures", "equations", "rules"):
         existing = kb.get(category, [])
+        if not isinstance(existing, list):
+            existing = []
+
         new_items = new_extraction.get(category, [])
         if not isinstance(new_items, list):
+            kb[category] = existing
             continue
 
         existing_index = {}
         for item in existing:
-            if isinstance(item, dict):
-                key = (item.get("name") or item.get("title") or item.get("rule") or "").lower().strip()
-                if key:
-                    existing_index[key] = item
+            if not isinstance(item, dict):
+                continue
+            key = str(item.get("name") or item.get("title") or item.get("rule") or "").lower().strip()
+            if key:
+                existing_index[key] = item
 
         for new_item in new_items:
             if not isinstance(new_item, dict):
                 continue
-            key = (new_item.get("name") or new_item.get("title") or new_item.get("rule") or "").lower().strip()
+
+            key = str(new_item.get("name") or new_item.get("title") or new_item.get("rule") or "").lower().strip()
+            new_sources = new_item.get("source_ids", [])
+            if not isinstance(new_sources, list):
+                new_sources = []
 
             if not key:
                 existing.append(new_item)
-            elif key in existing_index:
+                continue
+
+            if key in existing_index:
                 old_item = existing_index[key]
-                old_item["source_ids"] = sorted(list(
-                    set(old_item.get("source_ids", [])) | set(new_item.get("source_ids", []))
-                ))
-                if len(new_item.get("explanation", "")) > len(old_item.get("explanation", "")):
-                    old_item["explanation"] = new_item["explanation"]
+                old_sources = old_item.get("source_ids", [])
+                if not isinstance(old_sources, list):
+                    old_sources = []
+                old_item["source_ids"] = sorted(set(old_sources) | set(new_sources))
+
+                old_explanation = str(old_item.get("explanation", ""))
+                new_explanation = str(new_item.get("explanation", ""))
+                if len(new_explanation) > len(old_explanation):
+                    old_item["explanation"] = new_explanation
             else:
                 existing.append(new_item)
                 existing_index[key] = new_item
@@ -269,124 +318,119 @@ def merge_knowledge(existing_kb: Dict, new_extraction: Dict) -> Dict:
 def confirm_sections_read(
     sections_read: List[Dict],
     extracted_items: Dict[str, Dict[str, int]],
-    reading_state: Dict
+    reading_state: Dict,
 ) -> Dict:
-    """
-    Confirm that sections were successfully read and record what was extracted.
-    Call this after the LLM extraction phase completes.
-    
-    Args:
-        sections_read: List of sections that were read this cycle
-        extracted_items: Dict mapping article_id to what was extracted,
-                         e.g. {"arxiv_123": {"concepts": 3, "equations": 2}}
-        reading_state: Current reading state
-        
-    Returns:
-        Updated reading state
-    """
-    for section_info in sections_read:
-        article_id = section_info["article_id"]
-        section_type = section_info["section_type"]
-        char_start = section_info["char_start"]
-        
-        # Get what was extracted from this article
-        items = extracted_items.get(article_id, {"concepts": 0, "equations": 0, "procedures": 0, "rules": 0})
-        
-        reading_state = mark_section_read(
-            article_id=article_id,
-            section_type=section_type,
-            char_start=char_start,
-            extracted_items=items,
-            reading_state=reading_state
+    """Confirm sections only after successful, attributable extraction."""
+    for section_info in sections_read or []:
+        if not isinstance(section_info, dict):
+            continue
+
+        article_id = section_info.get("article_id")
+        if not article_id:
+            continue
+
+        items = (extracted_items or {}).get(
+            article_id,
+            {"concepts": 0, "equations": 0, "procedures": 0, "rules": 0},
         )
-    
+
+        reading_state = mark_section_read(
+            article_id=str(article_id),
+            section_type=section_info.get("section_type", "unknown"),
+            char_start=section_info.get("char_start", 0),
+            extracted_items=items,
+            reading_state=reading_state,
+        )
+
     return reading_state
 
 
 def get_articles_needing_more_reading(
     evidence: List[Dict],
     reading_state: Dict,
-    min_unread_sections: int = 1
+    min_unread_sections: int = 1,
 ) -> List[str]:
-    """
-    Find articles that still have unread sections.
-    These articles should be prioritized in the next Extract phase.
-    
-    Args:
-        evidence: List of all evidence dicts
-        reading_state: Current reading state
-        min_unread_sections: Minimum number of unread sections to qualify
-        
-    Returns:
-        List of article IDs that need more reading
-    """
     needs_reading = []
-    
-    for item in evidence:
-        article_id = item.get("source_id", "unknown")
+
+    for item in evidence or []:
+        if not isinstance(item, dict):
+            continue
+
+        article_id = str(item.get("source_id", "unknown"))
         full_text_path = item.get("full_text_path")
-        
         if not full_text_path or not os.path.exists(full_text_path):
             continue
-        
+
         try:
-            with open(full_text_path, "r", encoding="utf-8") as f:
-                full_text = f.read()
-        except Exception:
+            with open(full_text_path, "r", encoding="utf-8") as handle:
+                full_text = handle.read()
+        except OSError:
             continue
-        
+
         sections = split_article_into_sections(full_text)
-        unread = get_unread_sections(article_id, sections, reading_state)
-        
+        unread = get_unread_sections(
+            article_id,
+            sections,
+            reading_state,
+        )
+
         if len(unread) >= min_unread_sections:
             needs_reading.append(article_id)
-    
+
     return needs_reading
 
 
-def get_reading_summary(evidence: List[Dict], reading_state: Dict) -> Dict:
-    """
-    Get a summary of reading progress across all articles.
-    Useful for the convergence check and validation reports.
-    
-    Returns:
-        Dict with overall reading statistics
-    """
-    total_articles = len(evidence)
+def get_reading_summary(
+    evidence: List[Dict],
+    reading_state: Dict,
+) -> Dict:
+    total_articles = len(evidence or [])
     fully_read = 0
     partially_read = 0
     never_read = 0
     total_sections_read = 0
     total_sections_available = 0
-    
-    for item in evidence:
-        article_id = item.get("source_id", "unknown")
+
+    for item in evidence or []:
+        if not isinstance(item, dict):
+            continue
+
+        article_id = str(item.get("source_id", "unknown"))
         full_text_path = item.get("full_text_path")
-        
+
         if not full_text_path or not os.path.exists(full_text_path):
+            # Abstract/metadata-only sources do not have section coverage.
             never_read += 1
             continue
-        
+
         try:
-            with open(full_text_path, "r", encoding="utf-8") as f:
-                full_text = f.read()
-        except Exception:
+            with open(full_text_path, "r", encoding="utf-8") as handle:
+                full_text = handle.read()
+        except OSError:
             never_read += 1
             continue
-        
+
         sections = split_article_into_sections(full_text)
         unread = get_unread_sections(article_id, sections, reading_state)
-        
-        total_sections_available += len(sections)
-        total_sections_read += len(sections) - len(unread)
-        
+        available = len(sections)
+        read_count = available - len(unread)
+
+        total_sections_available += available
+        total_sections_read += max(0, read_count)
+
         if len(unread) == 0:
             fully_read += 1
-        elif article_id in reading_state:
+        elif read_count > 0:
             partially_read += 1
         else:
             never_read += 1
-    
+
+    coverage = (
+        (total_sections_read / total_sections_available * 100.0)
+        if total_sections_available > 0
+        else 0.0
+    )
+
     return {
         "total_articles": total_articles,
         "fully_read": fully_read,
@@ -394,8 +438,5 @@ def get_reading_summary(evidence: List[Dict], reading_state: Dict) -> Dict:
         "never_read": never_read,
         "total_sections_read": total_sections_read,
         "total_sections_available": total_sections_available,
-        "reading_coverage_percent": round(
-            (total_sections_read / total_sections_available * 100)
-            if total_sections_available > 0 else 0, 1
-        ),
+        "reading_coverage_percent": round(coverage, 1),
     }
