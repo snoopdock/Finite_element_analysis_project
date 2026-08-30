@@ -34,7 +34,7 @@ class IterationHistory:
     def resolve_section_key(self, section_or_title) -> str:
         if isinstance(section_or_title, dict):
             return self._section_key(section_or_title)
-        title = str(section_or_title or "")
+        title = str(section_or_title or "").strip()
         return self.section_titles.get(title, title)
 
     def record_clean_audit(self, section) -> None:
@@ -55,12 +55,25 @@ class IterationHistory:
         self.anomalies[key] = self.anomalies.get(key, 0) + 1
 
     def reset_anomaly(self, key: str) -> None:
+        """Reset transient anomaly history for one key."""
         if key in self.anomalies:
             self.anomalies[key] = 0
+
+    def reset_hysteresis(self, key: str) -> None:
+        """Reset the persistent OAA hysteresis counter for one key."""
+        if key in self.anomaly_counts:
+            self.anomaly_counts[key] = 0
+
+    def reset_anomaly_state(self, key: str) -> None:
+        """Reset both anomaly history and persistent hysteresis."""
+        self.reset_anomaly(key)
+        self.reset_hysteresis(key)
 
     def clear_all_anomalies(self) -> None:
         for key in list(self.anomalies.keys()):
             self.anomalies[key] = 0
+        for key in list(self.anomaly_counts.keys()):
+            self.anomaly_counts[key] = 0
 
     def get_anomaly_counts(self) -> Dict[str, int]:
         return dict(self.anomaly_counts)
@@ -96,5 +109,7 @@ class IterationHistory:
         titles = data.get("section_titles", {})
         self.audits = audits if isinstance(audits, dict) else {}
         self.anomalies = anomalies if isinstance(anomalies, dict) else {}
-        self.set_anomaly_counts(data.get("anomaly_counts", {}))
+        self.set_anomaly_counts(
+            data.get("anomaly_counts", {})
+        )
         self.section_titles = titles if isinstance(titles, dict) else {}
