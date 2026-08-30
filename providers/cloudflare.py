@@ -16,7 +16,14 @@ CF_BASE = "https://api.cloudflare.com/client/v4"
 
 
 class CloudflareProvider:
-    def __init__(self, account_id, api_token, models, max_tokens_per_call=2500, max_logical_calls=None):
+    def __init__(
+        self,
+        account_id,
+        api_token,
+        models,
+        max_tokens_per_call=2500,
+        max_logical_calls=20,
+    ):
         self.account_id = account_id
         self.api_token = api_token
         self.models = models if models else ["@cf/meta/llama-3.1-8b-instruct"]
@@ -28,12 +35,14 @@ class CloudflareProvider:
         self.http_attempts = 0
         self.total_calls = 0
         self.max_tokens_per_call = max_tokens_per_call
+
         env_limit = os.environ.get("FEA_MAX_LLM_CALLS")
-        if max_logical_calls is None and env_limit:
+        if env_limit:
             try:
                 max_logical_calls = int(env_limit)
             except ValueError:
-                max_logical_calls = None
+                pass
+
         self.max_logical_calls = max_logical_calls
         self.extractor = LLMResponseExtractor(verbose=False)
 
@@ -51,7 +60,7 @@ class CloudflareProvider:
         )
 
     def chat(self, messages, temperature=0.2, max_tokens=None, model=None):
-        """Send one logical LLM call and allow only transport-level retries."""
+        """Send one logical LLM call; HTTP retries do not count as new calls."""
         if self.budget_exhausted():
             return None, "Local logical-call budget exhausted"
 
