@@ -4,7 +4,7 @@ This branch contains the sequential architecture updates requested for the pipel
 
 ## Stage 1 — Stable section identity — complete
 
-Implemented UUID-based section identity and lineage. State schema is v4. Existing valid IDs are preserved; missing, invalid, or duplicate IDs are repaired. Split children receive new IDs with parent lineage. Merged sections receive new IDs with both parent IDs. Legacy title-keyed iteration history is migrated when the section UUID can be resolved.
+UUID-based section identity and lineage are implemented. State schema is v4. Existing valid IDs are preserved; missing, invalid, or duplicate IDs are repaired. Split children receive new IDs with parent lineage. Merged sections receive new IDs with both parent IDs. Legacy title-keyed iteration history is migrated when the section UUID can be resolved.
 
 ## Stage 2 — OAA and writer identity integration — complete
 
@@ -24,7 +24,7 @@ Cloudflare provider statistics distinguish logical calls from HTTP retry attempt
 
 Added `analysis/citation_validator.py`. Citation IDs are checked against known source IDs, paragraph coverage is measured, invalid references are reported, and citation coverage participates in convergence.
 
-This does not yet prove semantic claim-to-source entailment.
+This does not prove semantic claim-to-source entailment.
 
 ## Stage 6 — Convergence and persistence — complete
 
