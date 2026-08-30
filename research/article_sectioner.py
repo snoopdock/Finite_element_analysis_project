@@ -81,7 +81,7 @@ def split_article_into_sections(text: str) -> List[Dict]:
         List of dicts: [{"section_type": "methodology", "content": "...", "char_start": 0, "char_end": 500}, ...]
     """
     if not text or not text.strip():
-        return [{"section_type": "unknown", "content": text, "char_start": 0, "char_end": len(text)}]
+        return [{"section_type": "unknown", "content": text, "char_start": 0, "char_end": len(text or "")}]
     
     lines = text.split('\n')
     sections = []
