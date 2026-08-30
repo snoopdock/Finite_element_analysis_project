@@ -1,34 +1,38 @@
 # Sequential Architecture Update Report
 
+This branch contains the requested sequential architecture updates. The `tests/`, `formal/`, Lean, README, and wiki areas were intentionally excluded.
+
 ## Stage 1 — Stable section identity
 
-Implemented a UUID-based identity layer for document sections. State schema is v4. Existing valid section IDs are preserved; missing or duplicate IDs are repaired. Split sections receive new child IDs and parent lineage; merged sections receive a new ID with both parent IDs.
+Implemented UUID-based identity for document sections. State schema is v4. Existing valid IDs are preserved; missing, invalid, or duplicate IDs are repaired. Split children receive new UUIDs and `parent_section_ids`; merged sections receive new UUIDs with both parent IDs. Legacy title-keyed iteration history is migrated where UUIDs can be resolved.
 
 ## Stage 2 — OAA and writer identity integration
 
-Writing history and OAA anomaly keys now prefer section UUIDs instead of mutable titles. Rewrites preserve section IDs. OAA actions locate sections by UUID. Split and merge operations maintain lineage and document order.
+`WritingIndicator`, `DynamicWriter`, and OAA now prefer stable section UUIDs for history and structural operations. Rewrites preserve IDs. OAA actions carry `section_ids`. Split/merge/deduplicate/expansion actions operate on section identity, and merges preserve document order.
 
 ## Stage 3 — Evidence provenance and ranking
 
-Added `research/ranking.py`. Retrieval now records exact provider and originating query for each source. Evidence selection is ranked deterministically instead of depending on asynchronous completion order. The writer consumes ranked knowledge-base items.
+Added `research/ranking.py`. Retrieval records the exact provider and originating query for each source. Multi-query retrieval is ranked deterministically before truncation. Source quality, lexical relevance, section relevance, and citation support are surfaced as ranking components. The writer consumes ranked knowledge items.
+
+The ranking is deterministic lexical/source-quality ranking; it is not embedding-based semantic retrieval.
 
 ## Stage 4 — LLM budget accounting
 
-The Cloudflare provider distinguishes logical LLM calls from HTTP retry attempts and reports both. A provider-level logical call ceiling is enforced, with the workflow explicitly setting the same ceiling.
+The Cloudflare provider now distinguishes logical LLM calls from HTTP retry attempts and reports both. A provider-level logical-call ceiling is enforced, and the GitHub workflow sets the configured ceiling explicitly.
 
 ## Stage 5 — Citation integrity
 
-Added `analysis/citation_validator.py`. Citation IDs are checked against known evidence source IDs and paragraph citation coverage is reported. Convergence now includes citation coverage.
+Added `analysis/citation_validator.py`. Citation IDs are checked against known source IDs, paragraph citation coverage is measured, and invalid references are reported. Citation coverage is included in convergence diagnostics.
 
 This is structural citation validation, not semantic claim-to-source entailment.
 
-## Stage 6 — Convergence and persistence
+## Stage 6 — Convergence and persistent state
 
-Convergence now considers section stability, section completeness, reading coverage, citation coverage, eta variance, and pending adjustment state. State persistence is atomic. Evidence paths are application-rooted.
+Convergence now incorporates eta variance, audit stability, section completeness, reading coverage, citation coverage, and pending actions. State persistence is atomic. Evidence paths are application-rooted.
 
 ## Stage 7 — Reading-state robustness
 
-Reading-state storage is application-rooted and atomically written.
+Reading-state storage is application-rooted and written atomically.
 
 ## Stage 8 — Configuration
 
@@ -36,8 +40,8 @@ Ranking depth and reading/citation convergence thresholds are configurable in `c
 
 ## Stage 9 — Workflow safety
 
-The scheduled GitHub Actions workflow no longer deletes `main` and force-pushes an orphan branch. It now commits generated state normally and pushes to `main`, preserving repository history.
+The scheduled workflow no longer deletes `main` and force-pushes an orphan branch. It now commits generated state normally and pushes the resulting commit to `main`, preserving repository history.
 
-## Verification limitation
+## Verification status
 
-No live Python execution or GitHub Actions run was performed from this environment. The branch was inspected through GitHub and updated coherently, but runtime syntax/import verification still needs to be performed by the repository environment.
+The branch was reviewed through the GitHub integration. A live Python compile/import run and a live GitHub Actions run were not performed from this environment, so runtime verification remains outstanding.
