@@ -75,6 +75,19 @@ def main():
         delay = int(config.get("phase_delay_seconds", 5))
         budget_config = config.get("budget", {})
 
+        # Keep runtime policy aligned with config.yaml. Environment variables
+        # remain explicit overrides for CI or advanced deployments.
+        os.environ.setdefault(
+            "FEA_MAX_LLM_CALLS",
+            str(budget_config.get("max_llm_calls_per_run", 20)),
+        )
+
+        cache_config = config.get("cache", {})
+        os.environ.setdefault(
+            "FEA_CACHE_MAX_SIZE_MB",
+            str(cache_config.get("max_size_mb", 500)),
+        )
+
         account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "").strip()
         api_token = os.environ.get("CLOUDFLARE_API_TOKEN", "").strip()
 
@@ -90,10 +103,6 @@ def main():
             verbose=True,
         )
 
-        # ------------------------------------------------------------
-        # Persistent iteration state
-        # ------------------------------------------------------------
-
         iteration_history = IterationHistory()
 
         if "iteration_history_data" in state:
@@ -101,16 +110,8 @@ def main():
                 state["iteration_history_data"]
             )
 
-        # ------------------------------------------------------------
-        # Controllers
-        # ------------------------------------------------------------
-
         convergence_detector = ConvergenceDetector(config)
         gap_detector = GapDetector(config)
-
-        # SectionSplitter currently performs its own LLM call through
-        # generate_subsection_topics(), so no prompt generator object
-        # is required here.
         section_splitter = SectionSplitter(config)
         section_merger = SectionMerger(config)
 
@@ -119,8 +120,6 @@ def main():
             section_splitter,
             section_merger,
         )
-
-        # Ensure OAA hysteresis state is restored from persistent history.
         oaa_loop.load_persisted_state(iteration_history)
 
         section_leverage = config.get("section_leverage", {})
@@ -132,12 +131,7 @@ def main():
             leverage_map=section_leverage if section_leverage else None,
         )
 
-        # ------------------------------------------------------------
-        # Budget
-        # ------------------------------------------------------------
-
         print("\n=== BUDGET CHECK (Local) ===", file=sys.stderr)
-
         budget_config = check_budget(config)
 
         budget_msg = (
@@ -150,10 +144,6 @@ def main():
             "type": "local",
             "message": budget_msg,
         }
-
-        # ------------------------------------------------------------
-        # Section topics
-        # ------------------------------------------------------------
 
         config_topics = config.get(
             "section_topics",
@@ -187,12 +177,7 @@ def main():
             if title not in section_topics:
                 section_topics.append(title)
 
-        # ------------------------------------------------------------
-        # Reading state / convergence
-        # ------------------------------------------------------------
-
         reading_state = load_reading_state()
-
         existing_evidence = load_json(
             paths["evidence"],
             [],
@@ -207,12 +192,10 @@ def main():
         )
 
         recent_actions = []
-
         pending_adjustment = state.get("pending_adjustment")
 
         if isinstance(pending_adjustment, dict):
             action = pending_adjustment.get("action")
-
             if action:
                 recent_actions.append(action)
 
@@ -239,10 +222,6 @@ def main():
             file=sys.stderr,
         )
 
-        # ------------------------------------------------------------
-        # LLM provider
-        # ------------------------------------------------------------
-
         models = config.get(
             "cloudflare_models",
             ["@cf/meta/llama-3.1-8b-instruct"],
@@ -258,6 +237,12 @@ def main():
             api_token,
             models,
             max_tokens,
+            max_logical_calls=int(
+                budget_config.get(
+                    "max_llm_calls_per_run",
+                    20,
+                )
+            ),
         )
 
         print(f"\nModels: {models}", file=sys.stderr)
@@ -275,10 +260,6 @@ def main():
         print("STARTING FULL CYCLE", file=sys.stderr)
         print("=" * 60, file=sys.stderr)
 
-        # ------------------------------------------------------------
-        # Phase 1: Research
-        # ------------------------------------------------------------
-
         skip_gap = (
             is_converged
             and not state.get("pending_adjustment")
@@ -295,18 +276,11 @@ def main():
             skip_gap_analysis=skip_gap,
         )
 
-        # Recalculate reading summary because research may have
-        # introduced new evidence sources.
         reading_state = load_reading_state()
-
         reading_summary = get_reading_summary(
             evidence,
             reading_state,
         )
-
-        # ------------------------------------------------------------
-        # Decide whether writing/extraction should be skipped
-        # ------------------------------------------------------------
 
         skip_write = convergence_detector.should_skip_write_phase(
             is_converged,
@@ -315,7 +289,6 @@ def main():
 
         sections = state.get("sections", [])
         kb = state.get("knowledge_base", {})
-
         extracted = False
         written = False
         adjustment = None
@@ -327,10 +300,6 @@ def main():
                 file=sys.stderr,
             )
         else:
-            # --------------------------------------------------------
-            # Phase 2: Extract
-            # --------------------------------------------------------
-
             processed_extracted = set(
                 state.get(
                     "processed_sources_extracted",
@@ -373,12 +342,7 @@ def main():
                     delay,
                     budget_config,
                 )
-
                 state["knowledge_base"] = kb
-
-            # --------------------------------------------------------
-            # Phase 3: Write + OAA proposal
-            # --------------------------------------------------------
 
             sections, written, adjustment = phase_write(
                 config,
@@ -392,13 +356,10 @@ def main():
                 iteration_history,
                 oaa_loop,
                 section_topics,
+                writing_indicator=writing_indicator,
             )
 
             state["sections"] = sections
-
-            # --------------------------------------------------------
-            # Phase 3b: Execute OAA adjustment
-            # --------------------------------------------------------
 
             if adjustment:
                 print(
@@ -422,25 +383,14 @@ def main():
                     sections,
                 )
 
-                # The pending adjustment has now been consumed.
                 state.pop("pending_adjustment", None)
-
             else:
-                # There is no newly requested adjustment in this cycle.
                 state.pop("pending_adjustment", None)
-
-        # ------------------------------------------------------------
-        # Phase 4: Assemble
-        # ------------------------------------------------------------
 
         assembled = phase_assemble(
             state,
             paths,
         )
-
-        # ------------------------------------------------------------
-        # Update persistent state
-        # ------------------------------------------------------------
 
         state["cycle"] = int(
             state.get("cycle", 0)
@@ -451,24 +401,18 @@ def main():
         ) + 1
 
         state["last_run"] = utcnow()
-
         state["last_run_status"] = (
             "success"
             if not errors
             else "partial"
         )
 
-        state["model_usage"] = (
-            provider.get_stats()
-            if not skip_write
-            else state.get("model_usage", {})
-        )
-
+        stats = provider.get_stats()
+        state["model_usage"] = stats
         state["parser_stats"] = (
             llm_parser_instance.get_stats()
         )
 
-        # Persist OAA anomaly counters into iteration history.
         oaa_loop.save_persisted_state(
             iteration_history
         )
@@ -477,9 +421,7 @@ def main():
             iteration_history.to_dict()
         )
 
-        # Recompute reading summary after extraction.
         final_reading_state = load_reading_state()
-
         final_evidence = load_json(
             paths["evidence"],
             [],
@@ -500,23 +442,11 @@ def main():
             )
         )
 
-        state["convergence_diagnostics"] = (
-            convergence_diag
-        )
+        state["convergence_diagnostics"] = convergence_diag
 
         save_state(
             paths,
             state,
-        )
-
-        # ------------------------------------------------------------
-        # Cycle report
-        # ------------------------------------------------------------
-
-        stats = (
-            provider.get_stats()
-            if not skip_write
-            else state.get("model_usage", {})
         )
 
         report_lines = [
@@ -529,26 +459,19 @@ def main():
             "",
             "## Convergence Diagnostics",
             "",
-            f"- Eta variance: "
-            f"{convergence_diag.get('eta_variance')}",
-            f"- Invariant violations: "
-            f"{convergence_diag.get('invariant_violations')}",
-            f"- Adjust actions: "
-            f"{convergence_diag.get('adjust_actions')}",
-            f"- Incomplete sections: "
-            f"{convergence_diag.get('incomplete_sections')}",
-            f"- Unstable sections: "
-            f"{convergence_diag.get('unstable_sections')}",
-            f"- Reading coverage: "
-            f"{convergence_diag.get('reading_coverage', 0.0):.2f}%",
+            f"- Eta variance: {convergence_diag.get('eta_variance')}",
+            f"- Invariant violations: {convergence_diag.get('invariant_violations')}",
+            f"- Adjust actions: {convergence_diag.get('adjust_actions')}",
+            f"- Incomplete sections: {convergence_diag.get('incomplete_sections')}",
+            f"- Unstable sections: {convergence_diag.get('unstable_sections')}",
+            f"- Reading coverage: {convergence_diag.get('reading_coverage', 0.0):.2f}%",
             "",
             "## This Cycle",
             "",
             f"- New sources found: {new_sources}",
             f"- Extracted: {extracted}",
             f"- Sections written: {written}",
-            f"- Adjustment executed: "
-            f"{adjustment.get('action') if adjustment else 'none'}",
+            f"- Adjustment executed: {adjustment.get('action') if adjustment else 'none'}",
             f"- Write phase skipped: {skip_write}",
             f"- LaTeX assembled: {assembled}",
             "",
@@ -557,11 +480,8 @@ def main():
         if errors:
             report_lines.append("## Errors")
             report_lines.append("")
-
             for error in errors:
-                report_lines.append(
-                    f"- {error}"
-                )
+                report_lines.append(f"- {error}")
         else:
             report_lines.extend(
                 [
