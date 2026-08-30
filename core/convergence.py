@@ -8,8 +8,8 @@ import pathlib
 import statistics
 from typing import Dict, List, Tuple
 
-from core.section_identity import ensure_section_id
 from analysis.citation_validator import validate_document_citations
+from core.section_identity import ensure_section_id, get_section_id
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
@@ -38,6 +38,34 @@ class ConvergenceDetector:
                 return section
         return None
 
+    @staticmethod
+    def _current_section_ids(sections: List[Dict]) -> set:
+        result = set()
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            section_id = get_section_id(section)
+            if section_id:
+                result.add(section_id)
+        return result
+
+    @staticmethod
+    def _descendants_of(parent_id: str, sections: List[Dict]) -> List[Dict]:
+        if not parent_id:
+            return []
+        result = []
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            parent_ids = section.get("parent_section_ids", [])
+            if isinstance(parent_ids, str):
+                parent_ids = [parent_ids]
+            if not isinstance(parent_ids, list):
+                continue
+            if parent_id in {str(value) for value in parent_ids}:
+                result.append(section)
+        return result
+
     def _load_persisted_evidence(self) -> List[Dict]:
         try:
             with open(self.evidence_path, "r", encoding="utf-8") as handle:
@@ -46,7 +74,26 @@ class ConvergenceDetector:
         except (OSError, json.JSONDecodeError):
             return []
 
-    def check_convergence(self, iteration_history, writing_indicator, section_topics: List[str], recent_actions: List[str], sections: List[Dict] = None, reading_summary: Dict = None, evidence: List[Dict] = None) -> Tuple[bool, Dict]:
+    def _targets_for_topic(self, topic: str, sections: List[Dict], iteration_history) -> List[Dict]:
+        section = self._section_for_topic(topic, sections)
+        if section is not None:
+            return [section]
+
+        resolver = getattr(iteration_history, "resolve_section_key", None)
+        old_id = resolver(topic) if callable(resolver) else str(topic)
+        descendants = self._descendants_of(old_id, sections)
+        return descendants
+
+    def check_convergence(
+        self,
+        iteration_history,
+        writing_indicator,
+        section_topics: List[str],
+        recent_actions: List[str],
+        sections: List[Dict] = None,
+        reading_summary: Dict = None,
+        evidence: List[Dict] = None,
+    ) -> Tuple[bool, Dict]:
         sections = sections or []
         recent_actions = recent_actions or []
         if evidence is None:
@@ -66,62 +113,186 @@ class ConvergenceDetector:
             "reasons": [],
         }
 
+        # ------------------------------------------------------------
+        # Eta calculation
+        # ------------------------------------------------------------
+
         eta_values = []
         for topic in section_topics:
             if not topic:
                 continue
-            section = self._section_for_topic(topic, sections)
-            target = section if section is not None else topic
-            eta_values.append(float(writing_indicator.compute(target, iteration_history)))
 
-        variance = statistics.variance(eta_values) if len(eta_values) > 1 else 0.0
+            targets = self._targets_for_topic(
+                topic,
+                sections,
+                iteration_history,
+            )
+
+            if targets:
+                for target in targets:
+                    eta_values.append(
+                        float(
+                            writing_indicator.compute(
+                                target,
+                                iteration_history,
+                            )
+                        )
+                    )
+            else:
+                eta_values.append(
+                    float(
+                        writing_indicator.compute(
+                            topic,
+                            iteration_history,
+                        )
+                    )
+                )
+
+        variance = (
+            statistics.variance(eta_values)
+            if len(eta_values) > 1
+            else 0.0
+        )
         diagnostics["eta_variance"] = variance
+
+        # ------------------------------------------------------------
+        # Audit stability
+        # ------------------------------------------------------------
 
         recent_failures = 0
         unstable_sections = 0
+        evaluated_ids = set()
+
         for topic in section_topics:
             if not topic:
                 continue
-            section = self._section_for_topic(topic, sections)
-            if section is not None:
-                history_key = section.get("section_id")
-            elif hasattr(iteration_history, "resolve_section_key"):
-                history_key = iteration_history.resolve_section_key(topic)
-            else:
-                history_key = topic
 
-            audits = iteration_history.audits.get(history_key, [])
+            targets = self._targets_for_topic(
+                topic,
+                sections,
+                iteration_history,
+            )
+
+            for target in targets:
+                section_id = get_section_id(target)
+                if not section_id or section_id in evaluated_ids:
+                    continue
+                evaluated_ids.add(section_id)
+
+                audits = iteration_history.audits.get(
+                    section_id,
+                    [],
+                )
+
+                if not audits:
+                    unstable_sections += 1
+                    continue
+
+                recent = audits[-self.m:]
+                recent_failures += sum(
+                    1
+                    for audit in recent
+                    if not bool(audit)
+                )
+
+                if (
+                    len(audits) < self.m
+                    or not all(bool(audit) for audit in recent)
+                ):
+                    unstable_sections += 1
+
+        # Every actual document section is relevant to convergence, including
+        # dynamically-created sections not present in the original config.
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+
+            section_id = get_section_id(section)
+            if not section_id or section_id in evaluated_ids:
+                continue
+
+            audits = iteration_history.audits.get(
+                section_id,
+                [],
+            )
+
             if not audits:
                 unstable_sections += 1
                 continue
 
             recent = audits[-self.m:]
-            recent_failures += sum(1 for audit in recent if not bool(audit))
-            if len(audits) < self.m or not all(bool(audit) for audit in recent):
+            recent_failures += sum(
+                1
+                for audit in recent
+                if not bool(audit)
+            )
+
+            if (
+                len(audits) < self.m
+                or not all(bool(audit) for audit in recent)
+            ):
                 unstable_sections += 1
 
         diagnostics["invariant_violations"] = recent_failures
         diagnostics["unstable_sections"] = unstable_sections
+
+        # ------------------------------------------------------------
+        # Completeness
+        # ------------------------------------------------------------
 
         incomplete_sections = 0
         for section in sections:
             if not isinstance(section, dict):
                 incomplete_sections += 1
                 continue
+
             content = section.get("content", "")
             content = content if isinstance(content, str) else str(content)
             status = section.get("status", "")
-            if len(content.split()) < self.min_words_per_section or status in {"needs_generation", "needs_rewrite", "needs_expansion", "incomplete"}:
+
+            if (
+                len(content.split()) < self.min_words_per_section
+                or status in {
+                    "needs_generation",
+                    "needs_rewrite",
+                    "needs_expansion",
+                    "incomplete",
+                }
+            ):
                 incomplete_sections += 1
+
         diagnostics["incomplete_sections"] = incomplete_sections
 
-        reading_coverage = float((reading_summary or {}).get("reading_coverage_percent", 0.0))
+        # ------------------------------------------------------------
+        # Reading and citations
+        # ------------------------------------------------------------
+
+        reading_coverage = float(
+            (reading_summary or {}).get(
+                "reading_coverage_percent",
+                0.0,
+            )
+        )
         diagnostics["reading_coverage"] = reading_coverage
 
-        citation_summary = validate_document_citations(sections, evidence)
-        citation_coverage = float(citation_summary.get("citation_coverage_percent", 0.0))
+        citation_summary = validate_document_citations(
+            sections,
+            evidence,
+        )
+
+        citation_coverage = float(
+            citation_summary.get(
+                "citation_coverage_percent",
+                0.0,
+            )
+        )
         diagnostics["citation_coverage"] = citation_coverage
-        diagnostics["invalid_citation_sections"] = len(citation_summary.get("invalid_sections", []))
+        diagnostics["invalid_citation_sections"] = len(
+            citation_summary.get(
+                "invalid_sections",
+                [],
+            )
+        )
 
         conditions = {
             "variance_ok": variance < self.epsilon,
@@ -129,26 +300,59 @@ class ConvergenceDetector:
             "no_actions": len(recent_actions) == 0,
             "all_sections_stable": unstable_sections == 0,
             "all_sections_complete": incomplete_sections == 0,
-            "sufficient_reading": reading_coverage >= self.minimum_reading_coverage,
-            "sufficient_citations": citation_summary.get("valid", False) and citation_coverage >= self.minimum_citation_coverage,
+            "sufficient_reading": (
+                reading_coverage >= self.minimum_reading_coverage
+            ),
+            "sufficient_citations": (
+                citation_summary.get("valid", False)
+                and citation_coverage >= self.minimum_citation_coverage
+            ),
         }
 
         if not evidence:
             conditions["sufficient_citations"] = True
-            diagnostics["reasons"].append("citation_evidence_unavailable")
+            diagnostics["reasons"].append(
+                "citation_evidence_unavailable"
+            )
 
         for name, passed in conditions.items():
             if not passed:
                 diagnostics["reasons"].append(name)
 
-        is_converged = all(conditions.values())
-        self.consecutive_convergence = self.consecutive_convergence + 1 if is_converged else 0
-        diagnostics["consecutive_clean_cycles"] = self.consecutive_convergence
+        is_converged = all(
+            conditions.values()
+        )
+
+        self.consecutive_convergence = (
+            self.consecutive_convergence + 1
+            if is_converged
+            else 0
+        )
+
+        diagnostics["consecutive_clean_cycles"] = (
+            self.consecutive_convergence
+        )
         diagnostics["converged"] = is_converged
-        return is_converged, diagnostics
 
-    def should_skip_write_phase(self, is_converged: bool, new_sources_found: bool) -> bool:
-        return bool(is_converged and not new_sources_found)
+        return (
+            is_converged,
+            diagnostics,
+        )
 
-    def should_skip_extract_phase(self, unprocessed_sources: int) -> bool:
-        return int(unprocessed_sources) <= 0
+    def should_skip_write_phase(
+        self,
+        is_converged: bool,
+        new_sources_found: bool,
+    ) -> bool:
+        return bool(
+            is_converged
+            and not new_sources_found
+        )
+
+    def should_skip_extract_phase(
+        self,
+        unprocessed_sources: int,
+    ) -> bool:
+        return int(
+            unprocessed_sources
+        ) <= 0
