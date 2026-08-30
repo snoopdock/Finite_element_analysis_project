@@ -11,16 +11,14 @@ seed_queries:
   - finite element shape functions isoparametric elements
   - finite element assembly global stiffness boundary conditions
 
-# Add after seed_queries:
-
-# FIX #9: Single source of truth for section topics
+# Single source of truth for section topics
 section_topics:
   - "Introduction and Scope of the Finite Element Method"
   - "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method"
   - "The Finite Element Procedure"
   - "Rules for Modeling Physical Phenomena with FEM"
   - "Verification, Validation, and Best Practices"
-# Leverage values for each section (auto-generated if omitted)
+
 # Higher leverage = more downstream dependency = higher priority
 section_leverage:
   "Introduction and Scope of the Finite Element Method": 1.0
@@ -29,13 +27,11 @@ section_leverage:
   "Rules for Modeling Physical Phenomena with FEM": 0.4
   "Verification, Validation, and Best Practices": 0.2
 
-# Update budget section:
 budget:
   daily_neuron_limit: 10000
-  max_llm_calls_per_run: 20    # FIX #10: Increased from 6
+  max_llm_calls_per_run: 20
   max_tokens_per_call: 2500
 
-# Update writing section:
 writing:
   w_L: 0.4
   w_U: 0.4
@@ -43,13 +39,15 @@ writing:
   theta: 0.75
   tau: 0.6
   hysteresis: 2
-  max_retries_per_paragraph: 2   # Add this
-
-# Add these new sections:
+  max_retries_per_paragraph: 2
+  top_k_knowledge_items: 6
 
 convergence:
   window: 3
   eta_variance_threshold: 0.1
+  minimum_reading_coverage_percent: 80.0
+  minimum_citation_coverage_percent: 80.0
+  evidence_path: output/evidence.json
 
 gap_detection:
   max_wikipedia_topics: 30
@@ -69,12 +67,9 @@ splitting:
 merging:
   overlap_threshold: 0.6
   min_section_count: 3
-  
+
 cloudflare_models:
-  # The Strict JSON Specialist (Excellent at formatting)
   - "@hf/nousresearch/hermes-2-pro-mistral-7b"
-  
-  # The Reliable All-Rounders (Proven to write great content in your logs)
   - "@cf/meta/llama-3.1-8b-instruct"
   - "@cf/mistral/mistral-7b-instruct-v0.1"
   - "@cf/meta/llama-3.2-3b-instruct"
