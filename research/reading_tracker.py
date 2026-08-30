@@ -108,24 +108,13 @@ def get_article_provenance(article_id: str, reading_state: Dict) -> Dict:
 def get_unread_article_ids(reading_state: Dict, all_article_ids: List[str]) -> List[str]:
     """
     Find articles that still have unread sections.
-    
-    Args:
-        reading_state: Current reading state
-        all_article_ids: All article IDs in the evidence pool
-        
-    Returns:
-        List of article IDs that haven't been fully read yet
     """
     unread = []
     for aid in all_article_ids:
         if aid not in reading_state:
-            # Never read at all
             unread.append(aid)
         else:
             article = reading_state[aid]
-            # Check if there are sections not yet read
-            # This would be checked against the article_sectioner output
-            # For now, we consider it unread if coverage < 100%
             details = article.get("section_details", [])
             if len(details) < 5:  # Heuristic: most papers have 5+ sections
                 unread.append(aid)
