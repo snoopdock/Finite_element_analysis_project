@@ -12,20 +12,25 @@ from core.section_identity import ensure_section_id
 from analysis.citation_validator import validate_document_citations
 
 
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
 class ConvergenceDetector:
     def __init__(self, config: Dict):
         convergence_config = config.get("convergence", {})
         self.m = max(1, int(convergence_config.get("window", 3)))
         self.epsilon = float(convergence_config.get("eta_variance_threshold", 0.1))
         self.min_words_per_section = int(convergence_config.get("min_words_per_section", 150))
-        self.minimum_reading_coverage = float(
-            convergence_config.get("minimum_reading_coverage_percent", 80.0)
-        )
-        self.minimum_citation_coverage = float(
-            convergence_config.get("minimum_citation_coverage_percent", 80.0)
-        )
-        self.evidence_path = pathlib.Path(
+        self.minimum_reading_coverage = float(convergence_config.get("minimum_reading_coverage_percent", 80.0))
+        self.minimum_citation_coverage = float(convergence_config.get("minimum_citation_coverage_percent", 80.0))
+
+        configured_path = pathlib.Path(
             convergence_config.get("evidence_path", "output/evidence.json")
+        )
+        self.evidence_path = (
+            configured_path
+            if configured_path.is_absolute()
+            else ROOT / configured_path
         )
         self.consecutive_convergence = 0
 
@@ -87,7 +92,6 @@ class ConvergenceDetector:
 
         variance = statistics.variance(eta_values) if len(eta_values) > 1 else 0.0
         diagnostics["eta_variance"] = variance
-        variance_ok = variance < self.epsilon
 
         recent_failures = 0
         unstable_sections = 0
@@ -95,13 +99,13 @@ class ConvergenceDetector:
             if not topic:
                 continue
             section = self._section_for_topic(topic, sections)
-            history_key = (
-                section.get("section_id")
-                if section
-                else iteration_history.resolve_section_key(topic)
-                if hasattr(iteration_history, "resolve_section_key")
-                else topic
-            )
+            if section is not None:
+                history_key = section.get("section_id")
+            elif hasattr(iteration_history, "resolve_section_key"):
+                history_key = iteration_history.resolve_section_key(topic)
+            else:
+                history_key = topic
+
             audits = iteration_history.audits.get(history_key, [])
             if not audits:
                 unstable_sections += 1
@@ -125,8 +129,7 @@ class ConvergenceDetector:
             status = section.get("status", "")
             if len(content.split()) < self.min_words_per_section:
                 incomplete_sections += 1
-                continue
-            if status in {"needs_generation", "needs_rewrite", "needs_expansion", "incomplete"}:
+            elif status in {"needs_generation", "needs_rewrite", "needs_expansion", "incomplete"}:
                 incomplete_sections += 1
 
         diagnostics["incomplete_sections"] = incomplete_sections
@@ -140,7 +143,7 @@ class ConvergenceDetector:
         diagnostics["invalid_citation_sections"] = len(citation_summary.get("invalid_sections", []))
 
         conditions = {
-            "variance_ok": variance_ok,
+            "variance_ok": variance < self.epsilon,
             "no_violations": recent_failures == 0,
             "no_actions": len(recent_actions) == 0,
             "all_sections_stable": unstable_sections == 0,
@@ -152,8 +155,6 @@ class ConvergenceDetector:
             ),
         }
 
-        # A completely new project may not have evidence yet. In that bootstrap
-        # case citation coverage is not a meaningful convergence constraint.
         if not evidence:
             conditions["sufficient_citations"] = True
             diagnostics["reasons"].append("citation_evidence_unavailable")
