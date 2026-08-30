@@ -1,49 +1,162 @@
 #!/usr/bin/env python3
-"""Iteration History - Tracks audits, anomalies, and OAA state across cycles."""
+"""
+Iteration History.
 
-from typing import Dict, List, Optional
+Tracks:
+- section audit history
+- anomaly history
+- persistent OAA hysteresis counters
+"""
+
+from typing import Dict, List
 
 
 class IterationHistory:
+
     def __init__(self):
         self.audits: Dict[str, List[bool]] = {}
         self.anomalies: Dict[str, int] = {}
-        self.anomaly_counts: Dict[str, int] = {}  # FIX #8: Persistent OAA anomaly counts
+        self.anomaly_counts: Dict[str, int] = {}
 
-    def record_clean_audit(self, section: str):
-        self.audits.setdefault(section, []).append(True)
+    # ------------------------------------------------------------
+    # Audit history
+    # ------------------------------------------------------------
 
-    def record_failed_audit(self, section: str):
-        self.audits.setdefault(section, []).append(False)
+    def record_clean_audit(
+        self,
+        section: str,
+    ) -> None:
+        if not section:
+            return
 
-    def record_anomaly(self, key: str):
-        self.anomalies[key] = self.anomalies.get(key, 0) + 1
+        self.audits.setdefault(
+            section,
+            [],
+        ).append(True)
 
-    def reset_anomaly(self, key: str):
-        """Clear an anomaly when it is resolved by an adjustment."""
+    def record_failed_audit(
+        self,
+        section: str,
+    ) -> None:
+        if not section:
+            return
+
+        self.audits.setdefault(
+            section,
+            [],
+        ).append(False)
+
+    # ------------------------------------------------------------
+    # General anomaly history
+    # ------------------------------------------------------------
+
+    def record_anomaly(
+        self,
+        key: str,
+    ) -> None:
+        if not key:
+            return
+
+        self.anomalies[key] = (
+            self.anomalies.get(key, 0)
+            + 1
+        )
+
+    def reset_anomaly(
+        self,
+        key: str,
+    ) -> None:
         if key in self.anomalies:
             self.anomalies[key] = 0
 
-    def clear_all_anomalies(self):
-        for key in self.anomalies:
+    def clear_all_anomalies(self) -> None:
+        for key in list(
+            self.anomalies.keys()
+        ):
             self.anomalies[key] = 0
 
-    def get_anomaly_counts(self) -> Dict[str, int]:
-        """FIX #8: Get persisted OAA anomaly counts."""
-        return dict(self.anomaly_counts)
+    # ------------------------------------------------------------
+    # Persistent OAA hysteresis
+    # ------------------------------------------------------------
 
-    def set_anomaly_counts(self, counts: Dict[str, int]):
-        """FIX #8: Set OAA anomaly counts from persisted state."""
-        self.anomaly_counts = dict(counts)
+    def get_anomaly_counts(
+        self,
+    ) -> Dict[str, int]:
+        return dict(
+            self.anomaly_counts
+        )
+
+    def set_anomaly_counts(
+        self,
+        counts: Dict[str, int],
+    ) -> None:
+        if not isinstance(counts, dict):
+            self.anomaly_counts = {}
+            return
+
+        cleaned = {}
+
+        for key, value in counts.items():
+            if not isinstance(key, str):
+                continue
+
+            try:
+                numeric = int(value)
+            except (TypeError, ValueError):
+                continue
+
+            cleaned[key] = max(
+                0,
+                numeric,
+            )
+
+        self.anomaly_counts = cleaned
+
+    # ------------------------------------------------------------
+    # Serialization
+    # ------------------------------------------------------------
 
     def to_dict(self) -> Dict:
         return {
             "audits": self.audits,
             "anomalies": self.anomalies,
-            "anomaly_counts": self.anomaly_counts,  # FIX #8: Persist OAA counts
+            "anomaly_counts": self.anomaly_counts,
         }
 
-    def load_from_dict(self, data: Dict):
-        self.audits = data.get("audits", {})
-        self.anomalies = data.get("anomalies", {})
-        self.anomaly_counts = data.get("anomaly_counts", {})  # FIX #8: Load OAA counts
+    def load_from_dict(
+        self,
+        data: Dict,
+    ) -> None:
+        if not isinstance(data, dict):
+            return
+
+        audits = data.get(
+            "audits",
+            {},
+        )
+
+        anomalies = data.get(
+            "anomalies",
+            {},
+        )
+
+        anomaly_counts = data.get(
+            "anomaly_counts",
+            {},
+        )
+
+        self.audits = (
+            audits
+            if isinstance(audits, dict)
+            else {}
+        )
+
+        self.anomalies = (
+            anomalies
+            if isinstance(anomalies, dict)
+            else {}
+        )
+
+        self.set_anomaly_counts(
+            anomaly_counts
+        )
