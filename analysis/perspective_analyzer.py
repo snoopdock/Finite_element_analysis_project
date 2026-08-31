@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from typing import Dict, List, Optional
@@ -61,6 +62,15 @@ def _clean_list(value: object) -> List[str]:
     return out
 
 
+def _comparison_id(proposition_a: Dict, proposition_b: Dict) -> str:
+    ids = [
+        _clean(proposition_a.get("proposition_id")),
+        _clean(proposition_b.get("proposition_id")),
+    ]
+    payload = "|".join(sorted(ids))
+    return "cmp-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
 def normalize_comparison(value: Optional[Dict]) -> Dict:
     value = value if isinstance(value, dict) else {}
     relationship = _clean(value.get("relationship", "insufficient_evidence")).lower()
@@ -89,8 +99,18 @@ def compare_propositions(
     max_tokens: int = 600,
 ) -> Dict:
     """Compare two propositions with one bounded LLM call."""
+    comparison_id = _comparison_id(proposition_a, proposition_b)
     if provider.budget_exhausted():
-        return {"comparison": normalize_comparison({}), "skipped": True, "reason": "LLM budget exhausted."}
+        return {
+            "comparison_id": comparison_id,
+            "proposition_ids": [
+                proposition_a.get("proposition_id"),
+                proposition_b.get("proposition_id"),
+            ],
+            "comparison": normalize_comparison({}),
+            "skipped": True,
+            "reason": "LLM budget exhausted.",
+        }
 
     prompt = (
         "PROPOSITION A:\n" + _clean(proposition_a.get("statement", "")) +
@@ -110,7 +130,16 @@ def compare_propositions(
     )
 
     if error or not text:
-        return {"comparison": normalize_comparison({}), "skipped": True, "reason": error or "Empty response."}
+        return {
+            "comparison_id": comparison_id,
+            "proposition_ids": [
+                proposition_a.get("proposition_id"),
+                proposition_b.get("proposition_id"),
+            ],
+            "comparison": normalize_comparison({}),
+            "skipped": True,
+            "reason": error or "Empty response.",
+        }
 
     try:
         parsed = parser.parse(text, model_name="perspective_analyzer")
@@ -123,8 +152,19 @@ def compare_propositions(
     if isinstance(parsed, list) and len(parsed) == 1 and isinstance(parsed[0], dict):
         parsed = parsed[0]
 
+    comparison = normalize_comparison(parsed)
     return {
-        "comparison": normalize_comparison(parsed),
+        "comparison_id": comparison_id,
+        "proposition_ids": [
+            proposition_a.get("proposition_id"),
+            proposition_b.get("proposition_id"),
+        ],
+        "source_ids": sorted({
+            str(value)
+            for value in list(proposition_a.get("source_ids", [])) + list(proposition_b.get("source_ids", []))
+            if value
+        }),
+        "comparison": comparison,
         "skipped": False,
         "reason": "",
     }
