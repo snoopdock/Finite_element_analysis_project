@@ -10,7 +10,6 @@ Run from the repository root:
 
 from __future__ import annotations
 
-import copy
 import json
 import sys
 import tempfile
@@ -25,13 +24,16 @@ from core.knowledge_graph import validate_graph_references
 from core.graph_state import graph_summary
 
 
+
 def _assert(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
 
 
+
 def _paths(directory: Path) -> dict[str, str]:
     return {"state": str(directory / "state.json")}
+
 
 
 def _audit_new_state() -> dict:
@@ -50,6 +52,7 @@ def _audit_new_state() -> dict:
         _assert(restored.get("schema_version") == SCHEMA_VERSION, "Round-trip changed schema version.")
         _assert(graph_summary(restored)["violations"] == 0, "Round-trip produced graph violations.")
         return graph_summary(restored)
+
 
 
 def _audit_v4_migration() -> dict:
@@ -87,6 +90,7 @@ def _audit_v4_migration() -> dict:
         _assert(any(p.get("statement") == "A test proposition" for p in propositions.values()), "Proposition was not bridged.")
         _assert(not validate_graph_references(graph), "Migrated graph contains violations.")
         return graph_summary(state)
+
 
 
 def main() -> int:
