@@ -11,7 +11,7 @@ from typing import Dict
 
 from core.section_identity import normalize_sections
 from core.knowledge_graph import normalize_graph, validate_graph_references
-from analysis.knowledge_graph_builder import sync_legacy_knowledge_base
+from core.knowledge_graph_builder import sync_legacy_knowledge_base
 
 SCHEMA_VERSION = 5
 
