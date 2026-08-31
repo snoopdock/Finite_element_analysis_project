@@ -9,11 +9,14 @@ available locally. It deliberately does not claim semantic entailment.
 from __future__ import annotations
 
 import os
+import pathlib
 import re
 from typing import Dict, Iterable, List, Set
 
 from analysis.evidence_support import support_for_citations
 
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 _CITATION_RE = re.compile(
     r"\[([^\[\]\s,]+(?:\s*,\s*[^\[\]\s,]+)*)\]"
@@ -39,11 +42,18 @@ def _source_text(item: Dict) -> str:
             return value
 
     path = item.get("full_text_path")
-    if not path or not isinstance(path, str) or not os.path.exists(path):
+    if not path or not isinstance(path, str):
+        return ""
+
+    candidate = pathlib.Path(path)
+    if not candidate.is_absolute():
+        candidate = ROOT / candidate
+
+    if not candidate.exists():
         return ""
 
     try:
-        with open(path, "r", encoding="utf-8") as handle:
+        with open(candidate, "r", encoding="utf-8") as handle:
             return handle.read()
     except OSError:
         return ""
