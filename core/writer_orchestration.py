@@ -15,6 +15,7 @@ from analysis.semantic_verifier import verify_claim
 from analysis.semantic_feedback import attach_feedback
 from analysis.correction_planner import plan_corrections
 from analysis.perspective_registry import record_perspective_jobs
+from core.decision_state import append_decision_history
 
 
 def _citation_ids(text: str) -> List[str]:
@@ -76,6 +77,12 @@ def phase_write_policy_aware(
     )
 
     state["last_writing_decisions"] = list(writer.last_decisions)
+    writing_config = config.get("writing", {})
+    append_decision_history(
+        state,
+        writer.last_decisions,
+        max_records=int(writing_config.get("max_decision_history", 100)),
+    )
 
     semantic_config = config.get("semantic_verification", {})
     max_claims = int(semantic_config.get("max_claims_per_cycle", 0))
@@ -208,7 +215,7 @@ def phase_write_policy_aware(
                 max_sources=int(semantic_config.get("max_sources_per_claim", 2)),
                 max_passages_per_source=int(semantic_config.get("max_passages_per_source", 2)),
                 max_passage_chars=int(semantic_config.get("max_passage_chars", 1800)),
-                max_tokens=int(semantic_config.get("max_tokens_per_claim", 700)),
+                max_tokens=int(semantic_config.get("max_claims_per_cycle", 700)),
                 model=semantic_config.get("model"),
             )
 
