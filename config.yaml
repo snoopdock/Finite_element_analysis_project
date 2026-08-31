@@ -81,6 +81,15 @@ semantic_verification:
   max_tokens_per_claim: 700
   model: null
 
+  # Stage 4: scientific-context extraction. Disabled by default until runtime
+  # evaluation confirms that its extra calls are worthwhile.
+  context_enrichment_enabled: false
+  max_context_items_per_cycle: 3
+  max_context_sources_per_item: 2
+  max_context_passage_chars: 1800
+  context_model: null
+  max_context_tokens: 500
+
   # Perspective/corrective loop. Also disabled by default.
   correction_enabled: false
   max_evidence_queries_per_cycle: 2
