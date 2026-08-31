@@ -22,6 +22,12 @@ class ConvergenceDetector:
         self.min_words_per_section = int(convergence_config.get("min_words_per_section", 150))
         self.minimum_reading_coverage = float(convergence_config.get("minimum_reading_coverage_percent", 80.0))
         self.minimum_citation_coverage = float(convergence_config.get("minimum_citation_coverage_percent", 80.0))
+        self.minimum_lexical_support_coverage = float(
+            convergence_config.get(
+                "minimum_lexical_support_coverage_percent",
+                0.0,
+            )
+        )
 
         configured_path = pathlib.Path(convergence_config.get("evidence_path", "output/evidence.json"))
         self.evidence_path = configured_path if configured_path.is_absolute() else ROOT / configured_path
@@ -108,6 +114,7 @@ class ConvergenceDetector:
             "unstable_sections": 0,
             "reading_coverage": 0.0,
             "citation_coverage": 0.0,
+            "lexical_support_coverage": 0.0,
             "invalid_citation_sections": 0,
             "converged": False,
             "reasons": [],
@@ -286,7 +293,14 @@ class ConvergenceDetector:
                 0.0,
             )
         )
+        lexical_support_coverage = float(
+            citation_summary.get(
+                "lexical_support_coverage_percent",
+                0.0,
+            )
+        )
         diagnostics["citation_coverage"] = citation_coverage
+        diagnostics["lexical_support_coverage"] = lexical_support_coverage
         diagnostics["invalid_citation_sections"] = len(
             citation_summary.get(
                 "invalid_sections",
@@ -309,11 +323,20 @@ class ConvergenceDetector:
             ),
         }
 
+        # The lexical-support gate is optional. A value <= 0 reports the
+        # metric without making it a convergence requirement.
+        if self.minimum_lexical_support_coverage > 0.0:
+            conditions["sufficient_lexical_support"] = (
+                lexical_support_coverage
+                >= self.minimum_lexical_support_coverage
+            )
+
         if not evidence:
             conditions["sufficient_citations"] = True
-            diagnostics["reasons"].append(
-                "citation_evidence_unavailable"
-            )
+            if self.minimum_lexical_support_coverage <= 0.0:
+                diagnostics["reasons"].append(
+                    "citation_evidence_unavailable"
+                )
 
         for name, passed in conditions.items():
             if not passed:
