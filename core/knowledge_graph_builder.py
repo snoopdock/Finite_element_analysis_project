@@ -27,22 +27,42 @@ def _find_concept(graph: Dict[str, Dict], name: str, concept_type: str) -> str |
     return None
 
 
-def _ensure_concept(graph: Dict[str, Dict], name: str, concept_type: str, source_ids: List[str]) -> str:
+def _ensure_concept(
+    graph: Dict[str, Dict],
+    history: List[Dict[str, Any]],
+    name: str,
+    concept_type: str,
+    source_ids: List[str],
+) -> str:
     existing = _find_concept(graph, name, concept_type)
     if existing:
         concept = graph[existing]
-        current_sources = set(concept.get("source_ids", []))
-        current_sources.update(source_ids)
-        concept["source_ids"] = sorted(current_sources)
+        before = set(concept.get("source_ids", []))
+        after = before | set(source_ids)
+        if after != before:
+            concept["source_ids"] = sorted(after)
+            history.append({
+                "event": "provenance_extended",
+                "concept_id": existing,
+                "source_ids_added": sorted(after - before),
+            })
         return existing
 
     concept = normalize_concept({
         "concept_id": new_graph_id(),
         "name": str(name).strip(),
         "type": concept_type,
+        "source_ids": source_ids,
+        "status": "active",
     })
-    concept["source_ids"] = sorted({str(value) for value in source_ids if value})
     graph[concept["concept_id"]] = concept
+    history.append({
+        "event": "concept_discovered",
+        "concept_id": concept["concept_id"],
+        "name": concept["name"],
+        "type": concept["type"],
+        "source_ids": list(concept.get("source_ids", [])),
+    })
     return concept["concept_id"]
 
 
@@ -73,10 +93,13 @@ def sync_legacy_knowledge_base(state: Dict[str, Any]) -> Dict[str, Any]:
 
     concepts = graph.get("concepts", {})
     propositions = graph.get("propositions", {})
+    history = graph.get("concept_history", [])
     if not isinstance(concepts, dict):
         concepts = {}
     if not isinstance(propositions, dict):
         propositions = {}
+    if not isinstance(history, list):
+        history = []
 
     kb = state.get("knowledge_base", {})
     if not isinstance(kb, dict):
@@ -88,6 +111,7 @@ def sync_legacy_knowledge_base(state: Dict[str, Any]) -> Dict[str, Any]:
             continue
         concept_id = _ensure_concept(
             concepts,
+            history,
             str(item.get("name")),
             "concept",
             [str(value) for value in item.get("source_ids", []) if value],
@@ -133,7 +157,7 @@ def sync_legacy_knowledge_base(state: Dict[str, Any]) -> Dict[str, Any]:
 
     graph["concepts"] = concepts
     graph["propositions"] = propositions
-    graph.setdefault("relationships", {})
-    graph.setdefault("concept_history", [])
+    graph["relationships"] = graph.get("relationships", {}) if isinstance(graph.get("relationships", {}), dict) else {}
+    graph["concept_history"] = history
     state["knowledge_graph"] = graph
     return state
