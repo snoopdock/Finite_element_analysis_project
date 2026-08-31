@@ -84,7 +84,7 @@ def select_source_passages(
     ]
 
     candidates = []
-    for index, sentence in enumerate(sentences):
+    for index, _ in enumerate(sentences):
         start = max(0, index - 1)
         end = min(len(sentences), index + 2)
         passage = " ".join(sentences[start:end])
@@ -157,9 +157,10 @@ def verify_claim(
     model: Optional[str] = None,
     max_tokens: int = 700,
 ) -> Dict:
-    """Verify a claim against cited full-text passages using one LLM call."""
+    """Verify a claim against cited full-text passages using LLM calls."""
     claim = _normalize_text(claim)
     source_reports = []
+    source_verdicts = []
 
     for source_id in [str(value) for value in citation_ids if value][:max_sources]:
         item = evidence_by_id.get(source_id, {})
@@ -175,6 +176,7 @@ def verify_claim(
                 "reason": "No full text is available for this cited source.",
                 "passages": [],
             })
+            source_verdicts.append("insufficient_evidence")
             continue
 
         passages = select_source_passages(
@@ -192,6 +194,7 @@ def verify_claim(
                 "reason": "No relevant source passage could be selected.",
                 "passages": [],
             })
+            source_verdicts.append("insufficient_evidence")
             continue
 
         user_prompt = (
@@ -233,6 +236,7 @@ def verify_claim(
                 "reason": error or "Verifier returned an invalid response.",
                 "passages": passages,
             })
+            source_verdicts.append("insufficient_evidence")
             continue
 
         source_reports.append({
@@ -240,6 +244,7 @@ def verify_claim(
             **parsed,
             "passages": passages,
         })
+        source_verdicts.append(parsed["judgment"])
 
     if not source_reports:
         return {
@@ -250,29 +255,42 @@ def verify_claim(
             "verification_skipped": True,
         }
 
-    for preferred in ("supported", "contradicted"):
-        matches = [
-            report
-            for report in source_reports
-            if report.get("judgment") == preferred
-        ]
-        if matches:
-            best = max(matches, key=lambda report: float(report.get("confidence", 0.0)))
-            return {
-                "judgment": preferred,
-                "confidence": float(best.get("confidence", 0.0)),
-                "reason": str(best.get("reason", "")),
-                "sources": source_reports,
-                "verification_skipped": False,
-            }
+    supported = any(value == "supported" for value in source_verdicts)
+    contradicted = any(value == "contradicted" for value in source_verdicts)
+
+    if supported and contradicted:
+        return {
+            "judgment": "insufficient_evidence",
+            "confidence": 0.0,
+            "reason": "Cited sources produced conflicting semantic judgments.",
+            "sources": source_reports,
+            "verification_skipped": False,
+            "source_conflict": True,
+        }
+
+    preferred = "supported" if supported else "contradicted" if contradicted else "insufficient_evidence"
+    matches = [
+        report
+        for report in source_reports
+        if report.get("judgment") == preferred
+    ]
+    best = max(
+        matches,
+        key=lambda report: float(report.get("confidence", 0.0)),
+    ) if matches else None
 
     return {
-        "judgment": "insufficient_evidence",
-        "confidence": max(
+        "judgment": preferred,
+        "confidence": float(best.get("confidence", 0.0)) if best else max(
             float(report.get("confidence", 0.0))
             for report in source_reports
         ),
-        "reason": "Cited passages did not establish or contradict the claim.",
+        "reason": (
+            str(best.get("reason", ""))
+            if best
+            else "Cited passages did not establish or contradict the claim."
+        ),
         "sources": source_reports,
         "verification_skipped": False,
+        "source_conflict": False,
     }
