@@ -28,29 +28,37 @@ class PolicyAwareOAALoop(OAALoop):
             "writing",
             {},
         )
-        oaa_policy = writing.get(
-            "oaa_action_policy",
+        oaa_config = config.get(
+            "oaa",
             {},
         )
+        oaa_policy = writing.get(
+            "oaa_action_policy",
+            oaa_config.get("action_policy", {}),
+        )
+        if not isinstance(oaa_policy, dict):
+            oaa_policy = {}
 
         self.action_policy = OAAActionPolicy(
             severity_weights=oaa_policy.get(
-                "severity_weights"
+                "severity_weights",
+                oaa_config.get("severity_weights"),
             ),
             cost_weights=oaa_policy.get(
-                "cost_weights"
+                "cost_weights",
+                oaa_config.get("cost_weights"),
             ),
             persistence_weight=oaa_policy.get(
                 "persistence_weight",
-                0.35,
+                oaa_config.get("persistence_weight", 0.35),
             ),
             severity_weight=oaa_policy.get(
                 "severity_weight",
-                0.50,
+                oaa_config.get("severity_weight", 0.50),
             ),
             cost_weight=oaa_policy.get(
                 "cost_weight",
-                0.15,
+                oaa_config.get("cost_weight", 0.15),
             ),
         )
 
