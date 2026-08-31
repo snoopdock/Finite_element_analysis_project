@@ -90,6 +90,14 @@ semantic_verification:
   context_model: null
   max_context_tokens: 500
 
+  # Stage 5: graph-native scientific perspective comparison.
+  perspective_enabled: false
+  max_perspective_pairs_per_job: 1
+  max_perspective_jobs_per_cycle: 2
+  perspective_minimum_overlap: 0.15
+  perspective_max_records: 200
+  perspective_model: null
+
   # Perspective/corrective loop. Also disabled by default.
   correction_enabled: false
   max_evidence_queries_per_cycle: 2
