@@ -3,14 +3,19 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from analysis.writing_policy import WritingDecisionPolicy
 from writing.dynamic_writer import DynamicWriter
+from writing.output_validator import (
+    WritingValidationError,
+    validate_paragraph,
+    validate_section_structure,
+)
 
 
 class PolicyAwareDynamicWriter(DynamicWriter):
-    """DynamicWriter with explicit Stage 2 scheduling/model policy."""
+    """DynamicWriter with explicit scheduling, model policy, and validation."""
 
     def __init__(
         self,
@@ -58,6 +63,22 @@ class PolicyAwareDynamicWriter(DynamicWriter):
         )
 
         self._decision_sections: List[Dict] = []
+
+        self.min_paragraph_words = int(
+            writing_config.get(
+                "min_paragraph_words",
+                20,
+            )
+        )
+
+        self.max_paragraph_words: Optional[int] = writing_config.get(
+            "max_paragraph_words"
+        )
+
+        if self.max_paragraph_words is not None:
+            self.max_paragraph_words = int(
+                self.max_paragraph_words
+            )
 
     def mark_sections(
         self,
@@ -161,6 +182,47 @@ class PolicyAwareDynamicWriter(DynamicWriter):
 
         return str(
             models[index]
+        )
+
+    def _draft_paragraph(
+        self,
+        *args,
+        **kwargs,
+    ) -> Optional[str]:
+        """Delegate generation, then apply deterministic prose validation."""
+        result = super()._draft_paragraph(
+            *args,
+            **kwargs,
+        )
+
+        if result is None:
+            return None
+
+        try:
+            validated = validate_paragraph(
+                result,
+                min_words=self.min_paragraph_words,
+                max_words=self.max_paragraph_words,
+            )
+        except WritingValidationError:
+            return None
+
+        return validated["text"]
+
+    def _validate_section(
+        self,
+        section: Dict,
+    ) -> bool:
+        try:
+            validate_section_structure(
+                section,
+                min_words=100,
+            )
+        except WritingValidationError:
+            return False
+
+        return super()._validate_section(
+            section
         )
 
     def run(
