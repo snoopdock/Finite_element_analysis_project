@@ -1,0 +1,32 @@
+version: 1
+name: scientific_context_extraction
+purpose: >-
+  Preserve the scientific conditions needed to interpret extracted propositions
+  without treating context extraction as a truth judgment.
+
+context:
+  framework: string
+  assumptions: list[string]
+  definitions: list[string]
+  conditions: list[string]
+  domain_of_validity: list[string]
+  parameters: map[string, string]
+  boundary_conditions: list[string]
+  initial_conditions: list[string]
+  method: string
+  approximation: list[string]
+  scope: string
+
+proposition_record:
+  required:
+    - statement_or_item_field
+    - source_ids
+  optional:
+    - context
+
+invariants:
+  - source_ids must refer only to supplied evidence.
+  - missing context remains empty; it is not inferred from absence.
+  - context does not determine proposition truth.
+  - proposition identity remains independent of context and concept identity.
+  - full-text-only enrichment is required when source passages are used.
