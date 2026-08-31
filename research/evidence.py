@@ -17,6 +17,7 @@ from research.content_cache import cleanup_cache
 from research.article_sectioner import split_article_into_sections, get_unread_sections
 from research.reading_tracker import mark_section_read
 from research.ranking import rank_items_for_queries
+from research.diversity import select_diverse_evidence
 
 
 def retrieve_evidence_parallel(
@@ -205,14 +206,22 @@ def retrieve_evidence_parallel(
     ranked = rank_items_for_queries(
         normalized_queries,
         candidates,
-        top_k=max(0, int(max_items)),
+        # Rank the full candidate pool first. Diversity selection below then
+        # chooses the requested number without losing credible alternatives
+        # that merely ranked behind a concentrated provider cluster.
+        top_k=len(candidates),
+    )
+
+    selected = select_diverse_evidence(
+        ranked,
+        max_items=max(0, int(max_items)),
     )
 
     # Cleanup once more after retrieval because downloading new full-text may
     # have pushed the cache over its size limit.
     cleanup_cache()
 
-    return ranked
+    return selected
 
 
 def get_next_unread_content(
