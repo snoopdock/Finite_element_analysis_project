@@ -11,7 +11,7 @@ from typing import Dict
 
 from core.section_identity import normalize_sections
 from core.knowledge_graph import normalize_graph, validate_graph_references
-from core.knowledge_graph_builder import sync_legacy_knowledge_base
+from core.graph_state import ensure_graph_state, empty_graph
 
 SCHEMA_VERSION = 5
 
@@ -41,8 +41,7 @@ def initialize_state(paths: Dict, config: Dict) -> Dict:
 
     state["sections"] = normalize_sections(state.get("sections", []))
     _normalize_iteration_history(state)
-    state["knowledge_graph"] = normalize_graph(state.get("knowledge_graph", {}))
-    sync_legacy_knowledge_base(state)
+    ensure_graph_state(state)
     state["knowledge_graph"] = normalize_graph(state["knowledge_graph"])
     state["knowledge_graph_violations"] = validate_graph_references(
         state["knowledge_graph"]
@@ -61,12 +60,7 @@ def _default_state(config: Dict) -> Dict:
         "last_run": None,
         "last_run_status": None,
         "knowledge_base": {},
-        "knowledge_graph": {
-            "concepts": {},
-            "propositions": {},
-            "relationships": {},
-            "concept_history": [],
-        },
+        "knowledge_graph": empty_graph(),
         "knowledge_graph_violations": [],
         "sections": [],
         "processed_sources": [],
@@ -202,8 +196,7 @@ def save_state(paths: Dict, state: Dict):
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state["sections"] = normalize_sections(state.get("sections", []))
     _normalize_iteration_history(state)
-    state["knowledge_graph"] = normalize_graph(state.get("knowledge_graph", {}))
-    sync_legacy_knowledge_base(state)
+    ensure_graph_state(state)
     state["knowledge_graph"] = normalize_graph(state["knowledge_graph"])
     state["knowledge_graph_violations"] = validate_graph_references(
         state["knowledge_graph"]
