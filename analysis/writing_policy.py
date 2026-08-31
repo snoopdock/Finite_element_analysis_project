@@ -75,7 +75,7 @@ class WritingDecisionPolicy:
             priority = eta * self._semantic_priority(section_or_topic)
         else:
             priority = eta
-        return eta, max(0.0, min(1.0, priority))
+        return eta, max(0.0, priority)
 
     def rank_sections(self, sections: Sequence, indicator, history) -> List[Tuple[object, float]]:
         """Return sections ordered by feedback-adjusted priority."""
