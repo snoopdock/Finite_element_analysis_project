@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from core.section_identity import ensure_section_identity, normalize_sections
+from core.section_identity import ensure_section_id, normalize_sections
 
 
 def _assert(condition: bool, message: str) -> None:
@@ -20,10 +20,10 @@ def _assert(condition: bool, message: str) -> None:
 
 def main() -> int:
     try:
-        first = ensure_section_identity({"title": "Parent section", "content": "text"})
-        original_id = first["section_id"]
-        same = ensure_section_identity(first)
-        _assert(same["section_id"] == original_id, "Existing section ID was not preserved.")
+        first = {"title": "Parent section", "content": "text"}
+        original_id = ensure_section_id(first)
+        same_id = ensure_section_id(first)
+        _assert(same_id == original_id, "Existing section ID was not preserved.")
 
         children = normalize_sections([
             {
