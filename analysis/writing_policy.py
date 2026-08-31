@@ -8,12 +8,12 @@ selection. It is deterministic and contains no LLM calls.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
 
 @dataclass(frozen=True)
 class SectionDecision:
-    """Decision metadata for one section."""
+    """Immutable, auditable decision metadata for one section."""
 
     section_id: Optional[str]
     title: str
@@ -22,6 +22,38 @@ class SectionDecision:
     selected: bool
     model_index: int
     model: str
+
+    def validate(self, models: Sequence[str]) -> None:
+        """Raise ValueError if the decision record is internally inconsistent."""
+        if self.section_id is not None and not str(self.section_id).strip():
+            raise ValueError("section_id must be None or non-empty.")
+        if not str(self.title).strip():
+            raise ValueError("title must be non-empty.")
+        if not 0.0 <= float(self.eta) <= 1.0:
+            raise ValueError("eta must be in [0, 1].")
+        if float(self.priority) < 0.0:
+            raise ValueError("priority must be non-negative.")
+        if not isinstance(self.selected, bool):
+            raise ValueError("selected must be boolean.")
+        if not models:
+            raise ValueError("At least one model is required.")
+        if not 0 <= int(self.model_index) < len(models):
+            raise ValueError("model_index is outside the supplied model list.")
+        if str(self.model) != str(models[self.model_index]):
+            raise ValueError("model does not match model_index.")
+
+    def to_dict(self, models: Sequence[str]) -> dict[str, Any]:
+        """Return a JSON-serializable audit record after validation."""
+        self.validate(models)
+        return {
+            "section_id": self.section_id,
+            "title": self.title,
+            "eta": float(self.eta),
+            "priority": float(self.priority),
+            "selected": bool(self.selected),
+            "model_index": int(self.model_index),
+            "model": self.model,
+        }
 
 
 class WritingDecisionPolicy:
@@ -140,8 +172,14 @@ class WritingDecisionPolicy:
             return self._normalize_model_index(self.high_eta_model_index, models)
         return self._normalize_model_index(self.low_eta_model_index, models)
 
-    def decide(self, sections: Sequence[dict], indicator, history, models: Sequence[str]) -> List[SectionDecision]:
-        """Produce deterministic decisions for supplied sections."""
+    def decide(
+        self,
+        sections: Sequence[dict],
+        indicator,
+        history,
+        models: Sequence[str],
+    ) -> List[SectionDecision]:
+        """Produce deterministic, self-validating decisions for supplied sections."""
         ranked = self.rank_sections(sections, indicator, history)
         selected_items = self.select_sections(ranked)
         selected_ids = {
@@ -163,16 +201,16 @@ class WritingDecisionPolicy:
             )
 
             model_index = self.select_model_index(eta, models)
-            result.append(
-                SectionDecision(
-                    section_id=str(section_id) if section_id else None,
-                    title=title,
-                    eta=eta,
-                    priority=priority,
-                    selected=selected,
-                    model_index=model_index,
-                    model=str(models[model_index]),
-                )
+            decision = SectionDecision(
+                section_id=str(section_id) if section_id else None,
+                title=title,
+                eta=eta,
+                priority=priority,
+                selected=selected,
+                model_index=model_index,
+                model=str(models[model_index]),
             )
+            decision.validate(models)
+            result.append(decision)
 
         return result
