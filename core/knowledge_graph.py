@@ -107,6 +107,50 @@ def _normalize_opaque_list(values: Any) -> List[str]:
     return result
 
 
+def _normalize_strings(values: Any) -> List[str]:
+    if isinstance(values, str):
+        values = [values]
+    if not isinstance(values, list):
+        return []
+    result = []
+    seen = set()
+    for value in values:
+        text = str(value).strip()
+        if text and text not in seen:
+            seen.add(text)
+            result.append(text)
+    return result
+
+
+def _bounded_float(value: Any) -> float:
+    try:
+        return max(0.0, min(1.0, float(value)))
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _normalize_context_view(value: Any) -> Dict[str, Any]:
+    """Build a stable context view without inferring missing scientific facts."""
+    raw = value if isinstance(value, dict) else {}
+    return {
+        "framework": str(raw.get("framework", "")).strip(),
+        "assumptions": _normalize_strings(raw.get("assumptions", [])),
+        "definitions": _normalize_strings(raw.get("definitions", [])),
+        "conditions": _normalize_strings(raw.get("conditions", [])),
+        "domain_of_validity": _normalize_strings(raw.get("domain_of_validity", [])),
+        "parameters": (
+            dict(raw.get("parameters", {}))
+            if isinstance(raw.get("parameters", {}), dict)
+            else {}
+        ),
+        "boundary_conditions": _normalize_strings(raw.get("boundary_conditions", [])),
+        "initial_conditions": _normalize_strings(raw.get("initial_conditions", [])),
+        "method": str(raw.get("method", "")).strip(),
+        "approximation": _normalize_strings(raw.get("approximation", [])),
+        "scope": str(raw.get("scope", "")).strip(),
+    }
+
+
 def normalize_concept(concept: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize one concept record without inventing provenance."""
     ensure_graph_id(concept, CONCEPT_ID_KEY)
@@ -114,9 +158,7 @@ def normalize_concept(concept: Dict[str, Any]) -> Dict[str, Any]:
     concept["type"] = str(concept.get("type", "concept")).strip() or "concept"
     if concept["type"] not in VALID_CONCEPT_TYPES:
         concept["type"] = "other"
-    concept["parent_concept_ids"] = normalize_id_list(
-        concept.get("parent_concept_ids", [])
-    )
+    concept["parent_concept_ids"] = normalize_id_list(concept.get("parent_concept_ids", []))
     concept["aliases"] = [
         str(value).strip()
         for value in concept.get("aliases", [])
@@ -135,13 +177,16 @@ def normalize_proposition(proposition: Dict[str, Any]) -> Dict[str, Any]:
     proposition["framework"] = str(proposition.get("framework", "")).strip()
     proposition["assumptions"] = _normalize_strings(proposition.get("assumptions", []))
     proposition["conditions"] = _normalize_strings(proposition.get("conditions", []))
-    proposition["domain_of_validity"] = _normalize_strings(
-        proposition.get("domain_of_validity", [])
-    )
+    proposition["domain_of_validity"] = _normalize_strings(proposition.get("domain_of_validity", []))
     proposition["definitions"] = _normalize_strings(proposition.get("definitions", []))
     proposition["parameters"] = _normalize_strings(proposition.get("parameters", []))
+    proposition["boundary_conditions"] = _normalize_strings(proposition.get("boundary_conditions", []))
+    proposition["initial_conditions"] = _normalize_strings(proposition.get("initial_conditions", []))
     proposition["method"] = str(proposition.get("method", "")).strip()
     proposition["approximation"] = _normalize_strings(proposition.get("approximation", []))
+    proposition["scope"] = str(proposition.get("scope", proposition.get("scope_notes", ""))).strip()
+    proposition["scope_notes"] = proposition["scope"]
+    proposition["context"] = _normalize_context_view(proposition.get("context", proposition))
     proposition["source_ids"] = _normalize_opaque_list(proposition.get("source_ids", []))
     status = str(proposition.get("status", "proposed")).strip()
     proposition["status"] = status if status in VALID_PROPOSITION_STATUS else "proposed"
@@ -154,12 +199,8 @@ def normalize_relationship(relationship: Dict[str, Any]) -> Dict[str, Any]:
     relationship["source_id"] = normalize_uuid(relationship.get("source_id"))
     relationship["target_id"] = normalize_uuid(relationship.get("target_id"))
     relation_type = str(relationship.get("type", "related_to")).strip()
-    relationship["type"] = (
-        relation_type if relation_type in VALID_RELATIONSHIP_TYPES else "related_to"
-    )
-    relationship["proposition_ids"] = normalize_id_list(
-        relationship.get("proposition_ids", [])
-    )
+    relationship["type"] = relation_type if relation_type in VALID_RELATIONSHIP_TYPES else "related_to"
+    relationship["proposition_ids"] = normalize_id_list(relationship.get("proposition_ids", []))
     relationship["source_ids"] = _normalize_opaque_list(relationship.get("source_ids", []))
     relationship["framework"] = str(relationship.get("framework", "")).strip()
     relationship["assumptions"] = _normalize_strings(relationship.get("assumptions", []))
@@ -183,7 +224,6 @@ def normalize_graph(graph: Dict[str, Any]) -> Dict[str, Any]:
         concepts = converted
     elif not isinstance(concepts, dict):
         concepts = {}
-
     for concept_id, concept in list(concepts.items()):
         if not isinstance(concept, dict):
             concepts.pop(concept_id, None)
@@ -203,7 +243,6 @@ def normalize_graph(graph: Dict[str, Any]) -> Dict[str, Any]:
         propositions = converted
     elif not isinstance(propositions, dict):
         propositions = {}
-
     for proposition_id, proposition in list(propositions.items()):
         if not isinstance(proposition, dict):
             propositions.pop(proposition_id, None)
@@ -223,7 +262,6 @@ def normalize_graph(graph: Dict[str, Any]) -> Dict[str, Any]:
         relationships = converted
     elif not isinstance(relationships, dict):
         relationships = {}
-
     for relationship_id, relationship in list(relationships.items()):
         if not isinstance(relationship, dict):
             relationships.pop(relationship_id, None)
@@ -247,7 +285,6 @@ def validate_graph_references(graph: Dict[str, Any]) -> List[str]:
     concepts = graph.get("concepts", {}) if isinstance(graph, dict) else {}
     propositions = graph.get("propositions", {}) if isinstance(graph, dict) else {}
     relationships = graph.get("relationships", {}) if isinstance(graph, dict) else {}
-
     concept_ids = set(concepts) if isinstance(concepts, dict) else set()
     proposition_ids = set(propositions) if isinstance(propositions, dict) else set()
 
@@ -273,29 +310,5 @@ def validate_graph_references(graph: Dict[str, Any]) -> List[str]:
             errors.append(f"Relationship {relationship_id} references missing target {target_id}.")
         for proposition_id in relationship.get("proposition_ids", []):
             if proposition_id not in proposition_ids:
-                errors.append(
-                    f"Relationship {relationship_id} references missing proposition {proposition_id}."
-                )
+                errors.append(f"Relationship {relationship_id} references missing proposition {proposition_id}.")
     return errors
-
-
-def _normalize_strings(values: Any) -> List[str]:
-    if isinstance(values, str):
-        values = [values]
-    if not isinstance(values, list):
-        return []
-    result = []
-    seen = set()
-    for value in values:
-        text = str(value).strip()
-        if text and text not in seen:
-            seen.add(text)
-            result.append(text)
-    return result
-
-
-def _bounded_float(value: Any) -> float:
-    try:
-        return max(0.0, min(1.0, float(value)))
-    except (TypeError, ValueError):
-        return 0.0
