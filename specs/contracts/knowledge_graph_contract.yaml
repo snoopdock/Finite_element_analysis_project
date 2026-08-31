@@ -1,0 +1,79 @@
+version: 1
+purpose: >-
+  Define the minimum structural contract for the provenance-aware scientific
+  knowledge graph. This contract is descriptive; it does not mutate runtime state.
+
+entities:
+  concept:
+    identity: concept_id
+    required_fields:
+      - concept_id
+      - name
+      - type
+    provenance_fields:
+      - source_ids
+    semantic_rule: >-
+      A concept names an entity, method, formulation, theory, phenomenon,
+      parameter, algorithm, mathematical object, application, or other reusable
+      subject. A concept is not itself a scientific assertion.
+
+  proposition:
+    identity: proposition_id
+    required_fields:
+      - proposition_id
+      - statement
+      - status
+    provenance_fields:
+      - source_ids
+    context_fields:
+      - framework
+      - assumptions
+      - conditions
+      - domain_of_validity
+      - definitions
+      - parameters
+      - method
+      - approximation
+    semantic_rule: >-
+      A proposition is an assertion that can be supported, disputed,
+      qualified, superseded, or left unresolved. Its identity must remain
+      distinct from the concepts mentioned by the assertion.
+
+  relationship:
+    identity: relationship_id
+    required_fields:
+      - relationship_id
+      - source_id
+      - target_id
+      - type
+    provenance_fields:
+      - source_ids
+      - proposition_ids
+    semantic_rule: >-
+      A relationship records a typed connection between graph entities. A
+      contradiction-like relationship is evidence of disagreement or contextual
+      difference, not an instruction to rewrite either endpoint.
+
+invariants:
+  - entity_ids_are_stable_uuid_strings
+  - concept_parent_references_must_exist
+  - proposition_concept_references_must_exist
+  - relationship_endpoints_must_exist
+  - relationship_proposition_references_must_exist
+  - graph_normalization_must_not_invent_provenance
+  - provenance_ids_may_be_opaque_source_identifiers
+  - proposition_context_must_be_stored_on_the_proposition_or_relationship
+  - identical_statement_may_represent_distinct_propositions_when_provenance_differs
+  - legacy_knowledge_base_must_remain_available_during_migration
+
+relationship_policy:
+  contradiction_semantics:
+    appears_to_contradict: unresolved_disagreement
+    contradicts_under_same_assumptions: high_priority_scientific_disagreement
+    contrasts_with: different_framework_or_scope
+    conditional_on: dependency_or_condition
+  forbidden_implicit_actions:
+    - rewrite
+    - delete
+    - downgrade_source
+    - declare_winner
