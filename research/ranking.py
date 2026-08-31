@@ -56,25 +56,42 @@ def lexical_score(query: str, text: str) -> float:
     return min(1.0, score / (2.5 * len(query_tokens)))
 
 
-def source_quality_score(item: Dict) -> float:
-    source_type = str(
-        item.get("source_type")
-        or item.get("provider")
-        or item.get("source")
-        or "unknown"
-    ).lower()
-
-    if "wikipedia" in source_type:
+def _quality_for_value(value: object) -> float:
+    text = str(value or "unknown").lower()
+    if "wikipedia" in text:
         return SOURCE_QUALITY["wikipedia"]
-    if "arxiv" in source_type:
+    if "arxiv" in text:
         return SOURCE_QUALITY["arxiv"]
-    if "semantic" in source_type:
+    if "semantic" in text:
         return SOURCE_QUALITY["academic"]
-    if "journal" in source_type:
+    if "peer_reviewed" in text:
+        return SOURCE_QUALITY["peer_reviewed"]
+    if "journal" in text:
         return SOURCE_QUALITY["journal"]
-    if "book" in source_type:
+    if "conference" in text:
+        return SOURCE_QUALITY["conference"]
+    if "book" in text:
         return SOURCE_QUALITY["book"]
-    return SOURCE_QUALITY.get(source_type, SOURCE_QUALITY["unknown"])
+    return SOURCE_QUALITY.get(text, SOURCE_QUALITY["unknown"])
+
+
+def source_quality_score(item: Dict) -> float:
+    """Return the strongest quality prior represented by known provenance."""
+    values = []
+
+    for key in ("source_type", "provider", "source"):
+        value = item.get(key)
+        if value:
+            values.append(_quality_for_value(value))
+
+    for key in ("source_types", "provider_names"):
+        value = item.get(key, [])
+        if isinstance(value, str):
+            value = [value]
+        if isinstance(value, list):
+            values.extend(_quality_for_value(entry) for entry in value if entry)
+
+    return max(values, default=SOURCE_QUALITY["unknown"])
 
 
 def section_relevance_score(topic: str, section_type: str, text: str) -> float:
