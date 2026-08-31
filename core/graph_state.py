@@ -3,24 +3,24 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
+from analysis.knowledge_graph_builder import sync_legacy_knowledge_base
 from core.knowledge_graph import normalize_graph, validate_graph_references
 
 
 def ensure_graph_state(state: Dict[str, Any]) -> Dict[str, Any]:
-    """Return state with a normalized knowledge graph and deterministic diagnostics.
-
-    The legacy ``knowledge_base`` remains untouched. The graph is a separate
-    representation so concepts and propositions can evolve independently.
-    """
+    """Ensure the graph is normalized and populated from legacy KB data."""
     graph = state.get("knowledge_graph", {})
     if not isinstance(graph, dict):
         graph = {}
-
-    normalize_graph(graph)
     state["knowledge_graph"] = graph
-    state["knowledge_graph_violations"] = validate_graph_references(graph)
+
+    sync_legacy_knowledge_base(state)
+    normalize_graph(state["knowledge_graph"])
+    state["knowledge_graph_violations"] = validate_graph_references(
+        state["knowledge_graph"]
+    )
     return state
 
 
