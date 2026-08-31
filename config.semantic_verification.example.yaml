@@ -1,0 +1,9 @@
+semantic_verification:
+  # Keep disabled by default: semantic review consumes LLM calls.
+  enabled: false
+  max_claims_per_cycle: 4
+  max_sources_per_claim: 2
+  max_passages_per_source: 2
+  max_passage_chars: 1800
+  max_tokens_per_claim: 700
+  model: null
