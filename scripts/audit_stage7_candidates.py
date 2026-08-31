@@ -19,24 +19,30 @@ def main() -> int:
     graph = {
         "concepts": {
             P1: {"concept_id": P1, "name": "Finite Element Method", "source_ids": ["s1"],
-                 "relationship_hints": [{"target_concept_id": P2, "type": "generalizes", "reason": "Explicit source hint."}]},
+                 "relationship_hints": [
+                     {"target_concept_id": P2, "type": "generalizes", "reason": "Explicit source hint."},
+                     {"target_concept_id": P3, "type": "alternative_to", "reason": "Reverse duplicate test."},
+                 ]},
             P2: {"concept_id": P2, "name": "Galerkin Method", "source_ids": ["s2"]},
             P3: {"concept_id": P3, "name": "Unrelated", "source_ids": ["s3"],
-                 "relationship_hints": [{"target_concept_id": "missing", "type": "related_to"}]},
+                 "relationship_hints": [{"target_concept_id": P1, "type": "alternative_to", "reason": "Same symmetric relation."}]},
         },
         "propositions": {},
         "relationships": {},
     }
 
     changed = candidate_relationships(graph)
-    check(changed == 1, "Unexpected candidate count.")
+    check(changed == 2, "Unexpected candidate count.")
     candidates = graph["relationship_candidates"]
-    check(len(candidates) == 1, "Invalid relationship candidate was stored.")
-    candidate = next(iter(candidates.values()))
-    check(candidate["source_id"] == P1, "Wrong candidate source.")
-    check(candidate["target_id"] == P2, "Wrong candidate target.")
-    check(candidate["type"] == "generalizes", "Wrong relationship type.")
-    check(candidate["status"] == "candidate", "Candidate became authoritative.")
+    check(len(candidates) == 2, "Invalid relationship candidate was stored or symmetric duplicate was created.")
+
+    generalizes = [c for c in candidates.values() if c["type"] == "generalizes"][0]
+    check(generalizes["source_id"] == P1, "Directional relationship source changed.")
+    check(generalizes["target_id"] == P2, "Directional relationship target changed.")
+
+    alternative = [c for c in candidates.values() if c["type"] == "alternative_to"][0]
+    check(alternative["source_id"] < alternative["target_id"], "Symmetric relationship was not canonicalized.")
+    check(alternative["status"] == "candidate", "Candidate became authoritative.")
     check(not graph["relationships"], "Candidate unexpectedly entered authoritative relationships.")
 
     changed_again = candidate_relationships(graph)
@@ -44,7 +50,7 @@ def main() -> int:
 
     print("Stage 7 candidate relationship audit")
     print("====================================")
-    print("PASS: explicit hints, reference validation, non-authoritative storage, and idempotence passed.")
+    print("PASS: explicit hints, directional/symmetric semantics, validation, non-authoritative storage, and idempotence passed.")
     return 0
 
 
