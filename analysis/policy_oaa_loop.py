@@ -66,26 +66,25 @@ class PolicyAwareOAALoop(OAALoop):
         self,
         actionable_anomalies: List[Dict],
     ) -> Optional[Dict]:
-        ranked = self.action_policy.rank(
+        decision = self.action_policy.choose(
             actionable_anomalies,
             self.anomaly_counts,
         )
-
-        if not ranked:
+        if decision is None:
             return None
 
         adjustment = super().adjust(
-            ranked[:1]
+            [
+                anomaly
+                for anomaly in actionable_anomalies
+                if isinstance(anomaly, dict)
+                and str(anomaly.get("key", "")) == decision.key
+            ][:1]
         )
 
         if adjustment is None:
             return None
 
-        adjustment["adjustment_score"] = dict(
-            ranked[0].get(
-                "adjustment_score",
-                {},
-            )
-        )
-
+        adjustment["adjustment_score"] = decision.to_dict()["score"]
+        adjustment["decision_record"] = decision.to_dict()
         return adjustment
