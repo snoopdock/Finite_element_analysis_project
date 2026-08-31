@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 SYSTEM_PROMPT = """You are a cautious scientific-context extractor.
@@ -18,29 +18,31 @@ Return ONLY valid JSON:
 {
   "framework": "",
   "assumptions": [],
+  "definitions": [],
   "conditions": [],
   "domain_of_validity": [],
-  "definitions": [],
-  "parameters": [],
+  "parameters": {},
+  "boundary_conditions": [],
+  "initial_conditions": [],
   "method": "",
   "approximation": [],
-  "scope_notes": ""
+  "scope": ""
 }
 
 Unknown fields must be empty rather than invented.
 """
 
-_FIELDS = {
-    "framework",
+TEXT_FIELDS = {"framework", "method", "scope"}
+LIST_FIELDS = {
     "assumptions",
+    "definitions",
     "conditions",
     "domain_of_validity",
-    "definitions",
-    "parameters",
-    "method",
+    "boundary_conditions",
+    "initial_conditions",
     "approximation",
-    "scope_notes",
 }
+PARAMETER_FIELD = "parameters"
 
 
 def _clean_text(value: object) -> str:
@@ -52,7 +54,7 @@ def _clean_list(value: object) -> List[str]:
         value = [value]
     if not isinstance(value, list):
         return []
-    result = []
+    result: List[str] = []
     seen = set()
     for entry in value:
         text = _clean_text(entry)
@@ -62,20 +64,43 @@ def _clean_list(value: object) -> List[str]:
     return result
 
 
-def normalize_context(value: Optional[Dict]) -> Dict:
-    """Normalize a context object without adding unsupported context."""
-    value = value if isinstance(value, dict) else {}
-    return {
-        "framework": _clean_text(value.get("framework", "")),
-        "assumptions": _clean_list(value.get("assumptions", [])),
-        "conditions": _clean_list(value.get("conditions", [])),
-        "domain_of_validity": _clean_list(value.get("domain_of_validity", [])),
-        "definitions": _clean_list(value.get("definitions", [])),
-        "parameters": _clean_list(value.get("parameters", [])),
-        "method": _clean_text(value.get("method", "")),
-        "approximation": _clean_list(value.get("approximation", [])),
-        "scope_notes": _clean_text(value.get("scope_notes", "")),
-    }
+def _clean_parameters(value: object) -> Dict[str, str]:
+    if not isinstance(value, dict):
+        return {}
+    result: Dict[str, str] = {}
+    for key, raw_value in value.items():
+        clean_key = _clean_text(key)
+        clean_value = _clean_text(raw_value)
+        if clean_key and clean_value:
+            result[clean_key] = clean_value
+    return result
+
+
+def normalize_context(value: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Normalize context without inventing unsupported scientific information."""
+    raw = value if isinstance(value, dict) else {}
+    result: Dict[str, Any] = {}
+    for field in TEXT_FIELDS:
+        result[field] = _clean_text(raw.get(field, ""))
+    for field in LIST_FIELDS:
+        result[field] = _clean_list(raw.get(field, []))
+    result[PARAMETER_FIELD] = _clean_parameters(raw.get(PARAMETER_FIELD, {}))
+    result["scope_notes"] = result["scope"]
+    return result
+
+
+def context_difference(
+    context_a: Optional[Dict[str, Any]],
+    context_b: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Return field-level context differences; not a contradiction judgment."""
+    a = normalize_context(context_a)
+    b = normalize_context(context_b)
+    differences: Dict[str, Any] = {}
+    for field in (*sorted(TEXT_FIELDS), *sorted(LIST_FIELDS), PARAMETER_FIELD):
+        if a[field] != b[field]:
+            differences[field] = {"a": a[field], "b": b[field]}
+    return differences
 
 
 def extract_context(
@@ -90,18 +115,14 @@ def extract_context(
     """Extract scientific context using one bounded LLM call."""
     claim = _clean_text(claim)
     passages = [_clean_text(p) for p in passages if _clean_text(p)]
-
     if not claim or not passages:
         return {"context": normalize_context({}), "skipped": True, "reason": "Missing claim or passages."}
-
     if provider.budget_exhausted():
         return {"context": normalize_context({}), "skipped": True, "reason": "LLM budget exhausted."}
 
-    prompt = (
-        "CLAIM:\n" + claim + "\n\nSOURCE PASSAGES:\n" +
-        "\n\n".join(f"[{i + 1}] {p}" for i, p in enumerate(passages[:4]))
+    prompt = "CLAIM:\n" + claim + "\n\nSOURCE PASSAGES:\n" + "\n\n".join(
+        f"[{i + 1}] {p}" for i, p in enumerate(passages[:4])
     )
-
     text, error = provider.chat(
         [
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -111,7 +132,6 @@ def extract_context(
         max_tokens=max_tokens,
         model=model,
     )
-
     if error or not text:
         return {"context": normalize_context({}), "skipped": True, "reason": error or "Empty response."}
 
@@ -122,16 +142,13 @@ def extract_context(
             parsed = json.loads(text)
         except Exception:
             parsed = {}
-
     if isinstance(parsed, list) and len(parsed) == 1 and isinstance(parsed[0], dict):
         parsed = parsed[0]
-
     if not isinstance(parsed, dict):
         parsed = {}
+    if "scope" not in parsed and "scope_notes" in parsed:
+        parsed["scope"] = parsed["scope_notes"]
+    if not isinstance(parsed.get("parameters", {}), dict):
+        parsed["parameters"] = {}
 
-    cleaned = {key: parsed.get(key) for key in _FIELDS}
-    return {
-        "context": normalize_context(cleaned),
-        "skipped": False,
-        "reason": "",
-    }
+    return {"context": normalize_context(parsed), "skipped": False, "reason": ""}
