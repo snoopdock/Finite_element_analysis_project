@@ -13,6 +13,7 @@ from typing import List
 
 from utils.text import save_json
 from writing.policy_dynamic_writer import PolicyAwareDynamicWriter
+from analysis.policy_oaa_loop import PolicyAwareOAALoop
 
 
 def phase_write_policy_aware(
@@ -29,7 +30,7 @@ def phase_write_policy_aware(
     section_topics: List[str],
     writing_indicator=None,
 ):
-    """Run the write phase using the Stage 2 decision policy."""
+    """Run the write phase using the Stage 2 writer/OAA decision policies."""
     kb = state.get(
         "knowledge_base",
         {},
@@ -55,7 +56,16 @@ def phase_write_policy_aware(
         errors,
     )
 
-    adjustment = oaa_loop.run(
+    # Reuse the existing split/merge executors, but use an isolated
+    # policy-aware OAA instance for anomaly/action prioritization. The
+    # authoritative state remains in the caller's IterationHistory.
+    decision_oaa = PolicyAwareOAALoop(
+        config,
+        oaa_loop.section_splitter,
+        oaa_loop.section_merger,
+    )
+
+    adjustment = decision_oaa.run(
         all_sections,
         iteration_history,
         kb,
