@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""State management with schema versioning and stable section identity."""
+"""State management with schema versioning and stable section/graph identity."""
 
 from __future__ import annotations
 
@@ -10,8 +10,9 @@ import tempfile
 from typing import Dict
 
 from core.section_identity import normalize_sections
+from core.knowledge_graph import normalize_graph, validate_graph_references
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 
 def initialize_state(paths: Dict, config: Dict) -> Dict:
@@ -39,6 +40,10 @@ def initialize_state(paths: Dict, config: Dict) -> Dict:
 
     state["sections"] = normalize_sections(state.get("sections", []))
     _normalize_iteration_history(state)
+    state["knowledge_graph"] = normalize_graph(state.get("knowledge_graph", {}))
+    state["knowledge_graph_violations"] = validate_graph_references(
+        state["knowledge_graph"]
+    )
     state["schema_version"] = SCHEMA_VERSION
     return state
 
@@ -53,6 +58,13 @@ def _default_state(config: Dict) -> Dict:
         "last_run": None,
         "last_run_status": None,
         "knowledge_base": {},
+        "knowledge_graph": {
+            "concepts": {},
+            "propositions": {},
+            "relationships": {},
+            "concept_history": [],
+        },
+        "knowledge_graph_violations": [],
         "sections": [],
         "processed_sources": [],
         "processed_sources_extracted": [],
@@ -70,6 +82,9 @@ def _migrate_state(state: Dict, from_version: int, to_version: int) -> Dict:
         from_version = 3
     if from_version < 4:
         state = _migrate_v3_to_v4(state)
+        from_version = 4
+    if from_version < 5:
+        state = _migrate_v4_to_v5(state)
     state["schema_version"] = to_version
     return state
 
@@ -99,6 +114,19 @@ def _migrate_v2_to_v3(state: Dict) -> Dict:
 def _migrate_v3_to_v4(state: Dict) -> Dict:
     state["sections"] = normalize_sections(state.get("sections", []))
     _normalize_iteration_history(state)
+    return state
+
+
+def _migrate_v4_to_v5(state: Dict) -> Dict:
+    graph = state.get("knowledge_graph", {})
+    if not isinstance(graph, dict):
+        graph = {}
+    graph.setdefault("concepts", {})
+    graph.setdefault("propositions", {})
+    graph.setdefault("relationships", {})
+    graph.setdefault("concept_history", [])
+    state["knowledge_graph"] = graph
+    state["knowledge_graph_violations"] = []
     return state
 
 
@@ -171,6 +199,10 @@ def save_state(paths: Dict, state: Dict):
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state["sections"] = normalize_sections(state.get("sections", []))
     _normalize_iteration_history(state)
+    state["knowledge_graph"] = normalize_graph(state.get("knowledge_graph", {}))
+    state["knowledge_graph_violations"] = validate_graph_references(
+        state["knowledge_graph"]
+    )
     state["schema_version"] = SCHEMA_VERSION
 
     fd, tmp_path = tempfile.mkstemp(
