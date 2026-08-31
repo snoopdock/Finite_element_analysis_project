@@ -215,7 +215,7 @@ def phase_write_policy_aware(
                 max_sources=int(semantic_config.get("max_sources_per_claim", 2)),
                 max_passages_per_source=int(semantic_config.get("max_passages_per_source", 2)),
                 max_passage_chars=int(semantic_config.get("max_passage_chars", 1800)),
-                max_tokens=int(semantic_config.get("max_claims_per_cycle", 700)),
+                max_tokens=int(semantic_config.get("max_tokens_per_claim", 700)),
                 model=semantic_config.get("model"),
             )
 
