@@ -34,6 +34,7 @@ def main() -> int:
                 "provider_names": ["arxiv"],
                 "source_types": ["preprint"],
                 "retrieved_at": "2026-08-31T00:00:00+00:00",
+                "ranking": {"score": 0.10},
             }
         ]
         new = [
@@ -44,6 +45,7 @@ def main() -> int:
                 "provider_names": ["semantic_scholar"],
                 "source_types": ["academic"],
                 "retrieved_at": "2026-08-31T00:01:00+00:00",
+                "ranking": {"score": 0.91},
             },
             {
                 "source_id": "paper-2",
@@ -52,6 +54,7 @@ def main() -> int:
                 "provider_names": ["wikipedia"],
                 "source_types": ["wikipedia"],
                 "retrieved_at": "2026-08-31T00:02:00+00:00",
+                "ranking": {"score": 0.30},
             },
         ]
 
@@ -62,6 +65,7 @@ def main() -> int:
         _assert(set(by_id["paper-1"]["provider_names"]) == {"arxiv", "semantic_scholar"}, "Provider provenance was lost.")
         _assert(set(by_id["paper-1"]["source_types"]) == {"preprint", "academic"}, "Source-type provenance was lost.")
         _assert(len(merged) == 2, "Duplicate source IDs were not collapsed.")
+        _assert(abs(by_id["paper-1"]["ranking"]["score"] - 0.91) < 1e-12, "Fresh ranking metadata was not retained.")
 
         reversed_merge = merge_evidence(new, old, max_keep=10)
         reverse_by_id = {item["source_id"]: item for item in reversed_merge}
@@ -76,7 +80,7 @@ def main() -> int:
 
         print("Stage 3 evidence runtime audit")
         print("===============================")
-        print("PASS: source identity, provenance accumulation, deduplication, and order independence passed.")
+        print("PASS: source identity, provenance accumulation, deduplication, ranking refresh, and order independence passed.")
         return 0
     except Exception as exc:
         print(f"STAGE 3 EVIDENCE AUDIT: ERROR: {exc}")
