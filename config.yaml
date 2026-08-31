@@ -76,6 +76,14 @@ semantic_verification:
   max_tokens_per_claim: 700
   model: null
 
+  # Stage 7: corrective loop. Also disabled by default.
+  correction_enabled: false
+  max_evidence_queries_per_cycle: 2
+  max_pending_evidence_queries: 8
+  max_rewrites_per_cycle: 1
+  rewrite_model: null
+  max_rewrite_tokens: 900
+
 convergence:
   window: 3
   eta_variance_threshold: 0.1
