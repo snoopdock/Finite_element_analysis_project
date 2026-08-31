@@ -16,12 +16,12 @@ from analysis.evidence_support import support_for_citations
 
 
 _CITATION_RE = re.compile(
-    r"\[([A-Za-z0-9_.\-]+(?:\s*,\s*[A-Za-z0-9_.\-]+)*)\]"
+    r"\[([^\[\]\s,]+(?:\s*,\s*[^\[\]\s,]+)*)\]"
 )
 
 
 def extract_citation_ids(text: str) -> List[str]:
-    """Extract bracketed citation IDs from prose."""
+    """Extract comma-separated bracketed citation IDs from prose."""
     result: Set[str] = set()
     for group in _CITATION_RE.findall(str(text or "")):
         for value in group.split(","):
