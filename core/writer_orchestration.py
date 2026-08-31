@@ -14,6 +14,7 @@ from analysis.document_semantic_review import review_document_claims
 from analysis.semantic_verifier import verify_claim
 from analysis.semantic_feedback import attach_feedback
 from analysis.correction_planner import plan_corrections
+from analysis.perspective_registry import record_perspective_jobs
 
 
 def _citation_ids(text: str) -> List[str]:
@@ -111,8 +112,10 @@ def phase_write_policy_aware(
 
     correction_plan = {
         "evidence_queries": [],
+        "perspective_jobs": [],
         "rewrite_jobs": [],
         "query_count": 0,
+        "perspective_count": 0,
         "rewrite_count": 0,
     }
     correction_enabled = bool(semantic_config.get("correction_enabled", False))
@@ -120,8 +123,21 @@ def phase_write_policy_aware(
         correction_plan = plan_corrections(
             review,
             max_queries=int(semantic_config.get("max_evidence_queries_per_cycle", 2)),
-            max_rewrites=int(semantic_config.get("max_rewrites_per_cycle", 1)),
+            max_rewrites=int(semantic_config.get("max_rewrites_per_cycle", 0)),
+            max_perspective_jobs=int(semantic_config.get("max_perspective_jobs_per_cycle", 2)),
         )
+
+    perspective_analysis = {"jobs_checked": 0, "relationships_added": 0, "reports": []}
+    if correction_enabled and correction_plan.get("perspective_jobs"):
+        perspective_analysis = record_perspective_jobs(
+            state,
+            correction_plan.get("perspective_jobs", []),
+            provider,
+            parser,
+            max_jobs=int(semantic_config.get("max_perspective_jobs_per_cycle", 2)),
+            model=semantic_config.get("perspective_model"),
+        )
+    state["last_perspective_analysis"] = perspective_analysis
 
     pending = state.get("pending_evidence_queries", [])
     if not isinstance(pending, list):
@@ -152,7 +168,7 @@ def phase_write_policy_aware(
             if isinstance(item, dict) and item.get("source_id")
         }
 
-        for job in rewrite_jobs[:max(0, int(semantic_config.get("max_rewrites_per_cycle", 1)))]:
+        for job in rewrite_jobs[:max(0, int(semantic_config.get("max_rewrites_per_cycle", 0)))]:
             section_id = str(job.get("section_id", ""))
             target_index = next(
                 (
