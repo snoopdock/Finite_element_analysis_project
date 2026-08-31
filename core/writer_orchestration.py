@@ -71,6 +71,13 @@ def phase_write_policy_aware(
         kb,
     )
 
+    # Synchronize the caller's OAA instance with the state that the policy
+    # analysis just persisted. The caller later performs the actual mutation
+    # and saves its state again.
+    oaa_loop.load_persisted_state(
+        iteration_history
+    )
+
     if adjustment:
         state["pending_adjustment"] = adjustment
     else:
