@@ -13,6 +13,10 @@ def _norm_name(value: Any) -> str:
     return re.sub(r"\s+", " ", str(value or "")).strip().lower()
 
 
+def _source_signature(source_ids: List[str]) -> tuple[str, ...]:
+    return tuple(sorted({str(value) for value in source_ids if value}))
+
+
 def _find_concept(graph: Dict[str, Dict], name: str, concept_type: str) -> str | None:
     needle = _norm_name(name)
     for concept_id, concept in graph.items():
@@ -40,6 +44,25 @@ def _ensure_concept(graph: Dict[str, Dict], name: str, concept_type: str, source
     concept["source_ids"] = sorted({str(value) for value in source_ids if value})
     graph[concept["concept_id"]] = concept
     return concept["concept_id"]
+
+
+def _find_proposition(
+    propositions: Dict[str, Dict],
+    statement: str,
+    source_ids: List[str],
+    proposition_type: str,
+) -> str | None:
+    signature = _source_signature(source_ids)
+    for proposition_id, proposition in propositions.items():
+        if not isinstance(proposition, dict):
+            continue
+        if _norm_name(proposition.get("statement")) != _norm_name(statement):
+            continue
+        if str(proposition.get("knowledge_item_type", "")) != proposition_type:
+            continue
+        if _source_signature(proposition.get("source_ids", [])) == signature:
+            return str(proposition_id)
+    return None
 
 
 def sync_legacy_knowledge_base(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -71,13 +94,7 @@ def sync_legacy_knowledge_base(state: Dict[str, Any]) -> Dict[str, Any]:
         )
         item["concept_id"] = concept_id
 
-    proposition_categories = (
-        ("equations", "equation"),
-        ("rules", "rule"),
-        ("procedures", "procedure"),
-    )
-
-    for category, proposition_type in proposition_categories:
+    for category, proposition_type in (("equations", "equation"), ("rules", "rule"), ("procedures", "procedure")):
         records = kb.get(category, [])
         if not isinstance(records, list):
             continue
@@ -87,24 +104,19 @@ def sync_legacy_knowledge_base(state: Dict[str, Any]) -> Dict[str, Any]:
                 continue
 
             statement = (
-                item.get("rule")
-                or item.get("name")
-                or item.get("title")
-                or item.get("description")
-                or ""
+                item.get("rule") or item.get("name") or item.get("title") or item.get("description") or ""
             )
             statement = str(statement).strip()
             if not statement:
                 continue
 
             source_ids = [str(value) for value in item.get("source_ids", []) if value]
-            existing_id = None
-            for proposition_id, proposition in propositions.items():
-                if not isinstance(proposition, dict):
-                    continue
-                if _norm_name(proposition.get("statement")) == _norm_name(statement):
-                    existing_id = str(proposition_id)
-                    break
+            existing_id = _find_proposition(
+                propositions,
+                statement,
+                source_ids,
+                proposition_type,
+            )
 
             proposition = {
                 "proposition_id": existing_id or new_graph_id(),
