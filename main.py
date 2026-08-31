@@ -263,8 +263,36 @@ def main():
             and not state.get("pending_adjustment")
         )
 
+        research_config = dict(config)
+        pending_query_items = state.get("pending_evidence_queries", [])
+        if not isinstance(pending_query_items, list):
+            pending_query_items = []
+
+        pending_queries = [
+            str(item.get("query", "")).strip()
+            for item in pending_query_items
+            if isinstance(item, dict) and item.get("query")
+        ]
+
+        if pending_queries:
+            base_queries = list(
+                config.get(
+                    "seed_queries",
+                    [],
+                )
+            )
+            normalized_pending = []
+            seen_queries = set()
+            for query in pending_queries + base_queries:
+                query = str(query).strip()
+                if not query or query.lower() in seen_queries:
+                    continue
+                seen_queries.add(query.lower())
+                normalized_pending.append(query)
+            research_config["seed_queries"] = normalized_pending
+
         evidence, new_sources = phase_research(
-            config,
+            research_config,
             state,
             paths,
             errors,
@@ -273,6 +301,10 @@ def main():
             llm_parser_instance,
             skip_gap_analysis=skip_gap,
         )
+
+        if pending_query_items:
+            state["last_correction_queries_used"] = pending_query_items
+            state["pending_evidence_queries"] = []
 
         reading_state = load_reading_state()
         reading_summary = get_reading_summary(
@@ -466,6 +498,7 @@ def main():
             "",
             "## This Cycle",
             "",
+            f"- Correction queries used: {len(pending_query_items)}",
             f"- New sources found: {new_sources}",
             f"- Extracted: {extracted}",
             f"- Sections written: {written}",
