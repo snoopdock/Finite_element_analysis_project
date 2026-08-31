@@ -78,6 +78,9 @@ convergence:
   eta_variance_threshold: 0.1
   minimum_reading_coverage_percent: 80.0
   minimum_citation_coverage_percent: 80.0
+  # > 0 enables a lexical-support convergence gate. 0 keeps the metric
+  # diagnostic-only while semantic/entailment validation remains separate.
+  minimum_lexical_support_coverage_percent: 0.0
   evidence_path: output/evidence.json
 
 gap_detection:
