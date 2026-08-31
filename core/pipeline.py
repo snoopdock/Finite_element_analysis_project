@@ -498,7 +498,7 @@ def phase_research(
     }
 
     try:
-        new_evidence = retrieve_evidence_parallel(
+        retrieved_evidence = retrieve_evidence_parallel(
             queries,
             max_items=max_items,
             max_workers=2,
@@ -507,22 +507,13 @@ def phase_research(
         errors.append(
             f"Evidence retrieval error: {exc}"
         )
-        new_evidence = []
+        retrieved_evidence = []
 
-    truly_new = [
-        item
-        for item in new_evidence
-        if (
-            isinstance(item, dict)
-            and item.get("source_id")
-            and item["source_id"] not in processed
-            and item["source_id"] not in old_ids
-        )
-    ]
-
+    # Merge every retrieved record so that repeated discovery through a new
+    # query/provider updates persisted provenance metadata for existing sources.
     all_evidence = merge_evidence(
         old_evidence,
-        truly_new,
+        retrieved_evidence,
         max_keep=200,
     )
 
@@ -531,22 +522,24 @@ def phase_research(
         all_evidence,
     )
 
-    new_ids = {
+    retrieved_ids = {
         item.get("source_id")
-        for item in truly_new
-        if item.get("source_id")
+        for item in retrieved_evidence
+        if isinstance(item, dict) and item.get("source_id")
     }
 
+    new_ids = retrieved_ids - old_ids - processed
+
     state["processed_sources"] = sorted(
-        processed | old_ids | new_ids
+        processed | old_ids | retrieved_ids
     )
 
     print(
-        f"Found {len(truly_new)} new sources. Total: {len(all_evidence)}",
+        f"Found {len(new_ids)} new sources. Total: {len(all_evidence)}",
         file=sys.stderr,
     )
 
-    return all_evidence, bool(truly_new)
+    return all_evidence, bool(new_ids)
 
 
 def phase_extract(
@@ -861,7 +854,10 @@ def phase_extract(
         file=sys.stderr,
     )
 
-    return updated_kb, True
+    return (
+        updated_kb,
+        True,
+    )
 
 
 def phase_write(
