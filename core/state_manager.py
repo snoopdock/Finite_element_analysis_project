@@ -11,6 +11,7 @@ from typing import Dict
 
 from core.section_identity import normalize_sections
 from core.knowledge_graph import normalize_graph, validate_graph_references
+from analysis.knowledge_graph_builder import sync_legacy_knowledge_base
 
 SCHEMA_VERSION = 5
 
@@ -41,6 +42,8 @@ def initialize_state(paths: Dict, config: Dict) -> Dict:
     state["sections"] = normalize_sections(state.get("sections", []))
     _normalize_iteration_history(state)
     state["knowledge_graph"] = normalize_graph(state.get("knowledge_graph", {}))
+    sync_legacy_knowledge_base(state)
+    state["knowledge_graph"] = normalize_graph(state["knowledge_graph"])
     state["knowledge_graph_violations"] = validate_graph_references(
         state["knowledge_graph"]
     )
@@ -200,6 +203,8 @@ def save_state(paths: Dict, state: Dict):
     state["sections"] = normalize_sections(state.get("sections", []))
     _normalize_iteration_history(state)
     state["knowledge_graph"] = normalize_graph(state.get("knowledge_graph", {}))
+    sync_legacy_knowledge_base(state)
+    state["knowledge_graph"] = normalize_graph(state["knowledge_graph"])
     state["knowledge_graph_violations"] = validate_graph_references(
         state["knowledge_graph"]
     )
