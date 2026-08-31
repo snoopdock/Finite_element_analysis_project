@@ -1,0 +1,52 @@
+version: 1
+purpose: >-
+  Define the minimum structural contract for research evidence records used by
+  retrieval, ranking, reading, and later provenance-aware analysis.
+
+identity:
+  primary_key: source_id
+  rule: source_id_must_be_stable_for_the_same_logical_source
+
+required_fields:
+  - source_id
+  - title
+  - retrieved_at
+
+optional_fields:
+  - authors
+  - url
+  - metadata
+  - status
+  - content_type
+  - full_text_path
+  - query_context
+  - query_contexts
+  - provider
+  - provider_names
+  - source_type
+  - source_types
+  - ranking
+
+provenance:
+  query_contexts: all_distinct_queries_that_discovered_the_source
+  provider_names: all_distinct_retrieval_providers_that_returned_the_source
+  source_types: all_known_source_classifications
+  rule: provenance_must_be_accumulative_and_must_not_depend_on_arrival_order
+
+full_text:
+  abstract_is_not_full_text: true
+  full_text_path_is_a_local_cache_locator: true
+  missing_full_text_must_not_be_treated_as_readable_article_content: true
+
+ranking:
+  score_is_a_retrieval_priority_signal: true
+  score_is_not_scientific_truth_confidence: true
+  per_query_scores_should_be_retained_when_multiple_queries_are_used: true
+
+invariants:
+  - duplicate_source_ids_are_merged_not_duplicated
+  - merging_preserves_all_known_provenance
+  - provider_order_must_not_change_logical_source_identity
+  - query_order_must_not_change_logical_source_identity
+  - provenance_ids_may_be_opaque_strings
+  - ranking_metadata_must_not_overwrite_source_identity
