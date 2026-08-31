@@ -11,6 +11,7 @@ from writing.policy_dynamic_writer import PolicyAwareDynamicWriter
 from writing.corrective_rewriter import rewrite_paragraph
 from analysis.policy_oaa_loop import PolicyAwareOAALoop
 from analysis.document_semantic_review import review_document_claims
+from analysis.semantic_verifier import verify_claim
 from analysis.semantic_feedback import attach_feedback
 from analysis.correction_planner import plan_corrections
 
@@ -145,6 +146,12 @@ def phase_write_policy_aware(
     correction_results = []
     rewrite_jobs = correction_plan.get("rewrite_jobs", [])
     if correction_enabled and rewrite_jobs and not provider.budget_exhausted():
+        evidence_by_id = {
+            str(item.get("source_id")): dict(item)
+            for item in evidence
+            if isinstance(item, dict) and item.get("source_id")
+        }
+
         for job in rewrite_jobs[:max(0, int(semantic_config.get("max_rewrites_per_cycle", 1)))]:
             section_id = str(job.get("section_id", ""))
             target_index = next(
@@ -169,39 +176,38 @@ def phase_write_policy_aware(
                 continue
 
             paragraph_index = int(job.get("paragraph_index", -1))
-            candidate = _replace_paragraph(all_sections[target_index], paragraph_index, result.get("text", ""))
+            replacement = str(result.get("text", "")).strip()
+            candidate = _replace_paragraph(all_sections[target_index], paragraph_index, replacement)
             if candidate is None:
                 correction_results.append({"section_id": section_id, "action": "rewrite_rejected", "error": "Invalid paragraph index."})
                 continue
 
-            reverification = review_document_claims(
-                [candidate],
-                evidence,
+            candidate_citations = _citation_ids(replacement)
+            reverification = verify_claim(
+                replacement,
+                candidate_citations,
+                evidence_by_id,
                 provider,
                 parser,
-                max_claims=1,
-                max_sources_per_claim=int(semantic_config.get("max_sources_per_claim", 2)),
+                max_sources=int(semantic_config.get("max_sources_per_claim", 2)),
                 max_passages_per_source=int(semantic_config.get("max_passages_per_source", 2)),
                 max_passage_chars=int(semantic_config.get("max_passage_chars", 1800)),
                 max_tokens=int(semantic_config.get("max_tokens_per_claim", 700)),
                 model=semantic_config.get("model"),
             )
-            re_reports = reverification.get("reports", [])
-            re_judgment = str(re_reports[0].get("judgment", "")) if re_reports else ""
+
+            re_judgment = str(reverification.get("judgment", ""))
             if re_judgment == "supported":
                 candidate.pop("semantic_feedback", None)
                 candidate["semantic_feedback"] = {
                     "action": "retain",
                     "severity": "low",
-                    "confidence": float(re_reports[0].get("confidence", 0.0)),
+                    "confidence": float(reverification.get("confidence", 0.0)),
                     "judgments": ["supported"],
                     "claims_checked": 1,
                     "reverified": True,
-                    "reverification_reason": str(re_reports[0].get("reason", "")),
-                    "reverified_sources": [
-                        str(value) for value in re_reports[0].get("citation_ids", []) if value
-                    ],
-                    "reverification": reverification,
+                    "reverification_reason": str(reverification.get("reason", "")),
+                    "reverified_sources": candidate_citations,
                 }
                 all_sections[target_index] = candidate
                 correction_results.append({"section_id": section_id, "action": "rewrite_accepted", "reverification": reverification})
