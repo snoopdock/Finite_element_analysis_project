@@ -63,6 +63,7 @@ class PolicyAwareDynamicWriter(DynamicWriter):
         )
 
         self._decision_sections: List[Dict] = []
+        self.last_decisions: List[Dict] = []
 
         self.min_paragraph_words = int(
             writing_config.get(
@@ -90,9 +91,18 @@ class PolicyAwareDynamicWriter(DynamicWriter):
         )
 
         if not sections:
-            return super().mark_sections(
+            selected = super().mark_sections(
                 section_topics
             )
+            self.last_decisions = [
+                {
+                    "section_id": None,
+                    "title": topic,
+                    "selected": True,
+                }
+                for topic in selected
+            ]
+            return selected
 
         ranked = self.decision_policy.rank_sections(
             sections,
@@ -103,6 +113,22 @@ class PolicyAwareDynamicWriter(DynamicWriter):
         selected = self.decision_policy.select_sections(
             ranked
         )
+
+        models = self.config.get(
+            "cloudflare_models",
+            ["@cf/meta/llama-3.1-8b-instruct"],
+        )
+
+        decisions = self.decision_policy.decide(
+            sections,
+            self.indicator,
+            self.history,
+            models,
+        )
+        self.last_decisions = [
+            decision.__dict__.copy()
+            for decision in decisions
+        ]
 
         selected_ids = {
             str(
@@ -240,6 +266,7 @@ class PolicyAwareDynamicWriter(DynamicWriter):
                 dict,
             )
         ]
+        self.last_decisions = []
 
         try:
             return super().run(
