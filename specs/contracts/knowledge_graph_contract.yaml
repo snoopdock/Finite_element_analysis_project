@@ -1,4 +1,4 @@
-version: 1
+version: 2
 purpose: >-
   Define the minimum structural contract for the provenance-aware scientific
   knowledge graph. This contract is descriptive; it does not mutate runtime state.
@@ -12,6 +12,9 @@ entities:
       - type
     provenance_fields:
       - source_ids
+    optional_fields:
+      - parent_concept_ids
+      - aliases
     semantic_rule: >-
       A concept names an entity, method, formulation, theory, phenomenon,
       parameter, algorithm, mathematical object, application, or other reusable
@@ -34,6 +37,12 @@ entities:
       - parameters
       - method
       - approximation
+      - scope
+    optional_fields:
+      - concept_ids
+      - candidate_concept_ids
+      - provenance_kind
+      - knowledge_item_type
     semantic_rule: >-
       A proposition is an assertion that can be supported, disputed,
       qualified, superseded, or left unresolved. Its identity must remain
@@ -54,6 +63,14 @@ entities:
       contradiction-like relationship is evidence of disagreement or contextual
       difference, not an instruction to rewrite either endpoint.
 
+history:
+  concept_history:
+    purpose: record concept discovery and provenance extension events
+    identity_field: concept_id
+  proposition_history:
+    purpose: record proposition discovery and meaningful content/context changes
+    identity_field: proposition_id
+
 invariants:
   - entity_ids_are_stable_uuid_strings
   - concept_parent_references_must_exist
@@ -64,6 +81,8 @@ invariants:
   - provenance_ids_may_be_opaque_source_identifiers
   - proposition_context_must_be_stored_on_the_proposition_or_relationship
   - identical_statement_may_represent_distinct_propositions_when_provenance_differs
+  - candidate_concept_ids_are_non_assertive
+  - proposition_history_must_not_change_proposition_identity
   - legacy_knowledge_base_must_remain_available_during_migration
 
 relationship_policy:
