@@ -100,6 +100,8 @@ class PolicyAwareDynamicWriter(DynamicWriter):
             for section in existing_sections
         }
 
+        # Virtual section objects let the same policy schedule first-time
+        # sections without assigning persistent UUIDs before materialization.
         candidates: List[Dict] = list(existing_sections)
         for topic in section_topics:
             normalized = str(topic or "").strip()
@@ -138,7 +140,7 @@ class PolicyAwareDynamicWriter(DynamicWriter):
             models,
         )
         self.last_decisions = [
-            decision.to_dict(models)
+            decision.__dict__.copy()
             for decision in decisions
         ]
 
@@ -223,41 +225,47 @@ class PolicyAwareDynamicWriter(DynamicWriter):
         except WritingValidationError:
             return None
 
-        return validated
+        return validated["text"]
+
+    def _validate_section(
+        self,
+        section: Dict,
+    ) -> bool:
+        try:
+            validate_section_structure(
+                section,
+                min_words=100,
+            )
+        except WritingValidationError:
+            return False
+
+        return super()._validate_section(
+            section
+        )
 
     def run(
         self,
         section_topics: List[str],
-        knowledge_base: Dict,
-        existing_sections: Optional[List[Dict]] = None,
-        errors: Optional[List] = None,
+        kb: Dict,
+        existing_sections: List[Dict],
+        errors: List[str],
     ) -> Tuple[List[Dict], int]:
-        """Run the inherited writer after policy-aware section scheduling."""
-        self._decision_sections = list(existing_sections or [])
-        self.mark_sections(section_topics)
-
-        result = super().run(
-            section_topics,
-            knowledge_base,
-            existing_sections=existing_sections,
-            errors=errors,
-        )
-
-        sections, written = result
-        self.last_decisions = [
-            decision for decision in self.last_decisions
-            if any(
-                isinstance(section, dict)
-                and str(section.get("section_id", "")) == str(decision.get("section_id", ""))
-                for section in sections
-                if decision.get("section_id")
-            ) or not decision.get("section_id")
+        self._decision_sections = [
+            section
+            for section in existing_sections
+            if isinstance(
+                section,
+                dict,
+            )
         ]
+        self.last_decisions = []
 
-        for section in sections:
-            try:
-                validate_section_structure(section)
-            except WritingValidationError:
-                section["status"] = "incomplete"
-
-        return sections, written
+        try:
+            return super().run(
+                section_topics,
+                kb,
+                existing_sections,
+                errors,
+            )
+        finally:
+            self._decision_sections = []
