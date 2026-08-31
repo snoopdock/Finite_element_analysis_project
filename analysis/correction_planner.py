@@ -33,45 +33,31 @@ def build_targeted_query(report: Dict) -> str:
     claim = str(report.get("claim", "")).strip()
     reason = str(report.get("reason", "")).strip()
     terms = _terms(claim, limit=8)
-
     if not terms:
         terms = _terms(reason, limit=8)
-
-    query = " ".join(terms)
-    return query[:220].strip()
+    return " ".join(terms)[:220].strip()
 
 
 def build_rewrite_job(report: Dict) -> Dict:
     """Build a bounded rewrite job from one contradicted claim."""
+    try:
+        confidence = float(report.get("confidence", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        confidence = 0.0
+
     return {
         "action": "rewrite_and_reverify",
         "section_id": report.get("section_id"),
         "paragraph_index": report.get("paragraph_index"),
         "claim": str(report.get("claim", "")),
         "reason": str(report.get("reason", "")),
-        "citation_ids": [
-            str(value)
-            for value in report.get("citation_ids", [])
-            if value
-        ],
-        "source_reports": list(
-            report.get("sources", [])
-            if isinstance(report.get("sources", []), list)
-            else []
-        ),
-        "confidence": max(
-            0.0,
-            min(1.0, float(report.get("confidence", 0.0) or 0.0)),
-        ),
+        "citation_ids": [str(value) for value in report.get("citation_ids", []) if value],
+        "source_reports": list(report.get("sources", [])) if isinstance(report.get("sources", []), list) else [],
+        "confidence": max(0.0, min(1.0, confidence)),
     }
 
 
-def plan_corrections(
-    review: Dict,
-    *,
-    max_queries: int = 2,
-    max_rewrites: int = 1,
-) -> Dict:
+def plan_corrections(review: Dict, *, max_queries: int = 2, max_rewrites: int = 1) -> Dict:
     """Create bounded evidence-query and rewrite plans without executing them."""
     reports = review.get("reports", []) if isinstance(review, dict) else []
     if not isinstance(reports, list):
