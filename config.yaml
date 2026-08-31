@@ -47,6 +47,13 @@ writing:
   max_retries_per_paragraph: 2
   top_k_knowledge_items: 6
 
+  # Explicit model-selection policy. Indices refer to cloudflare_models below.
+  # Defaults preserve the previous behavior: high-eta uses the first model,
+  # low-eta uses the last model.
+  model_selection:
+    high_eta_model_index: 0
+    low_eta_model_index: -1
+
 convergence:
   window: 3
   eta_variance_threshold: 0.1
