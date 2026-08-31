@@ -210,7 +210,7 @@ def rank_items_for_queries(
     *,
     top_k: int = 4,
 ) -> List[Dict]:
-    """Score each item against all queries and retain the best score/provenance."""
+    """Score each item against all queries and retain best score/provenance."""
     if not queries or not items:
         return []
 
@@ -259,7 +259,12 @@ def rank_items_for_queries(
             current_ranking["per_query_scores"] = per_query_scores
 
             current_score = float(current_ranking.get("score", 0.0))
-            if score > current_score:
+            current_query = str(current_ranking.get("best_query", ""))
+            better = score > current_score
+            if score == current_score and normalized_query < current_query:
+                better = True
+
+            if better:
                 for key in (
                     "score",
                     "lexical",
