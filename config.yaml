@@ -1,70 +1,74 @@
-topic: Finite Element Method Theory Implementation and Modeling Rules
-
-objective: >
-  Produce a comprehensive technical guideline explaining how the Finite
-  Element Method works including mathematical foundation, step-by-step
-  procedure, and rules for modeling physical phenomena.
+topic: "Finite Element Method Theory Implementation and Modeling Rules"
+objective: |
+  Produce a comprehensive technical guideline explaining how the Finite Element Method works
+  including mathematical foundation, step-by-step procedure, and rules for modeling physical phenomena.
 
 seed_queries:
-  - finite element method structural mechanics stiffness matrix
-  - finite element weak form variational formulation
-  - finite element shape functions isoparametric elements
-  - finite element assembly global stiffness boundary conditions
+  - "finite element method mathematical foundation weak form Galerkin method"
+  - "finite element method practical implementation modeling rules"
+  - "finite element method verification validation numerical stability"
 
-# Single source of truth for section topics
-section_topics:
-  - "Introduction and Scope of the Finite Element Method"
-  - "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method"
-  - "The Finite Element Procedure"
-  - "Rules for Modeling Physical Phenomena with FEM"
-  - "Verification, Validation, and Best Practices"
-
-# Higher leverage = more downstream dependency = higher priority
-section_leverage:
-  "Introduction and Scope of the Finite Element Method": 1.0
-  "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method": 0.8
-  "The Finite Element Procedure": 0.6
-  "Rules for Modeling Physical Phenomena with FEM": 0.4
-  "Verification, Validation, and Best Practices": 0.2
+cloudflare_models:
+  - "@cf/meta/llama-3.1-8b-instruct"
+  - "@cf/qwen/qwen2.5-7b-instruct"
+  - "@cf/mistral/mistral-7b-instruct-v0.2"
 
 budget:
-  daily_neuron_limit: 10000
   max_llm_calls_per_run: 20
   max_tokens_per_call: 2500
 
 cache:
   max_size_mb: 500
 
+phase_delay_seconds: 5
+
+state:
+  path: state/current_state.json
+
+daily_limits:
+  max_evidence_items: 4
+  max_research_cycles: 1
+
 writing:
   w_L: 0.4
   w_U: 0.4
   w_A: 0.2
   theta: 0.75
-  tau: 0.6
-  hysteresis: 2
-  max_retries_per_paragraph: 2
+  tau: 0.60
   top_k_knowledge_items: 6
-
+  max_paragraphs_per_section: 3
+  max_retries_per_paragraph: 2
   model_selection:
     high_eta_model_index: 0
     low_eta_model_index: -1
 
-  oaa_action_policy:
-    persistence_weight: 0.35
-    severity_weight: 0.50
-    cost_weight: 0.15
-    severity_weights:
-      repetition: 1.00
-      too_simple: 0.95
-      merge_candidate: 0.85
-      length_imbalance: 0.65
-      missing_transition: 0.55
-    cost_weights:
-      merge_candidate: 0.85
-      too_simple: 0.75
-      repetition: 0.45
-      length_imbalance: 0.40
-      missing_transition: 0.35
+section_leverage:
+  "Introduction and Scope of the Finite Element Method": 1.0
+  "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method": 1.25
+  "The Finite Element Procedure": 1.15
+  "Rules for Modeling Physical Phenomena with FEM": 1.10
+  "Verification, Validation, and Best Practices": 1.05
+
+oaa:
+  enabled: true
+  repetition_threshold: 2
+  too_simple_threshold: 2
+  merge_threshold: 2
+  action_confidence_threshold: 0.65
+  weight: 0.35
+  cost_weight: 0.15
+  severity_weights:
+    repetition: 1.00
+    too_simple: 0.95
+    merge_candidate: 0.85
+    length_imbalance: 0.65
+    missing_transition: 0.55
+  cost_weights:
+    merge_candidate: 0.85
+    too_simple: 0.75
+    repetition: 0.45
+    length_imbalance: 0.40
+    missing_transition: 0.35
 
 semantic_verification:
   # Disabled by default because each verified claim consumes an LLM call.
@@ -76,11 +80,13 @@ semantic_verification:
   max_tokens_per_claim: 700
   model: null
 
-  # Stage 7: corrective loop. Also disabled by default.
+  # Perspective/corrective loop. Also disabled by default.
   correction_enabled: false
   max_evidence_queries_per_cycle: 2
   max_pending_evidence_queries: 8
-  max_rewrites_per_cycle: 1
+  max_perspective_jobs_per_cycle: 2
+  perspective_model: null
+  max_rewrites_per_cycle: 0
   rewrite_model: null
   max_rewrite_tokens: 900
 
@@ -108,14 +114,9 @@ splitting:
   max_subsections: 3
 
 merging:
-  overlap_threshold: 0.6
-  min_section_count: 3
+  max_sections: 8
+  merge_similarity_threshold: 0.5
 
-cloudflare_models:
-  - "@hf/nousresearch/hermes-2-pro-mistral-7b"
-  - "@cf/meta/llama-3.1-8b-instruct"
-  - "@cf/mistral/mistral-7b-instruct-v0.1"
-  - "@cf/meta/llama-3.2-3b-instruct"
-
-state:
-  path: state/current_state.json
+models:
+  fallback_enabled: true
+  max_retries_per_call: 2
