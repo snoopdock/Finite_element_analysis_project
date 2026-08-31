@@ -4,24 +4,25 @@
 import sys
 from datetime import datetime
 from utils.latex import escape_latex, sanitize_latex_content
+from processing.latex_graph import render_concept_graph, render_perspective_table
+
 
 def build_latex_document(state, sections, evidence):
     topic = state.get("topic", "Finite Element Method Guideline")
     objective = state.get("objective", "")
+    graph = state.get("knowledge_graph", {})
 
     # Build a clean, numbered bibliography
     refs = []
     for i, source in enumerate(evidence[:25]):
         title = escape_latex(source.get("title", "Unknown Title"))
         stype = source.get("retriever_module", "misc").replace("research.", "").title()
-        
         url = source.get("url", "")
         url = url.replace("%", r"\%").replace("&", r"\&").replace("#", r"\#")
-        
         refs.append(
             f"  \\bibitem{{ref{i + 1}}} \\textit{{{title}}}. [{stype}] Available at: \\url{{{url}}}"
         )
-        
+
     refs_text = "\n".join(refs) if refs else "  \\bibitem{none} No sources retrieved."
 
     # Build the Provenance Appendix
@@ -32,36 +33,38 @@ def build_latex_document(state, sections, evidence):
         retrieved = source.get("retrieved_at", "N/A")
         url = source.get("url", "").replace("%", r"\%").replace("&", r"\&").replace("#", r"\#")
         stype = source.get("retriever_module", "misc").replace("research.", "").title()
-        
-        # Format retrieved date nicely
         if retrieved != "N/A":
             try:
                 dt = datetime.fromisoformat(retrieved.replace("Z", "+00:00"))
                 retrieved = dt.strftime("%Y-%m-%d %H:%M UTC")
             except Exception:
                 pass
-        
         provenance_rows.append(
             f"  {i+1} & \\texttt{{{sid}}} & {title[:60]} & {stype} & {retrieved} \\\\"
         )
-    
+
     provenance_table = "\n".join(provenance_rows) if provenance_rows else "No sources."
 
     body_parts = []
     for s in sections:
         content = s.get("content", "").strip()
         if not content:
-            print(f"  [LaTeX] Warning: Skipping empty section "
-                  f"'{s.get('title', 'Untitled')}'", file=sys.stderr)
+            print(
+                f"  [LaTeX] Warning: Skipping empty section '{s.get('title', 'Untitled')}'",
+                file=sys.stderr,
+            )
             continue
-
         sanitized_content = sanitize_latex_content(content)
-
         body_parts.append(
             "\\section{" + escape_latex(s.get("title", "Untitled")) +
             "}\n\n" + sanitized_content
         )
     body = "\n\n".join(body_parts) if body_parts else "% No content generated."
+
+    graph_map = render_concept_graph(graph, max_nodes=40)
+    perspective_table = render_perspective_table(graph, max_rows=30)
+    graph_has_nodes = bool(graph.get("concepts")) if isinstance(graph, dict) else False
+    graph_has_relationships = bool(graph.get("relationships")) if isinstance(graph, dict) else False
 
     doc_lines = [
         r"\documentclass[12pt, a4paper]{article}",
@@ -80,6 +83,8 @@ def build_latex_document(state, sections, evidence):
         r"\usepackage{cite}",
         r"\usepackage{longtable}",
         r"\usepackage{array}",
+        r"\usepackage{tikz}",
+        r"\usetikzlibrary{positioning,arrows.meta}",
         "",
         r"% Fix layout warnings",
         r"\setlength{\emergencystretch}{3em}",
@@ -131,8 +136,33 @@ def build_latex_document(state, sections, evidence):
         r"\section{Objective}",
         escape_latex(objective),
         "",
+    ]
+
+    if graph_has_nodes:
+        doc_lines.extend([
+            r"\section{Conceptual Map}",
+            r"The following map shows the currently recorded concept structure. Concepts are maintained separately from propositions; edges are shown when the graph contains concept-to-concept relationships.",
+            graph_map,
+            "",
+        ])
+
+    doc_lines.extend([
         body,
         "",
+    ])
+
+    if graph_has_relationships:
+        doc_lines.extend([
+            r"\newpage",
+            r"\section*{Appendix: Scientific Perspectives and Relationships}",
+            r"\addcontentsline{toc}{section}{Appendix: Scientific Perspectives and Relationships}",
+            r"The table below preserves relationships among recorded propositions. A disagreement is not treated as an error solely because the propositions differ; contextual interpretation is retained in the relationship metadata.",
+            r"\vspace{1em}",
+            perspective_table,
+            "",
+        ])
+
+    doc_lines.extend([
         r"\begin{thebibliography}{99}",
         refs_text,
         r"\end{thebibliography}",
@@ -170,5 +200,5 @@ def build_latex_document(state, sections, evidence):
         r"\end{itemize}",
         r"",
         r"\end{document}",
-    ]
+    ])
     return "\n".join(doc_lines)
