@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """Deterministic citation integrity checks for generated document sections.
 
-This module verifies citation identity and coverage. It deliberately does not
-claim semantic entailment between a citation and a scientific claim; that
-requires source passages and a separate semantic verification step.
+This module verifies citation identity and coverage. It also reports a
+lexical-overlap support signal against cited source text when that text is
+available locally. It deliberately does not claim semantic entailment.
 """
 
 from __future__ import annotations
 
+import os
 import re
 from typing import Dict, Iterable, List, Set
+
+from analysis.evidence_support import support_for_citations
 
 
 _CITATION_RE = re.compile(
@@ -28,11 +31,30 @@ def extract_citation_ids(text: str) -> List[str]:
     return sorted(result)
 
 
+def _source_text(item: Dict) -> str:
+    """Return available source text without downloading new material."""
+    for key in ("full_text", "content", "abstract", "description"):
+        value = item.get(key)
+        if isinstance(value, str) and value.strip():
+            return value
+
+    path = item.get("full_text_path")
+    if not path or not isinstance(path, str) or not os.path.exists(path):
+        return ""
+
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return handle.read()
+    except OSError:
+        return ""
+
+
 def validate_section_citations(
     section: Dict,
     allowed_source_ids: Iterable[str],
+    evidence_by_id: Dict[str, Dict] | None = None,
 ) -> Dict:
-    """Validate one section's citation IDs and report coverage."""
+    """Validate one section's citation IDs and report coverage/support."""
     allowed = {str(value) for value in allowed_source_ids if value}
     content = str(section.get("content", "")) if isinstance(section, dict) else ""
     citations = extract_citation_ids(content)
@@ -48,12 +70,38 @@ def validate_section_citations(
         1 for paragraph in paragraphs if extract_citation_ids(paragraph)
     )
 
+    evidence_by_id = evidence_by_id or {}
+    support_reports = []
+    supported_paragraphs = 0
+
+    for paragraph in paragraphs:
+        paragraph_citations = extract_citation_ids(paragraph)
+        if not paragraph_citations:
+            continue
+
+        report = support_for_citations(
+            paragraph,
+            [citation for citation in paragraph_citations if citation in allowed],
+            evidence_by_id,
+        )
+        support_reports.append(report)
+        if report["supported"]:
+            supported_paragraphs += 1
+
     return {
         "section_id": section.get("section_id") if isinstance(section, dict) else None,
         "citation_ids": citations,
         "invalid_citation_ids": invalid,
         "paragraphs": len(paragraphs),
         "cited_paragraphs": cited_paragraphs,
+        "lexically_supported_paragraphs": supported_paragraphs,
+        "lexical_support_coverage_percent": round(
+            (supported_paragraphs / cited_paragraphs * 100.0)
+            if cited_paragraphs else 0.0,
+            1,
+        ),
+        "support_method": "lexical_overlap",
+        "support_reports": support_reports,
         "citation_coverage_percent": round(
             (cited_paragraphs / len(paragraphs) * 100.0)
             if paragraphs else 0.0,
@@ -67,17 +115,27 @@ def validate_document_citations(
     sections: List[Dict],
     evidence: List[Dict],
 ) -> Dict:
-    """Validate citation IDs across the generated document."""
+    """Validate citation IDs and report lexical source-support signals."""
     known_sources = {
         str(item.get("source_id"))
         for item in evidence or []
         if isinstance(item, dict) and item.get("source_id")
     }
 
+    evidence_by_id = {
+        str(item.get("source_id")): dict(item)
+        for item in evidence or []
+        if isinstance(item, dict) and item.get("source_id")
+    }
+
+    for item in evidence_by_id.values():
+        item["full_text"] = _source_text(item)
+
     reports = []
     invalid_sections = []
     total_paragraphs = 0
     cited_paragraphs = 0
+    supported_paragraphs = 0
 
     for section in sections or []:
         if not isinstance(section, dict):
@@ -86,10 +144,12 @@ def validate_document_citations(
         report = validate_section_citations(
             section,
             known_sources,
+            evidence_by_id=evidence_by_id,
         )
         reports.append(report)
         total_paragraphs += report["paragraphs"]
         cited_paragraphs += report["cited_paragraphs"]
+        supported_paragraphs += report["lexically_supported_paragraphs"]
 
         if not report["valid"]:
             invalid_sections.append(
@@ -103,10 +163,17 @@ def validate_document_citations(
         "invalid_sections": invalid_sections,
         "paragraphs_checked": total_paragraphs,
         "cited_paragraphs": cited_paragraphs,
+        "lexically_supported_paragraphs": supported_paragraphs,
         "citation_coverage_percent": round(
             (cited_paragraphs / total_paragraphs * 100.0)
             if total_paragraphs else 0.0,
             1,
         ),
+        "lexical_support_coverage_percent": round(
+            (supported_paragraphs / cited_paragraphs * 100.0)
+            if cited_paragraphs else 0.0,
+            1,
+        ),
+        "support_method": "lexical_overlap",
         "sections": reports,
     }
