@@ -35,6 +35,7 @@ def main() -> int:
     try:
         indicator = _Indicator()
         policy = WritingDecisionPolicy(theta=0.75, tau=0.60)
+        models = ["strong", "standard", "economy"]
         sections = [
             {"section_id": "s1", "title": "A", "eta": 0.9},
             {"section_id": "s2", "title": "B", "eta": 0.5},
@@ -48,7 +49,7 @@ def main() -> int:
                 },
             },
         ]
-        decisions = policy.decide(sections, indicator, {}, ["strong", "standard", "economy"])
+        decisions = policy.decide(sections, indicator, {}, models)
 
         _assert(len(decisions) == 3, "Unexpected decision count.")
         _assert(all(isinstance(item, SectionDecision) for item in decisions), "Decision type mismatch.")
@@ -56,13 +57,17 @@ def main() -> int:
         _assert(all(item.priority >= 0.0 for item in decisions), "Negative priority detected.")
         _assert(sum(item.selected for item in decisions) >= 1, "No section selected.")
         _assert(any(item.section_id == "s3" and item.priority > item.eta for item in decisions), "Semantic priority was not applied.")
-        _assert(all(item.model in {"strong", "standard", "economy"} for item in decisions), "Unknown model selected.")
+        _assert(all(item.model in set(models) for item in decisions), "Unknown model selected.")
+
+        records = [item.to_dict(models) for item in decisions]
+        _assert(all(record["model"] == models[record["model_index"]] for record in records), "Model index/name mismatch.")
+        _assert(all(record["selected"] in {True, False} for record in records), "Selection field is not boolean.")
 
         print("Stage 2 policy runtime audit")
         print("============================")
         print(f"decisions: {len(decisions)}")
         print(f"selected: {sum(item.selected for item in decisions)}")
-        print("PASS: priority, selection, semantic feedback, and model-selection invariants passed.")
+        print("PASS: priority, selection, semantic feedback, model selection, and serialization invariants passed.")
         return 0
     except Exception as exc:
         print(f"STAGE 2 POLICY AUDIT: ERROR: {exc}")
