@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from analysis.scientific_context import extract_context
@@ -18,6 +20,32 @@ def _statement(item: Dict[str, Any], category: str) -> str:
         or item.get("description")
         or ""
     ).strip()
+
+
+def _read_cached_text(evidence: Dict[str, Any], max_chars: int) -> str:
+    for key in ("full_text", "content", "excerpt"):
+        value = evidence.get(key)
+        if isinstance(value, str) and value.strip():
+            return value[:max_chars]
+
+    path = evidence.get("full_text_path")
+    if not path:
+        return ""
+
+    candidate = Path(str(path))
+    candidates = [candidate]
+    if not candidate.is_absolute():
+        candidates.append(Path.cwd() / candidate)
+
+    for resolved in candidates:
+        if not resolved.exists() or not resolved.is_file():
+            continue
+        try:
+            with resolved.open("r", encoding="utf-8") as handle:
+                return handle.read(max_chars)
+        except OSError:
+            continue
+    return ""
 
 
 def enrich_extraction_context(
@@ -47,6 +75,7 @@ def enrich_extraction_context(
                 break
             if not isinstance(item, dict):
                 continue
+
             source_ids = item.get("source_ids", [])
             if isinstance(source_ids, str):
                 source_ids = [source_ids]
@@ -58,13 +87,9 @@ def enrich_extraction_context(
                 evidence = evidence_by_id.get(str(source_id))
                 if not isinstance(evidence, dict):
                     continue
-                full_text = evidence.get("full_text")
-                if isinstance(full_text, str) and full_text.strip():
-                    passages.append(full_text[:max_passage_chars])
-                    continue
-                excerpt = evidence.get("excerpt") or evidence.get("content")
-                if isinstance(excerpt, str) and excerpt.strip():
-                    passages.append(excerpt[:max_passage_chars])
+                text = _read_cached_text(evidence, max_passage_chars)
+                if text.strip():
+                    passages.append(text)
 
             statement = _statement(item, category)
             if not statement or not passages:
