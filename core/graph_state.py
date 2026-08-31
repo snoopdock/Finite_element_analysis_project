@@ -6,6 +6,7 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from core.knowledge_graph_builder import sync_legacy_knowledge_base
+from core.concept_linking import candidate_concept_links
 from core.knowledge_graph import normalize_graph, validate_graph_references
 
 
@@ -18,6 +19,7 @@ def ensure_graph_state(state: Dict[str, Any]) -> Dict[str, Any]:
 
     sync_legacy_knowledge_base(state)
     normalize_graph(state["knowledge_graph"])
+    candidate_concept_links(state["knowledge_graph"])
     state["knowledge_graph_violations"] = validate_graph_references(
         state["knowledge_graph"]
     )
