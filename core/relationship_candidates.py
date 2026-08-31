@@ -13,6 +13,7 @@ _ALLOWED = {
     "complements",
     "related_to",
 }
+_SYMMETRIC = {"alternative_to", "complements", "related_to"}
 
 
 def _clean_ids(values: Any) -> List[str]:
@@ -62,11 +63,15 @@ def candidate_relationships(graph: Dict[str, Any]) -> int:
             if relation_type not in _ALLOWED:
                 continue
 
-            key = "|".join(sorted((str(source_id), target_id))) + "|" + relation_type
+            left_id, right_id = str(source_id), target_id
+            if relation_type in _SYMMETRIC and right_id < left_id:
+                left_id, right_id = right_id, left_id
+
+            key = "|".join((left_id, right_id, relation_type))
             record = {
                 "candidate_id": key,
-                "source_id": str(source_id),
-                "target_id": target_id,
+                "source_id": left_id,
+                "target_id": right_id,
                 "type": relation_type,
                 "source_ids": _clean_ids(hint.get("source_ids", concept.get("source_ids", []))),
                 "reason": str(hint.get("reason", "")).strip(),
