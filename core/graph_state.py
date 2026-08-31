@@ -9,6 +9,7 @@ from core.knowledge_graph_builder import sync_legacy_knowledge_base
 from core.concept_linking import candidate_concept_links
 from core.graph_membership import apply_explicit_membership
 from core.proposition_history import record_proposition_history
+from core.relationship_candidates import candidate_relationships
 from core.knowledge_graph import normalize_graph, validate_graph_references
 
 
@@ -22,6 +23,7 @@ def ensure_graph_state(state: Dict[str, Any]) -> Dict[str, Any]:
     sync_legacy_knowledge_base(state)
     normalize_graph(state["knowledge_graph"])
     candidate_concept_links(state["knowledge_graph"])
+    candidate_relationships(state["knowledge_graph"])
     apply_explicit_membership(state)
     normalize_graph(state["knowledge_graph"])
     record_proposition_history(state)
@@ -37,6 +39,7 @@ def empty_graph() -> Dict[str, Any]:
         "concepts": {},
         "propositions": {},
         "relationships": {},
+        "relationship_candidates": {},
         "concept_history": [],
         "proposition_history": [],
     }
@@ -49,6 +52,7 @@ def graph_summary(state: Dict[str, Any]) -> Dict[str, int]:
         "concepts": len(graph.get("concepts", {})),
         "propositions": len(graph.get("propositions", {})),
         "relationships": len(graph.get("relationships", {})),
+        "relationship_candidates": len(graph.get("relationship_candidates", {})),
         "concept_history": len(graph.get("concept_history", [])),
         "proposition_history": len(graph.get("proposition_history", [])),
         "violations": len(state.get("knowledge_graph_violations", [])),
