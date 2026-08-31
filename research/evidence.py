@@ -26,8 +26,6 @@ def retrieve_evidence_parallel(
     max_workers: int = 3,
 ) -> List[Dict]:
     """Retrieve evidence concurrently, preserving exact query/provider provenance."""
-    # Use the configured cache limit. Do not override the application/CI
-    # configuration with a legacy 5000-KB value.
     cleanup_cache()
 
     normalized_queries = [
@@ -44,37 +42,17 @@ def retrieve_evidence_parallel(
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for query in normalized_queries:
-            futures[
-                executor.submit(
-                    search_arxiv,
-                    query,
-                    2,
-                )
-            ] = (
+            futures[executor.submit(search_arxiv, query, 2)] = (
                 "arxiv",
                 query,
                 "preprint",
             )
-
-            futures[
-                executor.submit(
-                    search_semantic_scholar,
-                    query,
-                    2,
-                )
-            ] = (
+            futures[executor.submit(search_semantic_scholar, query, 2)] = (
                 "semantic_scholar",
                 query,
                 "academic",
             )
-
-            futures[
-                executor.submit(
-                    search_wikipedia,
-                    query,
-                    2,
-                )
-            ] = (
+            futures[executor.submit(search_wikipedia, query, 2)] = (
                 "wikipedia",
                 query,
                 "wikipedia",
@@ -102,20 +80,12 @@ def retrieve_evidence_parallel(
                 if not isinstance(item, dict):
                     continue
 
-                source_id = item.get(
-                    "source_id"
-                )
-
+                source_id = item.get("source_id")
                 if not source_id:
                     continue
+                source_id = str(source_id)
 
-                source_id = str(
-                    source_id
-                )
-
-                existing = candidates_by_id.get(
-                    source_id
-                )
+                existing = candidates_by_id.get(source_id)
 
                 if existing is None:
                     enriched = dict(item)
@@ -130,51 +100,27 @@ def retrieve_evidence_parallel(
                     candidates_by_id[source_id] = enriched
                     continue
 
-                # Preserve all discovery provenance when the same article is
-                # returned by multiple providers or queries.
-                query_contexts = existing.setdefault(
-                    "query_contexts",
-                    [],
-                )
-
+                query_contexts = existing.setdefault("query_contexts", [])
                 if query not in query_contexts:
                     query_contexts.append(query)
 
-                providers = existing.setdefault(
-                    "provider_names",
-                    [],
-                )
-
+                providers = existing.setdefault("provider_names", [])
                 if provider_name not in providers:
                     providers.append(provider_name)
 
-                source_types = existing.setdefault(
-                    "source_types",
-                    [],
-                )
-
+                source_types = existing.setdefault("source_types", [])
                 if source_type not in source_types:
                     source_types.append(source_type)
 
-                existing.setdefault(
-                    "query_context",
-                    query,
-                )
+                existing.setdefault("query_context", query)
 
-                # Prefer an actual full-text record if a duplicate result
-                # happens to arrive with better content than the first one.
                 old_full_text = bool(
                     existing.get("full_text_path")
-                    and os.path.exists(
-                        existing.get("full_text_path")
-                    )
+                    and os.path.exists(existing.get("full_text_path"))
                 )
-
                 new_full_text = bool(
                     item.get("full_text_path")
-                    and os.path.exists(
-                        item.get("full_text_path")
-                    )
+                    and os.path.exists(item.get("full_text_path"))
                 )
 
                 if new_full_text and not old_full_text:
@@ -188,27 +134,16 @@ def retrieve_evidence_parallel(
                         if key in item:
                             existing[key] = item[key]
 
-    candidates = list(
-        candidates_by_id.values()
-    )
+    candidates = list(candidates_by_id.values())
 
     for item in candidates:
-        item["query_contexts"] = sorted(
-            set(item.get("query_contexts", []))
-        )
-        item["provider_names"] = sorted(
-            set(item.get("provider_names", []))
-        )
-        item["source_types"] = sorted(
-            set(item.get("source_types", []))
-        )
+        item["query_contexts"] = sorted(set(item.get("query_contexts", [])))
+        item["provider_names"] = sorted(set(item.get("provider_names", [])))
+        item["source_types"] = sorted(set(item.get("source_types", [])))
 
     ranked = rank_items_for_queries(
         normalized_queries,
         candidates,
-        # Rank the full candidate pool first. Diversity selection below then
-        # chooses the requested number without losing credible alternatives
-        # that merely ranked behind a concentrated provider cluster.
         top_k=len(candidates),
     )
 
@@ -217,10 +152,7 @@ def retrieve_evidence_parallel(
         max_items=max(0, int(max_items)),
     )
 
-    # Cleanup once more after retrieval because downloading new full-text may
-    # have pushed the cache over its size limit.
     cleanup_cache()
-
     return selected
 
 
@@ -229,35 +161,15 @@ def get_next_unread_content(
     reading_state: Dict,
     max_chars: int = 3000,
 ) -> Optional[Dict]:
-    """Return the next unread full-text section of an article.
+    """Return the next unread full-text section of an article."""
+    full_text_path = source_item.get("full_text_path")
+    article_id = str(source_item.get("source_id", "unknown"))
 
-    This project intentionally does not substitute an abstract for missing
-    full text: an abstract-only source may remain in the evidence database,
-    but it is not presented to the full-text extraction stage.
-    """
-    full_text_path = source_item.get(
-        "full_text_path"
-    )
-
-    article_id = str(
-        source_item.get(
-            "source_id",
-            "unknown",
-        )
-    )
-
-    if (
-        not full_text_path
-        or not os.path.exists(full_text_path)
-    ):
+    if not full_text_path or not os.path.exists(full_text_path):
         return None
 
     try:
-        with open(
-            full_text_path,
-            "r",
-            encoding="utf-8",
-        ) as handle:
+        with open(full_text_path, "r", encoding="utf-8") as handle:
             full_text = handle.read()
     except OSError:
         return None
@@ -265,620 +177,237 @@ def get_next_unread_content(
     if not full_text.strip():
         return None
 
-    sections = split_article_into_sections(
-        full_text
-    )
-
-    unread = get_unread_sections(
-        article_id,
-        sections,
-        reading_state,
-    )
-
+    sections = split_article_into_sections(full_text)
+    unread = get_unread_sections(article_id, sections, reading_state)
     if not unread:
         return None
 
     next_section = unread[0]
-
-    content = str(
-        next_section.get(
-            "content",
-            "",
-        )
-    )[:max_chars]
+    content = str(next_section.get("content", ""))[:max_chars]
 
     return {
-        "section_type": next_section.get(
-            "section_type",
-            "unknown",
-        ),
+        "section_type": next_section.get("section_type", "unknown"),
         "content": content,
-        "char_start": next_section.get(
-            "char_start",
-            0,
-        ),
-        "char_end": next_section.get(
-            "char_end",
-            next_section.get(
-                "char_start",
-                0,
-            ) + len(content),
-        ),
+        "char_start": next_section.get("char_start", 0),
+        "char_end": next_section.get("char_end", next_section.get("char_start", 0) + len(content)),
     }
 
 
-def get_smart_excerpt(
-    source_item: Dict,
-    max_chars: int = 3000,
-) -> str:
+def get_smart_excerpt(source_item: Dict, max_chars: int = 3000) -> str:
     """Legacy full-text excerpt helper."""
-    full_text_path = source_item.get(
-        "full_text_path"
-    )
-
-    if (
-        full_text_path
-        and os.path.exists(full_text_path)
-    ):
+    full_text_path = source_item.get("full_text_path")
+    if full_text_path and os.path.exists(full_text_path):
         try:
-            with open(
-                full_text_path,
-                "r",
-                encoding="utf-8",
-            ) as handle:
+            with open(full_text_path, "r", encoding="utf-8") as handle:
                 text = handle.read()
-
             if len(text) > max_chars:
                 snippet = text[:max_chars]
-                last_para = snippet.rfind(
-                    "\n\n"
-                )
-
+                last_para = snippet.rfind("\n\n")
                 if last_para > max_chars * 0.5:
                     snippet = snippet[:last_para]
-
-                return (
-                    snippet
-                    + "\n[... text truncated ...]"
-                )
-
+                return snippet + "\n[... text truncated ...]"
             return text
-
         except OSError:
             pass
-
     return "No full text available."
 
 
-def evidence_to_text_section_aware(
-    evidence: List[Dict],
-    reading_state: Dict,
-    max_sources: int = 4,
-    chars_per_source: int = 3000,
-) -> tuple:
+def evidence_to_text_section_aware(evidence: List[Dict], reading_state: Dict, max_sources: int = 4, chars_per_source: int = 3000) -> tuple:
     """Select the next unread full-text section from ranked evidence."""
     blocks = []
     sections_read_this_cycle = []
     updated_state = reading_state
-
     count = 0
 
     for item in evidence:
-        if count >= max_sources:
-            break
-
-        if not isinstance(
-            item,
-            dict,
-        ):
+        if count >= max_sources or not isinstance(item, dict):
             continue
-
-        article_id = str(
-            item.get(
-                "source_id",
-                "unknown",
-            )
-        )
-
-        next_content = get_next_unread_content(
-            item,
-            updated_state,
-            chars_per_source,
-        )
-
+        article_id = str(item.get("source_id", "unknown"))
+        next_content = get_next_unread_content(item, updated_state, chars_per_source)
         if next_content is None:
             continue
-
-        section_type = next_content[
-            "section_type"
-        ]
-
-        content = next_content[
-            "content"
-        ]
-
-        char_start = next_content[
-            "char_start"
-        ]
-
-        char_end = next_content[
-            "char_end"
-        ]
-
-        block = (
-            f'<source id="{article_id}" '
-            f'title="{clean_text(item.get("title", ""), 200)}" '
-            f'section="{clean_text(str(section_type), 100)}" '
-            f'status="{clean_text(str(item.get("status", "unknown")), 50)}">\n'
-            f'{clean_text(content, chars_per_source)}\n'
-            f'</source>'
+        section_type = next_content["section_type"]
+        content = next_content["content"]
+        char_start = next_content["char_start"]
+        char_end = next_content["char_end"]
+        blocks.append(
+            f'<source id="{article_id}" title="{clean_text(item.get("title", ""), 200)}" '
+            f'section="{clean_text(str(section_type), 100)}" status="{clean_text(str(item.get("status", "unknown")), 50)}">\n'
+            f'{clean_text(content, chars_per_source)}\n</source>'
         )
-
-        blocks.append(block)
-
-        sections_read_this_cycle.append(
-            {
-                "article_id": article_id,
-                "section_type": section_type,
-                "char_start": char_start,
-                "char_end": char_end,
-            }
-        )
-
+        sections_read_this_cycle.append({
+            "article_id": article_id,
+            "section_type": section_type,
+            "char_start": char_start,
+            "char_end": char_end,
+        })
         count += 1
 
-    return (
-        "\n\n".join(blocks),
-        updated_state,
-        sections_read_this_cycle,
-    )
+    return "\n\n".join(blocks), updated_state, sections_read_this_cycle
 
 
-def evidence_to_text(
-    evidence: List[Dict],
-    max_sources: int = 4,
-    chars_per_source: int = 3000,
-) -> str:
+def evidence_to_text(evidence: List[Dict], max_sources: int = 4, chars_per_source: int = 3000) -> str:
     """Legacy full-text formatter retained for compatibility."""
     blocks = []
-
     for item in evidence[:max_sources]:
-        excerpt = get_smart_excerpt(
-            item,
-            max_chars=chars_per_source,
-        )
-
+        excerpt = get_smart_excerpt(item, max_chars=chars_per_source)
         if excerpt == "No full text available.":
             continue
-
         blocks.append(
-            '<source id="'
-            + str(
-                item.get(
-                    "source_id",
-                    "unknown",
-                )
-            )
-            + '" title="'
-            + clean_text(
-                item.get(
-                    "title",
-                    "",
-                ),
-                200,
-            )
-            + '" status="'
-            + str(
-                item.get(
-                    "status",
-                    "",
-                )
-            )
-            + '">\n'
-            + clean_text(
-                excerpt,
-                chars_per_source,
-            )
-            + "\n</source>"
+            '<source id="' + str(item.get("source_id", "unknown")) + '" title="' +
+            clean_text(item.get("title", ""), 200) + '" status="' + str(item.get("status", "")) + '">\n' +
+            clean_text(excerpt, chars_per_source) + "\n</source>"
         )
-
     return "\n\n".join(blocks)
 
 
-def merge_evidence(
-    old: List[Dict],
-    new: List[Dict],
-    max_keep: int = 200,
-) -> List[Dict]:
-    """Merge evidence by source_id while retaining provenance."""
+def merge_evidence(old: List[Dict], new: List[Dict], max_keep: int = 200) -> List[Dict]:
+    """Merge evidence by source_id while retaining provenance and current ranking."""
     merged = {}
 
     for item in old or []:
-        if (
-            isinstance(item, dict)
-            and item.get("source_id")
-        ):
-            merged[str(item["source_id"])] = dict(
-                item
-            )
+        if isinstance(item, dict) and item.get("source_id"):
+            merged[str(item["source_id"])] = dict(item)
 
     for item in new or []:
-        if not (
-            isinstance(item, dict)
-            and item.get("source_id")
-        ):
+        if not (isinstance(item, dict) and item.get("source_id")):
             continue
 
-        source_id = str(
-            item["source_id"]
-        )
-
+        source_id = str(item["source_id"])
         if source_id not in merged:
-            merged[source_id] = dict(
-                item
-            )
+            merged[source_id] = dict(item)
             continue
 
         existing = merged[source_id]
 
-        for key in (
-            "query_contexts",
-            "provider_names",
-            "source_types",
-        ):
-            old_values = existing.get(
-                key,
-                [],
-            )
-            new_values = item.get(
-                key,
-                [],
-            )
-
-            if isinstance(
-                old_values,
-                str,
-            ):
+        for key in ("query_contexts", "provider_names", "source_types"):
+            old_values = existing.get(key, [])
+            new_values = item.get(key, [])
+            if isinstance(old_values, str):
                 old_values = [old_values]
-
-            if isinstance(
-                new_values,
-                str,
-            ):
+            if isinstance(new_values, str):
                 new_values = [new_values]
-
-            if not isinstance(
-                old_values,
-                list,
-            ):
+            if not isinstance(old_values, list):
                 old_values = []
-
-            if not isinstance(
-                new_values,
-                list,
-            ):
+            if not isinstance(new_values, list):
                 new_values = []
+            existing[key] = sorted(set(old_values) | set(new_values))
 
-            existing[key] = sorted(
-                set(old_values)
-                | set(new_values)
-            )
-
-        # Prefer current metadata if available.
         for key in (
-            "title",
-            "authors",
-            "url",
-            "metadata",
-            "full_text_path",
-            "status",
-            "content_type",
+            "title", "authors", "url", "metadata", "full_text_path",
+            "status", "content_type", "ranking",
         ):
             if key in item:
                 existing[key] = item[key]
 
         if item.get("query_context"):
-            existing["query_context"] = item[
-                "query_context"
-            ]
-
+            existing["query_context"] = item["query_context"]
         if item.get("retrieved_at"):
-            existing["retrieved_at"] = item[
-                "retrieved_at"
-            ]
+            existing["retrieved_at"] = item["retrieved_at"]
 
-    values = list(
-        merged.values()
-    )
-
+    values = list(merged.values())
     values.sort(
         key=lambda item: (
-            -float(
-                item.get(
-                    "ranking",
-                    {}
-                ).get(
-                    "score",
-                    0.0,
-                )
-            ),
-            str(
-                item.get(
-                    "retrieved_at",
-                    "",
-                )
-            ),
+            -float(item.get("ranking", {}).get("score", 0.0)),
+            str(item.get("source_id", "")),
         )
     )
+    return values[:max(0, int(max_keep))]
 
-    return values[:max_keep]
 
-
-def merge_knowledge(
-    existing_kb: Dict,
-    new_extraction: Dict,
-) -> Dict:
+def merge_knowledge(existing_kb: Dict, new_extraction: Dict) -> Dict:
     """Merge extracted knowledge while retaining all known source IDs."""
-    if not isinstance(
-        new_extraction,
-        dict,
-    ):
+    if not isinstance(new_extraction, dict):
         return existing_kb or {}
+    kb = dict(existing_kb) if isinstance(existing_kb, dict) else {}
 
-    kb = (
-        dict(existing_kb)
-        if isinstance(
-            existing_kb,
-            dict,
-        )
-        else {}
-    )
-
-    for category in (
-        "concepts",
-        "procedures",
-        "equations",
-        "rules",
-    ):
-        existing = kb.get(
-            category,
-            [],
-        )
-
-        if not isinstance(
-            existing,
-            list,
-        ):
+    for category in ("concepts", "procedures", "equations", "rules"):
+        existing = kb.get(category, [])
+        if not isinstance(existing, list):
             existing = []
-
-        new_items = new_extraction.get(
-            category,
-            [],
-        )
-
-        if not isinstance(
-            new_items,
-            list,
-        ):
+        new_items = new_extraction.get(category, [])
+        if not isinstance(new_items, list):
             kb[category] = existing
             continue
 
         existing_index = {}
-
         for item in existing:
-            if not isinstance(
-                item,
-                dict,
-            ):
+            if not isinstance(item, dict):
                 continue
-
-            key = str(
-                item.get("name")
-                or item.get("title")
-                or item.get("rule")
-                or ""
-            ).lower().strip()
-
+            key = str(item.get("name") or item.get("title") or item.get("rule") or "").lower().strip()
             if key:
                 existing_index[key] = item
 
         for new_item in new_items:
-            if not isinstance(
-                new_item,
-                dict,
-            ):
+            if not isinstance(new_item, dict):
                 continue
-
-            key = str(
-                new_item.get("name")
-                or new_item.get("title")
-                or new_item.get("rule")
-                or ""
-            ).lower().strip()
-
-            new_sources = new_item.get(
-                "source_ids",
-                [],
-            )
-
-            if not isinstance(
-                new_sources,
-                list,
-            ):
+            key = str(new_item.get("name") or new_item.get("title") or new_item.get("rule") or "").lower().strip()
+            new_sources = new_item.get("source_ids", [])
+            if not isinstance(new_sources, list):
                 new_sources = []
-
             if not key:
-                existing.append(
-                    new_item
-                )
+                existing.append(new_item)
                 continue
-
             if key in existing_index:
-                old_item = existing_index[
-                    key
-                ]
-
-                old_sources = old_item.get(
-                    "source_ids",
-                    [],
-                )
-
-                if not isinstance(
-                    old_sources,
-                    list,
-                ):
+                old_item = existing_index[key]
+                old_sources = old_item.get("source_ids", [])
+                if not isinstance(old_sources, list):
                     old_sources = []
-
-                old_item["source_ids"] = sorted(
-                    set(old_sources)
-                    | set(new_sources)
-                )
-
-                old_explanation = str(
-                    old_item.get(
-                        "explanation",
-                        "",
-                    )
-                )
-
-                new_explanation = str(
-                    new_item.get(
-                        "explanation",
-                        "",
-                    )
-                )
-
+                old_item["source_ids"] = sorted(set(old_sources) | set(new_sources))
+                old_explanation = str(old_item.get("explanation", ""))
+                new_explanation = str(new_item.get("explanation", ""))
                 if len(new_explanation) > len(old_explanation):
                     old_item["explanation"] = new_explanation
-
             else:
-                existing.append(
-                    new_item
-                )
+                existing.append(new_item)
                 existing_index[key] = new_item
-
         kb[category] = existing
-
     return kb
 
 
-def confirm_sections_read(
-    sections_read: List[Dict],
-    extracted_items: Dict[str, Dict[str, int]],
-    reading_state: Dict,
-) -> Dict:
+def confirm_sections_read(sections_read: List[Dict], extracted_items: Dict[str, Dict[str, int]], reading_state: Dict) -> Dict:
     """Confirm sections only after successful attributable extraction."""
     for section_info in sections_read or []:
-        if not isinstance(
-            section_info,
-            dict,
-        ):
+        if not isinstance(section_info, dict):
             continue
-
-        article_id = section_info.get(
-            "article_id"
-        )
-
+        article_id = section_info.get("article_id")
         if not article_id:
             continue
-
-        items = (
-            extracted_items or {}
-        ).get(
-            article_id,
-            {
-                "concepts": 0,
-                "equations": 0,
-                "procedures": 0,
-                "rules": 0,
-            },
-        )
-
+        items = (extracted_items or {}).get(article_id, {"concepts": 0, "equations": 0, "procedures": 0, "rules": 0})
         reading_state = mark_section_read(
             article_id=str(article_id),
-            section_type=section_info.get(
-                "section_type",
-                "unknown",
-            ),
-            char_start=section_info.get(
-                "char_start",
-                0,
-            ),
+            section_type=section_info.get("section_type", "unknown"),
+            char_start=section_info.get("char_start", 0),
             extracted_items=items,
             reading_state=reading_state,
         )
-
     return reading_state
 
 
-def get_articles_needing_more_reading(
-    evidence: List[Dict],
-    reading_state: Dict,
-    min_unread_sections: int = 1,
-) -> List[str]:
+def get_articles_needing_more_reading(evidence: List[Dict], reading_state: Dict, min_unread_sections: int = 1) -> List[str]:
     needs_reading = []
-
     for item in evidence or []:
-        if not isinstance(
-            item,
-            dict,
-        ):
+        if not isinstance(item, dict):
             continue
-
-        article_id = str(
-            item.get(
-                "source_id",
-                "unknown",
-            )
-        )
-
-        full_text_path = item.get(
-            "full_text_path"
-        )
-
-        if (
-            not full_text_path
-            or not os.path.exists(full_text_path)
-        ):
+        article_id = str(item.get("source_id", "unknown"))
+        full_text_path = item.get("full_text_path")
+        if not full_text_path or not os.path.exists(full_text_path):
             continue
-
         try:
-            with open(
-                full_text_path,
-                "r",
-                encoding="utf-8",
-            ) as handle:
+            with open(full_text_path, "r", encoding="utf-8") as handle:
                 full_text = handle.read()
         except OSError:
             continue
-
-        sections = split_article_into_sections(
-            full_text
-        )
-
-        unread = get_unread_sections(
-            article_id,
-            sections,
-            reading_state,
-        )
-
+        sections = split_article_into_sections(full_text)
+        unread = get_unread_sections(article_id, sections, reading_state)
         if len(unread) >= min_unread_sections:
-            needs_reading.append(
-                article_id
-            )
-
+            needs_reading.append(article_id)
     return needs_reading
 
 
-def get_reading_summary(
-    evidence: List[Dict],
-    reading_state: Dict,
-) -> Dict:
+def get_reading_summary(evidence: List[Dict], reading_state: Dict) -> Dict:
     """Return section-level reading coverage."""
-    total_articles = len(
-        evidence or []
-    )
-
+    total_articles = len(evidence or [])
     fully_read = 0
     partially_read = 0
     never_read = 0
@@ -887,51 +416,14 @@ def get_reading_summary(
     total_sections_available = 0
 
     for item in evidence or []:
-        if not isinstance(
-            item,
-            dict,
-        ):
+        if not isinstance(item, dict):
             continue
+        article_id = str(item.get("source_id", "unknown"))
+        full_text_path = item.get("full_text_path")
+        article_history = reading_state.get(article_id, {}) if isinstance(reading_state, dict) else {}
+        previously_read = bool(isinstance(article_history, dict) and article_history.get("read_sections"))
 
-        article_id = str(
-            item.get(
-                "source_id",
-                "unknown",
-            )
-        )
-
-        full_text_path = item.get(
-            "full_text_path"
-        )
-
-        # Reading history is authoritative even when an LRU cache eviction
-        # removed the current local copy of the full text.
-        article_history = (
-            reading_state.get(
-                article_id,
-                {}
-            )
-            if isinstance(
-                reading_state,
-                dict,
-            )
-            else {}
-        )
-
-        previously_read = bool(
-            isinstance(
-                article_history,
-                dict,
-            )
-            and article_history.get(
-                "read_sections"
-            )
-        )
-
-        if (
-            not full_text_path
-            or not os.path.exists(full_text_path)
-        ):
+        if not full_text_path or not os.path.exists(full_text_path):
             if previously_read:
                 previously_read_cache_missing += 1
             else:
@@ -939,11 +431,7 @@ def get_reading_summary(
             continue
 
         try:
-            with open(
-                full_text_path,
-                "r",
-                encoding="utf-8",
-            ) as handle:
+            with open(full_text_path, "r", encoding="utf-8") as handle:
                 full_text = handle.read()
         except OSError:
             if previously_read:
@@ -952,25 +440,10 @@ def get_reading_summary(
                 never_read += 1
             continue
 
-        sections = split_article_into_sections(
-            full_text
-        )
-
-        unread = get_unread_sections(
-            article_id,
-            sections,
-            reading_state,
-        )
-
-        available = len(
-            sections
-        )
-
-        read_count = max(
-            0,
-            available - len(unread),
-        )
-
+        sections = split_article_into_sections(full_text)
+        unread = get_unread_sections(article_id, sections, reading_state)
+        available = len(sections)
+        read_count = max(0, available - len(unread))
         total_sections_available += available
         total_sections_read += read_count
 
@@ -981,14 +454,7 @@ def get_reading_summary(
         else:
             never_read += 1
 
-    coverage = (
-        total_sections_read
-        / total_sections_available
-        * 100.0
-        if total_sections_available > 0
-        else 0.0
-    )
-
+    coverage = total_sections_read / total_sections_available * 100.0 if total_sections_available > 0 else 0.0
     return {
         "total_articles": total_articles,
         "fully_read": fully_read,
@@ -997,8 +463,5 @@ def get_reading_summary(
         "previously_read_cache_missing": previously_read_cache_missing,
         "total_sections_read": total_sections_read,
         "total_sections_available": total_sections_available,
-        "reading_coverage_percent": round(
-            coverage,
-            1,
-        ),
+        "reading_coverage_percent": round(coverage, 1),
     }
