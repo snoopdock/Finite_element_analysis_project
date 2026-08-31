@@ -344,6 +344,9 @@ def main():
                 )
                 state["knowledge_base"] = kb
 
+            # phase_write currently constructs DynamicWriter itself. The shared
+            # indicator object is retained here for convergence; Stage 2 will
+            # wire the same object directly into the writer.
             sections, written, adjustment = phase_write(
                 config,
                 state,
@@ -356,7 +359,6 @@ def main():
                 iteration_history,
                 oaa_loop,
                 section_topics,
-                writing_indicator=writing_indicator,
             )
 
             state["sections"] = sections
