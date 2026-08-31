@@ -54,6 +54,25 @@ writing:
     high_eta_model_index: 0
     low_eta_model_index: -1
 
+  # OAA action-selection policy. Higher persistence/severity scores win;
+  # higher mutation cost is penalized. Weights are normalized automatically.
+  oaa_action_policy:
+    persistence_weight: 0.35
+    severity_weight: 0.50
+    cost_weight: 0.15
+    severity_weights:
+      repetition: 1.00
+      too_simple: 0.95
+      merge_candidate: 0.85
+      length_imbalance: 0.65
+      missing_transition: 0.55
+    cost_weights:
+      merge_candidate: 0.85
+      too_simple: 0.75
+      repetition: 0.45
+      length_imbalance: 0.40
+      missing_transition: 0.35
+
 convergence:
   window: 3
   eta_variance_threshold: 0.1
