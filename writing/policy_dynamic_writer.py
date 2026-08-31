@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Policy-aware adapter for DynamicWriter.
-
-This adapter integrates ``WritingDecisionPolicy`` without changing the
-existing paragraph/outline generation implementation. It keeps the section
-objects available to the policy so UUIDs and lineage remain intact.
-"""
+"""Policy-aware adapter for DynamicWriter."""
 
 from __future__ import annotations
 
@@ -33,7 +28,15 @@ class PolicyAwareDynamicWriter(DynamicWriter):
             writing_indicator=writing_indicator,
         )
 
-        writing_config = config.get("writing", {})
+        writing_config = config.get(
+            "writing",
+            {},
+        )
+
+        model_policy = writing_config.get(
+            "model_selection",
+            {},
+        )
 
         self.decision_policy = WritingDecisionPolicy(
             theta=writing_config.get(
@@ -44,6 +47,14 @@ class PolicyAwareDynamicWriter(DynamicWriter):
                 "tau",
                 0.60,
             ),
+            high_eta_model_index=model_policy.get(
+                "high_eta_model_index",
+                0,
+            ),
+            low_eta_model_index=model_policy.get(
+                "low_eta_model_index",
+                -1,
+            ),
         )
 
         self._decision_sections: List[Dict] = []
@@ -53,11 +64,11 @@ class PolicyAwareDynamicWriter(DynamicWriter):
         section_topics: List[str],
     ) -> List[str]:
         """Schedule sections using the explicit policy."""
-        sections = list(self._decision_sections)
+        sections = list(
+            self._decision_sections
+        )
 
         if not sections:
-            # Preserve the existing bootstrap behavior when there are no
-            # materialized section objects yet.
             return super().mark_sections(
                 section_topics
             )
@@ -73,7 +84,11 @@ class PolicyAwareDynamicWriter(DynamicWriter):
         )
 
         selected_ids = {
-            str(section.get("section_id"))
+            str(
+                section.get(
+                    "section_id"
+                )
+            )
             for section, _ in selected
             if section.get("section_id")
         }
@@ -84,39 +99,57 @@ class PolicyAwareDynamicWriter(DynamicWriter):
             section_id = section.get(
                 "section_id"
             )
+
             title = str(
-                section.get("title", "")
+                section.get(
+                    "title",
+                    "",
+                )
             ).strip()
 
             if (
                 section_id
                 and str(section_id) in selected_ids
             ):
-                selected_titles.append(title)
+                selected_titles.append(
+                    title
+                )
 
-        # Include configured topics which are not yet materialized as
-        # sections, because they still need initial generation.
         materialized_titles = {
-            str(section.get("title", "")).strip()
+            str(
+                section.get(
+                    "title",
+                    "",
+                )
+            ).strip()
             for section in sections
         }
 
         for topic in section_topics:
             if not topic:
                 continue
+
             if topic not in materialized_titles:
-                selected_titles.append(topic)
+                selected_titles.append(
+                    topic
+                )
 
         return selected_titles
 
-    def select_model(self, eta: float) -> str:
-        """Select the model through the shared Stage 2 policy."""
+    def select_model(
+        self,
+        eta: float,
+    ) -> str:
+        """Select the model through the Stage 2 policy."""
         models = self.config.get(
             "cloudflare_models",
             ["@cf/meta/llama-3.1-8b-instruct"],
         )
 
-        if not isinstance(models, list) or not models:
+        if not isinstance(
+            models,
+            list,
+        ) or not models:
             raise RuntimeError(
                 "cloudflare_models must contain at least one model."
             )
@@ -126,7 +159,9 @@ class PolicyAwareDynamicWriter(DynamicWriter):
             models,
         )
 
-        return str(models[index])
+        return str(
+            models[index]
+        )
 
     def run(
         self,
@@ -138,7 +173,10 @@ class PolicyAwareDynamicWriter(DynamicWriter):
         self._decision_sections = [
             section
             for section in existing_sections
-            if isinstance(section, dict)
+            if isinstance(
+                section,
+                dict,
+            )
         ]
 
         try:
