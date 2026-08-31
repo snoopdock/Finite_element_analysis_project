@@ -65,10 +65,18 @@ def make_state():
         "knowledge_graph": {
             "concepts": {},
             "propositions": {
-                "p1": proposition("p1", "Method A is stable", "s1", "F1"),
-                "p2": proposition("p2", "Method A is unstable", "s2", "F2"),
-                "p3": proposition("p3", "Method B is stable", "s3", "F3"),
-                "p4": proposition("p4", "Method B is unstable", "s4", "F4"),
+                "11111111-1111-4111-8111-111111111111": proposition(
+                    "11111111-1111-4111-8111-111111111111", "Method A is stable", "s1", "F1"
+                ),
+                "22222222-2222-4222-8222-222222222222": proposition(
+                    "22222222-2222-4222-8222-222222222222", "Method A is unstable", "s2", "F2"
+                ),
+                "33333333-3333-4333-8333-333333333333": proposition(
+                    "33333333-3333-4333-8333-333333333333", "Method B is stable", "s3", "F3"
+                ),
+                "44444444-4444-4444-8444-444444444444": proposition(
+                    "44444444-4444-4444-8444-444444444444", "Method B is unstable", "s4", "F4"
+                ),
             },
             "relationships": {},
             "concept_history": [],
@@ -81,9 +89,13 @@ def main() -> int:
         state = make_state()
         provider = StubProvider()
         parser = StubParser()
+        p1 = "11111111-1111-4111-8111-111111111111"
+        p2 = "22222222-2222-4222-8222-222222222222"
+        p3 = "33333333-3333-4333-8333-333333333333"
+        p4 = "44444444-4444-4444-8444-444444444444"
         jobs = [
-            {"section_id": "sec-a", "proposition_ids": ["p1", "p2"]},
-            {"section_id": "sec-b", "proposition_ids": ["p3", "p4"]},
+            {"section_id": "sec-a", "proposition_ids": [p1, p2]},
+            {"section_id": "sec-b", "proposition_ids": [p3, p4]},
         ]
 
         result = record_perspective_jobs(
@@ -103,22 +115,22 @@ def main() -> int:
             for record in result["reports"]
             if isinstance(record, dict)
         ]
-        check({"p1", "p2"} in pairs, "First job did not target its proposition IDs.")
-        check({"p3", "p4"} in pairs, "Second job did not target its proposition IDs.")
-        check({"p1", "p3"} not in pairs, "A job compared unrelated propositions.")
-        check({"p2", "p4"} not in pairs, "A job compared unrelated propositions.")
+        check({p1, p2} in pairs, "First job did not target its proposition IDs.")
+        check({p3, p4} in pairs, "Second job did not target its proposition IDs.")
+        check({p1, p3} not in pairs, "A job compared unrelated propositions.")
+        check({p2, p4} not in pairs, "A job compared unrelated propositions.")
 
         relationships = state["knowledge_graph"]["relationships"]
         endpoints = {
             tuple(sorted(rel["proposition_ids"]))
             for rel in relationships.values()
         }
-        check(("p1", "p2") in endpoints, "First targeted relationship missing.")
-        check(("p3", "p4") in endpoints, "Second targeted relationship missing.")
+        check(tuple(sorted((p1, p2))) in endpoints, "First targeted relationship missing.")
+        check(tuple(sorted((p3, p4))) in endpoints, "Second targeted relationship missing.")
 
         print("Stage 5 targeted perspective audit")
         print("=================================")
-        print("PASS: job-level targeting, bounds, proposition identity, and relationship endpoints passed.")
+        print("PASS: job-level targeting, UUID identity, bounds, proposition identity, and relationship endpoints passed.")
         return 0
     except Exception as exc:
         print(f"STAGE 5 TARGETED AUDIT: ERROR: {exc}")
