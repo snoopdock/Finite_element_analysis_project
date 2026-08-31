@@ -12,6 +12,7 @@ from writing.corrective_rewriter import rewrite_paragraph
 from analysis.policy_oaa_loop import PolicyAwareOAALoop
 from analysis.document_semantic_review import review_document_claims
 from analysis.semantic_feedback import attach_feedback
+from analysis.correction_planner import plan_corrections
 
 
 def _citation_ids(text: str) -> List[str]:
@@ -107,66 +108,70 @@ def phase_write_policy_aware(
     state["last_semantic_review"] = review
     all_sections = attach_feedback(all_sections, review)
 
+    correction_plan = {
+        "evidence_queries": [],
+        "rewrite_jobs": [],
+        "query_count": 0,
+        "rewrite_count": 0,
+    }
     correction_enabled = bool(semantic_config.get("correction_enabled", False))
-    max_rewrites = int(semantic_config.get("max_rewrites_per_cycle", 1))
-    rewrite_jobs = []
-    if correction_enabled and max_rewrites > 0:
-        for report in review.get("reports", []):
-            if not isinstance(report, dict):
-                continue
-            if str(report.get("judgment", "")).lower() == "contradicted":
-                rewrite_jobs.append(report)
-            if len(rewrite_jobs) >= max_rewrites:
-                break
+    if correction_enabled and review.get("reports"):
+        correction_plan = plan_corrections(
+            review,
+            max_queries=int(semantic_config.get("max_evidence_queries_per_cycle", 2)),
+            max_rewrites=int(semantic_config.get("max_rewrites_per_cycle", 1)),
+        )
+
+    pending = state.get("pending_evidence_queries", [])
+    if not isinstance(pending, list):
+        pending = []
+    existing_query_keys = {
+        str(item.get("query", "")).strip().lower()
+        for item in pending
+        if isinstance(item, dict) and item.get("query")
+    }
+    for item in correction_plan.get("evidence_queries", []):
+        if not isinstance(item, dict):
+            continue
+        query = str(item.get("query", "")).strip()
+        if not query or query.lower() in existing_query_keys:
+            continue
+        pending.append(item)
+        existing_query_keys.add(query.lower())
+    max_pending_queries = int(semantic_config.get("max_pending_evidence_queries", 8))
+    state["pending_evidence_queries"] = pending[-max(0, max_pending_queries):]
+    state["last_correction_plan"] = correction_plan
 
     correction_results = []
-    if rewrite_jobs and not provider.budget_exhausted():
-        for report in rewrite_jobs:
-            section_id = str(report.get("section_id", ""))
-            target = next(
+    rewrite_jobs = correction_plan.get("rewrite_jobs", [])
+    if correction_enabled and rewrite_jobs and not provider.budget_exhausted():
+        for job in rewrite_jobs[:max(0, int(semantic_config.get("max_rewrites_per_cycle", 1)))]:
+            section_id = str(job.get("section_id", ""))
+            target_index = next(
                 (
-                    section for section in all_sections
+                    index for index, section in enumerate(all_sections)
                     if isinstance(section, dict)
                     and str(section.get("section_id", "")) == section_id
                 ),
                 None,
             )
-            if target is None:
+            if target_index is None:
                 continue
 
             result = rewrite_paragraph(
-                {
-                    "claim": report.get("claim", ""),
-                    "reason": report.get("reason", ""),
-                    "citation_ids": report.get("citation_ids", []),
-                    "source_reports": report.get("sources", []),
-                },
+                job,
                 provider,
                 model=semantic_config.get("rewrite_model"),
                 max_tokens=int(semantic_config.get("max_rewrite_tokens", 900)),
             )
-
             if not result.get("success"):
-                correction_results.append({
-                    "section_id": section_id,
-                    "paragraph_index": report.get("paragraph_index"),
-                    "action": "rewrite_rejected",
-                    "error": result.get("error"),
-                })
+                correction_results.append({"section_id": section_id, "action": "rewrite_rejected", "error": result.get("error")})
                 continue
 
-            candidate = _replace_paragraph(
-                target,
-                int(report.get("paragraph_index", -1)),
-                result.get("text", ""),
-            )
+            paragraph_index = int(job.get("paragraph_index", -1))
+            candidate = _replace_paragraph(all_sections[target_index], paragraph_index, result.get("text", ""))
             if candidate is None:
-                correction_results.append({
-                    "section_id": section_id,
-                    "paragraph_index": report.get("paragraph_index"),
-                    "action": "rewrite_rejected",
-                    "error": "Invalid paragraph index.",
-                })
+                correction_results.append({"section_id": section_id, "action": "rewrite_rejected", "error": "Invalid paragraph index."})
                 continue
 
             reverification = review_document_claims(
@@ -181,28 +186,13 @@ def phase_write_policy_aware(
                 max_tokens=int(semantic_config.get("max_tokens_per_claim", 700)),
                 model=semantic_config.get("model"),
             )
-
             re_reports = reverification.get("reports", [])
             re_judgment = str(re_reports[0].get("judgment", "")) if re_reports else ""
             if re_judgment == "supported":
-                for index, section in enumerate(all_sections):
-                    if isinstance(section, dict) and str(section.get("section_id", "")) == section_id:
-                        all_sections[index] = candidate
-                        break
-                correction_results.append({
-                    "section_id": section_id,
-                    "paragraph_index": report.get("paragraph_index"),
-                    "action": "rewrite_accepted",
-                    "reverification": reverification,
-                })
+                all_sections[target_index] = candidate
+                correction_results.append({"section_id": section_id, "action": "rewrite_accepted", "reverification": reverification})
             else:
-                correction_results.append({
-                    "section_id": section_id,
-                    "paragraph_index": report.get("paragraph_index"),
-                    "action": "rewrite_rejected",
-                    "reverification": reverification,
-                })
-
+                correction_results.append({"section_id": section_id, "action": "rewrite_rejected", "reverification": reverification})
             break
 
     state["last_correction_results"] = correction_results
