@@ -91,6 +91,22 @@ def normalize_id_list(values: Any) -> List[str]:
     return result
 
 
+def _normalize_opaque_list(values: Any) -> List[str]:
+    """Normalize provenance/source identifiers without requiring UUID syntax."""
+    if isinstance(values, str):
+        values = [values]
+    if not isinstance(values, list):
+        return []
+    result = []
+    seen = set()
+    for value in values:
+        text = str(value).strip()
+        if text and text not in seen:
+            seen.add(text)
+            result.append(text)
+    return result
+
+
 def normalize_concept(concept: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize one concept record without inventing provenance."""
     ensure_graph_id(concept, CONCEPT_ID_KEY)
@@ -106,6 +122,8 @@ def normalize_concept(concept: Dict[str, Any]) -> Dict[str, Any]:
         for value in concept.get("aliases", [])
         if str(value).strip()
     ] if isinstance(concept.get("aliases", []), list) else []
+    concept["source_ids"] = _normalize_opaque_list(concept.get("source_ids", []))
+    concept["status"] = str(concept.get("status", "active")).strip() or "active"
     return concept
 
 
@@ -124,7 +142,7 @@ def normalize_proposition(proposition: Dict[str, Any]) -> Dict[str, Any]:
     proposition["parameters"] = _normalize_strings(proposition.get("parameters", []))
     proposition["method"] = str(proposition.get("method", "")).strip()
     proposition["approximation"] = _normalize_strings(proposition.get("approximation", []))
-    proposition["source_ids"] = _normalize_id_or_opaque_list(proposition.get("source_ids", []))
+    proposition["source_ids"] = _normalize_opaque_list(proposition.get("source_ids", []))
     status = str(proposition.get("status", "proposed")).strip()
     proposition["status"] = status if status in VALID_PROPOSITION_STATUS else "proposed"
     return proposition
@@ -142,9 +160,7 @@ def normalize_relationship(relationship: Dict[str, Any]) -> Dict[str, Any]:
     relationship["proposition_ids"] = normalize_id_list(
         relationship.get("proposition_ids", [])
     )
-    relationship["source_ids"] = _normalize_id_or_opaque_list(
-        relationship.get("source_ids", [])
-    )
+    relationship["source_ids"] = _normalize_opaque_list(relationship.get("source_ids", []))
     relationship["framework"] = str(relationship.get("framework", "")).strip()
     relationship["assumptions"] = _normalize_strings(relationship.get("assumptions", []))
     relationship["conditions"] = _normalize_strings(relationship.get("conditions", []))
@@ -264,22 +280,6 @@ def validate_graph_references(graph: Dict[str, Any]) -> List[str]:
 
 
 def _normalize_strings(values: Any) -> List[str]:
-    if isinstance(values, str):
-        values = [values]
-    if not isinstance(values, list):
-        return []
-    result = []
-    seen = set()
-    for value in values:
-        text = str(value).strip()
-        if text and text not in seen:
-            seen.add(text)
-            result.append(text)
-    return result
-
-
-def _normalize_id_or_opaque_list(values: Any) -> List[str]:
-    """Normalize source identifiers without requiring them to be UUIDs."""
     if isinstance(values, str):
         values = [values]
     if not isinstance(values, list):
