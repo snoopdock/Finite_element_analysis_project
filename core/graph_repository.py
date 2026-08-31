@@ -23,8 +23,27 @@ def upsert_concept(graph: Dict[str, Any], concept: Dict[str, Any]) -> str:
 
 def upsert_proposition(graph: Dict[str, Any], proposition: Dict[str, Any]) -> str:
     normalize_proposition(proposition)
+    propositions = graph.setdefault("propositions", {})
+
+    statement = proposition["statement"].strip().lower()
+    source_signature = tuple(sorted(proposition.get("source_ids", [])))
+    framework = proposition.get("framework", "").strip().lower()
+
+    for proposition_id, existing in propositions.items():
+        if not isinstance(existing, dict):
+            continue
+        if existing.get("statement", "").strip().lower() != statement:
+            continue
+        if tuple(sorted(existing.get("source_ids", []))) != source_signature:
+            continue
+        if existing.get("framework", "").strip().lower() != framework:
+            continue
+        proposition["proposition_id"] = str(proposition_id)
+        propositions[str(proposition_id)] = proposition
+        return str(proposition_id)
+
     proposition_id = proposition["proposition_id"]
-    graph.setdefault("propositions", {})[proposition_id] = proposition
+    propositions[proposition_id] = proposition
     return proposition_id
 
 
@@ -42,6 +61,33 @@ def upsert_relationship(
     conditions: Optional[Iterable[str]] = None,
     reason: str = "",
 ) -> Optional[str]:
+    relationships = graph.setdefault("relationships", {})
+    relation_type = str(relation_type).strip()
+
+    for relationship_id, existing in relationships.items():
+        if not isinstance(existing, dict):
+            continue
+        if str(existing.get("source_id")) != str(source_id):
+            continue
+        if str(existing.get("target_id")) != str(target_id):
+            continue
+        if str(existing.get("type")) != relation_type:
+            continue
+        # Refresh the evidence attached to an existing relationship while
+        # retaining its stable relationship identity.
+        existing["proposition_ids"] = list(proposition_ids or existing.get("proposition_ids", []))
+        existing["source_ids"] = sorted(set(existing.get("source_ids", [])) | {str(v) for v in (source_ids or []) if v})
+        existing["confidence"] = max(float(existing.get("confidence", 0.0)), float(confidence or 0.0))
+        if framework:
+            existing["framework"] = framework
+        if assumptions:
+            existing["assumptions"] = list(dict.fromkeys(existing.get("assumptions", []) + list(assumptions)))
+        if conditions:
+            existing["conditions"] = list(dict.fromkeys(existing.get("conditions", []) + list(conditions)))
+        if reason:
+            existing["reason"] = reason
+        return str(relationship_id)
+
     relationship = normalize_relationship({
         "relationship_id": new_graph_id(),
         "source_id": source_id,
@@ -56,9 +102,9 @@ def upsert_relationship(
         "reason": reason,
     })
 
-    graph.setdefault("relationships", {})[relationship["relationship_id"]] = relationship
+    relationships[relationship["relationship_id"]] = relationship
     violations = validate_graph_references(graph)
     if violations:
-        graph["relationships"].pop(relationship["relationship_id"], None)
+        relationships.pop(relationship["relationship_id"], None)
         return None
     return relationship["relationship_id"]
