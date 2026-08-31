@@ -33,8 +33,6 @@ budget:
   max_tokens_per_call: 2500
 
 cache:
-  # Maximum local full-text cache. Cached text is gitignored and does not
-  # belong in repository history. The default implementation uses 500 MB.
   max_size_mb: 500
 
 writing:
@@ -47,15 +45,10 @@ writing:
   max_retries_per_paragraph: 2
   top_k_knowledge_items: 6
 
-  # Explicit model-selection policy. Indices refer to cloudflare_models below.
-  # Defaults preserve the previous behavior: high-eta uses the first model,
-  # low-eta uses the last model.
   model_selection:
     high_eta_model_index: 0
     low_eta_model_index: -1
 
-  # OAA action-selection policy. Higher persistence/severity scores win;
-  # higher mutation cost is penalized. Weights are normalized automatically.
   oaa_action_policy:
     persistence_weight: 0.35
     severity_weight: 0.50
@@ -73,13 +66,21 @@ writing:
       length_imbalance: 0.40
       missing_transition: 0.35
 
+semantic_verification:
+  # Disabled by default because each verified claim consumes an LLM call.
+  enabled: false
+  max_claims_per_cycle: 4
+  max_sources_per_claim: 2
+  max_passages_per_source: 2
+  max_passage_chars: 1800
+  max_tokens_per_claim: 700
+  model: null
+
 convergence:
   window: 3
   eta_variance_threshold: 0.1
   minimum_reading_coverage_percent: 80.0
   minimum_citation_coverage_percent: 80.0
-  # > 0 enables a lexical-support convergence gate. 0 keeps the metric
-  # diagnostic-only while semantic/entailment validation remains separate.
   minimum_lexical_support_coverage_percent: 0.0
   evidence_path: output/evidence.json
 
