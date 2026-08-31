@@ -1,7 +1,7 @@
-version: 2
+version: 3
 purpose: >-
   Define the minimum structural contract for the provenance-aware scientific
-  knowledge graph. This contract is descriptive; it does not mutate runtime state.
+  knowledge graph, including non-authoritative relationship candidates.
 
 entities:
   concept:
@@ -15,6 +15,7 @@ entities:
     optional_fields:
       - parent_concept_ids
       - aliases
+      - relationship_hints
     semantic_rule: >-
       A concept names an entity, method, formulation, theory, phenomenon,
       parameter, algorithm, mathematical object, application, or other reusable
@@ -63,6 +64,20 @@ entities:
       contradiction-like relationship is evidence of disagreement or contextual
       difference, not an instruction to rewrite either endpoint.
 
+  relationship_candidate:
+    identity: candidate_id
+    required_fields:
+      - candidate_id
+      - source_id
+      - target_id
+      - type
+      - status
+    provenance_fields:
+      - source_ids
+    semantic_rule: >-
+      A candidate relationship is a hypothesis about graph structure. It is not
+      authoritative until an explicit verification record promotes it.
+
 history:
   concept_history:
     purpose: record concept discovery and provenance extension events
@@ -70,6 +85,9 @@ history:
   proposition_history:
     purpose: record proposition discovery and meaningful content/context changes
     identity_field: proposition_id
+  relationship_candidate_history:
+    purpose: record candidate creation and explicit promotion decisions
+    identity_field: candidate_id
 
 invariants:
   - entity_ids_are_stable_uuid_strings
@@ -82,7 +100,9 @@ invariants:
   - proposition_context_must_be_stored_on_the_proposition_or_relationship
   - identical_statement_may_represent_distinct_propositions_when_provenance_differs
   - candidate_concept_ids_are_non_assertive
+  - relationship_candidates_are_non_assertive
   - proposition_history_must_not_change_proposition_identity
+  - relationship_promotion_requires_explicit_verification_and_provenance
   - legacy_knowledge_base_must_remain_available_during_migration
 
 relationship_policy:
@@ -96,3 +116,4 @@ relationship_policy:
     - delete
     - downgrade_source
     - declare_winner
+    - promote_relationship_candidate
