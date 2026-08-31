@@ -72,13 +72,21 @@ def _record_graph_relationship(graph: Dict[str, Any], record: Dict[str, Any]) ->
     )
 
 
+def _source_ids(proposition: Dict[str, Any]) -> set[str]:
+    return {
+        str(value).strip()
+        for value in proposition.get("source_ids", []) or []
+        if str(value).strip()
+    }
+
+
 def _targeted_pairs(
     propositions: Dict[str, Dict[str, Any]],
     proposition_ids: List[str],
     *,
     max_pairs: int,
 ) -> tuple[List[tuple[Dict[str, Any], Dict[str, Any]]], int]:
-    """Return targeted proposition pairs; invalid targets never trigger global discovery."""
+    """Return validated target pairs; explicit targets never trigger global fallback."""
     ids = []
     seen = set()
     for value in proposition_ids:
@@ -87,16 +95,18 @@ def _targeted_pairs(
             ids.append(value)
             seen.add(value)
 
-    # A targeted request is authoritative. If it does not resolve to at least
-    # two existing propositions, return no pair instead of comparing unrelated
-    # propositions from the wider graph.
     if len(ids) < 2:
         return [], 0
 
     pairs = []
     for index, left_id in enumerate(ids):
+        left = propositions[left_id]
+        left_sources = _source_ids(left)
         for right_id in ids[index + 1:]:
-            pairs.append((propositions[left_id], propositions[right_id]))
+            right = propositions[right_id]
+            if left_sources & _source_ids(right):
+                continue
+            pairs.append((left, right))
             if len(pairs) >= max(0, int(max_pairs)):
                 return pairs, len(pairs)
     return pairs, len(pairs)
