@@ -87,6 +87,29 @@ def section_relevance_score(topic: str, section_type: str, text: str) -> float:
     return max(structural, lexical_score(topic, text) * 0.5)
 
 
+def _normalize_weights(
+    lexical_weight: float,
+    source_weight: float,
+    section_weight: float,
+    citation_weight: float,
+) -> tuple[float, float, float, float]:
+    weights = [
+        float(lexical_weight),
+        float(source_weight),
+        float(section_weight),
+        float(citation_weight),
+    ]
+
+    if any(weight < 0.0 or not math.isfinite(weight) for weight in weights):
+        raise ValueError("Ranking weights must be finite and non-negative.")
+
+    total = sum(weights)
+    if total <= 0.0:
+        raise ValueError("Ranking weights must contain at least one positive value.")
+
+    return tuple(weight / total for weight in weights)
+
+
 def rank_items(
     query: str,
     items: Sequence[Dict],
@@ -100,6 +123,18 @@ def rank_items(
     """Rank items for one query and annotate component scores."""
     if not isinstance(items, Sequence):
         return []
+
+    (
+        lexical_weight,
+        source_weight,
+        section_weight,
+        citation_weight,
+    ) = _normalize_weights(
+        lexical_weight,
+        source_weight,
+        section_weight,
+        citation_weight,
+    )
 
     prepared = []
     for index, item in enumerate(items):
@@ -139,6 +174,12 @@ def rank_items(
             "source_quality": round(quality, 6),
             "section_relevance": round(section, 6),
             "citation_support": round(citation_support, 6),
+            "weights": {
+                "lexical": round(lexical_weight, 6),
+                "source_quality": round(source_weight, 6),
+                "section_relevance": round(section_weight, 6),
+                "citation_support": round(citation_weight, 6),
+            },
         }
         prepared.append((score, index, annotated))
 
@@ -152,16 +193,19 @@ def rank_items_for_queries(
     *,
     top_k: int = 4,
 ) -> List[Dict]:
-    """Score each item against all queries, retaining its best query score."""
+    """Score each item against all queries and retain the best score/provenance."""
     if not queries or not items:
         return []
 
     best: Dict[str, Dict] = {}
-    order: Dict[str, int] = {}
 
     for query_index, query in enumerate(queries):
+        normalized_query = str(query).strip()
+        if not normalized_query:
+            continue
+
         ranked = rank_items(
-            str(query),
+            normalized_query,
             items,
             top_k=len(items),
             lexical_weight=0.65,
@@ -170,25 +214,75 @@ def rank_items_for_queries(
             citation_weight=0.0,
         )
 
-        for item_index, item in enumerate(ranked):
-            source_id = str(item.get("source_id") or f"__item_{query_index}_{item_index}")
-            score = float(item.get("ranking", {}).get("score", 0.0))
+        for item in ranked:
+            source_id = str(
+                item.get("source_id")
+                or f"__item_{query_index}_{len(best)}"
+            )
+            ranking = dict(item.get("ranking", {}))
+            score = float(ranking.get("score", 0.0))
+
             current = best.get(source_id)
-            if current is None or score > float(current.get("ranking", {}).get("score", 0.0)):
+            if current is None:
                 annotated = dict(item)
-                ranking = dict(annotated.get("ranking", {}))
-                ranking["best_query"] = str(query)
-                ranking["query_index"] = query_index
-                annotated["ranking"] = ranking
+                annotated["ranking"] = dict(ranking)
+                annotated["ranking"]["best_query"] = normalized_query
+                annotated["ranking"]["query_index"] = query_index
+                annotated["ranking"]["per_query_scores"] = {
+                    normalized_query: score,
+                }
                 best[source_id] = annotated
-                order.setdefault(source_id, query_index)
+                continue
+
+            current_ranking = dict(current.get("ranking", {}))
+            per_query_scores = dict(
+                current_ranking.get("per_query_scores", {})
+            )
+            per_query_scores[normalized_query] = score
+            current_ranking["per_query_scores"] = per_query_scores
+
+            current_score = float(current_ranking.get("score", 0.0))
+            if score > current_score:
+                for key in (
+                    "score",
+                    "lexical",
+                    "source_quality",
+                    "section_relevance",
+                    "citation_support",
+                    "weights",
+                ):
+                    if key in ranking:
+                        current_ranking[key] = ranking[key]
+                current_ranking["best_query"] = normalized_query
+                current_ranking["query_index"] = query_index
+
+            current["ranking"] = current_ranking
+
+            for key in ("query_contexts", "provider_names", "source_types"):
+                incoming = item.get(key, [])
+                existing = current.get(key, [])
+                if not isinstance(incoming, list):
+                    incoming = [incoming] if incoming else []
+                if not isinstance(existing, list):
+                    existing = [existing] if existing else []
+                current[key] = sorted({str(value) for value in existing + incoming if value})
 
     result = list(best.values())
-    result.sort(key=lambda item: (-float(item.get("ranking", {}).get("score", 0.0)), str(item.get("source_id", ""))))
+    result.sort(
+        key=lambda item: (
+            -float(item.get("ranking", {}).get("score", 0.0)),
+            str(item.get("source_id", "")),
+        )
+    )
     return result[:max(0, int(top_k))]
 
 
-def rank_knowledge_items(topic: str, knowledge_base: Dict, *, top_k: int = 6) -> List[Dict]:
+def rank_knowledge_items(
+    topic: str,
+    knowledge_base: Dict,
+    *,
+    top_k: int = 6,
+) -> List[Dict]:
     items = []
     if not isinstance(knowledge_base, dict):
         return []
@@ -201,7 +295,11 @@ def rank_knowledge_items(topic: str, knowledge_base: Dict, *, top_k: int = 6) ->
             if not isinstance(record, dict):
                 continue
             item = dict(record)
-            item["item_type"] = category[:-1] if category.endswith("s") else category
+            item["item_type"] = (
+                category[:-1]
+                if category.endswith("s")
+                else category
+            )
             items.append(item)
 
     return rank_items(
