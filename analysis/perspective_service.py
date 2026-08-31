@@ -78,7 +78,7 @@ def _targeted_pairs(
     *,
     max_pairs: int,
 ) -> tuple[List[tuple[Dict[str, Any], Dict[str, Any]]], int]:
-    """Return validated target pairs, falling back to deterministic discovery when needed."""
+    """Return targeted proposition pairs; invalid targets never trigger global discovery."""
     ids = []
     seen = set()
     for value in proposition_ids:
@@ -87,21 +87,19 @@ def _targeted_pairs(
             ids.append(value)
             seen.add(value)
 
-    if len(ids) >= 2:
-        pairs = []
-        for index, left_id in enumerate(ids):
-            for right_id in ids[index + 1:]:
-                pairs.append((propositions[left_id], propositions[right_id]))
-                if len(pairs) >= max(0, int(max_pairs)):
-                    return pairs, len(pairs)
-        return pairs, len(pairs)
+    # A targeted request is authoritative. If it does not resolve to at least
+    # two existing propositions, return no pair instead of comparing unrelated
+    # propositions from the wider graph.
+    if len(ids) < 2:
+        return [], 0
 
-    discovered = candidate_pairs(
-        list(propositions.values()),
-        max_pairs=max(0, int(max_pairs)),
-        minimum_overlap=0.15,
-    )
-    return discovered, len(discovered)
+    pairs = []
+    for index, left_id in enumerate(ids):
+        for right_id in ids[index + 1:]:
+            pairs.append((propositions[left_id], propositions[right_id]))
+            if len(pairs) >= max(0, int(max_pairs)):
+                return pairs, len(pairs)
+    return pairs, len(pairs)
 
 
 def compare_graph_propositions(
