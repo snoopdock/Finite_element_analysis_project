@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -23,10 +22,10 @@ def _statement(item: Dict[str, Any], category: str) -> str:
 
 
 def _read_cached_text(evidence: Dict[str, Any], max_chars: int) -> str:
-    for key in ("full_text", "content", "excerpt"):
-        value = evidence.get(key)
-        if isinstance(value, str) and value.strip():
-            return value[:max_chars]
+    """Read actual cached full text only; abstracts/excerpts are not substitutes."""
+    full_text = evidence.get("full_text")
+    if isinstance(full_text, str) and full_text.strip():
+        return full_text[:max_chars]
 
     path = evidence.get("full_text_path")
     if not path:
