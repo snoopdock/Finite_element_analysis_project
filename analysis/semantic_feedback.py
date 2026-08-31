@@ -10,7 +10,7 @@ _VALID = {"supported", "contradicted", "insufficient_evidence"}
 
 
 def classify_review(report: Dict) -> Dict:
-    """Map one semantic review report to a conservative control signal."""
+    """Map one semantic review report to a conservative scientific control signal."""
     judgment = str(report.get("judgment", "insufficient_evidence")).lower()
     if judgment not in _VALID:
         judgment = "insufficient_evidence"
@@ -24,10 +24,12 @@ def classify_review(report: Dict) -> Dict:
     conflict = bool(report.get("source_conflict", False))
 
     if conflict:
-        action = "seek_more_evidence"
+        action = "analyze_perspectives"
         severity = "high"
     elif judgment == "contradicted":
-        action = "rewrite_and_reverify"
+        # A source disagreement is not automatically an error. First compare
+        # frameworks, assumptions, conditions, definitions, and regimes.
+        action = "analyze_perspectives"
         severity = "high" if confidence >= 0.70 else "medium"
     elif judgment == "insufficient_evidence":
         action = "seek_more_evidence"
@@ -67,22 +69,21 @@ def build_section_feedback(review: Dict) -> Dict[str, Dict]:
                 "judgments": [],
                 "claims_checked": 0,
                 "reasons": [],
+                "source_conflicts": 0,
             },
         )
 
         existing["judgments"].append(signal["judgment"])
         existing["claims_checked"] += 1
-        existing["confidence"] = max(
-            existing["confidence"],
-            signal["confidence"],
-        )
+        existing["confidence"] = max(existing["confidence"], signal["confidence"])
+        existing["source_conflicts"] += int(signal["source_conflict"])
         if signal["reason"]:
             existing["reasons"].append(signal["reason"])
 
         rank = {
             "retain": 0,
             "seek_more_evidence": 1,
-            "rewrite_and_reverify": 2,
+            "analyze_perspectives": 2,
         }
         if rank[signal["action"]] > rank[existing["action"]]:
             existing["action"] = signal["action"]
@@ -106,8 +107,6 @@ def attach_feedback(
         if not isinstance(section, dict):
             continue
         clone = dict(section)
-        # Feedback is a per-review observation, not permanent semantic truth.
-        # Clear any previous cycle's signal before attaching current results.
         clone.pop("semantic_feedback", None)
         section_id = clone.get("section_id")
         feedback = by_id.get(str(section_id)) if section_id else None
