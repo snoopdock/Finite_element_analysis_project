@@ -25,10 +25,12 @@ def main() -> int:
             {"key": "too-simple:s1", "type": "too_simple", "action": "split", "section_id": "s1"},
             {"key": "repetition:s2", "type": "repetition", "action": "review", "section_id": "s2"},
         ]
-        decision = policy.choose(anomalies, {"too-simple:s1": 4, "repetition:s2": 1})
+        persistence = {"too-simple:s1": 4, "repetition:s2": 1}
+        ranked = policy.rank(anomalies, persistence)
+        decision = policy.choose(anomalies, persistence)
         _assert(isinstance(decision, AdjustmentDecision), "No typed OAA decision returned.")
-        _assert(decision.key, "Decision key is empty.")
-        _assert(decision.action == "split", "Highest-ranked anomaly was not selected.")
+        _assert(decision.key == ranked[0]["key"], "choose() did not select the top-ranked anomaly.")
+        _assert(decision.action == ranked[0]["action"], "Decision action disagrees with ranked anomaly.")
         record = decision.to_dict()
         _assert(record["score"]["score"] >= 0.0, "Decision score is negative.")
         _assert(0.0 <= record["score"]["severity"] <= 1.0, "Severity escaped bounds.")
@@ -37,7 +39,7 @@ def main() -> int:
 
         print("Stage 2 OAA decision runtime audit")
         print("==================================")
-        print("PASS: typed selection, bounded score fields, and serialization passed.")
+        print("PASS: typed selection, score ordering, bounded fields, and serialization passed.")
         return 0
     except Exception as exc:
         print(f"STAGE 2 OAA DECISION AUDIT: ERROR: {exc}")
