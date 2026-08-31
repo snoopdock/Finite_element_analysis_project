@@ -14,8 +14,7 @@ SYSTEM_PROMPT = """You are a careful academic technical editor.
 Rewrite only the supplied paragraph so that it is consistent with the supplied
 source passages. Use only information supported by those passages.
 Do not add unsupported facts. Preserve useful equations when supported.
-Keep the citation IDs that are supported by the passages and remove any
-citation that is no longer justified.
+Keep only citation IDs that correspond to the supplied source passages.
 Return only the rewritten paragraph text; no markdown, JSON, title, or commentary.
 """
 
@@ -31,10 +30,33 @@ def _source_passages(job: Dict) -> List[str]:
     return passages
 
 
+def _allowed_source_ids(job: Dict) -> set[str]:
+    allowed = set()
+    for source in job.get("source_reports", []):
+        if not isinstance(source, dict):
+            continue
+        source_id = source.get("source_id")
+        if source_id:
+            allowed.add(str(source_id))
+    if not allowed:
+        allowed.update(str(value) for value in job.get("citation_ids", []) if value)
+    return allowed
+
+
+def _sanitize_citations(text: str, allowed_sources: set[str]) -> str:
+    def replace(match):
+        values = [part.strip() for part in match.group(1).split(",") if part.strip()]
+        valid = [value for value in values if value in allowed_sources]
+        return "[" + ", ".join(valid) + "]" if valid else ""
+
+    return re.sub(r"\[([^\[\]]+)\]", replace, text)
+
+
 def rewrite_paragraph(job: Dict, provider, *, model: Optional[str] = None, max_tokens: int = 900) -> Dict:
     """Rewrite one paragraph from cited source passages using one bounded LLM call."""
     paragraph = str(job.get("claim", "")).strip()
     passages = _source_passages(job)
+    allowed_sources = _allowed_source_ids(job)
 
     if not paragraph or not passages:
         return {
@@ -58,6 +80,8 @@ def rewrite_paragraph(job: Dict, provider, *, model: Optional[str] = None, max_t
             f"[{index + 1}] {passage}"
             for index, passage in enumerate(passages[:4])
         )
+        + "\n\nALLOWED CITATION IDS:\n"
+        + ", ".join(sorted(allowed_sources))
         + "\n\nREASON FOR CORRECTION:\n"
         + str(job.get("reason", ""))
     )
@@ -80,6 +104,7 @@ def rewrite_paragraph(job: Dict, provider, *, model: Optional[str] = None, max_t
         }
 
     text = re.sub(r"\s+", " ", str(text)).strip()
+    text = _sanitize_citations(text, allowed_sources)
 
     try:
         validated = validate_paragraph(text, min_words=20)
