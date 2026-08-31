@@ -24,8 +24,10 @@ def retrieve_evidence_parallel(
     queries: List[str],
     max_items: int = 4,
     max_workers: int = 3,
+    max_per_provider: int = 2,
+    max_per_source_type: int = 3,
 ) -> List[Dict]:
-    """Retrieve evidence concurrently, preserving exact query/provider provenance."""
+    """Retrieve evidence while preserving provenance and configured diversity caps."""
     cleanup_cache()
 
     normalized_queries = [
@@ -42,33 +44,19 @@ def retrieve_evidence_parallel(
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for query in normalized_queries:
-            futures[executor.submit(search_arxiv, query, 2)] = (
-                "arxiv",
-                query,
-                "preprint",
-            )
-            futures[executor.submit(search_semantic_scholar, query, 2)] = (
-                "semantic_scholar",
-                query,
-                "academic",
-            )
-            futures[executor.submit(search_wikipedia, query, 2)] = (
-                "wikipedia",
-                query,
-                "wikipedia",
-            )
+            futures[executor.submit(search_arxiv, query, 2)] = ("arxiv", query, "preprint")
+            futures[executor.submit(search_semantic_scholar, query, 2)] = ("semantic_scholar", query, "academic")
+            futures[executor.submit(search_wikipedia, query, 2)] = ("wikipedia", query, "wikipedia")
 
         candidates_by_id: Dict[str, Dict] = {}
 
         for future in as_completed(futures):
             provider_name, query, source_type = futures[future]
-
             try:
                 results = future.result()
             except Exception as exc:
                 print(
-                    f"  [Evidence] {provider_name} retrieval error "
-                    f"for '{query}': {exc}",
+                    f"  [Evidence] {provider_name} retrieval error for '{query}': {exc}",
                     file=sys.stderr,
                 )
                 continue
@@ -79,14 +67,12 @@ def retrieve_evidence_parallel(
             for item in results:
                 if not isinstance(item, dict):
                     continue
-
                 source_id = item.get("source_id")
                 if not source_id:
                     continue
                 source_id = str(source_id)
 
                 existing = candidates_by_id.get(source_id)
-
                 if existing is None:
                     enriched = dict(item)
                     enriched["source_id"] = source_id
@@ -103,88 +89,62 @@ def retrieve_evidence_parallel(
                 query_contexts = existing.setdefault("query_contexts", [])
                 if query not in query_contexts:
                     query_contexts.append(query)
-
                 providers = existing.setdefault("provider_names", [])
                 if provider_name not in providers:
                     providers.append(provider_name)
-
                 source_types = existing.setdefault("source_types", [])
                 if source_type not in source_types:
                     source_types.append(source_type)
-
                 existing.setdefault("query_context", query)
 
                 old_full_text = bool(
-                    existing.get("full_text_path")
-                    and os.path.exists(existing.get("full_text_path"))
+                    existing.get("full_text_path") and os.path.exists(existing.get("full_text_path"))
                 )
                 new_full_text = bool(
-                    item.get("full_text_path")
-                    and os.path.exists(item.get("full_text_path"))
+                    item.get("full_text_path") and os.path.exists(item.get("full_text_path"))
                 )
-
                 if new_full_text and not old_full_text:
-                    for key in (
-                        "url",
-                        "content_type",
-                        "full_text_path",
-                        "status",
-                        "metadata",
-                    ):
+                    for key in ("url", "content_type", "full_text_path", "status", "metadata"):
                         if key in item:
                             existing[key] = item[key]
 
     candidates = list(candidates_by_id.values())
-
     for item in candidates:
         item["query_contexts"] = sorted(set(item.get("query_contexts", [])))
         item["provider_names"] = sorted(set(item.get("provider_names", [])))
         item["source_types"] = sorted(set(item.get("source_types", [])))
 
-    ranked = rank_items_for_queries(
-        normalized_queries,
-        candidates,
-        top_k=len(candidates),
-    )
-
+    ranked = rank_items_for_queries(normalized_queries, candidates, top_k=len(candidates))
     selected = select_diverse_evidence(
         ranked,
         max_items=max(0, int(max_items)),
+        max_per_provider=max(0, int(max_per_provider)),
+        max_per_source_type=max(0, int(max_per_source_type)),
     )
 
     cleanup_cache()
     return selected
 
 
-def get_next_unread_content(
-    source_item: Dict,
-    reading_state: Dict,
-    max_chars: int = 3000,
-) -> Optional[Dict]:
+def get_next_unread_content(source_item: Dict, reading_state: Dict, max_chars: int = 3000) -> Optional[Dict]:
     """Return the next unread full-text section of an article."""
     full_text_path = source_item.get("full_text_path")
     article_id = str(source_item.get("source_id", "unknown"))
-
     if not full_text_path or not os.path.exists(full_text_path):
         return None
-
     try:
         with open(full_text_path, "r", encoding="utf-8") as handle:
             full_text = handle.read()
     except OSError:
         return None
-
     if not full_text.strip():
         return None
-
     sections = split_article_into_sections(full_text)
     unread = get_unread_sections(article_id, sections, reading_state)
     if not unread:
         return None
-
     next_section = unread[0]
     content = str(next_section.get("content", ""))[:max_chars]
-
     return {
         "section_type": next_section.get("section_type", "unknown"),
         "content": content,
@@ -218,7 +178,6 @@ def evidence_to_text_section_aware(evidence: List[Dict], reading_state: Dict, ma
     sections_read_this_cycle = []
     updated_state = reading_state
     count = 0
-
     for item in evidence:
         if count >= max_sources or not isinstance(item, dict):
             continue
@@ -242,7 +201,6 @@ def evidence_to_text_section_aware(evidence: List[Dict], reading_state: Dict, ma
             "char_end": char_end,
         })
         count += 1
-
     return "\n\n".join(blocks), updated_state, sections_read_this_cycle
 
 
@@ -264,7 +222,6 @@ def evidence_to_text(evidence: List[Dict], max_sources: int = 4, chars_per_sourc
 def merge_evidence(old: List[Dict], new: List[Dict], max_keep: int = 200) -> List[Dict]:
     """Merge evidence by source_id while retaining provenance and current ranking."""
     merged = {}
-
     for item in old or []:
         if isinstance(item, dict) and item.get("source_id"):
             merged[str(item["source_id"])] = dict(item)
@@ -272,14 +229,11 @@ def merge_evidence(old: List[Dict], new: List[Dict], max_keep: int = 200) -> Lis
     for item in new or []:
         if not (isinstance(item, dict) and item.get("source_id")):
             continue
-
         source_id = str(item["source_id"])
         if source_id not in merged:
             merged[source_id] = dict(item)
             continue
-
         existing = merged[source_id]
-
         for key in ("query_contexts", "provider_names", "source_types"):
             old_values = existing.get(key, [])
             new_values = item.get(key, [])
@@ -292,14 +246,9 @@ def merge_evidence(old: List[Dict], new: List[Dict], max_keep: int = 200) -> Lis
             if not isinstance(new_values, list):
                 new_values = []
             existing[key] = sorted(set(old_values) | set(new_values))
-
-        for key in (
-            "title", "authors", "url", "metadata", "full_text_path",
-            "status", "content_type", "ranking",
-        ):
+        for key in ("title", "authors", "url", "metadata", "full_text_path", "status", "content_type", "ranking"):
             if key in item:
                 existing[key] = item[key]
-
         if item.get("query_context"):
             existing["query_context"] = item["query_context"]
         if item.get("retrieved_at"):
@@ -320,7 +269,6 @@ def merge_knowledge(existing_kb: Dict, new_extraction: Dict) -> Dict:
     if not isinstance(new_extraction, dict):
         return existing_kb or {}
     kb = dict(existing_kb) if isinstance(existing_kb, dict) else {}
-
     for category in ("concepts", "procedures", "equations", "rules"):
         existing = kb.get(category, [])
         if not isinstance(existing, list):
@@ -329,7 +277,6 @@ def merge_knowledge(existing_kb: Dict, new_extraction: Dict) -> Dict:
         if not isinstance(new_items, list):
             kb[category] = existing
             continue
-
         existing_index = {}
         for item in existing:
             if not isinstance(item, dict):
@@ -337,7 +284,6 @@ def merge_knowledge(existing_kb: Dict, new_extraction: Dict) -> Dict:
             key = str(item.get("name") or item.get("title") or item.get("rule") or "").lower().strip()
             if key:
                 existing_index[key] = item
-
         for new_item in new_items:
             if not isinstance(new_item, dict):
                 continue
@@ -414,7 +360,6 @@ def get_reading_summary(evidence: List[Dict], reading_state: Dict) -> Dict:
     previously_read_cache_missing = 0
     total_sections_read = 0
     total_sections_available = 0
-
     for item in evidence or []:
         if not isinstance(item, dict):
             continue
@@ -422,14 +367,12 @@ def get_reading_summary(evidence: List[Dict], reading_state: Dict) -> Dict:
         full_text_path = item.get("full_text_path")
         article_history = reading_state.get(article_id, {}) if isinstance(reading_state, dict) else {}
         previously_read = bool(isinstance(article_history, dict) and article_history.get("read_sections"))
-
         if not full_text_path or not os.path.exists(full_text_path):
             if previously_read:
                 previously_read_cache_missing += 1
             else:
                 never_read += 1
             continue
-
         try:
             with open(full_text_path, "r", encoding="utf-8") as handle:
                 full_text = handle.read()
@@ -439,21 +382,18 @@ def get_reading_summary(evidence: List[Dict], reading_state: Dict) -> Dict:
             else:
                 never_read += 1
             continue
-
         sections = split_article_into_sections(full_text)
         unread = get_unread_sections(article_id, sections, reading_state)
         available = len(sections)
         read_count = max(0, available - len(unread))
         total_sections_available += available
         total_sections_read += read_count
-
         if len(unread) == 0:
             fully_read += 1
         elif read_count > 0:
             partially_read += 1
         else:
             never_read += 1
-
     coverage = total_sections_read / total_sections_available * 100.0 if total_sections_available > 0 else 0.0
     return {
         "total_articles": total_articles,
