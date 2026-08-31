@@ -85,31 +85,45 @@ class PolicyAwareDynamicWriter(DynamicWriter):
         self,
         section_topics: List[str],
     ) -> List[str]:
-        """Schedule sections using the explicit policy."""
-        sections = list(
+        """Rank materialized and new sections together, then apply theta once."""
+        existing_sections = list(
             self._decision_sections
         )
 
-        if not sections:
-            selected = super().mark_sections(
-                section_topics
-            )
-            self.last_decisions = [
+        materialized_titles = {
+            str(
+                section.get(
+                    "title",
+                    "",
+                )
+            ).strip().lower()
+            for section in existing_sections
+        }
+
+        # Virtual section objects let the same policy schedule first-time
+        # sections without assigning persistent UUIDs before materialization.
+        candidates: List[Dict] = list(existing_sections)
+        for topic in section_topics:
+            normalized = str(topic or "").strip()
+            if not normalized:
+                continue
+            if normalized.lower() in materialized_titles:
+                continue
+            candidates.append(
                 {
-                    "section_id": None,
-                    "title": topic,
-                    "selected": True,
+                    "title": normalized,
                 }
-                for topic in selected
-            ]
-            return selected
+            )
+
+        if not candidates:
+            self.last_decisions = []
+            return []
 
         ranked = self.decision_policy.rank_sections(
-            sections,
+            candidates,
             self.indicator,
             self.history,
         )
-
         selected = self.decision_policy.select_sections(
             ranked
         )
@@ -120,7 +134,7 @@ class PolicyAwareDynamicWriter(DynamicWriter):
         )
 
         decisions = self.decision_policy.decide(
-            sections,
+            candidates,
             self.indicator,
             self.history,
             models,
@@ -130,23 +144,15 @@ class PolicyAwareDynamicWriter(DynamicWriter):
             for decision in decisions
         ]
 
-        selected_ids = {
-            str(
-                section.get(
-                    "section_id"
-                )
-            )
+        selected_objects = {
+            id(section)
             for section, _ in selected
-            if section.get("section_id")
         }
 
         selected_titles = []
+        seen_titles = set()
 
-        for section in sections:
-            section_id = section.get(
-                "section_id"
-            )
-
+        for section, _ in selected:
             title = str(
                 section.get(
                     "title",
@@ -154,32 +160,18 @@ class PolicyAwareDynamicWriter(DynamicWriter):
                 )
             ).strip()
 
-            if (
-                section_id
-                and str(section_id) in selected_ids
-            ):
-                selected_titles.append(
-                    title
-                )
-
-        materialized_titles = {
-            str(
-                section.get(
-                    "title",
-                    "",
-                )
-            ).strip()
-            for section in sections
-        }
-
-        for topic in section_topics:
-            if not topic:
+            if not title:
                 continue
 
-            if topic not in materialized_titles:
-                selected_titles.append(
-                    topic
-                )
+            if id(section) not in selected_objects:
+                continue
+
+            normalized = title.lower()
+            if normalized in seen_titles:
+                continue
+
+            seen_titles.add(normalized)
+            selected_titles.append(title)
 
         return selected_titles
 
