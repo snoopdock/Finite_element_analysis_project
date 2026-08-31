@@ -98,7 +98,7 @@ def attach_feedback(
     sections: List[Dict],
     review: Dict,
 ) -> List[Dict]:
-    """Return sections annotated with latest semantic feedback."""
+    """Return sections annotated only with feedback from the current review."""
     by_id = build_section_feedback(review)
     updated = []
 
@@ -106,6 +106,9 @@ def attach_feedback(
         if not isinstance(section, dict):
             continue
         clone = dict(section)
+        # Feedback is a per-review observation, not permanent semantic truth.
+        # Clear any previous cycle's signal before attaching current results.
+        clone.pop("semantic_feedback", None)
         section_id = clone.get("section_id")
         feedback = by_id.get(str(section_id)) if section_id else None
         if feedback:
