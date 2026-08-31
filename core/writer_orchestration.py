@@ -76,10 +76,7 @@ def phase_write_policy_aware(
             model=semantic_config.get("model"),
         )
         state["last_semantic_review"] = review
-        all_sections = attach_feedback(
-            all_sections,
-            review,
-        )
+        all_sections = attach_feedback(all_sections, review)
         state["last_semantic_feedback"] = {
             "sections": {
                 str(section.get("section_id")): section.get("semantic_feedback", {})
@@ -99,9 +96,8 @@ def phase_write_policy_aware(
             "verification_skipped": True,
             "reports": [],
         }
-        state["last_semantic_feedback"] = {
-            "sections": {}
-        }
+        all_sections = attach_feedback(all_sections, {"reports": []})
+        state["last_semantic_feedback"] = {"sections": {}}
 
     decision_oaa = PolicyAwareOAALoop(
         config,
