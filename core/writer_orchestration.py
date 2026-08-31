@@ -9,6 +9,7 @@ from utils.text import load_json, save_json
 from writing.policy_dynamic_writer import PolicyAwareDynamicWriter
 from analysis.policy_oaa_loop import PolicyAwareOAALoop
 from analysis.document_semantic_review import review_document_claims
+from analysis.semantic_feedback import attach_feedback
 
 
 def phase_write_policy_aware(
@@ -54,7 +55,7 @@ def phase_write_policy_aware(
         if not isinstance(evidence, list):
             evidence = []
 
-        state["last_semantic_review"] = review_document_claims(
+        review = review_document_claims(
             all_sections,
             evidence,
             provider,
@@ -74,6 +75,20 @@ def phase_write_policy_aware(
             ),
             model=semantic_config.get("model"),
         )
+        state["last_semantic_review"] = review
+        all_sections = attach_feedback(
+            all_sections,
+            review,
+        )
+        state["last_semantic_feedback"] = {
+            "sections": {
+                str(section.get("section_id")): section.get("semantic_feedback", {})
+                for section in all_sections
+                if isinstance(section, dict)
+                and section.get("section_id")
+                and section.get("semantic_feedback")
+            }
+        }
     else:
         state["last_semantic_review"] = {
             "enabled": False,
@@ -83,6 +98,9 @@ def phase_write_policy_aware(
             "claims_insufficient": 0,
             "verification_skipped": True,
             "reports": [],
+        }
+        state["last_semantic_feedback"] = {
+            "sections": {}
         }
 
     decision_oaa = PolicyAwareOAALoop(
