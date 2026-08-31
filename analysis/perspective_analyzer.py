@@ -71,6 +71,14 @@ def _comparison_id(proposition_a: Dict, proposition_b: Dict) -> str:
     return "cmp-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
+def _source_ids(proposition_a: Dict, proposition_b: Dict) -> List[str]:
+    return sorted({
+        str(value)
+        for value in list(proposition_a.get("source_ids", [])) + list(proposition_b.get("source_ids", []))
+        if value
+    })
+
+
 def normalize_comparison(value: Optional[Dict]) -> Dict:
     value = value if isinstance(value, dict) else {}
     relationship = _clean(value.get("relationship", "insufficient_evidence")).lower()
@@ -98,25 +106,32 @@ def compare_propositions(
     model: Optional[str] = None,
     max_tokens: int = 600,
 ) -> Dict:
-    """Compare two propositions with one bounded LLM call."""
+    """Compare two propositions with one bounded LLM call and traceable provenance."""
     comparison_id = _comparison_id(proposition_a, proposition_b)
+    provenance = {
+        "comparison_id": comparison_id,
+        "proposition_ids": [
+            proposition_a.get("proposition_id"),
+            proposition_b.get("proposition_id"),
+        ],
+        "source_ids": _source_ids(proposition_a, proposition_b),
+    }
+
     if provider.budget_exhausted():
         return {
-            "comparison_id": comparison_id,
-            "proposition_ids": [
-                proposition_a.get("proposition_id"),
-                proposition_b.get("proposition_id"),
-            ],
+            **provenance,
             "comparison": normalize_comparison({}),
             "skipped": True,
             "reason": "LLM budget exhausted.",
         }
 
+    context_a = proposition_a.get("context", {})
+    context_b = proposition_b.get("context", {})
     prompt = (
         "PROPOSITION A:\n" + _clean(proposition_a.get("statement", "")) +
-        "\nCONTEXT A:\n" + json.dumps(proposition_a.get("context", {}), ensure_ascii=False) +
+        "\nCONTEXT A:\n" + json.dumps(context_a, ensure_ascii=False) +
         "\n\nPROPOSITION B:\n" + _clean(proposition_b.get("statement", "")) +
-        "\nCONTEXT B:\n" + json.dumps(proposition_b.get("context", {}), ensure_ascii=False)
+        "\nCONTEXT B:\n" + json.dumps(context_b, ensure_ascii=False)
     )
 
     text, error = provider.chat(
@@ -131,11 +146,7 @@ def compare_propositions(
 
     if error or not text:
         return {
-            "comparison_id": comparison_id,
-            "proposition_ids": [
-                proposition_a.get("proposition_id"),
-                proposition_b.get("proposition_id"),
-            ],
+            **provenance,
             "comparison": normalize_comparison({}),
             "skipped": True,
             "reason": error or "Empty response.",
@@ -154,17 +165,14 @@ def compare_propositions(
 
     comparison = normalize_comparison(parsed)
     return {
-        "comparison_id": comparison_id,
-        "proposition_ids": [
-            proposition_a.get("proposition_id"),
-            proposition_b.get("proposition_id"),
-        ],
-        "source_ids": sorted({
-            str(value)
-            for value in list(proposition_a.get("source_ids", [])) + list(proposition_b.get("source_ids", []))
-            if value
-        }),
+        **provenance,
         "comparison": comparison,
+        "context_basis": {
+            "context_a": context_a if isinstance(context_a, dict) else {},
+            "context_b": context_b if isinstance(context_b, dict) else {},
+            "shared_context": comparison["shared_context"],
+            "different_context": comparison["different_context"],
+        },
         "skipped": False,
         "reason": "",
     }
