@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from analysis.knowledge_graph_builder import sync_legacy_knowledge_base
+from core.knowledge_graph_builder import sync_legacy_knowledge_base
 from core.knowledge_graph import normalize_graph, validate_graph_references
 
 
