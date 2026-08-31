@@ -38,6 +38,23 @@ def build_targeted_query(report: Dict) -> str:
     return " ".join(terms)[:220].strip()
 
 
+def _proposition_ids(report: Dict) -> List[str]:
+    values = report.get("proposition_ids", [])
+    if isinstance(values, str):
+        values = [values]
+    if not isinstance(values, list):
+        values = []
+    result = []
+    seen = set()
+    for value in values:
+        value = str(value).strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result
+
+
 def build_perspective_job(report: Dict) -> Dict:
     """Create a comparison job for an apparent scientific disagreement."""
     return {
@@ -47,6 +64,7 @@ def build_perspective_job(report: Dict) -> Dict:
         "claim": str(report.get("claim", "")),
         "reason": str(report.get("reason", "")),
         "citation_ids": [str(value) for value in report.get("citation_ids", []) if value],
+        "proposition_ids": _proposition_ids(report),
         "source_reports": list(report.get("sources", [])) if isinstance(report.get("sources", []), list) else [],
         "confidence": _bounded_confidence(report.get("confidence", 0.0)),
     }
@@ -61,6 +79,7 @@ def build_rewrite_job(report: Dict) -> Dict:
         "claim": str(report.get("claim", "")),
         "reason": str(report.get("reason", "")),
         "citation_ids": [str(value) for value in report.get("citation_ids", []) if value],
+        "proposition_ids": _proposition_ids(report),
         "source_reports": list(report.get("sources", [])) if isinstance(report.get("sources", []), list) else [],
         "confidence": _bounded_confidence(report.get("confidence", 0.0)),
     }
