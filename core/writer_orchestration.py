@@ -189,6 +189,20 @@ def phase_write_policy_aware(
             re_reports = reverification.get("reports", [])
             re_judgment = str(re_reports[0].get("judgment", "")) if re_reports else ""
             if re_judgment == "supported":
+                candidate.pop("semantic_feedback", None)
+                candidate["semantic_feedback"] = {
+                    "action": "retain",
+                    "severity": "low",
+                    "confidence": float(re_reports[0].get("confidence", 0.0)),
+                    "judgments": ["supported"],
+                    "claims_checked": 1,
+                    "reverified": True,
+                    "reverification_reason": str(re_reports[0].get("reason", "")),
+                    "reverified_sources": [
+                        str(value) for value in re_reports[0].get("citation_ids", []) if value
+                    ],
+                    "reverification": reverification,
+                }
                 all_sections[target_index] = candidate
                 correction_results.append({"section_id": section_id, "action": "rewrite_accepted", "reverification": reverification})
             else:
