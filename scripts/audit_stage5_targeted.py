@@ -77,6 +77,9 @@ def make_state():
                 "44444444-4444-4444-8444-444444444444": proposition(
                     "44444444-4444-4444-8444-444444444444", "Method B is unstable", "s4", "F4"
                 ),
+                "55555555-5555-4555-8555-555555555555": proposition(
+                    "55555555-5555-4555-8555-555555555555", "Method A has bounded error", "s1", "F1"
+                ),
             },
             "relationships": {},
             "concept_history": [],
@@ -93,6 +96,7 @@ def main() -> int:
         p2 = "22222222-2222-4222-8222-222222222222"
         p3 = "33333333-3333-4333-8333-333333333333"
         p4 = "44444444-4444-4444-8444-444444444444"
+        p5 = "55555555-5555-4555-8555-555555555555"
         jobs = [
             {"section_id": "sec-a", "proposition_ids": [p1, p2]},
             {"section_id": "sec-b", "proposition_ids": [p3, p4]},
@@ -128,9 +132,21 @@ def main() -> int:
         check(tuple(sorted((p1, p2))) in endpoints, "First targeted relationship missing.")
         check(tuple(sorted((p3, p4))) in endpoints, "Second targeted relationship missing.")
 
+        same_source = make_state()
+        same_source_provider = StubProvider()
+        same_source_result = record_perspective_jobs(
+            same_source,
+            [{"section_id": "sec-c", "proposition_ids": [p1, p5]}],
+            same_source_provider,
+            parser,
+            max_jobs=1,
+        )
+        check(same_source_result["relationships_added"] == 0, "Same-source propositions were compared as independent perspectives.")
+        check(same_source_provider.calls == 0, "Same-source comparison consumed an LLM call.")
+
         print("Stage 5 targeted perspective audit")
         print("=================================")
-        print("PASS: job-level targeting, UUID identity, bounds, proposition identity, and relationship endpoints passed.")
+        print("PASS: job targeting, UUID identity, bounds, unrelated-pair exclusion, relationship endpoints, and same-source safety passed.")
         return 0
     except Exception as exc:
         print(f"STAGE 5 TARGETED AUDIT: ERROR: {exc}")
