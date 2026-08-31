@@ -85,6 +85,31 @@ def _find_proposition(
     return None
 
 
+def _context_from_item(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Preserve explicit scientific context already present on legacy records."""
+    context = item.get("context", {})
+    if not isinstance(context, dict):
+        context = {}
+    merged = dict(context)
+    for key in (
+        "framework",
+        "assumptions",
+        "definitions",
+        "conditions",
+        "domain_of_validity",
+        "parameters",
+        "boundary_conditions",
+        "initial_conditions",
+        "method",
+        "approximation",
+        "scope",
+        "scope_notes",
+    ):
+        if key in item and key not in merged:
+            merged[key] = item[key]
+    return merged
+
+
 def sync_legacy_knowledge_base(state: Dict[str, Any]) -> Dict[str, Any]:
     """Add graph records for legacy KB items without deleting or rewriting the KB."""
     graph = state.get("knowledge_graph", {})
@@ -127,20 +152,13 @@ def sync_legacy_knowledge_base(state: Dict[str, Any]) -> Dict[str, Any]:
             if not isinstance(item, dict):
                 continue
 
-            statement = (
-                item.get("rule") or item.get("name") or item.get("title") or item.get("description") or ""
-            )
+            statement = item.get("rule") or item.get("name") or item.get("title") or item.get("description") or ""
             statement = str(statement).strip()
             if not statement:
                 continue
 
             source_ids = [str(value) for value in item.get("source_ids", []) if value]
-            existing_id = _find_proposition(
-                propositions,
-                statement,
-                source_ids,
-                proposition_type,
-            )
+            existing_id = _find_proposition(propositions, statement, source_ids, proposition_type)
 
             proposition = {
                 "proposition_id": existing_id or new_graph_id(),
@@ -150,6 +168,7 @@ def sync_legacy_knowledge_base(state: Dict[str, Any]) -> Dict[str, Any]:
                 "provenance_kind": "legacy_knowledge_base",
                 "knowledge_item_type": proposition_type,
                 "status": "proposed",
+                "context": _context_from_item(item),
             }
             normalize_proposition(proposition)
             propositions[proposition["proposition_id"]] = proposition
