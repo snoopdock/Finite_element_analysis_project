@@ -20,9 +20,9 @@ from core.budget import check_budget
 from core.pipeline import (
     phase_research,
     phase_extract,
-    phase_write,
     phase_assemble,
 )
+from core.writer_orchestration import phase_write_policy_aware
 from processing.llm_parser import UniversalLLMJSONParser
 from providers.cloudflare import CloudflareProvider
 from analysis.iteration_history import IterationHistory
@@ -75,8 +75,6 @@ def main():
         delay = int(config.get("phase_delay_seconds", 5))
         budget_config = config.get("budget", {})
 
-        # Keep runtime policy aligned with config.yaml. Environment variables
-        # remain explicit overrides for CI or advanced deployments.
         os.environ.setdefault(
             "FEA_MAX_LLM_CALLS",
             str(budget_config.get("max_llm_calls_per_run", 20)),
@@ -344,10 +342,7 @@ def main():
                 )
                 state["knowledge_base"] = kb
 
-            # phase_write currently constructs DynamicWriter itself. The shared
-            # indicator object is retained here for convergence; Stage 2 will
-            # wire the same object directly into the writer.
-            sections, written, adjustment = phase_write(
+            sections, written, adjustment = phase_write_policy_aware(
                 config,
                 state,
                 paths,
@@ -359,6 +354,7 @@ def main():
                 iteration_history,
                 oaa_loop,
                 section_topics,
+                writing_indicator=writing_indicator,
             )
 
             state["sections"] = sections
