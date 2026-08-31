@@ -56,6 +56,10 @@ def phase_write_policy_aware(
         errors,
     )
 
+    state["last_writing_decisions"] = list(
+        writer.last_decisions
+    )
+
     # Reuse the existing split/merge executors, but use an isolated
     # policy-aware OAA instance for anomaly/action prioritization. The
     # authoritative state remains in the caller's IterationHistory.
@@ -80,11 +84,23 @@ def phase_write_policy_aware(
 
     if adjustment:
         state["pending_adjustment"] = adjustment
+        state["last_adjustment_decision"] = {
+            "action": adjustment.get("action"),
+            "section_id": adjustment.get("section_id"),
+            "section_ids": list(
+                adjustment.get("section_ids", [])
+            ),
+            "reason": adjustment.get("reason", ""),
+            "adjustment_score": dict(
+                adjustment.get("adjustment_score", {})
+            ),
+        }
     else:
         state.pop(
             "pending_adjustment",
             None,
         )
+        state["last_adjustment_decision"] = None
 
     state["sections"] = all_sections
 
