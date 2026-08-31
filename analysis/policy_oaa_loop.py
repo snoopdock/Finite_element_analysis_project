@@ -66,6 +66,18 @@ class PolicyAwareOAALoop(OAALoop):
         if not ranked:
             return None
 
-        return super().adjust(
+        adjustment = super().adjust(
             ranked[:1]
         )
+
+        if adjustment is None:
+            return None
+
+        adjustment["adjustment_score"] = dict(
+            ranked[0].get(
+                "adjustment_score",
+                {},
+            )
+        )
+
+        return adjustment
