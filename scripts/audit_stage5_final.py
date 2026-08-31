@@ -23,6 +23,10 @@ from analysis.perspective_service import compare_graph_propositions
 from analysis.perspective_registry import record_perspective_jobs
 from core.perspective_state import upsert_comparison
 
+P1 = "00000000-0000-4000-8000-000000000001"
+P2 = "00000000-0000-4000-8000-000000000002"
+P3 = "00000000-0000-4000-8000-000000000003"
+
 
 class StubProvider:
     def __init__(self, payload=None):
@@ -56,13 +60,13 @@ def check(condition: bool, message: str) -> None:
 
 def graph_state():
     a = {
-        "proposition_id": "p1",
+        "proposition_id": P1,
         "statement": "Method A is stable",
         "source_ids": ["source-a"],
         "context": {"framework": "F1", "assumptions": ["A"]},
     }
     b = {
-        "proposition_id": "p2",
+        "proposition_id": P2,
         "statement": "Method A is unstable",
         "source_ids": ["source-b"],
         "context": {"framework": "F2", "assumptions": ["B"]},
@@ -70,7 +74,7 @@ def graph_state():
     return {
         "knowledge_graph": {
             "concepts": {},
-            "propositions": {"p1": a, "p2": b},
+            "propositions": {P1: a, P2: b},
             "relationships": {},
             "concept_history": [],
         }
@@ -80,19 +84,19 @@ def graph_state():
 def main() -> int:
     try:
         a = {
-            "proposition_id": "p1",
+            "proposition_id": P1,
             "statement": "Method A is stable",
             "source_ids": ["source-a"],
             "context": {"framework": "F1", "assumptions": ["A"]},
         }
         b = {
-            "proposition_id": "p2",
+            "proposition_id": P2,
             "statement": "Method A is unstable",
             "source_ids": ["source-b"],
             "context": {"framework": "F2", "assumptions": ["B"]},
         }
         c = {
-            "proposition_id": "p3",
+            "proposition_id": P3,
             "statement": "Method A is stable",
             "source_ids": ["source-a"],
             "context": {"framework": "F1"},
@@ -102,14 +106,14 @@ def main() -> int:
 
         pairs = candidate_pairs([a, b, c], max_pairs=8, minimum_overlap=0.15)
         ids = {tuple(sorted((x["proposition_id"], y["proposition_id"]))) for x, y in pairs}
-        check(("p1", "p2") in ids, "Cross-source pair missing.")
-        check(("p1", "p3") not in ids, "Same-source pair was selected.")
+        check(tuple(sorted((P1, P2))) in ids, "Cross-source pair missing.")
+        check(tuple(sorted((P1, P3))) not in ids, "Same-source pair was selected.")
 
         provider = StubProvider()
         parser = StubParser()
         comparison = compare_propositions(a, b, provider, parser)
         check(not comparison["skipped"], "Valid comparison was skipped.")
-        check(set(comparison["proposition_ids"]) == {"p1", "p2"}, "Proposition IDs were lost.")
+        check(set(comparison["proposition_ids"]) == {P1, P2}, "Proposition IDs were lost.")
         check(comparison["source_ids"] == ["source-a", "source-b"], "Source provenance was lost.")
 
         history = upsert_comparison([], comparison, max_records=2)
@@ -134,7 +138,7 @@ def main() -> int:
         check(len(graph["knowledge_graph"]["relationships"]) == 1, "Graph relationship was not stored.")
         relation = next(iter(graph["knowledge_graph"]["relationships"].values()))
         check(relation["type"] == "contrasts_with", "Framework contrast mapping failed.")
-        check(set(relation["proposition_ids"]) == {"p1", "p2"}, "Relationship proposition IDs changed.")
+        check(set(relation["proposition_ids"]) == {P1, P2}, "Relationship proposition IDs changed.")
         check(set(relation["source_ids"]) == {"source-a", "source-b"}, "Relationship provenance was lost.")
 
         unsupported, _, _ = graph_state()
