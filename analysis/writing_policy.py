@@ -50,7 +50,7 @@ class WritingDecisionPolicy:
 
     @staticmethod
     def _semantic_priority(section: dict) -> float:
-        """Return a bounded semantic-feedback priority multiplier."""
+        """Return a bounded priority multiplier from scientific review feedback."""
         feedback = section.get("semantic_feedback", {})
         if not isinstance(feedback, dict):
             return 1.0
@@ -62,8 +62,10 @@ class WritingDecisionPolicy:
         except (TypeError, ValueError):
             confidence = 0.0
 
-        if action == "rewrite_and_reverify":
-            return 1.0 + 0.50 * confidence
+        if action == "analyze_perspectives":
+            # Disagreement increases attention; it does not imply that content
+            # should be deleted or that one source must be declared correct.
+            return 1.0 + 0.40 * confidence
         if action == "seek_more_evidence":
             return 1.0 + 0.25 * confidence
         return 1.0
