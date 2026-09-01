@@ -17,6 +17,21 @@ _ALLOWED = {
     "insufficient_evidence",
 }
 
+_ALIASES = {
+    "subconcept": "subconcept_of",
+    "subconcept_of": "subconcept_of",
+    "specializes": "specializes",
+    "generalizes": "generalizes",
+    "alternative": "alternative_to",
+    "alternative_to": "alternative_to",
+    "complementary": "complements",
+    "complements": "complements",
+    "related": "related_to",
+    "related_to": "related_to",
+    "insufficient": "insufficient_evidence",
+    "insufficient_evidence": "insufficient_evidence",
+}
+
 _SYSTEM_PROMPT = """You are a cautious scientific ontology analyst.
 
 Given CONCEPT A and CONCEPT B plus propositions/evidence associated with them, infer only
@@ -61,9 +76,8 @@ def _clean_ids(value: object) -> List[str]:
 
 def normalize_relationship_proposal(value: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     raw = value if isinstance(value, dict) else {}
-    relation = _clean(raw.get("relationship", "insufficient_evidence")).lower()
-    if relation not in _ALLOWED:
-        relation = "insufficient_evidence"
+    raw_relation = _clean(raw.get("relationship", "insufficient_evidence")).lower()
+    relation = _ALIASES.get(raw_relation, "insufficient_evidence")
     try:
         confidence = max(0.0, min(1.0, float(raw.get("confidence", 0.0))))
     except (TypeError, ValueError):
