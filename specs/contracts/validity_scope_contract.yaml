@@ -1,0 +1,42 @@
+version: 1
+name: validity_scope
+purpose: "Describe where and under what conditions a proposition is claimed to hold."
+
+validity_types:
+  - universal
+  - conditional
+  - approximate
+  - empirical
+  - heuristic
+  - definitional
+  - unknown
+
+status_values:
+  - proposed
+  - assessed
+  - superseded
+
+required:
+  - validity_id
+  - proposition_id
+  - type
+
+optional:
+  - framework
+  - domain_of_validity
+  - regime
+  - conditions
+  - assumptions
+  - limitations
+  - exceptions
+  - approximation
+  - evidence_relation_ids
+  - status
+
+invariants:
+  - "validity_id and proposition_id are non-empty strings"
+  - "type is one of validity_types; unknown is used when classification is unsupported"
+  - "missing context is not replaced with inferred facts"
+  - "evidence_relation_ids point to evidence relations, not directly to scientific verification"
+  - "a validity scope is not itself a verification or truth assertion"
+  - "multiple validity scopes may exist for one proposition"
