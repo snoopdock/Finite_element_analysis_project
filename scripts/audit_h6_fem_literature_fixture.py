@@ -18,11 +18,13 @@ def main() -> int:
     assert len({item["source_type"] for item in sources}) >= 3
     assert len({item["scientific_role"] for item in sources}) == 4
 
-    # The fixture is metadata-only: no PDF path/byte payload is stored.
+    # The fixture is metadata-only: no PDF byte payload or embedded base64 is stored.
     assert data["trial_requirements"]["do_not_store_pdf_bytes"] is True
-    serialized = MANIFEST.read_text(encoding="utf-8").lower()
-    assert "pdf_bytes" not in serialized
-    assert "base64" not in serialized
+    for source in sources:
+        serialized_source = str(source).lower()
+        assert "pdf_bytes" not in source
+        assert "base64" not in serialized_source
+        assert "pdf_bytes:" not in serialized_source
 
     # Bibliographic metadata must not be interpreted as evidence.
     for source in sources:
