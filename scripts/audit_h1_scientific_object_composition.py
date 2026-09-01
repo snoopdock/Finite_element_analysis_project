@@ -49,14 +49,15 @@ def main() -> int:
     assert assertion["proposition_id"] == proposition["proposition_id"]
 
     lifecycle = normalize_lifecycle_event({
-        "lifecycle_id": "l-001",
+        "event_id": "l-001",
         "proposition_id": "p-001",
         "change_type": "restriction",
-        "related_proposition_id": "p-002",
+        "related_proposition_ids": ["p-002"],
         "status": "proposed",
     })
     assert lifecycle is not None
     assert lifecycle["proposition_id"] == "p-001"
+    assert lifecycle["related_proposition_ids"] == ["p-002"]
 
     epistemic = normalize_epistemic_state({
         "status": "conditional",
