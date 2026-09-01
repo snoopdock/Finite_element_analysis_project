@@ -46,17 +46,19 @@ def main() -> int:
     assert record_validity_scope(state, validity)
 
     epistemic = {
-        "entity_id": "p-001",
-        "entity_type": "proposition",
         "status": "conditional",
         "evidence_strength": "moderate",
         "literature_agreement": "mixed",
         "model_confidence": 0.82,
     }
-    assert record_epistemic_state(state, "p-001", epistemic)
+    assert record_epistemic_state(
+        state,
+        "p-001",
+        epistemic,
+        entity_type="proposition",
+    )
 
     attention = {
-        "entity_id": "p-001",
         "evidence_gap": 0.6,
         "disagreement": 0.5,
         "contextual_complexity": 0.3,
@@ -64,7 +66,12 @@ def main() -> int:
         "importance": 0.7,
         "decision_consequence": 0.9,
     }
-    assert record_scientific_attention(state, attention)
+    assert record_scientific_attention(
+        state,
+        "p-001",
+        attention,
+        entity_type="proposition",
+    )
 
     before = copy.deepcopy(state)
     encoded = json.dumps(state, sort_keys=True, ensure_ascii=False)
@@ -75,7 +82,7 @@ def main() -> int:
     assert after["knowledge_graph"]["evidence_relations"]["er-001"]["passage_ids"] == ["passage-001"]
     assert after["knowledge_graph"]["validity_scopes"]["v-001"]["evidence_relation_ids"] == ["er-001"]
     assert after["knowledge_graph"]["epistemic_states"]["proposition:p-001"]["model_confidence"] == 0.82
-    assert after["knowledge_graph"]["scientific_attention"]["p-001"]["decision_consequence"] == 0.9
+    assert after["knowledge_graph"]["scientific_attention"]["proposition:p-001"]["signals"]["decision_consequence"] == 0.9
 
     print("H2 state round-trip audit: PASS")
     return 0
