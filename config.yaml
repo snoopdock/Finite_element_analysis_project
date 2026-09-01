@@ -98,6 +98,14 @@ semantic_verification:
   perspective_max_records: 200
   perspective_model: null
 
+  # Stage 7: concept-relationship analysis. Disabled by default.
+  concept_relationship_enabled: false
+  max_concept_relationship_pairs_per_cycle: 2
+  max_concept_relationship_propositions_per_pair: 8
+  concept_relationship_max_records: 200
+  concept_relationship_model: null
+  concept_relationship_max_tokens: 650
+
   # Perspective/corrective loop. Also disabled by default.
   correction_enabled: false
   max_evidence_queries_per_cycle: 2
