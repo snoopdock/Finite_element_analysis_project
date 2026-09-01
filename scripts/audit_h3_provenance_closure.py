@@ -70,11 +70,12 @@ def main() -> int:
     proposition_id = support["proposition_ids"][0]
     proposition = graph["propositions"][proposition_id]
     source_id = support["source_ids"][0]
-    assert proposition_id in graph["assertions"]["a-001"]["proposition_id"]
+    assertion = graph["assertions"]["a-001"]
+    assert assertion["proposition_id"] == proposition_id
+    assert assertion["source_id"] == source_id
     assert source_id in proposition["source_ids"]
     assert source_id in graph["sources"]
 
-    assertion = graph["assertions"]["a-001"]
     for evidence_id in assertion["evidence_relation_ids"]:
         evidence = graph["evidence_relations"][evidence_id]
         assert evidence["source_id"] == source_id
