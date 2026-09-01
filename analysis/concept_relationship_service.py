@@ -3,37 +3,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from core.concept_relationship_candidates import candidate_concept_pairs
 from analysis.concept_relationship_analyzer import analyze_concept_relationship
+from analysis.concept_relationship_evidence import propositions_for_concept_pair
 from analysis.concept_relationship_ledger import record_proposals
-
-
-def _concept_propositions(
-    graph: Dict[str, Any],
-    concept_a_id: str,
-    concept_b_id: str,
-    *,
-    max_propositions: int,
-) -> List[Dict[str, Any]]:
-    propositions = graph.get("propositions", {}) if isinstance(graph, dict) else {}
-    if not isinstance(propositions, dict):
-        return []
-
-    wanted = {str(concept_a_id), str(concept_b_id)}
-    candidates: List[Tuple[int, str, Dict[str, Any]]] = []
-    for proposition_id, proposition in propositions.items():
-        if not isinstance(proposition, dict):
-            continue
-        concept_ids = {str(value).strip() for value in proposition.get("concept_ids", []) or []}
-        if not wanted.issubset(concept_ids):
-            continue
-        source_count = len({str(value).strip() for value in proposition.get("source_ids", []) or [] if str(value).strip()})
-        candidates.append((source_count, str(proposition_id), proposition))
-
-    candidates.sort(key=lambda item: (-item[0], item[1]))
-    return [item[2] for item in candidates[: max(0, int(max_propositions))]]
 
 
 def analyze_candidate_concepts(
@@ -47,7 +22,7 @@ def analyze_candidate_concepts(
     max_tokens: int = 650,
     max_records: int = 200,
 ) -> Dict[str, Any]:
-    """Analyze a bounded set of concept pairs using existing source-backed propositions."""
+    """Analyze a bounded set of concept pairs using source-backed propositions."""
     graph = state.get("knowledge_graph", {}) if isinstance(state, dict) else {}
     if not isinstance(graph, dict):
         return {"candidates": 0, "analyzed": 0, "skipped": 0, "recorded": 0, "records": []}
@@ -57,7 +32,7 @@ def analyze_candidate_concepts(
     if not isinstance(concepts, dict):
         return {"candidates": len(pairs), "analyzed": 0, "skipped": 0, "recorded": 0, "records": []}
 
-    records = []
+    records: List[Dict[str, Any]] = []
     skipped = 0
     for concept_a_id, concept_b_id in pairs:
         if provider.budget_exhausted():
@@ -69,11 +44,11 @@ def analyze_candidate_concepts(
             skipped += 1
             continue
 
-        propositions = _concept_propositions(
+        propositions = propositions_for_concept_pair(
             graph,
             concept_a_id,
             concept_b_id,
-            max_propositions=max_propositions_per_pair,
+            max_propositions=max(0, int(max_propositions_per_pair)),
         )
         if not propositions:
             skipped += 1
@@ -93,7 +68,7 @@ def analyze_candidate_concepts(
             continue
         records.append(result)
 
-    recorded = record_proposals(state, records, max_records=max_records)
+    recorded = record_proposals(state, records, max_records=max(0, int(max_records)))
     state["last_concept_relationship_analysis"] = {
         "candidates": len(pairs),
         "analyzed": len(records),
