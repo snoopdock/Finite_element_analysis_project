@@ -1,0 +1,64 @@
+version: 1
+name: h6_fem_literature_trial
+purpose: "Small real-literature metadata fixture for end-to-end scientific integration testing. PDFs are intentionally not stored here."
+
+sources:
+  - source_id: fem-strang-fix-1973
+    title: "An Analysis of the Finite Element Method"
+    authors:
+      - "Gilbert Strang"
+      - "George J. Fix"
+    year: 1973
+    source_type: textbook
+    scientific_role: foundational_mathematical_treatment
+    identifiers:
+      isbn: "9780130329462"
+    locator: "https://math.mit.edu/~gs/books/fem_toc.html"
+
+  - source_id: fem-ciarlet-1978
+    title: "The Finite Element Method for Elliptic Problems"
+    authors:
+      - "Philippe G. Ciarlet"
+    year: 1978
+    source_type: monograph
+    scientific_role: mathematical_theory
+    identifiers:
+      isbn: "9780444850287"
+      oclc: "3167152"
+    locator: "https://catalogue.bnf.fr/ark:/12148/cb44648210p"
+
+  - source_id: fem-brenner-scott-2008
+    title: "The Mathematical Theory of Finite Element Methods"
+    authors:
+      - "Susanne C. Brenner"
+      - "L. Ridgway Scott"
+    year: 2008
+    source_type: textbook
+    scientific_role: modern_mathematical_theory
+    identifiers:
+      doi: "10.1007/978-0-387-75934-0"
+    locator: "https://link.springer.com/book/10.1007/978-0-387-75934-0"
+
+  - source_id: fem-nasa-local-global-stress
+    title: "Application of the Finite-Element Method to Local/Global Stress Analysis"
+    authors: []
+    year: 1988
+    source_type: technical_report
+    scientific_role: applied_verification_and_model_development
+    identifiers:
+      nasa_report: "19890015267"
+    locator: "https://ntrs.nasa.gov/api/citations/19890015267/downloads/19890015267.pdf"
+
+trial_requirements:
+  preserve_pdf_free_repository: true
+  require_multiple_source_types: true
+  require_distinct_scientific_roles: true
+  do_not_store_pdf_bytes: true
+  do_not_infer_claims_from_metadata: true
+  expected_checks:
+    - source identity survives ingestion
+    - source characterization remains distinct from retrieval provenance
+    - propositions can cite multiple independent sources
+    - evidence relations require actual passage evidence
+    - book/report metadata alone does not become proposition support
+    - differing source roles remain distinguishable
