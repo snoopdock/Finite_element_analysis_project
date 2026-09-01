@@ -6,6 +6,8 @@ from __future__ import annotations
 import hashlib
 from typing import Any, Dict, Iterable
 
+_SYMMETRIC = {"alternative_to", "complements", "related_to"}
+
 
 def _clean_ids(values: Iterable[Any]) -> list[str]:
     result = []
@@ -49,6 +51,9 @@ def record_proposal(
     if relationship == "insufficient_evidence":
         return False
 
+    if relationship in _SYMMETRIC:
+        concept_ids = sorted(concept_ids)
+
     candidate_key = proposal_id(concept_ids, relationship)
     candidates = graph.setdefault("relationship_candidates", {})
     if not isinstance(candidates, dict):
@@ -69,9 +74,15 @@ def record_proposal(
     }
     candidates[candidate_key] = record
 
-    if max_records >= 0 and len(candidates) > int(max_records):
+    if max_records < 0:
+        return True
+    limit = int(max_records)
+    if limit == 0:
+        candidates.clear()
+        return False
+    if len(candidates) > limit:
         ordered = sorted(candidates.items(), key=lambda item: item[0])
-        for key, _ in ordered[:-int(max_records)]:
+        for key, _ in ordered[:-limit]:
             candidates.pop(key, None)
     return True
 
