@@ -1,0 +1,72 @@
+version: 1
+name: h7_failure_analysis_matrix
+purpose: "Classify integration failures without converting implementation failures into scientific conclusions."
+
+failure_classes:
+  - id: provenance_loss
+    meaning: "A source/evidence/proposition link is lost or altered."
+    severity: critical
+    action: "stop promotion; repair provenance path"
+
+  - id: identity_drift
+    meaning: "An existing scientific entity receives an unintended new identity."
+    severity: critical
+    action: "stop synchronization; repair identity policy"
+
+  - id: evidence_scope_error
+    meaning: "Evidence is treated as addressing a proposition outside its supported scope."
+    severity: critical
+    action: "downgrade relation to unknown or non-addressing"
+
+  - id: validity_overreach
+    meaning: "A local/conditional result is generalized beyond supported conditions."
+    severity: critical
+    action: "retain conditional scope; do not promote universal interpretation"
+
+  - id: perspective_collapse
+    meaning: "Distinct frameworks/methods are merged into one perspective without basis."
+    severity: high
+    action: "split perspective signatures; preserve alternatives"
+
+  - id: causal_overreach
+    meaning: "Associational/predictive evidence is presented as causal."
+    severity: critical
+    action: "retain original causal status; require causal evidence"
+
+  - id: temporal_overreach
+    meaning: "A newer source is treated as automatically superseding an older result."
+    severity: high
+    action: "retain temporal relationship as unresolved unless evidence establishes supersession"
+
+  - id: consensus_inflation
+    meaning: "Repeated dependent sources are counted as independent support."
+    severity: high
+    action: "preserve source lineage and independent-support uncertainty"
+
+  - id: epistemic_leak
+    meaning: "A proposal/evidence classification is converted into verified truth without the required gate."
+    severity: critical
+    action: "reject promotion and preserve unresolved status"
+
+  - id: serialization_loss
+    meaning: "Scientific metadata disappears or changes across save/reload."
+    severity: critical
+    action: "block downstream synthesis"
+
+required_failure_record:
+  - failure_id
+  - failure_class
+  - stage
+  - input_entity_ids
+  - observed_behavior
+  - expected_behavior
+  - provenance_available
+  - scientific_impact
+  - remediation
+  - rerun_required
+
+rules:
+  - "A software failure is not itself evidence that a scientific proposition is false."
+  - "A failed verifier does not justify deletion of the proposition."
+  - "Insufficient evidence remains an epistemic outcome, not a contradiction."
+  - "Every repaired failure must retain enough provenance to explain the repair."
