@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 """Audit the GapDetector API expected by the research pipeline."""
 
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from analysis.gap_detector import GapDetector, classify_knowledge_type
 
 
