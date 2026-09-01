@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -28,6 +29,10 @@ AUDITS = [
 
 def main() -> int:
     results = []
+    environment = os.environ.copy()
+    existing_pythonpath = environment.get("PYTHONPATH", "")
+    environment["PYTHONPATH"] = str(ROOT) + (os.pathsep + existing_pythonpath if existing_pythonpath else "")
+
     for name, script in AUDITS:
         started = datetime.now(timezone.utc).isoformat()
         if not script.exists():
@@ -36,6 +41,7 @@ def main() -> int:
         completed = subprocess.run(
             [sys.executable, str(script)],
             cwd=ROOT,
+            env=environment,
             capture_output=True,
             text=True,
         )
