@@ -8,7 +8,6 @@ available locally. It deliberately does not claim semantic entailment.
 
 from __future__ import annotations
 
-import os
 import pathlib
 import re
 from typing import Dict, Iterable, List, Set
@@ -23,14 +22,47 @@ _CITATION_RE = re.compile(
 )
 
 
-def extract_citation_ids(text: str) -> List[str]:
-    """Extract comma-separated bracketed citation IDs from prose."""
+def _looks_like_citation_id(value: str, known_ids: Set[str]) -> bool:
+    """Reject common mathematical/bracket notation from citation extraction."""
+    value = str(value or "").strip()
+    if not value:
+        return False
+
+    if value in known_ids:
+        return True
+
+    # Numeric intervals, indices, and simple coordinate/vector notation are
+    # not citation IDs. Numeric-only source IDs remain valid when they are
+    # explicitly present in known_ids above.
+    if re.fullmatch(r"\d+(?:\.\d+)?", value):
+        return False
+
+    # Single-letter variables are overwhelmingly mathematical notation in
+    # this pipeline and should not become citations.
+    if re.fullmatch(r"[A-Za-z]", value):
+        return False
+
+    # LaTeX commands or expressions are not source IDs.
+    if "\\" in value or any(char in value for char in "{}()<>|;="):
+        return False
+
+    return bool(re.fullmatch(r"[A-Za-z0-9_.:-]+", value))
+
+
+def extract_citation_ids(
+    text: str,
+    known_ids: Iterable[str] | None = None,
+) -> List[str]:
+    """Extract citation-like IDs while ignoring common mathematical brackets."""
+    known = {str(value) for value in (known_ids or []) if value}
     result: Set[str] = set()
+
     for group in _CITATION_RE.findall(str(text or "")):
         for value in group.split(","):
             value = value.strip()
-            if value:
+            if _looks_like_citation_id(value, known):
                 result.add(value)
+
     return sorted(result)
 
 
@@ -67,7 +99,7 @@ def validate_section_citations(
     """Validate one section's citation IDs and report coverage/support."""
     allowed = {str(value) for value in allowed_source_ids if value}
     content = str(section.get("content", "")) if isinstance(section, dict) else ""
-    citations = extract_citation_ids(content)
+    citations = extract_citation_ids(content, known_ids=allowed)
     invalid = [citation for citation in citations if citation not in allowed]
 
     paragraphs = [
@@ -77,7 +109,9 @@ def validate_section_citations(
     ]
 
     cited_paragraphs = sum(
-        1 for paragraph in paragraphs if extract_citation_ids(paragraph)
+        1
+        for paragraph in paragraphs
+        if extract_citation_ids(paragraph, known_ids=allowed)
     )
 
     evidence_by_id = evidence_by_id or {}
@@ -85,7 +119,10 @@ def validate_section_citations(
     supported_paragraphs = 0
 
     for paragraph in paragraphs:
-        paragraph_citations = extract_citation_ids(paragraph)
+        paragraph_citations = extract_citation_ids(
+            paragraph,
+            known_ids=allowed,
+        )
         if not paragraph_citations:
             continue
 
