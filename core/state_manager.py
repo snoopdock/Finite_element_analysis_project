@@ -46,8 +46,19 @@ def initialize_state(paths: Dict, config: Dict) -> Dict:
     state["knowledge_graph_violations"] = validate_graph_references(
         state["knowledge_graph"]
     )
+    state.setdefault("retrieval_report", _empty_retrieval_report())
     state["schema_version"] = SCHEMA_VERSION
     return state
+
+
+def _empty_retrieval_report() -> Dict:
+    return {
+        "status": "not_run",
+        "query_count": 0,
+        "providers": {},
+        "returned_records": 0,
+        "selected_records": 0,
+    }
 
 
 def _default_state(config: Dict) -> Dict:
@@ -67,6 +78,7 @@ def _default_state(config: Dict) -> Dict:
         "processed_sources_extracted": [],
         "iteration_history_data": {},
         "convergence_diagnostics": {},
+        "retrieval_report": _empty_retrieval_report(),
     }
 
 
@@ -201,6 +213,7 @@ def save_state(paths: Dict, state: Dict):
     state["knowledge_graph_violations"] = validate_graph_references(
         state["knowledge_graph"]
     )
+    state.setdefault("retrieval_report", _empty_retrieval_report())
     state["schema_version"] = SCHEMA_VERSION
 
     fd, tmp_path = tempfile.mkstemp(
