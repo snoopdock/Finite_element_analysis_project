@@ -31,6 +31,7 @@ AUDITS = [
     ("Retrieval-report-state", ROOT / "scripts/audit_retrieval_report_state.py"),
     ("Retrieval-coverage-contract", ROOT / "scripts/audit_retrieval_coverage_contract.py"),
     ("Retrieval-coverage", ROOT / "scripts/audit_retrieval_coverage.py"),
+    ("Retrieval-history-contract", ROOT / "scripts/audit_retrieval_history_contract.py"),
 ]
 
 
