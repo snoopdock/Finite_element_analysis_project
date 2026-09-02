@@ -7,17 +7,74 @@ import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from utils.text import clean_text
 from research.arxiv_fulltext import search_arxiv
 from research.wikipedia import search_wikipedia
-from research.semantic_scholar import search_semantic_scholar
+from research.semantic_scholar import search_semantic_scholar, get_last_retrieval_status
 from research.content_cache import cleanup_cache
 from research.article_sectioner import split_article_into_sections, get_unread_sections
 from research.reading_tracker import mark_section_read
 from research.ranking import rank_items_for_queries
 from research.diversity import select_diverse_evidence
+
+
+_LAST_RETRIEVAL_REPORT: Dict = {
+    "status": "not_run",
+    "providers": {},
+    "returned_records": 0,
+    "selected_records": 0,
+}
+
+
+def _aggregate_provider_status(statuses: List[str]) -> str:
+    """Aggregate per-query provider outcomes without hiding partial failures."""
+    normalized = [str(status).strip() for status in statuses if str(status).strip()]
+    if not normalized:
+        return "unknown"
+    if all(status == "success" for status in normalized):
+        return "success"
+    if all(status == "empty_result" for status in normalized):
+        return "empty_result"
+    if all(status == "rate_limited" for status in normalized):
+        return "rate_limited"
+    if any(status == "success" for status in normalized):
+        return "partial_failure"
+    if any(status in {"network_error", "server_error", "client_error", "http_error", "invalid_response"} for status in normalized):
+        return "failure"
+    return "mixed"
+
+
+def _run_provider_search(
+    provider_name: str,
+    search_fn: Callable,
+    query: str,
+    max_results: int,
+) -> tuple:
+    """Run one provider search and return both records and its worker-local status."""
+    try:
+        results = search_fn(query, max_results)
+    except Exception as exc:
+        return [], {"status": "exception", "error": str(exc)}
+
+    if provider_name == "semantic_scholar":
+        status = get_last_retrieval_status()
+        if isinstance(status, dict) and status:
+            return results if isinstance(results, list) else [], dict(status)
+
+    if isinstance(results, list):
+        return results, {
+            "status": "success" if results else "empty_result",
+            "returned_records": len(results),
+        }
+
+    return [], {"status": "invalid_result_type"}
+
+
+def get_last_retrieval_report() -> Dict:
+    """Return a copy of the latest retrieval-cycle report."""
+    return dict(_LAST_RETRIEVAL_REPORT)
 
 
 def retrieve_evidence_parallel(
@@ -28,6 +85,8 @@ def retrieve_evidence_parallel(
     max_per_source_type: int = 3,
 ) -> List[Dict]:
     """Retrieve evidence while preserving provenance and configured diversity caps."""
+    global _LAST_RETRIEVAL_REPORT
+
     cleanup_cache()
 
     normalized_queries = [
@@ -36,30 +95,61 @@ def retrieve_evidence_parallel(
         if str(query).strip()
     ]
 
+    retrieval_timestamp = datetime.now(timezone.utc).isoformat()
+    _LAST_RETRIEVAL_REPORT = {
+        "status": "not_run",
+        "retrieved_at": retrieval_timestamp,
+        "query_count": len(normalized_queries),
+        "providers": {},
+        "returned_records": 0,
+        "selected_records": 0,
+    }
+
     if not normalized_queries:
+        _LAST_RETRIEVAL_REPORT["status"] = "empty_query_set"
         return []
 
-    retrieval_timestamp = datetime.now(timezone.utc).isoformat()
+    provider_specs = {
+        "arxiv": (search_arxiv, "preprint"),
+        "semantic_scholar": (search_semantic_scholar, "academic"),
+        "wikipedia": (search_wikipedia, "wikipedia"),
+    }
+
     futures = {}
+    provider_attempts: Dict[str, List[Dict]] = {
+        provider_name: [] for provider_name in provider_specs
+    }
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for query in normalized_queries:
-            futures[executor.submit(search_arxiv, query, 2)] = ("arxiv", query, "preprint")
-            futures[executor.submit(search_semantic_scholar, query, 2)] = ("semantic_scholar", query, "academic")
-            futures[executor.submit(search_wikipedia, query, 2)] = ("wikipedia", query, "wikipedia")
+            for provider_name, (search_fn, source_type) in provider_specs.items():
+                futures[executor.submit(
+                    _run_provider_search,
+                    provider_name,
+                    search_fn,
+                    query,
+                    2,
+                )] = (provider_name, query, source_type)
 
         candidates_by_id: Dict[str, Dict] = {}
 
         for future in as_completed(futures):
             provider_name, query, source_type = futures[future]
             try:
-                results = future.result()
+                results, outcome = future.result()
             except Exception as exc:
+                results = []
+                outcome = {"status": "exception", "error": str(exc)}
                 print(
                     f"  [Evidence] {provider_name} retrieval error for '{query}': {exc}",
                     file=sys.stderr,
                 )
-                continue
+
+            outcome = dict(outcome) if isinstance(outcome, dict) else {"status": "unknown"}
+            outcome["query"] = query
+            outcome["provider"] = provider_name
+            outcome["returned_records"] = len(results) if isinstance(results, list) else 0
+            provider_attempts[provider_name].append(outcome)
 
             if not isinstance(results, list):
                 continue
@@ -121,6 +211,43 @@ def retrieve_evidence_parallel(
         max_per_provider=max(0, int(max_per_provider)),
         max_per_source_type=max(0, int(max_per_source_type)),
     )
+
+    provider_reports = {}
+    for provider_name, attempts in provider_attempts.items():
+        statuses = [str(item.get("status", "unknown")) for item in attempts]
+        provider_reports[provider_name] = {
+            "status": _aggregate_provider_status(statuses),
+            "attempts": sorted(attempts, key=lambda item: str(item.get("query", ""))),
+            "queries_attempted": len(attempts),
+            "returned_records": sum(int(item.get("returned_records", 0) or 0) for item in attempts),
+        }
+
+    successful_providers = sum(
+        1 for report in provider_reports.values()
+        if report.get("status") == "success"
+    )
+    failed_providers = sum(
+        1 for report in provider_reports.values()
+        if report.get("status") in {"rate_limited", "failure", "partial_failure", "mixed", "exception"}
+    )
+
+    if successful_providers and failed_providers:
+        cycle_status = "partial_failure"
+    elif successful_providers:
+        cycle_status = "success"
+    elif failed_providers:
+        cycle_status = "failure"
+    else:
+        cycle_status = "empty_result"
+
+    _LAST_RETRIEVAL_REPORT = {
+        "status": cycle_status,
+        "retrieved_at": retrieval_timestamp,
+        "query_count": len(normalized_queries),
+        "providers": provider_reports,
+        "returned_records": len(candidates),
+        "selected_records": len(selected),
+    }
 
     cleanup_cache()
     return selected
