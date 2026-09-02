@@ -1,0 +1,114 @@
+version: 1
+name: retrieval_attention_provenance_contract
+objective: >-
+  Define provenance and lifecycle semantics for future retrieval-attention
+  objects so every attention interpretation remains reproducible without
+  modifying immutable retrieval history or scientific state.
+
+attention_provenance:
+  required_fields:
+    - attention_id
+    - policy_version
+    - supporting_event_ids
+    - observed_condition
+    - generated_at
+  optional_context_fields:
+    - query_scope
+    - provider
+  field_semantics:
+    attention_id:
+      meaning: Stable identifier for one attention interpretation/proposal.
+    policy_version:
+      meaning: Version identifier of the explicit policy that produced the attention interpretation.
+      rule: Policy version is provenance metadata and must not itself alter retrieval history or scientific state.
+    supporting_event_ids:
+      meaning: Immutable retrieval-history event identifiers that justify the observed acquisition condition.
+      rule: Every attention interpretation must be traceable to one or more historical retrieval events.
+    observed_condition:
+      meaning: Operational retrieval condition observed in the supporting events.
+      rule: Must describe retrieval-process facts, not scientific conclusions.
+    generated_at:
+      meaning: UTC timestamp at which the attention interpretation was created.
+    query_scope:
+      meaning: Normalized query scope associated with the attention target when applicable.
+    provider:
+      meaning: Provider associated with the attention target when applicable.
+
+reproducibility:
+  required_trace:
+    - attention_id
+    - policy_version
+    - supporting_event_ids
+    - observed_condition
+  rules:
+    - An attention interpretation must be explainable from its recorded provenance without access to mutable current scientific state.
+    - Supporting event IDs must refer to retrieval-history events and must not be replaced by aggregate counts alone.
+    - Policy evolution must not retroactively reinterpret an already recorded attention provenance record.
+    - Reconstructing an attention interpretation must not require network retrieval or an LLM call.
+
+lifecycle:
+  statuses:
+    open:
+      meaning: The acquisition condition currently warrants attention and has not yet been addressed or closed.
+    addressed:
+      meaning: A retrieval-process response has been taken for the attention condition; the underlying operational condition may or may not be resolved.
+    closed:
+      meaning: No further action is currently required for this attention item under the policy that governs it.
+  transitions:
+    - from: open
+      to: addressed
+      condition: A bounded acquisition response has been executed or otherwise recorded.
+    - from: open
+      to: closed
+      condition: The governing policy determines that no further acquisition action is currently required without claiming the historical condition never occurred.
+    - from: addressed
+      to: closed
+      condition: The governing policy determines that the attention item no longer requires action.
+  rules:
+    - Lifecycle state is derived attention metadata and is not part of immutable retrieval history.
+    - A lifecycle transition must never rewrite, delete, or replace supporting retrieval-history events.
+    - Closed does not mean that the underlying provider, query, or historical failure was scientifically or permanently solved.
+    - Addressed means an acquisition response occurred; it does not assert that the underlying operational issue disappeared.
+    - A later successful retrieval may support closure, but closure must remain a policy-level interpretation rather than a mutation of history.
+    - If a newer attention interpretation supersedes an older one, the historical provenance of the older item remains preserved.
+
+policy_versioning:
+  rules:
+    - Policy versions must be explicit identifiers, not implicit code versions.
+    - A future policy change may alter how new attention items are generated but must not rewrite the provenance of existing attention items.
+    - Replaying an existing attention item must preserve the policy_version recorded when it was generated.
+
+scientific_isolation:
+  provenance_logic_must_not_modify:
+    - retrieval_history
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+  interpretation_rules:
+    - Attention provenance is process metadata, not evidence.
+    - Supporting retrieval events are acquisition facts, not scientific support relations merely because they are referenced by an attention object.
+    - Lifecycle status must not be interpreted as scientific confidence, truth, uncertainty, or evidence quality.
+
+scope:
+  included:
+    - attention identity provenance
+    - policy-version provenance
+    - supporting-event traceability
+    - reproducible interpretation metadata
+    - attention lifecycle semantics
+    - lifecycle/history separation
+  excluded:
+    - attention detection implementation
+    - numeric repetition thresholds
+    - acquisition policy implementation
+    - action execution
+    - evidence assessment
+    - epistemic inference
+    - ranking changes
+    - convergence changes
+    - writer decisions
