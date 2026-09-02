@@ -6,7 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 from copy import deepcopy
-from typing import Any, Dict, List, Mapping, Tuple
+from typing import Any, Dict, List, Mapping
 
 
 POLICY_SCHEMA_VERSION = 1
@@ -117,6 +117,20 @@ def _reason(condition: str, query: str, provider: str, count: int | None = None)
     raise ValueError(f"unsupported attention condition: {condition}")
 
 
+def _recommended_action(condition: str) -> str:
+    actions = {
+        "provider_unavailable": "retry_provider",
+        "provider_partially_available": "retry_provider",
+        "query_returned_empty_result": "reformulate_query",
+        "repeated_query_provider_non_success": "use_alternate_provider",
+        "repeated_query_provider_empty_result": "reformulate_query",
+    }
+    try:
+        return actions[condition]
+    except KeyError as exc:
+        raise ValueError(f"unsupported attention condition: {condition}") from exc
+
+
 def _classify_current_condition(
     latest: Mapping[str, Any],
 ) -> str | None:
@@ -148,6 +162,29 @@ def _classify_current_condition(
     if status in DEFAULT_UNAVAILABLE_STATUSES or status != "success":
         return "provider_unavailable"
     return None
+
+
+def _make_attention(
+    policy: Mapping[str, Any],
+    query: str,
+    provider: str,
+    condition: str,
+    supporting_event_ids: List[str],
+    count: int | None = None,
+) -> Dict[str, Any]:
+    return {
+        "attention_id": _attention_id(
+            policy, query, provider, condition, supporting_event_ids
+        ),
+        "policy_version": str(policy["policy_version"]),
+        "query_scope": query,
+        "provider": provider,
+        "attention_reason": _reason(condition, query, provider, count),
+        "observed_condition": condition,
+        "lifecycle_status": "open",
+        "supporting_event_ids": list(supporting_event_ids),
+        "recommended_acquisition_action": _recommended_action(condition),
+    }
 
 
 def evaluate_retrieval_attention(
@@ -182,9 +219,7 @@ def evaluate_retrieval_attention(
         condition = _classify_current_condition(latest)
 
         if condition is not None:
-            supporting = _latest_supporting_ids(
-                window if condition.startswith("repeated_") else [latest]
-            )
+            supporting = _latest_supporting_ids(window if condition.startswith("repeated_") else [latest])
             count = None
             if condition.startswith("repeated_"):
                 target_class = (
@@ -193,19 +228,9 @@ def evaluate_retrieval_attention(
                     else "empty_result"
                 )
                 count = sum(_observation_class(item) == target_class for item in window)
-            attention = {
-                "attention_id": _attention_id(
-                    policy_data, query, provider, condition, supporting
-                ),
-                "policy_version": str(policy_data["policy_version"]),
-                "query_scope": query,
-                "provider": provider,
-                "attention_reason": _reason(condition, query, provider, count),
-                "observed_condition": condition,
-                "lifecycle_status": "open",
-                "supporting_event_ids": supporting,
-            }
-            output.append(attention)
+            output.append(_make_attention(
+                policy_data, query, provider, condition, supporting, count
+            ))
             continue
 
         non_success_count = sum(
@@ -234,20 +259,9 @@ def evaluate_retrieval_attention(
             continue
 
         supporting = _latest_supporting_ids(window)
-        output.append(
-            {
-                "attention_id": _attention_id(
-                    policy_data, query, provider, condition, supporting
-                ),
-                "policy_version": str(policy_data["policy_version"]),
-                "query_scope": query,
-                "provider": provider,
-                "attention_reason": _reason(condition, query, provider, count),
-                "observed_condition": condition,
-                "lifecycle_status": "open",
-                "supporting_event_ids": supporting,
-            }
-        )
+        output.append(_make_attention(
+            policy_data, query, provider, condition, supporting, count
+        ))
 
     return {
         "schema_version": POLICY_SCHEMA_VERSION,
