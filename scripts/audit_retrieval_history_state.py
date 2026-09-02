@@ -64,6 +64,7 @@ def main() -> int:
     assert append_retrieval_event(state, event1) is True
     assert append_retrieval_event(state, event2) is True
     assert append_retrieval_event(state, event1) is False
+    assert append_retrieval_event(state, _event(" retrieval-002 ", 2)) is False
 
     history = get_retrieval_history(state)
     assert [event["event_id"] for event in history] == [
