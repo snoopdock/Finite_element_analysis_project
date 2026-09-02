@@ -25,6 +25,8 @@ AUDITS = [
     ("H7.5-scope-aware-contradiction", ROOT / "scripts/audit_h7_5_scope_aware_contradiction.py"),
     ("H7.5-semantic-consistency", ROOT / "scripts/audit_h7_5_semantic_consistency.py"),
     ("GapDetector-contract", ROOT / "scripts/audit_gap_detector_contract.py"),
+    ("Runtime-text-handling", ROOT / "scripts/audit_runtime_text_handling.py"),
+    ("Code-integrity", ROOT / "scripts/audit_code_integrity.py"),
 ]
 
 
