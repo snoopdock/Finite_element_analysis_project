@@ -105,6 +105,8 @@ def main() -> int:
         assert key not in serialized
 
     # Query normalization is case-insensitive and whitespace-tolerant.
+    # The first retained spelling is preserved; normalization controls grouping
+    # identity rather than rewriting the representative query text.
     normalized_event = _event(
         "retrieval-14",
         14,
@@ -113,7 +115,10 @@ def main() -> int:
     )
     normalized = build_retrieval_attention_context({"events": [normalized_event]})
     assert len(normalized["query_provider_contexts"]) == 1
-    assert normalized["query_provider_contexts"][0]["query_scope"] == query_a
+    assert (
+        normalized["query_provider_contexts"][0]["query_scope"].casefold()
+        == query_a.casefold()
+    )
 
     # Missing provider-level queries must not be falsely attributed to an
     # event-level query scope.
