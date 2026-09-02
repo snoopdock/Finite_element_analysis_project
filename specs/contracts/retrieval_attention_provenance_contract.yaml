@@ -5,6 +5,16 @@ objective: >-
   objects so every attention interpretation remains reproducible without
   modifying immutable retrieval history or scientific state.
 
+dependency:
+  base_contract:
+    name: retrieval_attention_contract
+    version: 1
+  composition_rule: >-
+    This contract extends the R6.5 attention contract with provenance,
+    reproducibility, policy-version, and lifecycle semantics. It does not
+    replace the base attention unit, trigger classes, action vocabulary, or
+    scientific-isolation rules.
+
 attention_provenance:
   required_fields:
     - attention_id
