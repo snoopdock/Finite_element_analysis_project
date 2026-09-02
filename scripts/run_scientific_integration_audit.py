@@ -27,6 +27,7 @@ AUDITS = [
     ("GapDetector-contract", ROOT / "scripts/audit_gap_detector_contract.py"),
     ("Runtime-text-handling", ROOT / "scripts/audit_runtime_text_handling.py"),
     ("Code-integrity", ROOT / "scripts/audit_code_integrity.py"),
+    ("Retrieval-report-integrity", ROOT / "scripts/audit_retrieval_report_integrity.py"),
 ]
 
 
