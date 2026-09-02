@@ -1,0 +1,48 @@
+version: 1
+name: retrieval_coverage_contract
+objective: >-
+  Define the boundary between retrieval-operation status and evidence-coverage
+  status without allowing provider failures to become scientific conclusions.
+
+operational_status:
+  success:
+    meaning: All attempted queries for the provider completed successfully.
+  empty_result:
+    meaning: All attempted queries completed successfully but returned no records.
+  rate_limited:
+    meaning: All attempted queries were blocked by rate limiting.
+  partial_failure:
+    meaning: At least one query succeeded and at least one query failed.
+  failure:
+    meaning: No query succeeded and at least one operational failure occurred.
+  mixed:
+    meaning: Outcomes occurred that are neither uniformly successful, empty, rate-limited, nor covered by the failure aggregate.
+
+coverage_status:
+  not_defined_yet:
+    meaning: R4 specifies the semantic boundary but does not yet compute research coverage.
+  partial_provider_availability:
+    meaning: Some configured providers or queries were unavailable; this is an acquisition limitation, not a scientific conclusion.
+  no_evidence_returned:
+    meaning: Retrieval completed without records; this does not imply that the literature contains no evidence.
+
+rules:
+  - An operational failure must never be interpreted as evidence absence.
+  - empty_result must remain distinguishable from rate_limited, network_error, and server_error.
+  - Provider availability metadata must remain separate from propositions, evidence relations, epistemic state, and writing content.
+  - R4 does not modify ranking, convergence, or writing decisions.
+  - Coverage semantics may only be introduced in a later increment after this contract is audited.
+
+examples:
+  all_success:
+    operational_status: success
+    coverage_status: not_defined_yet
+  successful_empty:
+    operational_status: empty_result
+    coverage_status: no_evidence_returned
+  mixed_provider_cycle:
+    operational_status: partial_failure
+    coverage_status: partial_provider_availability
+  rate_limited_provider:
+    operational_status: rate_limited
+    coverage_status: partial_provider_availability
