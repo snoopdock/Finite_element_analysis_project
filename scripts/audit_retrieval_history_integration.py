@@ -46,9 +46,46 @@ def main() -> int:
         config = {"topic": "FEM", "objective": "integration audit"}
 
         state = initialize_state(paths, config)
-        state["knowledge_graph"]["propositions"] = {
-            "p1": {"text": "example proposition"}
+        proposition_id = "00000000-0000-0000-0000-000000000001"
+        proposition = {
+            "proposition_id": proposition_id,
+            "statement": "example proposition",
+            "framework": "",
+            "assumptions": [],
+            "conditions": [],
+            "domain_of_validity": [],
+            "definitions": [],
+            "parameters": [],
+            "boundary_conditions": [],
+            "initial_conditions": [],
+            "method": "",
+            "approximation": [],
+            "scope": "",
+            "scope_notes": "",
+            "context": {
+                "framework": "",
+                "assumptions": [],
+                "definitions": [],
+                "conditions": [],
+                "domain_of_validity": [],
+                "parameters": {},
+                "boundary_conditions": [],
+                "initial_conditions": [],
+                "method": "",
+                "approximation": [],
+                "scope": "",
+            },
+            "source_ids": [],
+            "status": "proposed",
+            "concept_ids": [],
         }
+        state["knowledge_graph"]["propositions"] = {
+            proposition_id: proposition
+        }
+        # Use an already normalized, stably keyed graph fixture so the
+        # unrelated state-management normalization performed by save_state()
+        # does not create changes that this retrieval-history audit would
+        # incorrectly attribute to retrieval operations.
         scientific_before = deepcopy(state["knowledge_graph"])
 
         event_a = create_retrieval_event(
