@@ -10,16 +10,10 @@ from typing import Any, Dict, List, Mapping
 
 
 POLICY_SCHEMA_VERSION = 1
-DEFAULT_UNAVAILABLE_STATUSES = {
+PROVIDER_UNAVAILABLE_STATUSES = {
     "rate_limited",
     "network_error",
     "server_error",
-    "client_error",
-    "http_error",
-    "invalid_response",
-    "exception",
-    "starting",
-    "unknown",
 }
 
 
@@ -148,19 +142,12 @@ def _classify_current_condition(
             return "query_returned_empty_result"
         return None
 
-    if assessment_status == "partial_provider_availability" and status not in {
-        "rate_limited",
-        "network_error",
-        "server_error",
-        "client_error",
-        "http_error",
-        "invalid_response",
-        "exception",
-    }:
+    if assessment_status == "partial_provider_availability":
         return "provider_partially_available"
 
-    if status in DEFAULT_UNAVAILABLE_STATUSES or status != "success":
+    if status in PROVIDER_UNAVAILABLE_STATUSES:
         return "provider_unavailable"
+
     return None
 
 
