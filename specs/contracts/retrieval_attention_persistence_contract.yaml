@@ -1,0 +1,128 @@
+version: 1
+name: retrieval_attention_persistence_contract
+objective: >-
+  Define how canonical R7B attention proposals are persisted as append-only
+  process history without changing their deterministic interpretation,
+  mutating retrieval history, or crossing into scientific state.
+
+dependency:
+  proposal_contract:
+    name: retrieval_attention_proposal_contract
+    version: 1
+  composition_rule: >-
+    R7C persists the canonical R7B proposal representation defined by R7B.5.
+    Persistence adds only explicitly permitted storage-envelope metadata and
+    must not alter proposal meaning, identity, recommendation, or scientific
+    isolation.
+
+storage:
+  state_field: retrieval_attention_history
+  events_field: proposals
+  initialization:
+    rule: >-
+      Missing or malformed retrieval_attention_history state is initialized to
+      a dictionary containing an empty proposals list without modifying
+      unrelated scientific or retrieval state.
+  append_only:
+    rule: >-
+      Persisted proposals are append-only historical records. Existing proposal
+      records are never rewritten, deleted, or replaced by later proposals.
+
+canonical_proposal:
+  required_fields:
+    - attention_id
+    - policy_version
+    - query_scope
+    - provider
+    - attention_reason
+    - observed_condition
+    - lifecycle_status
+    - supporting_event_ids
+    - recommended_acquisition_action
+  generation_rule: R7B proposals must enter persistence with lifecycle_status open.
+  identity_rule: attention_id is the stable idempotency key for persistence.
+  rules:
+    - The persisted canonical proposal fields must retain the exact R7B values.
+    - Supporting event identifiers must remain intact.
+    - Persistence must not add scientific interpretation fields.
+
+persistence_envelope:
+  fields:
+    - generated_at
+  rules:
+    - generated_at records when the proposal was persisted.
+    - generated_at is storage metadata and must not alter attention_id or the deterministic R7B proposal interpretation.
+    - Reconstructing the canonical proposal must not require generated_at.
+
+idempotency:
+  key: attention_id
+  rules:
+    - Appending a proposal whose attention_id is already present is a no-op.
+    - Duplicate submission must not create a second stored proposal.
+    - Duplicate submission must not rewrite the existing proposal or replace its persistence metadata.
+    - A new attention_id is a distinct historical proposal even when query, provider, or observed condition are the same.
+
+immutability_and_history:
+  rules:
+    - Retrieval attention history is append-only.
+    - Persisting a newer proposal must not mutate or delete older proposals.
+    - Persisting a proposal must not mutate supporting retrieval-history events.
+    - Persisted history must preserve proposal provenance through supporting_event_ids and policy_version.
+    - Historical proposals remain replayable from their recorded canonical fields and supporting event references.
+
+lifecycle_boundary:
+  initial_status: open
+  rules:
+    - R7C persistence does not perform lifecycle transitions.
+    - R7C must not infer addressed or closed merely because a proposal is persisted.
+    - Future lifecycle management may transition persisted proposals under its own contract.
+
+scientific_isolation:
+  must_not_modify:
+    - retrieval_history
+    - retrieval_report
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+  rules:
+    - Attention proposal persistence is process-history storage, not evidence storage.
+    - Supporting retrieval events are references, not scientific support relations.
+    - Persistence must not create or modify scientific claims, confidence, ranking, convergence, or writer state.
+
+execution_boundary:
+  rules:
+    - Persisting a recommendation does not execute that recommendation.
+    - R7C has no network or provider-execution responsibility.
+    - Any later action execution must be handled by a separate subsystem and must create new retrieval-history events.
+
+read_and_write_behavior:
+  rules:
+    - Readers return defensive copies so callers cannot mutate persisted history through returned values.
+    - Writers deep-copy proposals before storage.
+    - Duplicate detection and append behavior must be deterministic from attention_id.
+    - Persistence metadata may vary across separate first-time persistence operations, but duplicates must preserve the existing stored record.
+
+scope:
+  included:
+    - proposal-history state representation
+    - append-only persistence
+    - attention_id idempotency
+    - generated_at persistence metadata
+    - defensive-copy semantics
+    - lifecycle initialization boundary
+    - scientific isolation
+  excluded:
+    - lifecycle transition implementation
+    - action execution
+    - policy evaluation
+    - new attention detection
+    - evidence assessment
+    - epistemic inference
+    - ranking changes
+    - convergence changes
+    - writer decisions
