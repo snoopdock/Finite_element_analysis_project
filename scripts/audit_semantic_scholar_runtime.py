@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 """Runtime diagnostic for the Semantic Scholar retrieval path.
 
-This audit intentionally exercises the existing Semantic Scholar retriever
-rather than changing its behavior. It reports each observable stage:
-API result count, open-access PDF availability, local full-text availability,
-cache path state, and persisted evidence provenance when available.
-
-The script performs network I/O and should be run manually from the repository
-root. It does not call an LLM or modify tracked repository files.
+This audit exercises the existing Semantic Scholar retriever and reports the
+provider outcome separately from the number of records returned. It performs
+network I/O, does not call an LLM, and does not modify tracked repository files.
 """
 
 from __future__ import annotations
@@ -16,14 +12,16 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from research.content_cache import get_cache_path  # noqa: E402
-from research.semantic_scholar import search_semantic_scholar  # noqa: E402
+from research.semantic_scholar import (  # noqa: E402
+    get_last_retrieval_status,
+    search_semantic_scholar,
+)
 from utils.text import load_json  # noqa: E402
 
 DEFAULT_QUERY = "finite element method mathematical foundation weak form Galerkin method"
@@ -132,12 +130,23 @@ def main() -> int:
         print(f"Retriever raised {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
 
+    retrieval_status = get_last_retrieval_status()
+    print(f"Provider status: {retrieval_status.get('status', 'unknown')}")
+    for key in (
+        "http_status",
+        "returned_records",
+        "records_with_oa_pdf",
+        "records_with_full_text",
+        "error",
+    ):
+        if key in retrieval_status:
+            print(f"  {key}: {retrieval_status[key]}")
+
     print(f"Returned source records: {len(sources)}")
 
     if not sources:
         print("No records returned by the current Semantic Scholar retriever.")
-        print("This does not distinguish 'no results' from an API/provider failure;")
-        print("the runtime logs above must be inspected together with this result.")
+        print("The provider status above distinguishes an empty search from a failure when available.")
     else:
         for index, source in enumerate(sources, start=1):
             if isinstance(source, dict):
@@ -184,15 +193,17 @@ def main() -> int:
         )
 
     print("\nInterpretation:")
-    if not sources:
-        print("  LIVE RESULT: no source records reached the caller.")
-        print("  Check the [S2] HTTP error lines immediately above this report.")
-    elif full_text_count == 0:
-        print("  LIVE RESULT: Semantic Scholar returned records, but no full-text path was produced.")
-    elif cached_count == 0:
-        print("  LIVE RESULT: full-text paths were reported, but no corresponding cache files exist now.")
+    status = retrieval_status.get("status", "unknown")
+    if status == "rate_limited":
+        print("  LIVE RESULT: Semantic Scholar responded with HTTP 429 rate limiting.")
+    elif status in {"network_error", "server_error", "client_error", "http_error", "invalid_response"}:
+        print(f"  LIVE RESULT: Semantic Scholar provider failed with status '{status}'.")
+    elif status == "empty_result":
+        print("  LIVE RESULT: Semantic Scholar completed successfully but returned no usable source records.")
+    elif status == "success":
+        print("  LIVE RESULT: Semantic Scholar returned source records successfully.")
     else:
-        print("  LIVE RESULT: at least one Semantic Scholar record reached local full-text caching.")
+        print(f"  LIVE RESULT: provider outcome is '{status}'.")
 
     if persisted:
         print("  PERSISTED RESULT: Semantic Scholar provenance exists in output/evidence.json.")
