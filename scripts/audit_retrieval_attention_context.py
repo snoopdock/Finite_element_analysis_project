@@ -131,9 +131,17 @@ def main() -> int:
 
     # R7A must be read-only and outputs must be defensive copies.
     assert history == original
-    context["query_provider_contexts"][0]["observations"].clear()
+    query_a_context_output = next(
+        item for item in context["query_provider_contexts"]
+        if item["query_scope"].casefold() == query_a.casefold()
+    )
+    query_a_context_output["observations"].clear()
     rebuilt = build_retrieval_attention_context(history)
-    assert len(rebuilt["query_provider_contexts"][0]["observations"]) == 3
+    rebuilt_query_a_context = next(
+        item for item in rebuilt["query_provider_contexts"]
+        if item["query_scope"].casefold() == query_a.casefold()
+    )
+    assert len(rebuilt_query_a_context["observations"]) == 3
 
     print("R7A retrieval attention context audit: PASS")
     return 0
