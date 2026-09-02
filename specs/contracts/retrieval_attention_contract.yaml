@@ -1,0 +1,178 @@
+version: 1
+name: retrieval_attention_contract
+objective: >-
+  Define how historical retrieval acquisition events may be interpreted into
+  research-process attention without turning acquisition conditions into
+  scientific conclusions or directly modifying scientific state.
+
+attention_unit:
+  dimensions:
+    - query_scope
+    - provider
+    - temporal_history
+  meaning: >-
+    Retrieval attention is evaluated at the intersection of a query scope,
+    a provider operation, and relevant historical events. Provider-wide
+    status alone is insufficient when query-specific history is available.
+  required_context:
+    - affected_query
+    - affected_provider
+    - supporting_event_ids
+    - observed_temporal_history
+
+attention_trigger_classes:
+  allowed:
+    - provider_unavailable
+    - provider_partially_available
+    - query_returned_empty_result
+    - repeated_query_provider_non_success
+    - repeated_query_provider_empty_result
+  semantics:
+    provider_unavailable: >-
+      A relevant provider is operationally unavailable for the affected query
+      scope during an observed retrieval event.
+    provider_partially_available: >-
+      The retrieval invocation completed with unequal provider availability,
+      leaving some relevant provider-query operations unavailable.
+    query_returned_empty_result: >-
+      A successful retrieval operation produced no records for the affected
+      query-provider scope. Empty retrieval is not evidence of scientific
+      absence.
+    repeated_query_provider_non_success: >-
+      The same query-provider scope has multiple relevant historical
+      non-success outcomes and therefore warrants acquisition attention.
+    repeated_query_provider_empty_result: >-
+      The same query-provider scope has multiple relevant historical empty
+      results and therefore warrants acquisition attention.
+
+repetition_rules:
+  principle: >-
+    Repetition must be determined from explicit historical event conditions,
+    not from an opaque retrieval-quality score or confidence value.
+  threshold_policy: >-
+    R6.5 does not choose a universal numeric repetition threshold. R7 may
+    define a bounded threshold appropriate to the configured acquisition
+    policy, provided that the threshold is explicit, auditable, and scoped to
+    query-provider history.
+  temporal_window: >-
+    R7 may define the historical window used for repetition detection, but it
+    must be explicit and must not collapse all prior history into one timeless
+    failure flag.
+  recovery_rule: >-
+    A current successful retrieval for the same query-provider scope must
+    prevent an earlier failure from remaining an unconditional active
+    attention trigger. Historical events remain preserved for audit and
+    replay.
+
+attention_output:
+  purpose: >-
+    Produce a bounded research-process attention proposal that identifies why
+    additional acquisition may be useful and what acquisition action should be
+    considered.
+  required_fields:
+    - attention_id
+    - attention_reason
+    - target_query
+    - affected_provider
+    - observed_condition
+    - recommended_acquisition_action
+    - supporting_event_ids
+  field_constraints:
+    attention_id:
+      meaning: Stable identifier for one attention proposal.
+    attention_reason:
+      meaning: Operational explanation grounded in retrieval history.
+    target_query:
+      meaning: Query scope requiring acquisition attention.
+    affected_provider:
+      meaning: Provider associated with the observed retrieval condition.
+    observed_condition:
+      meaning: Explicit retrieval-history condition that triggered attention.
+    recommended_acquisition_action:
+      meaning: Bounded research-process action such as retry, alternate query formulation, or alternate provider acquisition.
+    supporting_event_ids:
+      meaning: Historical retrieval event identifiers supporting the proposal.
+  forbidden_fields:
+    - confidence
+    - truth_status
+    - epistemic_status
+    - support_strength
+    - scientific_relevance
+    - scientific_importance
+    - proposition
+    - evidence_strength
+    - ranking_score
+    - convergence_status
+    - writer_decision
+
+action_vocabulary:
+  allowed:
+    - retry_provider
+    - retry_query
+    - reformulate_query
+    - expand_query_scope
+    - use_alternate_provider
+    - defer_until_provider_recovery
+  rules:
+    - Actions describe retrieval-process behavior only.
+    - An action proposal is not evidence and is not a scientific judgment.
+    - Executing an action must create new retrieval events rather than mutate historical events.
+
+recency_and_recovery:
+  rules:
+    - Historical events remain immutable after persistence.
+    - Attention is derived from relevant history plus current retrieval conditions.
+    - A later successful event may deactivate an attention condition while preserving the historical failure.
+    - A provider recovery must not rewrite or delete prior retrieval events.
+
+scientific_isolation:
+  attention_logic_must_not_modify:
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+  interpretation_rules:
+    - Retrieval attention is process metadata, not evidence.
+    - Operational failure is not scientific absence.
+    - Empty retrieval is not scientific absence.
+    - Repetition of an acquisition condition is not evidence repetition.
+    - Provider availability is not evidence quality.
+    - Attention proposals must reference retrieval history rather than create scientific support relations.
+
+integration_boundary:
+  r6_role: >-
+    R6 records immutable retrieval acquisition history and supports structural replay.
+  r6_5_role: >-
+    R6.5 defines semantic rules for interpreting that history into bounded
+    acquisition attention proposals.
+  r7_role: >-
+    R7 may implement detection, proposal generation, persistence, and
+    execution using this contract.
+  prohibited_shortcuts:
+    - generic_retrieval_quality_score
+    - generic_retrieval_confidence
+    - direct_rank_adjustment
+    - direct_convergence_adjustment
+    - direct_writer_instruction
+
+scope:
+  included:
+    - attention unit definition
+    - retrieval-history trigger semantics
+    - repetition semantics
+    - temporal recovery semantics
+    - bounded acquisition action vocabulary
+    - scientific isolation
+  excluded:
+    - numeric universal repetition thresholds
+    - literature coverage claims
+    - evidence quality scoring
+    - epistemic inference
+    - scientific proposition updates
+    - ranking implementation
+    - convergence implementation
+    - writer implementation
