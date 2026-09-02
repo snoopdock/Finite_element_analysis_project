@@ -1,0 +1,125 @@
+version: 1
+name: retrieval_attention_replay_contract
+objective: >-
+  Define deterministic, offline reconstruction of a persisted R7C attention
+  proposal without rerunning R7B, network retrieval, an LLM, or mutable
+  scientific state.
+
+dependency:
+  persistence_contract:
+    name: retrieval_attention_persistence_contract
+    version: 1
+  proposal_contract:
+    name: retrieval_attention_proposal_contract
+    version: 1
+  provenance_contract:
+    name: retrieval_attention_provenance_contract
+    version: 1
+  composition_rule: >-
+    Replay reads the persisted proposal and its supporting retrieval-history
+    references. It reconstructs the recorded proposal representation; it does
+    not generate a new interpretation.
+
+replay_input:
+  required_proposal_fields:
+    - attention_id
+    - policy_version
+    - query_scope
+    - provider
+    - attention_reason
+    - observed_condition
+    - lifecycle_status
+    - supporting_event_ids
+    - recommended_acquisition_action
+  persistence_fields:
+    - generated_at
+  rules:
+    - Replay may read generated_at as persistence provenance but must not require it to reconstruct deterministic proposal meaning.
+    - Missing required proposal fields are invalid replay input.
+    - Supporting event IDs must be preserved exactly as stored.
+
+reconstruction:
+  output_fields:
+    - attention_id
+    - policy_version
+    - query_scope
+    - provider
+    - attention_reason
+    - observed_condition
+    - lifecycle_status
+    - supporting_event_ids
+    - recommended_acquisition_action
+  rules:
+    - Reconstruction returns the recorded deterministic proposal core without re-evaluating policy conditions.
+    - Reconstruction does not change lifecycle status.
+    - Reconstruction does not regenerate or replace attention_id.
+    - Reconstruction preserves policy_version recorded at proposal generation.
+    - Reconstruction preserves supporting_event_ids and observed_condition exactly.
+    - Reconstruction preserves the recorded recommendation rather than recomputing it.
+
+provenance_validation:
+  rules:
+    - Every supporting_event_id referenced by a persisted proposal must resolve to a retrieval-history event when history is supplied for validation.
+    - Provenance validation must not mutate either proposal history or retrieval history.
+    - A missing supporting event is a provenance-integrity failure, not permission to silently drop or replace the reference.
+
+independence:
+  forbidden_dependencies:
+    - network_retrieval
+    - llm_calls
+    - r7b_policy_evaluation
+    - mutable_scientific_state
+    - current_provider_status
+  rules:
+    - Replay must remain offline and deterministic.
+    - Replay must not call the R7B evaluator to recreate an already persisted interpretation.
+    - Replay must not infer scientific meaning from retrieval events.
+
+fidelity:
+  required_invariants:
+    - attention_id
+    - policy_version
+    - query_scope
+    - provider
+    - attention_reason
+    - observed_condition
+    - lifecycle_status
+    - supporting_event_ids
+    - recommended_acquisition_action
+  rules:
+    - Persisting and reloading a proposal must preserve every deterministic core field exactly.
+    - Replay output must be safe to modify by callers without mutating persisted state.
+    - Replaying the same stored proposal repeatedly must produce identical output.
+
+scientific_isolation:
+  must_not_modify:
+    - retrieval_history
+    - retrieval_report
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+  rules:
+    - Proposal replay is provenance reconstruction, not evidence assessment or scientific inference.
+    - Retrieval events referenced during replay remain acquisition facts.
+
+scope:
+  included:
+    - persisted proposal validation
+    - deterministic proposal reconstruction
+    - supporting-event provenance validation
+    - save/reload fidelity
+  excluded:
+    - new attention detection
+    - policy re-evaluation
+    - lifecycle transitions
+    - action execution
+    - evidence assessment
+    - epistemic inference
+    - ranking changes
+    - convergence changes
+    - writer decisions
