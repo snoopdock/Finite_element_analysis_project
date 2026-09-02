@@ -70,22 +70,26 @@ def main() -> int:
         [
             _observation("e5", 5, "success", 0),
             _observation("e6", 6, "success", 0),
+            # A later non-success makes the repetition condition historical
+            # rather than a duplicate of the current-empty trigger. The
+            # policy contract requires current conditions to take precedence.
+            _observation("e7", 7, "invalid_response", 0),
         ],
     )
     recovered = _context(
         "weak form convergence",
         "semantic_scholar",
         [
-            _observation("e7", 7, "rate_limited", 0, "partial_provider_availability"),
             _observation("e8", 8, "rate_limited", 0, "partial_provider_availability"),
-            _observation("e9", 9, "success", 2),
+            _observation("e9", 9, "rate_limited", 0, "partial_provider_availability"),
+            _observation("e10", 10, "success", 2),
         ],
     )
     partial = _context(
         "mesh stability",
         "synthetic_provider",
         [
-            _observation("e10", 10, "partial_failure", 1, "partial_provider_availability"),
+            _observation("e11", 11, "partial_failure", 1, "partial_provider_availability"),
         ],
     )
 
@@ -99,12 +103,12 @@ def main() -> int:
     ]
     context = {
         "schema_version": 1,
-        "event_count": 10,
+        "event_count": 11,
         "query_provider_contexts": contexts,
         "unscoped_provider_operations": [
-            {"event_id": "e11", "provider": "semantic_scholar"}
+            {"event_id": "e12", "provider": "semantic_scholar"}
         ],
-        "unscoped_events": [{"event_id": "e12"}],
+        "unscoped_events": [{"event_id": "e13"}],
     }
     original_context = deepcopy(context)
 
@@ -128,6 +132,11 @@ def main() -> int:
     assert by_query["finite element conditioning"]["observed_condition"] == (
         "repeated_query_provider_empty_result"
     )
+    assert by_query["finite element conditioning"]["supporting_event_ids"] == [
+        "e5",
+        "e6",
+        "e7",
+    ]
     assert "finite element stability" not in by_query
     assert "weak form convergence" not in by_query
     assert by_query["mesh stability"]["observed_condition"] == "provider_partially_available"
