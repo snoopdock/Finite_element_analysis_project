@@ -1,0 +1,228 @@
+version: 1
+name: retrieval_attention_policy_contract
+objective: >-
+  Define the explicit, auditable policy boundary used by R7B to interpret
+  normalized retrieval history into bounded research-process attention.
+
+dependency:
+  context_contract:
+    name: retrieval_attention_context_contract
+    version: 1
+  attention_contract:
+    name: retrieval_attention_contract
+    version: 1
+  provenance_contract:
+    name: retrieval_attention_provenance_contract
+    version: 1
+  composition_rule: >-
+    R7B consumes only the factual R7A retrieval-attention context and an
+    explicit versioned acquisition policy. It may interpret operational
+    retrieval conditions into attention proposals, but it must not alter the
+    R7A factual context, retrieval history, or scientific state.
+
+policy:
+  required_fields:
+    - policy_version
+    - history_window_events
+    - repeated_non_success_threshold
+    - repeated_empty_result_threshold
+  field_semantics:
+    policy_version:
+      meaning: Explicit identifier for the acquisition policy governing one R7B interpretation.
+    history_window_events:
+      meaning: Maximum number of most recent observations considered for repetition detection for each query-provider context.
+      constraints:
+        - integer
+        - greater_than_or_equal_to: 1
+    repeated_non_success_threshold:
+      meaning: Minimum number of non-success observations within the configured window required to trigger repeated_query_provider_non_success attention.
+      constraints:
+        - integer
+        - greater_than_or_equal_to: 1
+    repeated_empty_result_threshold:
+      meaning: Minimum number of successful empty observations within the configured window required to trigger repeated_query_provider_empty_result attention.
+      constraints:
+        - integer
+        - greater_than_or_equal_to: 1
+  rules:
+    - Policy values must be explicit inputs or explicit configuration, never hidden constants in detection logic.
+    - Policy version must be recorded on every generated attention interpretation.
+    - Thresholds apply only within the scoped query-provider temporal history.
+    - A threshold of 1 is permitted but must remain an explicit policy choice.
+
+observation_classification:
+  success_with_records:
+    condition: provider_status is success and returned_records is greater than 0
+    class: success
+  successful_empty:
+    condition: provider_status is success and returned_records equals 0
+    class: empty_result
+  non_success:
+    condition: provider_status is not success
+    class: non_success
+  rules:
+    - Classification is based only on recorded R7A observations.
+    - Non-success does not imply evidence absence.
+    - Successful empty retrieval does not imply scientific absence.
+    - Classification must preserve the original supporting event identifiers.
+
+trigger_evaluation:
+  allowed_triggers:
+    - provider_unavailable
+    - provider_partially_available
+    - query_returned_empty_result
+    - repeated_query_provider_non_success
+    - repeated_query_provider_empty_result
+  precedence:
+    - current_provider_unavailable
+    - current_provider_partially_available
+    - current_query_returned_empty_result
+    - repeated_query_provider_non_success
+    - repeated_query_provider_empty_result
+  rules:
+    - Evaluate each normalized query-provider context independently.
+    - Current conditions take precedence over repetition when both are applicable.
+    - An attention item must identify the concrete observed condition that caused it.
+    - A context with no eligible observations produces no attention item.
+    - Unscoped provider operations and unscoped events are not converted into query-specific attention items.
+
+current_condition_rules:
+  provider_unavailable:
+    condition: The latest relevant observation has provider_status other than success and the operational condition indicates provider unavailability.
+    interpretation: >-
+      The provider operation is currently unavailable for the affected
+      query-provider scope; this is a retrieval-process condition only.
+  provider_partially_available:
+    condition: The latest relevant observation retains an acquisition assessment indicating partial provider availability.
+    interpretation: >-
+      The latest retrieval context indicates unequal provider availability;
+      this does not indicate scientific absence or evidence weakness.
+  query_returned_empty_result:
+    condition: The latest relevant observation has provider_status success and returned_records equal to 0.
+    interpretation: >-
+      The query-provider operation completed successfully but returned no
+      records; this may justify additional acquisition attention without
+      claiming that relevant literature is absent.
+
+repetition_rules:
+  window: >-
+    For each query-provider context, examine only the most recent
+    history_window_events observations after deterministic R7A ordering.
+  repeated_non_success:
+    condition: Count of observations classified non_success within the window is greater_than_or_equal_to repeated_non_success_threshold.
+  repeated_empty_result:
+    condition: Count of observations classified empty_result within the window is greater_than_or_equal_to repeated_empty_result_threshold.
+  rules:
+    - Repetition counts are scoped to one normalized query-provider context.
+    - Repetition count must be auditable from supporting event IDs.
+    - Success with records resets the current repetition condition for that same query-provider scope when it is the latest observation and lies within the governing temporal interpretation.
+    - Older failure or empty events remain preserved as historical facts.
+    - Repetition must never be represented as evidence repetition or evidence strength.
+
+recovery_rules:
+  latest_success_with_records:
+    effect: >-
+      A latest successful observation with records prevents a prior failure or
+      empty-result observation from remaining the sole basis for a current
+      unconditional attention item for that query-provider scope.
+  latest_successful_empty:
+    effect: >-
+      A latest successful empty observation is not provider recovery and may
+      itself trigger empty-result attention according to policy.
+  rules:
+    - Recovery is evaluated from recorded retrieval observations, not from external provider assumptions.
+    - Recovery does not delete, rewrite, or reinterpret historical retrieval events.
+    - Recovery does not alter scientific state.
+
+attention_output:
+  required_fields:
+    - attention_id
+    - policy_version
+    - query_scope
+    - provider
+    - attention_reason
+    - observed_condition
+    - lifecycle_status
+    - supporting_event_ids
+  field_semantics:
+    attention_id:
+      meaning: Unique identifier for one generated attention interpretation.
+    policy_version:
+      meaning: Exact acquisition-policy version used for generation.
+    query_scope:
+      meaning: Query represented by the R7A normalized context.
+    provider:
+      meaning: Provider represented by the R7A normalized context.
+    attention_reason:
+      meaning: Deterministic operational explanation of why attention was generated.
+    observed_condition:
+      meaning: One allowed R6.5 trigger class supported by the recorded observations.
+    lifecycle_status:
+      initial_value: open
+      rule: R7B creates new attention interpretations as open; later lifecycle transitions are handled by subsequent lifecycle management.
+    supporting_event_ids:
+      meaning: Exact historical retrieval events used by the triggering interpretation.
+      rule: Must not be replaced by aggregate counts alone.
+
+recommended_action_boundary:
+  rule: R7B may assign a bounded recommendation from the R6.5 action vocabulary when directly warranted by the observed operational condition.
+  allowed_actions:
+    - retry_provider
+    - retry_query
+    - reformulate_query
+    - expand_query_scope
+    - use_alternate_provider
+    - defer_until_provider_recovery
+  rules:
+    - Recommended action is process metadata, not evidence or scientific judgment.
+    - Action execution is outside R7B.
+    - Executing an action must generate new retrieval history events.
+
+scientific_isolation:
+  must_not_modify:
+    - retrieval_history
+    - retrieval_report
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+  forbidden_interpretations:
+    - scientific_absence
+    - evidence_quality
+    - truth_assessment
+    - epistemic_confidence
+    - scientific_relevance
+    - scientific_importance
+    - ranking_adjustment
+    - convergence_adjustment
+    - writer_instruction
+
+reproducibility:
+  rules:
+    - The same R7A context plus the same policy version and policy values must produce the same trigger decisions and observed-condition classifications.
+    - Every attention interpretation must be explainable from supporting event IDs, the recorded policy version, and the policy values used.
+    - R7B detection must not require network retrieval or an LLM call.
+    - Changing the policy version affects only new interpretations; existing attention provenance remains unchanged.
+
+scope:
+  included:
+    - explicit policy representation
+    - query-provider trigger evaluation
+    - bounded temporal repetition detection
+    - current-condition detection
+    - recovery interpretation
+    - attention proposal generation
+    - bounded acquisition recommendation
+  excluded:
+    - action execution
+    - literature coverage claims
+    - evidence quality scoring
+    - epistemic inference
+    - proposition mutation
+    - ranking changes
+    - convergence changes
+    - writer decisions
