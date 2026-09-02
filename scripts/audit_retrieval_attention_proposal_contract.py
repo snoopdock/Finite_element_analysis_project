@@ -208,6 +208,11 @@ def main() -> int:
         envelope["future_fields"] == ["generated_at"],
         "Persistence envelope must reserve generated_at without changing the deterministic core.",
     )
+    envelope_rules = "\n".join(str(rule) for rule in envelope["rules"])
+    check(
+        "must not change the meaning or deterministic identity" in envelope_rules,
+        "Persistence metadata must not alter proposal identity or interpretation.",
+    )
 
     isolation = contract["scientific_isolation"]
     protected = set(isolation["must_not_modify"])
@@ -270,11 +275,8 @@ def main() -> int:
         "R7B proposal generation must remain deterministic.",
     )
     check(
-        "Persistence timestamps may differ" in "\n".join(
-            str(rule)
-            for rule in persistence["persistence_envelope"]["rules"]
-        ),
-        "Persistence timestamps must remain outside proposal identity/interpretation.",
+        "Persistence timestamps may differ" in reproducibility_rules,
+        "Reproducibility must explicitly tolerate persistence timestamps outside the deterministic core.",
     )
 
     # Validate the live R7B representation against the frozen canonical shape.
