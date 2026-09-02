@@ -10,12 +10,22 @@ from __future__ import annotations
 import ast
 import importlib
 import pathlib
+import pkgutil
 import py_compile
 import sys
 import traceback
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 EXCLUDED_DIRS = {".git", "__pycache__", ".pytest_cache", "tests"}
+PACKAGES = [
+    "analysis",
+    "core",
+    "processing",
+    "providers",
+    "research",
+    "utils",
+    "writing",
+]
 SMOKE_MODULES = [
     "main",
     "core.pipeline",
@@ -45,11 +55,7 @@ def audit_python_files():
         try:
             source = path.read_text(encoding="utf-8")
             ast.parse(source, filename=str(path))
-            py_compile.compile(
-                str(path),
-                doraise=True,
-                quiet=1,
-            )
+            py_compile.compile(str(path), doraise=True, quiet=1)
         except Exception as exc:
             failures.append({
                 "file": str(path.relative_to(ROOT)),
@@ -58,10 +64,22 @@ def audit_python_files():
     return checked, failures
 
 
+def discover_modules():
+    modules = set(SMOKE_MODULES)
+    for package_name in PACKAGES:
+        package = importlib.import_module(package_name)
+        package_path = getattr(package, "__path__", None)
+        if package_path is None:
+            continue
+        for info in pkgutil.walk_packages(package_path, prefix=f"{package_name}."):
+            modules.add(info.name)
+    return sorted(modules)
+
+
 def audit_imports():
     failures = []
     imported = []
-    for module_name in SMOKE_MODULES:
+    for module_name in discover_modules():
         try:
             importlib.import_module(module_name)
             imported.append(module_name)
@@ -81,7 +99,7 @@ def main() -> int:
     imported, import_failures = audit_imports()
 
     print(f"Python files checked: {checked_files}")
-    print(f"Import smoke modules passed: {len(imported)}/{len(SMOKE_MODULES)}")
+    print(f"Production modules imported: {len(imported)}")
 
     if syntax_failures:
         print("Syntax/compile failures:")
