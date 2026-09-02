@@ -34,6 +34,7 @@ AUDITS = [
     ("Retrieval-history-contract", ROOT / "scripts/audit_retrieval_history_contract.py"),
     ("Retrieval-history-state", ROOT / "scripts/audit_retrieval_history_state.py"),
     ("Retrieval-event", ROOT / "scripts/audit_retrieval_event.py"),
+    ("Retrieval-history-persistence", ROOT / "scripts/audit_retrieval_history_persistence.py"),
 ]
 
 
