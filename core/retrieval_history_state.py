@@ -58,6 +58,7 @@ def append_retrieval_event(
     event_id = event.get("event_id")
     if not isinstance(event_id, str) or not event_id.strip():
         raise ValueError("Retrieval event requires a non-empty event_id.")
+    normalized_event_id = event_id.strip()
 
     required_fields = (
         "cycle",
@@ -74,10 +75,12 @@ def append_retrieval_event(
 
     initialize_retrieval_history(state)
 
-    if has_retrieval_event(state, event_id):
+    if has_retrieval_event(state, normalized_event_id):
         return False
 
-    state[HISTORY_FIELD][EVENTS_FIELD].append(deepcopy(event))
+    event_to_store = deepcopy(event)
+    event_to_store["event_id"] = normalized_event_id
+    state[HISTORY_FIELD][EVENTS_FIELD].append(event_to_store)
     return True
 
 
