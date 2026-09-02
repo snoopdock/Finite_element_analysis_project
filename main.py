@@ -308,7 +308,7 @@ def main():
         try:
             retrieval_event = create_retrieval_event(
                 cycle=int(state.get("cycle", 0)),
-                queries=research_config.get("seed_queries", []),
+                queries=None,
                 report=retrieval_report,
             )
             if append_retrieval_event(state, retrieval_event):
