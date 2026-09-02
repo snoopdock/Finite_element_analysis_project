@@ -9,9 +9,9 @@ seed_queries:
   - "finite element method verification validation numerical stability"
 
 cloudflare_models:
-  - "@cf/meta/llama-3.1-8b-instruct"
-  - "@cf/qwen/qwen2.5-7b-instruct"
-  - "@cf/mistral/mistral-7b-instruct-v0.2"
+  - "@cf/meta/llama-3.1-8b-instruct-fast"
+  - "@cf/qwen/qwen3-30b-a3b-fp8"
+  - "@cf/meta/llama-3.2-3b-instruct"
 
 budget:
   max_llm_calls_per_run: 20
@@ -72,7 +72,6 @@ oaa:
     missing_transition: 0.35
 
 semantic_verification:
-  # Disabled by default because each verified claim consumes an LLM call.
   enabled: false
   max_claims_per_cycle: 4
   max_sources_per_claim: 2
@@ -80,33 +79,24 @@ semantic_verification:
   max_passage_chars: 1800
   max_tokens_per_claim: 700
   model: null
-
-  # Stage 4: scientific-context extraction. Disabled by default until runtime
-  # evaluation confirms that its extra calls are worthwhile.
   context_enrichment_enabled: false
   max_context_items_per_cycle: 3
   max_context_sources_per_item: 2
   max_context_passage_chars: 1800
   context_model: null
   max_context_tokens: 500
-
-  # Stage 5: graph-native scientific perspective comparison.
   perspective_enabled: false
   max_perspective_pairs_per_job: 1
   max_perspective_jobs_per_cycle: 2
   perspective_minimum_overlap: 0.15
   perspective_max_records: 200
   perspective_model: null
-
-  # Stage 7: concept-relationship analysis. Disabled by default.
   concept_relationship_enabled: false
   max_concept_relationship_pairs_per_cycle: 2
   max_concept_relationship_propositions_per_pair: 8
   concept_relationship_max_records: 200
   concept_relationship_model: null
   concept_relationship_max_tokens: 650
-
-  # Perspective/corrective loop. Also disabled by default.
   correction_enabled: false
   max_evidence_queries_per_cycle: 2
   max_pending_evidence_queries: 8
