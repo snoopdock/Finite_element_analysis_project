@@ -33,20 +33,37 @@ def _normalize_query_scope(queries: Iterable[Any]) -> list[str]:
     return result
 
 
+def _queries_from_report(report: Dict[str, Any]) -> list[str]:
+    """Extract the final query scope from provider-level retrieval reporting."""
+    queries: list[str] = []
+    for provider in report.get("providers", {}).values():
+        if not isinstance(provider, dict):
+            continue
+        provider_queries = provider.get("queries", [])
+        if not isinstance(provider_queries, list):
+            continue
+        queries.extend(provider_queries)
+    return _normalize_query_scope(queries)
+
+
 def create_retrieval_event(
     cycle: int,
-    queries: Iterable[Any],
+    queries: Iterable[Any] | None,
     report: Dict[str, Any],
 ) -> Dict[str, Any]:
     """Create one event for one retrieval invocation."""
     if not isinstance(report, dict):
         raise TypeError("Retrieval report must be a dictionary.")
 
+    query_scope = _normalize_query_scope(queries or [])
+    if not query_scope:
+        query_scope = _queries_from_report(report)
+
     return {
         "event_id": f"retrieval-{uuid4()}",
         "cycle": int(cycle),
         "retrieved_at": utcnow(),
-        "query_scope": _normalize_query_scope(queries),
+        "query_scope": query_scope,
         "report": deepcopy(report),
         "acquisition_assessment": assess_retrieval_coverage(
             deepcopy(report)
