@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 import sys
+import threading
 import time
 import requests
 import urllib.request
@@ -32,6 +33,23 @@ USER_AGENT = (
 )
 
 API_URL = "https://api.semanticscholar.org/graph/v1/paper/search"
+
+_RETRIEVAL_STATE = threading.local()
+
+
+def _set_retrieval_status(status: str, **details) -> None:
+    """Record the latest provider outcome for the current worker thread."""
+    record = {"status": str(status)}
+    for key, value in details.items():
+        if value is not None:
+            record[key] = value
+    _RETRIEVAL_STATE.status = record
+
+
+def get_last_retrieval_status() -> Dict:
+    """Return the latest Semantic Scholar retrieval outcome for this thread."""
+    value = getattr(_RETRIEVAL_STATE, "status", None)
+    return dict(value) if isinstance(value, dict) else {"status": "unknown"}
 
 
 def _extract_text_from_pdf_bytes(pdf_bytes: bytes) -> Tuple[str, int, bool]:
@@ -63,6 +81,13 @@ def search_semantic_scholar(
     max_results: int = 3,
 ) -> List[Dict]:
     """Search Semantic Scholar and inspect Open Access full text when available."""
+    _set_retrieval_status(
+        "starting",
+        query=str(query),
+        requested_results=int(max_results),
+        provider="semantic_scholar",
+    )
+
     params = {
         "query": query,
         "limit": max_results,
@@ -81,15 +106,50 @@ def search_semantic_scholar(
             timeout=30,
         )
         if response.status_code != 200:
+            if response.status_code == 429:
+                status = "rate_limited"
+            elif 400 <= response.status_code < 500:
+                status = "client_error"
+            elif response.status_code >= 500:
+                status = "server_error"
+            else:
+                status = "http_error"
+            _set_retrieval_status(
+                status,
+                provider="semantic_scholar",
+                query=str(query),
+                requested_results=int(max_results),
+                http_status=int(response.status_code),
+            )
             print(
                 f"  [S2] API error: {response.status_code}",
                 file=sys.stderr,
             )
             return []
         data = response.json()
-    except Exception as exc:
+    except requests.exceptions.RequestException as exc:
+        _set_retrieval_status(
+            "network_error",
+            provider="semantic_scholar",
+            query=str(query),
+            requested_results=int(max_results),
+            error=str(exc),
+        )
         print(
             f"  [S2] Request error: {exc}",
+            file=sys.stderr,
+        )
+        return []
+    except ValueError as exc:
+        _set_retrieval_status(
+            "invalid_response",
+            provider="semantic_scholar",
+            query=str(query),
+            requested_results=int(max_results),
+            error=str(exc),
+        )
+        print(
+            f"  [S2] Invalid JSON response: {exc}",
             file=sys.stderr,
         )
         return []
@@ -250,5 +310,24 @@ def search_semantic_scholar(
                 file=sys.stderr,
             )
             continue
+
+    _set_retrieval_status(
+        "success" if sources else "empty_result",
+        provider="semantic_scholar",
+        query=str(query),
+        requested_results=int(max_results),
+        returned_records=len(sources),
+        records_with_oa_pdf=sum(
+            1
+            for item in sources
+            if isinstance(item.get("metadata"), dict)
+            and item["metadata"].get("open_access_pdf_available")
+        ),
+        records_with_full_text=sum(
+            1
+            for item in sources
+            if item.get("full_text_path")
+        ),
+    )
 
     return sources
