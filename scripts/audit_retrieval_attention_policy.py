@@ -46,8 +46,8 @@ def main() -> int:
         "weak form Galerkin FEM",
         "semantic_scholar",
         [
-            _observation("e1", 1, "rate_limited", 0, "partial_provider_availability"),
-            _observation("e2", 2, "network_error", 0, "partial_provider_availability"),
+            _observation("e1", 1, "invalid_response", 0),
+            _observation("e2", 2, "client_error", 0),
         ],
     )
     stable_success = _context(
