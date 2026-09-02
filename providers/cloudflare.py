@@ -13,6 +13,7 @@ from processing.response_extractor import (
 )
 
 CF_BASE = "https://api.cloudflare.com/client/v4"
+DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
 
 
 class CloudflareProvider:
@@ -26,7 +27,7 @@ class CloudflareProvider:
     ):
         self.account_id = account_id
         self.api_token = api_token
-        self.models = models if models else ["@cf/meta/llama-3.1-8b-instruct"]
+        self.models = models if models else [DEFAULT_MODEL]
         self.model_index = 0
         self.call_counts = {model: 0 for model in self.models}
         self.logical_calls = 0
