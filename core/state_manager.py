@@ -12,6 +12,7 @@ from typing import Dict
 from core.section_identity import normalize_sections
 from core.knowledge_graph import normalize_graph, validate_graph_references
 from core.graph_state import ensure_graph_state, empty_graph
+from core.retrieval_history_state import initialize_retrieval_history
 
 SCHEMA_VERSION = 5
 
@@ -47,6 +48,7 @@ def initialize_state(paths: Dict, config: Dict) -> Dict:
         state["knowledge_graph"]
     )
     state.setdefault("retrieval_report", _empty_retrieval_report())
+    initialize_retrieval_history(state)
     state["schema_version"] = SCHEMA_VERSION
     return state
 
@@ -79,6 +81,7 @@ def _default_state(config: Dict) -> Dict:
         "iteration_history_data": {},
         "convergence_diagnostics": {},
         "retrieval_report": _empty_retrieval_report(),
+        "retrieval_history": {"events": []},
     }
 
 
@@ -214,6 +217,7 @@ def save_state(paths: Dict, state: Dict):
         state["knowledge_graph"]
     )
     state.setdefault("retrieval_report", _empty_retrieval_report())
+    initialize_retrieval_history(state)
     state["schema_version"] = SCHEMA_VERSION
 
     fd, tmp_path = tempfile.mkstemp(
