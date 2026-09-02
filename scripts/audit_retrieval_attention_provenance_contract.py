@@ -31,6 +31,20 @@ def main() -> int:
         "Unexpected contract name.",
     )
 
+    dependency = contract["dependency"]
+    check(
+        dependency["base_contract"]["name"] == "retrieval_attention_contract",
+        "R6.5B must extend the R6.5 attention contract.",
+    )
+    check(
+        dependency["base_contract"]["version"] == 1,
+        "Unexpected base attention contract version.",
+    )
+    check(
+        "does not replace the base attention unit" in dependency["composition_rule"],
+        "Composition rule must preserve the base attention semantics.",
+    )
+
     provenance = contract["attention_provenance"]
     check(
         provenance["required_fields"]
