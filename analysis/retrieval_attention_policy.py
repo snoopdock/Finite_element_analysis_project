@@ -219,7 +219,9 @@ def evaluate_retrieval_attention(
         condition = _classify_current_condition(latest)
 
         if condition is not None:
-            supporting = _latest_supporting_ids(window if condition.startswith("repeated_") else [latest])
+            supporting = _latest_supporting_ids(
+                window if condition.startswith("repeated_") else [latest]
+            )
             count = None
             if condition.startswith("repeated_"):
                 target_class = (
@@ -262,6 +264,15 @@ def evaluate_retrieval_attention(
         output.append(_make_attention(
             policy_data, query, provider, condition, supporting, count
         ))
+
+    output.sort(
+        key=lambda item: (
+            str(item.get("query_scope", "")).casefold(),
+            str(item.get("provider", "")).casefold(),
+            str(item.get("observed_condition", "")),
+            tuple(item.get("supporting_event_ids", [])),
+        )
+    )
 
     return {
         "schema_version": POLICY_SCHEMA_VERSION,
