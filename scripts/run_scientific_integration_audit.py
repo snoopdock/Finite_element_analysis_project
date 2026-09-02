@@ -36,6 +36,7 @@ AUDITS = [
     ("Retrieval-event", ROOT / "scripts/audit_retrieval_event.py"),
     ("Retrieval-history-persistence", ROOT / "scripts/audit_retrieval_history_persistence.py"),
     ("Retrieval-replay", ROOT / "scripts/audit_retrieval_replay.py"),
+    ("Retrieval-history-integration", ROOT / "scripts/audit_retrieval_history_integration.py"),
 ]
 
 
