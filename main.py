@@ -32,6 +32,8 @@ from writing.section_splitter import SectionSplitter
 from writing.section_merger import SectionMerger
 from analysis.oaa_loop import OAALoop
 from analysis.writing_indicator import WritingIndicator
+from analysis.retrieval_event import create_retrieval_event
+from core.retrieval_history_state import append_retrieval_event
 
 from research.reading_tracker import load_reading_state
 from research.evidence import get_reading_summary
@@ -301,6 +303,22 @@ def main():
             llm_parser_instance,
             skip_gap_analysis=skip_gap,
         )
+
+        retrieval_report = state.get("retrieval_report", {})
+        try:
+            retrieval_event = create_retrieval_event(
+                cycle=int(state.get("cycle", 0)),
+                queries=research_config.get("seed_queries", []),
+                report=retrieval_report,
+            )
+            if append_retrieval_event(state, retrieval_event):
+                print(
+                    "  [Retrieval History] Recorded retrieval event "
+                    f"{retrieval_event['event_id']}",
+                    file=sys.stderr,
+                )
+        except Exception as exc:
+            errors.append(f"Retrieval history error: {exc}")
 
         if pending_query_items:
             state["last_correction_queries_used"] = pending_query_items
