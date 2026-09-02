@@ -82,11 +82,15 @@ def main() -> int:
         state["knowledge_graph"]["propositions"] = {
             proposition_id: proposition
         }
-        # Use an already normalized, stably keyed graph fixture so the
-        # unrelated state-management normalization performed by save_state()
-        # does not create changes that this retrieval-history audit would
-        # incorrectly attribute to retrieval operations.
-        scientific_before = deepcopy(state["knowledge_graph"])
+
+        # Establish the normalized scientific-state baseline before retrieval
+        # history is exercised. State initialization/save may legitimately add
+        # graph bookkeeping such as proposition history; those normalization
+        # effects are outside the retrieval-history subsystem being tested.
+        save_state(paths, state)
+        baseline_state = initialize_state(paths, config)
+        scientific_before = deepcopy(baseline_state["knowledge_graph"])
+        state = baseline_state
 
         event_a = create_retrieval_event(
             cycle=0,
