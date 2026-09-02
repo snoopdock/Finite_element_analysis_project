@@ -1,0 +1,123 @@
+version: 1
+name: retrieval_attention_context_contract
+objective: >-
+  Define the read-only normalization boundary between immutable retrieval
+  history and future retrieval-attention interpretation.
+
+dependency:
+  source_contract:
+    name: retrieval_history_contract
+    version: 1
+  attention_contract:
+    name: retrieval_attention_contract
+    version: 1
+  provenance_contract:
+    name: retrieval_attention_provenance_contract
+    version: 1
+  composition_rule: >-
+    R7A consumes persisted retrieval-history events and prepares factual
+    query/provider observations for later R7B interpretation. It does not
+    create attention decisions or lifecycle states.
+
+input:
+  name: retrieval_history
+  accepted_shapes:
+    - list_of_events
+    - mapping_with_events_list
+  rules:
+    - Input events are treated as immutable source data.
+    - Invalid non-dictionary entries are not converted into fabricated retrieval observations.
+
+output:
+  name: retrieval_attention_context
+  required_fields:
+    - schema_version
+    - event_count
+    - query_provider_contexts
+    - unscoped_provider_operations
+    - unscoped_events
+  schema_version: 1
+  query_provider_context:
+    required_fields:
+      - query_scope
+      - provider
+      - observations
+      - supporting_event_ids
+      - latest_observation
+  observation:
+    required_fields:
+      - event_id
+      - cycle
+      - retrieved_at
+      - provider_status
+      - attempts
+      - returned_records
+      - acquisition_assessment
+
+normalization_rules:
+  query_scope:
+    - Trim surrounding whitespace.
+    - Deduplicate case-insensitively while preserving first-seen display form.
+  provider:
+    - Normalize provider names by trimming surrounding whitespace.
+    - Group query/provider observations case-insensitively for provider identity.
+  ordering:
+    - Event observations are ordered by cycle, retrieved_at, and event_id.
+    - Query/provider contexts are returned in deterministic query/provider order.
+  query_provider_mapping:
+    - Only provider-level query lists establish a query/provider association.
+    - An event-level query_scope must not be used to invent a provider-specific query association when the provider-level query list is absent.
+    - Unmappable provider operations remain explicitly represented as unscoped_provider_operations.
+
+latest_observation:
+  meaning: >-
+    The latest recorded provider observation for a normalized query/provider
+    context according to the deterministic event ordering.
+  rules:
+    - Latest observation is descriptive only.
+    - Latest observation must not be labeled open, addressed, resolved, closed, active, or requiring action by R7A.
+
+read_only_boundary:
+  allowed:
+    - read retrieval history
+    - normalize query/provider keys
+    - order observations
+    - preserve supporting event identifiers
+    - preserve unscoped operations and events
+  forbidden:
+    - create attention proposals
+    - assign attention lifecycle status
+    - select acquisition actions
+    - infer recovery or resolution
+    - score retrieval quality
+    - modify retrieval history
+    - modify propositions
+    - modify evidence relations
+    - modify epistemic state
+    - modify ranking
+    - modify convergence
+    - modify writing content
+    - perform network retrieval
+    - invoke an LLM
+
+information_preservation:
+  rules:
+    - R7A must not silently discard a provider operation solely because query-level mapping is unavailable.
+    - R7A must not fabricate scientific meaning from operational status.
+    - Output mutations after construction must not mutate the source retrieval history.
+
+scope:
+  included:
+    - retrieval-history read access
+    - deterministic normalization
+    - query/provider context construction
+    - latest recorded observation extraction
+    - explicit representation of unmappable operations
+  excluded:
+    - attention interpretation
+    - lifecycle assignment
+    - policy thresholds
+    - action proposal generation
+    - action selection
+    - action execution
+    - scientific inference
