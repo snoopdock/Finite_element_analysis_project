@@ -1,0 +1,68 @@
+version: 1
+name: retrieval_history_contract
+objective: >-
+  Define append-only historical persistence for retrieval acquisition events
+  while keeping retrieval-process state separate from scientific reasoning.
+
+state_field:
+  name: retrieval_history
+  shape:
+    events: list
+
+retrieval_event:
+  required_fields:
+    - event_id
+    - cycle
+    - retrieved_at
+    - report
+    - acquisition_assessment
+  event_id:
+    meaning: Stable identifier for one retrieval invocation persisted as one historical event.
+    uniqueness: Event IDs must be unique within retrieval_history.events.
+  cycle:
+    meaning: Pipeline cycle associated with the retrieval invocation.
+    type: integer
+  retrieved_at:
+    meaning: UTC timestamp recorded when the retrieval result is persisted into the event.
+    type: string
+  report:
+    meaning: Structured retrieval-operation report, including provider and query outcomes.
+    source: retrieval_report
+  acquisition_assessment:
+    meaning: Read-only acquisition-status interpretation derived from the retrieval report.
+    source: analysis.retrieval_coverage.assess_retrieval_coverage
+
+temporal_rules:
+  - Historical events are never overwritten by a later retrieval cycle.
+  - A later successful retrieval does not erase or reinterpret an earlier failure event.
+  - Current retrieval_report remains the latest retrieval snapshot; retrieval_history preserves prior snapshots.
+  - Repeated state saves must not duplicate an already persisted retrieval event.
+
+idempotency_rules:
+  - Persistence must append an event at most once for a given event_id.
+  - Retrying a retrieval operation creates a new event_id and a new historical event unless the exact same event is explicitly being re-persisted.
+  - Event uniqueness is scoped to retrieval_history.events.
+
+granularity:
+  - Preserve the query-level and provider-level information already present in the retrieval report.
+  - Do not reduce historical retrieval state to a single aggregate status.
+
+separation_rules:
+  - retrieval_history is research-process metadata, not evidence.
+  - retrieval_history must not modify propositions, evidence relations, epistemic state, ranking, convergence, or writing content.
+  - Retrieval failures and empty results must remain operational/acquisition facts rather than scientific conclusions.
+
+scope:
+  included:
+    - historical retrieval acquisition state
+    - temporal persistence
+    - event identity
+    - append-only semantics
+    - idempotent persistence
+  excluded:
+    - literature_coverage_status
+    - scientific completeness claims
+    - ranking changes
+    - convergence changes
+    - writer decisions
+    - semantic claim verification
