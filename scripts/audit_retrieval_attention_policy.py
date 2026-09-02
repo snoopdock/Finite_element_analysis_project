@@ -89,17 +89,18 @@ def main() -> int:
         ],
     )
 
+    contexts = [
+        repeated_failure,
+        stable_success,
+        successful_empty,
+        repeated_empty,
+        recovered,
+        partial,
+    ]
     context = {
         "schema_version": 1,
         "event_count": 10,
-        "query_provider_contexts": [
-            repeated_failure,
-            stable_success,
-            successful_empty,
-            repeated_empty,
-            recovered,
-            partial,
-        ],
+        "query_provider_contexts": contexts,
         "unscoped_provider_operations": [
             {"event_id": "e11", "provider": "semantic_scholar"}
         ],
@@ -162,8 +163,13 @@ def main() -> int:
     for key in forbidden:
         assert key not in serialized
 
-    # Deterministic replay: identical context and policy yield identical output.
+    # Deterministic replay: identical inputs yield identical output.
     assert evaluate_retrieval_attention(context, POLICY) == result
+
+    # Reordering independent query/provider contexts must not change output order.
+    reordered = deepcopy(context)
+    reordered["query_provider_contexts"] = list(reversed(reordered["query_provider_contexts"]))
+    assert evaluate_retrieval_attention(reordered, POLICY) == result
 
     # Input context is read-only and outputs are defensive.
     assert context == original_context
@@ -187,8 +193,7 @@ def main() -> int:
     }
     assert "weak form Galerkin FEM" not in stricter_by_query
 
-    # Policy version is provenance, while changing it does not alter the
-    # underlying observations or invent a scientific interpretation.
+    # Policy version is provenance; changing it affects new interpretations only.
     versioned = dict(POLICY)
     versioned["policy_version"] = "r7b-test-v2"
     versioned_result = evaluate_retrieval_attention(context, versioned)
