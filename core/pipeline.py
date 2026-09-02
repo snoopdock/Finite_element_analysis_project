@@ -14,6 +14,7 @@ from research.evidence import (
     confirm_sections_read,
     get_articles_needing_more_reading,
     get_reading_summary,
+    get_last_retrieval_report,
 )
 
 from research.reading_tracker import (
@@ -503,11 +504,20 @@ def phase_research(
             max_items=max_items,
             max_workers=2,
         )
+        state["retrieval_report"] = get_last_retrieval_report()
     except Exception as exc:
         errors.append(
             f"Evidence retrieval error: {exc}"
         )
         retrieved_evidence = []
+        state["retrieval_report"] = {
+            "status": "exception",
+            "error": str(exc),
+            "query_count": len([q for q in queries if str(q).strip()]),
+            "providers": {},
+            "returned_records": 0,
+            "selected_records": 0,
+        }
 
     # Merge every retrieved record so that repeated discovery through a new
     # query/provider updates persisted provenance metadata for existing sources.
