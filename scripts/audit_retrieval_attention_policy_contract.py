@@ -154,9 +154,11 @@ def main() -> int:
         output["field_semantics"]["lifecycle_status"]["initial_value"] == "open",
         "R7B must create newly detected attention as open.",
     )
+    supporting_event_rule = str(
+        output["field_semantics"]["supporting_event_ids"]["rule"]
+    ).casefold()
     check(
-        "must not be replaced by aggregate counts alone"
-        in output["field_semantics"]["supporting_event_ids"]["rule"],
+        "must not be replaced by aggregate counts alone" in supporting_event_rule,
         "R7B must preserve event-level provenance.",
     )
 
