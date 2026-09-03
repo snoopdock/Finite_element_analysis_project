@@ -29,6 +29,12 @@ daily_limits:
   max_evidence_items: 4
   max_research_cycles: 1
 
+retrieval_attention:
+  policy_version: "r7b-v1"
+  history_window_events: 3
+  repeated_non_success_threshold: 2
+  repeated_empty_result_threshold: 2
+
 writing:
   w_L: 0.4
   w_U: 0.4
