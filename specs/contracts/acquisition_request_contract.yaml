@@ -1,0 +1,397 @@
+version: 1
+name: acquisition_request_contract
+status: accepted
+objective: >-
+  Define the minimal semantic boundary for a process-authorized AcquisitionRequest
+  between research planning and future acquisition execution. This contract freezes
+  acquisition intent without authorizing automatic retrieval or scientific
+  interpretation.
+
+architectural_role:
+  input_object:
+    name: ResearchPlanningDecision
+    semantic_claim: >-
+      The research planning subsystem has evaluated available planning inputs and
+      recorded a bounded process decision.
+    authority: planning_process
+  acquisition_object:
+    name: AcquisitionRequest
+    semantic_claim: >-
+      A distinct process object specifying acquisition work that may be attempted
+      by a downstream acquisition executor under explicit operational constraints.
+    authority: acquisition_process_request
+  execution_boundary:
+    name: future_acquisition_adapter
+    status: future_boundary
+    semantic_claim: >-
+      A downstream adapter may translate an AcquisitionRequest into the existing
+      retrieval execution interface. This contract does not define that adapter.
+  execution_object:
+    name: RetrievalEvent
+    semantic_claim: >-
+      A historical record of an acquisition attempt or provider interaction.
+    authority: retrieval_history
+
+core_invariants:
+  - AcquisitionRequest is distinct from ResearchPlanningDecision.
+  - AcquisitionRequest is distinct from ResearchPlanningSignal.
+  - AcquisitionRequest is distinct from AttentionProposal.
+  - AcquisitionRequest is distinct from RetrievalEvent.
+  - AcquisitionRequest is not a retrieval command or provider call.
+  - ResearchPlanningDecision does not automatically create an AcquisitionRequest.
+  - AcquisitionRequest does not automatically execute retrieval.
+  - Operational constraints describe how acquisition may be attempted, not how results should be interpreted.
+  - Process priority is not scientific priority.
+  - Provider failure is not evidence absence.
+  - Empty retrieval results are not literature absence without an independent scientific basis.
+  - Historical retrieval and planning records remain immutable.
+
+identity:
+  required_fields:
+    - acquisition_request_id
+    - schema_version
+    - created_at
+  acquisition_request_id:
+    semantic_role: >-
+      Unique identity for this acquisition-process request.
+    independence_rules:
+      - Must differ from research_planning_decision_id.
+      - Must differ from research_planning_signal_id.
+      - Must differ from attention_id.
+      - Must differ from RetrievalEvent identifiers.
+      - Must differ from LifecycleEvent identifiers.
+  schema_version:
+    type: integer
+    minimum: 1
+  created_at:
+    semantic_role: request_creation_time
+    authority: acquisition_request_history
+
+origin:
+  required: true
+  field: research_planning_decision_id
+  semantic_role: >-
+    Identifies the ResearchPlanningDecision from which the acquisition request
+    was explicitly formulated or delegated.
+  provenance_rule: >-
+    Upstream provenance is reconstructed through the referenced decision and its
+    input signal chain. The request does not duplicate attention or retrieval
+    identifiers unless a future contract establishes a concrete need.
+  forbidden_direct_origin_fields:
+    - attention_id
+    - retrieval_event_ids
+    - RetrievalEvent
+    - AttentionProposal
+
+request_creation:
+  explicit_boundary: true
+  automatic_from_decision: false
+  rule: >-
+    A ResearchPlanningDecision of type formulate_acquisition_request expresses that
+    a separate acquisition request should be formulated. It does not itself create
+    the AcquisitionRequest as a planner side effect. Request creation belongs to a
+    separate explicit formulation boundary under this contract.
+  planner_boundary: >-
+    The research planning evaluator may return a decision referring to acquisition
+    formulation, but it must not instantiate, persist, execute, or dispatch an
+    AcquisitionRequest merely by evaluating that decision.
+  authorization_semantics: >-
+    Creation of an AcquisitionRequest is an explicit process step. The request is
+    an acquisition-process object, not an implicit consequence of decision type.
+
+request_fields:
+  required:
+    - acquisition_request_id
+    - schema_version
+    - created_at
+    - origin
+    - target
+    - constraints
+    - priority
+  optional:
+    - requester
+    - request_version
+    - notes
+  origin:
+    required_fields:
+      - research_planning_decision_id
+  target:
+    required_fields:
+      - query_scope
+    query_scope:
+      semantic_role: >-
+        The operational research scope to be acquired. It identifies what query
+        scope should be submitted downstream without asserting a scientific claim,
+        proposition, evidence gap, or epistemic conclusion.
+  constraints:
+    semantic_role: >-
+      Operational restrictions or preferences governing how acquisition may be
+      attempted.
+    allowed_fields:
+      - provider_preferences
+      - provider_access_constraints
+      - execution_limits
+    provider_preferences:
+      semantic_role: >-
+        Preferred acquisition providers or provider ordering when such alternatives
+        are already defined by the acquisition process.
+    provider_access_constraints:
+      semantic_role: >-
+        Known operational limitations affecting provider access.
+    execution_limits:
+      semantic_role: >-
+        Process-level bounds on acquisition attempts, such as bounded execution
+        count or time constraints, when a future executor defines their vocabulary.
+  priority:
+    semantic_role: >-
+      Process execution priority for handling this acquisition request.
+    bounds:
+      minimum: 0.0
+      maximum: 1.0
+    interpretation: process_execution_priority_only
+
+forbidden_semantic_fields:
+  fields:
+    - confidence
+    - confidence_score
+    - evidence_gap
+    - evidence_strength
+    - evidence_quality
+    - epistemic_status
+    - truth_status
+    - truth_probability
+    - ranking
+    - ranking_score
+    - claim_rank
+    - claim_ranking
+    - convergence
+    - convergence_score
+    - scientific_priority
+    - scientific_importance
+    - scientific_relevance
+    - claim_id
+    - proposition_id
+    - evidence_relation
+  rejection_rule: >-
+    A request containing scientific-state or epistemic semantic fields must be
+    rejected explicitly rather than inferred, normalized, or silently discarded.
+
+semantic_isolation:
+  operational_vs_scientific:
+    provider_failure_is_not_evidence_absence: true
+    empty_result_is_not_literature_absence: true
+    operational_constraint_is_not_evidence_quality: true
+    process_priority_is_not_scientific_priority: true
+  interpretation_boundary: >-
+    AcquisitionRequest specifies process intent and operational constraints only.
+    It does not prescribe how acquired information should be evaluated, ranked,
+    assigned confidence, or incorporated into scientific state.
+  downstream_scientific_rule: >-
+    Any scientific-state change based on acquired results must occur through an
+    existing scientific contract with its own authority and evidence basis.
+
+acquisition_boundary:
+  planner_to_request:
+    allowed:
+      - formulate an explicit AcquisitionRequest after a planning decision
+      - preserve the originating ResearchPlanningDecision identifier
+      - specify operational query scope
+      - specify already-defined operational acquisition constraints
+      - specify process execution priority
+    prohibited:
+      - automatic request creation as a planner evaluation side effect
+      - direct provider calls
+      - direct retrieval execution
+      - scientific interpretation
+  request_to_execution:
+    allowed_future_transition: >-
+      A future acquisition adapter may translate the request into the existing
+      retrieval execution interface after an explicit request has been created.
+    current_status: contract_only
+    prohibited_in_this_revision:
+      - adapter implementation
+      - retrieve_evidence_parallel changes
+      - provider-layer changes
+      - main.py integration
+      - pending_evidence_queries integration
+      - network execution
+  execution_shape: >-
+    The future adapter may eventually translate AcquisitionRequest target and
+    operational constraints into the existing List[str] retrieval input. The
+    string-based execution interface remains outside this contract.
+
+relationship_to_research_planning_decision:
+  rule: >-
+    ResearchPlanningDecision and AcquisitionRequest have different semantic roles.
+    The decision records planning evaluation; the request records an explicit
+    acquisition-process object for downstream handling.
+  allowed_decision_reference:
+    field: research_planning_decision_id
+    required: true
+  forbidden_collapse:
+    - AcquisitionRequest must not be treated as a renamed ResearchPlanningDecision.
+    - ResearchPlanningDecision must not be treated as an executable acquisition request.
+    - formulate_acquisition_request must not itself imply automatic request creation.
+
+relationship_to_retrieval_execution:
+  current_execution_interface: List[str]
+  rule: >-
+    Existing retrieval execution accepts query strings. This contract intentionally
+    preserves AcquisitionRequest semantics until a future adapter boundary converts
+    the request into that execution representation.
+  prohibited_direct_mapping: >-
+    No current implementation may silently equate AcquisitionRequest with List[str]
+    or treat request creation as a provider invocation.
+  retrieval_event_rule: >-
+    Retrieval execution, when implemented downstream, must create new RetrievalEvent
+    records for acquisition attempts rather than modifying historical events.
+
+relationship_to_existing_corrective_paths:
+  correction_planner:
+    status: separate
+    rule: >-
+      AcquisitionRequest must not be silently routed through the scientific
+      corrective EvidenceQuery or pending_evidence_queries path.
+  gap_detector:
+    status: separate
+    rule: >-
+      AcquisitionRequest must not be interpreted as a scientific/content gap.
+  scientific_attention:
+    status: separate
+    rule: >-
+      AcquisitionRequest does not create or mutate ScientificAttention.
+  writing_decision_policy:
+    status: separate
+    rule: >-
+      AcquisitionRequest priority must not be interpreted as writing priority.
+
+lifecycle_isolation:
+  rules:
+    - AcquisitionRequest creation does not create a LifecycleEvent for AttentionProposal.
+    - AcquisitionRequest creation does not advance or close AttentionProposal lifecycle state.
+    - AcquisitionRequest does not rewrite LifecycleEvent history.
+    - AcquisitionRequest has its own acquisition-process history semantics.
+
+immutability:
+  rules:
+    - ResearchPlanningDecision records are not rewritten when an AcquisitionRequest is created.
+    - ResearchPlanningSignal records are not rewritten when an AcquisitionRequest is created.
+    - AttentionProposal records are not rewritten when an AcquisitionRequest is created.
+    - RetrievalEvent records are not rewritten when an AcquisitionRequest is executed downstream.
+    - An AcquisitionRequest represents a new process object rather than a mutation of its origin.
+
+persistence:
+  status: future_boundary
+  requirements:
+    - AcquisitionRequest records should be persistable independently from planning and retrieval histories.
+    - Persistence must preserve acquisition_request_id and research_planning_decision_id.
+    - Conflicting reuse of acquisition_request_id must fail as an integrity error.
+    - Idempotent duplicate creation may be defined by a future persistence contract.
+  exclusion: >-
+    This contract does not define a concrete state key, storage adapter, replay
+    format, or deduplication implementation.
+
+validation:
+  required_fields:
+    - acquisition_request_id
+    - schema_version
+    - created_at
+    - origin
+    - target
+    - constraints
+    - priority
+  identity:
+    distinct_from_decision_id: true
+    distinct_from_signal_id: true
+    distinct_from_attention_id: true
+    distinct_from_retrieval_event_id: true
+    distinct_from_lifecycle_event_id: true
+  target:
+    query_scope_required: true
+    scientific_target_fields_rejected: true
+  constraints:
+    only_defined_operational_fields: true
+  priority:
+    required: true
+    bounded: true
+    process_only: true
+  forbidden_scientific_fields_rejected: true
+  automatic_execution_rejected: true
+  integrity_failure_rule: >-
+    Invalid, ambiguous, provenance-incomplete, scientifically overreaching, or
+    execution-coupled requests must fail explicitly rather than being repaired
+    through inferred semantics.
+
+example:
+  valid_request:
+    acquisition_request_id: AR12
+    schema_version: 1
+    created_at: '2026-09-03T12:00:00Z'
+    origin:
+      research_planning_decision_id: RPD12
+    target:
+      query_scope: weak_form_galerkin_fem
+    constraints:
+      provider_preferences:
+        - semantic_scholar
+        - alternative_provider
+      provider_access_constraints:
+        semantic_scholar: temporarily_unavailable
+      execution_limits:
+        max_attempts: 2
+    priority: 0.8
+  invalid_request:
+    acquisition_request_id: AR13
+    schema_version: 1
+    created_at: '2026-09-03T12:00:00Z'
+    origin:
+      research_planning_decision_id: RPD13
+    target:
+      query_scope: weak_form_galerkin_fem
+      claim_id: C13
+    constraints:
+      provider_access_constraints:
+        semantic_scholar: unavailable
+    priority: 0.8
+    confidence: 0.2
+
+relationship_to_r8_6_1:
+  rule: >-
+    This contract implements the R8.6.1 AcquisitionRequest design and freezes the
+    planning-to-acquisition semantic boundary. It does not add an adapter, runtime
+    integration, retrieval execution, provider changes, or scientific mutation.
+  preserved_decisions:
+    - AcquisitionRequest is a distinct process object.
+    - Origin is through ResearchPlanningDecision rather than duplicated upstream provenance.
+    - query_scope is the minimal target vocabulary.
+    - Operational constraints govern acquisition attempts, not scientific interpretation.
+    - Priority is process execution priority only.
+    - Request creation is an explicit boundary and is not automatic planner behavior.
+    - Retrieval execution remains downstream of the request.
+    - AcquisitionRequest is not RetrievalRequest.
+
+scope:
+  included:
+    - AcquisitionRequest identity
+    - origin semantics
+    - request creation boundary
+    - target query_scope
+    - operational constraints
+    - process priority
+    - forbidden scientific semantics
+    - acquisition execution boundary
+    - separation from existing corrective and scientific paths
+    - lifecycle isolation
+    - immutability
+    - future persistence requirements
+    - validation
+  excluded:
+    - acquisition adapter implementation
+    - retrieval execution
+    - retrieve_evidence_parallel changes
+    - provider layer changes
+    - main.py changes
+    - pending_evidence_queries changes
+    - ResearchPlanningDecision evaluator changes
+    - RetrievalEvent changes
+    - runtime integration
