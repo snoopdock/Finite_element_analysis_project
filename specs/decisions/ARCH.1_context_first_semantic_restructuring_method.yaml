@@ -1,0 +1,189 @@
+version: 1
+name: ARCH.1_context_first_semantic_restructuring_method
+status: accepted
+title: Context-First Semantic Architecture and Audit Method
+objective: >-
+  Generalize the architectural working method learned during R8 so future audits,
+  restructuring, and migrations begin from the correct semantic problem and
+  authoritative model rather than forcing new requirements into accidental legacy
+  representations.
+
+core_method:
+  sequence:
+    - define the abstract problem independently of the current implementation
+    - establish the semantically correct model and authority boundaries
+    - identify provenance, cardinality, directionality, and invariants
+    - map the correct model onto the current repository
+    - distinguish existing correct structure from accidental coupling and genuine gaps
+    - introduce the smallest boundary necessary to preserve semantic correctness
+    - adapt legacy representations behind that boundary
+    - audit the boundary against semantic invariants
+    - integrate runtime behavior only after the boundary is stable
+  canonical_flow: >-
+    Abstract problem -> general solution pattern -> repository mapping -> genuine gaps
+    -> minimal adaptation -> audit -> integration
+
+principles:
+  semantic_authority_before_representation:
+    rule: >-
+      A repository representation is not authoritative merely because it already
+      exists or is convenient to reuse. The authoritative model must be selected
+      from semantic requirements first.
+  semantic_fidelity_over_representation_fidelity:
+    rule: >-
+      Preserve meaning before preserving structural similarity. A newer model may
+      legitimately be richer than a legacy representation.
+  bounded_lossy_translation:
+    rule: >-
+      Loss of representation is acceptable when the lost information is identified,
+      bounded, observable, and does not alter or invent meaning. Silent semantic
+      reinterpretation is never an acceptable substitute for translation.
+  legacy_boundary:
+    rule: >-
+      Legacy interfaces should be adapted at explicit boundaries rather than used
+      as the semantic model for new architecture.
+  explicit_unknowns:
+    rule: >-
+      Unknown, unsupported, or unrepresentable information should remain explicitly
+      unknown or unrepresentable rather than being guessed, silently discarded, or
+      mapped to an unrelated concept.
+  provenance_before_convenience:
+    rule: >-
+      Provenance and causal relationships must follow actual ownership and
+      cardinality. Identifiers must not be copied into objects merely because doing
+      so makes tracing easier.
+  authority_separation:
+    rule: >-
+      Objects from different semantic domains must not acquire authority merely by
+      being connected. Process observations, planning decisions, scientific state,
+      lifecycle state, and source provenance require explicit boundaries.
+  immutable_history:
+    rule: >-
+      Historical records represent completed occurrences or decisions and must not
+      be rewritten to absorb later retries, corrections, or reinterpretations.
+
+architecture_review:
+  required_questions:
+    - What semantic problem exists independent of the current code?
+    - Which object should be authoritative for each meaning?
+    - Which relationships are causal, referential, observational, or merely derived?
+    - What is the cardinality of each provenance relationship?
+    - Which information can the current implementation represent exactly?
+    - Which information is only partially representable?
+    - Which information is unrepresentable by the current interface?
+    - What is the smallest new boundary that preserves the correct model?
+    - Which existing behavior must remain frozen while the new boundary is introduced?
+    - What evidence demonstrates that the implementation matches the semantic contract?
+
+mapping_categories:
+  preserved:
+    meaning: Existing implementation already represents the intended semantics.
+  translated:
+    meaning: Existing implementation uses a different representation for equivalent meaning.
+  degraded:
+    meaning: Existing implementation carries only a bounded subset of the source representation and the loss is observable.
+  unrepresentable:
+    meaning: Existing implementation has no valid representation for the source semantic element.
+  accidental_coupling:
+    meaning: Existing code gives one domain unintended authority over another.
+  genuine_gap:
+    meaning: Required semantics have no authoritative representation or boundary.
+
+minimal_adaptation_rule:
+  rule: >-
+    Do not redesign a subsystem merely because a richer model has been introduced.
+    Add or strengthen only the boundary required to preserve the richer model,
+    then leave legacy implementation behind that boundary until a separate
+    decision justifies deeper replacement.
+
+translation_rule:
+  rule: >-
+    A translation layer may discard representation detail but may not fabricate
+    unsupported semantics. Any material loss must be classified and observable.
+  anti_patterns:
+    - forced field matching
+    - encoding control metadata into unrelated user data
+    - treating omitted information as nonexistent without declaring the loss
+    - claiming an unsupported constraint was honored
+    - using a legacy representation as evidence of the authoritative semantic state
+
+provenance_rule:
+  rule: >-
+    Before adding a provenance field, determine whether the relationship is one-to-one,
+    one-to-many, many-to-one, or many-to-many. A scalar shortcut is invalid when it
+    discards legitimate multiplicity.
+
+history_rule:
+  rule: >-
+    Distinguish current summaries, execution occurrences, and durable historical
+    records. A summary must not be promoted into an event merely because it contains
+    useful status information.
+
+three_level_audit:
+  semantic_audit:
+    question: Does the model express the correct meaning and authority?
+  structural_audit:
+    question: Are ownership, boundaries, cardinality, and direction implemented correctly?
+  implementation_audit:
+    question: Does concrete code conform without hidden coupling or semantic leakage?
+  evidence_order:
+    - semantic invariants
+    - ownership and authority
+    - direction and cardinality
+    - forbidden coupling
+    - representation
+    - implementation details
+    - textual snippets
+
+failure_classification:
+  required_before_change:
+    - contract_violation
+    - implementation_violation
+    - audit_recognition_defect
+    - architectural_ambiguity
+  rule: >-
+    An audit failure must be classified before modifying either the contract or
+    implementation. An audit-recognition defect must not be repaired by weakening
+    the architectural invariant.
+  audit_design_rule: >-
+    Static audits should prefer normalized semantic alternatives over brittle exact
+    sentence matching and should report which invariant failed rather than merely
+    which phrase was absent.
+
+r8_lesson:
+  rule: >-
+    R8 demonstrated that separating semantic domains, explicitly assigning authority,
+    preserving provenance cardinality, allowing controlled lossy translation, and
+    auditing invariants rather than prose produces safer incremental restructuring.
+  reusable_attitude: >-
+    First solve the architectural problem correctly. Then determine how much of that
+    solution the current repository can represent, adapt only at explicit boundaries,
+    and make every unavoidable loss visible.
+
+restructuring_application:
+  when_applied_to_legacy_repository:
+    - freeze known correct semantics before migration
+    - audit current objects for overloaded meanings
+    - identify semantic compression and accidental authority
+    - introduce explicit domain boundaries
+    - keep legacy adapters thin and replaceable
+    - migrate incrementally rather than rewriting unrelated subsystems
+    - re-audit after every boundary change
+  forbidden_strategy: >-
+    Do not begin a restructuring by renaming files, moving functions, or matching
+    old data structures to new names before their semantic roles have been established.
+
+scope:
+  included:
+    - context-first architecture review
+    - semantic authority
+    - bounded lossy translation
+    - legacy adaptation
+    - provenance and cardinality
+    - audit hierarchy and failure classification
+    - incremental restructuring
+  excluded:
+    - repository-specific implementation
+    - automatic migration of existing modules
+    - universal domain ontology
+    - replacement of all legacy interfaces
