@@ -1,0 +1,147 @@
+version: 1
+name: retrieval_attention_lifecycle_integration_contract
+objective: >-
+  Define the offline composition boundary between R7C attention proposals and
+  R7D lifecycle history so lifecycle tracking preserves proposal identity,
+  retrieval history, scientific state, and replayable provenance.
+
+dependencies:
+  proposal_persistence:
+    module: core/retrieval_attention_persistence.py
+  lifecycle_event_model:
+    module: analysis/retrieval_attention_lifecycle.py
+  lifecycle_persistence:
+    module: core/retrieval_attention_lifecycle_persistence.py
+  lifecycle_replay:
+    module: analysis/retrieval_attention_lifecycle_replay.py
+  composition_rule: >-
+    R7D.6 composes the already-validated R7C proposal boundary with the R7D
+    lifecycle event, persistence, and replay layers. It must not redefine
+    proposal semantics, lifecycle semantics, or retrieval semantics.
+
+composition_model:
+  objects:
+    retrieval_event:
+      meaning: Historical acquisition fact recorded by the retrieval subsystem.
+    attention_proposal:
+      meaning: Deterministic R7B operational interpretation persisted by R7C.
+    lifecycle_event:
+      meaning: Historical process event describing what happened to one attention proposal.
+    lifecycle_history:
+      meaning: Append-only persistence of lifecycle events, separate from proposal persistence.
+    lifecycle_replay:
+      meaning: Read-only reconstruction of the recorded lifecycle trajectory.
+  relationships:
+    - RetrievalEvent remains in retrieval_history and is referenced indirectly through proposal provenance.
+    - AttentionProposal is identified by attention_id and remains independently persisted.
+    - LifecycleEvent references attention_id and does not embed the authoritative proposal.
+    - Lifecycle history is stored separately from retrieval_attention_history.
+
+proposal_isolation:
+  rules:
+    - Lifecycle activity must not rewrite the canonical AttentionProposal.
+    - A lifecycle transition from open to addressed must not change the proposal lifecycle_status field stored by R7C unless a future explicitly specified synchronization contract permits it.
+    - Lifecycle persistence must reference proposals through attention_id only.
+    - A persisted lifecycle event must not replace or duplicate the proposal object.
+    - Proposal deterministic core fields must remain unchanged during lifecycle handling.
+
+history_separation:
+  rules:
+    - retrieval_history and retrieval_attention_lifecycle_history are distinct state domains.
+    - Lifecycle persistence must not append to, delete from, reorder, or mutate retrieval_history.
+    - Lifecycle handling must not rewrite historical RetrievalEvent payloads.
+    - retrieval_attention_history remains proposal history and must not be used as lifecycle-event storage.
+    - Lifecycle history may reference attention_id without absorbing proposal persistence responsibilities.
+
+lifecycle_composition:
+  valid_sequence:
+    - attention proposal exists with lifecycle_status open
+    - lifecycle event records null-to-open initialization when applicable
+    - lifecycle event records an allowed transition
+    - lifecycle event is persisted without modifying prior lifecycle events
+    - lifecycle history can be replayed offline
+  forbidden_sequences:
+    - lifecycle transition mutates proposal payload
+    - lifecycle persistence mutates retrieval history
+    - replay repairs or rewrites lifecycle history
+    - lifecycle event directly changes scientific state
+    - lifecycle handling automatically executes acquisition actions
+
+replay_boundary:
+  rules:
+    - Replay consumes recorded lifecycle events rather than recomputing lifecycle history from current proposal or scientific state.
+    - Replay must be read-only and must not create or modify lifecycle events.
+    - Replay must not require retrieval-network access, an LLM call, or execution of the scientific pipeline.
+    - A valid persisted trajectory must reproduce the recorded transition sequence and final lifecycle status.
+    - Invalid or contradictory lifecycle history must fail explicitly rather than be repaired.
+
+scientific_isolation:
+  protected_state:
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+    - knowledge_base
+    - sections
+  rules:
+    - Lifecycle integration is process metadata and must not modify protected scientific state.
+    - Lifecycle status must not be interpreted as evidence quality, truth, confidence, uncertainty, or scientific relevance.
+    - Lifecycle transition reasons must remain process-level metadata.
+    - Lifecycle references to retrieval events do not create evidence relations.
+
+retrieval_isolation:
+  protected_state:
+    - retrieval_history
+    - retrieval_report
+  rules:
+    - Lifecycle handling must not alter retrieval acquisition facts.
+    - A later acquisition response is represented by a new RetrievalEvent, not mutation of an earlier RetrievalEvent.
+    - Lifecycle integration must not trigger network retrieval or an acquisition action as part of the offline composition audit.
+
+determinism_and_integrity:
+  rules:
+    - Identical proposal and lifecycle inputs must produce equivalent lifecycle-event and replay results apart from independently generated event identifiers or timestamps where the model permits them.
+    - Persisted lifecycle-event identity integrity remains governed by lifecycle_event_id.
+    - Duplicate identical lifecycle events are idempotent; conflicting reuse of lifecycle_event_id is an integrity failure.
+    - Replay must preserve recorded lifecycle event identity and payload.
+
+execution_boundary:
+  prohibited_operations:
+    - automatic_lifecycle_transition
+    - automatic_action_execution
+    - retrieval_network_access
+    - llm_call
+    - scientific_state_mutation
+    - retrieval_history_mutation
+    - proposal_mutation
+  rules:
+    - R7D.6 is an offline composition audit only.
+    - This contract does not introduce runtime lifecycle behavior.
+    - Future live lifecycle management remains a separate stage.
+
+scope:
+  included:
+    - R7C proposal and R7D lifecycle composition
+    - proposal isolation
+    - retrieval-history isolation
+    - lifecycle-history separation
+    - replay boundary
+    - scientific isolation
+    - deterministic integrity boundary
+    - offline composition auditing
+  excluded:
+    - lifecycle runtime integration
+    - automatic lifecycle transitions
+    - action execution
+    - network retrieval
+    - LLM calls
+    - proposal synchronization implementation
+    - scientific inference
+    - evidence assessment
+    - ranking changes
+    - convergence changes
+    - writer decisions
