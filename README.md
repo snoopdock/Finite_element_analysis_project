@@ -92,7 +92,7 @@ References: Wiener (1948) on control loops; Kephart & Chess (2003) on autonomic 
 
 ---
 
-## Formal verification (optional)
+## Formal verification (not active by default, it will be worked on in near future)
 
 When enabled, the pipeline can route mathematical claims to solver tools:
 
@@ -113,7 +113,7 @@ The formal layer is disabled by default. To use it you must install the external
 - processing/ — LLM response parsing and LaTeX builder.
 - analysis/ — scoring, OAA loop, retrieval attention, and checks.
 - writing/ — writer, section merger, and splitter.
-- formal/ — solver adapters and Lean project (not active by default).
+- formal/ — solver adapters and Lean project (not active by default, it will be worked on in near future).
 - specs/ — YAML contracts and invariants.
 - scripts/ — audit scripts to check invariants and stages.
 - state/ and output/ — runtime state and generated files.
@@ -181,10 +181,3 @@ Edit `config.yaml` for weights, thresholds, budgets, and which models to use. Th
 - Biere, A., Heule, M., van Maaren, H., and Walsh, T. (eds.). (2021). Handbook of Satisfiability (2nd ed.). IOS Press.
 - Google OR-Tools CP-SAT docs: https://developers.google.com/optimization/cp
 - Lean 4 documentation: https://lean-lang.org/
-
----
-
-If you want, I can also:
-- Add a development Dockerfile that installs Python and optional formal tools.
-- Create a safe dev config that uses a mock LLM provider and zero calls by default.
-- Expand the README with example outputs and one small example section produced by the pipeline.
