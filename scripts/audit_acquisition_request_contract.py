@@ -18,7 +18,7 @@ REQUIRED_SNIPPETS = {
     "automatic_creation_disabled": "automatic_from_decision: false",
     "explicit_boundary": "explicit_boundary: true",
     "process_priority": "process_execution_priority_only",
-    "no_automatic_execution": "automatic execution",
+    "no_automatic_execution": "AcquisitionRequest does not automatically execute retrieval.",
     "future_adapter": "future_acquisition_adapter",
     "retrieval_execution_interface": "current_execution_interface: List[str]",
     "retrieval_request_rejected": "AcquisitionRequest is not RetrievalRequest.",
