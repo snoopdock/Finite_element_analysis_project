@@ -278,6 +278,16 @@ def main() -> int:
         ],
         "scientific isolation field",
     )
+    scientific_rules = contract["scientific_isolation"]["rules"]
+    _contains_all(
+        scientific_rules,
+        [
+            "Lifecycle runtime authority is process authority, not scientific authority.",
+            "A lifecycle decision must not promote operational events into evidence relations.",
+            "Lifecycle runtime handling must not modify scientific graph state or generated scientific text.",
+        ],
+        "scientific isolation rule",
+    )
 
     scope = contract["scope"]
     check(
@@ -291,10 +301,6 @@ def main() -> int:
     check(
         "automatic action execution" in scope["excluded"],
         "R7D.7 must exclude automatic action execution.",
-    )
-    check(
-        "scientific graph state" not in str(contract),
-        "Scientific graph state must remain represented by existing protected fields rather than a new runtime state boundary.",
     )
 
     print("R7D.7 retrieval attention lifecycle runtime boundary contract audit: PASS")
