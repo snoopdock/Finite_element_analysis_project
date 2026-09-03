@@ -1,0 +1,366 @@
+version: 1
+name: R8.0_retrieval_attention_research_planning_decision
+status: accepted
+title: Retrieval Attention to Research Planning Decision Record
+objective: >-
+  Establish the architectural boundary for allowing retrieval-attention
+  information to inform research planning without granting retrieval or process
+  observations scientific authority. This record approves planning-level use
+  only and intentionally introduces no implementation, translator, runtime
+  integration, or ScientificAttention changes.
+
+context:
+  architectural_domains:
+    process_acquisition:
+      meaning: >-
+        Describes what happened during evidence acquisition, as recorded by
+        RetrievalEvent and retrieval history.
+      objects:
+        - RetrievalEvent
+        - retrieval_history
+    process_attention:
+      meaning: >-
+        Describes whether an acquisition/process condition warrants awareness
+        or controlled lifecycle handling.
+      objects:
+        - AttentionProposal
+        - LifecycleEvent
+    research_planning:
+      meaning: >-
+        Describes whether a process condition may be relevant to planning or
+        scheduling future research activity.
+      object:
+        - ResearchPlanningSignal
+    scientific_reasoning:
+      meaning: >-
+        Describes which scientific objects warrant intellectual attention and
+        what the scientific system should believe about claims.
+      objects:
+        - ScientificAttention
+        - KnowledgeGraph
+        - EvidenceRelations
+        - EpistemicState
+        - Ranking
+        - Convergence
+        - WriterOAA
+  governing_distinction:
+    rule: >-
+      Operational acquisition observations, research-process attention,
+      planning signals, and scientific interpretations are distinct semantic
+      objects and must not be compressed into one state transition mechanism.
+    category_error_avoided: >-
+      An acquisition or provider condition must not silently become a
+      scientific interpretation such as evidence_gap, low confidence,
+      insufficient evidence, or claim uncertainty.
+    example:
+      condition: >-
+        Repeated non-success from a literature provider for a query such as
+        "weak form Galerkin FEM".
+      operational_interpretation: >-
+        The acquisition process encountered a provider-access limitation.
+      forbidden_scientific_interpretation:
+        - evidence_gap
+        - confidence_low
+        - claim_uncertain
+        - evidence_weak
+
+
+decision:
+  retrieval_attention_integration:
+    may_inform_research_planning: true
+    possesses_scientific_authority: false
+    authority_model: >-
+      Retrieval attention may provide information to a planning subsystem, but
+      it does not itself decide that a scientific object deserves intellectual
+      attention. The scientific planning layer remains responsible for deciding
+      whether a translated planning signal is relevant to scientific work.
+  allowed:
+    - inform_research_planning
+    - represent acquisition constraints for planning consideration
+    - provide provenance from planning signals back to supporting retrieval events
+    - permit a future planning subsystem to consider alternate acquisition paths
+    - permit a future scientific planner to increase or decrease planning priority
+      after independently evaluating the planning signal against scientific context
+  prohibited:
+    - directly_create_scientific_attention
+    - directly_modify_scientific_attention
+    - modify_epistemic_state
+    - modify_evidence_strength
+    - modify_claim_ranking
+    - modify_convergence
+    - modify_knowledge_graph_claims
+    - modify_evidence_relations
+    - modify_generated_scientific_content
+    - reinterpret_retrieval_history
+    - rewrite_retrieval_events
+    - rewrite_attention_proposals
+    - rewrite_lifecycle_events
+    - issue_acquisition_commands
+    - execute_retrieval
+  key_principle: >-
+    Retrieval attention may provide planning signals but does not possess
+    scientific authority.
+
+
+directionality:
+  allowed_flow:
+    - RetrievalEvent -> retrieval_history
+    - retrieval_history -> AttentionProposal
+    - AttentionProposal -> ResearchPlanningSignal
+    - ResearchPlanningSignal -> scientific_planning_evaluation
+    - scientific_planning_evaluation -> ScientificAttention_or_other_planning_decision
+    - planning_decision -> future_acquisition_request
+    - future_acquisition_request -> new_RetrievalEvent
+  forbidden_shortcuts:
+    - RetrievalEvent -> ScientificAttention
+    - AttentionProposal -> ScientificAttention
+    - AttentionProposal -> EpistemicState
+    - AttentionProposal -> EvidenceStrength
+    - AttentionProposal -> ClaimRanking
+    - AttentionProposal -> Convergence
+    - LifecycleEvent -> ScientificState
+  history_direction_rule: >-
+    Scientific planning may motivate a future acquisition request, but a future
+    request creates new acquisition history; it does not modify historical
+    RetrievalEvent, AttentionProposal, or LifecycleEvent records.
+  immutability_consequence:
+    - Historical RetrievalEvent records remain immutable.
+    - Historical AttentionProposal records remain immutable.
+    - Historical LifecycleEvent records remain immutable.
+    - Any new acquisition produces new retrieval events rather than amended history.
+
+
+semantic_boundary:
+  attention_proposal:
+    claim: >-
+      A process condition deserves attention under retrieval-attention policy.
+    source_domain: process_attention
+    scientific_authority: false
+  research_planning_signal:
+    claim: >-
+      A process condition may be relevant to future research planning.
+    source_domain: research_planning
+    scientific_authority: false
+    architectural_role: >-
+      Explicit semantic translation boundary between process attention and
+      research planning. It is not a renamed AttentionProposal and not a direct
+      scientific-state mutation instruction.
+  scientific_attention:
+    claim: >-
+      A scientific object deserves intellectual attention.
+    source_domain: scientific_reasoning
+    scientific_authority: true
+    authority_rule: >-
+      ScientificAttention can only arise through the scientific planning and
+      reasoning mechanisms that evaluate scientific context; a retrieval-
+      attention object cannot create it directly.
+
+
+translation_principles:
+  controlled_translation: >-
+    Translation from AttentionProposal to ResearchPlanningSignal must be
+    explicit, contract-governed, and semantically typed. No implicit field-name
+    or status propagation may be treated as scientific interpretation.
+  lossy_by_design: >-
+    ResearchPlanningSignal is intentionally lossy. The planning layer does not
+    need to mirror every operational detail of AttentionProposal, and omission
+    of retrieval-policy internals is a required architectural property rather
+    than an information-loss defect.
+  provenance_requirement: >-
+    Information retained by a ResearchPlanningSignal must preserve enough
+    provenance to identify the supporting operational history without making
+    operational metadata itself scientific evidence.
+  absence_handling: >-
+    Absence of a ResearchPlanningSignal means only that no planning signal was
+    produced under the applicable translation contract. It must not be
+    interpreted as absence of literature, absence of evidence, scientific
+    sufficiency, or scientific resolution.
+
+
+scientific_isolation:
+  protected_state:
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - scientific_attention
+    - claim_ranking
+    - convergence
+    - writing_content
+    - knowledge_base
+    - sections
+  rule: >-
+    No retrieval-attention proposal, planning signal, or lifecycle transition
+    may directly mutate protected scientific state. A scientific planning
+    component may independently use a ResearchPlanningSignal as one input to a
+    scientific decision, subject to the existing scientific contracts.
+  non_equivalence:
+    provider_failure_is_not_evidence_gap: true
+    retrieval_non_success_is_not_claim_uncertainty: true
+    planning_priority_is_not_claim_rank: true
+    lifecycle_status_is_not_epistemic_status: true
+
+
+future_planning_example:
+  acquisition_condition: >-
+    Semantic Scholar returns repeated provider non-success for a query targeting
+    weak-form Galerkin FEM literature.
+  process_layer:
+    result: >-
+      RetrievalEvent records the acquisition outcome and R7B may produce an
+      AttentionProposal when policy conditions warrant attention.
+  planning_translation:
+    result: >-
+      A future R8.1 contract may translate the process condition into a
+      ResearchPlanningSignal describing an acquisition constraint and its
+      provenance.
+  scientific_planner_evaluation:
+    possible_outcomes:
+      - >-
+        The planner determines the affected proposition is high priority and
+        increases verification planning priority.
+      - >-
+        The planner determines that alternate sources already provide sufficient
+        coverage and takes no additional scientific action.
+      - >-
+        The planner requests a future alternate acquisition path without changing
+        historical process records.
+  authority_note: >-
+    None of these planner outcomes permits the original acquisition condition to
+    rewrite scientific truth, evidence state, or historical process records.
+
+
+alternatives_considered:
+  direct_attention_mapping:
+    description: >-
+      AttentionProposal is mapped directly into ScientificAttention.
+    status: rejected
+    reason: >-
+      This collapses process interpretation into scientific interpretation and
+      permits operational conditions to acquire scientific meaning without an
+      explicit scientific decision boundary.
+  planning_signal_boundary:
+    description: >-
+      AttentionProposal is translated into a distinct ResearchPlanningSignal,
+      after which scientific planning evaluates the signal.
+    status: accepted
+    advantages:
+      - Preserves semantic separation.
+      - Makes authority boundaries explicit.
+      - Allows planning to use operational constraints without treating them as evidence.
+      - Supports provenance without mirroring retrieval internals.
+      - Keeps future planning policy replaceable without rewriting retrieval semantics.
+  no_integration:
+    description: >-
+      Retrieval attention remains isolated from research planning.
+    status: deferred_as_default
+    reason: >-
+      This would preserve maximal separation but would prevent planning systems
+      from using useful acquisition-process information. The current decision
+      therefore permits a controlled planning interface while retaining scientific
+      authority in the planning/reasoning layer.
+
+
+non_decisions:
+  scope_boundary:
+    - No ResearchPlanningSignal implementation is introduced by R8.0.
+    - No AttentionProposal translator is introduced by R8.0.
+    - No ScientificAttention changes are introduced by R8.0.
+    - No retrieval planning or acquisition command execution is introduced by R8.0.
+    - No runtime authorization mechanism is introduced by R8.0.
+    - No state-schema changes are introduced by R8.0.
+    - No changes to retrieval history, lifecycle history, evidence state, epistemic state, ranking, convergence, or writer behavior are introduced by R8.0.
+  deferred_work:
+    - R8.1 defines the ResearchPlanningSignal contract.
+    - R8.2 may implement the translation layer only if R8.1 demonstrates a concrete value and bounded interface.
+    - R8.3 audits scientific planning integration after implementation.
+
+
+requirements_for_r8_1:
+  mandatory_contract_properties:
+    - Define signal type and semantic meaning.
+    - Define affected planning target or scope.
+    - Define provenance back to supporting operational events.
+    - Define allowed and forbidden fields.
+    - Define absence and unknown handling.
+    - Define deterministic or otherwise explicit translation rules.
+    - Define the non-authoritative status of the signal with respect to scientific truth.
+    - Define how scientific planning receives and evaluates the signal without direct state promotion.
+    - Define that translation is lossy by design and does not mirror retrieval internals.
+  explicit_forbiddances:
+    - Do not encode evidence_gap as a translation consequence of provider failure alone.
+    - Do not encode confidence or epistemic status as a translation consequence.
+    - Do not encode scientific ranking as a translation consequence.
+    - Do not encode convergence state as a translation consequence.
+    - Do not issue acquisition commands from the translation layer.
+
+
+architectural_consequence:
+  current_model: >-
+    The architecture now permits a future controlled flow of
+    RetrievalEvent -> AttentionProposal -> ResearchPlanningSignal ->
+    scientific-planning evaluation, while preserving separate authority for
+    scientific interpretation.
+  authority_model: >-
+    Retrieval attention is informative to planning, not authoritative over
+    scientific state. The scientific planning subsystem decides whether and how
+    the signal matters scientifically.
+  required_next_artifact: >-
+    R8.1 Research Planning Signal Contract.
+  implementation_status:
+    code_changed: false
+    translator_implemented: false
+    scientific_attention_changed: false
+
+
+relationship_to_r7:
+  R7D.8_boundary: >-
+    R8.0 does not alter the controlled-process lifecycle authority decision. A
+    lifecycle event remains a controlled process decision and is not created or
+    mutated by planning translation.
+  retrieval_attention_contracts: >-
+    R8.0 builds on the existing RetrievalEvent, AttentionProposal, persistence,
+    lifecycle, replay, and runtime-boundary contracts without changing their
+    authority semantics.
+  scientific_contracts: >-
+    R8.0 does not supersede or weaken existing scientific-state contracts.
+
+
+audit_expectation:
+  pre_implementation: >-
+    Before R8.2 implementation, the repository should be able to demonstrate
+    that R8.1 preserves the distinction between process attention, planning
+    signals, and scientific interpretation.
+  post_implementation: >-
+    R8.3 should verify that a planning signal cannot directly mutate scientific
+    state, cannot mutate historical process records, and cannot execute an
+    acquisition action by itself.
+
+supersession:
+  status: not_superseded
+  rule: >-
+    This decision remains in force until a later decision record explicitly
+    supersedes its planning-authority boundary.
+
+scope:
+  included:
+    - semantic domains and object distinctions
+    - permitted retrieval-attention influence on research planning
+    - scientific authority boundary
+    - directionality and history immutability
+    - translation principles
+    - scientific isolation
+    - alternatives considered
+    - non-decisions and deferred artifacts
+    - requirements for R8.1
+  excluded:
+    - implementation
+    - translator code
+    - runtime acquisition execution
+    - ScientificAttention schema or algorithm changes
+    - evidence assessment
+    - epistemic updates
+    - ranking changes
+    - convergence changes
+    - writer decisions
