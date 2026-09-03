@@ -202,7 +202,7 @@ def _evaluate_one(
         decision_type = "prioritize_research"
         rationale = (
             "The acquisition provider is only partially available; process priority "
-            "may increase without changing scientific evidence state."
+            "may increase without changing scientific state."
         )
         priority = _priority_for(condition, False)
     elif condition in {
@@ -303,6 +303,43 @@ def validate_research_planning_decision(
         raise ValueError(f"ResearchPlanningDecision is missing required fields: {missing}")
 
     result = deepcopy(dict(decision))
+
+    # Semantic isolation is checked before optional-field type validation.
+    # This guarantees that a forbidden scientific meaning cannot be hidden
+    # inside an otherwise malformed generic field such as created_at.
+    forbidden_terms = {
+        "confidence",
+        "evidence_strength",
+        "evidence_gap",
+        "epistemic_status",
+        "truth_status",
+        "truth_probability",
+        "claim_rank",
+        "claim_ranking",
+        "convergence",
+        "convergence_score",
+        "scientific_priority",
+    }
+
+    def find_forbidden(value: Any) -> str | None:
+        if isinstance(value, Mapping):
+            for key, child in value.items():
+                if str(key).strip().casefold() in forbidden_terms:
+                    return str(key)
+                found = find_forbidden(child)
+                if found:
+                    return found
+        elif isinstance(value, list):
+            for child in value:
+                found = find_forbidden(child)
+                if found:
+                    return found
+        return None
+
+    forbidden = find_forbidden(result)
+    if forbidden:
+        raise ValueError(f"forbidden scientific semantic field: {forbidden!r}")
+
     _require_non_empty_string(
         result["research_planning_decision_id"],
         "research_planning_decision_id",
@@ -342,39 +379,6 @@ def validate_research_planning_decision(
             result["acquisition_request_reference"],
             "acquisition_request_reference",
         )
-
-    # These are semantic violations even when expressed under a generic field.
-    forbidden_terms = {
-        "confidence",
-        "evidence_strength",
-        "evidence_gap",
-        "epistemic_status",
-        "truth_status",
-        "truth_probability",
-        "claim_rank",
-        "claim_ranking",
-        "convergence",
-        "scientific_priority",
-    }
-
-    def find_forbidden(value: Any) -> str | None:
-        if isinstance(value, Mapping):
-            for key, child in value.items():
-                if str(key).strip().casefold() in forbidden_terms:
-                    return str(key)
-                found = find_forbidden(child)
-                if found:
-                    return found
-        elif isinstance(value, list):
-            for child in value:
-                found = find_forbidden(child)
-                if found:
-                    return found
-        return None
-
-    forbidden = find_forbidden(result)
-    if forbidden:
-        raise ValueError(f"forbidden scientific semantic field: {forbidden!r}")
 
     return result
 
