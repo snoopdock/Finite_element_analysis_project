@@ -34,6 +34,7 @@ from analysis.oaa_loop import OAALoop
 from analysis.writing_indicator import WritingIndicator
 from analysis.retrieval_event import create_retrieval_event
 from core.retrieval_history_state import append_retrieval_event
+from analysis.retrieval_attention_runtime import process_live_retrieval_attention
 
 from research.reading_tracker import load_reading_state
 from research.evidence import get_reading_summary
@@ -305,6 +306,7 @@ def main():
         )
 
         retrieval_report = state.get("retrieval_report", {})
+        retrieval_event_recorded = False
         try:
             retrieval_event = create_retrieval_event(
                 cycle=int(state.get("cycle", 0)),
@@ -312,6 +314,7 @@ def main():
                 report=retrieval_report,
             )
             if append_retrieval_event(state, retrieval_event):
+                retrieval_event_recorded = True
                 print(
                     "  [Retrieval History] Recorded retrieval event "
                     f"{retrieval_event['event_id']}",
@@ -319,6 +322,33 @@ def main():
                 )
         except Exception as exc:
             errors.append(f"Retrieval history error: {exc}")
+
+        if retrieval_event_recorded:
+            try:
+                attention_runtime_result = process_live_retrieval_attention(
+                    state,
+                    config,
+                )
+                print(
+                    "  [Retrieval Attention] "
+                    f"persisted={attention_runtime_result['persisted_count']} "
+                    f"duplicates={attention_runtime_result['duplicate_count']} "
+                    f"policy={attention_runtime_result['policy_version']}",
+                    file=sys.stderr,
+                )
+            except Exception as exc:
+                errors.append(
+                    f"Retrieval attention processing error: {exc}"
+                )
+                print(
+                    "  [Retrieval Attention] Processing failed; "
+                    "continuing pipeline.",
+                    file=sys.stderr,
+                )
+        else:
+            errors.append(
+                "Retrieval attention processing skipped because the current retrieval event was not recorded."
+            )
 
         if pending_query_items:
             state["last_correction_queries_used"] = pending_query_items
