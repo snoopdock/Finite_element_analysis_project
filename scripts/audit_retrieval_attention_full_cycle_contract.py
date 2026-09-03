@@ -62,9 +62,8 @@ def main() -> int:
     )
     cycle_rules = "\n".join(str(rule) for rule in cycle["rules"])
     check("does not perform retrieval" in cycle_rules, "Full-cycle audit must remain offline.")
-    check("does not perform retrieval" in cycle_rules, "Retrieval execution must remain outside R7C.6.")
-    check("does not execute a recommended acquisition action" in cycle_rules, "Action execution must remain outside R7C.6.")
-    check("does not modify scientific state" in cycle_rules, "Scientific mutation must remain outside R7C.6.")
+    check("No stage executes a recommended acquisition action." in cycle_rules, "Action execution must remain outside R7C.6.")
+    check("No stage modifies scientific state." in cycle_rules, "Scientific mutation must remain outside R7C.6.")
 
     isolation = contract["scientific_isolation"]
     protected = set(isolation["protected_fields"])
