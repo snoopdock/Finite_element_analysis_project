@@ -270,8 +270,8 @@ def main() -> int:
     )
     isolation_rules = "\n".join(str(rule) for rule in isolation["rules"])
     check(
-        "must not be treated as evidence" in isolation_rules,
-        "Lifecycle status must not become evidence.",
+        "operational process facts into evidence or scientific conclusions" in isolation_rules,
+        "Lifecycle status must not promote process facts into evidence or scientific conclusions.",
     )
     check(
         "must not change the scientific graph" in isolation_rules,
