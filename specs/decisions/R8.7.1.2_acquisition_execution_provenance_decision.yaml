@@ -1,0 +1,311 @@
+version: 1
+name: R8.7.1.2_acquisition_execution_provenance_decision
+status: accepted
+title: Acquisition Execution Provenance Decision Record
+objective: >-
+  Record the architectural decision for representing execution-level provenance
+  between an AcquisitionRequest and a concrete downstream acquisition attempt,
+  without changing the existing source-level EvidenceRecord provenance model or
+  introducing runtime implementation at this stage.
+
+context:
+  reconnaissance_finding:
+    source_level_provenance:
+      role: >-
+        Existing EvidenceRecord provenance answers where an evidence record came
+        from by retaining source_id, retrieved_at, query context, provider
+        information, and source metadata.
+    execution_level_provenance:
+      role: >-
+        No authoritative durable object currently represents the causal
+        relationship between an AcquisitionRequest and a specific retrieval
+        execution occurrence.
+      required_question: >-
+        The architecture must be able to distinguish why a retrieval execution
+        occurred, which acquisition request authorized or caused it, and which
+        execution occurrence produced or attempted the resulting acquisition.
+  governing_distinction:
+    rule: >-
+      Source-level provenance and execution-level provenance are separate
+      semantic domains and must not be collapsed into one record.
+    consequences:
+      - EvidenceRecord remains source-level provenance.
+      - AcquisitionRequest remains a planning-to-acquisition request.
+      - An execution occurrence must be represented separately from source records.
+      - A retrieval-cycle report is an operational summary and is not itself the durable execution-provenance model.
+      - Upstream planning identifiers must not be copied into EvidenceRecord merely to create execution traceability.
+
+current_architecture:
+  causal_chain:
+    - ResearchPlanningDecision
+    - AcquisitionRequest
+    - future acquisition execution boundary
+    - retrieval execution occurrence
+    - EvidenceRecord
+  provenance_domains:
+    planning_to_execution:
+      question: >-
+        Why did this acquisition execution occur, and which planning decision
+        produced the AcquisitionRequest?
+      authoritative_objects:
+        - ResearchPlanningDecision
+        - AcquisitionRequest
+        - selected execution provenance object
+    source_provenance:
+      question: >-
+        Where did this evidence record come from?
+      authoritative_object:
+        - EvidenceRecord
+  cardinality_constraint:
+    rule: >-
+      A source may be discovered by multiple acquisition requests or execution
+      occurrences. Therefore a scalar acquisition_request_id on EvidenceRecord
+      would not faithfully represent general provenance.
+    example: >-
+      Request A and Request B may both discover Source S. Source-level evidence
+      provenance must remain accumulative and must not select one upstream request
+      as the sole cause.
+
+options_considered:
+  acquisition_execution_receipt:
+    description: >-
+      Introduce a neutral execution-level process object representing one
+      acquisition execution occurrence or attempt and its relationship to the
+      AcquisitionRequest, before downstream retrieval execution and evidence
+      production.
+    conceptual_model: >-
+      AcquisitionRequest -> AcquisitionExecutionReceipt -> retrieval execution -> EvidenceRecord
+    advantages:
+      - Clear separation between planning request and execution occurrence.
+      - Preserves the existing EvidenceRecord contract as source-level provenance.
+      - Naturally supports multiple execution attempts and retries for one request.
+      - Does not require the repository to introduce a broader RetrievalEvent history model.
+      - Provides a stable target for the future acquisition adapter contract.
+      - Allows execution status and timing to be represented without assigning scientific meaning to operational outcomes.
+    risks:
+      - Introduces one additional process-domain object.
+      - Requires future decisions to define its exact persistence and lifecycle semantics.
+    status: selected
+
+  future_retrieval_event:
+    description: >-
+      Introduce a RetrievalEvent model as the authoritative execution-history
+      abstraction and attach AcquisitionRequest provenance to it.
+    conceptual_model: >-
+      AcquisitionRequest -> RetrievalEvent -> EvidenceRecord
+    advantages:
+      - Reuses terminology established by earlier architectural discussions.
+      - Could eventually support a general retrieval execution-history model.
+    risks:
+      - No authoritative RetrievalEvent object currently exists in the repository.
+      - Introducing it solely for R8 acquisition provenance could expand scope into history, replay, attention, and lifecycle concerns.
+      - Could reopen or unintentionally alter frozen R6-R7 semantic boundaries.
+      - Would require broader decisions before its authority and persistence semantics are safe to assume.
+    status: rejected_for_current_stage
+    reason: >-
+      The current requirement is narrowly to establish acquisition execution
+      provenance, not to introduce a general retrieval event-sourcing model.
+
+  execution_context_provenance_record:
+    description: >-
+      Introduce a separate execution-context record that carries the relationship
+      between AcquisitionRequest and the concrete retrieval execution.
+    conceptual_model: >-
+      AcquisitionRequest -> ExecutionContext -> retrieval execution -> EvidenceRecord
+    advantages:
+      - Minimal impact on the current function-based retrieval implementation.
+      - Avoids introducing a full event-history abstraction.
+    risks:
+      - The term context already has established architectural meanings in other
+        areas, including attention-related context.
+      - Naming may blur whether the object is a transient runtime context or a
+        durable execution occurrence.
+      - Less precise than an explicit receipt when the architecture needs to
+        distinguish an attempt and its outcome.
+    status: rejected_for_current_stage
+    reason: >-
+      The required semantics are execution occurrence and provenance, not a
+      generic execution context. The name AcquisitionExecutionReceipt is more
+      precise and leaves runtime context as an implementation detail.
+
+decision:
+  execution_provenance_model:
+    selected: acquisition_execution_receipt
+    meaning: >-
+      Acquisition execution provenance will be represented by a distinct
+      AcquisitionExecutionReceipt object associated with one AcquisitionRequest
+      and one concrete execution occurrence or attempt.
+  ownership:
+    acquisition_request:
+      domain: planning_to_acquisition_boundary
+      role: >-
+        Specifies that downstream acquisition work is requested and carries the
+        operational constraints needed at the acquisition boundary.
+    acquisition_execution_receipt:
+      domain: execution
+      role: >-
+        Records the occurrence of an acquisition execution attempt and its causal
+        relationship to the AcquisitionRequest.
+    retrieval_execution:
+      domain: retrieval_execution
+      role: >-
+        Performs or attempts the actual retrieval work. It should consume the
+        execution information required by the acquisition boundary without
+        becoming aware of upstream planning semantics.
+    evidence_record:
+      domain: scientific_source_provenance
+      role: >-
+        Represents the resulting source-level evidence and its accumulated source
+        provenance. It does not become an execution receipt or planning record.
+  causal_chain: >-
+    ResearchPlanningDecision -> AcquisitionRequest -> AcquisitionExecutionReceipt
+    -> retrieval execution -> EvidenceRecord
+  retry_semantics: >-
+    Each concrete execution attempt is a distinct execution occurrence. A retry
+    must not overwrite or masquerade as the original execution occurrence.
+  provenance_direction: >-
+    Execution provenance flows downstream from AcquisitionRequest into the
+    execution boundary. Retrieval and EvidenceRecord structures must not infer
+    or reconstruct planning decisions from source-level metadata.
+
+frozen_boundaries:
+  evidence_records:
+    remain_source_level_only: true
+    rules:
+      - Do not add acquisition_request_id as a scalar source-level field merely to represent execution provenance.
+      - Do not replace accumulated query/provider provenance with upstream planning identifiers.
+      - Do not reinterpret EvidenceRecord provenance as authorization or planning provenance.
+  retrieval_report:
+    remains_cycle_summary: true
+    rules:
+      - Do not redefine retrieval_report as an immutable execution event.
+      - Do not make retrieval_report the authoritative durable link between AcquisitionRequest and execution occurrence.
+      - Its existing operational summary role remains unchanged.
+  retrieval_runtime:
+    remains_unaware_of_planning_domain: true
+    rules:
+      - retrieve_evidence_parallel() must not become responsible for AttentionProposal semantics.
+      - retrieve_evidence_parallel() must not become responsible for ResearchPlanningSignal semantics.
+      - retrieve_evidence_parallel() must not become responsible for ResearchPlanningDecision semantics.
+      - retrieve_evidence_parallel() must not become responsible for LifecycleEvent semantics.
+      - retrieve_evidence_parallel() must not become responsible for ScientificAttention or scientific ranking semantics.
+  lifecycle:
+    remains_separate: true
+    rules:
+      - AcquisitionExecutionReceipt does not create LifecycleEvents as an automatic side effect.
+      - Execution success does not imply addressed or closed lifecycle state.
+      - Execution failure does not imply lifecycle state changes.
+
+non_decisions:
+  implementation_scope:
+    - No AcquisitionExecutionReceipt schema is defined by this decision record.
+    - No acquisition adapter is implemented by this decision record.
+    - No changes are made to retrieve_evidence_parallel().
+    - No changes are made to provider implementations.
+    - No changes are made to EvidenceRecord or evidence_contract.yaml.
+    - No changes are made to retrieval_report or its persistence behavior.
+    - No changes are made to main.py or pipeline runtime integration.
+    - No execution persistence mechanism is selected beyond the architectural ownership decision recorded here.
+  semantic_scope:
+    - AcquisitionExecutionReceipt is not a scientific evidence assessment.
+    - AcquisitionExecutionReceipt does not represent confidence, truth, evidence strength, epistemic status, claim ranking, convergence, or scientific importance.
+    - AcquisitionExecutionReceipt does not replace AttentionProposal, ResearchPlanningSignal, ResearchPlanningDecision, LifecycleEvent, or EvidenceRecord.
+  automatic_behavior:
+    - ResearchPlanningDecision does not automatically instantiate an AcquisitionExecutionReceipt.
+    - AcquisitionRequest does not automatically execute retrieval.
+    - Retrieval execution does not automatically create lifecycle transitions.
+    - EvidenceRecord creation does not imply that a specific AcquisitionRequest is its sole upstream cause.
+
+provenance_requirements_for_future_design:
+  acquisition_execution_receipt:
+    must_preserve:
+      - distinct execution identity
+      - originating acquisition_request_id
+      - execution occurrence or attempt identity
+      - operational execution status
+      - execution timing sufficient to distinguish attempts
+      - traceability to the acquisition boundary
+    must_not_assume:
+      - scientific authority
+      - evidence quality
+      - truth status
+      - claim ranking
+      - lifecycle authority
+  relationship_to_evidence:
+    rule: >-
+      A future implementation may associate execution outcomes with resulting
+      evidence without moving planning provenance into EvidenceRecord as a
+      replacement for its existing source-level provenance model.
+    cardinality: >-
+      The model must permit one AcquisitionRequest to produce multiple execution
+      attempts and one execution to produce multiple evidence records. It must
+      also permit a source-level EvidenceRecord to accumulate provenance from
+      multiple executions or requests without losing that information.
+  relationship_to_adapter:
+    rule: >-
+      The future acquisition adapter contract should use AcquisitionExecutionReceipt
+      as the execution-provenance target while translating the semantic
+      AcquisitionRequest into the existing retrieval execution interface.
+
+relationship_to_r8_6:
+  rule: >-
+    R8.7.1.2 preserves the R8.6.2 AcquisitionRequest contract. AcquisitionRequest
+    remains the explicit planning-to-acquisition boundary, while the selected
+    AcquisitionExecutionReceipt represents a later execution occurrence.
+  implication: >-
+    Request creation and execution occurrence remain separate events in the
+    causal chain. A planning decision may formulate a request without implying
+    that execution has occurred.
+
+relationship_to_r8_7_1:
+  rule: >-
+    This decision resolves the open provenance question identified by the R8.7.1
+    adapter design review and R8.7.1.1 reconnaissance.
+  reconnaissance_conclusion: >-
+    Existing source-level provenance is sufficient for EvidenceRecord origin,
+    but it is not sufficient to represent acquisition-level execution provenance.
+
+architectural_consequence:
+  selected_model: >-
+    The architecture now has a designated future execution-provenance owner:
+    AcquisitionExecutionReceipt.
+  resulting_layers:
+    planning_domain:
+      - ResearchPlanningDecision
+      - AcquisitionRequest
+    execution_domain:
+      - AcquisitionExecutionReceipt
+      - retrieval execution
+    source_provenance_domain:
+      - EvidenceRecord
+  next_safe_artifact: >-
+    R8.7.2 may define the Acquisition Adapter Contract against the selected
+    AcquisitionExecutionReceipt model. Adapter implementation remains deferred.
+
+reconsideration_criteria:
+  selected_model_may_be_reconsidered_when:
+    - A concrete repository requirement demonstrates that a general RetrievalEvent history model is needed independently of R8 acquisition provenance.
+    - The broader architecture explicitly defines event authority, persistence, replay, and lifecycle relationships for such a model.
+    - A future design demonstrates that AcquisitionExecutionReceipt cannot preserve required retry, provenance, or execution-attempt semantics.
+    - A superseding decision record explicitly changes the execution-provenance ownership model.
+
+scope:
+  included:
+    - execution-level provenance ownership
+    - comparison of three candidate models
+    - selection of AcquisitionExecutionReceipt
+    - source-level versus execution-level provenance separation
+    - retry and cardinality principles
+    - frozen boundaries
+    - non-decisions
+    - prerequisites for the future adapter contract
+  excluded:
+    - runtime implementation
+    - schema definition
+    - persistence implementation
+    - adapter implementation
+    - retrieval implementation changes
+    - provider implementation changes
+    - evidence contract changes
+    - lifecycle implementation
+    - scientific inference
