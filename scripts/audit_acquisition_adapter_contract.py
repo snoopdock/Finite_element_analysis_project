@@ -36,12 +36,17 @@ def _contains_any(text: str, phrases: tuple[str, ...]) -> bool:
 
 
 def _require(failures: list[str], label: str, condition: bool) -> None:
+    _require.check_count += 1
     if not condition:
         failures.append(label)
 
 
+_require.check_count = 0
+
+
 def main() -> int:
     failures: list[str] = []
+    _require.check_count = 0
 
     if not CONTRACT_PATH.exists():
         print("R8.7.3 AcquisitionAdapter contract audit: FAIL")
@@ -80,7 +85,7 @@ def main() -> int:
             "legacy retrieval interface": ("interface: List[str]", "current_status: existing_interface"),
             "EvidenceRecord remains separate": ("name: EvidenceRecord", "outside the adapter's semantic output boundary"),
         }.items():
-            _require(failures, f"missing boundary invariant: {label!r}", _contains_any(role, phrases))
+            _require(failures, f"missing boundary invariant: {label!r}", all(p in role for p in phrases))
 
     core = _section(text, "core_invariants:", "input_boundary:")
     _require(failures, "core_invariants section missing", bool(core))
@@ -381,17 +386,16 @@ def main() -> int:
         ):
             _require(failures, f"missing R8.7.3 decision linkage: {phrase!r}", phrase in r8)
 
-    # This is the number of invariant assertions executed above. Keep it explicit
-    # and audited here so the PASS count is itself trustworthy.
-    check_count = 117
-
     if failures:
         print("R8.7.3 AcquisitionAdapter contract audit: FAIL")
         for failure in failures:
             print(f"- {failure}")
         return 1
 
-    print(f"R8.7.3 AcquisitionAdapter contract audit: PASS ({check_count}/{check_count} checks passed)")
+    print(
+        f"R8.7.3 AcquisitionAdapter contract audit: PASS "
+        f"({_require.check_count}/{_require.check_count} checks passed)"
+    )
     return 0
 
 
