@@ -1,0 +1,111 @@
+version: 1
+name: retrieval_attention_runtime_contract
+objective: >-
+  Define the live production boundary that invokes the validated R7A-R7C
+  retrieval-attention path after retrieval history is recorded, while keeping
+  attention processing operationally isolated from scientific reasoning and
+  acquisition-action execution.
+
+dependencies:
+  pipeline_adapter:
+    name: retrieval_attention_pipeline
+    role: R7A -> R7B -> R7C composition
+  proposal_persistence:
+    name: retrieval_attention_persistence_contract
+    version: 1
+  full_cycle_contract:
+    name: retrieval_attention_full_cycle_contract
+    version: 1
+
+runtime_boundary:
+  invocation_point:
+    rule: >-
+      The live connector runs only after the current retrieval event has been
+      appended to retrieval_history for the cycle.
+  input:
+    - state
+    - explicit_retrieval_attention_policy_configuration
+  output:
+    - attention_processing_status
+    - policy_version
+    - persisted_count
+    - duplicate_count
+    - evaluation_summary
+  rules:
+    - The runtime connector delegates attention semantics to the existing R7A-R7C layers and introduces no new interpretation logic.
+    - The runtime connector must not perform retrieval or LLM calls.
+    - The runtime connector must not execute recommended acquisition actions.
+    - The runtime connector must not transition proposal lifecycle state.
+
+policy_configuration:
+  required_fields:
+    - policy_version
+    - history_window_events
+    - repeated_non_success_threshold
+    - repeated_empty_result_threshold
+  rules:
+    - Live R7B policy values must come from explicit configuration.
+    - Missing policy configuration is an operational configuration error, not a scientific conclusion.
+    - The runtime connector must not substitute hidden numeric policy defaults for missing configuration.
+
+failure_containment:
+  rules:
+    - An attention-processing exception must remain an operational process error.
+    - The caller must be able to record the error without converting it into evidence absence, scientific uncertainty, or epistemic state.
+    - Attention-processing failure must not trigger action execution or scientific-state mutation.
+    - Existing retrieval history remains the historical record of what occurred before attention processing failed.
+
+state_isolation:
+  allowed_changes:
+    - retrieval_attention_history
+  protected_fields:
+    - retrieval_history
+    - retrieval_report
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+    - knowledge_base
+    - sections
+  rules:
+    - The runtime connector may add persisted attention proposals through R7C only.
+    - It must not rewrite, delete, or replace retrieval events.
+    - It must not modify protected scientific fields.
+
+execution_boundary:
+  prohibited:
+    - automatic_action_execution
+    - lifecycle_transition
+    - scientific_state_mutation
+  future_loop: >-
+    A later action subsystem may consume persisted attention proposals, execute
+    a bounded acquisition action, and create new retrieval-history events.
+    That behavior is outside the live runtime connector.
+
+idempotency:
+  rules:
+    - Re-running the connector against the same retrieval history and policy must produce the same deterministic R7B evaluation.
+    - Existing attention_id values must be handled by R7C idempotent persistence.
+    - Duplicate persistence must not overwrite the original proposal or generated_at value.
+
+scope:
+  included:
+    - live invocation of validated R7A-R7C components
+    - explicit policy configuration
+    - operational failure containment
+    - scientific-state isolation
+    - duplicate-safe proposal persistence
+  excluded:
+    - retrieval execution
+    - LLM calls
+    - lifecycle transitions
+    - action execution
+    - evidence assessment
+    - epistemic inference
+    - ranking changes
+    - convergence changes
+    - writer decisions
