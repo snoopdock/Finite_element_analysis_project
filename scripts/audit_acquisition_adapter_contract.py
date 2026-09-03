@@ -140,41 +140,54 @@ def main() -> int:
         for name, phrases in (
             ("current_input", ("current_input: List[str]",)),
             ("existing_boundary", ("The adapter may invoke the existing retrieval execution boundary",)),
-            ("translation_owner", ("The adapter owns translation", "adapter owns translation")),
+            # Translation ownership is declared in architectural_role and reinforced
+            # by the retrieval-boundary rule. Do not require a specific YAML key name.
+            ("translation_owner", (
+                "The adapter owns translation",
+                "adapter owns translation",
+                "The adapter owns translation into that interface",
+            )),
             ("existing_interface_results", ("return retrieval results through its existing interface",)),
             ("source_provenance_preserved", ("maintain existing source-level evidence provenance",)),
         ):
-            if not _contains_any(retrieval_section, phrases):
+            search_text = retrieval_section if name != "translation_owner" else text
+            if not _contains_any(search_text, phrases):
                 failures.append(f"missing retrieval-boundary rule: {name!r}")
 
-    # Unsupported constraints must not disappear silently.
+    # Unsupported constraints must not disappear silently. These rules are
+    # contract-level semantics of the translation section; tolerate YAML line
+    # wrapping by checking the semantic phrases in the complete contract text.
     constraint_section = _section(text, "translation:", "execution_provenance:")
     if not constraint_section:
         failures.append("unable to inspect translation section")
     else:
-        for phrase in (
-            "must be reported explicitly",
-            "must not be silently ignored",
-            "must not be silently reinterpreted",
-            "query_scope",
-            "supported operational constraints",
+        for name, phrases in (
+            ("explicit_reporting", ("must be reported explicitly",)),
+            ("silent_ignore_rejected", ("must not be silently ignored",)),
+            ("silent_reinterpretation_rejected", ("must not be silently reinterpreted",)),
+            ("query_scope", ("query_scope",)),
+            ("supported_operational_constraints", ("supported operational constraints",)),
         ):
-            if phrase not in constraint_section:
-                failures.append(f"missing constraint-handling rule: {phrase!r}")
+            # Use normalized whitespace so a future YAML formatter can wrap a
+            # prose sentence without causing a false negative.
+            normalized = " ".join(constraint_section.split())
+            if not _contains_any(normalized, phrases):
+                failures.append(f"missing constraint-handling rule: {name!r}")
 
     # Retry semantics must establish distinct immutable occurrences.
     retry_section = _section(text, "failure_and_retry:", "automatic_execution:")
     if not retry_section:
         failures.append("unable to inspect failure_and_retry section")
     else:
+        normalized_retry = " ".join(retry_section.split())
         for name, phrases in (
             ("new_occurrence", ("a new execution occurrence",)),
-            ("new_execution_id", ("new\n    execution_id", "new execution_id")),
+            ("new_execution_id", ("new execution_id",)),
             ("historical_receipts", ("Earlier execution receipts remain historical records",)),
             ("same_request_multiple_receipts", ("Multiple execution receipts may reference the same acquisition_request_id",)),
             ("no_mutating_retry", ("must not be represented by mutating one receipt",)),
         ):
-            if not _contains_any(retry_section, phrases):
+            if not _contains_any(normalized_retry, phrases):
                 failures.append(f"missing retry/provenance rule: {name!r}")
 
     # Operational statuses must remain operational rather than epistemic.
