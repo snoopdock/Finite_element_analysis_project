@@ -10,6 +10,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 ADAPTER = ROOT / "analysis" / "acquisition_adapter.py"
+IMPLEMENTATION_DECISION = ROOT / "specs" / "decisions" / "R8.7.4.0_acquisition_adapter_implementation_decision.yaml"
 
 
 def _source() -> str:
@@ -48,6 +49,32 @@ def main() -> int:
     except Exception as exc:
         print(f"R8.7.4 AcquisitionAdapter audit: FAIL\n- unable to parse adapter: {exc}")
         return 1
+
+    require("R8.7.4.0 implementation decision exists", IMPLEMENTATION_DECISION.is_file())
+    if IMPLEMENTATION_DECISION.is_file():
+        decision = IMPLEMENTATION_DECISION.read_text(encoding="utf-8")
+        normalized_decision = " ".join(decision.split())
+        require(
+            "implementation decision is accepted",
+            "name: R8.7.4.0_acquisition_adapter_implementation_decision" in decision
+            and "status: accepted" in decision,
+        )
+        require(
+            "decision identifies AcquisitionRequest as authoritative input",
+            "authoritative_input: AcquisitionRequest" in normalized_decision,
+        )
+        require(
+            "decision identifies List[str] as legacy representation",
+            "legacy_execution_representation: List[str]" in normalized_decision,
+        )
+        require(
+            "decision identifies AcquisitionExecutionReceipt provenance",
+            "execution_provenance: AcquisitionExecutionReceipt" in normalized_decision,
+        )
+        require(
+            "decision defers integration",
+            "R8.7.4 stops at the explicit adapter boundary." in normalized_decision,
+        )
 
     functions = _functions(tree)
     for name in (
