@@ -1,0 +1,205 @@
+version: 1
+name: R7D.8_lifecycle_authority_decision
+status: accepted
+title: Lifecycle Authority Decision Record
+objective: >-
+  Record the current architectural decision that lifecycle transitions remain
+  an explicitly controlled process rather than an automatically executed runtime
+  behavior. This record establishes the present authority policy without
+  implementing runtime lifecycle control.
+
+context:
+  current_architecture:
+    retrieval_event:
+      role: >-
+        Historical acquisition observation describing retrieval activity and its
+        operational result.
+    attention_proposal:
+      role: >-
+        Canonical deterministic process interpretation produced by R7B from
+        retrieval context under an explicit attention policy.
+    lifecycle_event:
+      role: >-
+        Append-only historical record of an explicitly authorized lifecycle
+        decision for an attention proposal.
+  governing_distinction:
+    rule: >-
+      Observation, interpretation, and lifecycle decision are separate semantic
+      layers and must not be collapsed into one state transition mechanism.
+    consequences:
+      - RetrievalEvent is not a LifecycleEvent.
+      - AttentionProposal is not a LifecycleEvent.
+      - A retrieval observation does not itself authorize lifecycle mutation.
+      - A recommendation does not itself authorize lifecycle mutation.
+      - Acquisition action execution does not itself authorize lifecycle mutation.
+  current_state:
+    - Lifecycle transitions are represented as explicit LifecycleEvents.
+    - Lifecycle history is append-only and replayable.
+    - No subsystem currently has implicit authority to advance lifecycle state.
+    - Attention proposals may remain open indefinitely unless a future explicit policy changes that rule.
+    - R7D.7 defines the runtime boundary but intentionally excludes runtime authority implementation.
+
+decision:
+  lifecycle_authority:
+    mode: controlled_process
+    meaning: >-
+      LifecycleEvent creation requires an explicit lifecycle-authority decision
+      rather than an automatic side effect of retrieval, attention evaluation,
+      persistence, replay, or acquisition-action execution.
+  rationale:
+    - Preserve separation between acquisition facts and lifecycle decisions.
+    - Preserve explicit accountability for process-state changes.
+    - Avoid self-confirming loops in which retrieval behavior implicitly changes the process state that governs retrieval.
+    - Preserve auditability and offline reconstruction of historical lifecycle decisions.
+    - Avoid introducing runtime authority before a concrete workflow demonstrates that it is necessary.
+  operating_rule: >-
+    The repository should remain in controlled-process mode unless a later
+    decision record explicitly supersedes this decision.
+
+controlled_process_model:
+  sequence:
+    - RetrievalEvent records an acquisition observation.
+    - AttentionProposal records the R7B process interpretation when policy conditions warrant attention.
+    - A controlled lifecycle process reviews or otherwise explicitly determines the lifecycle transition.
+    - LifecycleEvent records the authorized lifecycle decision.
+  authority_boundary:
+    - Retrieval subsystem cannot transition lifecycle state merely by producing RetrievalEvents.
+    - R7B attention evaluation cannot transition lifecycle state merely by producing AttentionProposals.
+    - Recommendation metadata cannot act as a transition command.
+    - Acquisition action execution cannot silently create an addressed or closed lifecycle event.
+    - Lifecycle persistence and replay cannot create new lifecycle decisions.
+  allowed_process_characteristics:
+    - Human review may initiate or approve a lifecycle decision.
+    - A future controlled workflow may use a designated system component or authorized agent as the actor, provided explicit authorization exists.
+    - Lifecycle processing may occur synchronously or asynchronously relative to retrieval and acquisition activity.
+
+alternatives_considered:
+  controlled_lifecycle:
+    description: >-
+      Attention proposals are handled through an explicit controlled process,
+      and lifecycle transitions are recorded only when the designated process
+      authority makes the decision.
+    advantages:
+      - Strong provenance and accountability.
+      - Clear separation between observation, interpretation, and process authority.
+      - Easier auditing of transition causes.
+      - Reduced risk of implicit coupling between retrieval behavior and lifecycle state.
+    disadvantages:
+      - Requires explicit process participation.
+      - May introduce latency when lifecycle handling is performed manually.
+
+  automated_lifecycle_authority:
+    description: >-
+      A future authorized runtime component automatically evaluates transition
+      conditions and records LifecycleEvents.
+    potential_advantages:
+      - Faster handling of high-volume lifecycle decisions.
+      - Reduced manual intervention for well-defined workflows.
+      - Potential support for asynchronous autonomous operation.
+    risks:
+      - Accidental or overly broad lifecycle transitions.
+      - Ambiguous accountability when automated and human decisions interact.
+      - Coupling lifecycle decisions to retrieval or action runtime behavior.
+      - Greater complexity for conflict resolution, authorization, audit, and recovery.
+      - Risk that operational conditions become mistaken for lifecycle decisions.
+
+  hybrid_authority:
+    description: >-
+      A future system permits automated proposals or transition requests while
+      retaining explicit authorization for final LifecycleEvent recording.
+    status: deferred
+    reason: >-
+      This may become useful for scale, but no current repository requirement
+      establishes the need for a hybrid workflow. It therefore remains a future
+      design alternative rather than part of the current authority model.
+
+non_decisions:
+  scope_boundary:
+    - No runtime lifecycle authority is implemented by R7D.8.
+    - No actor authorization engine is implemented by R7D.8.
+    - No lifecycle transition endpoint is introduced by R7D.8.
+    - No main.py integration is introduced by R7D.8.
+    - No lifecycle persistence or replay changes are introduced by R7D.8.
+    - No state-schema changes are introduced by R7D.8.
+  forbidden_automatic_behaviors:
+    - RetrievalEvent does not imply open-to-addressed.
+    - Retrieval success does not imply addressed.
+    - Retrieval failure does not imply open, addressed, or closed.
+    - Successful acquisition-action execution does not imply addressed or closed.
+    - Recommended acquisition actions do not execute themselves or create lifecycle transitions.
+    - Absence of retrieval activity does not automatically close an open proposal.
+    - Lifecycle replay does not create new lifecycle events.
+  scientific_boundary:
+    - Lifecycle status remains process metadata, not evidence quality, truth, confidence, uncertainty, or scientific relevance.
+    - Lifecycle decisions must not modify scientific graph state or generated scientific text.
+
+reconsideration_criteria:
+  runtime_authority_may_be_reconsidered_when:
+    - Repeated controlled-process handling becomes a demonstrated operational bottleneck.
+    - A concrete workflow requires low-latency lifecycle transition processing.
+    - Actor identity and authorization semantics are formally specified.
+    - Transition-specific policies are explicit enough to execute deterministically or under a clearly bounded decision protocol.
+    - Conflict handling between human, system-component, and authorized-agent decisions is formally defined.
+    - Failure, retry, idempotency, and audit requirements for automated lifecycle recording are specified.
+    - The proposed runtime can preserve the R7D.7 authority boundary and append-only lifecycle history.
+    - A separate decision record explicitly supersedes this controlled-process decision.
+  evidence_expected_before_change:
+    - Concrete workflow requirement.
+    - Defined authority/authorization model.
+    - Defined transition policy.
+    - Defined audit and provenance guarantees.
+    - Defined failure and conflict semantics.
+
+architectural_consequence:
+  current_model: >-
+    The validated architecture remains RetrievalEvent -> AttentionProposal ->
+    explicit LifecycleEvent, with lifecycle authority residing in a controlled
+    process rather than an automatically executing runtime component.
+  state_of_runtime_authority:
+    implemented: false
+    required_now: false
+  future_change_rule: >-
+    Any move from controlled_process to automated or hybrid authority requires
+    an explicit superseding decision record before implementation begins.
+  contracts_remaining_authoritative:
+    - specs/contracts/retrieval_attention_lifecycle_contract.yaml
+    - specs/contracts/retrieval_attention_lifecycle_persistence_contract.yaml
+    - specs/contracts/retrieval_attention_lifecycle_runtime_boundary_contract.yaml
+
+relationship_to_r7d7:
+  rule: >-
+    R7D.8 selects the controlled-process mode permitted by the R7D.7 runtime
+    boundary. It does not narrow or replace the R7D.7 contract; it records the
+    current architectural choice within that boundary.
+  implication: >-
+    The R7D.7 provision for a future lifecycle-management runtime remains a
+    deferred capability rather than a current implementation requirement.
+
+supersession:
+  status: not_superseded
+  rule: >-
+    This decision remains in force until a later decision record explicitly
+    states that controlled_process is superseded and defines the replacement
+    authority mode and implementation preconditions.
+
+scope:
+  included:
+    - current lifecycle authority mode
+    - architectural rationale
+    - alternatives considered
+    - explicit non-decisions
+    - conditions for reconsideration
+    - current architectural consequences
+    - relationship to R7D.7
+  excluded:
+    - runtime implementation
+    - actor authorization implementation
+    - transition execution
+    - lifecycle persistence changes
+    - lifecycle replay changes
+    - main.py changes
+    - scientific inference
+    - evidence assessment
+    - ranking changes
+    - convergence changes
+    - writer decisions
