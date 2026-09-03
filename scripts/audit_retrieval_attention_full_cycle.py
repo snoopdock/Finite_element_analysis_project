@@ -87,7 +87,7 @@ def main() -> int:
     scientific = _scientific_state()
     state.update(deepcopy(scientific))
     original_state = deepcopy(state)
-    original_retrieval_history = deepcopy(state["retrieval_history"])
+    original_retrieval_events = get_retrieval_history(state)
 
     result = generate_and_persist_retrieval_attention(state, POLICY)
     evaluation = result["evaluation"]
@@ -110,7 +110,7 @@ def main() -> int:
     assert persisted[0]["generated_at"]
 
     # Retrieval history and protected scientific state must remain unchanged.
-    assert state["retrieval_history"] == original_retrieval_history
+    assert get_retrieval_history(state) == original_retrieval_events
     for key, expected in scientific.items():
         assert state[key] == expected, f"Protected state changed: {key}"
 
@@ -188,7 +188,13 @@ def main() -> int:
         assert key not in serialized
 
     # Retrieval history reader remains unchanged after the full cycle.
-    assert get_retrieval_history(state) == original_retrieval_history
+    assert get_retrieval_history(state) == original_retrieval_events
+
+    # The complete top-level state may differ only by the intended persisted
+    # attention proposal history and its persistence metadata.
+    expected_state = deepcopy(original_state)
+    expected_state["retrieval_attention_history"]["proposals"] = persisted_after_repeat
+    assert state == expected_state
 
     print("R7C.6 retrieval attention full-cycle integration audit: PASS")
     return 0
