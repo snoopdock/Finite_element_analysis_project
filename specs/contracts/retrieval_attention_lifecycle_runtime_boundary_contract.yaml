@@ -1,0 +1,242 @@
+version: 1
+name: retrieval_attention_lifecycle_runtime_boundary_contract
+objective: >-
+  Freeze the runtime authority boundary for retrieval-attention lifecycle
+  transitions without implementing runtime lifecycle control, automatic action
+  execution, or scientific-state mutation.
+
+dependencies:
+  lifecycle_contract:
+    name: retrieval_attention_lifecycle_contract
+    version: 1
+  proposal_contract:
+    name: retrieval_attention_proposal_contract
+    version: 1
+  composition_rule: >-
+    R7D.7 constrains how a future runtime may initiate and record lifecycle
+    transitions. It does not change lifecycle semantics, proposal semantics,
+    retrieval-event semantics, persistence semantics, or replay semantics.
+
+core_separation:
+  artifacts:
+    retrieval_event:
+      role: >-
+        Historical acquisition fact recording what retrieval activity actually
+        occurred and what operational result was observed.
+    attention_proposal:
+      role: >-
+        Canonical R7B deterministic process interpretation of retrieval context
+        under an explicit attention policy.
+    lifecycle_event:
+      role: >-
+        Explicit historical record that an authorized lifecycle authority
+        recorded a lifecycle transition for an attention proposal.
+  invariants:
+    - RetrievalEvent is not a LifecycleEvent.
+    - AttentionProposal is not a LifecycleEvent.
+    - Creation of a RetrievalEvent does not itself create a LifecycleEvent.
+    - Creation of a RetrievalEvent does not itself imply any lifecycle transition.
+    - An AttentionProposal recommendation does not itself create a LifecycleEvent.
+    - Execution of a recommended acquisition action does not itself create a LifecycleEvent.
+
+lifecycle_authority:
+  owner: lifecycle_management_layer
+  meaning: >-
+    The lifecycle-management layer is the explicit authority boundary for
+    recording lifecycle transitions. Retrieval, attention evaluation, action
+    execution, persistence, and replay layers do not acquire implicit authority
+    to mutate lifecycle state merely by performing their own responsibilities.
+  authority_rules:
+    - Only the lifecycle authority may cause a lifecycle transition to be recorded as a LifecycleEvent.
+    - A future runtime may expose an interface for lifecycle transition requests, but the interface must preserve this authority boundary.
+    - The lifecycle authority must validate the requested from/to state against the R7D lifecycle contract before recording an event.
+    - The lifecycle authority must not reinterpret a retrieval fact as a lifecycle transition without an explicit lifecycle decision.
+    - No subsystem receives lifecycle authority merely by producing, consuming, or persisting a RetrievalEvent.
+
+transition_initiation:
+  general_rule: >-
+    Every non-initial lifecycle transition requires an explicit lifecycle
+    transition request. The request is a process decision input, not an
+    implicit side effect of retrieval, recommendation, or execution.
+  required_request_semantics:
+    - attention_id
+    - previous_status
+    - new_status
+    - transition_reason
+    - actor_identity
+  request_rules:
+    - The requested from/to pair must be an allowed R7D transition.
+    - The request must identify the attention proposal being transitioned.
+    - The request must state an operational or process-level reason.
+    - The request must identify the actor responsible for initiating or recording the lifecycle decision.
+    - A request that lacks lifecycle authority must not be converted into a LifecycleEvent.
+    - A rejected request must not mutate lifecycle history.
+  initial_open_rule: >-
+    Initial null-to-open lifecycle creation may be recorded when an R7B proposal
+    is created, but the proposal-generation step and lifecycle-event recording
+    remain distinct operations. Proposal creation alone does not require a
+    lifecycle event unless the lifecycle authority elects to record one.
+
+actor_identity:
+  categories:
+    - human
+    - system_component
+    - authorized_agent
+  semantics: >-
+    The actor field identifies the category and identity of the process actor
+    associated with the lifecycle decision. This contract defines identity
+    categories but does not by itself grant transition permission to any
+    category.
+  authorization_boundary: >-
+    Which actor identities are permitted to initiate, approve, or record a
+    particular transition is an authorization-policy concern outside this
+    contract. A future runtime implementation must consult an explicit
+    authorization policy rather than infer permission from actor category alone.
+
+transition_specific_rules:
+  open_to_addressed:
+    requires:
+      - explicit lifecycle transition request
+      - lifecycle authority processing
+      - operational or process-level transition_reason
+    qualifying_response: >-
+      A bounded retrieval/process response must have been executed or explicitly
+      recorded before the lifecycle authority records addressed.
+    retrieval_event_rule: >-
+      A new RetrievalEvent may provide supporting operational evidence for the
+      transition decision, but the RetrievalEvent itself never performs or
+      implies open-to-addressed.
+  open_to_closed:
+    requires:
+      - explicit lifecycle transition request
+      - lifecycle authority processing
+      - governing process policy determining that no further action is currently required
+    rule: >-
+      Closure is a process decision and does not claim scientific resolution,
+      permanent provider recovery, or absence of the historical condition.
+  addressed_to_closed:
+    requires:
+      - explicit lifecycle transition request
+      - lifecycle authority processing
+      - governing process policy determining that the proposal no longer requires lifecycle tracking
+    rule: >-
+      Closure ends lifecycle tracking only; it does not rewrite the historical
+      response or establish a scientific conclusion.
+
+retrieval_boundary:
+  rules:
+    - Retrieval subsystem may create RetrievalEvents as acquisition facts.
+    - Retrieval subsystem must not create LifecycleEvents as a side effect of recording RetrievalEvents.
+    - Retrieval success does not imply addressed.
+    - Retrieval failure does not imply open, addressed, or closed.
+    - Repeated retrieval attempts do not automatically reopen, address, or close a proposal.
+    - A retrieval action may supply input to a later lifecycle decision without becoming the lifecycle decision itself.
+
+attention_boundary:
+  rules:
+    - R7B evaluation may create an AttentionProposal with lifecycle_status open according to the proposal contract.
+    - R7B evaluation must not autonomously advance lifecycle_status to addressed or closed.
+    - recommended_acquisition_action is advisory metadata and is not a lifecycle transition request.
+    - Attention evaluation must not execute the recommended action as a lifecycle side effect.
+
+execution_boundary:
+  rules:
+    - Executing an acquisition action and recording a lifecycle transition are separate operations.
+    - Successful execution of a recommended action does not automatically create an addressed LifecycleEvent.
+    - Runtime action completion may be submitted as input to a later explicit lifecycle decision.
+    - Lifecycle transition recording must not execute a new acquisition action implicitly.
+    - Persistence of a LifecycleEvent must not trigger acquisition, recommendation evaluation, or scientific inference.
+    - Replay of lifecycle history must remain historical reconstruction and must not emit new LifecycleEvents.
+
+asynchronous_semantics:
+  rule: >-
+    Lifecycle transitions are recorded events and may occur asynchronously
+    relative to retrieval acquisition and action execution.
+  requirements:
+    - Acquisition and lifecycle decision processing may be temporally decoupled.
+    - Event ordering must use recorded lifecycle-event provenance and existing replay semantics rather than assuming runtime call order is the historical order.
+    - An asynchronous delay between acquisition and lifecycle recording does not by itself invalidate either event.
+    - Consumers must not infer a transition solely from temporal proximity between a RetrievalEvent and LifecycleEvent.
+
+proposal_lifetime:
+  rule: >-
+    An attention proposal may remain open indefinitely unless a future explicit
+    lifecycle policy introduces an expiration or other bounded-lifetime rule.
+  requirements:
+    - No timeout, expiry, or automatic close is introduced by R7D.7.
+    - Absence of new retrieval activity does not automatically close an open proposal.
+    - A future expiration policy, if introduced, must explicitly authorize its own lifecycle transition mechanism.
+
+reopening_boundary:
+  rule: >-
+    R7D lifecycle semantics do not permit reopening a closed proposal.
+  requirements:
+    - A later materially distinct operational condition must produce a new attention proposal with a new attention_id.
+    - A later RetrievalEvent must not reopen a closed proposal by side effect.
+    - A later recommended action must not reopen a closed proposal by side effect.
+
+recording_authority:
+  lifecycle_event_recording:
+    required_preconditions:
+      - lifecycle authority owns the transition decision
+      - requested transition is allowed by the lifecycle contract
+      - actor identity is recorded
+      - transition reason is recorded
+    result: >-
+      A valid lifecycle decision may be recorded as one append-only
+      LifecycleEvent through the existing lifecycle persistence boundary.
+  failure_behavior: >-
+    Invalid, unauthorized, ambiguous, or policy-incompatible transition
+    requests must fail explicitly and must not overwrite, repair, synthesize,
+    or reinterpret historical lifecycle events.
+
+scientific_isolation:
+  must_not_modify:
+    - retrieval_history
+    - retrieval_report
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+  rules:
+    - Lifecycle runtime authority is process authority, not scientific authority.
+    - A lifecycle decision must not promote operational events into evidence relations.
+    - Lifecycle runtime handling must not modify scientific graph state or generated scientific text.
+
+reproducibility:
+  rules:
+    - Historical lifecycle events remain authoritative records of lifecycle decisions actually recorded.
+    - Runtime policy evolution must not retroactively rewrite prior lifecycle events.
+    - Replay must reconstruct from recorded lifecycle events rather than recomputing transitions from current retrieval or scientific state.
+    - Actor authorization changes may affect future transition requests but must not rewrite historical actor records.
+
+scope:
+  included:
+    - lifecycle authority ownership
+    - transition initiation boundary
+    - actor identity categories
+    - retrieval/lifecycle separation
+    - attention/lifecycle separation
+    - action/lifecycle separation
+    - asynchronous lifecycle semantics
+    - proposal lifetime boundary
+    - reopening boundary
+    - recording preconditions
+    - scientific isolation
+  excluded:
+    - runtime lifecycle adapter implementation
+    - actor authorization policy implementation
+    - automatic action execution
+    - lifecycle persistence implementation
+    - lifecycle replay implementation
+    - retrieval implementation
+    - attention policy implementation
+    - evidence assessment
+    - epistemic inference
+    - ranking changes
+    - convergence changes
+    - writer decisions
