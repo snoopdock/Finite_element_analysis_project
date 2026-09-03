@@ -193,6 +193,6 @@ def test_scientific_semantic_field_is_rejected_even_nested():
                 "decision_type": "prioritize_research",
                 "input_signal_ids": ["RPS1"],
                 "rationale": "process-only",
-                "target": {"query_scope": "x", "nested": {"confidence": 0.1}},
+                "created_at": {"confidence": 0.1},
             }
         )
