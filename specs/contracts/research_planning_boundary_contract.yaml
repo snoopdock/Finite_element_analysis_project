@@ -1,0 +1,362 @@
+version: 1
+name: research_planning_boundary_contract
+status: accepted
+objective: >-
+  Define the minimal semantic boundary for receiving ResearchPlanningSignal and
+  evaluating it as an input to research planning. This contract establishes the
+  planning owner and separates process-condition signals from scientific
+  attention, corrective verification, and acquisition execution.
+
+architectural_role:
+  input_object:
+    name: ResearchPlanningSignal
+    semantic_claim: >-
+      A retrieval/process condition may be relevant to future research planning.
+    authority: planning_input
+  planning_object:
+    name: ResearchPlanningDecision
+    semantic_claim: >-
+      The research planning subsystem has evaluated available planning inputs
+      and recorded a bounded process decision.
+    authority: planning_process
+  scientific_objects:
+    - ScientificAttention
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - ranking
+    - convergence
+    - writing_content
+  acquisition_objects:
+    - RetrievalRequest
+    - RetrievalEvent
+
+core_invariants:
+  - ResearchPlanningSignal is an input, not a decision.
+  - ResearchPlanningSignal does not possess scientific authority.
+  - ResearchPlanningDecision is distinct from ScientificAttention.
+  - Planning evaluation must not reinterpret an operational condition as evidence.
+  - Planning evaluation must not mutate scientific state merely because a signal exists.
+  - Planning evaluation must not execute retrieval directly.
+  - Existing scientific corrective planning remains a separate causal path.
+  - Historical retrieval, attention, and lifecycle records remain immutable.
+  - Absence of a planning decision is not evidence that no scientific issue exists.
+
+planning_owner:
+  owner: research_planning_layer
+  responsibility: >-
+    Evaluate ResearchPlanningSignal inputs against the current research context
+    and decide whether a bounded research-process response is warranted.
+  authority_boundary: >-
+    The planning layer may decide process priority and formulate a future
+    acquisition request, but it does not determine scientific truth or directly
+    execute acquisition.
+  implementation_status: >-
+    This contract defines the owner boundary only. It does not require a runtime
+    planner implementation in this revision.
+
+input_boundary:
+  accepted_object: ResearchPlanningSignal
+  required_source_semantics:
+    - acquisition_constraint
+    - bounded operational condition
+    - operational provenance
+  accepted_sources:
+    - retrieval_attention_translation
+  rejected_as_equivalent:
+    - ScientificAttention
+    - evidence_relation
+    - epistemic_state
+    - corrective_verification_report
+    - retrieval_command
+  input_rules:
+    - The planner must treat the signal as advisory input.
+    - The planner must preserve source identity for traceability.
+    - The planner must not require a scientific conclusion merely because a signal exists.
+    - The planner may ignore a signal when it is not relevant to current planning.
+
+planning_evaluation:
+  purpose: >-
+    Determine whether an operational retrieval condition is relevant to current
+    research-process planning.
+  permitted_considerations:
+    - current research scope
+    - current acquisition strategy
+    - provider availability constraints
+    - existing planning context
+    - existing process priorities
+    - already available acquisition alternatives
+    - scientific context through existing scientific contracts
+  semantic_rules:
+    - Operational difficulty may increase process priority without implying evidence weakness.
+    - Provider failure must not be converted into evidence_gap solely by planning evaluation.
+    - Empty retrieval results must not be interpreted as absence of literature without an independent scientific basis.
+    - A planning priority is not a scientific claim rank.
+    - A planning decision is not an epistemic judgment.
+
+research_planning_decision:
+  identity:
+    required: true
+    field: research_planning_decision_id
+    independence_rule: >-
+      The decision identifier must be distinct from research_planning_signal_id,
+      attention_id, RetrievalEvent identifiers, and LifecycleEvent identifiers.
+  required_fields:
+    - research_planning_decision_id
+    - decision_type
+    - input_signal_ids
+    - rationale
+  optional_fields:
+    - target
+    - priority
+    - created_at
+    - planner_version
+    - acquisition_request_reference
+  allowed_decision_types:
+    - no_action
+    - defer
+    - prioritize_research
+    - formulate_acquisition_request
+  decision_semantics:
+    no_action: >-
+      The planner evaluated the available signal and determined that no additional
+      planning response is currently warranted.
+    defer: >-
+      The planner retains the signal as relevant but determines that response can
+      be considered later under the applicable process policy.
+    prioritize_research: >-
+      The planner raises process priority for relevant research work without
+      directly modifying scientific truth, evidence strength, or epistemic state.
+    formulate_acquisition_request: >-
+      The planner has decided that a separate acquisition request should be
+      formulated under an acquisition contract. This decision does not execute
+      retrieval.
+
+traceability:
+  input_references:
+    required: true
+    field: input_signal_ids
+    rules:
+      - Every referenced signal must be identifiable in the planning input history.
+      - Signal references must not be copied into scientific evidence relations merely by planning evaluation.
+      - Planning must preserve enough references to reconstruct why the decision was made.
+  source_chain: >-
+    The intended trace is ResearchPlanningDecision -> ResearchPlanningSignal ->
+    AttentionProposal -> RetrievalEvent(s). Planning must not sever this chain or
+    replace operational provenance with scientific evidence provenance.
+
+priority:
+  meaning: >-
+    Priority expresses process-planning relevance only. It is not evidence
+    strength, scientific importance, claim ranking, epistemic confidence, or
+    convergence.
+  optional: true
+  bounds:
+    minimum: 0.0
+    maximum: 1.0
+  forbidden_reinterpretations:
+    - evidence_strength
+    - confidence
+    - scientific_priority
+    - claim_rank
+    - convergence_score
+
+acquisition_boundary:
+  planner_may:
+    - identify that additional acquisition planning may be useful
+    - formulate a future acquisition request through a separate contract
+    - select among already-defined acquisition alternatives
+  planner_may_not:
+    - execute retrieval
+    - call a retrieval provider directly as a side effect of evaluation
+    - rewrite RetrievalEvent history
+    - rewrite AttentionProposal history
+    - create LifecycleEvents as a side effect of signal evaluation
+  request_rule: >-
+    If acquisition is warranted, planning produces or delegates to a distinct
+    acquisition request object. Retrieval execution remains downstream and must
+    produce new RetrievalEvent records rather than modifying historical records.
+
+relationship_to_existing_planning_paths:
+  correction_planner:
+    status: separate
+    semantic_path: >-
+      Scientific verification feedback -> corrective planning -> targeted evidence query.
+    rule: >-
+      ResearchPlanningSignal must not be silently injected into correction_planner
+      as though it were an insufficient-evidence report.
+  gap_detector:
+    status: separate
+    semantic_path: >-
+      Scientific/content analysis -> detected topic gap -> research query.
+    rule: >-
+      ResearchPlanningSignal must not be silently converted into a scientific gap.
+  writing_decision_policy:
+    status: downstream_and_separate
+    semantic_path: >-
+      Scientific/writing context -> writing priority -> section/model scheduling.
+    rule: >-
+      Research planning priority must not be treated as writing priority without
+      an explicit downstream contract.
+  scientific_attention:
+    status: downstream_and_separate
+    semantic_path: >-
+      Scientific object analysis -> ScientificAttention -> scientific scheduling.
+    rule: >-
+      ResearchPlanningSignal may inform planning that later invokes existing
+      scientific mechanisms, but translation/evaluation itself must not create or
+      mutate ScientificAttention.
+
+scientific_isolation:
+  prohibited_direct_mutations:
+    - ScientificAttention
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+    - knowledge_base
+    - sections
+  prohibited_semantic_conversions:
+    provider_failure_to_evidence_gap: true
+    empty_result_to_literature_absence: true
+    planning_priority_to_claim_rank: true
+    planning_decision_to_epistemic_status: true
+    signal_existence_to_scientific_evidence: true
+  rule: >-
+    Any scientific-state change that follows a planning decision must occur through
+    an existing scientific contract with its own authority and evidence basis.
+
+lifecycle_isolation:
+  rules:
+    - Planning evaluation does not reuse R7D lifecycle semantics.
+    - Planning evaluation does not advance or close AttentionProposal lifecycle state.
+    - Planning evaluation does not create LifecycleEvents merely because a signal was received.
+    - Lifecycle history remains authoritative historical process data.
+
+immutability:
+  rules:
+    - ResearchPlanningSignal records are not rewritten as a consequence of evaluation.
+    - AttentionProposal records are not rewritten as a consequence of evaluation.
+    - RetrievalEvent records are not rewritten as a consequence of evaluation.
+    - LifecycleEvent records are not rewritten as a consequence of evaluation.
+    - A new planning policy version may produce a new decision rather than retroactively changing historical decisions.
+
+persistence:
+  status: future_boundary
+  requirements:
+    - Planning inputs and decisions should be persistable independently from retrieval and lifecycle history.
+    - Persistence must preserve decision identity and input signal references.
+    - Duplicate identical decision writes should be idempotent if a future persistence contract adopts this behavior.
+    - Conflicting reuse of a decision identifier must fail as an integrity error.
+  exclusion: >-
+    This contract does not define a concrete state key, adapter, or replay format;
+    those require a separate persistence contract.
+
+runtime_boundary:
+  current_scope:
+    - accept planning signals as inputs
+    - evaluate them under an explicit planning policy
+    - record a bounded planning decision when a future implementation exists
+  excluded:
+    - automatic runtime integration
+    - retrieval execution
+    - network calls
+    - LLM calls required merely to translate or validate the boundary
+    - scientific-state mutation
+    - lifecycle mutation
+  controlled_process_rule: >-
+    Until a future decision explicitly authorizes runtime planning authority, this
+    boundary remains a contract-level process interface and does not authorize
+    automatic acquisition or scientific-state transitions.
+
+validation:
+  input:
+    required_signal_identity: true
+    required_source_attention_reference: true
+    required_operational_provenance: true
+    forbidden_scientific_fields_rejected: true
+  decision:
+    decision_type_must_be_defined: true
+    input_signal_ids_must_be_traceable: true
+    rationale_must_be_present: true
+    priority_if_present_must_be_bounded: true
+    acquisition_request_must_not_equal_execution: true
+  integrity_failure_rule: >-
+    Invalid, ambiguous, provenance-incomplete, or semantically overreaching
+    planning inputs or decisions must fail explicitly rather than being repaired
+    through inferred scientific meaning.
+
+example:
+  input_signal:
+    research_planning_signal_id: RPS12
+    source_attention_id: A12
+    signal_type: acquisition_constraint
+    target:
+      query_scope: weak_form_galerkin_fem
+    acquisition_constraint:
+      provider_access_limitation: true
+      provider: semantic_scholar
+    provenance:
+      supporting_event_ids:
+        - E12
+        - E13
+  valid_decision:
+    research_planning_decision_id: RPD12
+    decision_type: formulate_acquisition_request
+    input_signal_ids:
+      - RPS12
+    rationale: >-
+      The provider limitation is relevant to the current acquisition strategy;
+      an alternative acquisition route should be considered.
+  forbidden_decision:
+    research_planning_decision_id: RPD13
+    decision_type: prioritize_research
+    rationale: >-
+      Semantic Scholar failed, therefore the literature is insufficient and the
+      proposition confidence must be reduced.
+    scientific_mutations:
+      evidence_gap: true
+      confidence: 0.2
+
+relationship_to_r8_1:
+  rule: >-
+    This contract defines the receiving planning boundary authorized by R8.1. It
+    does not alter the ResearchPlanningSignal semantic contract and does not add
+    runtime integration, persistence, scientific mutation, or acquisition execution.
+  preserved_decisions:
+    - ResearchPlanningSignal is distinct from AttentionProposal.
+    - ResearchPlanningSignal is distinct from ScientificAttention.
+    - Translation is explicit and lossy.
+    - Planning evaluates the signal rather than obeying it.
+    - Scientific authority remains downstream and explicit.
+
+scope:
+  included:
+    - planning owner
+    - input boundary
+    - planning evaluation semantics
+    - ResearchPlanningDecision boundary
+    - traceability
+    - priority semantics
+    - acquisition boundary
+    - separation from existing planning-like paths
+    - scientific isolation
+    - lifecycle isolation
+    - immutability
+    - future persistence requirements
+    - runtime boundary
+    - validation
+  excluded:
+    - planner implementation
+    - planner persistence implementation
+    - planner replay implementation
+    - runtime integration
+    - acquisition execution
+    - ScientificAttention changes
+    - correction planner changes
+    - gap detector changes
+    - writer changes
