@@ -1,0 +1,126 @@
+version: 1
+name: retrieval_attention_full_cycle_contract
+objective: >-
+  Define the offline full-cycle integration boundary for the validated R6-R7C
+  retrieval-attention subsystem. The cycle composes persisted retrieval
+  history, R7A context construction, R7B policy interpretation, and R7C
+  proposal persistence without invoking retrieval, LLMs, action execution,
+  lifecycle transitions, or scientific-state mutation.
+
+dependencies:
+  retrieval_history_state:
+    name: retrieval_history_state
+    role: immutable retrieval acquisition history input
+  attention_context:
+    name: retrieval_attention_context
+    version: 1
+  attention_policy:
+    name: retrieval_attention_policy
+    version: 1
+  attention_proposal:
+    name: retrieval_attention_proposal_contract
+    version: 1
+  attention_persistence:
+    name: retrieval_attention_persistence_contract
+    version: 1
+  pipeline_adapter:
+    name: retrieval_attention_pipeline
+    role: R7A -> R7B -> R7C composition only
+
+cycle_boundary:
+  ordered_stages:
+    - retrieve_history_input
+    - build_r7a_context
+    - evaluate_r7b_policy
+    - persist_r7c_proposals
+  rules:
+    - The full-cycle adapter consumes recorded retrieval history; it does not perform retrieval.
+    - R7A remains read-only normalization.
+    - R7B remains deterministic policy interpretation.
+    - R7C remains append-only proposal persistence.
+    - No stage executes a recommended acquisition action.
+    - No stage performs lifecycle transitions.
+    - No stage modifies scientific state.
+
+scientific_isolation:
+  protected_fields:
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+    - knowledge_base
+    - sections
+  rules:
+    - Protected scientific fields must be byte-for-byte equivalent in semantic content before and after the offline attention cycle.
+    - Retrieval history may be read but must not be rewritten by attention evaluation.
+    - Adding persisted attention proposals is the only intended state mutation in a cycle that generates attention.
+    - A cycle that generates no attention proposals must not create or mutate the attention-history container.
+
+attention_state_rules:
+  proposal_generation:
+    - Every persisted proposal must originate from the R7B evaluation result for the same cycle input.
+    - New proposals begin with lifecycle_status open.
+    - Supporting retrieval event IDs must remain unchanged.
+  no_attention:
+    - If R7B produces zero attention items, attention proposal persistence must not mutate state.
+  idempotency:
+    - Repeating the same R7B proposal against existing attention history must not create a duplicate proposal.
+    - Existing proposal content and generated_at must remain unchanged on duplicate persistence.
+
+reproducibility:
+  deterministic_core:
+    - attention_id
+    - policy_version
+    - query_scope
+    - provider
+    - attention_reason
+    - observed_condition
+    - lifecycle_status
+    - supporting_event_ids
+    - recommended_acquisition_action
+  rules:
+    - The same retrieval history plus the same explicit policy values/version must reproduce the same deterministic proposal core.
+    - Persistence generated_at may differ for newly persisted proposals but must not change the deterministic proposal core.
+    - A repeated persistence attempt for an existing attention_id must preserve the original persisted proposal and timestamp.
+
+provenance:
+  rules:
+    - Every proposal must remain traceable to supporting retrieval event IDs.
+    - Replay of a persisted proposal must remain possible without network access or an LLM call.
+    - Full-cycle composition must not manufacture query/provider associations absent from R7A context.
+
+execution_boundary:
+  prohibited:
+    - automatic_action_execution
+    - lifecycle_transition
+    - retrieval_history_mutation
+    - scientific_state_mutation
+  required_future_loop: >-
+    A later action subsystem may consume a persisted proposal, execute a bounded
+    acquisition action, and create new retrieval-history events. That behavior is
+    outside this full-cycle integration contract.
+
+scope:
+  included:
+    - offline R7A-R7B-R7C composition
+    - attention proposal persistence
+    - no-attention behavior
+    - duplicate persistence behavior
+    - scientific-state isolation
+    - deterministic-core reproducibility
+    - supporting-event traceability
+  excluded:
+    - network retrieval
+    - LLM calls
+    - action selection beyond R7B recommendation
+    - action execution
+    - lifecycle transitions
+    - evidence assessment
+    - epistemic inference
+    - ranking changes
+    - convergence changes
+    - writer decisions
