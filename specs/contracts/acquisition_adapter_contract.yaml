@@ -1,12 +1,13 @@
 version: 1
 name: acquisition_adapter_contract
-status: draft
+status: accepted
 objective: >-
-  Define the minimal semantic boundary for translating an explicitly created
+  Define the semantic boundary for translating an explicitly created
   AcquisitionRequest into downstream acquisition execution while producing
   acquisition-level execution provenance through an AcquisitionExecutionReceipt.
-  This contract does not implement retrieval, alter EvidenceRecord semantics,
-  or grant planning, scientific, or lifecycle authority to the adapter.
+  The AcquisitionRequest is the authoritative semantic model. Translation into
+  the existing retrieval representation is deliberately lossy when necessary,
+  but semantic loss must be explicit, bounded, and observable.
 
 architectural_role:
   input_object:
@@ -27,8 +28,8 @@ architectural_role:
     authority: acquisition_execution_history
     semantic_claim: >-
       A durable or durably representable record of one acquisition execution
-      occurrence, including its relationship to the AcquisitionRequest and its
-      operational outcome.
+      occurrence, including its relationship to the AcquisitionRequest, its
+      operational outcome, and material translation loss.
   retrieval_execution:
     interface: List[str]
     current_status: existing_interface
@@ -44,6 +45,7 @@ architectural_role:
       outside the adapter's semantic output boundary.
 
 core_invariants:
+  - AcquisitionRequest is the authoritative semantic model at this boundary.
   - AcquisitionAdapter consumes AcquisitionRequest, not upstream planning or scientific objects.
   - AcquisitionAdapter produces AcquisitionExecutionReceipt for each execution occurrence.
   - AcquisitionRequest remains distinct from AcquisitionExecutionReceipt.
@@ -54,6 +56,8 @@ core_invariants:
   - AcquisitionAdapter does not modify historical planning, request, attention, or execution records.
   - Existing retrieve_evidence_parallel(List[str]) semantics remain unchanged by this contract.
   - Request execution is explicit; adapter execution is not an automatic side effect of planning evaluation.
+  - Semantic fidelity has priority over representation completeness.
+  - Loss of representation is acceptable only when the loss is explicit and observable.
 
 input_boundary:
   accepted_object:
@@ -72,33 +76,161 @@ input_boundary:
     Upstream objects remain traceable through the AcquisitionRequest origin and
     must not be supplied to the adapter as an alternative execution input.
 
+semantic_authority:
+  authoritative_model: AcquisitionRequest
+  legacy_representation: List[str]
+  rule: >-
+    The legacy execution representation is not an authoritative semantic model.
+    It exists only because the current retrieval runtime accepts query strings.
+    New architecture must not be constrained to fields that happen to fit the
+    legacy representation.
+  fidelity_order:
+    - preserve semantic meaning
+    - preserve provenance
+    - preserve operational constraints when representable
+    - preserve structural detail only when available
+
 translation:
   responsibility: >-
     Translate the semantic target and supported operational constraints of an
     AcquisitionRequest into the existing retrieval execution representation.
   current_retrieval_shape:
     input: List[str]
-  allowed_translation:
-    - normalize AcquisitionRequest.target.query_scope into executable query strings
-    - apply supported provider preferences or access constraints where the existing execution boundary can represent them
-    - apply supported execution limits where the existing execution boundary can represent them
-    - preserve process execution priority as adapter scheduling metadata without converting it into scientific priority
+  mode: lossy_by_design
+  intermediate_model:
+    conceptual_name: AcquisitionExecutionProjection
+    persistence: not_required_by_this_contract
+    semantic_role: >-
+      A precise internal translation result used to determine which source
+      semantics are preserved, translated, degraded, or unrepresentable before
+      producing the legacy execution representation. It is not a new authority.
+  translation_classes:
+    preserved:
+      meaning: >-
+        Source meaning remains available without reinterpretation at the
+        execution boundary.
+    translated:
+      meaning: >-
+        Equivalent source meaning is expressed using a different representation
+        required by the legacy execution interface.
+    degraded:
+      meaning: >-
+        Only a bounded subset of the source representation can be carried. The
+        exact loss must be identified and must not change the retained meaning.
+    unrepresentable:
+      meaning: >-
+        The target interface cannot express the source semantic element. It must
+        not be silently discarded or falsely reported as enforced.
+  stages:
+    - validate AcquisitionRequest against its own contract
+    - construct a precise semantic projection
+    - classify material fields as preserved, translated, degraded, or unrepresentable
+    - produce legacy execution representation from the representable projection
+    - preserve material translation loss as execution provenance
+    - invoke the existing retrieval interface
   structural_loss_boundary: >-
     Conversion from the structured AcquisitionRequest into List[str] is an
     explicit adapter responsibility. The retrieval function must not be required
     to reconstruct the AcquisitionRequest from query strings.
+  allowed_translation:
+    - normalize AcquisitionRequest.target.query_scope into executable query strings
+    - apply supported provider preferences or access constraints where the existing execution boundary can represent them
+    - apply supported execution limits where the existing execution boundary can represent them exactly
+    - preserve process execution priority as adapter/process metadata without converting it into scientific priority
+  translation_truthfulness: >-
+    The adapter must distinguish requested semantics from semantics actually
+    representable or enforceable by the downstream interface. Similar-looking
+    legacy parameters must not be treated as semantic equivalents without an
+    explicit equivalence rule.
   unsupported_constraints:
     rule: >-
       Operational constraints that cannot be represented or enforced by the
-      current retrieval interface must be reported explicitly. They must not be
-      silently ignored, silently reinterpreted, or converted into scientific
-      semantics.
+      current retrieval interface must be classified as unrepresentable and
+      reported explicitly. They must not be silently ignored, silently
+      reinterpreted, or converted into scientific semantics.
+  loss_reporting:
+    required: true
+    rule: >-
+      Every material degraded or unrepresentable request element encountered
+      during execution must be observable through acquisition execution
+      provenance. Translation loss describes adapter limitations, not scientific
+      weakness or evidence quality.
   prohibited_translation:
+    - encode provider preferences into query text merely to imitate provider selection
+    - encode provider access restrictions into query text merely to imitate enforcement
+    - map unrelated numeric parameters solely because both represent quantities or limits
     - convert process priority into scientific priority
     - convert provider failure into evidence weakness
     - convert empty results into literature absence
     - convert operational constraints into epistemic claims
     - attach planning objects to EvidenceRecord solely to preserve execution provenance
+
+field_translation:
+  target_query_scope:
+    source: AcquisitionRequest.target.query_scope
+    target: List[str]
+    class: translated
+    rule: >-
+      query_scope is the primary executable projection in this contract. The
+      adapter may produce one or more concrete query strings from the request
+      scope, but may not add scientific claims or provider directives that are
+      absent from the source semantics.
+  provider_preferences:
+    source: AcquisitionRequest.constraints.provider_preferences
+    current_target_support: unavailable
+    class_when_unrepresentable: unrepresentable
+    rule: >-
+      Provider preferences must not be encoded into query text. When the current
+      retrieval interface cannot represent the preference, the limitation is
+      recorded and execution proceeds without claiming provider selection was
+      enforced.
+  provider_access_constraints:
+    source: AcquisitionRequest.constraints.provider_access_constraints
+    current_target_support: unavailable
+    class_when_unrepresentable: unrepresentable
+    rule: >-
+      Provider-access restrictions must not be converted into query semantics.
+      When the current interface cannot enforce a restriction, the adapter
+      records the limitation and must not report the restriction as honored.
+  execution_limits:
+    source: AcquisitionRequest.constraints.execution_limits
+    current_target_support: partial_or_unknown
+    rule: >-
+      An execution limit may be translated only when the current retrieval
+      boundary exposes an exact semantic equivalent. A similar-looking legacy
+      parameter is not an equivalent merely because its value is numeric.
+      Otherwise the limit is recorded as unrepresentable.
+  process_priority:
+    source: AcquisitionRequest.priority
+    current_target_support: adapter_metadata
+    class: preserved
+    rule: >-
+      Process execution priority remains process metadata at the adapter
+      boundary. It must not affect scientific ranking, evidence weighting, claim
+      priority, or scientific relevance.
+
+execution_policy:
+  lossy_execution_allowed: true
+  rule: >-
+    This contract favors useful execution through a known lossy projection over
+    forcing the legacy interface to pretend it supports semantics it cannot
+    represent.
+  unsupported_constraint_behavior:
+    rule: >-
+      An unrepresentable operational constraint does not automatically invalidate
+      the entire AcquisitionRequest. The adapter may continue with the supported
+      projection when execution remains semantically safe, while recording the
+      exact translation loss and never claiming the unsupported constraint was
+      applied.
+    exception_rule: >-
+      A future AcquisitionRequest vocabulary may explicitly mark a constraint as
+      execution-mandatory. That future contract may require pre-execution
+      rejection; this contract does not invent that vocabulary implicitly.
+  empty_projection:
+    rule: >-
+      If translation yields no valid executable query input, retrieval execution
+      must not be invoked merely to manufacture an outcome. The adapter must
+      return an explicit translation/execution failure provenance result.
 
 execution_provenance:
   output_object: AcquisitionExecutionReceipt
@@ -119,17 +251,11 @@ execution_provenance:
     Each execution attempt is a separate occurrence. A retry creates a new
     AcquisitionExecutionReceipt and must not overwrite the receipt of an earlier
     attempt.
-  example_retry_sequence:
-    - acquisition_request_id: AR1
-      execution_id: EX1
-      execution_status: failure
-    - acquisition_request_id: AR1
-      execution_id: EX2
-      execution_status: success
-  immutable_occurrence_rule: >-
-    Once an execution receipt represents a completed execution occurrence, its
-    historical identity and causal relationship must not be rewritten to merge it
-    with another execution occurrence.
+  translation_provenance:
+    required: true
+    rule: >-
+      The receipt records material translation loss and the distinction between
+      requested semantics and semantics actually represented at execution.
 
 receipt_fields:
   required:
@@ -139,10 +265,21 @@ receipt_fields:
     - completed_at
     - execution_status
   optional:
+    - translation_policy_version
+    - translation_results
+    - translation_losses
     - execution_constraints_applied
     - generated_query_inputs
     - provider_execution_summary
     - error_summary
+  translation_results:
+    semantic_role: >-
+      Per-field classification of preserved, translated, degraded, or
+      unrepresentable source semantics.
+  translation_losses:
+    semantic_role: >-
+      Material degraded or unrepresentable elements retained for execution
+      provenance and auditability.
   execution_status:
     allowed_values:
       - success
@@ -158,7 +295,7 @@ receipt_fields:
   generated_query_inputs:
     semantic_role: >-
       Query strings or equivalent execution inputs generated by the adapter from
-      the AcquisitionRequest. They document the adapter translation rather than
+      the AcquisitionRequest. They document adapter translation rather than
       scientific conclusions.
   provider_execution_summary:
     semantic_role: >-
@@ -188,6 +325,7 @@ relationship_to_evidence:
     - redefine EvidenceRecord as an execution receipt
     - reinterpret source-level provider/query provenance as request causality
     - require EvidenceRecord to represent failed executions with no source result
+    - store translation loss in EvidenceRecord as scientific or source provenance
 
 relationship_to_retrieval_runtime:
   current_function: retrieve_evidence_parallel
@@ -200,6 +338,8 @@ relationship_to_retrieval_runtime:
   responsibility_split:
     acquisition_adapter:
       - validate accepted AcquisitionRequest semantics
+      - build a precise semantic projection
+      - classify translation loss
       - translate query_scope and supported operational constraints
       - invoke downstream retrieval execution through the existing interface
       - capture execution timing and operational outcome
@@ -234,6 +374,9 @@ execution_status_semantics:
     - empty_result != evidence_gap
     - rate_limited != evidence_weakness
     - partial_failure != scientific_disagreement
+    - translation_loss != evidence_weakness
+    - translation_loss != evidence_gap
+    - translation_loss != claim_uncertainty
 
 authority_isolation:
   planning:
@@ -280,6 +423,10 @@ failure_and_retry:
   no_merge_rule: >-
     Retries must not be represented by mutating one receipt to contain multiple
     execution occurrences.
+  translation_history_rule: >-
+    A later retrieval interface with richer semantic support may reduce future
+    translation loss, but it must not rewrite what was unrepresentable during an
+    earlier execution occurrence.
 
 automatic_execution:
   planning_boundary: >-
@@ -299,6 +446,7 @@ lifecycle_isolation:
     - Execution success does not imply addressed or closed lifecycle state.
     - Execution failure does not imply open, addressed, or closed lifecycle state.
     - Execution retry does not reopen or alter lifecycle state.
+    - Translation loss does not imply lifecycle state.
     - AcquisitionAdapter has no lifecycle transition authority.
 
 persistence:
@@ -308,6 +456,7 @@ persistence:
     - execution_id must uniquely identify one execution occurrence within its persistence scope.
     - acquisition_request_id must preserve the causal relationship to the executed request.
     - Historical receipts must remain independently addressable for audit and retry reconstruction.
+    - Material translation loss should remain available for later audit of execution fidelity.
   excluded:
     - concrete storage key
     - database implementation
@@ -321,14 +470,22 @@ validation:
     scientific_objects_rejected: true
     lifecycle_objects_rejected: true
   translation:
+    authoritative_model_is_AcquisitionRequest: true
+    legacy_representation_is_List[str]: true
+    lossy_translation_allowed: true
+    translation_classification_required: true
+    material_translation_loss_reported: true
     unsupported_constraints_reported: true
     silent_constraint_loss_rejected: true
+    silent_reinterpretation_rejected: true
     query_translation_explicit: true
+    false_enforcement_claims_rejected: true
   receipt:
     execution_id_required: true
     acquisition_request_id_required: true
     execution_status_required: true
     retry_creates_new_execution_id: true
+    translation_provenance_required: true
     operational_semantics_only: true
   separation:
     evidence_remains_source_level: true
@@ -339,17 +496,14 @@ validation:
     lifecycle_authority_excluded: true
 
 non_decisions:
-  - No AcquisitionAdapter implementation is introduced by this contract.
-  - No changes to retrieve_evidence_parallel are introduced by this contract.
-  - No provider-layer changes are introduced by this contract.
+  - No provider-layer redesign is introduced by this contract.
   - No EvidenceRecord schema changes are introduced by this contract.
-  - No AcquisitionExecutionReceipt runtime persistence is introduced by this contract.
-  - No RetrievalEvent model is introduced by this contract.
-  - No main.py integration is introduced by this contract.
-  - No pending_evidence_queries integration is introduced by this contract.
-  - No automatic retrieval execution is introduced by this contract.
+  - No RetrievalEvent model is required by this contract.
+  - No main.py integration is required by this contract.
+  - No pending_evidence_queries integration is required by this contract.
   - No scientific interpretation is introduced by this contract.
   - No lifecycle transition is introduced by this contract.
+  - No requirement is introduced for the legacy retrieval interface to reconstruct AcquisitionRequest semantics.
 
 relationship_to_r8_6_2:
   rule: >-
@@ -358,11 +512,13 @@ relationship_to_r8_6_2:
     and execution-provenance boundary without changing the AcquisitionRequest
     contract.
   preserved_decisions:
-    - AcquisitionRequest is distinct from ResearchPlanningDecision.
-    - Request creation is explicit and not automatic planner behavior.
+    - AcquisitionRequest is a distinct process object.
+    - Origin is through ResearchPlanningDecision rather than duplicated upstream provenance.
     - query_scope is the minimal target vocabulary.
-    - Operational constraints are not scientific semantics.
-    - Process priority remains process execution priority.
+    - Operational constraints govern acquisition attempts, not scientific interpretation.
+    - Priority is process execution priority only.
+    - Request creation is an explicit boundary and is not automatic planner behavior.
+    - Retrieval execution remains downstream of the request.
 
 relationship_to_r8_7_1_2:
   rule: >-
@@ -375,11 +531,25 @@ relationship_to_r8_7_1_2:
     - Retries create new execution receipts.
     - Retrieval runtime remains unaware of upstream planning semantics.
 
+relationship_to_r8_7_3:
+  rule: >-
+    This contract freezes the R8.7.3 decision that AcquisitionRequest is the
+    authoritative semantic model and translation into List[str] is a deliberate
+    lossy projection rather than a semantic collapse.
+  preserved_decisions:
+    - Semantic fidelity has priority over representation completeness.
+    - query_scope is concretely projected into legacy query inputs.
+    - Material translation loss is explicitly classified and observable.
+    - Unsupported constraints are not falsely reported as enforced.
+    - The adapter remains replaceable when the retrieval interface becomes richer.
+
 scope:
   included:
     - adapter semantic role
+    - authoritative semantic model
+    - bounded lossy translation
+    - translation classification and loss reporting
     - input boundary
-    - translation responsibility
     - existing retrieval interface boundary
     - execution receipt relationship
     - execution status semantics
@@ -391,7 +561,7 @@ scope:
     - validation requirements
   excluded:
     - adapter implementation
-    - retrieval implementation
+    - retrieval implementation changes
     - provider redesign
     - EvidenceRecord redesign
     - RetrievalEvent design
