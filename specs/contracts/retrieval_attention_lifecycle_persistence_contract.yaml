@@ -1,0 +1,173 @@
+version: 1
+name: retrieval_attention_lifecycle_persistence_contract
+objective: >-
+  Define persistence semantics for retrieval-attention lifecycle events while
+  preserving append-only provenance, event identity integrity, proposal
+  separation, offline replayability, and scientific isolation.
+
+dependencies:
+  lifecycle_contract:
+    name: retrieval_attention_lifecycle_contract
+    version: 1
+  lifecycle_event_model:
+    module: analysis/retrieval_attention_lifecycle.py
+  composition_rule: >-
+    R7D.3 persists lifecycle events defined by R7D.1/R7D.2. Persistence stores
+    lifecycle history; it does not redefine lifecycle semantics, mutate the
+    canonical AttentionProposal, or alter retrieval or scientific history.
+
+storage_model:
+  state_key: retrieval_attention_lifecycle_history
+  structure:
+    events:
+      type: append_only_event_list
+      event_fields:
+        - lifecycle_event_id
+        - attention_id
+        - previous_status
+        - new_status
+        - transition_reason
+        - created_at
+        - actor
+        - schema_version
+  rules:
+    - The persisted history contains lifecycle events rather than a mutable current-status field that replaces historical events.
+    - Persisted lifecycle events must conform to the R7D.2 lifecycle event model.
+    - The storage representation must preserve the complete event payload needed for offline reconstruction.
+
+append_only:
+  rules:
+    - Existing lifecycle events must never be modified in place.
+    - Existing lifecycle events must never be deleted as part of ordinary persistence.
+    - Persistence must not semantically reorder historical lifecycle events by rewriting existing records.
+    - A new lifecycle event is appended without changing prior event payloads.
+
+identity_integrity:
+  identity_field: lifecycle_event_id
+  rules:
+    - lifecycle_event_id is the immutable identity key for one lifecycle event.
+    - A previously unseen lifecycle_event_id may be appended.
+    - Re-appending an existing lifecycle_event_id with an identical canonical payload is an idempotent no-op.
+    - Re-appending an existing lifecycle_event_id with any different payload is an integrity failure and must not overwrite the stored event.
+    - An integrity failure must leave the existing stored event unchanged.
+    - Duplicate handling must compare event content rather than relying only on list position.
+
+canonical_payload:
+  required_fields:
+    - lifecycle_event_id
+    - attention_id
+    - previous_status
+    - new_status
+    - transition_reason
+    - created_at
+    - actor
+    - schema_version
+  rules:
+    - lifecycle_event_id is part of the canonical persisted event payload.
+    - No scientific fields are required or permitted as part of the lifecycle event payload.
+    - Persistence metadata must not change the semantics of the lifecycle event.
+    - The persisted event remains an event object and is not converted into a mutable proposal-status record.
+
+proposal_separation:
+  rules:
+    - Lifecycle persistence may reference an AttentionProposal through attention_id.
+    - Lifecycle persistence must not embed a duplicate full AttentionProposal as authoritative lifecycle state.
+    - Persisting a lifecycle event must not modify the referenced AttentionProposal.
+    - Updating lifecycle history must not rewrite the proposal's deterministic R7B core fields.
+    - Lifecycle history and proposal persistence remain separate concerns.
+
+ordering:
+  rules:
+    - Array position is storage order and must not be treated as the semantic identity of a lifecycle event.
+    - Persistence must preserve each event's recorded created_at and lifecycle_event_id.
+    - Consumers may order lifecycle events using recorded event metadata, including created_at and lifecycle_event_id, according to their reconstruction policy.
+    - Persistence must not rewrite historical timestamps or identifiers to manufacture an ordering.
+    - Concurrent or externally supplied timestamps do not permit an existing event to be rewritten merely to change ordering.
+
+replayability:
+  requirements:
+    - lifecycle history must contain sufficient event data to reconstruct recorded transitions offline.
+    - Replay must operate only on persisted lifecycle events and supplied deterministic lifecycle-model rules.
+    - Replay must not require network retrieval, an LLM call, or execution of the scientific pipeline.
+    - Replay must not recompute historical lifecycle transitions from mutable current state when recorded lifecycle events are available.
+    - Historical lifecycle events remain authoritative records of what was recorded, regardless of later policy changes.
+
+validation_and_integrity:
+  rules:
+    - Every persisted event must have all required canonical fields.
+    - previous_status and new_status must use the R7D.1 lifecycle vocabulary and transition semantics, including null-to-open only for initial creation.
+    - transition_reason must remain process-level metadata and must not become a scientific conclusion.
+    - actor identifies the process responsible for recording the event and must not be treated as a scientific authority field.
+    - schema_version identifies the lifecycle event representation and must not be interpreted as scientific state.
+    - Persistence failures must be explicit; silent overwrite, silent normalization, or silent loss of historical events is forbidden.
+
+scientific_isolation:
+  must_not_modify:
+    - retrieval_history
+    - retrieval_report
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+  rules:
+    - Lifecycle persistence is process-history storage, not scientific state.
+    - Persisting or deduplicating lifecycle events must not create evidence relations or alter scientific conclusions.
+    - Lifecycle status must not be interpreted as evidence quality, truth, confidence, uncertainty, or scientific relevance.
+    - Persistence must not mutate historical RetrievalEvent records.
+
+execution_boundary:
+  prohibited_operations:
+    - overwrite_existing_lifecycle_event
+    - delete_historical_lifecycle_event
+    - mutate_attention_proposal
+    - mutate_retrieval_history
+    - mutate_scientific_state
+    - execute_acquisition_action
+  action_boundary: >-
+    Persistence records lifecycle facts only. Any later acquisition action is a
+    separate process and must produce new RetrievalEvent records through the
+    established acquisition pipeline.
+
+error_semantics:
+  duplicate_identical:
+    result: no_op
+    requirement: The persisted history and existing event payload remain unchanged.
+  duplicate_conflicting:
+    result: integrity_failure
+    requirement: The persisted history and original event remain unchanged.
+  malformed_event:
+    result: validation_failure
+    requirement: No malformed event may be appended.
+  persistence_failure:
+    result: explicit_failure
+    requirement: Partial silent mutation is forbidden; the persistence boundary must report failure to its caller.
+
+scope:
+  included:
+    - lifecycle history storage representation
+    - append-only semantics
+    - duplicate event identity integrity
+    - canonical persisted lifecycle event payload
+    - proposal separation
+    - ordering semantics
+    - offline replayability requirements
+    - persistence validation and error semantics
+    - scientific isolation
+    - action boundary
+  excluded:
+    - lifecycle event model implementation
+    - lifecycle persistence implementation
+    - lifecycle replay implementation
+    - runtime integration
+    - main.py changes
+    - automatic lifecycle transitions
+    - automatic action execution
+    - evidence assessment
+    - epistemic inference
+    - ranking changes
+    - convergence changes
+    - writer decisions
