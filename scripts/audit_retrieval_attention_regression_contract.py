@@ -54,10 +54,15 @@ def main() -> int:
         "Unexpected R7C.9 contract name.",
     )
 
+    objective = str(contract["objective"])
+    check(
+        "must not introduce new runtime behavior" in objective,
+        "Umbrella must not introduce runtime behavior.",
+    )
+
     purpose_rules = "\n".join(str(rule) for rule in contract["purpose"]["rules"])
     check("orchestration-only" in purpose_rules, "Regression umbrella must remain orchestration-only.")
     check("must not invoke network retrieval" in purpose_rules, "Network retrieval must remain excluded.")
-    check("must not introduce new runtime behavior" in purpose_rules, "Umbrella must not introduce runtime behavior.")
 
     audits = contract["ordered_audits"]
     check(audits == EXPECTED_AUDITS, "Regression audit order is incomplete or unexpected.")
