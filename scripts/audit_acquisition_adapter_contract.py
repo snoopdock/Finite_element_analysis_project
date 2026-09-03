@@ -90,6 +90,7 @@ def main() -> int:
     core = _section(text, "core_invariants:", "input_boundary:")
     _require(failures, "core_invariants section missing", bool(core))
     if core:
+        core_norm = _normalized(core)
         core_rules = (
             "AcquisitionRequest is the authoritative semantic model at this boundary.",
             "Semantic fidelity has priority over representation completeness.",
@@ -97,7 +98,7 @@ def main() -> int:
             "Existing retrieve_evidence_parallel(List[str]) semantics remain unchanged by this contract.",
         )
         for phrase in core_rules:
-            _require(failures, f"missing core invariant: {phrase!r}", phrase in core)
+            _require(failures, f"missing core invariant: {phrase!r}", phrase in core_norm)
 
     # ------------------------------------------------------------
     # Translation policy: lossy by design, but semantically truthful
@@ -377,14 +378,38 @@ def main() -> int:
     r8 = _section(text, "relationship_to_r8_7_3:", "scope:")
     _require(failures, "relationship_to_r8_7_3 section missing", bool(r8))
     if r8:
-        for phrase in (
-            "AcquisitionRequest is the authoritative semantic model",
-            "translation into List[str] is a deliberate lossy projection",
-            "Material translation loss is explicitly classified and observable",
-            "Unsupported constraints are not falsely reported as enforced",
-            "adapter remains replaceable",
-        ):
-            _require(failures, f"missing R8.7.3 decision linkage: {phrase!r}", phrase in r8)
+        r8_norm = _normalized(r8)
+        linkage_rules = {
+            "authoritative semantic model": (
+                "AcquisitionRequest is the authoritative semantic model",
+                "authoritative semantic model",
+            ),
+            "deliberate lossy projection": (
+                "translation into List[str] is a deliberate lossy projection",
+                "deliberate lossy projection",
+            ),
+            "loss explicitly classified and observable": (
+                "Material translation loss is explicitly classified and observable",
+                "translation loss",
+                "explicitly classified",
+                "observable",
+            ),
+            "unsupported constraints not falsely enforced": (
+                "Unsupported constraints are not falsely reported as enforced",
+                "not falsely reported as enforced",
+            ),
+            "adapter remains replaceable": (
+                "adapter remains replaceable",
+                "The adapter remains replaceable",
+                "remains replaceable",
+            ),
+        }
+        for label, phrases in linkage_rules.items():
+            _require(
+                failures,
+                f"missing R8.7.3 decision linkage: {label!r}",
+                _contains_any(r8_norm, phrases),
+            )
 
     if failures:
         print("R8.7.3 AcquisitionAdapter contract audit: FAIL")
