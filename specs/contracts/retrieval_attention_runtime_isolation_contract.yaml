@@ -1,0 +1,89 @@
+version: 1
+name: retrieval_attention_runtime_isolation_contract
+objective: >-
+  Define the live-runtime isolation guarantees for R7C.8 after R7C.7 connects
+  retrieval attention to main.py. The runtime may persist attention proposals,
+  but it must remain outside scientific reasoning, lifecycle transitions, and
+  acquisition-action execution.
+
+dependency:
+  runtime_contract:
+    name: retrieval_attention_runtime_contract
+    version: 1
+  live_integration:
+    name: retrieval_attention_live_integration
+    role: main.py live connection
+
+runtime_isolation:
+  required_properties:
+    - attention_processing_is_side_channel
+    - attention_failure_is_operational_error
+    - retrieval_history_remains_immutable_after_recording
+    - scientific_state_remains_unchanged
+    - no_action_execution
+    - no_lifecycle_transition
+  rules:
+    - The live attention connector must run after retrieval-event recording and before unrelated later phases only as a side-channel operation.
+    - Attention-processing failure must be captured as an operational error and must not terminate the scientific pipeline by itself.
+    - Attention processing must not alter scientific reasoning state.
+
+failure_containment:
+  required_behavior:
+    - catch_attention_processing_exception
+    - record_operational_error
+    - continue_pipeline
+  forbidden_effects:
+    - scientific_uncertainty
+    - evidence_absence
+    - epistemic_state_change
+    - ranking_change
+    - convergence_change
+    - writer_instruction
+
+scientific_isolation:
+  protected_fields:
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+    - knowledge_base
+    - sections
+  allowed_attention_state_change:
+    - retrieval_attention_history
+  rules:
+    - A successful attention pass may add proposals to retrieval_attention_history through R7C.
+    - Retrieval history and retrieval report semantics must not be reinterpreted by attention processing.
+    - Protected scientific fields must retain their semantic content across attention processing.
+
+execution_boundary:
+  prohibited:
+    - automatic_action_execution
+    - lifecycle_transition
+    - scientific_state_mutation
+  rule: >-
+    The main pipeline connection exposes attention proposals only. No
+    recommended acquisition action may be executed in R7C.7 or R7C.8.
+
+reproducibility:
+  rules:
+    - The attention connector must delegate deterministic interpretation to R7B and persistence to R7C without adding new policy logic.
+    - Same retrieval history and same explicit policy must produce the same deterministic proposal evaluation.
+    - Persistence timestamps do not alter proposal identity.
+
+runtime_scope:
+  included:
+    - live invocation ordering
+    - operational error containment
+    - scientific-state isolation verification
+    - action/lifecycle exclusion verification
+  excluded:
+    - action execution
+    - lifecycle management
+    - automatic scheduling
+    - evidence assessment
+    - epistemic inference
+    - ranking/convergence changes
