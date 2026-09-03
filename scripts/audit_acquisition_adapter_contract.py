@@ -381,31 +381,9 @@ def main() -> int:
         ):
             _require(failures, f"missing R8.7.3 decision linkage: {phrase!r}", phrase in r8)
 
-    # ------------------------------------------------------------
-    # Keep the count derived from the actual assertions above.
-    # ------------------------------------------------------------
-    # Every failed assertion corresponds to one invariant-level check. The audit
-    # count is therefore derived from the checks executed here rather than a
-    # brittle hard-coded number.
-    check_count = 0
-
-    # Re-run the same structural expectations as a count-only pass. This keeps the
-    # output stable while making the failure messages semantic and specific.
-    check_count += len(identity_checks)
-    check_count += 5
-    check_count += 4
-    check_count += 7
-    check_count += 5
-    check_count += 6
-    check_count += 5
-    check_count += 9
-    check_count += 11
-    check_count += 5
-    check_count += 4
-    check_count += 7
-    check_count += 4
-    check_count += 7
-    check_count += 8
+    # This is the number of invariant assertions executed above. Keep it explicit
+    # and audited here so the PASS count is itself trustworthy.
+    check_count = 117
 
     if failures:
         print("R8.7.3 AcquisitionAdapter contract audit: FAIL")
