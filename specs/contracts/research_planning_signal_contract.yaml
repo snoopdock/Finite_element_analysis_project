@@ -1,0 +1,410 @@
+version: 1
+name: research_planning_signal_contract
+status: accepted
+objective: >-
+  Define the semantic, identity, provenance, translation, and authority boundary
+  for ResearchPlanningSignal as the explicit interface between retrieval-process
+  attention and research planning. This contract does not implement translation,
+  scheduling, scientific-state mutation, or acquisition execution.
+
+architectural_role:
+  source_object:
+    name: AttentionProposal
+    semantic_claim: >-
+      A retrieval/process condition deserves attention under the applicable
+      retrieval-attention policy.
+    authority: process_attention
+  target_object:
+    name: ResearchPlanningSignal
+    semantic_claim: >-
+      A retrieval/process condition may be relevant to future research planning.
+    authority: planning_input
+  downstream_object:
+    name: ScientificAttention
+    semantic_claim: >-
+      A scientific object deserves intellectual attention.
+    authority: scientific_reasoning
+  boundary_rule: >-
+    ResearchPlanningSignal is a distinct semantic object. It is neither a renamed
+    AttentionProposal nor a direct ScientificAttention mutation instruction.
+
+core_invariants:
+  - AttentionProposal is not ResearchPlanningSignal.
+  - ResearchPlanningSignal is not ScientificAttention.
+  - Translation is an explicit semantic operation rather than implicit field copying.
+  - Translation is lossy by design.
+  - A planning signal is informative, not authoritative over scientific truth.
+  - Operational difficulty is not itself evidence weakness or scientific uncertainty.
+  - Historical process records remain immutable through planning translation.
+  - Planning signals do not execute acquisition actions.
+  - Planning signals do not modify scientific state directly.
+
+identity:
+  primary_key: research_planning_signal_id
+  source_reference:
+    required: true
+    field: source_attention_id
+    meaning: >-
+      Identifies the AttentionProposal from which the planning signal was derived.
+  independence_rule: >-
+    research_planning_signal_id must be distinct from attention_id and from any
+    RetrievalEvent or LifecycleEvent identifiers.
+  determinism: >-
+    A future implementation may use deterministic identity when the translation
+    inputs and policy are fully specified, but this contract does not require a
+    particular identifier-generation algorithm.
+
+schema:
+  required_fields:
+    - research_planning_signal_id
+    - source_attention_id
+    - schema_version
+    - signal_type
+    - target
+    - provenance
+  optional_fields:
+    - created_at
+    - translation_policy_version
+    - operational_condition
+    - acquisition_constraint
+    - planning_context
+  field_semantics:
+    research_planning_signal_id:
+      type: string
+      role: signal_identity
+    source_attention_id:
+      type: string
+      role: provenance_reference
+    schema_version:
+      type: integer
+      role: contract_version
+    signal_type:
+      type: string
+      role: planning_semantic_type
+    target:
+      type: object
+      role: affected_planning_scope
+    provenance:
+      type: object
+      role: operational_traceability
+    created_at:
+      type: string
+      role: persistence_metadata
+    translation_policy_version:
+      type: string
+      role: translation_policy_metadata
+    operational_condition:
+      type: object
+      role: bounded_process_description
+    acquisition_constraint:
+      type: object
+      role: planning_relevant_operational_constraint
+    planning_context:
+      type: object
+      role: optional_non_authoritative_planning_context
+
+signal_semantics:
+  signal_type:
+    allowed_initial_values:
+      - acquisition_constraint
+    extensibility_rule: >-
+      Additional signal types require an explicit contract revision or extension
+      that defines their semantics and authority boundary before implementation.
+  target:
+    purpose: >-
+      Identify the research scope that the process condition may affect for
+      planning purposes.
+    examples:
+      query_scope: weak_form_galerkin_fem
+      topic_scope: finite_element_method
+      proposition_reference: optional_future_planning_reference
+    prohibition: >-
+      A target reference does not establish a scientific proposition, evidence
+      relation, uncertainty status, or claim priority.
+  acquisition_constraint:
+    purpose: >-
+      Describe an operational limitation relevant to possible future acquisition
+      planning.
+    examples:
+      provider_access_limitation: true
+      provider: semantic_scholar
+      query_scope: weak_form_galerkin_fem
+    prohibition: >-
+      An acquisition constraint must not encode absence of literature, evidence
+      insufficiency, low confidence, disputed truth, or other scientific meaning.
+  operational_condition:
+    purpose: >-
+      Preserve only the bounded operational condition needed for planning.
+    prohibition: >-
+      Operational condition descriptions must not be promoted into scientific
+      conclusions by field naming or status propagation.
+
+provenance:
+  required:
+    supporting_event_ids: true
+  fields:
+    supporting_event_ids:
+      type: list
+      meaning: >-
+        RetrievalEvent identifiers supporting the operational condition represented
+        by the planning signal.
+    source_attention_id:
+      type: string
+      meaning: >-
+        AttentionProposal identifier establishing the immediate semantic source.
+  rules:
+    - Provenance must remain traceable to operational history.
+    - Provenance references do not turn RetrievalEvents into scientific evidence.
+    - Provenance must not be used as a substitute for passage-level evidence.
+    - Missing operational provenance is a contract failure when the signal claims to summarize an observed acquisition condition.
+    - Provenance may be narrower than the complete AttentionProposal history.
+
+translation:
+  authority:
+    translator_role: planning_boundary_component
+    rule: >-
+      Creation of ResearchPlanningSignal is a semantic translation operation and
+      must occur through a contract-governed component rather than by implicit
+      object aliasing or field-name propagation.
+    scientific_authority: false
+  direction:
+    allowed: AttentionProposal -> ResearchPlanningSignal
+    forbidden:
+      - ResearchPlanningSignal -> rewrite AttentionProposal
+      - ResearchPlanningSignal -> rewrite RetrievalEvent
+      - ResearchPlanningSignal -> rewrite LifecycleEvent
+      - AttentionProposal -> direct ScientificAttention mutation
+  lossy_by_design:
+    required: true
+    rule: >-
+      The translation need only retain planning-relevant information. Retrieval
+      policy internals, complete operational histories, lifecycle metadata, or
+      other source-object fields must not be copied merely for structural
+      completeness.
+  explicitness:
+    required: true
+    rule: >-
+      Every retained planning field must have a defined semantic purpose at the
+      planning boundary. Unknown or newly introduced fields must not be silently
+      propagated across the boundary.
+
+field_allowance:
+  allowed_semantic_categories:
+    - signal_type
+    - affected_planning_scope
+    - operational_condition
+    - acquisition_constraint
+    - bounded_planning_context
+    - provenance
+  forbidden_semantic_categories:
+    - scientific_truth
+    - confidence
+    - epistemic_status
+    - evidence_strength
+    - evidence_gap
+    - claim_support
+    - claim_ranking
+    - convergence_state
+    - scientific_resolution
+    - scientific_uncertainty
+    - generated_scientific_content
+  forbidden_field_examples:
+    - confidence
+    - confidence_score
+    - evidence_strength
+    - evidence_gap
+    - epistemic_status
+    - truth_status
+    - truth_probability
+    - claim_rank
+    - ranking_score
+    - convergence_score
+    - scientific_priority
+  rule: >-
+    A forbidden semantic category must not enter the ResearchPlanningSignal as a
+    disguised or renamed field merely to bypass this boundary.
+
+absence_and_unknown:
+  no_signal:
+    meaning: >-
+      No ResearchPlanningSignal was produced under the applicable translation
+      contract and current process information.
+    does_not_mean:
+      - literature_absent
+      - evidence_absent
+      - evidence_sufficient
+      - evidence_insufficient
+      - scientific_resolution
+      - claim_confirmed
+      - claim_disconfirmed
+  unknown_source_detail:
+    rule: >-
+      Unknown operational detail must remain unknown rather than being inferred
+      as a scientific condition.
+  missing_provenance:
+    rule: >-
+      A signal lacking required supporting event references must fail validation
+      rather than fabricate provenance or silently broaden its semantic claim.
+
+planning_boundary:
+  meaning: >-
+    ResearchPlanningSignal is an input offered for planning consideration. The
+    receiving planning subsystem remains responsible for deciding whether the
+    signal is relevant, how important it is, and whether any research activity
+    should follow.
+  planner_authority:
+    may:
+      - evaluate relevance against scientific context
+      - compare the signal with existing evidence and planning context through existing scientific contracts
+      - increase or decrease planning priority
+      - determine that no additional action is necessary
+      - formulate a future acquisition request under an appropriate planning contract
+    may_not_delegate_to_signal:
+      - scientific truth determination
+      - evidence-strength determination
+      - epistemic-state mutation
+      - claim-ranking mutation
+      - convergence mutation
+      - automatic acquisition execution
+  critical_rule: >-
+    The scientific planner decides whether the signal matters scientifically;
+    the signal does not decide for the planner.
+
+acquisition_boundary:
+  rules:
+    - ResearchPlanningSignal may describe an acquisition constraint.
+    - ResearchPlanningSignal may inform a future acquisition request.
+    - ResearchPlanningSignal must not itself issue an acquisition command.
+    - ResearchPlanningSignal must not execute retrieval.
+    - A future acquisition request creates new RetrievalEvent records when retrieval occurs.
+    - Future retrieval must not rewrite the signal or its supporting historical events.
+
+scientific_isolation:
+  prohibited_direct_mutations:
+    - ScientificAttention
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+    - knowledge_base
+    - sections
+  non_equivalences:
+    provider_failure_is_not_evidence_gap: true
+    retrieval_non_success_is_not_claim_uncertainty: true
+    planning_priority_is_not_claim_rank: true
+    lifecycle_status_is_not_epistemic_status: true
+    signal_existence_is_not_evidence: true
+  rule: >-
+    Any scientific-state change resulting after a planning signal must arise from
+    the existing scientific planning/reasoning mechanisms, not from translation
+    itself.
+
+lifecycle_isolation:
+  rules:
+    - ResearchPlanningSignal does not reuse R7D lifecycle status semantics.
+    - ResearchPlanningSignal does not create LifecycleEvents.
+    - Translation does not advance, reopen, close, or otherwise mutate lifecycle state.
+    - Lifecycle history remains authoritative historical process data.
+    - A planning signal may reference an AttentionProposal without copying its lifecycle history.
+
+immutability_and_reproducibility:
+  rules:
+    - Historical RetrievalEvents are not rewritten by translation.
+    - Historical AttentionProposals are not rewritten by translation.
+    - Historical LifecycleEvents are not rewritten by translation.
+    - Translation policy evolution must not retroactively reinterpret prior process history.
+    - A future implementation should retain enough policy metadata to explain how a signal was produced.
+    - Reprocessing may create a distinct signal under a new translation policy rather than silently mutating a prior signal.
+
+validation:
+  structural:
+    required_fields_must_exist: true
+    signal_id_must_be_unique_within_signal_store: true
+    source_attention_id_must_be_present: true
+    supporting_event_ids_must_be_present: true
+    forbidden_fields_must_be_rejected: true
+  semantic:
+    signal_type_must_have_defined_contract_meaning: true
+    target_must_not_assert_scientific_truth: true
+    operational_condition_must_not_be_encoded_as_epistemic_state: true
+    provenance_must_reference_operational_history: true
+    translation_must_not_execute_actions: true
+  integrity_failure_rule: >-
+    Invalid, ambiguous, semantically overreaching, or provenance-incomplete
+    signals must fail explicitly and must not be repaired by inventing scientific
+    meaning or rewriting source history.
+
+example:
+  source_condition:
+    provider: semantic_scholar
+    query_scope: weak_form_galerkin_fem
+    repeated_non_success: true
+  source_attention:
+    attention_id: A12
+    attention_reason: repeated_query_provider_non_success
+    supporting_events:
+      - E12
+      - E13
+  valid_signal:
+    research_planning_signal_id: RPS12
+    source_attention_id: A12
+    schema_version: 1
+    signal_type: acquisition_constraint
+    target:
+      query_scope: weak_form_galerkin_fem
+    acquisition_constraint:
+      provider_access_limitation: true
+      provider: semantic_scholar
+    provenance:
+      supporting_event_ids:
+        - E12
+        - E13
+  forbidden_translation:
+    evidence_gap: true
+    confidence: low
+    claim_uncertain: true
+    evidence_weak: true
+
+relationship_to_r8_0:
+  rule: >-
+    This contract implements the semantic boundary authorized by R8.0 without
+    introducing the R8.2 translator or any scientific-planning integration.
+  preserved_decision:
+    - Retrieval attention may inform research planning.
+    - Retrieval attention possesses no scientific authority.
+    - Translation is lossy by design.
+    - Scientific interpretation remains downstream and explicit.
+  non_override: >-
+    R8.1 does not supersede R7D lifecycle authority or any existing scientific
+    state contract.
+
+scope:
+  included:
+    - ResearchPlanningSignal identity
+    - semantic meaning
+    - allowed fields
+    - forbidden fields
+    - provenance
+    - explicit translation boundary
+    - lossy translation rule
+    - absence and unknown handling
+    - planning authority boundary
+    - acquisition boundary
+    - scientific isolation
+    - lifecycle isolation
+    - validation requirements
+  excluded:
+    - translator implementation
+    - persistence implementation
+    - runtime scheduling
+    - acquisition execution
+    - ScientificAttention changes
+    - epistemic inference
+    - evidence assessment
+    - ranking changes
+    - convergence changes
+    - writer changes
