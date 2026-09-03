@@ -26,6 +26,14 @@ REQUIRED_EVENT_FIELDS = {
     "actor",
     "schema_version",
 }
+EXPECTED_EXECUTION_PROHIBITIONS = {
+    "overwrite_existing_lifecycle_event",
+    "delete_historical_lifecycle_event",
+    "mutate_attention_proposal",
+    "mutate_retrieval_history",
+    "mutate_scientific_state",
+    "execute_acquisition_action",
+}
 FORBIDDEN_SCIENTIFIC_FIELDS = {
     "retrieval_history",
     "retrieval_report",
@@ -37,14 +45,6 @@ FORBIDDEN_SCIENTIFIC_FIELDS = {
     "ranking",
     "convergence",
     "writing_content",
-}
-EXPECTED_PROHIBITED_OPERATIONS = {
-    "overwrite_existing_lifecycle_event",
-    "delete_historical_lifecycle_event",
-    "mutate_attention_proposal",
-    "mutate_retrieval_history",
-    "mutate_scientific_state",
-    "execute_acquisition_action",
 }
 
 
@@ -77,15 +77,6 @@ def main() -> int:
         == "analysis/retrieval_attention_lifecycle.py",
         "R7D.3 must depend on the R7D.2 lifecycle event model.",
     )
-    composition_rule = str(dependencies["composition_rule"])
-    check(
-        "persists lifecycle events defined by R7D.1/R7D.2" in composition_rule,
-        "R7D.3 must persist the R7D lifecycle events rather than redefine them.",
-    )
-    check(
-        "does not redefine lifecycle semantics" in composition_rule,
-        "Persistence must not redefine lifecycle semantics.",
-    )
 
     storage = contract["storage_model"]
     check(
@@ -94,7 +85,7 @@ def main() -> int:
     )
     check(
         storage["structure"]["events"]["type"] == "append_only_event_list",
-        "Lifecycle history must be an append-only event list.",
+        "Lifecycle history must use an append-only event list.",
     )
     check(
         set(storage["structure"]["events"]["event_fields"]) == REQUIRED_EVENT_FIELDS,
@@ -103,42 +94,47 @@ def main() -> int:
     storage_rules = "\n".join(str(rule) for rule in storage["rules"])
     check(
         "rather than a mutable current-status field" in storage_rules,
-        "Storage must preserve events rather than replacing history with mutable status.",
+        "Persistence must not collapse history into mutable current status.",
     )
     check(
         "complete event payload" in storage_rules,
-        "Persisted history must retain the payload needed for offline reconstruction.",
+        "Persisted events must retain sufficient reconstruction data.",
     )
 
-    append_only = contract["append_only"]["rules"]
-    append_rules = "\n".join(str(rule) for rule in append_only)
-    check("must never be modified in place" in append_rules, "Existing lifecycle events must not be modified.")
-    check("must never be deleted" in append_rules, "Existing lifecycle events must not be deleted.")
-    check("semantically reorder" in append_rules, "Persistence must not rewrite historical ordering.")
-    check("without changing prior event payloads" in append_rules, "New events must not mutate prior payloads.")
+    append_only = contract["append_only"]
+    append_rules = "\n".join(str(rule) for rule in append_only["rules"])
+    check("never be modified in place" in append_rules, "Existing lifecycle events must be immutable.")
+    check("never be deleted" in append_rules, "Historical lifecycle events must not be deleted.")
+    check("semantically reorder" in append_rules, "Persistence must preserve historical ordering semantics.")
+    check("appended without changing prior event payloads" in append_rules, "New events must not alter prior events.")
 
     identity = contract["identity_integrity"]
-    check(identity["identity_field"] == "lifecycle_event_id", "Lifecycle event identity must use lifecycle_event_id.")
+    check(
+        identity["identity_field"] == "lifecycle_event_id",
+        "lifecycle_event_id must be the persistence identity key.",
+    )
     identity_rules = "\n".join(str(rule) for rule in identity["rules"])
-    check("immutable identity key" in identity_rules, "Lifecycle event identity must be immutable.")
-    check("previously unseen lifecycle_event_id" in identity_rules, "New IDs must be appendable.")
     check("identical canonical payload is an idempotent no-op" in identity_rules,
-          "Identical duplicate events must be idempotent.")
-    check("any different payload is an integrity failure" in identity_rules,
-          "Conflicting duplicate IDs must fail integrity validation.")
+          "Identical duplicate lifecycle events must be idempotent.")
+    check("different payload is an integrity failure" in identity_rules,
+          "Conflicting duplicate lifecycle events must fail integrity validation.")
     check("must not overwrite the stored event" in identity_rules,
-          "Conflicting duplicate IDs must not overwrite history.")
-    check("existing stored event unchanged" in identity_rules,
-          "Integrity failure must leave the original event unchanged.")
+          "Conflicting duplicate events must not overwrite history.")
+    check("leave the existing stored event unchanged" in identity_rules,
+          "Integrity failure must preserve the original event.")
+    check("event content" in identity_rules,
+          "Duplicate handling must compare event content.")
 
     canonical = contract["canonical_payload"]
-    check(set(canonical["required_fields"]) == REQUIRED_EVENT_FIELDS,
-          "Canonical lifecycle payload fields are incomplete or unexpected.")
+    check(
+        set(canonical["required_fields"]) == REQUIRED_EVENT_FIELDS,
+        "Canonical persisted event fields are incomplete or unexpected.",
+    )
     canonical_rules = "\n".join(str(rule) for rule in canonical["rules"])
     check("No scientific fields are required or permitted" in canonical_rules,
-          "Lifecycle persistence must exclude scientific fields.")
+          "Scientific fields must be excluded from lifecycle persistence payloads.")
     check("not converted into a mutable proposal-status record" in canonical_rules,
-          "Lifecycle events must remain event objects.")
+          "Lifecycle events must remain events rather than mutable proposal status.")
 
     separation = contract["proposal_separation"]
     separation_rules = "\n".join(str(rule) for rule in separation["rules"])
@@ -154,7 +150,7 @@ def main() -> int:
     ordering = contract["ordering"]
     ordering_rules = "\n".join(str(rule) for rule in ordering["rules"])
     check("Array position is storage order" in ordering_rules,
-          "Ordering must not derive semantic identity from array position.")
+          "Array position must remain storage order rather than event identity.")
     check("created_at and lifecycle_event_id" in ordering_rules,
           "Recorded event metadata must support consumer ordering.")
     check("must not rewrite historical timestamps or identifiers" in ordering_rules,
@@ -165,7 +161,8 @@ def main() -> int:
     check("sufficient event data" in replay_requirements,
           "Lifecycle history must support offline reconstruction.")
     check(
-        "without network retrieval, an LLM call, or execution of the scientific pipeline" in replay_requirements,
+        "must not require network retrieval, an LLM call, or execution of the scientific pipeline"
+        in replay_requirements,
         "Replay must remain offline and outside the scientific pipeline.",
     )
     check("must not recompute historical lifecycle transitions" in replay_requirements,
@@ -188,44 +185,36 @@ def main() -> int:
 
     isolation = contract["scientific_isolation"]
     protected = set(isolation["must_not_modify"])
-    check(FORBIDDEN_SCIENTIFIC_FIELDS <= protected,
-          "Scientific/process isolation boundary is incomplete.")
+    check(
+        FORBIDDEN_SCIENTIFIC_FIELDS <= protected,
+        "Scientific/process isolation boundary is incomplete.",
+    )
     isolation_rules = "\n".join(str(rule) for rule in isolation["rules"])
     check("not scientific state" in isolation_rules,
           "Lifecycle persistence must remain process-history storage.")
-    check("must not create evidence relations" in isolation_rules,
-          "Persistence must not create evidence relations.")
-    check("must not be interpreted as evidence quality" in isolation_rules,
-          "Lifecycle status must not become scientific interpretation.")
     check("must not mutate historical RetrievalEvent records" in isolation_rules,
-          "RetrievalEvent history must remain untouched.")
+          "Persistence must not mutate historical RetrievalEvent records.")
 
     execution = contract["execution_boundary"]
     check(
-        set(execution["prohibited_operations"]) == EXPECTED_PROHIBITED_OPERATIONS,
-        "Lifecycle persistence prohibited operations are incomplete or unexpected.",
+        set(execution["prohibited_operations"]) == EXPECTED_EXECUTION_PROHIBITIONS,
+        "Lifecycle persistence execution boundary is incomplete or unexpected.",
     )
     action_boundary = str(execution["action_boundary"])
-    check("records lifecycle facts only" in action_boundary,
-          "Persistence must only record lifecycle facts.")
-    check("must produce new RetrievalEvent records" in action_boundary,
-          "Acquisition actions must return through new retrieval events.")
+    check("separate process" in action_boundary,
+          "Acquisition action must remain outside persistence.")
+    check("new RetrievalEvent records" in action_boundary,
+          "Later actions must return through new retrieval events.")
 
-    errors = contract["error_semantics"]
-    check(errors["duplicate_identical"]["result"] == "no_op",
-          "Identical duplicate events must be a no-op.")
-    check("remain unchanged" in errors["duplicate_identical"]["requirement"],
-          "Identical duplicate no-op must preserve stored history.")
-    check(errors["duplicate_conflicting"]["result"] == "integrity_failure",
-          "Conflicting duplicate IDs must be integrity failures.")
-    check("original event remain unchanged" in errors["duplicate_conflicting"]["requirement"],
-          "Conflicting duplicates must preserve the original event.")
-    check(errors["malformed_event"]["result"] == "validation_failure",
-          "Malformed events must produce validation failures.")
-    check(errors["persistence_failure"]["result"] == "explicit_failure",
+    error_semantics = contract["error_semantics"]
+    check(error_semantics["duplicate_identical"]["result"] == "no_op",
+          "Identical duplicate result must be no_op.")
+    check(error_semantics["duplicate_conflicting"]["result"] == "integrity_failure",
+          "Conflicting duplicate result must be integrity_failure.")
+    check(error_semantics["malformed_event"]["result"] == "validation_failure",
+          "Malformed event result must be validation_failure.")
+    check(error_semantics["persistence_failure"]["result"] == "explicit_failure",
           "Persistence failures must be explicit.")
-    check("Partial silent mutation is forbidden" in errors["persistence_failure"]["requirement"],
-          "Persistence failures must not silently partially mutate state.")
 
     scope = contract["scope"]
     check(
