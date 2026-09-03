@@ -1,0 +1,256 @@
+version: 1
+name: R8.7.4.0_acquisition_adapter_implementation_decision
+status: accepted
+objective: >-
+  Freeze the implementation boundary for realizing the accepted R8.7.3
+  AcquisitionAdapter contract without changing retrieval, provider, evidence,
+  lifecycle, planning, or main-runtime semantics.
+
+implementation_model:
+  authoritative_input: AcquisitionRequest
+  adapter_role: >-
+    Translate an explicit AcquisitionRequest into the currently supported
+    retrieval execution representation and record one execution occurrence with
+    observable translation provenance.
+  legacy_execution_representation: List[str]
+  execution_provenance: AcquisitionExecutionReceipt
+  translation_mode: lossy_by_design
+  primary_invariant: >-
+    Semantic fidelity has priority over representation completeness. The adapter
+    may lose representation detail only when that loss is explicit, bounded, and
+    observable and the retained execution meaning remains truthful.
+
+implementation_stages:
+  - id: R8.7.4.1
+    responsibility: AcquisitionRequest validation
+    rule: >-
+      Validate the request against its own accepted vocabulary, including
+      identity, origin, target.query_scope, operational constraints, process
+      priority, and rejection of forbidden scientific semantics.
+  - id: R8.7.4.2
+    responsibility: AcquisitionExecutionProjection construction
+    rule: >-
+      Construct a precise internal projection before retrieval execution so that
+      semantic preservation, translation, degradation, and unrepresentability
+      are explicit rather than hidden inside the legacy List[str] call.
+  - id: R8.7.4.3
+    responsibility: translation classification
+    rule: >-
+      Classify every material request field relevant to execution as preserved,
+      translated, degraded, or unrepresentable. Unsupported semantics must never
+      be silently ignored or falsely reported as enforced.
+  - id: R8.7.4.4
+    responsibility: legacy execution projection
+    rule: >-
+      Generate List[str] query inputs only from the representable projection.
+      Do not encode provider preferences, provider-access restrictions, or
+      unrelated operational constraints into query text.
+  - id: R8.7.4.5
+    responsibility: execution receipt
+    rule: >-
+      Produce one AcquisitionExecutionReceipt per execution occurrence with
+      execution identity, request identity, timing, operational status, generated
+      query inputs, translation classifications, and material translation loss.
+  - id: R8.7.4.6
+    responsibility: runtime audit and tests
+    rule: >-
+      Verify semantic invariants structurally and behaviorally before any later
+      integration work.
+
+receipt_representation:
+  current_form: defensive_mapping
+  authority: acquisition_execution_history
+  rationale: >-
+    R8.7.4 requires a concrete execution-provenance representation but does not
+    yet establish a separate persistence or domain-object module. A defensive
+    mapping is sufficient at this stage; a future persistence boundary may define
+    a dedicated immutable/persisted receipt object without changing current
+    semantics.
+  required_fields:
+    - execution_id
+    - acquisition_request_id
+    - started_at
+    - completed_at
+    - execution_status
+  required_translation_provenance:
+    - translation_policy_version
+    - translation_results
+    - translation_losses
+    - generated_query_inputs
+    - execution_constraints_applied
+
+constraint_translation:
+  query_scope:
+    source: AcquisitionRequest.target.query_scope
+    current_representation: List[str]
+    classification: translated
+  provider_preferences:
+    current_representation: unavailable
+    classification_when_requested: unrepresentable
+    rule: >-
+      Do not encode provider names into query strings to simulate provider
+      selection.
+  provider_access_constraints:
+    current_representation: unavailable
+    classification_when_requested: unrepresentable
+    rule: >-
+      Do not convert provider-access restrictions into query semantics.
+  execution_limits:
+    current_representation: no_exact_equivalent_established
+    classification_when_not_exact: unrepresentable
+    rule: >-
+      Numeric similarity is not semantic equivalence. An execution limit is
+      applied only after an exact supported equivalent is established by this
+      boundary or a future retrieval contract.
+  priority:
+    current_representation: adapter_process_metadata
+    classification: preserved
+    rule: >-
+      Priority is retained for process execution metadata and never converted
+      into scientific ranking, evidence weighting, claim priority, or relevance.
+
+execution_status:
+  operational_only: true
+  allowed_values:
+    - success
+    - failure
+    - partial_failure
+    - empty_result
+    - rate_limited
+  source_of_status: >-
+    Prefer the existing retrieval cycle report when available; otherwise use the
+    adapter execution result to distinguish successful non-empty results, empty
+    results, and execution failure.
+  prohibited_interpretations:
+    - evidence weakness
+    - claim uncertainty
+    - evidence gap
+    - literature absence
+    - scientific disagreement
+
+retry_and_history:
+  execution_identity: >-
+    Each call representing an execution attempt receives a new execution_id.
+  request_identity: >-
+    Retries may reference the same acquisition_request_id.
+  overwrite_rule: >-
+    The adapter does not maintain or overwrite historical receipts. Persistence
+    and durable history remain a future boundary.
+
+architectural_isolation:
+  must_not_modify:
+    - RetrievalEvent history
+    - EvidenceRecord schema or source-level provenance semantics
+    - LifecycleEvent history
+    - AttentionProposal lifecycle state
+    - ResearchPlanningDecision
+    - ResearchPlanningSignal
+    - ScientificAttention
+    - scientific ranking
+    - convergence state
+    - main.py runtime orchestration
+    - pending_evidence_queries
+    - provider implementations
+    - retrieve_evidence_parallel signature or behavior
+  must_not_import_directly:
+    - analysis.scientific_attention
+    - analysis.gap_detector
+    - analysis.correction_planner
+    - core.writer_orchestration
+    - main
+
+file_scope:
+  planned_runtime_files:
+    - analysis/acquisition_adapter.py
+  planned_test_files:
+    - tests/test_acquisition_adapter.py
+  planned_audit_files:
+    - scripts/audit_r8_7_4_acquisition_adapter.py
+  explicitly_deferred_files:
+    - core/acquisition_execution_receipt.py
+    - research/evidence.py
+    - main.py
+    - provider modules
+    - EvidenceRecord implementation
+
+test_strategy:
+  categories:
+    validation:
+      - valid request accepted
+      - unknown request field rejected
+      - forbidden scientific field rejected recursively
+      - malformed target/constraints rejected
+      - process priority bounds enforced
+      - input is not mutated
+    translation:
+      - query_scope becomes only executable query input
+      - provider preferences become explicit unrepresentable loss
+      - provider access constraints become explicit unrepresentable loss
+      - execution limits are not falsely claimed as enforced
+      - process priority remains process metadata
+      - unsupported constraints are not encoded into query text
+    execution:
+      - successful execution returns source results and receipt
+      - empty result remains operational
+      - partial failure remains operational
+      - rate limiting remains operational
+      - executor exception returns failure receipt
+      - retry receives a distinct execution_id
+      - translation loss remains on the receipt rather than EvidenceRecord
+      - retrieval is not called after validation/projection failure
+    isolation:
+      - no scientific-state mutation
+      - no lifecycle mutation
+      - no planning mutation
+      - no provider/runtime redesign
+  audit_principle: >-
+    Tests and the independent audit must verify semantic invariants and authority
+    separation, not merely exact text or implementation details that are not part
+    of the contract.
+
+integration:
+  status: deferred
+  rule: >-
+    R8.7.4 stops at the explicit adapter boundary. No automatic request creation,
+    pipeline integration, main.py wiring, persistence integration, or background
+    scheduling is introduced by this stage.
+
+candidate_implementation_review:
+  existing_r8_7_4_code: candidate_realization
+  rule: >-
+    Existing adapter code created before this decision is treated as a candidate
+    realization of this decision. It is authoritative only after the implementation
+    and audit stages demonstrate conformity with this decision and the accepted
+    R8.7.3 contract.
+
+relationships:
+  r8_6_2: >-
+    AcquisitionRequest remains a distinct explicit process object and is not a
+    retrieval command.
+  r8_7_1_2: >-
+    AcquisitionExecutionReceipt remains the selected execution-level provenance
+    model and is distinct from EvidenceRecord.
+  r8_7_3: >-
+    The adapter implements deliberate lossy translation from the authoritative
+    AcquisitionRequest model to the current List[str] execution representation.
+
+scope:
+  included:
+    - implementation responsibilities
+    - translation/projection sequencing
+    - receipt representation choice for the current stage
+    - constraint translation behavior
+    - execution status semantics
+    - retry identity
+    - test strategy
+    - architectural isolation
+    - file scope
+    - deferred integration
+  excluded:
+    - retrieval redesign
+    - provider redesign
+    - EvidenceRecord redesign
+    - RetrievalEvent implementation
+    - lifecycle implementation
+    - persistence implementation
+    - main.py integration
