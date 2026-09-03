@@ -1,0 +1,63 @@
+version: 1
+name: retrieval_attention_regression_contract
+objective: >-
+  Define the regression gate for the completed R6-R7C retrieval-attention
+  subsystem. The gate executes the established offline audits in dependency
+  order and must not introduce new runtime behavior.
+
+purpose:
+  rules:
+    - The regression umbrella is an orchestration-only test gate.
+    - It must reuse existing audits rather than duplicate their semantic assertions.
+    - A failure in any required audit must fail the umbrella gate.
+    - The umbrella must not invoke network retrieval, LLM calls, lifecycle transitions, or action execution.
+    - The umbrella must not modify scientific state or production state.
+
+ordered_audits:
+  - python -m scripts.audit_retrieval_history_integration
+  - python -m scripts.audit_retrieval_attention_contract
+  - python -m scripts.audit_retrieval_attention_provenance_contract
+  - python -m scripts.audit_retrieval_attention_context_contract
+  - python -m scripts.audit_retrieval_attention_context
+  - python -m scripts.audit_retrieval_attention_policy_contract
+  - python -m scripts.audit_retrieval_attention_policy
+  - python -m scripts.audit_retrieval_attention_proposal_contract
+  - python -m scripts.audit_retrieval_attention_persistence_contract
+  - python -m scripts.audit_retrieval_attention_persistence
+  - python -m scripts.audit_retrieval_attention_replay
+  - python -m scripts.audit_retrieval_attention_pipeline_contract
+  - python -m scripts.audit_retrieval_attention_pipeline
+  - python -m scripts.audit_retrieval_attention_full_cycle_contract
+  - python -m scripts.audit_retrieval_attention_full_cycle
+  - python -m scripts.audit_retrieval_attention_runtime_contract
+  - python -m scripts.audit_retrieval_attention_runtime
+  - python -m scripts.audit_retrieval_attention_live_integration
+  - python -m scripts.audit_retrieval_attention_runtime_isolation_contract
+  - python -m scripts.audit_retrieval_attention_runtime_isolation
+
+execution_rules:
+  rules:
+    - Execute audits in the listed dependency order.
+    - Use the current Python interpreter to invoke each audit as a module.
+    - Stop on the first failing audit and return a non-zero exit status.
+    - Preserve each child audit stdout/stderr so the failing audit remains diagnosable.
+    - A successful umbrella run must report the number of audits executed and that all passed.
+
+scientific_isolation:
+  rules:
+    - The umbrella orchestrator must not import or modify scientific state.
+    - The umbrella must not write retrieval history, attention history, propositions, evidence relations, epistemic state, ranking, convergence, or writing state.
+    - The umbrella only launches existing offline audits.
+
+scope:
+  included:
+    - regression audit ordering
+    - subprocess/module orchestration
+    - fail-fast behavior
+    - pass/fail aggregation
+  excluded:
+    - changes to retrieval attention semantics
+    - changes to production pipeline behavior
+    - lifecycle transitions
+    - action execution
+    - scientific inference
