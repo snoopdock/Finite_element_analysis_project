@@ -1,0 +1,245 @@
+version: 1
+name: retrieval_attention_lifecycle_contract
+objective: >-
+  Define lifecycle-event semantics for retrieval-attention proposals without
+  mutating immutable retrieval history or introducing scientific interpretation.
+
+dependencies:
+  proposal_contract:
+    name: retrieval_attention_proposal_contract
+    version: 1
+  provenance_contract:
+    name: retrieval_attention_provenance_contract
+    version: 1
+  composition_rule: >-
+    R7D extends the lifecycle boundary already established by R6.5B and R7B.5.
+    It does not introduce a second proposal representation, change attention
+    semantics, or reinterpret lifecycle status as scientific state.
+
+lifecycle_model:
+  proposal_role:
+    meaning: >-
+      The AttentionProposal is the canonical R7B process interpretation. Its
+      lifecycle_status records the current process state of that proposal;
+      the proposal itself remains the original interpretation and is not
+      rewritten by later lifecycle activity.
+  event_stream_role:
+    meaning: >-
+      Lifecycle changes are represented as append-only lifecycle events that
+      reference an attention_id. A lifecycle event records what happened to
+      the process item rather than changing the historical retrieval facts
+      that supported the proposal.
+  state_vocabulary:
+    open:
+      meaning: >-
+        The attention proposal exists and currently warrants process tracking.
+      does_not_mean:
+        - scientific uncertainty
+        - evidence weakness
+        - scientific importance
+    addressed:
+      meaning: >-
+        A bounded retrieval/process response occurred or was explicitly
+        recorded for the attention proposal.
+      does_not_mean:
+        - problem solved
+        - provider fixed
+        - scientific issue resolved
+        - evidence strengthened
+    closed:
+      meaning: >-
+        Lifecycle tracking for the attention proposal has ended because the
+        governing process policy determines that no further action is currently
+        required.
+      does_not_mean:
+        - historical condition never existed
+        - provider permanently recovered
+        - scientific truth established
+        - scientific issue resolved
+
+initialization:
+  rule: >-
+    A newly generated R7B attention proposal begins with lifecycle_status open.
+    A lifecycle event stream may record this creation as an initial null-to-open
+    event, where previous_status is null and new_status is open.
+  requirements:
+    - The initial open state must reference the existing attention_id.
+    - Initial lifecycle creation must not alter the proposal's deterministic R7B core fields.
+    - Initial lifecycle creation must not alter retrieval-history events.
+
+lifecycle_event:
+  required_fields:
+    - lifecycle_event_id
+    - attention_id
+    - previous_status
+    - new_status
+    - transition_reason
+    - created_at
+    - actor
+  field_semantics:
+    lifecycle_event_id:
+      meaning: >-
+        Stable identity for one recorded lifecycle transition or initial
+        lifecycle creation event.
+    attention_id:
+      meaning: >-
+        Identifier of the canonical retrieval-attention proposal whose
+        lifecycle is being recorded.
+    previous_status:
+      meaning: >-
+        The lifecycle status immediately preceding this event; null is allowed
+        only for initial creation of an open proposal.
+    new_status:
+      meaning: >-
+        Lifecycle status established by this event.
+    transition_reason:
+      meaning: >-
+        Process-level explanation for why the lifecycle state changed; it must
+        not be a scientific conclusion.
+    created_at:
+      meaning: UTC timestamp at which the lifecycle event was recorded.
+    actor:
+      meaning: >-
+        Identifier of the process actor or subsystem responsible for recording
+        the lifecycle event.
+  rules:
+    - Lifecycle events describe process metadata only.
+    - Lifecycle events reference an attention proposal and must not create a duplicate proposal representation.
+    - A lifecycle event must not rewrite the original AttentionProposal interpretation.
+    - Lifecycle events are append-only historical records.
+    - created_at is lifecycle-event provenance metadata and does not redefine R7B deterministic proposal identity.
+
+allowed_transitions:
+  - from: open
+    to: addressed
+    condition: >-
+      A bounded retrieval/process response has been executed or explicitly
+      recorded for the attention proposal.
+  - from: open
+    to: closed
+    condition: >-
+      The governing process policy determines that no further action is
+      currently required, without claiming that the historical condition
+      never occurred or was scientifically resolved.
+  - from: addressed
+    to: closed
+    condition: >-
+      The governing process policy determines that the attention proposal no
+      longer requires lifecycle tracking.
+
+forbidden_transitions:
+  - from: closed
+    to: open
+    reason: >-
+      Reopening would mutate the lifecycle meaning of a closed historical
+      proposal; a later materially distinct operational condition must be
+      represented by a new attention proposal with a new attention_id.
+  - from: closed
+    to: addressed
+    reason: >-
+      A closed historical proposal must not be retroactively reused as the
+      active target of a new acquisition response.
+  - from: addressed
+    to: open
+    reason: >-
+      Addressed records that a process response occurred; returning to open
+      would conflate a later condition with the historical proposal lifecycle.
+  - from: open
+    to: open
+    reason: Repeating the same state is not a lifecycle transition.
+  - from: addressed
+    to: addressed
+    reason: Repeating the same state is not a lifecycle transition.
+  - from: closed
+    to: closed
+    reason: Repeating the same state is not a lifecycle transition.
+
+transition_rules:
+  rules:
+    - Every non-initial lifecycle transition must name one allowed from/to pair.
+    - A transition_reason must explain an operational or process condition and must not claim scientific resolution.
+    - Lifecycle history must preserve the ordering and identity of prior lifecycle events.
+    - A lifecycle transition must never rewrite, delete, replace, or reinterpret supporting retrieval-history events.
+    - A later retrieval event is a new acquisition fact and is not a mutation of the lifecycle event that preceded it.
+    - Policy changes may affect future lifecycle decisions but must not retroactively rewrite recorded lifecycle events.
+    - Lifecycle status is process metadata and must not be treated as evidence quality, truth, confidence, or scientific relevance.
+
+provenance:
+  required_trace:
+    - lifecycle_event_id
+    - attention_id
+    - previous_status
+    - new_status
+    - created_at
+    - actor
+  rules:
+    - Every lifecycle event must be attributable to one attention_id.
+    - Lifecycle history must remain explainable without network retrieval or an LLM call.
+    - Lifecycle provenance must remain distinct from retrieval-event provenance.
+    - A lifecycle event may reference retrieval-history information indirectly through the attention proposal but does not become a scientific support relation by doing so.
+
+scientific_isolation:
+  must_not_modify:
+    - retrieval_history
+    - retrieval_report
+    - propositions
+    - evidence_relations
+    - epistemic_state
+    - evidence_strength
+    - truth_status
+    - ranking
+    - convergence
+    - writing_content
+  forbidden_interpretations:
+    - scientific_absence
+    - evidence_quality
+    - truth_assessment
+    - epistemic_confidence
+    - scientific_relevance
+    - scientific_importance
+    - ranking_adjustment
+    - convergence_adjustment
+    - writer_instruction
+  rules:
+    - Lifecycle status is not a scientific state.
+    - Lifecycle transitions must not promote operational process facts into evidence or scientific conclusions.
+    - Lifecycle events must not change the scientific graph or generated scientific text.
+
+execution_boundary:
+  prohibited_direct_transitions:
+    - lifecycle_event_to_scientific_state
+    - lifecycle_event_to_retrieval_history_mutation
+    - lifecycle_event_to_automatic_action_execution
+  action_boundary: >-
+    Any later acquisition action remains a separate process. Executing an
+    acquisition action must produce new retrieval-history events rather than
+    modifying historical retrieval events or lifecycle provenance.
+
+reproducibility:
+  rules:
+    - Lifecycle event identity must not require mutable scientific state.
+    - Replaying lifecycle history must use recorded lifecycle events rather than recomputing historical transitions from current state.
+    - Policy evolution must not retroactively rewrite previously recorded lifecycle events.
+    - created_at may differ between independent newly recorded events without changing the meaning of the transition that was recorded.
+
+scope:
+  included:
+    - lifecycle state vocabulary
+    - lifecycle event semantics
+    - initial open-state recording
+    - allowed transitions
+    - forbidden transitions
+    - lifecycle provenance
+    - scientific isolation
+    - action boundary
+  excluded:
+    - lifecycle event implementation
+    - lifecycle persistence implementation
+    - lifecycle replay implementation
+    - runtime integration
+    - automatic action execution
+    - evidence assessment
+    - epistemic inference
+    - ranking changes
+    - convergence changes
+    - writer decisions
