@@ -39,7 +39,7 @@ REQUIRED_EVENT_FIELDS = {
     "created_at",
     "actor",
 }
-PROTECTED_STATE = {
+FORBIDDEN_SCIENTIFIC_FIELDS = {
     "retrieval_history",
     "retrieval_report",
     "propositions",
@@ -61,6 +61,11 @@ FORBIDDEN_INTERPRETATIONS = {
     "ranking_adjustment",
     "convergence_adjustment",
     "writer_instruction",
+}
+EXPECTED_PROHIBITED_DIRECT_TRANSITIONS = {
+    "lifecycle_event_to_scientific_state",
+    "lifecycle_event_to_retrieval_history_mutation",
+    "lifecycle_event_to_automatic_action_execution",
 }
 
 
@@ -86,7 +91,7 @@ def main() -> int:
     check(
         dependencies["proposal_contract"]["name"]
         == "retrieval_attention_proposal_contract",
-        "R7D.1 must depend on the R7B.5 proposal contract.",
+        "R7D.1 must depend on the proposal contract.",
     )
     check(
         dependencies["proposal_contract"]["version"] == 1,
@@ -95,111 +100,140 @@ def main() -> int:
     check(
         dependencies["provenance_contract"]["name"]
         == "retrieval_attention_provenance_contract",
-        "R7D.1 must extend the existing R6.5B provenance contract.",
+        "R7D.1 must extend the existing provenance/lifecycle contract.",
     )
     check(
         dependencies["provenance_contract"]["version"] == 1,
         "Unexpected provenance contract version.",
     )
-    composition_rule = dependencies["composition_rule"]
+    composition_rule = str(dependencies["composition_rule"])
     check(
-        "extends the lifecycle boundary already established by R6.5B and R7B.5"
+        "R7D extends the lifecycle boundary already established by R6.5B and R7B.5"
         in composition_rule,
-        "R7D.1 must extend existing lifecycle semantics rather than create a parallel state model.",
-    )
-
-    model = contract["lifecycle_model"]
-    states = model["state_vocabulary"]
-    check(set(states) == EXPECTED_STATES, "Lifecycle vocabulary must be exactly open/addressed/closed.")
-
-    open_meaning = states["open"]["meaning"]
-    addressed_meaning = states["addressed"]["meaning"]
-    closed_meaning = states["closed"]["meaning"]
-    check("process tracking" in open_meaning, "Open state must represent process tracking.")
-    check("retrieval/process response" in addressed_meaning, "Addressed state must represent a process response.")
-    check("Lifecycle tracking" in closed_meaning, "Closed state must represent lifecycle tracking ending.")
-
-    check(
-        {
-            "scientific uncertainty",
-            "evidence weakness",
-            "scientific importance",
-        }
-        <= set(states["open"]["does_not_mean"]),
-        "Open state must remain separate from scientific interpretation.",
+        "R7D.1 must extend the existing lifecycle semantics rather than create a parallel model.",
     )
     check(
-        {
-            "problem solved",
-            "provider fixed",
-            "scientific issue resolved",
-            "evidence strengthened",
-        }
-        <= set(states["addressed"]["does_not_mean"]),
-        "Addressed state must not imply resolution or evidence improvement.",
+        "does not introduce a second proposal representation" in composition_rule,
+        "R7D.1 must not introduce a duplicate proposal representation.",
+    )
+
+    lifecycle_model = contract["lifecycle_model"]
+    proposal_role = str(lifecycle_model["proposal_role"]["meaning"])
+    check(
+        "canonical R7B process interpretation" in proposal_role,
+        "AttentionProposal must remain the canonical R7B interpretation.",
     )
     check(
-        {
+        "is not rewritten by later lifecycle activity" in proposal_role,
+        "Lifecycle activity must not rewrite the original proposal.",
+    )
+
+    event_stream_role = str(lifecycle_model["event_stream_role"]["meaning"])
+    check(
+        "append-only lifecycle events" in event_stream_role,
+        "Lifecycle changes must be represented as append-only events.",
+    )
+    check(
+        "historical retrieval facts" in event_stream_role,
+        "Lifecycle events must remain separate from historical retrieval facts.",
+    )
+
+    states = lifecycle_model["state_vocabulary"]
+    check(set(states) == EXPECTED_STATES, "Lifecycle vocabulary must be open/addressed/closed.")
+    check(
+        "does_not_mean" in states["open"]
+        and set(states["open"]["does_not_mean"]) >= {"scientific uncertainty", "evidence weakness"},
+        "Open-state scientific interpretation boundary is incomplete.",
+    )
+    check(
+        set(states["addressed"]["does_not_mean"])
+        >= {"problem solved", "provider fixed", "scientific issue resolved"},
+        "Addressed-state semantics are incomplete.",
+    )
+    check(
+        set(states["closed"]["does_not_mean"])
+        >= {
             "historical condition never existed",
             "provider permanently recovered",
             "scientific truth established",
             "scientific issue resolved",
-        }
-        <= set(states["closed"]["does_not_mean"]),
-        "Closed state must not imply historical erasure or scientific resolution.",
+        },
+        "Closed-state semantics are incomplete.",
     )
 
     initialization = contract["initialization"]
+    initialization_rule = str(initialization["rule"])
     check(
-        "lifecycle_status open" in initialization["rule"],
-        "New R7B proposals must initialize with open lifecycle status.",
-    )
-    requirements = set(initialization["requirements"])
-    check(
-        "The initial open state must reference the existing attention_id." in requirements,
-        "Initial lifecycle state must reference the existing attention proposal.",
+        "begins with lifecycle_status open" in initialization_rule,
+        "New proposals must begin open.",
     )
     check(
-        "Initial lifecycle creation must not alter the proposal's deterministic R7B core fields." in requirements,
-        "Lifecycle creation must not modify the deterministic proposal core.",
+        "previous_status is null and new_status is open" in initialization_rule,
+        "Initial lifecycle creation semantics must allow null-to-open.",
+    )
+    initialization_requirements = "\n".join(str(item) for item in initialization["requirements"])
+    check(
+        "existing attention_id" in initialization_requirements,
+        "Initial lifecycle creation must reference the existing attention_id.",
     )
     check(
-        "Initial lifecycle creation must not alter retrieval-history events." in requirements,
-        "Lifecycle creation must preserve retrieval history.",
+        "must not alter retrieval-history events" in initialization_requirements,
+        "Initial lifecycle creation must not mutate retrieval history.",
     )
 
-    event = contract["lifecycle_event"]
+    event_contract = contract["lifecycle_event"]
     check(
-        set(event["required_fields"]) == REQUIRED_EVENT_FIELDS,
+        set(event_contract["required_fields"]) == REQUIRED_EVENT_FIELDS,
         "Lifecycle event required fields are incomplete or unexpected.",
     )
-    event_rules = "\n".join(str(rule) for rule in event["rules"])
+    event_rules = "\n".join(str(rule) for rule in event_contract["rules"])
     check("process metadata only" in event_rules, "Lifecycle events must remain process metadata.")
-    check("append-only" in event_rules, "Lifecycle events must be append-only.")
+    check("must not create a duplicate proposal representation" in event_rules,
+          "Lifecycle events must not create duplicate proposal objects.")
     check("must not rewrite the original AttentionProposal interpretation" in event_rules,
-          "Lifecycle events must not rewrite proposal interpretation.")
+          "Lifecycle events must not rewrite the original proposal interpretation.")
+    check("append-only historical records" in event_rules,
+          "Lifecycle events must remain append-only historical records.")
+    check("does not redefine R7B deterministic proposal identity" in event_rules,
+          "Lifecycle timestamps must remain outside deterministic proposal identity.")
 
     allowed = _pairs(contract["allowed_transitions"])
     forbidden = _pairs(contract["forbidden_transitions"])
-    check(allowed == EXPECTED_ALLOWED_TRANSITIONS, "Allowed lifecycle transitions are incomplete or unexpected.")
-    check(forbidden == EXPECTED_FORBIDDEN_TRANSITIONS, "Forbidden lifecycle transitions are incomplete or unexpected.")
+    check(
+        allowed == EXPECTED_ALLOWED_TRANSITIONS,
+        "Allowed lifecycle transitions are incomplete or unexpected.",
+    )
+    check(
+        forbidden == EXPECTED_FORBIDDEN_TRANSITIONS,
+        "Forbidden lifecycle transitions are incomplete or unexpected.",
+    )
     check(not (allowed & forbidden), "A lifecycle transition cannot be both allowed and forbidden.")
 
     forbidden_reasons = "\n".join(
         str(entry["reason"]) for entry in contract["forbidden_transitions"]
     )
-    check("new attention proposal" in forbidden_reasons,
-          "Closed-state recurrence must be represented by a new attention proposal.")
-    check("new acquisition response" in forbidden_reasons,
-          "A closed proposal must not be reused for a new acquisition response.")
+    check(
+        "new attention proposal" in forbidden_reasons,
+        "Closed-state recurrence must be represented by a new attention proposal.",
+    )
+    check(
+        "new acquisition response" in forbidden_reasons,
+        "A closed proposal must not be reused for a new acquisition response.",
+    )
 
     transition_rules = "\n".join(str(rule) for rule in contract["transition_rules"]["rules"])
-    check("must not rewrite, delete, replace, or reinterpret" in transition_rules,
-          "Lifecycle transitions must preserve retrieval history.")
-    check("Policy changes may affect future lifecycle decisions" in transition_rules,
-          "Lifecycle history must be protected from retroactive policy rewriting.")
-    check("process metadata" in transition_rules,
-          "Lifecycle status must remain process metadata.")
+    check(
+        "must never rewrite, delete, replace, or reinterpret" in transition_rules,
+        "Lifecycle transitions must preserve retrieval history.",
+    )
+    check(
+        "Policy changes may affect future lifecycle decisions" in transition_rules,
+        "Lifecycle history must be protected from retroactive policy rewriting.",
+    )
+    check(
+        "process metadata" in transition_rules,
+        "Lifecycle status must remain process metadata.",
+    )
 
     provenance = contract["provenance"]
     check(
@@ -214,54 +248,98 @@ def main() -> int:
         "Lifecycle provenance trace is incomplete or reordered.",
     )
     provenance_rules = "\n".join(str(rule) for rule in provenance["rules"])
-    check("network retrieval" in provenance_rules, "Lifecycle provenance must be replayable offline.")
-    check("LLM call" in provenance_rules, "Lifecycle provenance must not require an LLM call.")
-    check("scientific support relation" in provenance_rules,
-          "Lifecycle provenance must remain separate from scientific support relations.")
-
-    isolation = contract["scientific_isolation"]
     check(
-        PROTECTED_STATE <= set(isolation["must_not_modify"]),
-        "Scientific/process isolation boundary is incomplete.",
+        "without network retrieval or an LLM call" in provenance_rules,
+        "Lifecycle provenance must be reproducible offline.",
     )
     check(
-        FORBIDDEN_INTERPRETATIONS <= set(isolation["forbidden_interpretations"]),
+        "distinct from retrieval-event provenance" in provenance_rules,
+        "Lifecycle provenance must remain distinct from retrieval provenance.",
+    )
+
+    isolation = contract["scientific_isolation"]
+    protected = set(isolation["must_not_modify"])
+    check(
+        FORBIDDEN_SCIENTIFIC_FIELDS <= protected,
+        "Scientific/process isolation boundary is incomplete.",
+    )
+    forbidden_interpretations = set(isolation["forbidden_interpretations"])
+    check(
+        FORBIDDEN_INTERPRETATIONS <= forbidden_interpretations,
         "Scientific interpretation boundary is incomplete.",
     )
     isolation_rules = "\n".join(str(rule) for rule in isolation["rules"])
-    check("not a scientific state" in isolation_rules, "Lifecycle status must not become scientific state.")
-    check("must not change the scientific graph" in isolation_rules,
-          "Lifecycle events must not change the scientific graph.")
+    check(
+        "must not be treated as evidence" in isolation_rules,
+        "Lifecycle status must not become evidence.",
+    )
+    check(
+        "must not change the scientific graph" in isolation_rules,
+        "Lifecycle events must not change the scientific graph.",
+    )
 
     execution = contract["execution_boundary"]
     check(
         set(execution["prohibited_direct_transitions"])
-        == {
-            "lifecycle_event_to_scientific_state",
-            "lifecycle_event_to_retrieval_history_mutation",
-            "lifecycle_event_to_automatic_action_execution",
-        },
+        == EXPECTED_PROHIBITED_DIRECT_TRANSITIONS,
         "Lifecycle execution boundary is incomplete or unexpected.",
     )
+    action_boundary = str(execution["action_boundary"])
     check(
-        "new retrieval-history events" in execution["action_boundary"],
-        "Later acquisition actions must create new retrieval-history events.",
+        "must produce new retrieval-history events" in action_boundary,
+        "Later acquisition actions must return through new retrieval history.",
+    )
+    check(
+        "modifying historical retrieval events" in action_boundary,
+        "Lifecycle/action execution must not mutate historical retrieval events.",
     )
 
-    reproducibility_rules = "\n".join(str(rule) for rule in contract["reproducibility"]["rules"])
-    check("recorded lifecycle events" in reproducibility_rules,
-          "Lifecycle replay must use recorded events rather than recomputing history.")
-    check("must not retroactively rewrite" in reproducibility_rules,
-          "Policy evolution must not rewrite historical lifecycle events.")
+    reproducibility = contract["reproducibility"]
+    reproducibility_rules = "\n".join(str(rule) for rule in reproducibility["rules"])
+    check(
+        "must not require mutable scientific state" in reproducibility_rules,
+        "Lifecycle replay must not depend on mutable scientific state.",
+    )
+    check(
+        "recorded lifecycle events rather than recomputing historical transitions" in reproducibility_rules,
+        "Lifecycle replay must use recorded lifecycle events.",
+    )
+    check(
+        "must not retroactively rewrite previously recorded lifecycle events" in reproducibility_rules,
+        "Policy changes must not rewrite lifecycle history.",
+    )
 
     scope = contract["scope"]
-    included = set(scope["included"])
-    excluded = set(scope["excluded"])
-    check("lifecycle event semantics" in included, "Lifecycle event semantics must be in scope.")
-    check("lifecycle persistence implementation" in excluded, "Persistence implementation must remain out of R7D.1.")
-    check("runtime integration" in excluded, "Runtime integration must remain out of R7D.1.")
-    check("automatic action execution" in excluded, "Automatic action execution must remain out of R7D.1.")
-    check("evidence assessment" in excluded, "Scientific evidence assessment must remain out of R7D.1.")
+    check(
+        {
+            "lifecycle state vocabulary",
+            "lifecycle event semantics",
+            "initial open-state recording",
+            "allowed transitions",
+            "forbidden transitions",
+            "lifecycle provenance",
+            "scientific isolation",
+            "action boundary",
+        }
+        <= set(scope["included"]),
+        "R7D.1 included scope is incomplete.",
+    )
+    check(
+        {
+            "lifecycle event implementation",
+            "lifecycle persistence implementation",
+            "lifecycle replay implementation",
+            "runtime integration",
+            "automatic action execution",
+            "evidence assessment",
+            "epistemic inference",
+            "ranking changes",
+            "convergence changes",
+            "writer decisions",
+        }
+        <= set(scope["excluded"]),
+        "R7D.1 exclusions are incomplete.",
+    )
 
     print("R7D.1 retrieval attention lifecycle contract audit: PASS")
     return 0
