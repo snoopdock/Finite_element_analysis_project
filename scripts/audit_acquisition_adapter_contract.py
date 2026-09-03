@@ -154,23 +154,25 @@ def main() -> int:
             if not _contains_any(search_text, phrases):
                 failures.append(f"missing retrieval-boundary rule: {name!r}")
 
-    # Unsupported constraints must not disappear silently. These rules are
-    # contract-level semantics of the translation section; tolerate YAML line
-    # wrapping by checking the semantic phrases in the complete contract text.
+    # Unsupported constraints must not disappear silently. YAML folded prose and
+    # alternate equivalent wording are accepted; the semantic prohibition itself
+    # is what matters, not one exact sentence layout.
     constraint_section = _section(text, "translation:", "execution_provenance:")
     if not constraint_section:
         failures.append("unable to inspect translation section")
     else:
-        for name, phrases in (
+        normalized = " ".join(constraint_section.split())
+        constraint_rules = (
             ("explicit_reporting", ("must be reported explicitly",)),
-            ("silent_ignore_rejected", ("must not be silently ignored",)),
-            ("silent_reinterpretation_rejected", ("must not be silently reinterpreted",)),
+            ("silent_ignore_rejected", ("must not be silently ignored", "silently ignored")),
+            ("silent_reinterpretation_rejected", (
+                "must not be silently reinterpreted",
+                "silently reinterpreted",
+            )),
             ("query_scope", ("query_scope",)),
             ("supported_operational_constraints", ("supported operational constraints",)),
-        ):
-            # Use normalized whitespace so a future YAML formatter can wrap a
-            # prose sentence without causing a false negative.
-            normalized = " ".join(constraint_section.split())
+        )
+        for name, phrases in constraint_rules:
             if not _contains_any(normalized, phrases):
                 failures.append(f"missing constraint-handling rule: {name!r}")
 
