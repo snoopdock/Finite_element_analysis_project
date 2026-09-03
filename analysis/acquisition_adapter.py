@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Translate and execute explicit AcquisitionRequest objects.
 
-R8.7.4 intentionally implements only the acquisition boundary. The
-AcquisitionRequest remains the authoritative semantic model; the current
+R8.7.4 / R8.7.4.0 intentionally implements only the acquisition boundary.
+The R8.7.4.0 decision treats this module as the candidate realization until
+its tests and independent audit demonstrate conformity with the accepted
+R8.7.3 contract and implementation boundary.
+
+The AcquisitionRequest remains the authoritative semantic model; the current
 retrieval runtime continues to accept List[str]. Translation loss is recorded
 as execution provenance rather than being pushed into EvidenceRecord.
 """
