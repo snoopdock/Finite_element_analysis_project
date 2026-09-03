@@ -1,0 +1,399 @@
+version: 1
+name: acquisition_adapter_contract
+status: draft
+objective: >-
+  Define the minimal semantic boundary for translating an explicitly created
+  AcquisitionRequest into downstream acquisition execution while producing
+  acquisition-level execution provenance through an AcquisitionExecutionReceipt.
+  This contract does not implement retrieval, alter EvidenceRecord semantics,
+  or grant planning, scientific, or lifecycle authority to the adapter.
+
+architectural_role:
+  input_object:
+    name: AcquisitionRequest
+    authority: acquisition_process_request
+    semantic_claim: >-
+      An explicit process object specifying acquisition work and operational
+      constraints that may be attempted downstream.
+  adapter:
+    name: AcquisitionAdapter
+    authority: acquisition_execution_boundary
+    semantic_claim: >-
+      A translation and execution-boundary component that converts an
+      AcquisitionRequest into the representation required by the existing
+      retrieval interface and records the resulting execution occurrence.
+  output_object:
+    name: AcquisitionExecutionReceipt
+    authority: acquisition_execution_history
+    semantic_claim: >-
+      A durable or durably representable record of one acquisition execution
+      occurrence, including its relationship to the AcquisitionRequest and its
+      operational outcome.
+  retrieval_execution:
+    interface: List[str]
+    current_status: existing_interface
+    rule: >-
+      The existing retrieval execution interface remains responsible for
+      retrieval/provider behavior. The adapter owns translation into that
+      interface but does not redefine it.
+  evidence:
+    name: EvidenceRecord
+    authority: scientific_evidence_provenance
+    rule: >-
+      EvidenceRecord remains a source-level knowledge/provenance object and is
+      outside the adapter's semantic output boundary.
+
+core_invariants:
+  - AcquisitionAdapter consumes AcquisitionRequest, not upstream planning or scientific objects.
+  - AcquisitionAdapter produces AcquisitionExecutionReceipt for each execution occurrence.
+  - AcquisitionRequest remains distinct from AcquisitionExecutionReceipt.
+  - AcquisitionExecutionReceipt remains distinct from EvidenceRecord.
+  - AcquisitionAdapter is a translation and execution boundary, not a planner.
+  - AcquisitionAdapter does not evaluate scientific meaning of retrieval results.
+  - AcquisitionAdapter does not create or mutate lifecycle state.
+  - AcquisitionAdapter does not modify historical planning, request, attention, or execution records.
+  - Existing retrieve_evidence_parallel(List[str]) semantics remain unchanged by this contract.
+  - Request execution is explicit; adapter execution is not an automatic side effect of planning evaluation.
+
+input_boundary:
+  accepted_object:
+    name: AcquisitionRequest
+    required: true
+    source: explicit_request_formulation_boundary
+  prohibited_inputs:
+    - AttentionProposal
+    - ResearchPlanningSignal
+    - ResearchPlanningDecision
+    - RetrievalEvent
+    - EvidenceRecord
+    - ScientificAttention
+    - LifecycleEvent
+  rule: >-
+    Upstream objects remain traceable through the AcquisitionRequest origin and
+    must not be supplied to the adapter as an alternative execution input.
+
+translation:
+  responsibility: >-
+    Translate the semantic target and supported operational constraints of an
+    AcquisitionRequest into the existing retrieval execution representation.
+  current_retrieval_shape:
+    input: List[str]
+  allowed_translation:
+    - normalize AcquisitionRequest.target.query_scope into executable query strings
+    - apply supported provider preferences or access constraints where the existing execution boundary can represent them
+    - apply supported execution limits where the existing execution boundary can represent them
+    - preserve process execution priority as adapter scheduling metadata without converting it into scientific priority
+  structural_loss_boundary: >-
+    Conversion from the structured AcquisitionRequest into List[str] is an
+    explicit adapter responsibility. The retrieval function must not be required
+    to reconstruct the AcquisitionRequest from query strings.
+  unsupported_constraints:
+    rule: >-
+      Operational constraints that cannot be represented or enforced by the
+      current retrieval interface must be reported explicitly. They must not be
+      silently ignored, silently reinterpreted, or converted into scientific
+      semantics.
+  prohibited_translation:
+    - convert process priority into scientific priority
+    - convert provider failure into evidence weakness
+    - convert empty results into literature absence
+    - convert operational constraints into epistemic claims
+    - attach planning objects to EvidenceRecord solely to preserve execution provenance
+
+execution_provenance:
+  output_object: AcquisitionExecutionReceipt
+  identity:
+    required_fields:
+      - execution_id
+      - acquisition_request_id
+      - started_at
+      - completed_at
+      - execution_status
+  relationship:
+    acquisition_request_id: >-
+      Identifies the AcquisitionRequest whose explicit execution produced this
+      execution occurrence.
+    execution_id: >-
+      Identifies one execution occurrence and is distinct from acquisition_request_id.
+  occurrence_rule: >-
+    Each execution attempt is a separate occurrence. A retry creates a new
+    AcquisitionExecutionReceipt and must not overwrite the receipt of an earlier
+    attempt.
+  example_retry_sequence:
+    - acquisition_request_id: AR1
+      execution_id: EX1
+      execution_status: failure
+    - acquisition_request_id: AR1
+      execution_id: EX2
+      execution_status: success
+  immutable_occurrence_rule: >-
+    Once an execution receipt represents a completed execution occurrence, its
+    historical identity and causal relationship must not be rewritten to merge it
+    with another execution occurrence.
+
+receipt_fields:
+  required:
+    - execution_id
+    - acquisition_request_id
+    - started_at
+    - completed_at
+    - execution_status
+  optional:
+    - execution_constraints_applied
+    - generated_query_inputs
+    - provider_execution_summary
+    - error_summary
+  execution_status:
+    allowed_values:
+      - success
+      - failure
+      - partial_failure
+      - empty_result
+      - rate_limited
+    semantic_role: operational_execution_outcome_only
+  execution_constraints_applied:
+    semantic_role: >-
+      Operational constraints actually applied or enforced during this execution.
+      This field must not contain scientific interpretation.
+  generated_query_inputs:
+    semantic_role: >-
+      Query strings or equivalent execution inputs generated by the adapter from
+      the AcquisitionRequest. They document the adapter translation rather than
+      scientific conclusions.
+  provider_execution_summary:
+    semantic_role: >-
+      Operational provider outcomes relevant to the execution occurrence. It is
+      not an evidence-quality or truth assessment.
+  error_summary:
+    semantic_role: >-
+      Operational description of execution failure or limitation without
+      epistemic interpretation.
+
+relationship_to_evidence:
+  rule: >-
+    AcquisitionExecutionReceipt records why and how an acquisition execution
+    occurred. EvidenceRecord records source-level provenance and knowledge-bearing
+    evidence information. The two objects must remain semantically separate.
+  allowed_relationship: >-
+    Evidence produced by an execution may retain its existing source-level
+    provenance, including source_id, retrieved_at, query_context(s), and
+    provider(s), without requiring an acquisition_request_id field on the
+    EvidenceRecord.
+  many_to_many_protection: >-
+    A source may be discovered by multiple acquisition requests or execution
+    occurrences. The adapter must therefore not assume that one EvidenceRecord
+    belongs to exactly one AcquisitionRequest.
+  prohibited_changes:
+    - add acquisition_request_id to EvidenceRecord solely for adapter provenance
+    - redefine EvidenceRecord as an execution receipt
+    - reinterpret source-level provider/query provenance as request causality
+    - require EvidenceRecord to represent failed executions with no source result
+
+relationship_to_retrieval_runtime:
+  current_function: retrieve_evidence_parallel
+  current_input: List[str]
+  contract_rule: >-
+    The adapter may invoke the existing retrieval execution boundary after an
+    explicit AcquisitionRequest is available. This contract does not alter the
+    function signature, provider implementation, retrieval normalization, or
+    evidence merging behavior.
+  responsibility_split:
+    acquisition_adapter:
+      - validate accepted AcquisitionRequest semantics
+      - translate query_scope and supported operational constraints
+      - invoke downstream retrieval execution through the existing interface
+      - capture execution timing and operational outcome
+      - produce AcquisitionExecutionReceipt
+    retrieval_runtime:
+      - perform retrieval/provider execution
+      - return retrieval results through its existing interface
+      - maintain existing source-level evidence provenance
+  prohibited_runtime_changes:
+    - changes to retrieve_evidence_parallel
+    - provider-layer redesign
+    - EvidenceRecord schema redesign
+    - introduction of RetrievalEvent as an adapter requirement
+
+execution_status_semantics:
+  operational_only: true
+  mappings:
+    success:
+      meaning: retrieval execution completed without an operational failure classified by the executor
+    failure:
+      meaning: execution failed operationally
+    partial_failure:
+      meaning: execution completed with a bounded mixture of successful and failed operational components
+    empty_result:
+      meaning: execution completed but produced no returned records through the current retrieval interface
+    rate_limited:
+      meaning: execution was prevented or limited by provider rate limiting
+  semantic_non_equivalences:
+    - failure != evidence_weakness
+    - failure != claim_uncertainty
+    - empty_result != literature_absence
+    - empty_result != evidence_gap
+    - rate_limited != evidence_weakness
+    - partial_failure != scientific_disagreement
+
+authority_isolation:
+  planning:
+    prohibited:
+      - create ResearchPlanningDecision
+      - revise ResearchPlanningDecision
+      - create ResearchPlanningSignal
+      - revise ResearchPlanningSignal
+      - alter planning priority semantics
+  attention:
+    prohibited:
+      - create AttentionProposal
+      - revise AttentionProposal
+      - reinterpret retrieval conditions as attention state
+  scientific:
+    prohibited:
+      - create ScientificAttention
+      - modify epistemic state
+      - modify confidence
+      - modify evidence strength
+      - modify claim ranking
+      - modify convergence
+      - generate scientific conclusions
+  lifecycle:
+    prohibited:
+      - create LifecycleEvent
+      - advance AttentionProposal lifecycle state
+      - close or reopen lifecycle state
+      - rewrite lifecycle history
+  request_history:
+    prohibited:
+      - rewrite AcquisitionRequest
+      - mutate the originating ResearchPlanningDecision
+
+failure_and_retry:
+  retry_rule: >-
+    A retry of an AcquisitionRequest is a new execution occurrence with a new
+    execution_id and a new AcquisitionExecutionReceipt.
+  history_rule: >-
+    Earlier execution receipts remain historical records even when a later retry
+    succeeds.
+  request_identity_rule: >-
+    Multiple execution receipts may reference the same acquisition_request_id.
+  no_merge_rule: >-
+    Retries must not be represented by mutating one receipt to contain multiple
+    execution occurrences.
+
+automatic_execution:
+  planning_boundary: >-
+    Evaluation of a ResearchPlanningDecision does not automatically instantiate,
+    dispatch, or execute an AcquisitionRequest.
+  request_boundary: >-
+    Creation of an AcquisitionRequest is an explicit process step under the
+    AcquisitionRequest contract.
+  adapter_boundary: >-
+    The adapter executes only when an explicit AcquisitionRequest is submitted to
+    the execution boundary. The adapter is not a background authority that creates
+    requests or decides what should be acquired.
+
+lifecycle_isolation:
+  rules:
+    - AcquisitionExecutionReceipt does not create a LifecycleEvent.
+    - Execution success does not imply addressed or closed lifecycle state.
+    - Execution failure does not imply open, addressed, or closed lifecycle state.
+    - Execution retry does not reopen or alter lifecycle state.
+    - AcquisitionAdapter has no lifecycle transition authority.
+
+persistence:
+  status: future_boundary
+  requirements:
+    - AcquisitionExecutionReceipt should be persistable independently of EvidenceRecord.
+    - execution_id must uniquely identify one execution occurrence within its persistence scope.
+    - acquisition_request_id must preserve the causal relationship to the executed request.
+    - Historical receipts must remain independently addressable for audit and retry reconstruction.
+  excluded:
+    - concrete storage key
+    - database implementation
+    - replay implementation
+    - event-sourcing architecture
+    - automatic persistence integration
+
+validation:
+  input:
+    AcquisitionRequest_required: true
+    scientific_objects_rejected: true
+    lifecycle_objects_rejected: true
+  translation:
+    unsupported_constraints_reported: true
+    silent_constraint_loss_rejected: true
+    query_translation_explicit: true
+  receipt:
+    execution_id_required: true
+    acquisition_request_id_required: true
+    execution_status_required: true
+    retry_creates_new_execution_id: true
+    operational_semantics_only: true
+  separation:
+    evidence_remains_source_level: true
+    retrieval_report_remains_cycle_summary: true
+    retrieval_event_not_required: true
+    planning_authority_excluded: true
+    scientific_authority_excluded: true
+    lifecycle_authority_excluded: true
+
+non_decisions:
+  - No AcquisitionAdapter implementation is introduced by this contract.
+  - No changes to retrieve_evidence_parallel are introduced by this contract.
+  - No provider-layer changes are introduced by this contract.
+  - No EvidenceRecord schema changes are introduced by this contract.
+  - No AcquisitionExecutionReceipt runtime persistence is introduced by this contract.
+  - No RetrievalEvent model is introduced by this contract.
+  - No main.py integration is introduced by this contract.
+  - No pending_evidence_queries integration is introduced by this contract.
+  - No automatic retrieval execution is introduced by this contract.
+  - No scientific interpretation is introduced by this contract.
+  - No lifecycle transition is introduced by this contract.
+
+relationship_to_r8_6_2:
+  rule: >-
+    This contract consumes the AcquisitionRequest defined by R8.6.2 and preserves
+    its planning-to-acquisition boundary. It defines the downstream translation
+    and execution-provenance boundary without changing the AcquisitionRequest
+    contract.
+  preserved_decisions:
+    - AcquisitionRequest is distinct from ResearchPlanningDecision.
+    - Request creation is explicit and not automatic planner behavior.
+    - query_scope is the minimal target vocabulary.
+    - Operational constraints are not scientific semantics.
+    - Process priority remains process execution priority.
+
+relationship_to_r8_7_1_2:
+  rule: >-
+    This contract implements the R8.7.1.2 decision selecting
+    AcquisitionExecutionReceipt as the execution-level provenance model.
+  preserved_decisions:
+    - EvidenceRecord remains source-level only.
+    - retrieval_report remains a cycle summary.
+    - Execution occurrences are distinct from requests.
+    - Retries create new execution receipts.
+    - Retrieval runtime remains unaware of upstream planning semantics.
+
+scope:
+  included:
+    - adapter semantic role
+    - input boundary
+    - translation responsibility
+    - existing retrieval interface boundary
+    - execution receipt relationship
+    - execution status semantics
+    - retry semantics
+    - source-level evidence separation
+    - planning, scientific, and lifecycle isolation
+    - unsupported constraint handling
+    - future persistence requirements
+    - validation requirements
+  excluded:
+    - adapter implementation
+    - retrieval implementation
+    - provider redesign
+    - EvidenceRecord redesign
+    - RetrievalEvent design
+    - lifecycle runtime
+    - scientific inference
