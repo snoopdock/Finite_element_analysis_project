@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Translate R7B AttentionProposal objects into R8 ResearchPlanningSignals.
 
-R8.2 is an explicit, lossy semantic boundary.  This module does not mutate
+R8.2 is an explicit, lossy semantic boundary. This module does not mutate
 retrieval history, attention proposals, lifecycle history, scientific state,
-or acquisition systems.  It only creates a planning-input representation.
+or acquisition systems. It only creates a planning-input representation.
 """
 
 from __future__ import annotations
@@ -40,7 +40,30 @@ ALLOWED_CONDITIONS = {
     "repeated_query_provider_empty_result",
 }
 
-# These names are deliberately rejected anywhere in a supplied signal.  The
+ALLOWED_SIGNAL_FIELDS = {
+    "research_planning_signal_id",
+    "source_attention_id",
+    "schema_version",
+    "signal_type",
+    "target",
+    "provenance",
+    "operational_condition",
+    "acquisition_constraint",
+    "planning_context",
+    "translation_policy_version",
+    "created_at",
+}
+ALLOWED_TARGET_FIELDS = {"query_scope", "provider", "topic_scope", "proposition_reference"}
+ALLOWED_OPERATIONAL_CONDITION_FIELDS = {"observed_condition"}
+ALLOWED_ACQUISITION_CONSTRAINT_FIELDS = {
+    "provider_access_limitation",
+    "empty_query_result",
+    "provider",
+    "query_scope",
+}
+ALLOWED_PROVENANCE_FIELDS = {"supporting_event_ids"}
+
+# These names are deliberately rejected anywhere in a supplied signal. The
 # translator itself never creates them; validation also prevents callers from
 # smuggling scientific meaning through optional planning context.
 FORBIDDEN_SEMANTIC_KEYS = {
@@ -86,6 +109,12 @@ def _require_event_ids(value: Any) -> list[str]:
     return result
 
 
+def _reject_unknown_fields(value: Mapping[str, Any], allowed: set[str], scope: str) -> None:
+    unknown = sorted(set(value) - allowed)
+    if unknown:
+        raise ValueError(f"unknown {scope} fields: {unknown}")
+
+
 def _contains_forbidden_key(value: Any) -> str | None:
     if isinstance(value, Mapping):
         for key, child in value.items():
@@ -117,7 +146,10 @@ def _validate_attention_proposal(proposal: Mapping[str, Any]) -> dict[str, Any]:
     _require_non_empty_string(normalized["query_scope"], "query_scope")
     _require_non_empty_string(normalized["provider"], "provider")
     _require_non_empty_string(normalized["attention_reason"], "attention_reason")
-    _require_non_empty_string(normalized["recommended_acquisition_action"], "recommended_acquisition_action")
+    _require_non_empty_string(
+        normalized["recommended_acquisition_action"],
+        "recommended_acquisition_action",
+    )
     _require_event_ids(normalized["supporting_event_ids"])
 
     condition = _require_non_empty_string(
@@ -126,7 +158,7 @@ def _validate_attention_proposal(proposal: Mapping[str, Any]) -> dict[str, Any]:
     if condition not in ALLOWED_CONDITIONS:
         raise ValueError(f"unsupported observed_condition: {condition!r}")
 
-    # R7B proposals are process-attention records.  Lifecycle handling remains
+    # R7B proposals are process-attention records. Lifecycle handling remains
     # separate and never changes the canonical proposal payload.
     if normalized["lifecycle_status"] != "open":
         raise ValueError(
@@ -225,8 +257,8 @@ def translate_attention_proposal(
 ) -> dict[str, Any]:
     """Translate one R7B AttentionProposal into one R8 planning signal.
 
-    The returned object is newly allocated.  The input proposal is never
-    modified.  ``include_created_at`` adds persistence metadata only and is
+    The returned object is newly allocated. The input proposal is never
+    modified. ``include_created_at`` adds persistence metadata only and is
     excluded from deterministic signal identity.
     """
     signal = _make_signal(proposal)
@@ -262,35 +294,17 @@ def validate_research_planning_signal(
     if not isinstance(signal, Mapping):
         raise TypeError("research planning signal must be a mapping")
 
-    allowed_fields = {
+    _reject_unknown_fields(signal, ALLOWED_SIGNAL_FIELDS, "ResearchPlanningSignal")
+
+    required = (
         "research_planning_signal_id",
         "source_attention_id",
         "schema_version",
         "signal_type",
         "target",
         "provenance",
-        "operational_condition",
-        "acquisition_constraint",
-        "planning_context",
-        "translation_policy_version",
-        "created_at",
-    }
-    unknown = sorted(set(signal) - allowed_fields)
-    if unknown:
-        raise ValueError(f"unknown ResearchPlanningSignal fields: {unknown}")
-
-    missing = [
-        field
-        for field in (
-            "research_planning_signal_id",
-            "source_attention_id",
-            "schema_version",
-            "signal_type",
-            "target",
-            "provenance",
-        )
-        if field not in signal
-    ]
+    )
+    missing = [field for field in required if field not in signal]
     if missing:
         raise ValueError(f"ResearchPlanningSignal is missing required fields: {missing}")
 
@@ -299,20 +313,28 @@ def validate_research_planning_signal(
         raise ValueError(f"forbidden scientific semantic field: {forbidden!r}")
 
     result = deepcopy(dict(signal))
-    _require_non_empty_string(result["research_planning_signal_id"], "research_planning_signal_id")
+    _require_non_empty_string(
+        result["research_planning_signal_id"], "research_planning_signal_id"
+    )
     _require_non_empty_string(result["source_attention_id"], "source_attention_id")
     if result["schema_version"] != PLANNING_SIGNAL_SCHEMA_VERSION:
         raise ValueError("unsupported ResearchPlanningSignal schema version")
     if result["signal_type"] != SIGNAL_TYPE:
         raise ValueError(f"unsupported signal_type: {result['signal_type']!r}")
-    if not isinstance(result["target"], Mapping):
-        raise ValueError("target must be a mapping")
-    if not isinstance(result["provenance"], Mapping):
-        raise ValueError("provenance must be a mapping")
 
-    event_ids = _require_event_ids(result["provenance"].get("supporting_event_ids"))
-    if not result["source_attention_id"].strip():
-        raise ValueError("source_attention_id must not be empty")
+    target = result["target"]
+    if not isinstance(target, Mapping):
+        raise ValueError("target must be a mapping")
+    _reject_unknown_fields(target, ALLOWED_TARGET_FIELDS, "target")
+    for field in ("query_scope", "provider", "topic_scope", "proposition_reference"):
+        if field in target and target[field] is not None:
+            _require_non_empty_string(target[field], f"target.{field}")
+
+    provenance = result["provenance"]
+    if not isinstance(provenance, Mapping):
+        raise ValueError("provenance must be a mapping")
+    _reject_unknown_fields(provenance, ALLOWED_PROVENANCE_FIELDS, "provenance")
+    _require_event_ids(provenance.get("supporting_event_ids"))
 
     if "translation_policy_version" in result:
         _require_non_empty_string(
@@ -321,32 +343,46 @@ def validate_research_planning_signal(
     if "created_at" in result:
         _require_non_empty_string(result["created_at"], "created_at")
 
-    target = result["target"]
-    query_scope = target.get("query_scope")
-    provider = target.get("provider")
-    if query_scope is not None:
-        _require_non_empty_string(query_scope, "target.query_scope")
-    if provider is not None:
-        _require_non_empty_string(provider, "target.provider")
-
     if "operational_condition" in result:
         condition_data = result["operational_condition"]
         if not isinstance(condition_data, Mapping):
             raise ValueError("operational_condition must be a mapping")
-        condition = condition_data.get("observed_condition")
-        _require_non_empty_string(condition, "operational_condition.observed_condition")
+        _reject_unknown_fields(
+            condition_data,
+            ALLOWED_OPERATIONAL_CONDITION_FIELDS,
+            "operational_condition",
+        )
+        condition = _require_non_empty_string(
+            condition_data.get("observed_condition"),
+            "operational_condition.observed_condition",
+        )
         if condition not in ALLOWED_CONDITIONS:
             raise ValueError(f"unsupported observed_condition: {condition!r}")
 
-    if "acquisition_constraint" in result and not isinstance(
-        result["acquisition_constraint"], Mapping
-    ):
-        raise ValueError("acquisition_constraint must be a mapping")
+    if "acquisition_constraint" in result:
+        constraint = result["acquisition_constraint"]
+        if not isinstance(constraint, Mapping):
+            raise ValueError("acquisition_constraint must be a mapping")
+        _reject_unknown_fields(
+            constraint,
+            ALLOWED_ACQUISITION_CONSTRAINT_FIELDS,
+            "acquisition_constraint",
+        )
+        for field in ("provider", "query_scope"):
+            if field in constraint:
+                _require_non_empty_string(
+                    constraint[field], f"acquisition_constraint.{field}"
+                )
+        for field in ("provider_access_limitation", "empty_query_result"):
+            if field in constraint and not isinstance(constraint[field], bool):
+                raise ValueError(f"acquisition_constraint.{field} must be boolean")
 
-    # The required provenance is deliberately checked independently of any
-    # optional fields so a caller cannot hide missing operational traceability.
-    if not event_ids:
-        raise ValueError("provenance.supporting_event_ids must not be empty")
+    # planning_context is intentionally not generated by R8.2. Reject it here
+    # until a later contract revision defines its exact bounded vocabulary.
+    if "planning_context" in result:
+        raise ValueError(
+            "planning_context is reserved by R8.1 but is not implemented by R8.2"
+        )
 
     return result
 
