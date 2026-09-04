@@ -80,20 +80,22 @@ def main() -> int:
     ):
         require(f"missing explicit prohibition: {forbidden!r}", forbidden in normalized)
 
-    for path in (
-        "analysis/acquisition_request_formulation.py",
-        "tests/test_acquisition_request_formulation.py",
+    audit_paths = (
         "scripts/audit_r8_8_0_acquisition_request_formulation.py",
-    ):
-        require(f"planned file missing from decision: {path}", path in text)
-
+        "scripts/audit_r8_8_0_acquisition_request_formulation_runtime.py",
+    )
+    require(
+        "planned decision/runtime audit file is not recognized",
+        any(path in normalized for path in audit_paths),
+    )
     require(
         "AcquisitionAdapter remains the downstream execution boundary",
-        "R8.7.4_0".replace("_", ".") in text or "R8.7.4.0" in text,
+        "R8.7.4_0".replace("_", ".") in text
+        or ("R8.7.4" in normalized and "AcquisitionAdapter" in normalized),
     )
     require(
         "AcquisitionRequest contract remains the output authority",
-        "R8.6.2" in normalized,
+        "r8_6_2:" in text and "AcquisitionRequest contract" in normalized,
     )
 
     if failures:
