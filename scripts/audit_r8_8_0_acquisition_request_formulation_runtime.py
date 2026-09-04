@@ -20,6 +20,14 @@ def _source_call_names(tree: ast.AST) -> set[str]:
     }
 
 
+def _string_literals(tree: ast.AST) -> set[str]:
+    return {
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+    }
+
+
 def _dict_string_keys(tree: ast.AST) -> set[str]:
     keys: set[str] = set()
     for node in ast.walk(tree):
@@ -28,6 +36,16 @@ def _dict_string_keys(tree: ast.AST) -> set[str]:
                 if isinstance(key, ast.Constant) and isinstance(key.value, str):
                     keys.add(key.value)
     return keys
+
+
+def _set_string_elements(tree: ast.AST) -> set[str]:
+    values: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Set):
+            for element in node.elts:
+                if isinstance(element, ast.Constant) and isinstance(element.value, str):
+                    values.add(element.value)
+    return values
 
 
 def main() -> int:
@@ -48,6 +66,7 @@ def main() -> int:
         print(f"R8.8.0 AcquisitionRequest formulation runtime audit: FAIL\n- unable to read/parse artifacts: {exc}")
         return 1
 
+    normalized_module = " ".join(text.split())
     normalized_decision = " ".join(decision.split())
     functions = {
         node.name: node
@@ -60,7 +79,9 @@ def main() -> int:
         if isinstance(node, ast.ImportFrom)
         for alias in node.names
     }
+    string_literals = _string_literals(tree)
     dict_keys = _dict_string_keys(tree)
+    set_elements = _set_string_elements(tree)
 
     require("formulator function exists", "formulate_acquisition_request" in functions)
     require("output validator is used", "validate_acquisition_request" in imported_names)
@@ -87,11 +108,12 @@ def main() -> int:
 
     require(
         "provider is not inferred",
-        "target.provider is deliberately not mapped" in " ".join(text.split()),
+        "target.provider is deliberately not mapped" in normalized_module,
     )
     require(
         "provider constraints remain explicit",
-        {"provider_preferences", "provider_access_constraints"}.issubset(dict_keys),
+        {"provider_preferences", "provider_access_constraints"}.issubset(string_literals)
+        and {"provider_preferences", "provider_access_constraints"}.issubset(set_elements),
     )
     require(
         "rationale is not converted into query semantics",
@@ -108,11 +130,11 @@ def main() -> int:
         "research_planning_decision_id" in dict_keys
         and "origin" in dict_keys,
     )
-    require("new request identity is generated", "uuid4" in text)
-    require("constraints default to empty mapping", "return {}" in text)
+    require("new request identity is generated", "uuid4" in string_literals or "uuid4" in normalized_module)
+    require("constraints default to empty mapping", "return {}" in normalized_module)
     require(
         "request formulation is explicit",
-        "decision_type" in text and "formulate_acquisition_request" in text,
+        "decision_type" in normalized_module and "formulate_acquisition_request" in normalized_module,
     )
     require(
         "execution is explicitly downstream",
