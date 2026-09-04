@@ -202,7 +202,7 @@ file_scope:
   planned_test_files:
     - tests/test_acquisition_request_formulation.py
   planned_audit_files:
-    - scripts/audit_r8_8_0_acquisition_request_formulation.py
+    - scripts/audit_r8_8_0_acquisition_request_formulation_runtime.py
   deferred:
     - main.py integration
     - persistence implementation
