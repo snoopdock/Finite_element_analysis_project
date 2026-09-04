@@ -43,9 +43,16 @@ def test_request_validation_rejects_forbidden_scientific_field_nested():
 
 
 def test_request_validation_rejects_scientific_target_fields():
-    with pytest.raises(ValueError, match="unknown AcquisitionRequest target fields"):
+    with pytest.raises(ValueError, match="forbidden scientific semantic field"):
         validate_acquisition_request(
             request(target={"query_scope": "fem", "claim_id": "C1"})
+        )
+
+
+def test_request_validation_rejects_unknown_non_scientific_target_fields():
+    with pytest.raises(ValueError, match="unknown AcquisitionRequest target fields"):
+        validate_acquisition_request(
+            request(target={"query_scope": "fem", "request_scope": "extra"})
         )
 
 
