@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import sys
 from typing import Any
 
 import yaml
@@ -88,7 +87,12 @@ def main() -> None:
     require(types == {"no_action", "defer", "prioritize_research", "formulate_acquisition_request"}, "planner decision vocabulary is incomplete or altered")
     no_op = data.get("no_op_semantics", {})
     no_op_text = " ".join(str(v) for v in no_op.values()).lower()
-    require("no separate no-op object" in no_op_text, "no-op semantics must not introduce a new semantic object")
+    normalized_no_op_text = norm(no_op_text)
+    require(
+        "no_separate_no_op_object" in normalized_no_op_text
+        or "does_not_create_a_separate_no_op_object" in normalized_no_op_text,
+        "no-op semantics must not introduce a new semantic object",
+    )
     require("only formulate_acquisition_request" in no_op_text, "request routing condition is missing")
     checks += 1
 
