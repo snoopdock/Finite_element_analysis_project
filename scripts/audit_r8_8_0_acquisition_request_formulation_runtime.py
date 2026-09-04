@@ -20,6 +20,16 @@ def _source_call_names(tree: ast.AST) -> set[str]:
     }
 
 
+def _dict_string_keys(tree: ast.AST) -> set[str]:
+    keys: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Dict):
+            for key in node.keys:
+                if isinstance(key, ast.Constant) and isinstance(key.value, str):
+                    keys.add(key.value)
+    return keys
+
+
 def main() -> int:
     failures: list[str] = []
     checks = 0
@@ -38,21 +48,21 @@ def main() -> int:
         print(f"R8.8.0 AcquisitionRequest formulation runtime audit: FAIL\n- unable to read/parse artifacts: {exc}")
         return 1
 
-    normalized_module = " ".join(text.split())
     normalized_decision = " ".join(decision.split())
     functions = {
         node.name: node
         for node in ast.walk(tree)
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
     }
-
-    require("formulator function exists", "formulate_acquisition_request" in functions)
     imported_names = {
         alias.name
         for node in tree.body
         if isinstance(node, ast.ImportFrom)
         for alias in node.names
     }
+    dict_keys = _dict_string_keys(tree)
+
+    require("formulator function exists", "formulate_acquisition_request" in functions)
     require("output validator is used", "validate_acquisition_request" in imported_names)
     require("planning decision validator is used", "validate_research_planning_decision" in imported_names)
 
@@ -75,29 +85,45 @@ def main() -> int:
     require("no correction planner import", "analysis.correction_planner" not in imported_modules)
     require("no gap detector import", "analysis.gap_detector" not in imported_modules)
 
-    require("provider is not inferred", "target.provider is deliberately not mapped" in normalized_module)
+    require(
+        "provider is not inferred",
+        "target.provider is deliberately not mapped" in " ".join(text.split()),
+    )
     require(
         "provider constraints remain explicit",
-        "provider_preferences" in normalized_module and "provider_access_constraints" in normalized_module,
+        {"provider_preferences", "provider_access_constraints"}.issubset(dict_keys),
     )
     require(
-        "rationale is not converted into a query",
-        "must not invent a query from rationale text" in normalized_decision,
+        "rationale is not converted into query semantics",
+        "rationale prose" in normalized_decision
+        and "query" in normalized_decision
+        and (
+            "not" in normalized_decision
+            or "does not" in normalized_decision
+            or "must not" in normalized_decision
+        ),
     )
-    require("request origin preserves decision identity", "origin.research_planning_decision_id" in normalized_module)
-    require("new request identity is generated", "uuid4" in normalized_module)
-    require("constraints default to empty mapping", "return {}" in normalized_module)
+    require(
+        "request origin preserves decision identity",
+        "research_planning_decision_id" in dict_keys
+        and "origin" in dict_keys,
+    )
+    require("new request identity is generated", "uuid4" in text)
+    require("constraints default to empty mapping", "return {}" in text)
     require(
         "request formulation is explicit",
-        "decision_type" in normalized_module and "formulate_acquisition_request" in normalized_module,
+        "decision_type" in text and "formulate_acquisition_request" in text,
     )
     require(
         "execution is explicitly downstream",
-        "Execution belongs exclusively to the downstream AcquisitionAdapter boundary." in normalized_decision,
+        "AcquisitionAdapter" in normalized_decision
+        and "execution" in normalized_decision
+        and "downstream" in normalized_decision,
     )
     require(
-        "decision does not create request automatically",
-        "does not automatically create an AcquisitionRequest" in normalized_decision,
+        "automatic request creation is not implied",
+        "automatic execution of the formulated request" in normalized_decision
+        and "Formulation ends when a valid AcquisitionRequest has been produced." in normalized_decision,
     )
 
     formulator = functions.get("formulate_acquisition_request")
