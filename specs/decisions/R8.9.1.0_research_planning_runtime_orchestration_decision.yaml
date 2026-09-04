@@ -1,0 +1,357 @@
+version: 1
+name: R8.9.1.0_research_planning_runtime_orchestration_decision
+status: accepted
+title: Research Planning Runtime Orchestration Boundary Decision
+objective: >-
+  Define the finite runtime composition boundary that connects the accepted R8.2,
+  R8.3, and R8.8 semantic authorities without transferring semantic ownership into
+  runtime orchestration, application bootstrap code, acquisition execution, retrieval,
+  persistence, lifecycle state, or scientific state.
+
+central_invariant: >-
+  Runtime orchestration is a coordinator, not a semantic authority. It may delegate
+  to established translation, planning, and formulation authorities, but it must not
+  redefine the meaning of their inputs, outputs, decisions, failures, or identities.
+
+authority_separation:
+  runtime_orchestration:
+    authority_type: composition_only
+    owns:
+      - sequencing
+      - delegation
+      - batch cardinality
+      - composition-level preconditions
+      - operational error propagation
+      - provenance preservation across composed boundaries
+    does_not_own:
+      - planning semantics
+      - acquisition semantics
+      - retrieval semantics
+      - evidence semantics
+      - lifecycle semantics
+      - scientific semantics
+      - persistence semantics
+  research_planning_translation:
+    authority: R8.2
+    role: AttentionProposal_to_ResearchPlanningSignal
+  research_planning_evaluation:
+    authority: R8.3
+    role: ResearchPlanningSignal_to_ResearchPlanningDecision
+  acquisition_request_formulation:
+    authority: R8.8
+    role: ResearchPlanningDecision_to_AcquisitionRequest
+  acquisition_execution:
+    authority: AcquisitionAdapter
+    role: AcquisitionRequest_to_retrieval_execution
+
+runtime_scope:
+  included:
+    - accept one or more AttentionProposal inputs
+    - process proposals independently
+    - invoke the established R8.2 translation boundary
+    - invoke the established R8.3 planning evaluator
+    - invoke the established R8.8 request formulation boundary when applicable
+    - preserve cross-boundary provenance
+    - preserve established decision types and request semantics
+    - propagate operational failures without converting them into domain decisions
+  excluded:
+    - retrieval execution
+    - provider selection
+    - provider failover policy
+    - evidence storage
+    - RetrievalEvent creation or mutation
+    - lifecycle mutation
+    - scientific-state mutation
+    - AcquisitionRequest persistence
+    - AcquisitionExecutionReceipt persistence
+    - creation or reconstruction of AcquisitionExecutionReceipt
+    - modification of EvidenceRecord semantics
+    - merging of independent planning decisions
+    - automatic scheduling
+    - hidden retries
+    - new scientific or planning semantic objects
+
+composition_sequence:
+  per_input:
+    - AttentionProposal
+    - ResearchPlanningSignal
+    - ResearchPlanningDecision
+    - AcquisitionRequest_if_applicable
+  rule: >-
+    The coordinator invokes existing authorities in semantic order. It does not
+    inline or duplicate their rules. A ResearchPlanningDecision is created by the
+    established R8.3 evaluator, and an AcquisitionRequest is created only by the
+    established R8.8 formulation boundary.
+
+batch_semantics:
+  mode: independent
+  rule: >-
+    Each AttentionProposal is an independent processing unit. The coordinator must
+    not merge proposals, signals, planning decisions, or requests unless a later
+    explicit semantic decision defines such an operation.
+  rationale: >-
+    Independent processing preserves provenance and avoids introducing an unstated
+    semantic rule explaining why originally independent reasoning paths should become
+    one acquisition operation.
+  failure_isolation: >-
+    Operational failure handling must not change the semantic meaning of other
+    independent inputs. The implementation may expose item-level operational failure
+    information, but must not synthesize a ResearchPlanningDecision from a runtime
+    failure.
+
+cardinality:
+  input:
+    AttentionProposal:
+      cardinality: many
+  output:
+    ResearchPlanningDecision:
+      cardinality: one_per_input
+    AcquisitionRequest:
+      cardinality: zero_or_more
+  constraints:
+    - one AttentionProposal produces at most one ResearchPlanningSignal in one composition operation
+    - one ResearchPlanningSignal produces one ResearchPlanningDecision per evaluation
+    - only decision_type formulate_acquisition_request may produce an AcquisitionRequest
+    - no cross-input deduplication or merging is introduced by the coordinator
+    - request identity remains owned by the R8.8 formulation boundary
+
+provenance_preservation:
+  rule: >-
+    Composition must preserve the existing provenance chain without inventing replacement
+    authority or lossy tracing identifiers.
+  chain:
+    - AttentionProposal.id
+    - ResearchPlanningSignal.source_attention_proposal_id
+    - ResearchPlanningDecision.id
+    - AcquisitionRequest.origin.research_planning_decision_id
+  requirements:
+    - do not replace an upstream identity with a runtime-generated semantic identity
+    - do not discard the relationship between an output and the authority that created it
+    - do not add scalar acquisition_request_id to EvidenceRecord merely for runtime tracing
+    - do not reconstruct an AcquisitionExecutionReceipt in the coordinator
+
+error_handling:
+  principle: >-
+    Runtime failures are operational failures and are not ResearchPlanningDecision values.
+  domain_decision_types_owned_by_planner:
+    - no_action
+    - defer
+    - prioritize_research
+    - formulate_acquisition_request
+  operational_failure_examples:
+    - invalid_input_object
+    - translation_failure
+    - planning_component_failure
+    - formulation_failure
+    - unexpected_exception
+  rules:
+    - do not create RejectedDecision or NoAcquisitionRequired semantic objects
+    - do not reinterpret runtime failure as evidence absence, evidence gap, confidence change, ranking change, or convergence change
+    - do not silently convert an exception into no_action
+    - do not silently retry a failed semantic boundary
+    - preserve the original operational error for the caller according to the implementation contract
+  default_behavior: >-
+    Unless a later runtime implementation decision establishes a bounded item-level
+    error container, operational exceptions propagate to the caller rather than being
+    converted into semantic domain objects.
+
+no_op_semantics:
+  rule: >-
+    No-action and defer outcomes remain ordinary ResearchPlanningDecision values created
+    by the planner. The coordinator does not create a separate no-op object.
+  request_behavior: >-
+    A ResearchPlanningDecision whose decision_type is no_action, defer, or
+    prioritize_research does not continue to R8.8 AcquisitionRequest formulation.
+  formulation_behavior: >-
+    Only formulate_acquisition_request continues to the explicit R8.8 formulation
+    boundary.
+
+statelessness:
+  required: true
+  rule: >-
+    The coordinator is a stateless composition service. It must not maintain runtime
+    state, retrieval history, pending requests, durable decisions, caches with semantic
+    ownership, or persistence-backed orchestration state as part of R8.9.1.
+  prohibited_members:
+    - runtime_state
+    - runtime_history
+    - pending_requests
+    - persisted_decisions
+    - implicit_retry_state
+  rationale: >-
+    AcquisitionRequest persistence, AcquisitionExecutionReceipt persistence, and
+    lifecycle storage remain intentionally deferred. The coordinator must not introduce
+    an unofficial persistence model through internal state.
+
+adapter_boundary:
+  R8_9_1_role: >-
+    R8.9.1 ends at AcquisitionRequest production. It does not execute the request
+    through AcquisitionAdapter and does not trigger retrieval implicitly.
+  downstream_owner: AcquisitionAdapter
+  rule: >-
+    Any future execution path must pass the resulting AcquisitionRequest through the
+    established AcquisitionAdapter boundary. Adapter translation, execution identity,
+    receipt creation, and retrieval invocation remain outside this coordinator.
+
+main_py_boundary:
+  rule: >-
+    main.py remains application bootstrap and top-level composition. It may construct
+    and invoke the coordinator after the coordinator is independently implemented and
+    verified, but it must not absorb R8 semantic rules into application code.
+  prohibited:
+    - direct AttentionProposal_to_signal translation
+    - direct signal_to_decision semantic evaluation
+    - direct decision_to_request semantic formulation
+    - direct request_to_legacy_List_string translation
+    - direct receipt creation
+    - direct persistence of requests or receipts
+    - direct scientific or lifecycle mutation from planning observations
+
+non_expansion_invariant:
+  statement: >-
+    R8.9.1 may define composition behavior required to connect existing authorities,
+    but may not become a repository for unresolved planning, acquisition, evidence,
+    scientific, lifecycle, or persistence semantics.
+  may_define:
+    - sequencing
+    - delegation
+    - batch cardinality
+    - operational error propagation
+    - provenance preservation
+    - composition-level preconditions
+  may_not_define:
+    - new planning semantics
+    - new acquisition semantics
+    - new evidence semantics
+    - new scientific semantics
+    - new lifecycle semantics
+    - new persistence semantics
+    - merged planning semantics without an explicit future decision
+
+implementation_boundary:
+  planned_module: core/research_planning_runtime.py
+  planned_entry_point: compose_research_acquisition_flow
+  expected_behavior: >-
+    For each input AttentionProposal, translate it through R8.2, evaluate the resulting
+    ResearchPlanningSignal through R8.3, and, only when the resulting decision type is
+    formulate_acquisition_request, formulate an AcquisitionRequest through R8.8. Return
+    the composed results without executing retrieval.
+  implementation_constraints:
+    - pure/stateless orchestration
+    - reuse existing authorities rather than duplicating their rules
+    - no hidden network activity
+    - no LLM calls
+    - no lifecycle mutation
+    - no scientific-state mutation
+    - no persistence
+    - no implicit adapter execution
+    - no cross-input merging
+
+closure_criteria:
+  ownership:
+    required: true
+    description: >-
+      Every responsibility in the runtime boundary has an identified semantic or
+      composition authority.
+  responsibilities:
+    required: true
+    description: >-
+      Runtime scope is bounded and excluded responsibilities are explicit.
+  invariants:
+    required: true
+    description: >-
+      Directionality, cardinality, provenance, statelessness, error separation, and
+      non-expansion rules are explicit.
+  implementation:
+    required: true
+    description: >-
+      The implementation conforms to this decision without introducing additional
+      semantic ownership.
+  verification:
+    required: true
+    description: >-
+      Semantic audit and behavioral tests pass for batch processing, no-op decisions,
+      request cardinality, provenance, statelessness, and failure separation.
+  ambiguity:
+    required: true
+    description: >-
+      No unresolved architectural ambiguity materially affecting runtime ownership,
+      implementation behavior, or system semantics remains.
+  closure_rule: >-
+    When all closure criteria are satisfied, the R8.9.1 boundary is closed. Further
+    analysis does not create a new architectural layer unless new evidence introduces
+    a material ambiguity.
+
+meta_method_freeze:
+  status: frozen
+  rule: >-
+    Every new semantic boundary follows the same finite evaluation procedure, but
+    evaluating a boundary does not create another boundary automatically.
+  finite_procedure:
+    - identify boundary
+    - define ownership
+    - define invariants
+    - implement
+    - verify
+    - classify failures if any
+    - closure
+  decision_creation_rule: >-
+    Create a new architectural decision only when an unresolved ambiguity exists and
+    that ambiguity can materially change implementation behavior, ownership, or system
+    semantics. Do not create decisions solely for individual modules, functions,
+    naming choices, or isolated implementation details without semantic impact.
+  controlled_iteration_rule: >-
+    Verification failure permits bounded iteration by modifying the lowest incorrect
+    layer and verifying again. Verification success plus satisfied closure criteria
+    terminates the boundary work.
+
+relationship_to_r8_9_0:
+  prerequisite: R8.9.0
+  inherited_findings:
+    - semantic components are individually established
+    - runtime composition path is the remaining primary gap
+    - receipt persistence remains deferred
+    - main.py integration remains deferred
+  refinement: >-
+    R8.9.1 narrows the first runtime implementation to planning and explicit request
+    formulation. AcquisitionAdapter invocation remains a downstream execution boundary
+    and is not triggered implicitly by this coordinator.
+
+next_artifacts:
+  - id: R8.9.1
+    purpose: >-
+      Implement the stateless runtime coordinator exactly within this boundary.
+  - id: R8.9.1.audit
+    purpose: >-
+      Audit authority separation, dependency direction, batch cardinality, provenance,
+      error separation, statelessness, and non-expansion invariants.
+  - id: R8.9.1.tests
+    purpose: >-
+      Verify independent batch behavior, no-op decision handling, request cardinality,
+      provenance preservation, operational failure separation, and absence of implicit
+      retrieval execution.
+  - id: later_main_integration
+    purpose: >-
+      Integrate the stable coordinator into main.py only after R8.9.1 audit and tests
+      pass and closure criteria are satisfied.
+
+scope_guard:
+  included:
+    - runtime composition semantics
+    - authority ownership
+    - batch semantics
+    - cardinality
+    - provenance preservation
+    - operational error separation
+    - statelessness
+    - closure criteria
+    - implementation boundary
+  excluded:
+    - planning semantic redesign
+    - acquisition semantic redesign
+    - retrieval/provider redesign
+    - persistence design
+    - lifecycle redesign
+    - scientific-state redesign
+    - main.py implementation
+    - automatic execution or scheduling
