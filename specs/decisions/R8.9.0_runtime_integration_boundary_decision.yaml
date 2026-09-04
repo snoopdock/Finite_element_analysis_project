@@ -1,0 +1,311 @@
+version: 1
+name: R8.9.0_runtime_integration_boundary_decision
+status: accepted
+title: Runtime Integration Boundary Analysis
+objective: >-
+  Establish the runtime composition boundary for connecting the accepted R8 semantic
+  planning and acquisition objects without leaking semantic ownership into main.py,
+  retrieval execution, lifecycle state, or scientific state.
+
+reconnaissance_findings:
+  research_planning_signal_runtime_source:
+    status: absent
+    finding: >-
+      The existing live runtime reaches AttentionProposal generation and persistence
+      through analysis.retrieval_attention_runtime.process_live_retrieval_attention(),
+      but no runtime producer currently invokes the R8.2 AttentionProposal to
+      ResearchPlanningSignal translation boundary.
+  research_planning_decision_runtime_creator:
+    status: absent
+    finding: >-
+      analysis.research_planning_decision.py provides pure deterministic evaluators,
+      but no runtime caller currently converts live ResearchPlanningSignal objects
+      into ResearchPlanningDecision objects.
+  acquisition_request_runtime_creator:
+    status: absent
+    finding: >-
+      analysis.acquisition_request_formulation.py provides the explicit pure
+      formulation boundary, but it is not connected to the live pipeline.
+  adapter_runtime_entry:
+    status: existing_boundary_not_integrated
+    finding: >-
+      AcquisitionAdapter.execute_acquisition_request() is an explicit execution
+      boundary and is exercised by its own implementation/tests, but it is not part
+      of the current main.py runtime flow.
+  receipt_creation:
+    status: existing_in_adapter
+    finding: >-
+      AcquisitionAdapter already creates the current defensive AcquisitionExecutionReceipt
+      mapping for each execution attempt. Receipt creation authority therefore remains
+      with the adapter.
+  receipt_persistence:
+    status: deferred
+    finding: >-
+      R8.7.1.2 and R8.7.4.0 explicitly defer durable execution-receipt persistence.
+      No dedicated receipt persistence owner or storage boundary is selected by R8.9.0.
+  retrieval_event_runtime:
+    status: existing
+    finding: >-
+      RetrievalEvent history is already persisted through core.retrieval_history_state.
+      main.py currently creates and appends RetrievalEvent after phase_research().
+  main_runtime:
+    status: existing_orchestration
+    finding: >-
+      main.py currently bootstraps configuration/state, constructs runtime services,
+      invokes core pipeline phases, records retrieval history, invokes retrieval-attention
+      runtime processing, and persists final state. It does not currently compose the
+      new R8 planning/acquisition boundaries.
+  core_pipeline:
+    status: mixed_responsibility
+    finding: >-
+      core.pipeline is described as phase sequencing but phase_research() still directly
+      invokes retrieve_evidence_parallel() and performs retrieval/evidence merging work.
+      This is existing coupling, but R8.9.0 does not redesign it.
+
+ownership_decisions:
+  research_planning_signal:
+    authority: research_planning_translation
+    producer: >-
+      A future explicit runtime bridge from AttentionProposal to ResearchPlanningSignal
+      should invoke the established R8.2 translation boundary. main.py must not own
+      the semantic translation itself.
+  research_planning_decision:
+    authority: research_planning_evaluation
+    creator: >-
+      The established research-planning evaluator remains responsible for converting
+      ResearchPlanningSignal into ResearchPlanningDecision. The runtime composition
+      layer may invoke it but must not redefine its semantics.
+  acquisition_request:
+    authority: acquisition_process_formulation
+    creator: >-
+      The explicit AcquisitionRequest formulation boundary remains responsible for
+      converting an accepted ResearchPlanningDecision of type
+      formulate_acquisition_request into a distinct AcquisitionRequest.
+  adapter_invocation_owner:
+    selected: dedicated_runtime_orchestration_boundary
+    candidate_module: core/research_planning_runtime.py
+    rule: >-
+      Runtime sequencing of R8 planning, request formulation, and explicit adapter
+      invocation should be owned by a dedicated orchestration boundary outside the
+      semantic objects themselves. The candidate module is not yet implemented by
+      this decision and is not itself a new semantic authority.
+  receipt_creator:
+    owner: AcquisitionAdapter
+    rule: >-
+      The adapter remains the sole owner of constructing an AcquisitionExecutionReceipt
+      for an execution occurrence. Runtime orchestration may receive the receipt but
+      must not reconstruct or reinterpret it.
+  receipt_persistence_owner:
+    selected: false
+    rule: >-
+      No persistence owner is selected at R8.9.0 because durable receipt persistence
+      was explicitly deferred by the accepted R8.7.4.0 decision. A later boundary must
+      define storage, identity scope, replay, and duplicate semantics before integration
+      depends on durable receipts.
+  retrieval_event:
+    owner: existing_retrieval_history_runtime
+    relationship: >-
+      Retrieval execution continues to produce new RetrievalEvent history through the
+      existing retrieval-history mechanism. AcquisitionExecutionReceipt remains an
+      execution-level provenance record for one acquisition attempt. The receipt does
+      not replace RetrievalEvent and RetrievalEvent does not replace the receipt.
+
+cardinality:
+  signal_to_decision:
+    per_evaluation: one_signal_to_one_decision
+    rule: >-
+      Each ResearchPlanningSignal evaluation produces one ResearchPlanningDecision.
+      Batch evaluation may produce many independent decisions.
+  decision_to_request:
+    per_formulation_operation: zero_or_one_request
+    condition: >-
+      An AcquisitionRequest may be produced only from a ResearchPlanningDecision whose
+      decision_type is formulate_acquisition_request and only through the explicit
+      formulation boundary. Re-formulating the same decision may create a new request
+      identity unless a future persistence contract establishes idempotency.
+  request_to_execution:
+    one_request_to_zero_or_many_execution_attempts
+    rule: >-
+      Each concrete adapter execution attempt receives a distinct execution identity
+      and receipt. Retries may reference the same AcquisitionRequest.
+  execution_to_evidence:
+    one_execution_to_zero_or_many_evidence_records
+    rule: >-
+      A single execution may return multiple source-level EvidenceRecords or no source
+      records when execution fails or returns an empty result.
+  source_provenance:
+    allowed_multiplicity: many_requests_or_executions_to_one_source_record
+    rule: >-
+      A source may be discovered by multiple acquisition requests or execution
+      occurrences. Existing EvidenceRecord source-level provenance remains accumulative;
+      integration must not add a scalar acquisition_request_id merely for tracing.
+
+runtime_flow_target:
+  semantic_sequence:
+    - AttentionProposal
+    - ResearchPlanningSignal
+    - ResearchPlanningDecision
+    - AcquisitionRequest
+    - AcquisitionExecutionReceipt
+    - retrieval_execution
+    - RetrievalEvent
+    - EvidenceRecord
+  orchestration_role: >-
+    The runtime composition layer sequences already-defined semantic boundaries and
+    passes objects between them. It does not acquire new authority over planning,
+    acquisition semantics, retrieval meaning, lifecycle, or scientific interpretation.
+  explicit_directionality: >-
+    Process observations may inform planning. Planning may formulate a future
+    acquisition request. Acquisition execution creates new retrieval history. Later
+    scientific interpretation remains downstream of the retrieval/evidence contracts.
+
+main_py_responsibility:
+  allowed:
+    - initialize configuration and persistent runtime state
+    - construct runtime dependencies
+    - delegate R8 runtime sequencing to the dedicated orchestration boundary
+    - preserve existing top-level error handling and final state persistence
+    - continue owning process startup and shutdown composition
+  prohibited:
+    - evaluate ResearchPlanningSignal semantics directly
+    - create ResearchPlanningDecision semantics directly
+    - formulate AcquisitionRequest semantics directly
+    - translate AcquisitionRequest into List[str] directly
+    - create AcquisitionExecutionReceipt directly
+    - persist receipt history before a dedicated persistence boundary is defined
+    - reinterpret provider/retrieval failure as scientific evidence state
+    - create or mutate LifecycleEvent objects as an automatic R8 integration side effect
+    - mutate ScientificAttention, epistemic state, claim ranking, convergence, or writer state from R8 process observations
+  rule: >-
+    main.py remains application composition and bootstrap orchestration. Semantic
+    decisions belong to their established domain boundaries, while runtime sequencing
+    is delegated to a dedicated orchestration component.
+
+frozen_boundaries:
+  retrieval:
+    rules:
+      - retrieve_evidence_parallel remains unchanged by R8.9.0.
+      - provider implementations remain unchanged by R8.9.0.
+      - the List[str] retrieval interface remains the legacy execution interface behind AcquisitionAdapter.
+  retrieval_history:
+    rules:
+      - RetrievalEvent remains append-only retrieval history.
+      - New execution must produce new history rather than rewrite historical retrieval events.
+  evidence:
+    rules:
+      - EvidenceRecord remains source-level provenance and evidence representation.
+      - EvidenceRecord is not extended with acquisition_request_id solely for R8 integration tracing.
+  planning:
+    rules:
+      - ResearchPlanningSignal remains a non-scientific planning input.
+      - ResearchPlanningDecision remains the authoritative planning evaluation record.
+      - Runtime orchestration must not change planning semantics.
+  request:
+    rules:
+      - AcquisitionRequest remains a distinct process object and is not a retrieval command.
+      - Request creation remains explicit and is not an automatic side effect of planning evaluation.
+  adapter:
+    rules:
+      - AcquisitionAdapter remains the sole request-to-execution translation boundary.
+      - Adapter remains the sole creator of the current execution receipt representation.
+      - Adapter retries create distinct execution identities.
+  lifecycle:
+    rules:
+      - R8.9.0 introduces no LifecycleEvent creation or lifecycle mutation.
+  scientific:
+    rules:
+      - R8.9.0 introduces no ScientificAttention, epistemic-state, ranking, convergence, or writer-state mutation.
+
+integration_gaps:
+  primary:
+    - no runtime AttentionProposal_to_ResearchPlanningSignal bridge
+    - no runtime ResearchPlanningSignal_to_ResearchPlanningDecision composition
+    - no runtime ResearchPlanningDecision_to_AcquisitionRequest composition
+    - no dedicated runtime owner that sequences formulation and adapter invocation
+  persistence:
+    - no durable AcquisitionExecutionReceipt persistence boundary
+    - no AcquisitionRequest persistence integration
+  secondary:
+    - core.pipeline still embeds retrieval execution despite being documented as phase sequencing
+  non_gaps:
+    - ResearchPlanningSignal semantic contract and translator
+    - ResearchPlanningDecision semantic evaluator
+    - AcquisitionRequest formulation boundary
+    - AcquisitionRequest contract
+    - AcquisitionAdapter execution boundary
+    - existing RetrievalEvent history mechanism
+    - existing retrieval List[str] interface
+
+integration_readiness:
+  semantic_objects_ready: true
+  planning_evaluator_ready: true
+  request_formulation_ready: true
+  acquisition_adapter_ready: true
+  runtime_composition_ready: false
+  receipt_persistence_ready: false
+  main_py_integration_ready: false
+  reason: >-
+    The semantic boundaries are individually established, but there is no controlled
+    runtime composition path connecting live retrieval attention through planning and
+    acquisition. Receipt persistence also remains intentionally undefined. Integration
+    should therefore begin only after the missing orchestration boundary is explicitly
+    designed and independently audited.
+
+safe_next_artifacts:
+  - id: R8.9.1
+    purpose: >-
+      Define and audit the dedicated runtime orchestration boundary that connects
+      AttentionProposal -> ResearchPlanningSignal -> ResearchPlanningDecision ->
+      AcquisitionRequest without executing retrieval implicitly.
+  - id: R8.9.2
+    purpose: >-
+      Define the durable persistence boundary for AcquisitionRequest and
+      AcquisitionExecutionReceipt if runtime requirements demonstrate that persistence
+      is needed for the composed flow.
+  - id: R8.9.3
+    purpose: >-
+      Add an integration-level audit/test surface proving the composed path preserves
+      authority, directionality, cardinality, and operational/scientific separation.
+  - id: later_main_integration
+    purpose: >-
+      Modify main.py only after the dedicated orchestration boundary is stable and
+      its integration tests/audits pass.
+
+integration_rule:
+  status: deferred
+  rule: >-
+    R8.9.0 records runtime ownership and readiness findings only. It does not modify
+    main.py, core.pipeline, retrieval/provider implementations, EvidenceRecord,
+    RetrievalEvent semantics, lifecycle behavior, scientific state, or receipt
+    persistence.
+
+method_alignment:
+  authoritative_method: ARCH.1_context_first_semantic_restructuring_method
+  governing_rules:
+    - classify genuine gaps before implementation
+    - preserve established semantic authority
+    - introduce the smallest runtime boundary required for composition
+    - keep legacy retrieval representation behind AcquisitionAdapter
+    - treat unknown or unrepresentable persistence semantics explicitly
+    - integrate runtime behavior only after semantic boundaries are stable
+
+scope:
+  included:
+    - runtime ownership reconnaissance
+    - runtime source and consumer mapping
+    - cardinality and provenance direction
+    - adapter invocation ownership
+    - receipt creation and persistence status
+    - RetrievalEvent relationship
+    - main.py responsibility
+    - integration readiness
+    - next safe artifacts
+  excluded:
+    - runtime implementation
+    - main.py changes
+    - receipt persistence implementation
+    - retrieval/provider changes
+    - EvidenceRecord changes
+    - lifecycle changes
+    - scientific-state changes
+    - automatic scheduling
