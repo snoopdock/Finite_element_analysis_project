@@ -1,0 +1,231 @@
+version: 1
+name: R8.8.0_acquisition_request_formulation_decision
+status: accepted
+objective: >-
+  Define the explicit boundary for formulating an AcquisitionRequest from an
+  accepted ResearchPlanningDecision without inferring operational constraints
+  that the planning decision does not actually express.
+
+problem_statement: >-
+  ResearchPlanningDecision records a planning evaluation and may request that a
+  separate AcquisitionRequest be formulated, but it does not necessarily carry
+  every operational constraint required by AcquisitionRequest. In particular, a
+  provider named in a planning signal or decision must not be inferred to be a
+  provider preference or execution requirement without an explicit semantic rule.
+
+formation_model:
+  authoritative_input: ResearchPlanningDecision
+  output_object: AcquisitionRequest
+  boundary_role: explicit_request_formulation
+  execution_authority: none
+  translation_mode: semantic_projection
+  primary_invariant: >-
+    The formulator may construct an AcquisitionRequest only from semantics that
+    are explicitly present in the planning decision or explicitly supplied as
+    bounded operational formulation input. It must not invent provider preferences,
+    provider-access constraints, execution limits, or scientific meaning.
+
+allowed_decision_type:
+  required: formulate_acquisition_request
+  rule: >-
+    Only a ResearchPlanningDecision whose decision_type is
+    formulate_acquisition_request may be accepted as the originating decision for
+    this formulation boundary.
+
+required_request_mapping:
+  acquisition_request_id:
+    source: new_formulation_identity
+    rule: >-
+      Each formulation creates a distinct AcquisitionRequest identity. It must not
+      reuse research_planning_decision_id, research_planning_signal_id, attention_id,
+      RetrievalEvent identifiers, or LifecycleEvent identifiers.
+  schema_version:
+    source: AcquisitionRequest contract
+    value: 1
+  created_at:
+    source: formulation_time
+  origin.research_planning_decision_id:
+    source: ResearchPlanningDecision.research_planning_decision_id
+    classification: preserved
+  target.query_scope:
+    source: ResearchPlanningDecision.target.query_scope
+    required: true
+    classification: translated
+    rule: >-
+      The query scope may be transferred when explicitly present. The formulator
+      must reject formulation when no executable acquisition scope can be obtained
+      rather than inventing a query from rationale text.
+  priority:
+    source: ResearchPlanningDecision.priority
+    default_when_absent: 0.0
+    classification: translated
+    rule: >-
+      Planning priority may become AcquisitionRequest process execution priority
+      because both are explicitly process-level semantics. It must not be converted
+      into scientific priority, claim rank, evidence weighting, or relevance.
+  constraints:
+    source: explicit bounded operational formulation input only
+    default: {}
+    rule: >-
+      Constraints are not inferred from scientific context, provider observations,
+      rationale prose, or similarly named planning fields. When no explicit
+      operational formulation input exists, the request contains an empty
+      constraints mapping.
+
+provider_semantic_protection:
+  planning_target_provider:
+    rule: >-
+      ResearchPlanningDecision.target.provider identifies the provider involved in
+      the planning signal context. It is not automatically equivalent to
+      AcquisitionRequest.constraints.provider_preferences or a provider execution
+      requirement.
+  no_inference_rule:
+    - Do not convert target.provider into provider_preferences automatically.
+    - Do not convert target.provider into provider_access_constraints automatically.
+    - Do not infer an alternative provider from rationale prose.
+    - Do not infer execution limits from priority, rationale, or decision type.
+
+optional_operational_formulation_input:
+  status: allowed
+  authority: acquisition_process_formulation
+  rule: >-
+    A separate bounded operational mapping may supplement the planning decision
+    with already-defined acquisition constraints. Such input must conform to the
+    AcquisitionRequest constraint vocabulary and must remain operational only.
+  allowed_fields:
+    - provider_preferences
+    - provider_access_constraints
+    - execution_limits
+  forbidden_fields:
+    - confidence
+    - evidence_strength
+    - evidence_gap
+    - epistemic_status
+    - truth_status
+    - truth_probability
+    - claim_rank
+    - claim_ranking
+    - convergence
+    - convergence_score
+    - scientific_priority
+    - scientific_importance
+    - scientific_relevance
+    - claim_id
+    - proposition_id
+    - evidence_relation
+
+provenance:
+  rule: >-
+    The resulting AcquisitionRequest preserves its originating planning decision
+    through origin.research_planning_decision_id. Upstream signal and attention
+    provenance remains reconstructable through the decision chain and is not
+    duplicated into request fields without an explicit need.
+  chain: >-
+    AcquisitionRequest -> ResearchPlanningDecision -> ResearchPlanningSignal ->
+    AttentionProposal -> RetrievalEvent(s)
+
+immutability:
+  rules:
+    - ResearchPlanningDecision is not rewritten by request formulation.
+    - ResearchPlanningSignal is not rewritten by request formulation.
+    - AttentionProposal is not rewritten by request formulation.
+    - RetrievalEvent history is not rewritten by request formulation.
+    - Formulation creates a new AcquisitionRequest rather than mutating its origin.
+
+scientific_isolation:
+  prohibited:
+    - scientific-state mutation
+    - confidence changes
+    - evidence-strength changes
+    - claim ranking changes
+    - convergence changes
+    - scientific interpretation of planning rationale
+    - conversion of operational constraints into scientific claims
+
+lifecycle_isolation:
+  prohibited:
+    - LifecycleEvent creation
+    - lifecycle transition
+    - AttentionProposal state mutation
+    - lifecycle history rewrite
+
+execution_isolation:
+  prohibited:
+    - retrieval provider calls
+    - retrieve_evidence_parallel invocation
+    - AcquisitionExecutionReceipt creation
+    - automatic execution of the formulated request
+  rule: >-
+    Formulation ends when a valid AcquisitionRequest has been produced. Execution
+    belongs exclusively to the downstream AcquisitionAdapter boundary.
+
+identity_and_repetition:
+  rule: >-
+    Re-formulating from the same planning decision creates a new request identity
+    unless a future persistence contract explicitly defines idempotent request
+    formulation. This decision does not infer idempotency from semantic equality.
+
+validation:
+  input:
+    decision_required: true
+    decision_type_required: formulate_acquisition_request
+    decision_identity_required: true
+    target_query_scope_required: true
+    forbidden_scientific_fields_rejected: true
+  operational_supplement:
+    optional: true
+    vocabulary_must_match_acquisition_request_contract: true
+    scientific_fields_rejected: true
+  output:
+    must_validate_against_acquisition_request_contract: true
+    request_is_not_execution: true
+    request_is_not_scientific_state: true
+
+relationship_to_existing_contracts:
+  r8_6_2: >-
+    This decision implements the explicit request-creation boundary defined by the
+    accepted AcquisitionRequest contract. It does not change the AcquisitionRequest
+    vocabulary or automatically execute retrieval.
+  r8_3: >-
+    This decision consumes ResearchPlanningDecision as a planning record and does
+    not collapse the decision into an executable request.
+  r8_7_3: >-
+    The resulting request becomes the authoritative semantic input to the existing
+    AcquisitionAdapter. No legacy List[str] representation is introduced here.
+  r8_7_4_0: >-
+    This boundary ends before AcquisitionAdapter execution and therefore does not
+    create an AcquisitionExecutionReceipt or invoke retrieval.
+
+file_scope:
+  planned_runtime_files:
+    - analysis/acquisition_request_formulation.py
+  planned_test_files:
+    - tests/test_acquisition_request_formulation.py
+  planned_audit_files:
+    - scripts/audit_r8_8_0_acquisition_request_formulation.py
+  deferred:
+    - main.py integration
+    - persistence implementation
+    - retrieval/provider changes
+    - EvidenceRecord changes
+    - RetrievalEvent changes
+    - lifecycle changes
+
+scope:
+  included:
+    - explicit request formulation boundary
+    - mapping from ResearchPlanningDecision
+    - operational supplement vocabulary
+    - provider semantic protection
+    - provenance
+    - identity
+    - scientific and lifecycle isolation
+    - execution isolation
+    - validation
+    - file scope
+  excluded:
+    - acquisition execution
+    - retrieval adapter changes
+    - persistence
+    - automatic scheduling
+    - scientific-state integration
