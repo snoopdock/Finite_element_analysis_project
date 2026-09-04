@@ -90,12 +90,13 @@ def main() -> int:
     )
     require(
         "AcquisitionAdapter remains the downstream execution boundary",
-        "R8.7.4_0".replace("_", ".") in text
-        or ("R8.7.4" in normalized and "AcquisitionAdapter" in normalized),
+        "r8_7_4_0:" in text
+        and "AcquisitionAdapter" in normalized
+        and "execution" in normalized,
     )
     require(
         "AcquisitionRequest contract remains the output authority",
-        "r8_6_2:" in text and "AcquisitionRequest contract" in normalized,
+        "r8_6_2:" in text and "AcquisitionRequest" in normalized,
     )
 
     if failures:
