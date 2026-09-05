@@ -14,13 +14,15 @@ import pathlib
 import subprocess
 import sys
 
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from core.document_pipeline_integration import persist_pipeline_document
 from utils.text import load_json
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
 
-
-def main() -> int:
+def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="Run the existing FEA pipeline and persist document.json."
     )
@@ -29,7 +31,7 @@ def main() -> int:
         default="config.yaml",
         help="Pipeline configuration passed to main.py.",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     command = [sys.executable, str(ROOT / "main.py"), "--config", args.config]
     completed = subprocess.run(command, cwd=ROOT)
