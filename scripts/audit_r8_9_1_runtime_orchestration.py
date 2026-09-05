@@ -28,6 +28,14 @@ FORBIDDEN_NAME_TOKENS = {
     "LifecycleEvent",
 }
 
+FORBIDDEN_RUNTIME_STATE_NAMES = {
+    "runtime_state",
+    "runtime_history",
+    "pending_requests",
+    "persisted_decisions",
+    "implicit_retry_state",
+}
+
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}")
@@ -112,7 +120,10 @@ def main() -> None:
         '"formulate_acquisition_request"' in source_lower,
         "request routing condition is not explicit",
     )
-    require("planning_context=planning_context" in source_lower, "planning context is not delegated unchanged")
+    require(
+        "planning_context=planning_context" in source_lower,
+        "planning context is not delegated unchanged",
+    )
     require(
         "operational_constraints=operational_constraints" in source_lower,
         "operational constraints are not delegated unchanged",
@@ -121,10 +132,15 @@ def main() -> None:
 
     # No mutable module-level runtime state is permitted.
     for node in tree.body:
-        if isinstance(node, (ast.Assign, ast.AnnAssign)):
-            target_text = ast.unparse(node.target) if isinstance(node, ast.Assign) else ast.unparse(node.target)
+        targets = []
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, ast.AnnAssign):
+            targets = [node.target]
+        for target in targets:
+            target_text = ast.unparse(target)
             require(
-                target_text not in {"runtime_state", "runtime_history", "pending_requests", "persisted_decisions", "implicit_retry_state"},
+                target_text not in FORBIDDEN_RUNTIME_STATE_NAMES,
                 f"forbidden runtime state member declared: {target_text}",
             )
 
