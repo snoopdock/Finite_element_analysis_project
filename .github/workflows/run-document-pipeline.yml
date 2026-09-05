@@ -45,7 +45,8 @@ jobs:
             tests/test_section_document_adapter.py \
             tests/test_semantic_writer_boundary.py \
             tests/test_document_persistence.py \
-            tests/test_document_snapshot.py 2>&1 | tee latex-tests.log
+            tests/test_document_snapshot.py \
+            tests/test_document_renderer_boundary.py 2>&1 | tee latex-tests.log
 
       - name: Collect test diagnostics
         if: always()
