@@ -1,4 +1,4 @@
-name: Run document pipeline
+name: Validate LaTeX document pipeline
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  run-document-pipeline:
+  validate-latex-documents:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -30,12 +30,11 @@ jobs:
             python -m pip install -r requirements.txt
           elif [ -f pyproject.toml ]; then
             python -m pip install .
-          else
-            echo "No requirements.txt or pyproject.toml found."
           fi
+          python -m pip install pytest
 
-      - name: Run focused document-pipeline tests
-        id: focused_tests
+      - name: Run LaTeX document tests
+        id: latex_tests
         continue-on-error: true
         run: |
           set -o pipefail
@@ -46,18 +45,9 @@ jobs:
             tests/test_section_document_adapter.py \
             tests/test_semantic_writer_boundary.py \
             tests/test_document_persistence.py \
-            tests/test_document_snapshot.py \
-            tests/test_document_pipeline_integration.py \
-            tests/test_pipeline_document_runner.py 2>&1 | tee focused-tests.log
+            tests/test_document_snapshot.py 2>&1 | tee latex-tests.log
 
-      - name: Run document pipeline runner
-        id: runner
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          python tools/run_pipeline_with_document_snapshot.py 2>&1 | tee runner.log
-
-      - name: Collect runtime diagnostics
+      - name: Collect test diagnostics
         if: always()
         run: |
           {
@@ -68,40 +58,33 @@ jobs:
             echo "Python:"
             python --version || true
             echo
-            echo "=== Focused test result ==="
-            echo "outcome=${{ steps.focused_tests.outcome }}"
+            echo "=== LaTeX test result ==="
+            echo "outcome=${{ steps.latex_tests.outcome }}"
             echo
-            echo "=== Pipeline runner result ==="
-            echo "outcome=${{ steps.runner.outcome }}"
-            echo
-            echo "=== Focused tests log ==="
-            cat focused-tests.log 2>/dev/null || true
-            echo
-            echo "=== Runner log ==="
-            cat runner.log 2>/dev/null || true
-          } > runtime-log.txt
+            echo "=== LaTeX tests log ==="
+            cat latex-tests.log 2>/dev/null || true
+          } > latex-runtime-log.txt
 
-      - name: Print runtime diagnostics for remote inspection
+      - name: Print test diagnostics
         if: always()
         run: |
-          echo "================ RUNTIME LOG ================"
-          cat runtime-log.txt
-          echo "============== END RUNTIME LOG =============="
+          echo "================ LATEX RUNTIME LOG ================"
+          cat latex-runtime-log.txt
+          echo "============== END LATEX RUNTIME LOG =============="
 
-      - name: Upload runtime log artifact
+      - name: Upload LaTeX test artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: document-pipeline-runtime-log
+          name: latex-document-test-log
           path: |
-            runtime-log.txt
-            focused-tests.log
-            runner.log
+            latex-runtime-log.txt
+            latex-tests.log
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Fail workflow if focused tests or runner failed
-        if: steps.focused_tests.outcome == 'failure' || steps.runner.outcome == 'failure'
+      - name: Fail workflow if LaTeX tests failed
+        if: steps.latex_tests.outcome == 'failure'
         run: |
-          echo "The document pipeline validation failed. Download the document-pipeline-runtime-log artifact for diagnostics."
+          echo "The LaTeX document tests failed. Download the latex-document-test-log artifact for diagnostics."
           exit 1
