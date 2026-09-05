@@ -1,1 +1,92 @@
+version: 1
+purpose: >-
+  Define the LLM-facing authoring contract for generating free-form academic
+  prose with explicit references to pre-authorized semantic objects.
 
+authority:
+  role: authoring
+  scientific_authority: domain_semantic_model
+  writer_may:
+    - generate_prose
+    - select_pre_authorized_semantic_objects
+    - choose_reference_placement
+    - propose_new_semantic_equations
+  writer_may_not:
+    - create_authoritative_equation_identity
+    - create_authoritative_source_identity
+    - redefine_domain_object_meaning
+    - redefine_source_metadata
+    - substitute_another_object_for_an_unknown_identifier
+
+output:
+  primary_type: text
+  free_form_prose: true
+  allowed_control_sequences:
+    - EQ
+    - CITE
+    - REF
+    - NEW_EQ
+
+marker_syntax:
+  equation_reference: '[[EQ:<id>]]'
+  citation_reference: '[[CITE:<id>]]'
+  document_reference: '[[REF:<id>]]'
+  new_equation_proposal: '[[NEW_EQ:<proposal_id>]]'
+
+marker_semantics:
+  EQ: >-
+    Select an already authorized semantic equation for placement in the
+    document.
+  CITE: >-
+    Associate the surrounding authorial content with an authorized evidence
+    source.
+  REF: >-
+    Create an explicit cross-reference to an authorized document object.
+  NEW_EQ: >-
+    Request a new equation proposal. The proposal is not authoritative until
+    it passes the semantic verification lifecycle.
+
+resolution:
+  identifiers_are_pre_authorized: true
+  unknown_identifier: error
+  unknown_marker_type: error
+  malformed_marker: error
+  silent_substitution: forbidden
+  semantic_guessing: forbidden
+
+payload_authority:
+  existing_equation:
+    identifier_only: true
+    expression_source: domain_semantic_model
+  existing_source:
+    identifier_only: true
+    metadata_source: evidence_model
+  cross_reference:
+    identifier_only: true
+    target_source: semantic_document_model
+  new_equation_proposal:
+    proposal_payload: separate_structured_field
+    authoritative: false
+
+prose_policy:
+  ordinary_text: free_form
+  raw_latex_document_structure: forbidden
+  markdown_document_structure: forbidden
+  bibliography_entries: forbidden
+  equation_reproduction_for_existing_equations: discouraged
+  inline_math_without_semantic_identity: permitted
+
+proposal_policy:
+  new_equation:
+    allowed: true
+    requires_explicit_proposal_identity: true
+    requires_semantic_verification: true
+    cannot_be_renderable_while_unresolved: true
+
+invariants:
+  - writer_can_reference_only_pre_authorized_ids
+  - writer_output_does_not_establish_semantic_authority
+  - existing_semantic_objects_are_referenced_by_identity_not_redefined
+  - new_equation_proposals_are_non_authoritative
+  - ordinary_prose_survives_without_structural_parsing
+  - document_structure_is_not_encoded_as_raw_latex
