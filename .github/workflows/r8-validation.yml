@@ -45,12 +45,10 @@ jobs:
           if [ -f requirements.txt ]; then
             python -m pip install -r requirements.txt
           fi
-          if [ -f pyproject.toml ]; then
-            python -m pip install -e .
-          fi
           python -m pip install pytest pyyaml
 
       - name: Create report directory
+        shell: bash
         run: mkdir -p validation-results
 
       - name: Run R8.9.1.0 decision audit
