@@ -13,6 +13,7 @@ from writing.section_document_adapter import (
 
 
 SECTION_ID = "550e8400-e29b-41d4-a716-446655440000"
+PARENT_ID = "550e8400-e29b-41d4-a716-446655440001"
 
 
 def test_legacy_section_becomes_opaque_prose_without_semantic_inference():
@@ -22,7 +23,7 @@ def test_legacy_section_becomes_opaque_prose_without_semantic_inference():
         "content": "The relation is $u=x^2$. [source-1]",
         "key_equations": ["u=x^2"],
         "citations_used": ["source-1"],
-        "parent_section_ids": ["parent-1"],
+        "parent_section_ids": [PARENT_ID],
         "status": "complete",
         "generated_from": "writer",
         "subsection_index": 2,
@@ -33,7 +34,7 @@ def test_legacy_section_becomes_opaque_prose_without_semantic_inference():
 
     assert document.document_id == "doc-1"
     assert converted.section_id == SECTION_ID
-    assert converted.parent_section_ids == ["parent-1"]
+    assert converted.parent_section_ids == [PARENT_ID]
     assert converted.status == "complete"
     assert converted.generated_from == "writer"
     assert converted.subsection_index == 2
@@ -56,7 +57,7 @@ def test_semantic_markers_use_strict_assembly_when_present():
             "section_id": SECTION_ID,
             "title": "Weak Form",
             "content": "Supported [[CITE:source-1]]. [[EQ:eq-1]]",
-            "parent_section_ids": ["parent-1"],
+            "parent_section_ids": [PARENT_ID],
         },
         equation_ids={"eq-1"},
         source_ids={"source-1"},
