@@ -9,10 +9,15 @@ It does not infer equations or citations from legacy metadata.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
+from typing import Any, Dict, List, Optional, Sequence, Set
 
-from core.document_model import Document, DocumentModelError, Section, document_from_legacy_sections
 from core.document_assembler import assemble_section
+from core.document_model import (
+    Document,
+    DocumentModelError,
+    Section,
+    document_from_legacy_sections,
+)
 from core.section_identity import ensure_section_id
 
 
@@ -79,12 +84,8 @@ def legacy_section_to_document_section(
             **common,
         )
 
-    converted = document_from_legacy_sections(
-        [section],
-    )
-    result = converted.children[0]
-    result.document_id = getattr(result, "document_id", None)  # type: ignore[attr-defined]
-    return result
+    converted = document_from_legacy_sections([section])
+    return converted.children[0]
 
 
 def document_section_to_legacy(
