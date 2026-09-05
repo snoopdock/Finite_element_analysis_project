@@ -48,6 +48,25 @@ jobs:
             tests/test_document_snapshot.py \
             tests/test_document_renderer_boundary.py 2>&1 | tee latex-tests.log
 
+      - name: Run KaTeX validation tests
+        id: katex_tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mapfile -t katex_tests < <(find tests -type f \( \
+            -iname '*katex*.py' -o \
+            -iname 'test_*math*.py' \
+          \) -print | sort)
+
+          if [ "${#katex_tests[@]}" -eq 0 ]; then
+            echo "No KaTeX-specific test files were found." | tee katex-tests.log
+            exit 0
+          fi
+
+          printf 'Running KaTeX-related tests:\n%s\n' "${katex_tests[@]}" | tee katex-tests.log
+          python -m pytest -q "${katex_tests[@]}" 2>&1 | tee -a katex-tests.log
+
       - name: Collect test diagnostics
         if: always()
         run: |
@@ -62,8 +81,14 @@ jobs:
             echo "=== LaTeX test result ==="
             echo "outcome=${{ steps.latex_tests.outcome }}"
             echo
+            echo "=== KaTeX test result ==="
+            echo "outcome=${{ steps.katex_tests.outcome }}"
+            echo
             echo "=== LaTeX tests log ==="
             cat latex-tests.log 2>/dev/null || true
+            echo
+            echo "=== KaTeX tests log ==="
+            cat katex-tests.log 2>/dev/null || true
           } > latex-runtime-log.txt
 
       - name: Print test diagnostics
@@ -81,6 +106,7 @@ jobs:
           path: |
             latex-runtime-log.txt
             latex-tests.log
+            katex-tests.log
           if-no-files-found: warn
           retention-days: 14
 
@@ -88,4 +114,10 @@ jobs:
         if: steps.latex_tests.outcome == 'failure'
         run: |
           echo "The LaTeX document tests failed. Download the latex-document-test-log artifact for diagnostics."
+          exit 1
+
+      - name: Fail workflow if KaTeX tests failed
+        if: steps.katex_tests.outcome == 'failure'
+        run: |
+          echo "The KaTeX validation tests failed. Download the latex-document-test-log artifact for diagnostics."
           exit 1
