@@ -1,1 +1,122 @@
+version: 1
+purpose: >-
+  Define the deterministic transformation from LLM authoring output into the
+  persisted semantic document model.
 
+authority:
+  role: semantic_assembly
+  scientific_authority: domain_semantic_model
+  document_authority: semantic_document_model
+  rule: >-
+    Assembly may interpret authorized references and construct document
+    structure, but must not silently invent, substitute, or redefine semantic
+    objects.
+
+input:
+  writer_output:
+    type: text
+  optional_proposals:
+    type: structured
+    authoritative: false
+
+registries:
+  equations:
+    source: domain_semantic_model
+  sources:
+    source: evidence_model
+  document_targets:
+    source: semantic_document_model
+
+marker_parsing:
+  required: true
+  preserve_unmarked_text: true
+  supported_markers:
+    - EQ
+    - CITE
+    - REF
+    - NEW_EQ
+  malformed_marker: error
+  unknown_marker_type: error
+  unknown_identifier: error
+
+transformation:
+  text:
+    rule: >-
+      Unmarked text is preserved as free-form authorial content without
+      semantic inference.
+  EQ:
+    output: equation_occurrence
+    payload_from_registry: true
+    create_new_domain_object: false
+  CITE:
+    output: citation_occurrence
+    payload_from_registry: true
+    create_new_source: false
+  REF:
+    output: cross_reference_occurrence
+    payload_from_document_model: true
+    create_new_target: false
+  NEW_EQ:
+    output: equation_proposal_reference
+    authoritative: false
+    renderable: false
+    verification_required: true
+
+ordering:
+  preserve_text_order: true
+  preserve_marker_order: true
+  preserve_block_order: true
+  repeated_reference_is_distinct_occurrence: true
+
+resolution:
+  equations:
+    unknown_id: reject
+    silent_substitution: forbidden
+  sources:
+    unknown_id: reject
+    silent_substitution: forbidden
+  document_targets:
+    unknown_id: reject
+    silent_substitution: forbidden
+
+validation:
+  schema_validation: required
+  reference_resolution: required
+  authority_validation: required
+  renderability_validation: required
+
+renderability:
+  unresolved_references: forbidden
+  unresolved_new_equation_proposals: forbidden
+  malformed_markers: forbidden
+  unknown_marker_types: forbidden
+
+legacy_projection:
+  content:
+    may_be_generated: true
+    authoritative: false
+  key_equations:
+    may_be_generated: true
+    source: document_structure
+    authoritative: false
+  citations_used:
+    may_be_generated: true
+    source: document_structure
+    authoritative: false
+
+failure_policy:
+  unresolved_reference: reject
+  malformed_marker: reject
+  invalid_document_structure: reject
+  semantic_payload_override: reject
+  silent_repair: forbidden
+  semantic_guessing: forbidden
+
+invariants:
+  - assembly_is_deterministic_for_the_same_input_and_registries
+  - writer_output_does_not_gain_scientific_authority_during_assembly
+  - existing_equations_are_not_redefined_by_writer_text
+  - existing_sources_are_not_redefined_by_writer_text
+  - document_order_is_preserved
+  - source_and_equation_identity_is_not_reconstructed_from_labels_or_titles
+  - unresolved_objects_cannot_enter_renderable_state
