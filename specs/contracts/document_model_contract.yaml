@@ -1,0 +1,163 @@
+version: 1
+purpose: >-
+  Define the persisted semantic document representation used to organize
+  scientific material for publication without duplicating scientific authority.
+
+authority:
+  role: document_organization
+  scientific_truth_source: domain_semantic_model
+  rule: >-
+    Document objects may reference, arrange, and present scientific objects,
+    but must not silently redefine their identity, provenance, or meaning.
+
+entities:
+  document:
+    identity: document_id
+    required_fields:
+      - document_id
+      - version
+      - children
+    optional_fields:
+      - metadata
+      - source_snapshot
+
+  section:
+    identity: section_id
+    required_fields:
+      - section_id
+      - title
+      - children
+    lineage_fields:
+      - parent_section_ids
+    optional_fields:
+      - status
+      - generated_from
+      - subsection_index
+
+  paragraph:
+    required_fields:
+      - text
+    optional_fields:
+      - inline_content
+
+  equation_occurrence:
+    identity: occurrence_id
+    required_fields:
+      - occurrence_id
+      - equation_id
+    optional_fields:
+      - label
+      - caption
+    reference_fields:
+      equation_id:
+        target: domain_equation
+        rule: >-
+          equation_id must resolve to an existing semantic equation, or to an
+          explicitly permitted semantic proposal during draft assembly.
+
+  citation_occurrence:
+    identity: occurrence_id
+    required_fields:
+      - occurrence_id
+      - source_id
+    reference_fields:
+      source_id:
+        target: evidence_source
+
+  cross_reference_occurrence:
+    identity: occurrence_id
+    required_fields:
+      - occurrence_id
+      - target_id
+    reference_fields:
+      target_id:
+        target:
+          - section
+          - equation_occurrence
+          - figure
+          - table
+          - algorithm
+
+  figure:
+    identity: figure_id
+    required_fields:
+      - figure_id
+      - asset
+    optional_fields:
+      - caption
+      - label
+      - source_ids
+
+  table:
+    identity: table_id
+    required_fields:
+      - table_id
+      - columns
+      - rows
+    optional_fields:
+      - caption
+      - label
+      - source_ids
+
+structure:
+  document_children:
+    allowed_types:
+      - section
+  section_children:
+    allowed_types:
+      - paragraph
+      - equation_occurrence
+      - figure
+      - table
+      - algorithm
+      - code
+  paragraph_inline_content:
+    allowed_types:
+      - text
+      - citation_occurrence
+      - cross_reference_occurrence
+
+ordering:
+  rule: >-
+    Child and inline-content ordering is semantically significant and must be
+    preserved across persistence, splitting, merging, and rendering.
+
+identity:
+  section_rule: >-
+    Section identity is independent of the section title and must use the
+    repository's stable section identity mechanism.
+  occurrence_rule: >-
+    Multiple document occurrences may reference the same domain object and
+    must remain distinct placements.
+
+provenance:
+  rule: >-
+    Scientific provenance belongs to the referenced domain or evidence object.
+    Document-level provenance may describe presentation lineage but must not
+    replace source provenance.
+
+legacy_projection:
+  content:
+    role: compatibility_projection
+    authoritative: false
+  key_equations:
+    role: derived_index
+    authoritative: false
+  citations_used:
+    role: derived_index
+    authoritative: false
+
+invariants:
+  - document_id_is_stable
+  - section_ids_are_stable_uuid_strings
+  - section_parent_ids_are_preserved
+  - child_order_is_preserved
+  - inline_order_is_preserved
+  - referenced_equation_ids_must_resolve_when_document_is_renderable
+  - referenced_source_ids_must_resolve_when_document_is_renderable
+  - cross_reference_targets_must_resolve_when_document_is_renderable
+  - document_objects_must_not_redefine_domain_object_identity
+  - occurrence_identity_must_not_be_used_as_domain_object_identity
+  - derived_fields_must_not_be_authoritative
+  - rendering_must_not_mutate_document_semantics
+  - unresolved_draft_proposals_must_not_be_renderable
