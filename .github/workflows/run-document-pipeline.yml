@@ -1,0 +1,107 @@
+name: Run document pipeline
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run-document-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            python -m pip install -r requirements.txt
+          elif [ -f pyproject.toml ]; then
+            python -m pip install .
+          else
+            echo "No requirements.txt or pyproject.toml found."
+          fi
+
+      - name: Run focused document-pipeline tests
+        id: focused_tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python -m pytest -q \
+            tests/test_document_model.py \
+            tests/test_semantic_markers.py \
+            tests/test_document_assembler.py \
+            tests/test_section_document_adapter.py \
+            tests/test_semantic_writer_boundary.py \
+            tests/test_document_persistence.py \
+            tests/test_document_snapshot.py \
+            tests/test_document_pipeline_integration.py \
+            tests/test_pipeline_document_runner.py 2>&1 | tee focused-tests.log
+
+      - name: Run document pipeline runner
+        id: runner
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python tools/run_pipeline_with_document_snapshot.py 2>&1 | tee runner.log
+
+      - name: Collect runtime diagnostics
+        if: always()
+        run: |
+          {
+            echo "=== GitHub Actions context ==="
+            echo "Commit: $GITHUB_SHA"
+            echo "Branch/ref: $GITHUB_REF"
+            echo "Runner OS: $RUNNER_OS"
+            echo "Python:"
+            python --version || true
+            echo
+            echo "=== Focused test result ==="
+            echo "outcome=${{ steps.focused_tests.outcome }}"
+            echo
+            echo "=== Pipeline runner result ==="
+            echo "outcome=${{ steps.runner.outcome }}"
+            echo
+            echo "=== Focused tests log ==="
+            cat focused-tests.log 2>/dev/null || true
+            echo
+            echo "=== Runner log ==="
+            cat runner.log 2>/dev/null || true
+          } > runtime-log.txt
+
+      - name: Print runtime diagnostics for remote inspection
+        if: always()
+        run: |
+          echo "================ RUNTIME LOG ================"
+          cat runtime-log.txt
+          echo "============== END RUNTIME LOG =============="
+
+      - name: Upload runtime log artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: document-pipeline-runtime-log
+          path: |
+            runtime-log.txt
+            focused-tests.log
+            runner.log
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Fail workflow if focused tests or runner failed
+        if: steps.focused_tests.outcome == 'failure' || steps.runner.outcome == 'failure'
+        run: |
+          echo "The document pipeline validation failed. Download the document-pipeline-runtime-log artifact for diagnostics."
+          exit 1
