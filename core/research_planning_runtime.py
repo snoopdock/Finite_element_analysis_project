@@ -24,9 +24,15 @@ from analysis.research_planning_decision import (
 def compose_research_acquisition_flow(
     proposals: Iterable[AttentionProposal | Mapping[str, Any]],
     *,
+    planning_context: Mapping[str, Any] | None = None,
     operational_constraints: Mapping[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Compose the R8 planning boundaries independently for each proposal.
+
+    ``planning_context`` is passed unchanged to the established R8.3 evaluator;
+    it is not interpreted by this coordinator. ``operational_constraints`` is
+    passed unchanged to the established R8.8 formulator when a request is
+    actually warranted.
 
     The returned records preserve the provenance chain and contain the
     resulting planning decision plus an optional acquisition request. A
@@ -38,7 +44,10 @@ def compose_research_acquisition_flow(
     results: list[dict[str, Any]] = []
     for proposal in proposals:
         signal = translate_attention_proposal(proposal)
-        decision = evaluate_research_planning_signal(signal)
+        decision = evaluate_research_planning_signal(
+            signal,
+            planning_context=planning_context,
+        )
         result: dict[str, Any] = {
             "attention_proposal": proposal,
             "research_planning_signal": signal,
