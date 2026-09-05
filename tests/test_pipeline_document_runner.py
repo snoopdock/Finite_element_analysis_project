@@ -40,7 +40,7 @@ def test_runner_persists_document_after_successful_pipeline(monkeypatch, tmp_pat
         lambda loaded_sections, path: original_persist(loaded_sections, document_path),
     )
 
-    assert runner.main() == 0
+    assert runner.main([]) == 0
 
     payload = json.loads(document_path.read_text(encoding="utf-8"))
     assert payload["type"] == "document"
