@@ -2,6 +2,12 @@ name: R8 validation
 
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch to validate"
+        required: true
+        default: "stage1/section-uuids"
+        type: string
   push:
     branches:
       - stage1/section-uuids
@@ -23,6 +29,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -67,8 +75,8 @@ jobs:
             echo "# R8 validation report"
             echo
             echo "- Repository: $GITHUB_REPOSITORY"
-            echo "- Branch or ref: $GITHUB_REF_NAME"
-            echo "- Commit: $GITHUB_SHA"
+            echo "- Branch or ref: ${{ inputs.ref || github.ref_name }}"
+            echo "- Commit checked out: $(git rev-parse HEAD)"
             echo "- Workflow run: $GITHUB_RUN_ID"
             echo
             echo "## Step results"
