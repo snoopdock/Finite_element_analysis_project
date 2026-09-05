@@ -156,7 +156,8 @@ identity:
     repository's stable section identity mechanism.
   occurrence_rule: >-
     Multiple document occurrences may reference the same domain object and
-    must remain distinct placements.
+    must remain distinct placements. Occurrence IDs should be stable for the
+    same document location across deterministic reassembly.
 
 provenance:
   rule: >-
@@ -186,6 +187,7 @@ invariants:
   - cross_reference_targets_must_resolve_when_document_is_renderable
   - document_objects_must_not_redefine_domain_object_identity
   - occurrence_identity_must_not_be_used_as_domain_object_identity
+  - occurrence_identity_must_be_stable_for_same_document_location
   - derived_fields_must_not_be_authoritative
   - rendering_must_not_mutate_document_semantics
   - unresolved_draft_proposals_must_not_be_renderable
