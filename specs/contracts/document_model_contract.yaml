@@ -36,9 +36,13 @@ entities:
 
   paragraph:
     required_fields:
-      - text
-    optional_fields:
       - inline_content
+    optional_fields:
+      - semantic_references
+
+  text:
+    required_fields:
+      - text
 
   equation_occurrence:
     identity: occurrence_id
@@ -54,6 +58,17 @@ entities:
         rule: >-
           equation_id must resolve to an existing semantic equation, or to an
           explicitly permitted semantic proposal during draft assembly.
+
+  equation_proposal_reference:
+    identity: occurrence_id
+    required_fields:
+      - occurrence_id
+      - proposal_id
+    authoritative: false
+    renderable: false
+    reference_fields:
+      proposal_id:
+        target: equation_proposal
 
   citation_occurrence:
     identity: occurrence_id
@@ -76,7 +91,6 @@ entities:
           - equation_occurrence
           - figure
           - table
-          - algorithm
 
   figure:
     identity: figure_id
@@ -107,10 +121,9 @@ structure:
     allowed_types:
       - paragraph
       - equation_occurrence
+      - equation_proposal_reference
       - figure
       - table
-      - algorithm
-      - code
   paragraph_inline_content:
     allowed_types:
       - text
