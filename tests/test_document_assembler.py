@@ -38,7 +38,7 @@ def test_assemble_preserves_inline_citations_and_display_equation_order():
             source_id="source-1",
             occurrence_id=section.children[0].inline_content[1].occurrence_id,
         ),
-        Text(". "),
+        Text(". The governing relation is "),
     ]
     assert section.children[1].equation_id == "eq-1"
     assert section.children[2].inline_content[1].target_id == "eq-occ-1"
