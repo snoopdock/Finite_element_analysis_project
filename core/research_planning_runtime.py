@@ -10,19 +10,12 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 from analysis.acquisition_request_formulation import formulate_acquisition_request
-from analysis.retrieval_attention_planning_signal import (
-    AttentionProposal,
-    ResearchPlanningSignal,
-    translate_attention_proposal,
-)
-from analysis.research_planning_decision import (
-    ResearchPlanningDecision,
-    evaluate_research_planning_signal,
-)
+from analysis.retrieval_attention_planning_signal import translate_attention_proposal
+from analysis.research_planning_decision import evaluate_research_planning_signal
 
 
 def compose_research_acquisition_flow(
-    proposals: Iterable[AttentionProposal | Mapping[str, Any]],
+    proposals: Iterable[Mapping[str, Any]],
     *,
     planning_context: Mapping[str, Any] | None = None,
     operational_constraints: Mapping[str, Any] | None = None,
@@ -62,11 +55,8 @@ def compose_research_acquisition_flow(
     return results
 
 
-def _decision_type(decision: ResearchPlanningDecision | Mapping[str, Any]) -> str:
-    if isinstance(decision, Mapping):
-        value = decision.get("decision_type")
-    else:
-        value = getattr(decision, "decision_type", None)
+def _decision_type(decision: Mapping[str, Any]) -> str:
+    value = decision.get("decision_type")
     return str(value).lower().replace("-", "_")
 
 
