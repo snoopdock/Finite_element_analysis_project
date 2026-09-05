@@ -79,7 +79,14 @@ jobs:
             cat runner.log 2>/dev/null || true
           } > runtime-log.txt
 
-      - name: Upload runtime log
+      - name: Print runtime diagnostics for remote inspection
+        if: always()
+        run: |
+          echo "================ RUNTIME LOG ================"
+          cat runtime-log.txt
+          echo "============== END RUNTIME LOG =============="
+
+      - name: Upload runtime log artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
