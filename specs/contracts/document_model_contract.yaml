@@ -59,6 +59,21 @@ entities:
           equation_id must resolve to an existing semantic equation, or to an
           explicitly permitted semantic proposal during draft assembly.
 
+  equation_proposal:
+    identity: proposal_id
+    required_fields:
+      - proposal_id
+      - expression
+      - status
+    optional_fields:
+      - explanation
+      - role
+    authoritative: false
+    renderable: false
+    rule: >-
+      A proposal is a candidate semantic equation and has no scientific
+      authority until explicitly verified and promoted by the semantic layer.
+
   equation_proposal_reference:
     identity: occurrence_id
     required_fields:
