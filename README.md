@@ -2,7 +2,7 @@
 
 This project is an automated pipeline that finds academic sources about the Finite Element Method (FEM), extracts facts and equations, writes clear guideline sections using LLMs, and builds a LaTeX guideline.
 
-The goal is to make a precise, evidence-backed technical guideline for FEM that can be checked by humans and, when enabled, by formal tools.
+The goal is to make a precise, evidence-backed technical guideline for FEM that can be checked by humans and, when enabled, by formal tools. However, I understand that for at least foreseeable future LLM systems do not become reliable through structure alone.
 
 ---
 
