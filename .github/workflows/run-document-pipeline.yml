@@ -36,7 +36,10 @@ jobs:
       - name: Install TeX Live
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends texlive-latex-base
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra
 
       - name: Run LaTeX document tests
         id: latex_tests
@@ -110,18 +113,16 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          {
-            echo "=== TeX compilation ==="
-            if [ ! -f output/guideline.tex ]; then
-              echo "output/guideline.tex is not present."
-              exit 1
-            fi
-            cd output
-            pdflatex -interaction=nonstopmode -halt-on-error guideline.tex
-            pdflatex -interaction=nonstopmode -halt-on-error guideline.tex
-            test -s guideline.pdf
-            pdfinfo guideline.pdf | sed -n '1,20p' || true
-          } 2>&1 | tee ../latex-compile.log
+          if [ ! -f output/guideline.tex ]; then
+            echo "output/guideline.tex is not present." | tee latex-compile.log
+            exit 1
+          fi
+
+          cd output
+          pdflatex -interaction=nonstopmode -halt-on-error guideline.tex > ../latex-compile.log 2>&1
+          pdflatex -interaction=nonstopmode -halt-on-error guideline.tex >> ../latex-compile.log 2>&1
+          test -s guideline.pdf
+          pdfinfo guideline.pdf | sed -n '1,20p' >> ../latex-compile.log || true
 
       - name: Discover document pipeline implementation
         id: pipeline_discovery
@@ -137,8 +138,8 @@ jobs:
             echo "=== LaTeX and document-pipeline references ==="
             grep -RInE \
               'latex|LaTeX|\\.tex|pdflatex|xelatex|lualatex|DocumentAssembler|DocumentRenderer|persist_pipeline_document|render|compile' \
-              --include='*.py' --include='*.tex' --include='*.yml' --include='*.yaml' \
-              --exclude-dir=.git . || true
+              --include='*.py' --include='*.yml' --include='*.yaml' \
+              --exclude-dir=.git --exclude='guideline.tex' . || true
             echo
             echo "=== Candidate integration tests ==="
             find tests tools -maxdepth 4 -type f 2>/dev/null \
@@ -191,9 +192,12 @@ jobs:
       - name: Print test diagnostics
         if: always()
         run: |
-          echo "================ LATEX RUNTIME LOG ================"
-          cat latex-runtime-log.txt
-          echo "============== END LATEX RUNTIME LOG =============="
+          echo "================ LATEX RUNTIME SUMMARY ================"
+          grep -E \
+            '^(===|Commit:|Branch/ref:|Runner OS:|outcome=|File:|[0-9]+ output/guideline.tex|[0-9]+:|! LaTeX Error:|! Emergency stop|!  ==> Fatal error|Output written on|Transcript written on|pdfTeX warning|LaTeX Warning:)' \
+            latex-runtime-log.txt \
+            || true
+          echo "============== END LATEX RUNTIME SUMMARY =============="
 
       - name: Upload LaTeX test artifact
         if: always()
