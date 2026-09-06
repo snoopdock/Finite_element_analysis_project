@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Sequence, Union
 
 from core.document_snapshot import persist_document_snapshot
 
@@ -13,21 +13,30 @@ DEFAULT_DOCUMENT_PATH_KEY = "document"
 
 
 def persist_pipeline_document(
-    state: Dict[str, Any],
-    paths: Dict[str, Path],
+    state: Union[Dict[str, Any], Sequence[Dict[str, Any]]],
+    paths: Union[Dict[str, Path], Path, str],
 ) -> Path:
-    """Persist the semantic document represented by ``state['sections']``.
+    """Persist the semantic document represented by the pipeline state.
 
-    This helper is intentionally side-effect limited: it reads the current
-    legacy section list, creates the semantic snapshot, and writes it to the
-    configured document path. It does not replace ``state['sections']`` and it
-    does not modify the legacy ``sections.json`` artifact.
+    The established contract accepts a state mapping containing ``sections``
+    and a paths mapping containing ``document``. The transitional runner also
+    passes the legacy section list and the destination path directly; that
+    form is accepted here so the integration boundary remains compatible with
+    both callers.
     """
-    sections = state.get("sections", [])
-    if not isinstance(sections, list):
-        sections = []
+    if isinstance(state, dict):
+        sections = state.get("sections", [])
+    else:
+        sections = state
 
-    document_path = paths.get(DEFAULT_DOCUMENT_PATH_KEY)
+    if not isinstance(sections, list):
+        sections = list(sections) if isinstance(sections, Sequence) else []
+
+    if isinstance(paths, dict):
+        document_path = paths.get(DEFAULT_DOCUMENT_PATH_KEY)
+    else:
+        document_path = paths
+
     if document_path is None:
         raise ValueError("Pipeline paths must define a 'document' path.")
 
