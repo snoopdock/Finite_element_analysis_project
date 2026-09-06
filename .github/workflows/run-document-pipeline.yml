@@ -9,7 +9,7 @@ permissions:
 jobs:
   validate-latex-documents:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Check out repository
@@ -32,6 +32,11 @@ jobs:
             python -m pip install .
           fi
           python -m pip install pytest
+
+      - name: Install TeX Live
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends texlive-latex-base
 
       - name: Run LaTeX document tests
         id: latex_tests
@@ -100,6 +105,24 @@ jobs:
             tail -n 20 output/guideline.tex
           } | tee latex-output-inspection.log
 
+      - name: Compile generated LaTeX document
+        id: latex_compile
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            echo "=== TeX compilation ==="
+            if [ ! -f output/guideline.tex ]; then
+              echo "output/guideline.tex is not present."
+              exit 1
+            fi
+            cd output
+            pdflatex -interaction=nonstopmode -halt-on-error guideline.tex
+            pdflatex -interaction=nonstopmode -halt-on-error guideline.tex
+            test -s guideline.pdf
+            pdfinfo guideline.pdf | sed -n '1,20p' || true
+          } 2>&1 | tee ../latex-compile.log
+
       - name: Discover document pipeline implementation
         id: pipeline_discovery
         continue-on-error: true
@@ -121,11 +144,6 @@ jobs:
             find tests tools -maxdepth 4 -type f 2>/dev/null \
               | grep -Ei 'pipeline|integration|render|latex|document' \
               | sort || true
-            echo
-            echo "=== TeX executables available on runner ==="
-            command -v pdflatex || true
-            command -v xelatex || true
-            command -v lualatex || true
           } | tee latex-pipeline-discovery.log
 
       - name: Collect test diagnostics
@@ -148,8 +166,14 @@ jobs:
             echo "=== LaTeX output inspection result ==="
             echo "outcome=${{ steps.latex_output_inspection.outcome }}"
             echo
+            echo "=== TeX compilation result ==="
+            echo "outcome=${{ steps.latex_compile.outcome }}"
+            echo
             echo "=== Pipeline discovery result ==="
             echo "outcome=${{ steps.pipeline_discovery.outcome }}"
+            echo
+            echo "=== LaTeX compile log ==="
+            cat latex-compile.log 2>/dev/null || true
             echo
             echo "=== LaTeX tests log ==="
             cat latex-tests.log 2>/dev/null || true
@@ -181,12 +205,14 @@ jobs:
             latex-tests.log
             latex-pipeline-integration.log
             latex-output-inspection.log
+            latex-compile.log
             latex-pipeline-discovery.log
+            output/guideline.pdf
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Fail workflow if LaTeX tests failed
-        if: steps.latex_tests.outcome == 'failure' || steps.pipeline_integration_tests.outcome == 'failure'
+      - name: Fail workflow if LaTeX validation failed
+        if: steps.latex_tests.outcome == 'failure' || steps.pipeline_integration_tests.outcome == 'failure' || steps.latex_compile.outcome == 'failure'
         run: |
-          echo "The LaTeX document or pipeline integration tests failed. Download the latex-document-test-log artifact for diagnostics."
+          echo "LaTeX validation failed. Download the latex-document-test-log artifact for diagnostics."
           exit 1
