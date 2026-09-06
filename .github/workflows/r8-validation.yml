@@ -55,7 +55,14 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python -m scripts.audit_r8_9_1_runtime_orchestration 2>&1 | tee validation-results/r8-9-1-implementation-audit.txt
+          python -m scripts.audit_r8_9_1_runtime_orchestration 2>&1 | tee validation-results/r8-9-9-1-implementation-audit.txt
+      - name: Run R8.9.2 application integration audit
+        id: application_integration_audit
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m scripts.audit_r8_9_2_application_integration 2>&1 | tee validation-results/r8-9-2-application-integration-audit.txt
       - name: Run R8 behavioral tests
         id: r8_tests
         if: always()
@@ -79,6 +86,7 @@ jobs:
             echo
             echo "- Decision audit: ${{ steps.decision_audit.outcome }}"
             echo "- Implementation audit: ${{ steps.implementation_audit.outcome }}"
+            echo "- Application integration audit: ${{ steps.application_integration_audit.outcome }}"
             echo "- R8 tests: ${{ steps.r8_tests.outcome }}"
           } > validation-results/README.md
       - name: Upload validation results
