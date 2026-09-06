@@ -1,0 +1,157 @@
+version: 1
+name: R8.9.2_research_planning_application_integration_decision
+status: accepted
+title: Research Planning Application Integration Boundary Decision
+objective: >-
+  Define the smallest application-level integration boundary that invokes the
+  established R8.9.1 stateless research-planning coordinator without transferring
+  planning, acquisition, retrieval, evidence, lifecycle, or scientific authority into
+  main.py.
+
+central_invariant: >-
+  main.py may compose established authorities and expose their operational results,
+  but it must not interpret planning semantics, reconstruct domain objects, or mutate
+  scientific or lifecycle state from planning observations.
+
+authority_separation:
+  application_bootstrap:
+    authority_type: top_level_composition
+    owns:
+      - configuration loading
+      - dependency construction
+      - invocation ordering
+      - operational error collection
+      - application-level reporting
+    does_not_own:
+      - retrieval-attention policy semantics
+      - research-planning translation semantics
+      - research-planning decision semantics
+      - acquisition-request formulation semantics
+      - acquisition execution semantics
+      - evidence semantics
+      - lifecycle semantics
+      - scientific semantics
+  research_planning_runtime:
+    authority: R8.9.1
+    role: AttentionProposal_to_composed_planning_results
+  retrieval_attention_runtime:
+    authority: R7 retrieval-attention runtime
+    role: RetrievalEvent_to_AttentionProposal processing and persistence
+  acquisition_execution:
+    authority: AcquisitionAdapter
+    role: AcquisitionRequest_to_retrieval_execution
+
+integration_scope:
+  included:
+    - import the established R8.9.1 coordinator
+    - invoke the coordinator only after live retrieval-attention processing has produced AttentionProposal records
+    - pass planning context and operational constraints explicitly when available
+    - preserve the coordinator result without semantic reinterpretation
+    - expose planning results through application state or operational reporting only as a bounded integration result
+    - preserve operational failure separation
+  excluded:
+    - changing retrieval execution
+    - changing provider selection or failover
+    - creating RetrievalEvent objects as a planning side effect
+    - translating retrieval failures into scientific conclusions
+    - inventing planning decisions in main.py
+    - reconstructing ResearchPlanningSignal, ResearchPlanningDecision, or AcquisitionRequest objects in main.py
+    - invoking AcquisitionAdapter
+    - persisting AcquisitionRequest or AcquisitionExecutionReceipt
+    - mutating EvidenceRecord semantics
+    - mutating lifecycle state
+    - mutating scientific state
+    - retries, scheduling, or background execution
+    - redesigning R8 semantic contracts
+
+integration_point:
+  prerequisite: >-
+    The existing retrieval-attention runtime must complete successfully and provide
+    the current bounded AttentionProposal records through its established result or
+    state representation.
+  rule: >-
+    main.py invokes R8.9.1 only at the application composition boundary after the
+    attention proposals are available. It does not call the lower-level translation,
+    planning, or formulation authorities directly.
+  first_step: >-
+    The first implementation may store the composed planning result under an explicit
+    application-owned operational field. It must not treat the result as evidence,
+    convergence, lifecycle, or scientific state.
+
+input_contract:
+  source: >-
+    AttentionProposal records produced by the established retrieval-attention runtime
+    or its explicitly documented state representation.
+  cardinality: zero_or_more
+  rule: >-
+    No proposal means no coordinator invocation and no synthesized no_action decision.
+    Each supplied proposal remains an independent processing unit according to R8.9.1.
+
+output_contract:
+  owner: research_planning_runtime
+  representation: >-
+    The application receives the coordinator's composed result records unchanged.
+  application_storage: >-
+    If stored, the result must be placed in an explicitly named operational planning
+    field and must not be merged into evidence, lifecycle, convergence, or scientific
+    fields.
+  request_behavior: >-
+    Any AcquisitionRequest remains a planning output. It is not executed or persisted
+    by this integration boundary.
+
+error_handling:
+  rules:
+    - operational coordinator exceptions remain operational application errors
+    - main.py must not convert coordinator failure into no_action, evidence absence, evidence gap, or convergence
+    - existing retrieval-attention failure handling remains distinct from planning failure handling
+    - no automatic retry is introduced
+    - partial application reporting must preserve the distinction between successful retrieval attention and failed planning composition
+
+provenance:
+  rule: >-
+    The application must preserve the coordinator's result structure and upstream
+    identities. It must not replace domain identities with application-generated semantic
+    identifiers or flatten the provenance chain into unrelated scalar fields.
+  prohibited:
+    - replacing AttentionProposal identity
+    - reconstructing AcquisitionRequest identity
+    - attaching planning output directly as EvidenceRecord content
+    - using planning output as a lifecycle event
+
+verification:
+  required:
+    - integration invokes only the R8.9.1 coordinator
+    - no direct semantic authority calls are added to main.py
+    - zero proposals produce no planning result and no synthesized decision
+    - independent proposals remain independent
+    - coordinator operational failure remains distinguishable from retrieval failure
+    - no retrieval, adapter, receipt, lifecycle, or scientific mutation is introduced
+    - existing application behavior remains unchanged outside the new bounded result
+
+closure_criteria:
+  ownership: true
+  responsibilities: true
+  invariants: true
+  implementation: true
+  verification: true
+  ambiguity: true
+  closure_rule: >-
+    R8.9.2 closes only when the smallest application integration is implemented and
+    verified without expanding main.py into a semantic authority.
+
+scope_guard:
+  included:
+    - application composition boundary
+    - invocation point
+    - input and output ownership
+    - operational error separation
+    - provenance preservation
+    - bounded application storage
+  excluded:
+    - semantic redesign
+    - retrieval execution
+    - acquisition execution
+    - receipt persistence
+    - lifecycle redesign
+    - scientific-state redesign
+    - scheduling and retries
