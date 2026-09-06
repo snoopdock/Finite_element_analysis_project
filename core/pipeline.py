@@ -22,8 +22,8 @@ from research.reading_tracker import (
     save_reading_state,
 )
 
-from processing.latex_builder import (
-    build_latex_document,
+from processing.document_renderer import (
+    render_document,
 )
 
 from utils.text import (
@@ -981,7 +981,7 @@ def phase_assemble(state, paths):
         )
         return False
 
-    tex_content = build_latex_document(
+    tex_content = render_document(
         state,
         sections,
         evidence,
