@@ -23,6 +23,7 @@ from core.pipeline import (
     phase_assemble,
 )
 from core.writer_orchestration import phase_write_policy_aware
+from core.research_planning_application import prepare_research_acquisition_flow
 from processing.llm_parser import UniversalLLMJSONParser
 from providers.cloudflare import CloudflareProvider
 from analysis.iteration_history import IterationHistory
@@ -40,6 +41,41 @@ from research.reading_tracker import load_reading_state
 from research.evidence import get_reading_summary
 
 ROOT = pathlib.Path(__file__).resolve().parent
+RESEARCH_PLANNING_RESULT_FIELD = "research_planning_operational_results"
+
+
+def _integrate_research_planning(
+    state,
+    config,
+    attention_runtime_result,
+):
+    """Compose R8.9.1 results at the application boundary without reinterpretation."""
+    proposals = attention_runtime_result.get("attention_proposals", [])
+    if not isinstance(proposals, list) or not proposals:
+        state.pop(RESEARCH_PLANNING_RESULT_FIELD, None)
+        return None
+
+    research_planning_config = config.get("research_planning", {})
+    if not isinstance(research_planning_config, dict):
+        research_planning_config = {}
+
+    planning_context = research_planning_config.get("planning_context")
+    if not isinstance(planning_context, dict):
+        planning_context = None
+
+    operational_constraints = research_planning_config.get(
+        "operational_constraints"
+    )
+    if not isinstance(operational_constraints, dict):
+        operational_constraints = None
+
+    result = prepare_research_acquisition_flow(
+        proposals,
+        planning_context=planning_context,
+        operational_constraints=operational_constraints,
+    )
+    state[RESEARCH_PLANNING_RESULT_FIELD] = result
+    return result
 
 
 def main():
@@ -336,6 +372,18 @@ def main():
                     f"policy={attention_runtime_result['policy_version']}",
                     file=sys.stderr,
                 )
+
+                planning_result = _integrate_research_planning(
+                    state,
+                    config,
+                    attention_runtime_result,
+                )
+                if planning_result is not None:
+                    print(
+                        "  [Research Planning] "
+                        f"composed={len(planning_result)} records",
+                        file=sys.stderr,
+                    )
             except Exception as exc:
                 errors.append(
                     f"Retrieval attention processing error: {exc}"
