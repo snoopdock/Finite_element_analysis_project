@@ -48,6 +48,58 @@ jobs:
             tests/test_document_snapshot.py \
             tests/test_document_renderer_boundary.py 2>&1 | tee latex-tests.log
 
+      - name: Run document-pipeline integration tests
+        id: pipeline_integration_tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          integration_tests=()
+          for test_file in \
+            tests/test_document_pipeline_integration.py \
+            tests/test_pipeline_document_runner.py
+          do
+            if [ -f "$test_file" ]; then
+              integration_tests+=("$test_file")
+            fi
+          done
+
+          if [ "${#integration_tests[@]}" -eq 0 ]; then
+            echo "No document-pipeline integration test files found."
+            : > latex-pipeline-integration.log
+            exit 0
+          fi
+
+          printf 'Running integration tests: %s\n' "${integration_tests[*]}"
+          python -m pytest -q "${integration_tests[@]}" 2>&1 \
+            | tee latex-pipeline-integration.log
+
+      - name: Inspect generated LaTeX output
+        id: latex_output_inspection
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            echo "=== Generated LaTeX output inspection ==="
+            if [ ! -f output/guideline.tex ]; then
+              echo "output/guideline.tex is not present."
+              exit 0
+            fi
+
+            echo "File: output/guideline.tex"
+            wc -c output/guideline.tex
+            wc -l output/guideline.tex
+            echo
+            echo "Document markers:"
+            grep -n '\\begin{document}' output/guideline.tex || true
+            grep -n '\\end{document}' output/guideline.tex || true
+            echo
+            echo "First 40 lines:"
+            sed -n '1,40p' output/guideline.tex
+            echo
+            echo "Last 20 lines:"
+            tail -n 20 output/guideline.tex
+          } | tee latex-output-inspection.log
+
       - name: Discover document pipeline implementation
         id: pipeline_discovery
         continue-on-error: true
@@ -90,11 +142,23 @@ jobs:
             echo "=== LaTeX test result ==="
             echo "outcome=${{ steps.latex_tests.outcome }}"
             echo
+            echo "=== Pipeline integration test result ==="
+            echo "outcome=${{ steps.pipeline_integration_tests.outcome }}"
+            echo
+            echo "=== LaTeX output inspection result ==="
+            echo "outcome=${{ steps.latex_output_inspection.outcome }}"
+            echo
             echo "=== Pipeline discovery result ==="
             echo "outcome=${{ steps.pipeline_discovery.outcome }}"
             echo
             echo "=== LaTeX tests log ==="
             cat latex-tests.log 2>/dev/null || true
+            echo
+            echo "=== Pipeline integration tests log ==="
+            cat latex-pipeline-integration.log 2>/dev/null || true
+            echo
+            echo "=== LaTeX output inspection log ==="
+            cat latex-output-inspection.log 2>/dev/null || true
             echo
             echo "=== Pipeline discovery log ==="
             cat latex-pipeline-discovery.log 2>/dev/null || true
@@ -115,12 +179,14 @@ jobs:
           path: |
             latex-runtime-log.txt
             latex-tests.log
+            latex-pipeline-integration.log
+            latex-output-inspection.log
             latex-pipeline-discovery.log
           if-no-files-found: warn
           retention-days: 14
 
       - name: Fail workflow if LaTeX tests failed
-        if: steps.latex_tests.outcome == 'failure'
+        if: steps.latex_tests.outcome == 'failure' || steps.pipeline_integration_tests.outcome == 'failure'
         run: |
-          echo "The LaTeX document tests failed. Download the latex-document-test-log artifact for diagnostics."
+          echo "The LaTeX document or pipeline integration tests failed. Download the latex-document-test-log artifact for diagnostics."
           exit 1
