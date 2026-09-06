@@ -48,6 +48,31 @@ jobs:
             tests/test_document_snapshot.py \
             tests/test_document_renderer_boundary.py 2>&1 | tee latex-tests.log
 
+      - name: Discover LaTeX pipeline files
+        id: latex_discovery
+        if: always()
+        continue-on-error: true
+        run: |
+          {
+            echo "=== Repository state ==="
+            git status --short
+            git log -1 --oneline
+            echo
+            echo "=== Candidate LaTeX and Python files ==="
+            find . -maxdepth 4 -type f \
+              \( -name "*.py" -o -name "*.tex" -o -name "*.yml" -o -name "*.yaml" \) \
+              -not -path "./.git/*" \
+              -not -path "./.venv/*" \
+              | sort
+            echo
+            echo "=== LaTeX-related symbols and commands ==="
+            grep -RInE \
+              "latex|LaTeX|\\.tex|pdflatex|xelatex|lualatex|render|compile|DocumentAssembler|DocumentRenderer" \
+              --exclude-dir=.git \
+              --exclude-dir=.venv \
+              . || true
+          } > latex-discovery-log.txt
+
       - name: Collect test diagnostics
         if: always()
         run: |
@@ -64,6 +89,9 @@ jobs:
             echo
             echo "=== LaTeX tests log ==="
             cat latex-tests.log 2>/dev/null || true
+            echo
+            echo "=== LaTeX discovery log ==="
+            cat latex-discovery-log.txt 2>/dev/null || true
           } > latex-runtime-log.txt
 
       - name: Print test diagnostics
@@ -81,6 +109,7 @@ jobs:
           path: |
             latex-runtime-log.txt
             latex-tests.log
+            latex-discovery-log.txt
           if-no-files-found: warn
           retention-days: 14
 
