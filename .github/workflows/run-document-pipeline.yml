@@ -48,30 +48,33 @@ jobs:
             tests/test_document_snapshot.py \
             tests/test_document_renderer_boundary.py 2>&1 | tee latex-tests.log
 
-      - name: Discover LaTeX pipeline files
-        id: latex_discovery
-        if: always()
+      - name: Discover document pipeline implementation
+        id: pipeline_discovery
         continue-on-error: true
         run: |
+          set -o pipefail
           {
-            echo "=== Repository state ==="
-            git status --short
-            git log -1 --oneline
-            echo
-            echo "=== Candidate LaTeX and Python files ==="
+            echo "=== Candidate pipeline files ==="
             find . -maxdepth 4 -type f \
-              \( -name "*.py" -o -name "*.tex" -o -name "*.yml" -o -name "*.yaml" \) \
-              -not -path "./.git/*" \
-              -not -path "./.venv/*" \
+              \( -name '*.py' -o -name '*.tex' -o -name '*.yml' -o -name '*.yaml' \) \
               | sort
             echo
-            echo "=== LaTeX-related symbols and commands ==="
+            echo "=== LaTeX and document-pipeline references ==="
             grep -RInE \
-              "latex|LaTeX|\\.tex|pdflatex|xelatex|lualatex|render|compile|DocumentAssembler|DocumentRenderer" \
-              --exclude-dir=.git \
-              --exclude-dir=.venv \
-              . || true
-          } > latex-discovery-log.txt
+              'latex|LaTeX|\\.tex|pdflatex|xelatex|lualatex|DocumentAssembler|DocumentRenderer|persist_pipeline_document|render|compile' \
+              --include='*.py' --include='*.tex' --include='*.yml' --include='*.yaml' \
+              --exclude-dir=.git . || true
+            echo
+            echo "=== Candidate integration tests ==="
+            find tests tools -maxdepth 4 -type f 2>/dev/null \
+              | grep -Ei 'pipeline|integration|render|latex|document' \
+              | sort || true
+            echo
+            echo "=== TeX executables available on runner ==="
+            command -v pdflatex || true
+            command -v xelatex || true
+            command -v lualatex || true
+          } | tee latex-pipeline-discovery.log
 
       - name: Collect test diagnostics
         if: always()
@@ -87,11 +90,14 @@ jobs:
             echo "=== LaTeX test result ==="
             echo "outcome=${{ steps.latex_tests.outcome }}"
             echo
+            echo "=== Pipeline discovery result ==="
+            echo "outcome=${{ steps.pipeline_discovery.outcome }}"
+            echo
             echo "=== LaTeX tests log ==="
             cat latex-tests.log 2>/dev/null || true
             echo
-            echo "=== LaTeX discovery log ==="
-            cat latex-discovery-log.txt 2>/dev/null || true
+            echo "=== Pipeline discovery log ==="
+            cat latex-pipeline-discovery.log 2>/dev/null || true
           } > latex-runtime-log.txt
 
       - name: Print test diagnostics
@@ -109,7 +115,7 @@ jobs:
           path: |
             latex-runtime-log.txt
             latex-tests.log
-            latex-discovery-log.txt
+            latex-pipeline-discovery.log
           if-no-files-found: warn
           retention-days: 14
 
