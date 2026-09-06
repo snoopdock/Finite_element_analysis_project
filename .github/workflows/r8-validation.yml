@@ -62,7 +62,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python -m pytest -q tests/test_research_planning_runtime.py tests/test_research_planning_application.py tests/test_retrieval_attention_planning_signal.py tests/test_research_planning_decision.py tests/test_acquisition_request_formulation.py 2>&1 | tee validation-results/r8-tests.txt
+          python -m pytest -q tests/test_research_planning_runtime.py tests/test_research_planning_application.py tests/test_research_planning_application_integration.py tests/test_retrieval_attention_planning_signal.py tests/test_research_planning_decision.py tests/test_acquisition_request_formulation.py 2>&1 | tee validation-results/r8-tests.txt
       - name: Write validation summary
         if: always()
         shell: bash
