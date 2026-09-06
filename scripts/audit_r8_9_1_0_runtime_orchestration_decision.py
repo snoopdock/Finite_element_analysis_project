@@ -25,7 +25,8 @@ def norm(value: Any) -> str:
 
 def contains_all(values: list[Any], required: set[str]) -> bool:
     normalized = {norm(v) for v in values}
-    return required.issubset(normalized)
+    normalized_required = {norm(v) for v in required}
+    return normalized_required.issubset(normalized)
 
 
 def main() -> None:
