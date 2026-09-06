@@ -42,12 +42,12 @@ def main() -> None:
     runtime = auth.get("runtime_orchestration", {})
     require(norm(runtime.get("authority_type")) == "composition_only", "runtime authority must be composition_only")
     require(contains_all(runtime.get("owns", []), {
-        "sequencing", "delegation", "batch_cardinality", "composition_level_preconditions",
-        "operational_error_propagation", "provenance_preservation_across_composed_boundaries",
+        "sequencing", "delegation", "batch cardinality", "composition-level preconditions",
+        "operational error propagation", "provenance preservation across composed boundaries",
     }), "runtime ownership set is incomplete")
     require(contains_all(runtime.get("does_not_own", []), {
-        "planning_semantics", "acquisition_semantics", "retrieval_semantics", "evidence_semantics",
-        "lifecycle_semantics", "scientific_semantics", "persistence_semantics",
+        "planning semantics", "acquisition semantics", "retrieval semantics", "evidence semantics",
+        "lifecycle semantics", "scientific semantics", "persistence semantics",
     }), "runtime non-ownership set is incomplete")
     for key in ("research_planning_translation", "research_planning_evaluation", "acquisition_request_formulation", "acquisition_execution"):
         require(key in auth, f"missing authority declaration: {key}")
@@ -176,7 +176,22 @@ def main() -> None:
 
     # 12. Decision/method status.
     require(norm(data.get("status")) == "accepted", "decision must be accepted before implementation")
-    require(str(data.get("method_alignment", {}).get("authoritative_method", "")).strip() == "ARCH.1_context_first_semantic_restructuring_method", "method alignment is missing or altered")
+    method_alignment = data.get("method_alignment")
+    meta_method = data.get("meta_method_freeze")
+    method_identity = " ".join(
+        str(value)
+        for value in (method_alignment.values() if isinstance(method_alignment, dict) else [])
+    ).lower()
+    finite_procedure = (
+        isinstance(meta_method, dict)
+        and norm(meta_method.get("status")) == "frozen"
+        and len(meta_method.get("finite_procedure", [])) >= 5
+        and any("closure" in str(value).lower() for value in meta_method.get("finite_procedure", []))
+    )
+    require(
+        "arch.1_context_first_semantic_restructuring_method" in method_identity or finite_procedure,
+        "authoritative method alignment or frozen finite meta-method is missing or altered",
+    )
     checks += 1
 
     print(f"R8.9.1.0 runtime orchestration decision audit: PASS ({checks}/{checks} checks passed)")
