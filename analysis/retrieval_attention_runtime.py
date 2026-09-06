@@ -58,10 +58,16 @@ def process_live_retrieval_attention(
     """
     policy = get_retrieval_attention_policy(config)
     result = generate_and_persist_retrieval_attention(state, policy)
+    evaluation = result.get("evaluation", {})
+    attention_proposals = evaluation.get("attention_items", [])
+    if not isinstance(attention_proposals, list):
+        attention_proposals = []
+
     return {
         "status": "success",
         "policy_version": policy["policy_version"],
         "persisted_count": int(result.get("persisted_count", 0)),
         "duplicate_count": int(result.get("duplicate_count", 0)),
-        "evaluation": result.get("evaluation", {}),
+        "attention_proposals": deepcopy(attention_proposals),
+        "evaluation": deepcopy(evaluation),
     }
