@@ -25,39 +25,30 @@ jobs:
   r8-validation:
     name: R8 decision and test validation
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || github.ref }}
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
-
       - name: Install dependencies
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then
-            python -m pip install -r requirements.txt
-          fi
+          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
           python -m pip install pytest pyyaml
-
       - name: Create report directory
-        shell: bash
         run: mkdir -p validation-results
-
       - name: Run R8.9.1.0 decision audit
         id: decision_audit
         shell: bash
         run: |
           set -o pipefail
           python -m scripts.audit_r8_9_1_0_runtime_orchestration_decision 2>&1 | tee validation-results/r8-9-1-0-decision-audit.txt
-
       - name: Run R8.9.1 implementation audit
         id: implementation_audit
         if: always()
@@ -65,15 +56,13 @@ jobs:
         run: |
           set -o pipefail
           python -m scripts.audit_r8_9_1_runtime_orchestration 2>&1 | tee validation-results/r8-9-1-implementation-audit.txt
-
-      - name: Run R8 tests
+      - name: Run R8.9.1 behavioral tests
         id: r8_tests
         if: always()
         shell: bash
         run: |
           set -o pipefail
-          python -m pytest -q tests -k 'r8' 2>&1 | tee validation-results/r8-tests.txt
-
+          python -m pytest -q tests/test_research_planning_runtime.py tests/test_retrieval_attention_planning_signal.py tests/test_research_planning_decision.py tests/test_acquisition_request_formulation.py 2>&1 | tee validation-results/r8-tests.txt
       - name: Write validation summary
         if: always()
         shell: bash
@@ -91,10 +80,7 @@ jobs:
             echo "- Decision audit: ${{ steps.decision_audit.outcome }}"
             echo "- Implementation audit: ${{ steps.implementation_audit.outcome }}"
             echo "- R8 tests: ${{ steps.r8_tests.outcome }}"
-            echo
-            echo "The complete command output is stored in the accompanying text files."
           } > validation-results/README.md
-
       - name: Upload validation results
         if: always()
         uses: actions/upload-artifact@v4
@@ -103,11 +89,6 @@ jobs:
           path: validation-results/
           if-no-files-found: error
           retention-days: 30
-
       - name: Publish job summary
         if: always()
-        shell: bash
-        run: |
-          cat validation-results/README.md >> "$GITHUB_STEP_SUMMARY"
-          echo >> "$GITHUB_STEP_SUMMARY"
-          echo "Download the complete report from the workflow run's Artifacts section." >> "$GITHUB_STEP_SUMMARY"
+        run: cat validation-results/README.md >> "$GITHUB_STEP_SUMMARY"
