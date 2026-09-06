@@ -15,8 +15,10 @@ def test_runner_persists_document_after_successful_pipeline(monkeypatch, tmp_pat
             "parent_section_ids": [],
         }
     ]
-    sections_path = tmp_path / "sections.json"
-    document_path = tmp_path / "document.json"
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    sections_path = output_dir / "sections.json"
+    document_path = output_dir / "document.json"
     sections_path.write_text(json.dumps(sections), encoding="utf-8")
 
     monkeypatch.setattr(runner, "ROOT", tmp_path)
