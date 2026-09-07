@@ -24,11 +24,23 @@ class SymbolReference:
     line: int
     usage: str
 
+    # New fields
+    classification: str = "UNKNOWN"
+    classification_reason: str = ""
+
 
 @dataclass
 class AuditInventory:
     python_files: List[str] = field(default_factory=list)
-    dependencies: List[DependencyEdge] = field(default_factory=list)
-    symbols: List[SymbolReference] = field(default_factory=list)
 
-    metadata: Dict = field(default_factory=dict)
+    dependencies: List[DependencyEdge] = field(
+        default_factory=list
+    )
+
+    symbols: List[SymbolReference] = field(
+        default_factory=list
+    )
+
+    metadata: Dict = field(
+        default_factory=dict
+    )
