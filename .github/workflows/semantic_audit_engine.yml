@@ -1,125 +1,83 @@
 name: Semantic Audit Engine
 
 on:
+
   workflow_dispatch:
+
 
 jobs:
 
   semantic-audit:
 
-    name: Run Semantic Dependency Mapper
 
     runs-on: ubuntu-latest
 
 
     steps:
 
-      - name: Checkout repository
+
+      - name: Checkout
         uses: actions/checkout@v4
+
         with:
           ref: stage1/section-uuids
 
 
+
       - name: Setup Python
         uses: actions/setup-python@v5
+
         with:
           python-version: "3.11"
 
 
-      - name: Display repository state
-        run: |
-          echo "===== Branch ====="
-          git branch --show-current
 
-          echo
-          echo "===== Commit ====="
-          git rev-parse HEAD
+      - name: Run semantic audit
 
-          echo
-          echo "===== Audit Engine ====="
-          find audit_engine -maxdepth 3 -type f | sort || true
+        run:
+
+          python -m semantic_audit.runner
 
 
 
-      - name: Validate Python files
-        run: |
-          python -m compileall audit_engine
+      - name: Validate report
+
+        run:
+
+          test -f semantic_audit_report.json
 
 
 
-      - name: Run semantic dependency mapper
-        run: |
-          python -m audit_engine.runner
+      - name: Print findings
 
-
-
-      - name: Validate generated report
-        run: |
-
-          if [ ! -f semantic_audit_inventory.json ]; then
-              echo "ERROR: semantic_audit_inventory.json was not generated"
-              exit 1
-          fi
-
-
-          echo "===== Report generated ====="
+        run:
 
           python - <<'PY'
 
           import json
-          from pathlib import Path
 
-
-          report = Path(
-              "semantic_audit_inventory.json"
-          )
-
-
-          data = json.loads(
-              report.read_text()
-          )
-
-
-          print(
-              "Python files:",
-              len(data.get("python_files", []))
-          )
-
-
-          print(
-              "Dependencies:",
-              len(data.get("dependencies", []))
-          )
-
-
-          print(
-              "Symbols:",
-              len(data.get("symbols", []))
-          )
-
-
-          print("\nSample classified symbols:")
-
-
-          for item in data.get("symbols", [])[:20]:
-
-              print(
-                  "-",
-                  item.get("module"),
-                  "::",
-                  item.get("symbol"),
-                  "=>",
-                  item.get("classification")
+          data=json.load(
+              open(
+              "semantic_audit_report.json"
               )
+          )
+
+          for item in data["findings"]:
+
+              if item["classification"] != "UNCLASSIFIED":
+
+                  print(item)
 
           PY
 
 
 
-      - name: Upload semantic audit artifact
+      - name: Upload report
+
         uses: actions/upload-artifact@v4
+
         with:
 
-          name: semantic-audit-inventory
+          name: semantic-audit-report
 
-          path: semantic_audit_inventory.json
+          path: semantic_audit_report.json
