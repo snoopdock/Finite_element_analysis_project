@@ -1,4 +1,4 @@
-name: R8 main dependency inspection
+name: R8 main dependency context inspection
 
 on:
   workflow_dispatch:
@@ -12,35 +12,35 @@ jobs:
         with:
           ref: stage1/section-uuids
 
-      - name: Inspect research evidence dependency
+      - name: Inspect main dependency context
         run: |
-          echo "=== imports ==="
-          grep -n "research.evidence" main.py || true
-
-          echo
-          echo "=== summary usage ==="
-          grep -n "get_reading_summary" main.py || true
-
-          echo
-          echo "=== surrounding code ==="
-
           python - <<'PY'
           from pathlib import Path
 
-          lines = Path("main.py").read_text().splitlines()
+          path = Path("main.py")
 
-          for i, line in enumerate(lines, 1):
-              if (
-                  "research.evidence" in line
-                  or "get_reading_summary" in line
-              ):
-                  start=max(1, i-15)
-                  end=min(len(lines), i+15)
+          if not path.exists():
+              raise SystemExit("main.py not found")
 
-                  print(
-                      f"\n--- context {start}:{end} ---"
-                  )
+          lines = path.read_text().splitlines()
 
-                  for n in range(start,end+1):
-                      print(f"{n}: {lines[n-1]}")
+          targets = [
+              "research.evidence",
+              "get_reading_summary",
+          ]
+
+          for index, line in enumerate(lines, 1):
+              if any(target in line for target in targets):
+
+                  start=max(1,index-20)
+                  end=min(len(lines),index+20)
+
+                  print("\n==============================")
+                  print(f"Context {start}-{end}")
+                  print("==============================")
+
+                  for number in range(start,end+1):
+                      print(
+                          f"{number}: {lines[number-1]}"
+                      )
           PY
