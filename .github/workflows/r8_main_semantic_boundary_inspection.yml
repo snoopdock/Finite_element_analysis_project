@@ -1,0 +1,138 @@
+name: R8 Main Semantic Boundary Inspection
+
+on:
+  workflow_dispatch:
+
+
+jobs:
+
+  inspect-main-boundary:
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+
+      - name: Create inspection directory
+        run:
+
+          mkdir -p boundary-inspection
+
+
+
+      - name: Import analysis
+        run: |
+
+          python - <<'PY' > boundary-inspection/imports.txt
+
+          import ast
+          from pathlib import Path
+
+
+          tree = ast.parse(
+              Path("main.py").read_text()
+          )
+
+
+          for node in ast.walk(tree):
+
+              if isinstance(node, ast.Import):
+
+                  print(
+                      "IMPORT",
+                      node.lineno,
+                      [
+                          x.name
+                          for x in node.names
+                      ]
+                  )
+
+
+              if isinstance(node, ast.ImportFrom):
+
+                  print(
+                      "IMPORT_FROM",
+                      node.lineno,
+                      node.module,
+                      [
+                          x.name
+                          for x in node.names
+                      ]
+                  )
+
+          PY
+
+
+
+      - name: Call analysis
+        run: |
+
+          python - <<'PY' > boundary-inspection/calls.txt
+
+          import ast
+          from pathlib import Path
+
+
+          tree = ast.parse(
+              Path("main.py").read_text()
+          )
+
+
+          for node in ast.walk(tree):
+
+              if isinstance(node, ast.Call):
+
+                  if isinstance(
+                      node.func,
+                      ast.Name
+                  ):
+
+                      print(
+                          node.lineno,
+                          node.func.id
+                      )
+
+
+                  elif isinstance(
+                      node.func,
+                      ast.Attribute
+                  ):
+
+                      print(
+                          node.lineno,
+                          ast.unparse(node.func)
+                      )
+
+          PY
+
+
+
+      - name: Research evidence references
+        run: |
+
+          grep -Rni \
+          "research.evidence\|get_reading_summary" \
+          . \
+          > boundary-inspection/evidence-references.txt || true
+
+
+
+      - name: Upload inspection
+        uses: actions/upload-artifact@v4
+        with:
+
+          name: r8-main-boundary-inspection
+
+          path: boundary-inspection/
