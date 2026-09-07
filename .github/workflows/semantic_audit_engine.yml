@@ -1,4 +1,3 @@
-
 name: Semantic Audit Engine
 
 on:
@@ -15,11 +14,17 @@ jobs:
   semantic-audit:
 
 
+    name: Semantic Audit Engine Analysis
+
     runs-on: ubuntu-latest
 
 
     steps:
 
+
+      # --------------------------------------------------
+      # 1. Checkout
+      # --------------------------------------------------
 
       - name: Checkout repository
 
@@ -31,6 +36,10 @@ jobs:
 
 
 
+      # --------------------------------------------------
+      # 2. Python environment
+      # --------------------------------------------------
+
       - name: Setup Python
 
         uses: actions/setup-python@v5
@@ -40,6 +49,10 @@ jobs:
           python-version: "3.11"
 
 
+
+      # --------------------------------------------------
+      # 3. Install minimal dependencies
+      # --------------------------------------------------
 
       - name: Install dependencies
 
@@ -51,76 +64,309 @@ jobs:
 
 
 
-      - name: Verify audit engine structure
+      # --------------------------------------------------
+      # 4. Repository inventory
+      # --------------------------------------------------
+
+      - name: Repository inventory
 
         run: |
 
-          find audit_engine -maxdepth 3 -type f | sort
+          echo "===== Repository root ====="
+
+          ls -la
+
+
+          echo
+
+          echo "===== Audit engine structure ====="
+
+          find audit_engine -maxdepth 4 -type f | sort
 
 
 
-      - name: Run semantic audit engine
+      # --------------------------------------------------
+      # 5. Validate Python syntax
+      # --------------------------------------------------
 
-        run: |
-
-          python -m audit_engine.semantic_audit.runner
-
-
-
-      - name: Verify generated report
-
-        run: |
-
-          test -f semantic_audit_report.json
-
-
-
-      - name: Display report summary
+      - name: Python syntax validation
 
         run: |
 
-          python - <<'PY'
-
-          import json
+          python -m compileall audit_engine
 
 
-          with open(
-              "semantic_audit_report.json"
-          ) as f:
 
-              report=json.load(f)
+      # --------------------------------------------------
+      # 6. Import dependency inspection
+      # --------------------------------------------------
 
+      - name: Semantic audit import inspection
 
-          print("Imports:",
-                len(report["imports"]))
+        run: |
 
-
-          print("Symbols:",
-                len(report["symbols"]))
+          mkdir -p semantic_audit_results
 
 
-          print("Findings:",
-                len(report["findings"]))
+          python - <<'PY' > semantic_audit_results/import_check.txt
+
+          import pathlib
 
 
-          for finding in report["findings"]:
+          print(
+              "Checking imports inside audit_engine/semantic_audit"
+          )
+
+
+          for file in pathlib.Path(
+              "audit_engine/semantic_audit"
+          ).rglob("*.py"):
+
 
               print(
-                  finding
+                  "\nFILE:",
+                  file
               )
+
+
+              for line in file.read_text(
+                  encoding="utf-8"
+              ).splitlines():
+
+
+                  if line.startswith(
+                      "from "
+                  ) or line.startswith(
+                      "import "
+                  ):
+
+                      print(
+                          "   ",
+                          line
+                      )
+
 
           PY
 
 
 
-      - name: Upload semantic audit artifact
+      # --------------------------------------------------
+      # 7. Import resolution test
+      # --------------------------------------------------
+
+      - name: Test audit engine import resolution
+
+        run: |
+
+          python - <<'PY'
+
+          import importlib
+
+
+          modules = [
+
+              "audit_engine.semantic_audit.runner",
+
+              "audit_engine.semantic_audit.core.models",
+
+              "audit_engine.semantic_audit.extractors.ast_extractor",
+
+              "audit_engine.semantic_audit.analyzers.symbol_classifier",
+
+              "audit_engine.semantic_audit.reports.json_report"
+
+          ]
+
+
+          failures = []
+
+
+          for module in modules:
+
+              try:
+
+                  importlib.import_module(
+                      module
+                  )
+
+                  print(
+                      "PASS:",
+                      module
+                  )
+
+
+              except Exception as exc:
+
+                  print(
+                      "FAIL:",
+                      module,
+                      exc
+                  )
+
+                  failures.append(
+                      module
+                  )
+
+
+          if failures:
+
+              raise SystemExit(
+                  "Import resolution failed"
+              )
+
+
+          PY
+
+
+
+      # --------------------------------------------------
+      # 8. Run semantic audit engine
+      # --------------------------------------------------
+
+      - name: Run semantic audit engine
+
+        run:
+
+          python -m audit_engine.semantic_audit.runner
+
+
+
+      # --------------------------------------------------
+      # 9. Validate JSON report exists
+      # --------------------------------------------------
+
+      - name: Validate semantic audit report
+
+        run: |
+
+          if [ ! -f semantic_audit_report.json ];
+
+          then
+
+              echo "ERROR: JSON report not generated"
+
+              exit 1
+
+          fi
+
+
+
+      # --------------------------------------------------
+      # 10. Inspect JSON content
+      # --------------------------------------------------
+
+      - name: Analyze generated JSON report
+
+        run: |
+
+          python - <<'PY'
+
+
+          import json
+
+
+          from pathlib import Path
+
+
+
+          report = json.loads(
+
+              Path(
+                  "semantic_audit_report.json"
+              )
+              .read_text(
+                  encoding="utf-8"
+              )
+
+          )
+
+
+
+          required_sections = [
+
+              "imports",
+
+              "symbols",
+
+              "findings"
+
+          ]
+
+
+
+          print(
+              "===== Report validation ====="
+          )
+
+
+          for section in required_sections:
+
+
+              if section not in report:
+
+                  raise Exception(
+                      f"Missing section: {section}"
+                  )
+
+
+              print(
+                  section,
+                  ":",
+                  len(report[section])
+              )
+
+
+
+          print(
+
+              "\n===== Semantic findings ====="
+
+          )
+
+
+          for finding in report[
+
+              "findings"
+
+          ][:50]:
+
+
+              print(finding)
+
+
+
+          PY
+
+
+
+      # --------------------------------------------------
+      # 11. Store metadata
+      # --------------------------------------------------
+
+      - name: Create audit metadata
+
+        run: |
+
+          git rev-parse HEAD > semantic_audit_results/commit.txt
+
+          git branch --show-current > semantic_audit_results/branch.txt
+
+
+
+      # --------------------------------------------------
+      # 12. Upload artifacts
+      # --------------------------------------------------
+
+      - name: Upload semantic audit artifacts
 
         uses: actions/upload-artifact@v4
 
         with:
 
-          name: semantic-audit-report
+          name: semantic-audit-engine-results
 
-          path:
+          path: |
 
             semantic_audit_report.json
+
+            semantic_audit_results/
