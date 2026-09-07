@@ -1,25 +1,20 @@
 """Rendering helpers for the semantic document model.
 
 This module owns translation from renderer-neutral blocks to LaTeX. Legacy
-fragments are intentionally rendered without text escaping because they are
-already-authored LaTeX and are isolated by the semantic model.
+fragments are intentionally rendered without plain-text escaping because they
+are already-authored LaTeX and are isolated by the semantic model.
 """
 
 from __future__ import annotations
 
-from processing.latex_ir import (
-    DocumentModel,
-    LegacyLatexBlock,
-    MathBlock,
-    TextBlock,
-)
-from utils.latex import escape_latex, sanitize_latex_content
+from processing.latex_ir import DocumentModel, LegacyLatexBlock, MathBlock, TextBlock
+from utils.latex import escape_latex, escape_text, sanitize_latex_content
 
 
 def render_block(block: TextBlock | MathBlock | LegacyLatexBlock) -> str:
-    """Render one semantic block into LaTeX."""
+    """Render one semantic block into LaTeX according to its declared kind."""
     if isinstance(block, TextBlock):
-        return escape_latex(block.text)
+        return escape_text(block.text)
     if isinstance(block, MathBlock):
         expression = block.expression.strip()
         if not expression:
