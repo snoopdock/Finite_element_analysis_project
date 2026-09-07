@@ -1,4 +1,4 @@
-from semantic_audit.core.models import (
+from ..core.models import  (
     SemanticFinding
 )
 
