@@ -29,7 +29,7 @@ class CitationBlock:
 
 @dataclass(frozen=True)
 class LegacyLatexBlock:
-    """Compatibility block for already-authored LaTeX fragments."""
+    """Explicit compatibility block for already-authored LaTeX fragments."""
 
     source: str
 
@@ -70,7 +70,7 @@ def _as_text(value: Any, field_name: str, *, default: str = "") -> str:
 
 
 def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionModel, ...]:
-    """Normalize section dictionaries without guessing their semantics."""
+    """Normalize the closed section input language without guessing semantics."""
 
     normalized: list[SectionModel] = []
     for index, section in enumerate(sections):
@@ -81,13 +81,20 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
         if not title:
             title = "Untitled"
 
-        raw_blocks = section.get("blocks")
-        if raw_blocks is None:
-            content = _as_text(section.get("content"), f"section {index}.content")
-            blocks: tuple[DocumentBlock, ...] = (
-                (LegacyLatexBlock(content),) if content.strip() else tuple()
+        has_blocks = "blocks" in section
+        has_content = "content" in section
+        if has_blocks and has_content:
+            raise DocumentModelError(
+                f"section {index} cannot define both 'blocks' and legacy 'content'"
             )
+        if not has_blocks:
+            if has_content:
+                raise DocumentModelError(
+                    f"section {index}.content is not accepted; use an explicit legacy_latex block"
+                )
+            blocks: tuple[DocumentBlock, ...] = tuple()
         else:
+            raw_blocks = section.get("blocks")
             if not isinstance(raw_blocks, Sequence) or isinstance(raw_blocks, (str, bytes)):
                 raise DocumentModelError(f"section {index}.blocks must be a sequence")
             parsed: list[DocumentBlock] = []
