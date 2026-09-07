@@ -1,0 +1,40 @@
+grep -n "research.evidence" main.py
+
+grep -n "get_reading_summary" main.py
+
+python - <<'PY'
+import ast
+from pathlib import Path
+
+tree = ast.parse(Path("main.py").read_text())
+
+for node in ast.walk(tree):
+    if isinstance(node, ast.Import):
+        for alias in node.names:
+            if "research.evidence" in alias.name:
+                print(
+                    "IMPORT:",
+                    alias.name,
+                    "line",
+                    node.lineno
+                )
+
+    elif isinstance(node, ast.ImportFrom):
+        if node.module and "research.evidence" in node.module:
+            print(
+                "FROM IMPORT:",
+                node.module,
+                "names:",
+                [x.name for x in node.names],
+                "line",
+                node.lineno
+            )
+
+    elif isinstance(node, ast.Call):
+        if isinstance(node.func, ast.Name):
+            if node.func.id == "get_reading_summary":
+                print(
+                    "CALL get_reading_summary line",
+                    node.lineno
+                )
+PY
