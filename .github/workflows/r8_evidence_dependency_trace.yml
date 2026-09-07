@@ -1,0 +1,71 @@
+name: R8 evidence dependency trace
+
+on:
+  workflow_dispatch:
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+
+      - name: Trace research evidence dependency
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+
+          files = [
+              Path("main.py"),
+          ]
+
+          for file in files:
+
+              print("=" * 80)
+              print("FILE:", file)
+
+              tree = ast.parse(file.read_text())
+
+              for node in ast.walk(tree):
+
+                  if isinstance(node, ast.Import):
+                      for name in node.names:
+                          if "research.evidence" in name.name:
+                              print(
+                                  "IMPORT:",
+                                  name.name,
+                                  "line:",
+                                  node.lineno
+                              )
+
+                  if isinstance(node, ast.ImportFrom):
+                      module=node.module or ""
+
+                      if "research.evidence" in module:
+                          print(
+                              "FROM:",
+                              module,
+                              "IMPORTS:",
+                              [
+                                  x.name
+                                  for x in node.names
+                              ],
+                              "line:",
+                              node.lineno
+                          )
+
+                  if isinstance(node, ast.Call):
+
+                      if isinstance(node.func, ast.Name):
+
+                          if node.func.id == "get_reading_summary":
+
+                              print(
+                                  "CALL get_reading_summary",
+                                  "line:",
+                                  node.lineno
+                              )
+          PY
