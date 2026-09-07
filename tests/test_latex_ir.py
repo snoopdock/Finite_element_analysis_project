@@ -25,7 +25,7 @@ def test_legacy_content_is_explicitly_marked():
 
 
 def test_implicit_content_is_rejected_at_the_boundary():
-    with pytest.raises(DocumentModelError, match="content is not accepted"):
+    with pytest.raises(DocumentModelError, match="unsupported fields"):
         normalize_sections([{"title": "Introduction", "content": r"A & B"}])
 
 
@@ -111,6 +111,27 @@ def test_citation_blocks_resolve_against_explicit_reference_keys():
         "ref2",
     ]
     assert r"\cite{ref1,ref2}" in render_body(document)
+
+
+def test_unknown_citation_source_ids_fail_before_rendering():
+    with pytest.raises(DocumentModelError, match="unknown source_id"):
+        build_document_model(
+            {},
+            [
+                {
+                    "title": "Evidence",
+                    "blocks": [
+                        {"type": "citation", "source_ids": ["missing"]},
+                    ],
+                }
+            ],
+            [{"source_id": "known", "title": "Known"}],
+        )
+
+
+def test_empty_reference_source_ids_fail_at_the_boundary():
+    with pytest.raises(DocumentModelError, match="source_id must not be empty"):
+        build_document_model({}, [], [{"source_id": "", "title": "Untitled"}])
 
 
 def test_duplicate_reference_source_ids_fail_at_the_boundary():
