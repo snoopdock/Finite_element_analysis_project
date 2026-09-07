@@ -1,0 +1,216 @@
+version: 1
+name: R8.10.0_acquisition_execution_boundary_decision
+status: accepted
+title: Acquisition Execution Boundary Decision
+objective: >-
+  Define the smallest execution boundary that translates and executes an explicit
+  AcquisitionRequest through AcquisitionAdapter while preserving the distinction
+  between planning intent, retrieval execution, execution provenance, evidence,
+  lifecycle state, and scientific state.
+
+central_invariant: >-
+  AcquisitionAdapter may execute an explicit AcquisitionRequest and return retrieval
+  results together with an AcquisitionExecutionReceipt, but it must not become the
+  authority for planning semantics, evidence semantics, lifecycle semantics, or
+  scientific semantics.
+
+authority_separation:
+  acquisition_request:
+    authority: R8.6 and R8.8
+    role: Explicit planning output
+  acquisition_adapter:
+    authority: AcquisitionAdapter
+    role: AcquisitionRequest_to_retrieval_execution
+    owns:
+      - request validation
+      - bounded translation to the current retrieval interface
+      - execution invocation
+      - execution-status classification
+      - execution provenance and translation-loss reporting
+      - return of retrieval results and an execution receipt
+    does_not_own:
+      - research-planning decisions
+      - provider policy semantics beyond representable execution inputs
+      - evidence interpretation
+      - evidence convergence
+      - lifecycle mutation
+      - scientific mutation
+      - receipt persistence
+  retrieval_runtime:
+    authority: Established retrieval execution interface
+    role: Execute projected legacy query inputs and return retrieval results/report
+  evidence:
+    authority: EvidenceRecord pipeline
+    role: Source-level evidence provenance and interpretation
+  application_bootstrap:
+    authority: R8.9.2
+    role: Top-level composition and operational reporting only
+
+input_contract:
+  source: >-
+    One explicit AcquisitionRequest produced by the established planning authorities.
+  cardinality: one_request_per_execution
+  required_fields:
+    - acquisition_request_id
+    - schema_version
+    - created_at
+    - origin
+    - target
+    - constraints
+    - priority
+  rule: >-
+    The adapter must not infer an AcquisitionRequest from a rationale, raw string,
+    retrieval failure, EvidenceRecord, lifecycle event, or scientific state.
+  validation:
+    - reject malformed request structure
+    - reject forbidden scientific or lifecycle semantic fields
+    - reject unsupported field types and invalid priority values
+    - preserve the request identity and request version
+
+translation_contract:
+  authority: AcquisitionAdapter
+  rule: >-
+    Translation is limited to the currently representable retrieval interface. The
+    adapter may project the request target into legacy query inputs, but it must not
+    silently claim that unsupported provider, access, or execution constraints were
+    enforced.
+  provenance:
+    - record translation policy version
+    - record generated query inputs
+    - record representable translation results
+    - record unrepresentable or lossy translation details
+  prohibited:
+    - changing the authoritative AcquisitionRequest
+    - rewriting planning rationale into a scientific claim
+    - treating translation loss as evidence absence
+    - treating translation loss as a lifecycle event
+
+execution_contract:
+  executor: >-
+    The established retrieval executor, with an injectable executor permitted for
+    deterministic verification.
+  bounded_parameters:
+    - max_items
+    - max_workers
+    - max_per_provider
+    - max_per_source_type
+  constraints:
+    - execute only the projected query inputs
+    - do not introduce provider selection or failover redesign
+    - do not introduce retries or scheduling
+    - do not create lifecycle events as an execution side effect
+    - do not mutate scientific state
+    - do not persist requests, receipts, or evidence
+
+output_contract:
+  representation: >-
+    Return retrieval result records and one AcquisitionExecutionReceipt for the
+    execution attempt.
+  receipt_owner: AcquisitionAdapter
+  receipt_fields:
+    - execution_id
+    - acquisition_request_id
+    - started_at
+    - completed_at
+    - execution_status
+    - translation_policy_version
+    - translation_results
+    - translation_losses
+    - execution_constraints_applied
+    - generated_query_inputs
+    - provider_execution_summary
+    - error_summary_when_applicable
+  identity_rules:
+    - preserve acquisition_request_id
+    - generate a distinct execution_id for the attempt
+    - do not replace domain identities with application-generated semantic identities
+  evidence_rule: >-
+    Retrieval results remain execution outputs. Conversion into EvidenceRecord is
+    owned by the evidence pipeline and is not performed by AcquisitionAdapter.
+
+failure_semantics:
+  rule: >-
+    Execution failure is represented as an execution outcome, not as a planning
+    decision or scientific conclusion.
+  statuses:
+    - success
+    - failure
+    - partial_failure
+    - empty_result
+    - rate_limited
+  behavior:
+    - validate and translation failures return a failure receipt with no results
+    - executor exceptions are captured as execution failures with an error summary
+    - empty retrieval output is distinguishable from executor failure
+    - provider-level status remains execution provenance
+    - no failure is converted into no_action, evidence absence, evidence gap,
+      convergence, lifecycle mutation, or scientific mutation
+  propagation: >-
+    The current adapter returns a bounded failure receipt rather than propagating
+    retrieval execution exceptions. Any change to that behavior requires a separate
+    decision and verification.
+
+persistence:
+  status: deferred
+  rule: >-
+    This decision defines receipt creation and return only. Persistence ownership,
+    storage format, durability, replay, and recovery are outside R8.10.0.
+
+application_integration:
+  rule: >-
+    R8.9.2 remains the application integration boundary. This decision does not permit
+    main.py to reconstruct requests, invoke lower-level retrieval authorities, or
+    persist execution receipts.
+  excluded:
+    - direct AcquisitionAdapter invocation from main.py
+    - planning-runtime redesign
+    - evidence conversion
+    - lifecycle mutation
+    - scientific mutation
+    - persistence
+    - retries
+    - scheduling
+    - provider-selection redesign
+
+verification:
+  required:
+    - explicit AcquisitionRequest is required
+    - request identity is preserved in the receipt
+    - execution identity is distinct from request identity
+    - translation losses are recorded and not silently enforced
+    - bounded executor parameters are passed explicitly
+    - success, empty-result, and failure outcomes remain distinguishable
+    - executor exceptions produce failure receipts
+    - no EvidenceRecord, lifecycle event, or scientific mutation is introduced
+    - no persistence is introduced
+    - injected executors can verify behavior deterministically
+
+closure_criteria:
+  ownership: true
+  responsibilities: true
+  invariants: true
+  implementation: false
+  verification: false
+  ambiguity: true
+  closure_rule: >-
+    R8.10.0 closes only when the existing AcquisitionAdapter behavior is covered by
+    focused tests and its execution boundary is verified without expanding semantic
+    authority or persistence scope.
+
+scope_guard:
+  included:
+    - AcquisitionRequest validation
+    - bounded request translation
+    - retrieval execution invocation
+    - execution-status classification
+    - execution receipt creation
+    - translation-loss provenance
+    - failure separation
+  excluded:
+    - planning semantics
+    - evidence semantics
+    - lifecycle semantics
+    - scientific semantics
+    - receipt persistence
+    - application wiring redesign
+    - retries and scheduling
