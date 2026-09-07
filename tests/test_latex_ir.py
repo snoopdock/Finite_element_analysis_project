@@ -15,11 +15,18 @@ from processing.latex_renderer import render_body
 
 
 def test_legacy_content_is_explicitly_marked():
-    sections = normalize_sections([{"title": "Introduction", "content": r"A & B"}])
+    sections = normalize_sections(
+        [{"title": "Introduction", "blocks": [{"type": "legacy_latex", "source": r"A & B"}]}]
+    )
 
     assert len(sections) == 1
     assert isinstance(sections[0].blocks[0], LegacyLatexBlock)
     assert sections[0].blocks[0].source == r"A & B"
+
+
+def test_implicit_content_is_rejected_at_the_boundary():
+    with pytest.raises(DocumentModelError, match="content is not accepted"):
+        normalize_sections([{"title": "Introduction", "content": r"A & B"}])
 
 
 def test_structured_blocks_preserve_semantic_kinds():
