@@ -1,0 +1,135 @@
+name: R8 main evidence semantic trace
+
+on:
+  workflow_dispatch:
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+
+      - name: Analyze research evidence dependency
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+
+
+          path = Path("main.py")
+
+          if not path.exists():
+              raise SystemExit("main.py not found")
+
+
+          source = path.read_text()
+          tree = ast.parse(source)
+
+
+          imported_names = set()
+
+
+          print("=" * 80)
+          print("IMPORT ANALYSIS")
+          print("=" * 80)
+
+
+          for node in ast.walk(tree):
+
+              if isinstance(node, ast.ImportFrom):
+
+                  if node.module and "research.evidence" in node.module:
+
+                      print(
+                          "IMPORT FROM:",
+                          node.module,
+                          "LINE:",
+                          node.lineno
+                      )
+
+                      for item in node.names:
+                          imported_names.add(
+                              item.asname or item.name
+                          )
+
+                          print(
+                              " SYMBOL:",
+                              item.name,
+                              "AS:",
+                              item.asname
+                          )
+
+
+              elif isinstance(node, ast.Import):
+
+                  for item in node.names:
+
+                      if "research.evidence" in item.name:
+
+                          print(
+                              "IMPORT:",
+                              item.name,
+                              "LINE:",
+                              node.lineno
+                          )
+
+                          imported_names.add(
+                              item.asname or item.name.split(".")[-1]
+                          )
+
+
+          print()
+          print("=" * 80)
+          print("USAGE ANALYSIS")
+          print("=" * 80)
+
+
+          for node in ast.walk(tree):
+
+              if isinstance(node, ast.Name):
+
+                  if node.id in imported_names:
+
+                      print(
+                          "NAME:",
+                          node.id,
+                          "LINE:",
+                          node.lineno,
+                          "CONTEXT:",
+                          type(node.ctx).__name__
+                      )
+
+
+              if isinstance(node, ast.Call):
+
+                  if isinstance(node.func, ast.Name):
+
+                      if node.func.id in imported_names:
+
+                          print(
+                              "CALL:",
+                              node.func.id,
+                              "LINE:",
+                              node.lineno
+                          )
+
+
+                  elif isinstance(node.func, ast.Attribute):
+
+                      print(
+                          "ATTRIBUTE CALL:",
+                          ast.unparse(node.func),
+                          "LINE:",
+                          node.lineno
+                      )
+
+
+          print()
+          print("=" * 80)
+          print("DONE")
+          print("=" * 80)
+
+          PY
