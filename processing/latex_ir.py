@@ -50,6 +50,7 @@ class ReferenceModel:
     url: str = ""
     source_type: str = "misc"
     retrieved_at: str = "N/A"
+    citation_key: str = ""
 
 
 @dataclass(frozen=True)
@@ -140,6 +141,7 @@ def normalize_references(evidence: Sequence[Mapping[str, Any]]) -> tuple[Referen
                 url=_as_text(source.get("url"), "url"),
                 source_type=_as_text(source.get("retriever_module"), "retriever_module", default="misc"),
                 retrieved_at=_as_text(source.get("retrieved_at"), "retrieved_at", default="N/A"),
+                citation_key=f"ref{index + 1}",
             )
         )
     return tuple(references)
