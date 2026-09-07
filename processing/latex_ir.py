@@ -131,12 +131,17 @@ def normalize_references(evidence: Sequence[Mapping[str, Any]]) -> tuple[Referen
     """Convert retrieval receipts into renderer-neutral reference records."""
 
     references: list[ReferenceModel] = []
+    seen_source_ids: set[str] = set()
     for index, source in enumerate(evidence[:25]):
         if not isinstance(source, Mapping):
             raise DocumentModelError(f"evidence {index} must be a mapping")
+        source_id = _as_text(source.get("source_id"), "source_id", default="unknown").strip()
+        if source_id in seen_source_ids:
+            raise DocumentModelError(f"duplicate source_id in evidence: {source_id!r}")
+        seen_source_ids.add(source_id)
         references.append(
             ReferenceModel(
-                source_id=_as_text(source.get("source_id"), "source_id", default="unknown"),
+                source_id=source_id,
                 title=_as_text(source.get("title"), "title", default="Unknown Title"),
                 url=_as_text(source.get("url"), "url"),
                 source_type=_as_text(source.get("retriever_module"), "retriever_module", default="misc"),
