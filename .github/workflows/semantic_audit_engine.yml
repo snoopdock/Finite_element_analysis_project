@@ -7,24 +7,119 @@ jobs:
 
   semantic-audit:
 
+    name: Run Semantic Dependency Mapper
+
     runs-on: ubuntu-latest
+
 
     steps:
 
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Run semantic mapper
+
+      - name: Display repository state
+        run: |
+          echo "===== Branch ====="
+          git branch --show-current
+
+          echo
+          echo "===== Commit ====="
+          git rev-parse HEAD
+
+          echo
+          echo "===== Audit Engine ====="
+          find audit_engine -maxdepth 3 -type f | sort || true
+
+
+
+      - name: Validate Python files
+        run: |
+          python -m compileall audit_engine
+
+
+
+      - name: Run semantic dependency mapper
         run: |
           python -m audit_engine.runner
 
-      - name: Upload audit artifact
+
+
+      - name: Validate generated report
+        run: |
+
+          if [ ! -f semantic_audit_inventory.json ]; then
+              echo "ERROR: semantic_audit_inventory.json was not generated"
+              exit 1
+          fi
+
+
+          echo "===== Report generated ====="
+
+          python - <<'PY'
+
+          import json
+          from pathlib import Path
+
+
+          report = Path(
+              "semantic_audit_inventory.json"
+          )
+
+
+          data = json.loads(
+              report.read_text()
+          )
+
+
+          print(
+              "Python files:",
+              len(data.get("python_files", []))
+          )
+
+
+          print(
+              "Dependencies:",
+              len(data.get("dependencies", []))
+          )
+
+
+          print(
+              "Symbols:",
+              len(data.get("symbols", []))
+          )
+
+
+          print("\nSample classified symbols:")
+
+
+          for item in data.get("symbols", [])[:20]:
+
+              print(
+                  "-",
+                  item.get("module"),
+                  "::",
+                  item.get("symbol"),
+                  "=>",
+                  item.get("classification")
+              )
+
+          PY
+
+
+
+      - name: Upload semantic audit artifact
         uses: actions/upload-artifact@v4
         with:
+
           name: semantic-audit-inventory
+
           path: semantic_audit_inventory.json
