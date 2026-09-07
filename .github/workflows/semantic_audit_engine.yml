@@ -4,6 +4,10 @@ on:
 
   workflow_dispatch:
 
+  push:
+    branches:
+      - stage1/section-uuids
+
 
 jobs:
 
@@ -16,63 +20,99 @@ jobs:
     steps:
 
 
-      - name: Checkout
+      - name: Checkout repository
+
         uses: actions/checkout@v4
 
         with:
+
           ref: stage1/section-uuids
 
 
 
       - name: Setup Python
+
         uses: actions/setup-python@v5
 
         with:
+
           python-version: "3.11"
 
 
 
-      - name: Run semantic audit
+      - name: Install dependencies
 
-        run:
+        run: |
 
-          python -m semantic_audit.runner
+          python -m pip install --upgrade pip
+
+          pip install pyyaml
 
 
 
-      - name: Validate report
+      - name: Verify audit engine structure
 
-        run:
+        run: |
+
+          find audit_engine -maxdepth 3 -type f | sort
+
+
+
+      - name: Run semantic audit engine
+
+        run: |
+
+          python -m audit_engine.semantic_audit.runner
+
+
+
+      - name: Verify generated report
+
+        run: |
 
           test -f semantic_audit_report.json
 
 
 
-      - name: Print findings
+      - name: Display report summary
 
-        run:
+        run: |
 
           python - <<'PY'
 
           import json
 
-          data=json.load(
-              open(
+
+          with open(
               "semantic_audit_report.json"
+          ) as f:
+
+              report=json.load(f)
+
+
+          print("Imports:",
+                len(report["imports"]))
+
+
+          print("Symbols:",
+                len(report["symbols"]))
+
+
+          print("Findings:",
+                len(report["findings"]))
+
+
+          for finding in report["findings"]:
+
+              print(
+                  finding
               )
-          )
-
-          for item in data["findings"]:
-
-              if item["classification"] != "UNCLASSIFIED":
-
-                  print(item)
 
           PY
 
 
 
-      - name: Upload report
+      - name: Upload semantic audit artifact
 
         uses: actions/upload-artifact@v4
 
@@ -80,4 +120,6 @@ jobs:
 
           name: semantic-audit-report
 
-          path: semantic_audit_report.json
+          path:
+
+            semantic_audit_report.json
