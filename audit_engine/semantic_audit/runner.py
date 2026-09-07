@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-from semantic_audit.core.models import (
+from .core.models import (
     AuditReport
 )
 
