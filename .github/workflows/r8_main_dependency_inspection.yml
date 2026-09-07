@@ -12,27 +12,33 @@ jobs:
         with:
           ref: stage1/section-uuids
 
-      - name: Show evidence dependency usage
+      - name: Inspect research evidence dependency
         run: |
-          echo "=== import locations ==="
+          echo "=== imports ==="
           grep -n "research.evidence" main.py || true
 
-          echo "=== summary function usage ==="
+          echo
+          echo "=== summary usage ==="
           grep -n "get_reading_summary" main.py || true
 
-          echo "=== surrounding context ==="
+          echo
+          echo "=== surrounding code ==="
+
           python - <<'PY'
           from pathlib import Path
 
           lines = Path("main.py").read_text().splitlines()
 
-          for i,line in enumerate(lines,1):
-              if "get_reading_summary" in line:
-                  start=max(1,i-10)
-                  end=min(len(lines),i+10)
+          for i, line in enumerate(lines, 1):
+              if (
+                  "research.evidence" in line
+                  or "get_reading_summary" in line
+              ):
+                  start=max(1, i-15)
+                  end=min(len(lines), i+15)
 
                   print(
-                      f"\n--- lines {start}-{end} ---"
+                      f"\n--- context {start}:{end} ---"
                   )
 
                   for n in range(start,end+1):
