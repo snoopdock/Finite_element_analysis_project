@@ -1,0 +1,258 @@
+name: R8 main dependency forensic audit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  forensic-analysis:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+
+      - name: Repository state
+        run: |
+          mkdir -p forensic-results
+
+          {
+            echo "===== GIT ====="
+            git branch --show-current
+            git rev-parse HEAD
+
+            echo
+            echo "===== FILES ====="
+            ls -la
+
+            echo
+            echo "===== MAIN EXISTS ====="
+            ls -la main.py
+
+          } | tee forensic-results/repository_state.txt
+
+
+      - name: Search repository references
+        run: |
+
+          {
+            echo "===== research.evidence ====="
+            grep -R "research.evidence" -n . || true
+
+            echo
+            echo "===== get_reading_summary ====="
+            grep -R "get_reading_summary" -n . || true
+
+            echo
+            echo "===== EvidenceRecord ====="
+            grep -R "EvidenceRecord" -n . || true
+
+          } | tee forensic-results/repository_search.txt
+
+
+
+      - name: AST dependency analysis
+        run: |
+
+          python - <<'PY' | tee forensic-results/main_ast_analysis.txt
+
+          import ast
+          from pathlib import Path
+
+
+          path = Path("main.py")
+
+          print("FILE:", path)
+          print("="*80)
+
+
+          source = path.read_text()
+
+          tree = ast.parse(source)
+
+
+          imported = set()
+
+
+          print("\nIMPORTS")
+          print("="*80)
+
+
+          for node in ast.walk(tree):
+
+              if isinstance(node, ast.ImportFrom):
+
+                  if node.module and "research" in node.module:
+
+                      print(
+                          "FROM",
+                          node.module,
+                          "LINE",
+                          node.lineno
+                      )
+
+                      for n in node.names:
+
+                          name = n.asname or n.name
+
+                          imported.add(name)
+
+                          print(
+                              " SYMBOL:",
+                              n.name,
+                              "LOCAL:",
+                              name
+                          )
+
+
+              if isinstance(node, ast.Import):
+
+                  for n in node.names:
+
+                      if "research" in n.name:
+
+                          print(
+                              "IMPORT",
+                              n.name,
+                              "LINE",
+                              node.lineno
+                          )
+
+
+          print("\nUSAGES")
+          print("="*80)
+
+
+          for node in ast.walk(tree):
+
+              if isinstance(node, ast.Call):
+
+                  if isinstance(node.func, ast.Name):
+
+                      if node.func.id in imported:
+
+                          print(
+                              "FUNCTION CALL:",
+                              node.func.id,
+                              "LINE:",
+                              node.lineno
+                          )
+
+
+                  elif isinstance(node.func, ast.Attribute):
+
+                      print(
+                          "ATTRIBUTE CALL:",
+                          ast.unparse(node.func),
+                          "LINE:",
+                          node.lineno
+                      )
+
+
+              if isinstance(node, ast.Name):
+
+                  if node.id in imported:
+
+                      print(
+                          "REFERENCE:",
+                          node.id,
+                          "LINE:",
+                          node.lineno
+                      )
+
+
+          print("\nDONE")
+
+
+          PY
+
+
+
+      - name: Show main.py context
+        run: |
+
+          python - <<'PY' | tee forensic-results/main_context.txt
+
+          from pathlib import Path
+
+          lines = Path("main.py").read_text().splitlines()
+
+          keywords=[
+              "research.evidence",
+              "get_reading_summary",
+              "Evidence"
+          ]
+
+
+          for i,line in enumerate(lines,1):
+
+              if any(k in line for k in keywords):
+
+                  print("\n")
+                  print("="*80)
+                  print("MATCH LINE:",i)
+                  print("="*80)
+
+                  start=max(0,i-5)
+                  end=min(len(lines),i+5)
+
+                  for n in range(start,end):
+                      print(
+                          f"{n+1}: {lines[n]}"
+                      )
+
+          PY
+
+
+
+      - name: Inspect failing audit source
+        run: |
+
+          python - <<'PY' | tee forensic-results/audit_source.txt
+
+          from pathlib import Path
+
+          candidates=[]
+
+          for p in Path(".").rglob("*.py"):
+
+              if "audit_r8_9_2" in p.name:
+
+                  candidates.append(p)
+
+
+          print("FOUND AUDITS")
+
+          for p in candidates:
+
+              print("="*80)
+              print(p)
+
+              text=p.read_text()
+
+              for i,line in enumerate(text.splitlines(),1):
+
+                  if (
+                      "research" in line
+                      or "forbidden" in line
+                      or "import" in line
+                  ):
+                      print(
+                          i,
+                          line
+                      )
+
+          PY
+
+
+
+      - name: Upload forensic results
+        uses: actions/upload-artifact@v4
+        with:
+
+          name: r8-main-dependency-forensic-results
+
+          path: forensic-results/
