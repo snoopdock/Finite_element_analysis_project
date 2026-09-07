@@ -3,6 +3,7 @@
 import pytest
 
 from processing.latex_ir import (
+    CitationBlock,
     DocumentModelError,
     LegacyLatexBlock,
     MathBlock,
@@ -77,3 +78,41 @@ def test_document_model_limits_references_to_renderer_contract():
     )
 
     assert [reference.source_id for reference in document.references] == ["one", "two"]
+
+
+def test_citation_blocks_resolve_against_explicit_reference_keys():
+    document = build_document_model(
+        {},
+        [
+            {
+                "title": "Evidence",
+                "blocks": [
+                    {"type": "text", "text": "Claim"},
+                    {"type": "citation", "source_ids": ["one", "two"]},
+                ],
+            }
+        ],
+        [
+            {"source_id": "one", "title": "One"},
+            {"source_id": "two", "title": "Two"},
+        ],
+    )
+
+    assert isinstance(document.sections[0].blocks[1], CitationBlock)
+    assert [reference.citation_key for reference in document.references] == [
+        "ref1",
+        "ref2",
+    ]
+    assert r"\cite{ref1,ref2}" in render_body(document)
+
+
+def test_duplicate_reference_source_ids_fail_at_the_boundary():
+    with pytest.raises(DocumentModelError, match="duplicate source_id"):
+        build_document_model(
+            {},
+            [],
+            [
+                {"source_id": "same", "title": "First"},
+                {"source_id": "same", "title": "Second"},
+            ],
+        )
