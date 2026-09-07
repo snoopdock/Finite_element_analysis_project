@@ -69,6 +69,16 @@ def _as_text(value: Any, field_name: str, *, default: str = "") -> str:
     return value
 
 
+def _require_keys(
+    value: Mapping[str, Any], allowed: set[str], context: str
+) -> None:
+    unknown = sorted(set(value) - allowed)
+    if unknown:
+        raise DocumentModelError(
+            f"{context} contains unsupported fields: {', '.join(unknown)}"
+        )
+
+
 def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionModel, ...]:
     """Normalize the closed section input language without guessing semantics."""
 
@@ -76,60 +86,61 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
     for index, section in enumerate(sections):
         if not isinstance(section, Mapping):
             raise DocumentModelError(f"section {index} must be a mapping")
+        _require_keys(section, {"title", "blocks"}, f"section {index}")
 
         title = _as_text(section.get("title"), f"section {index}.title", default="Untitled").strip()
         if not title:
             title = "Untitled"
+        if "blocks" not in section:
+            raise DocumentModelError(f"section {index}.blocks is required")
 
-        has_blocks = "blocks" in section
-        has_content = "content" in section
-        if has_blocks and has_content:
-            raise DocumentModelError(
-                f"section {index} cannot define both 'blocks' and legacy 'content'"
-            )
-        if not has_blocks:
-            if has_content:
-                raise DocumentModelError(
-                    f"section {index}.content is not accepted; use an explicit legacy_latex block"
+        raw_blocks = section["blocks"]
+        if not isinstance(raw_blocks, Sequence) or isinstance(raw_blocks, (str, bytes)):
+            raise DocumentModelError(f"section {index}.blocks must be a sequence")
+
+        parsed: list[DocumentBlock] = []
+        for block_index, block in enumerate(raw_blocks):
+            context = f"section {index}.blocks[{block_index}]"
+            if not isinstance(block, Mapping):
+                raise DocumentModelError(f"{context} must be a mapping")
+            kind = block.get("type")
+
+            if kind == "text":
+                _require_keys(block, {"type", "text"}, context)
+                text = _as_text(block.get("text"), f"{context}.text")
+                if not text:
+                    raise DocumentModelError(f"{context}.text must not be empty")
+                parsed.append(TextBlock(text))
+            elif kind == "math":
+                _require_keys(block, {"type", "expression"}, context)
+                expression = _as_text(block.get("expression"), f"{context}.expression").strip()
+                if not expression:
+                    raise DocumentModelError(f"{context}.expression must not be empty")
+                parsed.append(MathBlock(expression))
+            elif kind == "citation":
+                _require_keys(block, {"type", "source_ids"}, context)
+                raw_ids = block.get("source_ids")
+                if not isinstance(raw_ids, Sequence) or isinstance(raw_ids, (str, bytes)):
+                    raise DocumentModelError(f"{context}.source_ids must be a sequence")
+                source_ids = tuple(
+                    _as_text(source_id, f"{context}.source_ids[{source_index}]").strip()
+                    for source_index, source_id in enumerate(raw_ids)
                 )
-            blocks: tuple[DocumentBlock, ...] = tuple()
-        else:
-            raw_blocks = section.get("blocks")
-            if not isinstance(raw_blocks, Sequence) or isinstance(raw_blocks, (str, bytes)):
-                raise DocumentModelError(f"section {index}.blocks must be a sequence")
-            parsed: list[DocumentBlock] = []
-            for block_index, block in enumerate(raw_blocks):
-                if not isinstance(block, Mapping):
-                    raise DocumentModelError(
-                        f"section {index}.blocks[{block_index}] must be a mapping"
-                    )
-                kind = block.get("type")
-                if kind == "text":
-                    parsed.append(TextBlock(_as_text(block.get("text"), "text")))
-                elif kind == "math":
-                    expression = _as_text(block.get("expression"), "expression").strip()
-                    if expression:
-                        parsed.append(MathBlock(expression))
-                elif kind == "citation":
-                    raw_ids = block.get("source_ids")
-                    if not isinstance(raw_ids, Sequence) or isinstance(raw_ids, (str, bytes)):
-                        raise DocumentModelError("citation source_ids must be a sequence")
-                    source_ids = tuple(
-                        _as_text(source_id, "citation source_id").strip()
-                        for source_id in raw_ids
-                    )
-                    source_ids = tuple(source_id for source_id in source_ids if source_id)
-                    if source_ids:
-                        parsed.append(CitationBlock(source_ids))
-                elif kind == "legacy_latex":
-                    parsed.append(LegacyLatexBlock(_as_text(block.get("source"), "source")))
-                else:
-                    raise DocumentModelError(
-                        f"unsupported block type {kind!r} in section {index}.blocks[{block_index}]"
-                    )
-            blocks = tuple(parsed)
+                if not source_ids or any(not source_id for source_id in source_ids):
+                    raise DocumentModelError(f"{context}.source_ids must contain non-empty strings")
+                if len(set(source_ids)) != len(source_ids):
+                    raise DocumentModelError(f"{context}.source_ids must not contain duplicates")
+                parsed.append(CitationBlock(source_ids))
+            elif kind == "legacy_latex":
+                _require_keys(block, {"type", "source"}, context)
+                source = _as_text(block.get("source"), f"{context}.source")
+                if not source:
+                    raise DocumentModelError(f"{context}.source must not be empty")
+                parsed.append(LegacyLatexBlock(source))
+            else:
+                raise DocumentModelError(f"unsupported block type {kind!r} in {context}")
 
-        normalized.append(SectionModel(title=title, blocks=blocks))
+        normalized.append(SectionModel(title=title, blocks=tuple(parsed)))
 
     return tuple(normalized)
 
