@@ -5,15 +5,15 @@ from .core.models import (
     AuditReport
 )
 
-from semantic_audit.extractors.ast_extractor import (
+from .extractors.ast_extractor import (
     ASTExtractor
 )
 
-from semantic_audit.analyzers.symbol_classifier import (
+from .analyzers.symbol_classifier import (
     SymbolClassifier
 )
 
-from semantic_audit.reports.json_report import (
+from .reports.json_report import (
     write_report
 )
 
