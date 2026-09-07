@@ -1,17 +1,40 @@
-grep -n "get_reading_summary" main.py
-grep -n "research.evidence" main.py
-python - <<'PY'
-import ast
-from pathlib import Path
+name: R8 main dependency inspection
 
-tree = ast.parse(Path("main.py").read_text())
+on:
+  workflow_dispatch:
 
-for node in ast.walk(tree):
-    if isinstance(node, ast.Call):
-        if isinstance(node.func, ast.Name):
-            if node.func.id == "get_reading_summary":
-                print(
-                    "CALL:",
-                    node.lineno
-                )
-PY
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+
+      - name: Show evidence dependency usage
+        run: |
+          echo "=== import locations ==="
+          grep -n "research.evidence" main.py || true
+
+          echo "=== summary function usage ==="
+          grep -n "get_reading_summary" main.py || true
+
+          echo "=== surrounding context ==="
+          python - <<'PY'
+          from pathlib import Path
+
+          lines = Path("main.py").read_text().splitlines()
+
+          for i,line in enumerate(lines,1):
+              if "get_reading_summary" in line:
+                  start=max(1,i-10)
+                  end=min(len(lines),i+10)
+
+                  print(
+                      f"\n--- lines {start}-{end} ---"
+                  )
+
+                  for n in range(start,end+1):
+                      print(f"{n}: {lines[n-1]}")
+          PY
