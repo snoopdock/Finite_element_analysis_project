@@ -1,6 +1,6 @@
 import ast
 
-from semantic_audit.core.models import (
+from ..core.models import  (
     ImportReference,
     SymbolUsage
 )
