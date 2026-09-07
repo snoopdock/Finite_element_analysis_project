@@ -3,8 +3,11 @@
 
 import sys
 from datetime import datetime
-from utils.latex import escape_latex, sanitize_latex_content
+
 from processing.latex_graph import render_concept_graph, render_perspective_table
+from processing.latex_ir import build_document_model
+from processing.latex_renderer import render_body
+from utils.latex import escape_latex
 
 
 def build_latex_document(state, sections, evidence):
@@ -45,21 +48,9 @@ def build_latex_document(state, sections, evidence):
 
     provenance_table = "\n".join(provenance_rows) if provenance_rows else "No sources."
 
-    body_parts = []
-    for s in sections:
-        content = s.get("content", "").strip()
-        if not content:
-            print(
-                f"  [LaTeX] Warning: Skipping empty section '{s.get('title', 'Untitled')}'",
-                file=sys.stderr,
-            )
-            continue
-        sanitized_content = sanitize_latex_content(content)
-        body_parts.append(
-            "\\section{" + escape_latex(s.get("title", "Untitled")) +
-            "}\n\n" + sanitized_content
-        )
-    body = "\n\n".join(body_parts) if body_parts else "% No content generated."
+    # Section bodies now cross the explicit semantic document-model boundary.
+    document = build_document_model(state, sections, evidence)
+    body = render_body(document)
 
     graph_map = render_concept_graph(graph, max_nodes=40)
     perspective_table = render_perspective_table(graph, max_rows=30)
@@ -146,10 +137,7 @@ def build_latex_document(state, sections, evidence):
             "",
         ])
 
-    doc_lines.extend([
-        body,
-        "",
-    ])
+    doc_lines.extend([body, ""])
 
     if graph_has_relationships:
         doc_lines.extend([
