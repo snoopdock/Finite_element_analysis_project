@@ -1,9 +1,4 @@
-"""Semantic intermediate representation for generated scientific documents.
-
-This module deliberately contains no LaTeX rendering.  It defines the boundary
-between research/writing output and the document renderer so that formatting,
-escaping, and citation policy remain renderer responsibilities.
-"""
+"""Semantic intermediate representation for generated scientific documents."""
 
 from __future__ import annotations
 
@@ -26,21 +21,26 @@ class MathBlock:
 
 
 @dataclass(frozen=True)
-class LegacyLatexBlock:
-    """Compatibility block for already-authored LaTeX fragments.
+class CitationBlock:
+    """A citation referring to one or more normalized source identifiers."""
 
-    New producers should emit TextBlock, MathBlock, or structured blocks instead.
-    """
+    source_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class LegacyLatexBlock:
+    """Compatibility block for already-authored LaTeX fragments."""
 
     source: str
+
+
+DocumentBlock = TextBlock | MathBlock | CitationBlock | LegacyLatexBlock
 
 
 @dataclass(frozen=True)
 class SectionModel:
     title: str
-    blocks: tuple[TextBlock | MathBlock | LegacyLatexBlock, ...] = field(
-        default_factory=tuple
-    )
+    blocks: tuple[DocumentBlock, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -69,12 +69,7 @@ def _as_text(value: Any, field_name: str, *, default: str = "") -> str:
 
 
 def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionModel, ...]:
-    """Normalize legacy section dictionaries without guessing their semantics.
-
-    A legacy ``content`` field is explicitly represented as a
-    ``LegacyLatexBlock``. This prevents the renderer from silently treating
-    arbitrary upstream text as safe plain text while preserving compatibility.
-    """
+    """Normalize section dictionaries without guessing their semantics."""
 
     normalized: list[SectionModel] = []
     for index, section in enumerate(sections):
@@ -88,11 +83,13 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
         raw_blocks = section.get("blocks")
         if raw_blocks is None:
             content = _as_text(section.get("content"), f"section {index}.content")
-            blocks = (LegacyLatexBlock(content),) if content.strip() else tuple()
+            blocks: tuple[DocumentBlock, ...] = (
+                (LegacyLatexBlock(content),) if content.strip() else tuple()
+            )
         else:
             if not isinstance(raw_blocks, Sequence) or isinstance(raw_blocks, (str, bytes)):
                 raise DocumentModelError(f"section {index}.blocks must be a sequence")
-            parsed: list[TextBlock | MathBlock | LegacyLatexBlock] = []
+            parsed: list[DocumentBlock] = []
             for block_index, block in enumerate(raw_blocks):
                 if not isinstance(block, Mapping):
                     raise DocumentModelError(
@@ -105,6 +102,17 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
                     expression = _as_text(block.get("expression"), "expression").strip()
                     if expression:
                         parsed.append(MathBlock(expression))
+                elif kind == "citation":
+                    raw_ids = block.get("source_ids")
+                    if not isinstance(raw_ids, Sequence) or isinstance(raw_ids, (str, bytes)):
+                        raise DocumentModelError("citation source_ids must be a sequence")
+                    source_ids = tuple(
+                        _as_text(source_id, "citation source_id").strip()
+                        for source_id in raw_ids
+                    )
+                    source_ids = tuple(source_id for source_id in source_ids if source_id)
+                    if source_ids:
+                        parsed.append(CitationBlock(source_ids))
                 elif kind == "legacy_latex":
                     parsed.append(LegacyLatexBlock(_as_text(block.get("source"), "source")))
                 else:
@@ -130,12 +138,8 @@ def normalize_references(evidence: Sequence[Mapping[str, Any]]) -> tuple[Referen
                 source_id=_as_text(source.get("source_id"), "source_id", default="unknown"),
                 title=_as_text(source.get("title"), "title", default="Unknown Title"),
                 url=_as_text(source.get("url"), "url"),
-                source_type=_as_text(
-                    source.get("retriever_module"), "retriever_module", default="misc"
-                ),
-                retrieved_at=_as_text(
-                    source.get("retrieved_at"), "retrieved_at", default="N/A"
-                ),
+                source_type=_as_text(source.get("retriever_module"), "retriever_module", default="misc"),
+                retrieved_at=_as_text(source.get("retrieved_at"), "retrieved_at", default="N/A"),
             )
         )
     return tuple(references)
