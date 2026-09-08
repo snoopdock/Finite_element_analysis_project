@@ -1,192 +1,70 @@
-name: Validate LaTeX document pipeline
+#!/usr/bin/env python3
+"""Run the existing pipeline and persist its semantic document snapshot.
 
-on:
-  workflow_dispatch:
+This is a transitional integration entry point. The existing ``main.py``
+remains unchanged; after a successful pipeline invocation, the resulting
+``output/sections.json`` is converted to ``output/document.json`` using the
+semantic document pipeline integration layer.
+"""
 
-permissions:
-  contents: read
+from __future__ import annotations
 
-jobs:
-  validate-latex-documents:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+import argparse
+import pathlib
+import subprocess
+import sys
 
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-        with:
-          ref: stage1/section-uuids
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
+from core.document_pipeline_integration import persist_pipeline_document
+from utils.text import load_json
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then
-            python -m pip install -r requirements.txt
-          elif [ -f pyproject.toml ]; then
-            python -m pip install .
-          fi
-          python -m pip install pytest
 
-      - name: Install TeX Live
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            texlive-luatex \
-            texlive-latex-base \
-            texlive-latex-recommended \
-            texlive-latex-extra \
-            fonts-lmodern \
-            pdfinfo
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Run the existing FEA pipeline and persist document.json."
+    )
+    parser.add_argument(
+        "--config",
+        default="config.yaml",
+        help="Pipeline configuration passed to main.py.",
+    )
+    args = parser.parse_args(argv)
 
-      - name: Run pipeline and generate document artifacts
-        id: run_pipeline
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          python tools/run_pipeline_with_document_snapshot.py --config config.yaml 2>&1 \
-            | tee pipeline-run.log
+    command = [sys.executable, str(ROOT / "main.py"), "--config", args.config]
+    completed = subprocess.run(command, cwd=ROOT)
 
-      - name: Run LaTeX document tests
-        id: latex_tests
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          python -m pytest -q \
-            tests/test_document_model.py \
-            tests/test_semantic_markers.py \
-            tests/test_document_assembler.py \
-            tests/test_section_document_adapter.py \
-            tests/test_semantic_writer_boundary.py \
-            tests/test_document_persistence.py \
-            tests/test_document_snapshot.py \
-            tests/test_document_renderer_boundary.py 2>&1 | tee latex-tests.log
+    if completed.returncode != 0:
+        return completed.returncode
 
-      - name: Run document-pipeline integration tests
-        id: pipeline_integration_tests
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          integration_tests=()
-          for test_file in \
-            tests/test_document_pipeline_integration.py \
-            tests/test_pipeline_document_runner.py
-          do
-            if [ -f "$test_file" ]; then
-              integration_tests+=("$test_file")
-            fi
-          done
+    sections_path = ROOT / "output" / "sections.json"
+    document_path = ROOT / "output" / "document.json"
 
-          if [ "${#integration_tests[@]}" -eq 0 ]; then
-            echo "No document-pipeline integration test files found."
-            : > latex-pipeline-integration.log
-            exit 0
-          fi
+    sections = load_json(sections_path, [])
+    if not isinstance(sections, list):
+        print(
+            "Pipeline completed, but output/sections.json is not a list.",
+            file=sys.stderr,
+        )
+        return 2
 
-          printf 'Running integration tests: %s\n' "${integration_tests[*]}"
-          python -m pytest -q "${integration_tests[@]}" 2>&1 \
-            | tee latex-pipeline-integration.log
+    try:
+        persist_pipeline_document(
+            sections,
+            document_path,
+        )
+    except Exception as exc:
+        print(
+            f"Failed to persist semantic document: {exc}",
+            file=sys.stderr,
+        )
+        return 3
 
-      - name: Inspect generated LaTeX output
-        id: latex_output_inspection
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          {
-            echo "=== Generated LaTeX output inspection ==="
-            if [ ! -f output/guideline.tex ]; then
-              echo "output/guideline.tex is not present."
-              exit 0
-            fi
-            echo "File: output/guideline.tex"
-            wc -c output/guideline.tex
-            wc -l output/guideline.tex
-            grep -n '\\begin{document}' output/guideline.tex || true
-            grep -n '\\end{document}' output/guideline.tex || true
-          } | tee latex-output-inspection.log
+    print(f"Semantic document persisted to {document_path}")
+    return 0
 
-      - name: Compile generated LaTeX document
-        id: latex_compile
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          if [ ! -f output/guideline.tex ]; then
-            echo "output/guideline.tex is not present." | tee latex-compile.log
-            exit 1
-          fi
-          cd output
-          lualatex -interaction=nonstopmode -halt-on-error guideline.tex > ../latex-compile.log 2>&1
-          lualatex -interaction=nonstopmode -halt-on-error guideline.tex >> ../latex-compile.log 2>&1
-          test -s guideline.pdf
-          pdfinfo guideline.pdf | sed -n '1,20p' >> ../latex-compile.log || true
 
-      - name: Collect test diagnostics
-        if: always()
-        run: |
-          {
-            echo "=== GitHub Actions context ==="
-            echo "Commit: $GITHUB_SHA"
-            echo "Branch/ref: $GITHUB_REF"
-            echo "Runner OS: $RUNNER_OS"
-            python --version || true
-            echo "=== Pipeline run result ==="
-            echo "outcome=${{ steps.run_pipeline.outcome }}"
-            echo "=== LaTeX test result ==="
-            echo "outcome=${{ steps.latex_tests.outcome }}"
-            echo "=== Pipeline integration test result ==="
-            echo "outcome=${{ steps.pipeline_integration_tests.outcome }}"
-            echo "=== LaTeX output inspection result ==="
-            echo "outcome=${{ steps.latex_output_inspection.outcome }}"
-            echo "=== TeX compilation result ==="
-            echo "outcome=${{ steps.latex_compile.outcome }}"
-            echo "=== Pipeline run log ==="
-            cat pipeline-run.log 2>/dev/null || true
-            echo "=== LaTeX compile log ==="
-            cat latex-compile.log 2>/dev/null || true
-            echo "=== LaTeX tests log ==="
-            cat latex-tests.log 2>/dev/null || true
-            echo "=== Pipeline integration tests log ==="
-            cat latex-pipeline-integration.log 2>/dev/null || true
-            echo "=== LaTeX output inspection log ==="
-            cat latex-output-inspection.log 2>/dev/null || true
-          } > latex-runtime-log.txt
-
-      - name: Print test diagnostics
-        if: always()
-        run: |
-          echo "================ LATEX RUNTIME SUMMARY ================"
-          grep -E '^(===|Commit:|Branch/ref:|Runner OS:|outcome=|File:|[0-9]+ output/guideline.tex|[0-9]+:|! LaTeX Error:|! Emergency stop|!  ==> Fatal error|Output written on|Transcript written on|pdfTeX warning|LaTeX Warning:|Semantic document persisted|Failed to persist semantic document)' latex-runtime-log.txt || true
-          echo "============== END LATEX RUNTIME SUMMARY =============="
-
-      - name: Upload LaTeX test artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: latex-document-test-log
-          path: |
-            latex-runtime-log.txt
-            pipeline-run.log
-            latex-tests.log
-            latex-pipeline-integration.log
-            latex-output-inspection.log
-            latex-compile.log
-            output/sections.json
-            output/document.json
-            output/guideline.tex
-            output/guideline.pdf
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Fail workflow if LaTeX validation failed
-        if: steps.run_pipeline.outcome == 'failure' || steps.latex_tests.outcome == 'failure' || steps.pipeline_integration_tests.outcome == 'failure' || steps.latex_compile.outcome == 'failure'
-        run: |
-          echo "LaTeX validation failed. Download the latex-document-test-log artifact for diagnostics."
-          exit 1
+if __name__ == "__main__":
+    raise SystemExit(main())
