@@ -120,3 +120,10 @@ def test_normalize_sections_rejects_unsupported_block_type():
 
     with pytest.raises(DocumentModelError, match="unsupported block type 'unsupported'"):
         normalize_sections(sections)
+
+
+def test_normalize_sections_rejects_unsupported_fields():
+    sections = [{"title": "Section", "blocks": [], "unexpected": "value"}]
+
+    with pytest.raises(DocumentModelError, match="section 0 contains unsupported fields: unexpected"):
+        normalize_sections(sections)
