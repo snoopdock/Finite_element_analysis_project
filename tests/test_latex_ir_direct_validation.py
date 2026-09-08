@@ -113,3 +113,10 @@ def test_normalize_sections_rejects_non_mapping_item():
 def test_normalize_references_rejects_non_mapping_item():
     with pytest.raises(DocumentModelError, match="evidence 0 must be a mapping"):
         normalize_references(["invalid"])
+
+
+def test_normalize_sections_rejects_unsupported_block_type():
+    sections = [{"title": "Section", "blocks": [{"type": "unsupported"}]}]
+
+    with pytest.raises(DocumentModelError, match="unsupported block type 'unsupported'"):
+        normalize_sections(sections)
