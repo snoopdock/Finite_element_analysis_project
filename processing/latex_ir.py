@@ -85,26 +85,18 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
         if not isinstance(section, Mapping):
             raise DocumentModelError(f"section {index} must be a mapping")
         _require_keys(section, {"title", "blocks"}, f"section {index}")
-
-        title = _as_text(
-            section.get("title"), f"section {index}.title", default="Untitled"
-        ).strip()
-        if not title:
-            title = "Untitled"
+        title = _as_text(section.get("title"), f"section {index}.title", default="Untitled").strip() or "Untitled"
         if "blocks" not in section:
             raise DocumentModelError(f"section {index}.blocks is required")
-
         raw_blocks = section["blocks"]
         if not isinstance(raw_blocks, Sequence) or isinstance(raw_blocks, (str, bytes)):
             raise DocumentModelError(f"section {index}.blocks must be a sequence")
-
         parsed: list[DocumentBlock] = []
         for block_index, block in enumerate(raw_blocks):
             context = f"section {index}.blocks[{block_index}]"
             if not isinstance(block, Mapping):
                 raise DocumentModelError(f"{context} must be a mapping")
             kind = block.get("type")
-
             if kind == "text":
                 _require_keys(block, {"type", "text"}, context)
                 text = _as_text(block.get("text"), f"{context}.text")
@@ -113,9 +105,7 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
                 parsed.append(TextBlock(text))
             elif kind == "math":
                 _require_keys(block, {"type", "expression"}, context)
-                expression = _as_text(
-                    block.get("expression"), f"{context}.expression"
-                ).strip()
+                expression = _as_text(block.get("expression"), f"{context}.expression").strip()
                 if not expression:
                     raise DocumentModelError(f"{context}.expression must not be empty")
                 parsed.append(MathBlock(expression))
@@ -124,21 +114,11 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
                 raw_ids = block.get("source_ids")
                 if not isinstance(raw_ids, Sequence) or isinstance(raw_ids, (str, bytes)):
                     raise DocumentModelError(f"{context}.source_ids must be a sequence")
-                source_ids = tuple(
-                    _as_text(
-                        source_id,
-                        f"{context}.source_ids[{source_index}]",
-                    ).strip()
-                    for source_index, source_id in enumerate(raw_ids)
-                )
+                source_ids = tuple(_as_text(source_id, f"{context}.source_ids[{source_index}]").strip() for source_index, source_id in enumerate(raw_ids))
                 if not source_ids or any(not source_id for source_id in source_ids):
-                    raise DocumentModelError(
-                        f"{context}.source_ids must contain non-empty strings"
-                    )
+                    raise DocumentModelError(f"{context}.source_ids must contain non-empty strings")
                 if len(set(source_ids)) != len(source_ids):
-                    raise DocumentModelError(
-                        f"{context}.source_ids must not contain duplicates"
-                    )
+                    raise DocumentModelError(f"{context}.source_ids must not contain duplicates")
                 parsed.append(CitationBlock(source_ids))
             elif kind == "legacy_latex":
                 _require_keys(block, {"type", "source"}, context)
@@ -148,9 +128,7 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
                 parsed.append(LegacyLatexBlock(source))
             else:
                 raise DocumentModelError(f"unsupported block type {kind!r} in {context}")
-
         normalized.append(SectionModel(title=title, blocks=tuple(parsed)))
-
     return tuple(normalized)
 
 
@@ -168,58 +146,47 @@ def normalize_references(evidence: Sequence[Mapping[str, Any]]) -> tuple[Referen
         if source_id in seen_source_ids:
             raise DocumentModelError(f"duplicate source_id in evidence: {source_id!r}")
         seen_source_ids.add(source_id)
-        references.append(
-            ReferenceModel(
-                source_id=source_id,
-                title=_as_text(source.get("title"), "title", default="Unknown Title"),
-                url=_as_text(source.get("url"), "url"),
-                source_type=_as_text(
-                    source.get("retriever_module"), "retriever_module", default="misc"
-                ),
-                retrieved_at=_as_text(
-                    source.get("retrieved_at"), "retrieved_at", default="N/A"
-                ),
-                citation_key=f"ref{index + 1}",
-            )
-        )
+        references.append(ReferenceModel(source_id=source_id, title=_as_text(source.get("title"), "title", default="Unknown Title"), url=_as_text(source.get("url"), "url"), source_type=_as_text(source.get("retriever_module"), "retriever_module", default="misc"), retrieved_at=_as_text(source.get("retrieved_at"), "retrieved_at", default="N/A"), citation_key=f"ref{index + 1}"))
     return tuple(references)
 
 
 def validate_document_model(document: DocumentModel) -> None:
-    """Ensure every semantic citation resolves to a normalized reference."""
+    """Validate both structure and cross-reference integrity of a document model."""
 
-    reference_ids = {reference.source_id for reference in document.references}
+    if not isinstance(document, DocumentModel):
+        raise DocumentModelError("document must be a DocumentModel")
+    if not isinstance(document.topic, str) or not isinstance(document.objective, str):
+        raise DocumentModelError("document topic and objective must be strings")
+    if not isinstance(document.sections, tuple) or not isinstance(document.references, tuple):
+        raise DocumentModelError("document sections and references must be tuples")
+    reference_ids: set[str] = set()
+    citation_keys: set[str] = set()
+    for index, reference in enumerate(document.references):
+        if not isinstance(reference, ReferenceModel):
+            raise DocumentModelError(f"reference {index} must be a ReferenceModel")
+        if not reference.source_id.strip():
+            raise DocumentModelError(f"reference {index}.source_id must not be empty")
+        if reference.source_id in reference_ids:
+            raise DocumentModelError(f"duplicate source_id in document: {reference.source_id!r}")
+        reference_ids.add(reference.source_id)
+        if not reference.citation_key.strip() or reference.citation_key in citation_keys:
+            raise DocumentModelError(f"invalid or duplicate citation_key: {reference.citation_key!r}")
+        citation_keys.add(reference.citation_key)
     for section_index, section in enumerate(document.sections):
+        if not isinstance(section, SectionModel):
+            raise DocumentModelError(f"section {section_index} must be a SectionModel")
         for block_index, block in enumerate(section.blocks):
-            if not isinstance(block, CitationBlock):
-                continue
-            missing = [
-                source_id
-                for source_id in block.source_ids
-                if source_id not in reference_ids
-            ]
-            if missing:
-                missing_ids = ", ".join(missing)
-                raise DocumentModelError(
-                    f"section {section_index}.blocks[{block_index}] "
-                    f"references unknown source_id(s): {missing_ids}"
-                )
+            if not isinstance(block, (TextBlock, MathBlock, CitationBlock, LegacyLatexBlock)):
+                raise DocumentModelError(f"section {section_index}.blocks[{block_index}] has an invalid block type")
+            if isinstance(block, CitationBlock):
+                missing = [source_id for source_id in block.source_ids if source_id not in reference_ids]
+                if missing:
+                    raise DocumentModelError(f"section {section_index}.blocks[{block_index}] references unknown source_id(s): {', '.join(missing)}")
 
 
-def build_document_model(
-    state: Mapping[str, Any],
-    sections: Sequence[Mapping[str, Any]],
-    evidence: Sequence[Mapping[str, Any]],
-) -> DocumentModel:
+def build_document_model(state: Mapping[str, Any], sections: Sequence[Mapping[str, Any]], evidence: Sequence[Mapping[str, Any]]) -> DocumentModel:
     """Build and validate the semantic document model consumed by a renderer."""
 
-    document = DocumentModel(
-        topic=_as_text(
-            state.get("topic"), "topic", default="Finite Element Method Guideline"
-        ),
-        objective=_as_text(state.get("objective"), "objective"),
-        sections=normalize_sections(sections),
-        references=normalize_references(evidence),
-    )
+    document = DocumentModel(topic=_as_text(state.get("topic"), "topic", default="Finite Element Method Guideline"), objective=_as_text(state.get("objective"), "objective"), sections=normalize_sections(sections), references=normalize_references(evidence))
     validate_document_model(document)
     return document
