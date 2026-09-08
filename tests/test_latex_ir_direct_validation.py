@@ -13,6 +13,7 @@ from processing.latex_ir import (
     TextBlock,
     validate_document_model,
 )
+from processing.latex_renderer import render_body
 
 
 def _document(section: SectionModel) -> DocumentModel:
@@ -69,3 +70,17 @@ def test_direct_model_rejects_non_string_reference_fields():
 
     with pytest.raises(DocumentModelError, match="reference 0.title must be a string"):
         validate_document_model(document)
+
+
+def test_renderer_rejects_non_string_section_titles_before_rendering():
+    document = _document(SectionModel(title=123, blocks=(TextBlock("text"),)))
+
+    with pytest.raises(DocumentModelError, match="section 0.title must be a string"):
+        render_body(document)
+
+
+def test_renderer_rejects_invalid_citation_containers_before_rendering():
+    document = _document(SectionModel(title="Section", blocks=(CitationBlock(["known"]),)))
+
+    with pytest.raises(DocumentModelError, match="source_ids must be a tuple"):
+        render_body(document)
