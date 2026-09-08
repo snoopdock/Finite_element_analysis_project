@@ -80,6 +80,9 @@ def _require_keys(value: Mapping[str, Any], allowed: set[str], context: str) -> 
 def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionModel, ...]:
     """Normalize the closed section input language without guessing semantics."""
 
+    if not isinstance(sections, Sequence) or isinstance(sections, (str, bytes)):
+        raise DocumentModelError("sections must be a sequence")
+
     normalized: list[SectionModel] = []
     for index, section in enumerate(sections):
         if not isinstance(section, Mapping):
@@ -134,6 +137,9 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
 
 def normalize_references(evidence: Sequence[Mapping[str, Any]]) -> tuple[ReferenceModel, ...]:
     """Convert retrieval receipts into renderer-neutral reference records."""
+
+    if not isinstance(evidence, Sequence) or isinstance(evidence, (str, bytes)):
+        raise DocumentModelError("evidence must be a sequence")
 
     references: list[ReferenceModel] = []
     seen_source_ids: set[str] = set()
