@@ -15,7 +15,7 @@ from processing.latex_ir import (
     normalize_sections,
     validate_document_model,
 )
-from processing.latex_renderer import render_body
+from processing.latex_renderer import render_block, render_body
 
 
 def test_legacy_content_is_explicitly_marked():
@@ -164,3 +164,13 @@ def test_duplicate_reference_source_ids_fail_at_the_boundary():
                 {"source_id": "same", "title": "Second"},
             ],
         )
+
+
+def test_direct_citation_rendering_rejects_unknown_source_ids():
+    with pytest.raises(DocumentModelError, match="unknown source_id"):
+        render_block(CitationBlock(("missing",)), {"known": "ref1"})
+
+
+def test_direct_citation_rendering_requires_reference_mapping():
+    with pytest.raises(DocumentModelError, match="without a reference-number mapping"):
+        render_block(CitationBlock(("known",)), None)
