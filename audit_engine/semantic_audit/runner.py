@@ -17,10 +17,17 @@ from .reports.json_report import (
     write_report
 )
 
+from .graph.builder import (
+    SemanticGraphBuilder
+)
+
+from .graph.serializer import (
+    serialize_graph
+)
+
 
 
 def run():
-
 
     report = AuditReport()
 
@@ -76,9 +83,33 @@ def run():
 
 
 
+    #
+    # Semantic Graph Generation
+    #
+    # Converts existing audit observations
+    # into an explicit semantic graph.
+    #
+    # The graph is an additional artifact.
+    # It does not modify audit decisions.
+    #
+
+
+    semantic_graph = SemanticGraphBuilder().build(
+        report
+    )
+
+
+    serialize_graph(
+        semantic_graph,
+        "semantic_graph.json"
+    )
+
+
+
     write_report(
         report
     )
+
 
 
 if __name__ == "__main__":
