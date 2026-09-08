@@ -10,6 +10,7 @@ from __future__ import annotations
 from processing.latex_ir import (
     CitationBlock,
     DocumentModel,
+    DocumentModelError,
     LegacyLatexBlock,
     MathBlock,
     TextBlock,
@@ -29,13 +30,20 @@ def render_block(block, reference_numbers: dict[str, str] | None = None) -> str:
         return f"\\[{expression}\\]"
     if isinstance(block, CitationBlock):
         if not reference_numbers:
-            return ""
-        keys = [
-            reference_numbers[source_id]
+            raise DocumentModelError(
+                "cannot render citation without a reference-number mapping"
+            )
+        missing = [
+            source_id
             for source_id in block.source_ids
-            if source_id in reference_numbers
+            if source_id not in reference_numbers
         ]
-        return f"\\cite{{{','.join(keys)}}}" if keys else ""
+        if missing:
+            raise DocumentModelError(
+                "citation references unknown source_id(s): " + ", ".join(missing)
+            )
+        keys = [reference_numbers[source_id] for source_id in block.source_ids]
+        return f"\\cite{{{','.join(keys)}}}"
     if isinstance(block, LegacyLatexBlock):
         return sanitize_latex_content(block.source)
     raise TypeError(f"Unsupported document block: {type(block).__name__}")
