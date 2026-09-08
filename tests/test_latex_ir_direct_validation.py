@@ -11,6 +11,7 @@ from processing.latex_ir import (
     ReferenceModel,
     SectionModel,
     TextBlock,
+    normalize_references,
     validate_document_model,
 )
 from processing.latex_renderer import render_body
@@ -84,3 +85,10 @@ def test_renderer_rejects_invalid_citation_containers_before_rendering():
 
     with pytest.raises(DocumentModelError, match="source_ids must be a tuple"):
         render_body(document)
+
+
+def test_normalize_references_rejects_unsupported_fields():
+    evidence = [{"source_id": "known", "title": "Known", "unexpected": "value"}]
+
+    with pytest.raises(DocumentModelError, match="evidence 0 contains unsupported fields: unexpected"):
+        normalize_references(evidence)
