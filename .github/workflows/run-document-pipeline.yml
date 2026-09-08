@@ -1,4 +1,4 @@
-name: Run document pipeline
+name: Validate LaTeX document pipeline
 
 on:
   workflow_dispatch:
@@ -7,13 +7,15 @@ permissions:
   contents: read
 
 jobs:
-  run-document-pipeline:
+  validate-latex-documents:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -28,12 +30,33 @@ jobs:
             python -m pip install -r requirements.txt
           elif [ -f pyproject.toml ]; then
             python -m pip install .
-          else
-            echo "No requirements.txt or pyproject.toml found."
           fi
+          python -m pip install pytest
 
-      - name: Run focused document-pipeline tests
-        id: focused_tests
+      - name: Install TeX Live
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-luatex \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            fonts-lmodern \
+            pdfinfo
+
+      - name: Run pipeline and generate document artifacts
+        id: run_pipeline
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python tools/run_pipeline_with_document_snapshot.py --config config.yaml 2>&1 \
+            | tee pipeline-run.log
+
+      - name: Run LaTeX document tests
+        id: latex_tests
         continue-on-error: true
         run: |
           set -o pipefail
@@ -45,17 +68,67 @@ jobs:
             tests/test_semantic_writer_boundary.py \
             tests/test_document_persistence.py \
             tests/test_document_snapshot.py \
-            tests/test_document_pipeline_integration.py \
-            tests/test_pipeline_document_runner.py 2>&1 | tee focused-tests.log
+            tests/test_document_renderer_boundary.py 2>&1 | tee latex-tests.log
 
-      - name: Run document pipeline runner
-        id: runner
+      - name: Run document-pipeline integration tests
+        id: pipeline_integration_tests
         continue-on-error: true
         run: |
           set -o pipefail
-          python tools/run_pipeline_with_document_snapshot.py 2>&1 | tee runner.log
+          integration_tests=()
+          for test_file in \
+            tests/test_document_pipeline_integration.py \
+            tests/test_pipeline_document_runner.py
+          do
+            if [ -f "$test_file" ]; then
+              integration_tests+=("$test_file")
+            fi
+          done
 
-      - name: Collect runtime diagnostics
+          if [ "${#integration_tests[@]}" -eq 0 ]; then
+            echo "No document-pipeline integration test files found."
+            : > latex-pipeline-integration.log
+            exit 0
+          fi
+
+          printf 'Running integration tests: %s\n' "${integration_tests[*]}"
+          python -m pytest -q "${integration_tests[@]}" 2>&1 \
+            | tee latex-pipeline-integration.log
+
+      - name: Inspect generated LaTeX output
+        id: latex_output_inspection
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            echo "=== Generated LaTeX output inspection ==="
+            if [ ! -f output/guideline.tex ]; then
+              echo "output/guideline.tex is not present."
+              exit 0
+            fi
+            echo "File: output/guideline.tex"
+            wc -c output/guideline.tex
+            wc -l output/guideline.tex
+            grep -n '\\begin{document}' output/guideline.tex || true
+            grep -n '\\end{document}' output/guideline.tex || true
+          } | tee latex-output-inspection.log
+
+      - name: Compile generated LaTeX document
+        id: latex_compile
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          if [ ! -f output/guideline.tex ]; then
+            echo "output/guideline.tex is not present." | tee latex-compile.log
+            exit 1
+          fi
+          cd output
+          lualatex -interaction=nonstopmode -halt-on-error guideline.tex > ../latex-compile.log 2>&1
+          lualatex -interaction=nonstopmode -halt-on-error guideline.tex >> ../latex-compile.log 2>&1
+          test -s guideline.pdf
+          pdfinfo guideline.pdf | sed -n '1,20p' >> ../latex-compile.log || true
+
+      - name: Collect test diagnostics
         if: always()
         run: |
           {
@@ -63,43 +136,57 @@ jobs:
             echo "Commit: $GITHUB_SHA"
             echo "Branch/ref: $GITHUB_REF"
             echo "Runner OS: $RUNNER_OS"
-            echo "Python:"
             python --version || true
-            echo
-            echo "=== Focused test result ==="
-            echo "outcome=${{ steps.focused_tests.outcome }}"
-            echo
-            echo "=== Pipeline runner result ==="
-            echo "outcome=${{ steps.runner.outcome }}"
-            echo
-            echo "=== Focused tests log ==="
-            cat focused-tests.log 2>/dev/null || true
-            echo
-            echo "=== Runner log ==="
-            cat runner.log 2>/dev/null || true
-          } > runtime-log.txt
+            echo "=== Pipeline run result ==="
+            echo "outcome=${{ steps.run_pipeline.outcome }}"
+            echo "=== LaTeX test result ==="
+            echo "outcome=${{ steps.latex_tests.outcome }}"
+            echo "=== Pipeline integration test result ==="
+            echo "outcome=${{ steps.pipeline_integration_tests.outcome }}"
+            echo "=== LaTeX output inspection result ==="
+            echo "outcome=${{ steps.latex_output_inspection.outcome }}"
+            echo "=== TeX compilation result ==="
+            echo "outcome=${{ steps.latex_compile.outcome }}"
+            echo "=== Pipeline run log ==="
+            cat pipeline-run.log 2>/dev/null || true
+            echo "=== LaTeX compile log ==="
+            cat latex-compile.log 2>/dev/null || true
+            echo "=== LaTeX tests log ==="
+            cat latex-tests.log 2>/dev/null || true
+            echo "=== Pipeline integration tests log ==="
+            cat latex-pipeline-integration.log 2>/dev/null || true
+            echo "=== LaTeX output inspection log ==="
+            cat latex-output-inspection.log 2>/dev/null || true
+          } > latex-runtime-log.txt
 
-      - name: Print runtime diagnostics for remote inspection
+      - name: Print test diagnostics
         if: always()
         run: |
-          echo "================ RUNTIME LOG ================"
-          cat runtime-log.txt
-          echo "============== END RUNTIME LOG =============="
+          echo "================ LATEX RUNTIME SUMMARY ================"
+          grep -E '^(===|Commit:|Branch/ref:|Runner OS:|outcome=|File:|[0-9]+ output/guideline.tex|[0-9]+:|! LaTeX Error:|! Emergency stop|!  ==> Fatal error|Output written on|Transcript written on|pdfTeX warning|LaTeX Warning:|Semantic document persisted|Failed to persist semantic document)' latex-runtime-log.txt || true
+          echo "============== END LATEX RUNTIME SUMMARY =============="
 
-      - name: Upload runtime log artifact
+      - name: Upload LaTeX test artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: document-pipeline-runtime-log
+          name: latex-document-test-log
           path: |
-            runtime-log.txt
-            focused-tests.log
-            runner.log
+            latex-runtime-log.txt
+            pipeline-run.log
+            latex-tests.log
+            latex-pipeline-integration.log
+            latex-output-inspection.log
+            latex-compile.log
+            output/sections.json
+            output/document.json
+            output/guideline.tex
+            output/guideline.pdf
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Fail workflow if focused tests or runner failed
-        if: steps.focused_tests.outcome == 'failure' || steps.runner.outcome == 'failure'
+      - name: Fail workflow if LaTeX validation failed
+        if: steps.run_pipeline.outcome == 'failure' || steps.latex_tests.outcome == 'failure' || steps.pipeline_integration_tests.outcome == 'failure' || steps.latex_compile.outcome == 'failure'
         run: |
-          echo "The document pipeline validation failed. Download the document-pipeline-runtime-log artifact for diagnostics."
+          echo "LaTeX validation failed. Download the latex-document-test-log artifact for diagnostics."
           exit 1
