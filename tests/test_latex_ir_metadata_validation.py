@@ -18,3 +18,18 @@ def test_direct_document_model_rejects_non_string_metadata(field):
 
     with pytest.raises(DocumentModelError, match="topic and objective must be strings"):
         validate_document_model(document)
+
+
+@pytest.mark.parametrize("field", ["topic", "objective"])
+def test_direct_document_model_rejects_empty_metadata(field):
+    values = {"topic": "Test", "objective": "Objective"}
+    values[field] = ""
+    document = DocumentModel(
+        topic=values["topic"],
+        objective=values["objective"],
+        sections=(),
+        references=(),
+    )
+
+    with pytest.raises(DocumentModelError, match="topic and objective must not be empty"):
+        validate_document_model(document)
