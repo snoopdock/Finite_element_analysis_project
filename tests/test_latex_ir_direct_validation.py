@@ -12,6 +12,7 @@ from processing.latex_ir import (
     SectionModel,
     TextBlock,
     normalize_references,
+    normalize_sections,
     validate_document_model,
 )
 from processing.latex_renderer import render_body
@@ -92,3 +93,13 @@ def test_normalize_references_rejects_unsupported_fields():
 
     with pytest.raises(DocumentModelError, match="evidence 0 contains unsupported fields: unexpected"):
         normalize_references(evidence)
+
+
+def test_normalize_sections_rejects_non_sequence_input():
+    with pytest.raises(DocumentModelError, match="sections must be a sequence"):
+        normalize_sections({"title": "Section", "blocks": []})
+
+
+def test_normalize_references_rejects_non_sequence_input():
+    with pytest.raises(DocumentModelError, match="evidence must be a sequence"):
+        normalize_references({"source_id": "known"})
