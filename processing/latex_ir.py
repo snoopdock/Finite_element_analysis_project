@@ -184,6 +184,8 @@ def validate_document_model(document: DocumentModel) -> None:
             raise DocumentModelError(f"section {section_index} must be a SectionModel")
         if not isinstance(section.title, str):
             raise DocumentModelError(f"section {section_index}.title must be a string")
+        if not section.title.strip():
+            raise DocumentModelError(f"section {section_index}.title must be a non-empty string")
         if not isinstance(section.blocks, tuple):
             raise DocumentModelError(f"section {section_index}.blocks must be a tuple")
         for block_index, block in enumerate(section.blocks):
