@@ -42,7 +42,7 @@ jobs:
             texlive-latex-recommended \
             texlive-latex-extra \
             fonts-lmodern \
-            pdfinfo
+            poppler-utils
 
       - name: Run pipeline and generate document artifacts
         id: run_pipeline
