@@ -193,3 +193,12 @@ def test_section_rendering_preserves_block_order_and_citation_mapping():
     assert rendered.index(r"\\cite{ref7}") < rendered.index(r"\\[u = K^{-1}f\\]")
     assert rendered.index(r"\\[u = K^{-1}f\\]") < rendered.index("Final claim")
     assert rendered.startswith(r"\\section{Evidence \& Results}")
+
+
+def test_empty_sections_are_omitted_from_rendered_output():
+    section = SectionModel(
+        title="Empty",
+        blocks=(TextBlock("   "), MathBlock("   ")),
+    )
+
+    assert render_section(section) == ""
