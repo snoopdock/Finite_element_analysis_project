@@ -151,7 +151,7 @@ def normalize_references(evidence: Sequence[Mapping[str, Any]]) -> tuple[Referen
 
 
 def validate_document_model(document: DocumentModel) -> None:
-    """Validate both structure and cross-reference integrity of a document model."""
+    """Validate structure, field types, and cross-reference integrity."""
 
     if not isinstance(document, DocumentModel):
         raise DocumentModelError("document must be a DocumentModel")
@@ -159,11 +159,15 @@ def validate_document_model(document: DocumentModel) -> None:
         raise DocumentModelError("document topic and objective must be strings")
     if not isinstance(document.sections, tuple) or not isinstance(document.references, tuple):
         raise DocumentModelError("document sections and references must be tuples")
+
     reference_ids: set[str] = set()
     citation_keys: set[str] = set()
     for index, reference in enumerate(document.references):
         if not isinstance(reference, ReferenceModel):
             raise DocumentModelError(f"reference {index} must be a ReferenceModel")
+        for field_name in ("source_id", "title", "url", "source_type", "retrieved_at", "citation_key"):
+            if not isinstance(getattr(reference, field_name), str):
+                raise DocumentModelError(f"reference {index}.{field_name} must be a string")
         if not reference.source_id.strip():
             raise DocumentModelError(f"reference {index}.source_id must not be empty")
         if reference.source_id in reference_ids:
@@ -172,23 +176,31 @@ def validate_document_model(document: DocumentModel) -> None:
         if not reference.citation_key.strip() or reference.citation_key in citation_keys:
             raise DocumentModelError(f"invalid or duplicate citation_key: {reference.citation_key!r}")
         citation_keys.add(reference.citation_key)
+
     for section_index, section in enumerate(document.sections):
         if not isinstance(section, SectionModel):
             raise DocumentModelError(f"section {section_index} must be a SectionModel")
         if not isinstance(section.title, str):
             raise DocumentModelError(f"section {section_index}.title must be a string")
+        if not isinstance(section.blocks, tuple):
+            raise DocumentModelError(f"section {section_index}.blocks must be a tuple")
         for block_index, block in enumerate(section.blocks):
             context = f"section {section_index}.blocks[{block_index}]"
             if not isinstance(block, (TextBlock, MathBlock, CitationBlock, LegacyLatexBlock)):
                 raise DocumentModelError(f"{context} has an invalid block type")
-            if isinstance(block, TextBlock) and not block.text:
-                raise DocumentModelError(f"{context}.text must not be empty")
-            if isinstance(block, MathBlock) and not block.expression.strip():
-                raise DocumentModelError(f"{context}.expression must not be empty")
-            if isinstance(block, LegacyLatexBlock) and not block.source:
-                raise DocumentModelError(f"{context}.source must not be empty")
-            if isinstance(block, CitationBlock):
-                if not block.source_ids or any(not source_id.strip() for source_id in block.source_ids):
+            if isinstance(block, TextBlock):
+                if not isinstance(block.text, str) or not block.text:
+                    raise DocumentModelError(f"{context}.text must be a non-empty string")
+            elif isinstance(block, MathBlock):
+                if not isinstance(block.expression, str) or not block.expression.strip():
+                    raise DocumentModelError(f"{context}.expression must be a non-empty string")
+            elif isinstance(block, LegacyLatexBlock):
+                if not isinstance(block.source, str) or not block.source:
+                    raise DocumentModelError(f"{context}.source must be a non-empty string")
+            else:
+                if not isinstance(block.source_ids, tuple):
+                    raise DocumentModelError(f"{context}.source_ids must be a tuple")
+                if not block.source_ids or any(not isinstance(source_id, str) or not source_id.strip() for source_id in block.source_ids):
                     raise DocumentModelError(f"{context}.source_ids must contain non-empty strings")
                 if len(set(block.source_ids)) != len(block.source_ids):
                     raise DocumentModelError(f"{context}.source_ids must not contain duplicates")
