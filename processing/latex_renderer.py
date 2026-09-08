@@ -13,6 +13,7 @@ from processing.latex_ir import (
     LegacyLatexBlock,
     MathBlock,
     TextBlock,
+    validate_document_model,
 )
 from utils.latex import escape_latex, escape_text, sanitize_latex_content
 
@@ -50,7 +51,8 @@ def render_section(section, reference_numbers: dict[str, str] | None = None) -> 
 
 
 def render_body(document: DocumentModel) -> str:
-    """Render all document sections in order."""
+    """Validate and render all document sections in order."""
+    validate_document_model(document)
     reference_numbers = {
         reference.source_id: reference.citation_key
         for reference in document.references
