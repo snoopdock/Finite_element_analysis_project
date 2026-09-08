@@ -31,5 +31,20 @@ def test_direct_document_model_rejects_empty_metadata(field):
         references=(),
     )
 
-    with pytest.raises(DocumentModelError, match="topic and objective must not be empty"):
+    with pytest.raises(DocumentModelError, match="topic and objective must be non-empty strings"):
+        validate_document_model(document)
+
+
+@pytest.mark.parametrize("field", ["topic", "objective"])
+def test_direct_document_model_rejects_whitespace_only_metadata(field):
+    values = {"topic": "Test", "objective": "Objective"}
+    values[field] = "   "
+    document = DocumentModel(
+        topic=values["topic"],
+        objective=values["objective"],
+        sections=(),
+        references=(),
+    )
+
+    with pytest.raises(DocumentModelError, match="topic and objective must be non-empty strings"):
         validate_document_model(document)
