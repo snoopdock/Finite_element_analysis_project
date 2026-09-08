@@ -44,6 +44,17 @@ jobs:
             fonts-lmodern \
             pdfinfo
 
+      - name: Run pipeline and generate document artifacts
+        id: run_pipeline
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python tools/run_pipeline_with_document_snapshot.py --config config.yaml 2>&1 \
+            | tee pipeline-run.log
+
       - name: Run LaTeX document tests
         id: latex_tests
         continue-on-error: true
@@ -126,6 +137,8 @@ jobs:
             echo "Branch/ref: $GITHUB_REF"
             echo "Runner OS: $RUNNER_OS"
             python --version || true
+            echo "=== Pipeline run result ==="
+            echo "outcome=${{ steps.run_pipeline.outcome }}"
             echo "=== LaTeX test result ==="
             echo "outcome=${{ steps.latex_tests.outcome }}"
             echo "=== Pipeline integration test result ==="
@@ -134,6 +147,8 @@ jobs:
             echo "outcome=${{ steps.latex_output_inspection.outcome }}"
             echo "=== TeX compilation result ==="
             echo "outcome=${{ steps.latex_compile.outcome }}"
+            echo "=== Pipeline run log ==="
+            cat pipeline-run.log 2>/dev/null || true
             echo "=== LaTeX compile log ==="
             cat latex-compile.log 2>/dev/null || true
             echo "=== LaTeX tests log ==="
@@ -148,7 +163,7 @@ jobs:
         if: always()
         run: |
           echo "================ LATEX RUNTIME SUMMARY ================"
-          grep -E '^(===|Commit:|Branch/ref:|Runner OS:|outcome=|File:|[0-9]+ output/guideline.tex|[0-9]+:|! LaTeX Error:|! Emergency stop|!  ==> Fatal error|Output written on|Transcript written on|pdfTeX warning|LaTeX Warning:)' latex-runtime-log.txt || true
+          grep -E '^(===|Commit:|Branch/ref:|Runner OS:|outcome=|File:|[0-9]+ output/guideline.tex|[0-9]+:|! LaTeX Error:|! Emergency stop|!  ==> Fatal error|Output written on|Transcript written on|pdfTeX warning|LaTeX Warning:|Semantic document persisted|Failed to persist semantic document)' latex-runtime-log.txt || true
           echo "============== END LATEX RUNTIME SUMMARY =============="
 
       - name: Upload LaTeX test artifact
@@ -158,16 +173,20 @@ jobs:
           name: latex-document-test-log
           path: |
             latex-runtime-log.txt
+            pipeline-run.log
             latex-tests.log
             latex-pipeline-integration.log
             latex-output-inspection.log
             latex-compile.log
+            output/sections.json
+            output/document.json
+            output/guideline.tex
             output/guideline.pdf
           if-no-files-found: warn
           retention-days: 14
 
       - name: Fail workflow if LaTeX validation failed
-        if: steps.latex_tests.outcome == 'failure' || steps.pipeline_integration_tests.outcome == 'failure' || steps.latex_compile.outcome == 'failure'
+        if: steps.run_pipeline.outcome == 'failure' || steps.latex_tests.outcome == 'failure' || steps.pipeline_integration_tests.outcome == 'failure' || steps.latex_compile.outcome == 'failure'
         run: |
           echo "LaTeX validation failed. Download the latex-document-test-log artifact for diagnostics."
           exit 1
