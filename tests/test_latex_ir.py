@@ -4,12 +4,16 @@ import pytest
 
 from processing.latex_ir import (
     CitationBlock,
+    DocumentModel,
     DocumentModelError,
     LegacyLatexBlock,
     MathBlock,
+    ReferenceModel,
+    SectionModel,
     TextBlock,
     build_document_model,
     normalize_sections,
+    validate_document_model,
 )
 from processing.latex_renderer import render_body
 
@@ -132,6 +136,22 @@ def test_unknown_citation_source_ids_fail_before_rendering():
 def test_empty_reference_source_ids_fail_at_the_boundary():
     with pytest.raises(DocumentModelError, match="source_id must not be empty"):
         build_document_model({}, [], [{"source_id": "", "title": "Untitled"}])
+
+
+def test_direct_document_models_can_be_validated_before_rendering():
+    document = DocumentModel(
+        topic="Test",
+        objective="Objective",
+        sections=(
+            SectionModel(title="Evidence", blocks=(CitationBlock(("missing",)),)),
+        ),
+        references=(
+            ReferenceModel(source_id="known", title="Known", citation_key="ref1"),
+        ),
+    )
+
+    with pytest.raises(DocumentModelError, match="unknown source_id"):
+        validate_document_model(document)
 
 
 def test_duplicate_reference_source_ids_fail_at_the_boundary():
