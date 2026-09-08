@@ -103,3 +103,13 @@ def test_normalize_sections_rejects_non_sequence_input():
 def test_normalize_references_rejects_non_sequence_input():
     with pytest.raises(DocumentModelError, match="evidence must be a sequence"):
         normalize_references({"source_id": "known"})
+
+
+def test_normalize_sections_rejects_non_mapping_item():
+    with pytest.raises(DocumentModelError, match="section 0 must be a mapping"):
+        normalize_sections(["invalid"])
+
+
+def test_normalize_references_rejects_non_mapping_item():
+    with pytest.raises(DocumentModelError, match="evidence 0 must be a mapping"):
+        normalize_references(["invalid"])
