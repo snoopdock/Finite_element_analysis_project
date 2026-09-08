@@ -157,6 +157,8 @@ def validate_document_model(document: DocumentModel) -> None:
         raise DocumentModelError("document must be a DocumentModel")
     if not isinstance(document.topic, str) or not isinstance(document.objective, str):
         raise DocumentModelError("document topic and objective must be strings")
+    if not document.topic.strip() or not document.objective.strip():
+        raise DocumentModelError("document topic and objective must be non-empty strings")
     if not isinstance(document.sections, tuple) or not isinstance(document.references, tuple):
         raise DocumentModelError("document sections and references must be tuples")
 
