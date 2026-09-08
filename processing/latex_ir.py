@@ -175,13 +175,26 @@ def validate_document_model(document: DocumentModel) -> None:
     for section_index, section in enumerate(document.sections):
         if not isinstance(section, SectionModel):
             raise DocumentModelError(f"section {section_index} must be a SectionModel")
+        if not isinstance(section.title, str):
+            raise DocumentModelError(f"section {section_index}.title must be a string")
         for block_index, block in enumerate(section.blocks):
+            context = f"section {section_index}.blocks[{block_index}]"
             if not isinstance(block, (TextBlock, MathBlock, CitationBlock, LegacyLatexBlock)):
-                raise DocumentModelError(f"section {section_index}.blocks[{block_index}] has an invalid block type")
+                raise DocumentModelError(f"{context} has an invalid block type")
+            if isinstance(block, TextBlock) and not block.text:
+                raise DocumentModelError(f"{context}.text must not be empty")
+            if isinstance(block, MathBlock) and not block.expression.strip():
+                raise DocumentModelError(f"{context}.expression must not be empty")
+            if isinstance(block, LegacyLatexBlock) and not block.source:
+                raise DocumentModelError(f"{context}.source must not be empty")
             if isinstance(block, CitationBlock):
+                if not block.source_ids or any(not source_id.strip() for source_id in block.source_ids):
+                    raise DocumentModelError(f"{context}.source_ids must contain non-empty strings")
+                if len(set(block.source_ids)) != len(block.source_ids):
+                    raise DocumentModelError(f"{context}.source_ids must not contain duplicates")
                 missing = [source_id for source_id in block.source_ids if source_id not in reference_ids]
                 if missing:
-                    raise DocumentModelError(f"section {section_index}.blocks[{block_index}] references unknown source_id(s): {', '.join(missing)}")
+                    raise DocumentModelError(f"{context} references unknown source_id(s): {', '.join(missing)}")
 
 
 def build_document_model(state: Mapping[str, Any], sections: Sequence[Mapping[str, Any]], evidence: Sequence[Mapping[str, Any]]) -> DocumentModel:
