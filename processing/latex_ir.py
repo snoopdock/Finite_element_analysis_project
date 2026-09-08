@@ -146,6 +146,11 @@ def normalize_references(evidence: Sequence[Mapping[str, Any]]) -> tuple[Referen
     for index, source in enumerate(evidence[:25]):
         if not isinstance(source, Mapping):
             raise DocumentModelError(f"evidence {index} must be a mapping")
+        _require_keys(
+            source,
+            {"source_id", "title", "url", "retriever_module", "retrieved_at"},
+            f"evidence {index}",
+        )
         source_id = _as_text(source.get("source_id"), "source_id").strip()
         if not source_id:
             raise DocumentModelError(f"evidence {index}.source_id must not be empty")
