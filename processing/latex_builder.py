@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """LaTeX document building utilities with provenance tracking."""
 
-import sys
-
 from processing.latex_graph import render_concept_graph, render_perspective_table
 from processing.latex_ir import build_document_model
 from processing.latex_references import format_bibliography, format_provenance_table
