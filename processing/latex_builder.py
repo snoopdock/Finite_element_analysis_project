@@ -2,10 +2,10 @@
 """LaTeX document building utilities with provenance tracking."""
 
 import sys
-from datetime import datetime
 
 from processing.latex_graph import render_concept_graph, render_perspective_table
 from processing.latex_ir import build_document_model
+from processing.latex_references import format_bibliography, format_provenance_table
 from processing.latex_renderer import render_body
 from utils.latex import escape_latex
 
@@ -18,36 +18,10 @@ def build_latex_document(state, sections, evidence):
     objective = document.objective
     graph = state.get("knowledge_graph", {})
 
-    # Build the bibliography from the normalized reference records so citation
-    # keys and reference metadata have a single source of truth.
-    refs = []
-    for reference in document.references:
-        title = escape_latex(reference.title)
-        stype = escape_latex(reference.source_type.replace("research.", "").title())
-        url = reference.url.replace("%", r"\%").replace("&", r"\&").replace("#", r"\#")
-        refs.append(
-            f"  \\bibitem{{{reference.citation_key}}} \\textit{{{title}}}. [{stype}] Available at: \\url{{{url}}}"
-        )
-
-    refs_text = "\n".join(refs) if refs else "  \\bibitem{none} No sources retrieved."
-
-    # Build the Provenance Appendix from the same normalized references.
-    provenance_rows = []
-    for index, reference in enumerate(document.references):
-        sid = escape_latex(reference.source_id)
-        title = escape_latex(reference.title)
-        retrieved = reference.retrieved_at
-        if retrieved != "N/A":
-            try:
-                dt = datetime.fromisoformat(retrieved.replace("Z", "+00:00"))
-                retrieved = dt.strftime("%Y-%m-%d %H:%M UTC")
-            except Exception:
-                pass
-        provenance_rows.append(
-            f"  {index + 1} & \\texttt{{{sid}}} & {title[:60]} & {escape_latex(reference.source_type.replace('research.', '').title())} & {escape_latex(retrieved)} \\\\"
-        )
-
-    provenance_table = "\n".join(provenance_rows) if provenance_rows else "No sources."
+    # Bibliography and provenance are presentation projections of the same
+    # normalized references used by the body renderer.
+    refs_text = format_bibliography(document.references)
+    provenance_table = format_provenance_table(document.references)
 
     body = render_body(document)
 
