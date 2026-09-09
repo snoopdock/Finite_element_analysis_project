@@ -227,6 +227,8 @@ def validate_document_model(document: DocumentModel) -> None:
 def build_document_model(state: Mapping[str, Any], sections: Sequence[Mapping[str, Any]], evidence: Sequence[Mapping[str, Any]]) -> DocumentModel:
     """Build and validate the semantic document model consumed by a renderer."""
 
+    if not isinstance(state, Mapping):
+        raise DocumentModelError("state must be a mapping")
     document = DocumentModel(topic=_as_text(state.get("topic"), "topic", default="Finite Element Method Guideline"), objective=_as_text(state.get("objective"), "objective"), sections=normalize_sections(sections), references=normalize_references(evidence))
     validate_document_model(document)
     return document
