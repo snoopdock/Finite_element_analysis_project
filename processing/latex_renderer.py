@@ -16,7 +16,7 @@ from processing.latex_ir import (
     TextBlock,
     validate_document_model,
 )
-from utils.latex import escape_latex, escape_text, sanitize_latex_content
+from utils.latex import escape_text, sanitize_latex_content
 
 
 def render_block(block, reference_numbers: dict[str, str] | None = None) -> str:
@@ -55,7 +55,7 @@ def render_section(section, reference_numbers: dict[str, str] | None = None) -> 
     content = "\n\n".join(part for part in rendered if part.strip())
     if not content:
         return ""
-    return f"\\section{{{escape_latex(section.title)}}}\n\n{content}"
+    return f"\\section{{{escape_text(section.title)}}}\n\n{content}"
 
 
 def render_body(document: DocumentModel) -> str:
