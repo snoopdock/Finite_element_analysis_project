@@ -34,4 +34,4 @@ jobs:
           tests/test_latex_ir_metadata_validation.py
 
       - name: Run LaTeX escaping diagnostic
-        run: python scripts/latex_escape_audit.py
+        run: python -m scripts.latex_escape_audit
