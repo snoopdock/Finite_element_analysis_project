@@ -11,31 +11,32 @@ from utils.latex import escape_latex
 
 
 def build_latex_document(state, sections, evidence):
-    topic = state.get("topic", "Finite Element Method Guideline")
-    objective = state.get("objective", "")
+    # Build the semantic document once. References, citations, and section bodies
+    # must all derive from this normalized representation.
+    document = build_document_model(state, sections, evidence)
+    topic = document.topic
+    objective = document.objective
     graph = state.get("knowledge_graph", {})
 
-    # Build a clean, numbered bibliography
+    # Build the bibliography from the normalized reference records so citation
+    # keys and reference metadata have a single source of truth.
     refs = []
-    for i, source in enumerate(evidence[:25]):
-        title = escape_latex(source.get("title", "Unknown Title"))
-        stype = source.get("retriever_module", "misc").replace("research.", "").title()
-        url = source.get("url", "")
-        url = url.replace("%", r"\%").replace("&", r"\&").replace("#", r"\#")
+    for reference in document.references:
+        title = escape_latex(reference.title)
+        stype = escape_latex(reference.source_type.replace("research.", "").title())
+        url = reference.url.replace("%", r"\%").replace("&", r"\&").replace("#", r"\#")
         refs.append(
-            f"  \\bibitem{{ref{i + 1}}} \\textit{{{title}}}. [{stype}] Available at: \\url{{{url}}}"
+            f"  \\bibitem{{{reference.citation_key}}} \\textit{{{title}}}. [{stype}] Available at: \\url{{{url}}}"
         )
 
     refs_text = "\n".join(refs) if refs else "  \\bibitem{none} No sources retrieved."
 
-    # Build the Provenance Appendix
+    # Build the Provenance Appendix from the same normalized references.
     provenance_rows = []
-    for i, source in enumerate(evidence[:25]):
-        sid = escape_latex(source.get("source_id", "unknown"))
-        title = escape_latex(source.get("title", "Unknown"))
-        retrieved = source.get("retrieved_at", "N/A")
-        url = source.get("url", "").replace("%", r"\%").replace("&", r"\&").replace("#", r"\#")
-        stype = source.get("retriever_module", "misc").replace("research.", "").title()
+    for index, reference in enumerate(document.references):
+        sid = escape_latex(reference.source_id)
+        title = escape_latex(reference.title)
+        retrieved = reference.retrieved_at
         if retrieved != "N/A":
             try:
                 dt = datetime.fromisoformat(retrieved.replace("Z", "+00:00"))
@@ -43,13 +44,11 @@ def build_latex_document(state, sections, evidence):
             except Exception:
                 pass
         provenance_rows.append(
-            f"  {i+1} & \\texttt{{{sid}}} & {title[:60]} & {stype} & {retrieved} \\\\"
+            f"  {index + 1} & \\texttt{{{sid}}} & {title[:60]} & {escape_latex(reference.source_type.replace('research.', '').title())} & {escape_latex(retrieved)} \\\\"
         )
 
     provenance_table = "\n".join(provenance_rows) if provenance_rows else "No sources."
 
-    # Section bodies now cross the explicit semantic document-model boundary.
-    document = build_document_model(state, sections, evidence)
     body = render_body(document)
 
     graph_map = render_concept_graph(graph, max_nodes=40)
