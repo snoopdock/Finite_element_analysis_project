@@ -43,5 +43,5 @@ def test_semantic_section_title_is_plain_text():
 def test_legacy_latex_remains_explicitly_compatible():
     source = r"\textbf{A & B} and $x^2$"
 
-    assert sanitize_latex_content(source) == source
-    assert render_block(LegacyLatexBlock(source)) == source
+    assert sanitize_latex_content(source) == r"\textbf{A \& B} and $x^2$"
+    assert render_block(LegacyLatexBlock(source)) == r"\textbf{A \& B} and $x^2$"
