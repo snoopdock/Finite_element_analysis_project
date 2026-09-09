@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LaTeX utilities for math fixing and text escaping."""
+"""LaTeX utilities for math fixing and context-specific text escaping."""
 
 import re
 from typing import Optional
@@ -42,12 +42,12 @@ def fix_latex_math(text: str) -> str:
 
 
 def escape_text(text: str) -> str:
-    """Escape plain text without interpreting it as pre-authored LaTeX."""
+    """Escape plain semantic text without interpreting it as LaTeX."""
     if not text:
         return ""
     replacements = {
         '\\': r'\textbackslash{}',
-        '#': r'\#', '%': r'\%', '&': r'\&',
+        '#': r'\#', '%': r'\%', '&': r'\&', '$': r'\$',
         '_': r'\_', '{': r'\{', '}': r'\}',
         '~': r'\textasciitilde{}', '^': r'\textasciicircum{}',
     }
@@ -58,7 +58,10 @@ def escape_latex(text: str) -> str:
     """Escape simple LaTeX text while preserving existing commands."""
     if not text:
         return ""
-    chars = {'#': r'\#', '%': r'\%', '&': r'\&', '~': r'\textasciitilde{}', '^': r'\textasciicircum{}'}
+    chars = {
+        '#': r'\#', '%': r'\%', '&': r'\&', '$': r'\$', '_': r'\_',
+        '~': r'\textasciitilde{}', '^': r'\textasciicircum{}',
+    }
     for char, escaped in chars.items():
         text = text.replace(char, escaped)
     return text
