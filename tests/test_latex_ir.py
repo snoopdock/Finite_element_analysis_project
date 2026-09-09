@@ -80,7 +80,7 @@ def test_renderer_escapes_text_but_preserves_math_structure():
 
 def test_document_model_limits_references_to_renderer_contract():
     document = build_document_model(
-        {},
+        {"topic": "Test", "objective": "Objective"},
         [],
         [
             {"source_id": "one", "title": "One"},
@@ -93,7 +93,7 @@ def test_document_model_limits_references_to_renderer_contract():
 
 def test_citation_blocks_resolve_against_explicit_reference_keys():
     document = build_document_model(
-        {},
+        {"topic": "Test", "objective": "Objective"},
         [
             {
                 "title": "Evidence",
@@ -120,7 +120,7 @@ def test_citation_blocks_resolve_against_explicit_reference_keys():
 def test_unknown_citation_source_ids_fail_before_rendering():
     with pytest.raises(DocumentModelError, match="unknown source_id"):
         build_document_model(
-            {},
+            {"topic": "Test", "objective": "Objective"},
             [
                 {
                     "title": "Evidence",
@@ -135,7 +135,11 @@ def test_unknown_citation_source_ids_fail_before_rendering():
 
 def test_empty_reference_source_ids_fail_at_the_boundary():
     with pytest.raises(DocumentModelError, match="source_id must not be empty"):
-        build_document_model({}, [], [{"source_id": "", "title": "Untitled"}])
+        build_document_model(
+            {"topic": "Test", "objective": "Objective"},
+            [],
+            [{"source_id": "", "title": "Untitled"}],
+        )
 
 
 def test_direct_document_models_can_be_validated_before_rendering():
@@ -157,7 +161,7 @@ def test_direct_document_models_can_be_validated_before_rendering():
 def test_duplicate_reference_source_ids_fail_at_the_boundary():
     with pytest.raises(DocumentModelError, match="duplicate source_id"):
         build_document_model(
-            {},
+            {"topic": "Test", "objective": "Objective"},
             [],
             [
                 {"source_id": "same", "title": "First"},
@@ -189,10 +193,10 @@ def test_section_rendering_preserves_block_order_and_citation_mapping():
 
     rendered = render_section(section, {"source": "ref7"})
 
-    assert rendered.index("First claim") < rendered.index(r"\\cite{ref7}")
-    assert rendered.index(r"\\cite{ref7}") < rendered.index(r"\\[u = K^{-1}f\\]")
-    assert rendered.index(r"\\[u = K^{-1}f\\]") < rendered.index("Final claim")
-    assert rendered.startswith(r"\\section{Evidence \& Results}")
+    assert rendered.index("First claim") < rendered.index(r"\cite{ref7}")
+    assert rendered.index(r"\cite{ref7}") < rendered.index(r"\[u = K^{-1}f\]")
+    assert rendered.index(r"\[u = K^{-1}f\]") < rendered.index("Final claim")
+    assert rendered.startswith(r"\section{Evidence \& Results}")
 
 
 def test_empty_sections_are_omitted_from_rendered_output():
