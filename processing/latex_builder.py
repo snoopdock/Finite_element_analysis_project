@@ -7,7 +7,7 @@ from processing.latex_graph import render_concept_graph, render_perspective_tabl
 from processing.latex_ir import build_document_model
 from processing.latex_references import format_bibliography, format_provenance_table
 from processing.latex_renderer import render_body
-from utils.latex import escape_latex
+from utils.latex import escape_text
 
 
 def build_latex_document(state, sections, evidence):
@@ -87,7 +87,7 @@ def build_latex_document(state, sections, evidence):
         "",
         r"\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}",
         "",
-        r"\title{\textbf{" + escape_latex(topic) + r"}}",
+        r"\title{\textbf{" + escape_text(topic) + r"}}",
         r"\author{Automated Scientific Pipeline}",
         r"\date{\today}",
         "",
@@ -98,7 +98,7 @@ def build_latex_document(state, sections, evidence):
         r"\newpage",
         "",
         r"\section{Objective}",
-        escape_latex(objective),
+        escape_text(objective),
         "",
     ]
 
