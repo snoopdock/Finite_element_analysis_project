@@ -32,6 +32,7 @@ jobs:
           tests/test_latex_builder.py
           tests/test_latex_references.py
           tests/test_latex_ir_metadata_validation.py
+          tests/test_latex_escaping.py
 
       - name: Run LaTeX escaping diagnostic
         run: python -m scripts.latex_escape_audit
