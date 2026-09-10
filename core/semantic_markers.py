@@ -96,6 +96,9 @@ def parse_authoring_text(text: str) -> List[AuthoringSegment]:
 
 def _reject_unparsed_markers(text: str, parsed: List[AuthoringSegment]) -> None:
     """Reject any bracketed marker-like syntax not consumed by the parser."""
+    if "[[" in text and not _ANY_MARKER_RE.search(text):
+        raise SemanticMarkerError("Unterminated semantic marker detected.")
+
     recognized_spans = []
     cursor = 0
     for segment in parsed:
@@ -128,9 +131,6 @@ def _reject_unparsed_markers(text: str, parsed: List[AuthoringSegment]) -> None:
         raise SemanticMarkerError(
             f"Unknown or malformed semantic marker: {marker_type!r}."
         )
-
-    if "[[" in text and not _ANY_MARKER_RE.search(text):
-        raise SemanticMarkerError("Unterminated semantic marker detected.")
 
 
 def _coalesce_text_segments(
