@@ -90,13 +90,13 @@ def scan_authoring_text(text: str) -> List[AuthoringRegion]:
 
 
 def _find_inline_dollar(text: str, start: int) -> int:
-    """Find an unescaped single-dollar closing delimiter."""
+    """Find the first unescaped dollar closing an inline math region."""
     cursor = start
     while cursor < len(text):
         if text[cursor] == "\\" and cursor + 1 < len(text) and text[cursor + 1] == "$":
             cursor += 2
             continue
-        if text[cursor] == "$" and not text.startswith("$$", cursor):
+        if text[cursor] == "$":
             return cursor
         cursor += 1
     return -1
