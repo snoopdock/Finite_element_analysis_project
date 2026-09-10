@@ -111,6 +111,14 @@ def _reject_unparsed_markers(text: str, parsed: List[AuthoringSegment]) -> None:
             recognized_spans.append((start, start + len(marker_text)))
             cursor = start + len(marker_text)
 
+    recognized_starts = {start for start, _ in recognized_spans}
+    for marker_start in (match.start() for match in re.finditer(r"\[\[", text)):
+        if marker_start not in recognized_starts:
+            raise SemanticMarkerError(
+                "Unknown or malformed semantic marker near position "
+                f"{marker_start}."
+            )
+
     for match in _ANY_MARKER_RE.finditer(text):
         span = (match.start(), match.end())
         if any(span == known for known in recognized_spans):
