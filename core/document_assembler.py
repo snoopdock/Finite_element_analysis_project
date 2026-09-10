@@ -37,6 +37,81 @@ def _stable_occurrence_id(
     return str(uuid.uuid5(_OCCURRENCE_NAMESPACE, key))
 
 
+def _validate_marker_references(
+    segments: List[object],
+    *,
+    equation_ids: Set[str],
+    source_ids: Set[str],
+    target_ids: Set[str],
+    proposal_ids: Set[str],
+) -> None:
+    """Validate semantic marker identifiers against authoritative registries."""
+    for segment in segments:
+        if isinstance(segment, TextSegment):
+            continue
+        if not isinstance(segment, SemanticMarker):
+            raise DocumentAssemblyError(
+                f"Unsupported authoring segment: {type(segment).__name__}."
+            )
+
+        marker_type = segment.marker_type
+        identifier = segment.identifier
+
+        if marker_type == "CITE":
+            if identifier not in source_ids:
+                raise DocumentAssemblyError(
+                    f"Unknown citation source_id: {identifier}."
+                )
+        elif marker_type == "REF":
+            if identifier not in target_ids:
+                raise DocumentAssemblyError(
+                    f"Unknown cross-reference target_id: {identifier}."
+                )
+        elif marker_type == "EQ":
+            if identifier not in equation_ids:
+                raise DocumentAssemblyError(
+                    f"Unknown equation_id: {identifier}."
+                )
+        elif marker_type == "NEW_EQ":
+            if identifier not in proposal_ids:
+                raise DocumentAssemblyError(
+                    f"Unknown equation proposal_id: {identifier}."
+                )
+        else:
+            raise DocumentAssemblyError(
+                f"Unsupported semantic marker type: {marker_type}."
+            )
+
+
+def validate_authoring_text(
+    authoring_text: str,
+    *,
+    equation_ids: Set[str],
+    source_ids: Set[str],
+    target_ids: Set[str],
+    proposal_ids: Optional[Set[str]] = None,
+) -> None:
+    """Validate authoring syntax and referenced semantic identifiers.
+
+    Validation performs no semantic-object construction and assigns no
+    document-location occurrence identifiers. It raises ``DocumentAssemblyError``
+    when a parsed marker references an identifier outside the supplied registries.
+    """
+    equation_ids = set(equation_ids or set())
+    source_ids = set(source_ids or set())
+    target_ids = set(target_ids or set())
+    proposal_ids = set(proposal_ids or set())
+
+    segments = parse_authoring_text(authoring_text)
+    _validate_marker_references(
+        segments,
+        equation_ids=equation_ids,
+        source_ids=source_ids,
+        target_ids=target_ids,
+        proposal_ids=proposal_ids,
+    )
+
+
 def assemble_section(
     *,
     section_id: str,
@@ -69,6 +144,14 @@ def assemble_section(
     proposal_ids = set(proposal_ids or set())
 
     segments = parse_authoring_text(authoring_text)
+    _validate_marker_references(
+        segments,
+        equation_ids=equation_ids,
+        source_ids=source_ids,
+        target_ids=target_ids,
+        proposal_ids=proposal_ids,
+    )
+
     children = []
     inline_nodes = []
 
@@ -98,10 +181,6 @@ def assemble_section(
         )
 
         if marker_type == "CITE":
-            if identifier not in source_ids:
-                raise DocumentAssemblyError(
-                    f"Unknown citation source_id: {identifier}."
-                )
             inline_nodes.append(
                 CitationOccurrence(
                     source_id=identifier,
@@ -110,10 +189,6 @@ def assemble_section(
             )
 
         elif marker_type == "REF":
-            if identifier not in target_ids:
-                raise DocumentAssemblyError(
-                    f"Unknown cross-reference target_id: {identifier}."
-                )
             inline_nodes.append(
                 CrossReferenceOccurrence(
                     target_id=identifier,
@@ -123,10 +198,6 @@ def assemble_section(
 
         elif marker_type == "EQ":
             flush_paragraph()
-            if identifier not in equation_ids:
-                raise DocumentAssemblyError(
-                    f"Unknown equation_id: {identifier}."
-                )
             children.append(
                 EquationOccurrence(
                     equation_id=identifier,
@@ -136,10 +207,6 @@ def assemble_section(
 
         elif marker_type == "NEW_EQ":
             flush_paragraph()
-            if identifier not in proposal_ids:
-                raise DocumentAssemblyError(
-                    f"Unknown equation proposal_id: {identifier}."
-                )
             children.append(
                 EquationProposalReference(
                     proposal_id=identifier,
