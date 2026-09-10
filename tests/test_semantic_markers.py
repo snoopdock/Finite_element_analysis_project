@@ -58,6 +58,11 @@ def test_unterminated_marker_is_rejected():
         parse_authoring_text("Use [[EQ:eq-1 here.")
 
 
+def test_nested_marker_start_is_rejected_instead_of_becoming_text():
+    with pytest.raises(SemanticMarkerError, match="Unknown or malformed semantic marker"):
+        parse_authoring_text("Use [[BAD:prefix [[CITE:source-1]] here.")
+
+
 def test_non_string_authoring_output_is_rejected():
     with pytest.raises(SemanticMarkerError, match="must be a string"):
         parse_authoring_text(None)
