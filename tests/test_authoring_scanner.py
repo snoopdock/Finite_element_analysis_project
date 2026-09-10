@@ -53,7 +53,7 @@ def test_legacy_square_bracket_citation_is_not_scanner_syntax():
     assert scan_authoring_text(text) == [TextRegion(text)]
 
 
-def test_scanner_preserves_adjacent_math_regions_without_normalization():
+def test_adjacent_inline_math_regions_are_distinct():
     assert scan_authoring_text("$x$$y$") == [
         MathRegion("$x$", "$"),
         MathRegion("$y$", "$"),
@@ -67,6 +67,11 @@ def test_scanner_does_not_normalize_math_contents():
         MathRegion(r"$  x  +  y  $", "$"),
         TextRegion(" after"),
     ]
+
+
+def test_escaped_dollar_inside_math_does_not_close_region():
+    text = r"$price = \$10$"
+    assert scan_authoring_text(text) == [MathRegion(text, "$")]
 
 
 def test_non_string_input_is_rejected():
