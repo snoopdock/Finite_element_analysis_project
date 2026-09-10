@@ -1,6 +1,10 @@
 import pytest
 
-from core.document_assembler import DocumentAssemblyError, assemble_section
+from core.document_assembler import (
+    DocumentAssemblyError,
+    assemble_section,
+    validate_authoring_text,
+)
 from core.document_model import (
     CitationOccurrence,
     EquationOccurrence,
@@ -117,4 +121,85 @@ def test_new_equation_proposal_requires_registered_proposal():
             source_ids=set(),
             target_ids=set(),
             proposal_ids=set(),
+        )
+
+
+def test_validate_authoring_text_accepts_registered_citation_without_assembly():
+    authoring_text = "Supported [[CITE:source-1]]."
+
+    assert validate_authoring_text(
+        authoring_text,
+        equation_ids=set(),
+        source_ids={"source-1"},
+        target_ids=set(),
+    ) is None
+    assert authoring_text == "Supported [[CITE:source-1]]."
+
+
+def test_validate_authoring_text_rejects_unknown_citation_without_substitution():
+    authoring_text = "Supported [[CITE:not-authorized]]."
+
+    with pytest.raises(DocumentAssemblyError, match="Unknown citation source_id"):
+        validate_authoring_text(
+            authoring_text,
+            equation_ids=set(),
+            source_ids={"source-1"},
+            target_ids=set(),
+        )
+
+    assert authoring_text == "Supported [[CITE:not-authorized]]."
+
+
+@pytest.mark.parametrize(
+    ("authoring_text", "registry_kwargs", "error_match"),
+    [
+        (
+            "See [[REF:target-missing]].",
+            {"target_ids": {"target-known"}},
+            "Unknown cross-reference target_id",
+        ),
+        (
+            "Use [[EQ:eq-missing]].",
+            {"equation_ids": {"eq-known"}},
+            "Unknown equation_id",
+        ),
+        (
+            "Consider [[NEW_EQ:proposal-missing]].",
+            {"proposal_ids": {"proposal-known"}},
+            "Unknown equation proposal_id",
+        ),
+    ],
+)
+def test_validate_authoring_text_rejects_unknown_registered_marker_types(
+    authoring_text, registry_kwargs, error_match
+):
+    kwargs = {
+        "equation_ids": set(),
+        "source_ids": set(),
+        "target_ids": set(),
+        "proposal_ids": set(),
+    }
+    kwargs.update(registry_kwargs)
+
+    with pytest.raises(DocumentAssemblyError, match=error_match):
+        validate_authoring_text(authoring_text, **kwargs)
+
+
+def test_validate_authoring_text_accepts_all_registered_marker_types():
+    validate_authoring_text(
+        "[[CITE:source-1]] [[REF:target-1]] [[EQ:eq-1]] [[NEW_EQ:proposal-1]]",
+        equation_ids={"eq-1"},
+        source_ids={"source-1"},
+        target_ids={"target-1"},
+        proposal_ids={"proposal-1"},
+    )
+
+
+def test_validate_authoring_text_propagates_syntax_errors():
+    with pytest.raises(DocumentAssemblyError):
+        validate_authoring_text(
+            "Broken [[CITE:source-1",
+            equation_ids=set(),
+            source_ids={"source-1"},
+            target_ids=set(),
         )
