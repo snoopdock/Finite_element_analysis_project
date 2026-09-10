@@ -12,6 +12,7 @@ from core.document_model import (
     Paragraph,
     Text,
 )
+from core.semantic_markers import SemanticMarkerError
 
 
 SECTION_ID = "550e8400-e29b-41d4-a716-446655440000"
@@ -196,7 +197,7 @@ def test_validate_authoring_text_accepts_all_registered_marker_types():
 
 
 def test_validate_authoring_text_propagates_syntax_errors():
-    with pytest.raises(DocumentAssemblyError):
+    with pytest.raises(SemanticMarkerError):
         validate_authoring_text(
             "Broken [[CITE:source-1",
             equation_ids=set(),
