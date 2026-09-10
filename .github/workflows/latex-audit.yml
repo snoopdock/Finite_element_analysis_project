@@ -33,6 +33,9 @@ jobs:
           tests/test_latex_references.py
           tests/test_latex_ir_metadata_validation.py
           tests/test_latex_escaping.py
+          tests/test_authoring_scanner.py
+          tests/test_semantic_markers.py
+          tests/test_document_assembler.py
 
       - name: Run LaTeX escaping diagnostic
         run: python -m scripts.latex_escape_audit
