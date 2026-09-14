@@ -129,21 +129,24 @@ jobs:
 
 
 
-        graph.add_edge(
+        
+          graph.add_edge(
 
             SemanticEdge(
+        
+                  source_id="module.main",
+          
+                  target_id="module.research",
+          
+                  relation_type="IMPORTS",
+          
+                  attributes={}
+          
+              )
+          
+          )
 
-                source="module.main",
-
-                target="module.research",
-
-                relation="IMPORTS",
-
-                attributes={}
-
-            )
-
-        )
+     
 
 
 
