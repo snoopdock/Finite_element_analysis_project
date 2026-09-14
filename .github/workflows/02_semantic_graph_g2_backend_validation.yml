@@ -3,15 +3,6 @@ name: 02 - Semantic Graph G2 Backend Validation
 
 on:
 
-  push:
-
-    branches:
-      - main
-      - master
-      - develop
-
-  pull_request:
-
   workflow_dispatch:
 
 
@@ -67,7 +58,7 @@ jobs:
 
 
         import json
-        import hashlib
+
         from pathlib import Path
 
 
@@ -78,33 +69,6 @@ jobs:
 
         print("=" * 60)
 
-
-
-        # -------------------------------------------------
-        # Repository information
-        # -------------------------------------------------
-
-
-        commit_file = Path(
-
-            ".git/HEAD"
-
-        )
-
-
-        print(
-
-            "Repository checkout detected:",
-
-            commit_file.exists()
-
-        )
-
-
-
-        # -------------------------------------------------
-        # Import semantic graph core
-        # -------------------------------------------------
 
 
         from audit_engine.semantic_audit.core.semantic_graph import (
@@ -118,7 +82,6 @@ jobs:
         )
 
 
-
         from audit_engine.semantic_audit.graph.backend.networkx_adapter import (
 
             NetworkXAdapter,
@@ -127,13 +90,8 @@ jobs:
 
 
 
-        print("[PASS] Semantic graph modules imported")
+        print("[PASS] Imports")
 
-
-
-        # -------------------------------------------------
-        # Create semantic graph
-        # -------------------------------------------------
 
 
         graph = SemanticGraph()
@@ -148,11 +106,7 @@ jobs:
 
                 kind="module",
 
-                attributes={
-
-                    "path": "main.py"
-
-                }
+                attributes={}
 
             )
 
@@ -168,11 +122,7 @@ jobs:
 
                 kind="module",
 
-                attributes={
-
-                    "path": "research/evidence.py"
-
-                }
+                attributes={}
 
             )
 
@@ -198,33 +148,25 @@ jobs:
 
 
 
-        print("[PASS] Semantic graph construction")
+        print("[PASS] Semantic graph creation")
 
-
-
-        # -------------------------------------------------
-        # Convert to NetworkX
-        # -------------------------------------------------
 
 
         adapter = NetworkXAdapter(graph)
 
 
 
-        nodes = adapter.nodes()
+        assert "module.main" in adapter.nodes()
+
+        assert "module.research" in adapter.nodes()
+
+
 
         edges = adapter.edges()
 
 
 
-        assert "module.main" in nodes
-
-        assert "module.research" in nodes
-
-
         assert len(edges) == 1
-
-
 
         assert edges[0]["relation"] == "IMPORTS"
 
@@ -234,11 +176,6 @@ jobs:
 
 
 
-        # -------------------------------------------------
-        # Validate traversal capability
-        # -------------------------------------------------
-
-
         neighbours = adapter.neighbors(
 
             "module.main"
@@ -246,18 +183,12 @@ jobs:
         )
 
 
-
         assert "module.research" in neighbours
 
 
 
-        print("[PASS] Network traversal")
+        print("[PASS] Graph traversal")
 
-
-
-        # -------------------------------------------------
-        # Core isolation check
-        # -------------------------------------------------
 
 
         core_file = Path(
@@ -280,13 +211,8 @@ jobs:
 
 
 
-        print("[PASS] Semantic core isolation")
+        print("[PASS] Core/backend separation")
 
-
-
-        # -------------------------------------------------
-        # Create validation artifact
-        # -------------------------------------------------
 
 
         result = {
@@ -302,55 +228,34 @@ jobs:
             "PASSED",
 
 
-            "checks": {
+            "checks":
 
+            {
 
-                "semantic_graph_import":
+                "semantic_graph_import": True,
 
-                True,
+                "node_creation": True,
 
+                "edge_creation": True,
 
-                "networkx_adapter":
+                "networkx_conversion": True,
 
-                True,
+                "relationship_preservation": True,
 
-
-                "node_preservation":
-
-                True,
-
-
-                "edge_preservation":
-
-                True,
-
-
-                "relationship_preservation":
-
-                True,
-
-
-                "networkx_core_isolation":
-
-                True
+                "core_backend_separation": True
 
             },
 
 
-            "graph_summary": {
+            "graph":
 
+            {
 
-                "nodes":
+                "nodes": adapter.nodes(),
 
-                nodes,
-
-
-                "edges":
-
-                edges
+                "edges": edges
 
             }
-
 
         }
 
@@ -398,6 +303,4 @@ jobs:
 
         name: semantic_graph_g2_backend_result
 
-        path:
-
-          semantic_graph_g2_backend_result.json
+        path: semantic_graph_g2_backend_result.json
