@@ -41,28 +41,43 @@ class NetworkXAdapter:
 
 
     def _load_graph(self) -> None:
-        """
-        Convert SemanticGraph into NetworkX representation.
-        """
+    """
+    Convert universal SemanticGraph into NetworkX representation.
 
-        for node in self.semantic_graph.nodes.values():
+    NetworkX is only a computational backend.
+    The semantic graph remains authoritative.
+    """
 
-            self._graph.add_node(
-                node.id,
-                kind=node.kind,
-                **node.attributes
-            )
+    for node in self.semantic_graph.nodes:
+
+        self._graph.add_node(
+
+            node.node_id,
+
+            entity_type=node.entity_type,
+
+            metadata=node.metadata,
+
+            **node.attributes
+
+        )
 
 
-        for edge in self.semantic_graph.edges:
+    for edge in self.semantic_graph.edges:
 
-            self._graph.add_edge(
-                edge.source,
-                edge.target,
-                relation=edge.relation,
-                **edge.attributes
-            )
+        self._graph.add_edge(
 
+            edge.source_id,
+
+            edge.target_id,
+
+            relation=edge.relation_type,
+
+            metadata=edge.metadata,
+
+            **edge.attributes
+
+        )
 
     def nodes(self) -> List[str]:
         """
