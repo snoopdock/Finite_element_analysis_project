@@ -1,4 +1,4 @@
-name: 03_semantic_graph_architecture_audit
+name: 03 - Semantic Graph Architecture Audit
 on:
   push:
     branches:
