@@ -105,14 +105,11 @@ jobs:
 
         graph.add_node(
 
+            
             SemanticNode(
-
-                id="module.main",
-
-                kind="module",
-
+                node_id="module.main",
+                entity_type="SoftwareModule",
                 attributes={}
-
             )
 
         )
@@ -121,14 +118,11 @@ jobs:
 
         graph.add_node(
 
+            
             SemanticNode(
-
-                id="module.research",
-
-                kind="module",
-
+                node_id="module.research",
+                entity_type="SoftwareModule",
                 attributes={}
-
             )
 
         )
