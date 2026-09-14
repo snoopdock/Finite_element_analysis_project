@@ -1,0 +1,509 @@
+name: Semantic Graph Implementation Inspection
+
+
+on:
+
+  push:
+
+    branches:
+
+      - main
+      - master
+      - develop
+
+  pull_request:
+
+  workflow_dispatch:
+
+
+
+jobs:
+
+
+  semantic-graph-inspection:
+
+
+    name: Inspect Semantic Graph Implementation
+
+
+    runs-on: ubuntu-latest
+
+
+
+    steps:
+
+
+    - name: Checkout repository
+
+      uses: actions/checkout@v4
+
+
+
+    - name: Setup Python
+
+      uses: actions/setup-python@v5
+
+      with:
+
+        python-version: "3.11"
+
+
+
+    - name: Install dependencies
+
+      run: |
+
+        python -m pip install --upgrade pip
+
+        pip install networkx
+
+
+
+    - name: Create inspection directory
+
+      run: |
+
+        mkdir -p inspection_results
+
+
+
+    - name: Inspect semantic graph implementation
+
+      run: |
+
+
+        python <<'PY'
+
+
+        import os
+        import json
+        import inspect
+        import importlib
+        from pathlib import Path
+
+
+
+        result = {
+
+
+            "inspection": "Semantic Graph Implementation Inspection",
+
+            "status": "started",
+
+            "files": {},
+
+            "schemas": {},
+
+            "dependencies": {},
+
+            "runtime_tests": {},
+
+            "warnings": []
+
+        }
+
+
+
+        # -------------------------------------------------
+        # File existence inspection
+        # -------------------------------------------------
+
+
+        expected_files = {
+
+
+            "semantic_graph_core":
+
+            "audit_engine/semantic_audit/core/semantic_graph.py",
+
+
+            "builder":
+
+            "audit_engine/semantic_audit/graph/builder.py",
+
+
+            "serializer":
+
+            "audit_engine/semantic_audit/graph/serializer.py",
+
+
+            "networkx_adapter":
+
+            "audit_engine/semantic_audit/graph/backend/networkx_adapter.py"
+
+        }
+
+
+
+        for name,path in expected_files.items():
+
+            result["files"][name] = {
+
+
+                "path": path,
+
+                "exists": Path(path).exists()
+
+            }
+
+
+
+        # -------------------------------------------------
+        # Import inspection
+        # -------------------------------------------------
+
+
+        try:
+
+
+            module = importlib.import_module(
+
+                "audit_engine.semantic_audit.core.semantic_graph"
+
+            )
+
+
+            result["runtime_tests"]["semantic_graph_import"] = "PASS"
+
+
+
+            objects = {
+
+
+                "SemanticNode":
+
+                getattr(module,"SemanticNode",None),
+
+
+                "SemanticEdge":
+
+                getattr(module,"SemanticEdge",None),
+
+
+                "SemanticGraph":
+
+                getattr(module,"SemanticGraph",None)
+
+            }
+
+
+
+            for name,obj in objects.items():
+
+
+                if obj:
+
+
+                    result["schemas"][name] = {
+
+
+                        "exists": True,
+
+                        "signature":
+
+                        str(inspect.signature(obj))
+
+                    }
+
+
+                else:
+
+
+                    result["schemas"][name] = {
+
+
+                        "exists": False
+
+                    }
+
+
+
+        except Exception as e:
+
+
+            result["runtime_tests"]["semantic_graph_import"] = (
+
+                "FAILED: " + str(e)
+
+            )
+
+
+
+        # -------------------------------------------------
+        # Class attribute inspection
+        # -------------------------------------------------
+
+
+        try:
+
+
+            from audit_engine.semantic_audit.core.semantic_graph import (
+
+                SemanticNode,
+
+                SemanticEdge,
+
+                SemanticGraph
+
+            )
+
+
+
+            sample_node = SemanticNode(
+
+                id="inspection.node",
+
+                kind="module",
+
+                attributes={}
+
+            )
+
+
+
+            sample_edge = SemanticEdge(
+
+                source="inspection.node",
+
+                target="inspection.target",
+
+                relation="TEST",
+
+                attributes={}
+
+            )
+
+
+
+            graph = SemanticGraph()
+
+
+
+            graph.add_node(sample_node)
+
+            graph.add_edge(sample_edge)
+
+
+
+            result["schemas"]["sample_node"] = {
+
+                "fields":
+
+                list(vars(sample_node).keys())
+
+            }
+
+
+
+            result["schemas"]["sample_edge"] = {
+
+                "fields":
+
+                list(vars(sample_edge).keys())
+
+            }
+
+
+
+            result["schemas"]["sample_graph"] = {
+
+                "fields":
+
+                list(vars(graph).keys())
+
+            }
+
+
+
+            result["runtime_tests"]["graph_creation"] = "PASS"
+
+
+
+        except Exception as e:
+
+
+            result["runtime_tests"]["graph_creation"] = (
+
+                "FAILED: " + str(e)
+
+            )
+
+
+
+        # -------------------------------------------------
+        # Serializer inspection
+        # -------------------------------------------------
+
+
+        try:
+
+
+            serializer_path = Path(
+
+                "audit_engine/semantic_audit/graph/serializer.py"
+
+            )
+
+
+
+            if serializer_path.exists():
+
+
+                text = serializer_path.read_text(
+
+                    encoding="utf-8"
+
+                )
+
+
+                result["schemas"]["serializer_keywords"] = {
+
+
+                    "json":
+
+                    "json" in text,
+
+
+                    "nodes":
+
+                    "nodes" in text,
+
+
+                    "edges":
+
+                    "edges" in text
+
+                }
+
+
+
+        except Exception as e:
+
+
+            result["warnings"].append(
+
+                "Serializer inspection failed: " + str(e)
+
+            )
+
+
+
+        # -------------------------------------------------
+        # NetworkX dependency boundary
+        # -------------------------------------------------
+
+
+        core_path = Path(
+
+            "audit_engine/semantic_audit/core/semantic_graph.py"
+
+        )
+
+
+        if core_path.exists():
+
+
+            text = core_path.read_text(
+
+                encoding="utf-8"
+
+            ).lower()
+
+
+
+            result["dependencies"]["core_uses_networkx"] = (
+
+                "networkx" in text
+
+            )
+
+
+
+        adapter_path = Path(
+
+            "audit_engine/semantic_audit/graph/backend/networkx_adapter.py"
+
+        )
+
+
+        if adapter_path.exists():
+
+
+            text = adapter_path.read_text(
+
+                encoding="utf-8"
+
+            ).lower()
+
+
+
+            result["dependencies"]["adapter_uses_networkx"] = (
+
+                "networkx" in text
+
+            )
+
+
+
+        # -------------------------------------------------
+        # Final status
+        # -------------------------------------------------
+
+
+        result["status"] = "COMPLETED"
+
+
+
+        with open(
+
+            "inspection_results/semantic_graph_implementation_inspection.json",
+
+            "w",
+
+            encoding="utf-8"
+
+        ) as f:
+
+
+            json.dump(
+
+                result,
+
+                f,
+
+                indent=4
+
+            )
+
+
+
+        print(
+
+            json.dumps(
+
+                result,
+
+                indent=4
+
+            )
+
+        )
+
+
+        PY
+
+
+
+    - name: Upload inspection artifact
+
+      uses: actions/upload-artifact@v4
+
+      with:
+
+
+        name: semantic-graph-implementation-inspection
+
+
+        path:
+
+          inspection_results/semantic_graph_implementation_inspection.json
