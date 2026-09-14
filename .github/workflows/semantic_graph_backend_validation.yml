@@ -1,0 +1,159 @@
+name: Semantic Graph Backend Validation
+
+
+on:
+
+  push:
+
+    branches:
+      - main
+      - master
+      - develop
+
+  pull_request:
+
+  workflow_dispatch:
+
+
+
+jobs:
+
+  validate-networkx-backend:
+
+
+    name: Validate NetworkX Semantic Graph Backend
+
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+
+    - name: Checkout repository
+
+      uses: actions/checkout@v4
+
+
+
+    - name: Setup Python
+
+      uses: actions/setup-python@v5
+
+      with:
+
+        python-version: "3.11"
+
+
+
+    - name: Install dependencies
+
+      run: |
+
+        python -m pip install --upgrade pip
+
+        pip install networkx
+
+
+
+    - name: Validate backend adapter
+
+      run: |
+
+
+        python <<'PY'
+
+
+        from audit_engine.semantic_audit.core.semantic_graph import (
+            SemanticGraph,
+            SemanticNode,
+            SemanticEdge,
+        )
+
+
+        from audit_engine.semantic_audit.graph.backend.networkx_adapter import (
+            NetworkXAdapter,
+        )
+
+
+
+        graph = SemanticGraph()
+
+
+
+        graph.add_node(
+
+            SemanticNode(
+
+                id="module.main",
+
+                kind="module",
+
+                attributes={}
+
+            )
+
+        )
+
+
+
+        graph.add_node(
+
+            SemanticNode(
+
+                id="module.research",
+
+                kind="module",
+
+                attributes={}
+
+            )
+
+        )
+
+
+
+        graph.add_edge(
+
+            SemanticEdge(
+
+                source="module.main",
+
+                target="module.research",
+
+                relation="IMPORTS",
+
+                attributes={}
+
+            )
+
+        )
+
+
+
+        adapter = NetworkXAdapter(graph)
+
+
+
+        assert "module.main" in adapter.nodes()
+
+        assert "module.research" in adapter.nodes()
+
+
+        assert len(adapter.edges()) == 1
+
+
+
+        edge = adapter.edges()[0]
+
+
+        assert edge["relation"] == "IMPORTS"
+
+
+
+        print(
+            "Semantic Graph NetworkX backend validation passed."
+        )
+
+
+        PY
