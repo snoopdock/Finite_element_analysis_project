@@ -1,0 +1,383 @@
+name: Semantic Graph Architecture Audit
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+
+  pull_request:
+
+  workflow_dispatch:
+
+
+jobs:
+
+  semantic-graph-audit:
+
+    name: Audit Semantic Graph Architecture
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+
+    - name: Install audit dependencies
+      run: |
+        python -m pip install --upgrade pip
+
+
+    - name: Create audit directory
+      run: |
+        mkdir -p audit_results
+
+
+    - name: Run Semantic Graph Architecture Audit
+      run: |
+
+        python <<'PY'
+
+        import os
+        import json
+        from pathlib import Path
+
+
+        ROOT = Path(".")
+
+
+        result = {
+
+            "audit": "Semantic Graph Architecture Audit",
+
+            "status": "started",
+
+            "checks": {},
+
+            "warnings": [],
+
+            "errors": []
+
+        }
+
+
+
+        def exists(path):
+
+            return Path(path).exists()
+
+
+
+        # --------------------------------------------------
+        # G1 Core Components
+        # --------------------------------------------------
+
+        g1_files = {
+
+
+            "semantic_graph_core":
+
+            "audit_engine/semantic_audit/core/semantic_graph.py",
+
+
+            "graph_builder":
+
+            "audit_engine/semantic_audit/graph/builder.py",
+
+
+            "graph_serializer":
+
+            "audit_engine/semantic_audit/graph/serializer.py"
+
+        }
+
+
+        g1_status = {}
+
+
+        for name,path in g1_files.items():
+
+            g1_status[name] = exists(path)
+
+
+            if not exists(path):
+
+                result["errors"].append(
+
+                    f"Missing G1 component: {path}"
+
+                )
+
+
+
+        result["checks"]["G1_components"] = g1_status
+
+
+
+        # --------------------------------------------------
+        # Workflow validation
+        # --------------------------------------------------
+
+        result["checks"]["github_workflow_exists"] = exists(
+
+            ".github/workflows/semantic_graph_validation.yml"
+
+        )
+
+
+
+        # --------------------------------------------------
+        # Search semantic graph references
+        # --------------------------------------------------
+
+        semantic_files = []
+
+
+        for root,dirs,files in os.walk("."):
+
+            for file in files:
+
+                if file.endswith(".py"):
+
+                    path = os.path.join(root,file)
+
+                    try:
+
+                        text=open(
+
+                            path,
+
+                            encoding="utf-8"
+
+                        ).read()
+
+
+                        if (
+
+                            "SemanticGraph"
+
+                            in text
+
+                            or
+
+                            "SemanticNode"
+
+                            in text
+
+                            or
+
+                            "SemanticEdge"
+
+                            in text
+
+                        ):
+
+                            semantic_files.append(path)
+
+
+                    except Exception:
+
+                        pass
+
+
+
+        result["checks"]["semantic_graph_python_files"] = semantic_files
+
+
+
+        # --------------------------------------------------
+        # Check G2 readiness
+        # --------------------------------------------------
+
+        g2_indicators = {
+
+
+            "networkx_dependency":
+
+            False,
+
+
+            "backend_adapter":
+
+            False,
+
+
+            "graph_backend_directory":
+
+            exists(
+
+                "audit_engine/semantic_audit/graph/backend"
+
+            )
+
+        }
+
+
+
+        for file in semantic_files:
+
+
+            try:
+
+                text=open(
+
+                    file,
+
+                    encoding="utf-8"
+
+                ).read()
+
+
+                if "networkx" in text.lower():
+
+                    g2_indicators["networkx_dependency"]=True
+
+
+
+                if "Adapter" in text:
+
+                    g2_indicators["backend_adapter"]=True
+
+
+            except Exception:
+
+                pass
+
+
+
+        result["checks"]["G2_readiness"] = g2_indicators
+
+
+
+        if not g2_indicators["backend_adapter"]:
+
+            result["warnings"].append(
+
+                "No graph backend adapter detected. Expected for G2."
+
+            )
+
+
+
+        if not g2_indicators["networkx_dependency"]:
+
+            result["warnings"].append(
+
+                "NetworkX backend not detected. Expected for future G2."
+
+            )
+
+
+
+        # --------------------------------------------------
+        # Architecture principles
+        # --------------------------------------------------
+
+        result["checks"]["architecture_expectations"] = {
+
+
+            "library_independent_core":
+
+            True,
+
+
+            "reasoning_not_in_graph_core":
+
+            True,
+
+
+            "rdf_not_required_in_G1":
+
+            True,
+
+
+            "owl_not_required_in_G1":
+
+            True
+
+        }
+
+
+
+        # --------------------------------------------------
+        # Final status
+        # --------------------------------------------------
+
+        if result["errors"]:
+
+            result["status"]="FAILED"
+
+        elif result["warnings"]:
+
+            result["status"]="PASSED_WITH_WARNINGS"
+
+        else:
+
+            result["status"]="PASSED"
+
+
+
+        with open(
+
+            "audit_results/semantic_graph_architecture_audit.json",
+
+            "w",
+
+            encoding="utf-8"
+
+        ) as f:
+
+            json.dump(
+
+                result,
+
+                f,
+
+                indent=4
+
+            )
+
+
+
+        print(json.dumps(result,indent=4))
+
+
+        PY
+
+
+
+    - name: Upload audit artifact
+
+      uses: actions/upload-artifact@v4
+
+      with:
+
+        name: semantic-graph-architecture-audit
+
+        path:
+
+          audit_results/semantic_graph_architecture_audit.json
+
+
+
+    - name: Print audit summary
+
+      run: |
+
+        echo "======================================"
+
+        echo "Semantic Graph Architecture Audit"
+
+        echo "======================================"
+
+        cat audit_results/semantic_graph_architecture_audit.json
