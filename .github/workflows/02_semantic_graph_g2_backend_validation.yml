@@ -1,0 +1,403 @@
+name: 02 - Semantic Graph G2 Backend Validation
+
+
+on:
+
+  push:
+
+    branches:
+      - main
+      - master
+      - develop
+
+  pull_request:
+
+  workflow_dispatch:
+
+
+
+jobs:
+
+
+  g2-networkx-backend-validation:
+
+
+    name: G2 NetworkX Adapter Verification
+
+
+    runs-on: ubuntu-latest
+
+
+
+    steps:
+
+
+    - name: Checkout repository
+
+      uses: actions/checkout@v4
+
+
+
+    - name: Setup Python
+
+      uses: actions/setup-python@v5
+
+      with:
+
+        python-version: "3.11"
+
+
+
+    - name: Install G2 dependencies
+
+      run: |
+
+        python -m pip install --upgrade pip
+
+        pip install networkx
+
+
+
+    - name: Run G2 backend validation
+
+      run: |
+
+
+        python <<'PY'
+
+
+        import json
+        import hashlib
+        from pathlib import Path
+
+
+
+        print("=" * 60)
+
+        print("G2 Semantic Graph NetworkX Backend Validation")
+
+        print("=" * 60)
+
+
+
+        # -------------------------------------------------
+        # Repository information
+        # -------------------------------------------------
+
+
+        commit_file = Path(
+
+            ".git/HEAD"
+
+        )
+
+
+        print(
+
+            "Repository checkout detected:",
+
+            commit_file.exists()
+
+        )
+
+
+
+        # -------------------------------------------------
+        # Import semantic graph core
+        # -------------------------------------------------
+
+
+        from audit_engine.semantic_audit.core.semantic_graph import (
+
+            SemanticGraph,
+
+            SemanticNode,
+
+            SemanticEdge,
+
+        )
+
+
+
+        from audit_engine.semantic_audit.graph.backend.networkx_adapter import (
+
+            NetworkXAdapter,
+
+        )
+
+
+
+        print("[PASS] Semantic graph modules imported")
+
+
+
+        # -------------------------------------------------
+        # Create semantic graph
+        # -------------------------------------------------
+
+
+        graph = SemanticGraph()
+
+
+
+        graph.add_node(
+
+            SemanticNode(
+
+                id="module.main",
+
+                kind="module",
+
+                attributes={
+
+                    "path": "main.py"
+
+                }
+
+            )
+
+        )
+
+
+
+        graph.add_node(
+
+            SemanticNode(
+
+                id="module.research",
+
+                kind="module",
+
+                attributes={
+
+                    "path": "research/evidence.py"
+
+                }
+
+            )
+
+        )
+
+
+
+        graph.add_edge(
+
+            SemanticEdge(
+
+                source="module.main",
+
+                target="module.research",
+
+                relation="IMPORTS",
+
+                attributes={}
+
+            )
+
+        )
+
+
+
+        print("[PASS] Semantic graph construction")
+
+
+
+        # -------------------------------------------------
+        # Convert to NetworkX
+        # -------------------------------------------------
+
+
+        adapter = NetworkXAdapter(graph)
+
+
+
+        nodes = adapter.nodes()
+
+        edges = adapter.edges()
+
+
+
+        assert "module.main" in nodes
+
+        assert "module.research" in nodes
+
+
+        assert len(edges) == 1
+
+
+
+        assert edges[0]["relation"] == "IMPORTS"
+
+
+
+        print("[PASS] NetworkX conversion")
+
+
+
+        # -------------------------------------------------
+        # Validate traversal capability
+        # -------------------------------------------------
+
+
+        neighbours = adapter.neighbors(
+
+            "module.main"
+
+        )
+
+
+
+        assert "module.research" in neighbours
+
+
+
+        print("[PASS] Network traversal")
+
+
+
+        # -------------------------------------------------
+        # Core isolation check
+        # -------------------------------------------------
+
+
+        core_file = Path(
+
+            "audit_engine/semantic_audit/core/semantic_graph.py"
+
+        )
+
+
+
+        core_text = core_file.read_text(
+
+            encoding="utf-8"
+
+        ).lower()
+
+
+
+        assert "networkx" not in core_text
+
+
+
+        print("[PASS] Semantic core isolation")
+
+
+
+        # -------------------------------------------------
+        # Create validation artifact
+        # -------------------------------------------------
+
+
+        result = {
+
+
+            "workflow":
+
+            "02 - Semantic Graph G2 Backend Validation",
+
+
+            "status":
+
+            "PASSED",
+
+
+            "checks": {
+
+
+                "semantic_graph_import":
+
+                True,
+
+
+                "networkx_adapter":
+
+                True,
+
+
+                "node_preservation":
+
+                True,
+
+
+                "edge_preservation":
+
+                True,
+
+
+                "relationship_preservation":
+
+                True,
+
+
+                "networkx_core_isolation":
+
+                True
+
+            },
+
+
+            "graph_summary": {
+
+
+                "nodes":
+
+                nodes,
+
+
+                "edges":
+
+                edges
+
+            }
+
+
+        }
+
+
+
+        Path(
+
+            "semantic_graph_g2_backend_result.json"
+
+        ).write_text(
+
+            json.dumps(
+
+                result,
+
+                indent=4
+
+            ),
+
+            encoding="utf-8"
+
+        )
+
+
+
+        print()
+
+        print(json.dumps(result, indent=4))
+
+        print()
+
+        print("G2 validation completed successfully.")
+
+
+
+        PY
+
+
+
+    - name: Upload G2 validation artifact
+
+      uses: actions/upload-artifact@v4
+
+      with:
+
+        name: semantic_graph_g2_backend_result
+
+        path:
+
+          semantic_graph_g2_backend_result.json
