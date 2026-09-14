@@ -5,304 +5,218 @@ on:
 
   workflow_dispatch:
 
-  push:
-
-    branches:
-
-      - stage1/section-uuids
-
 
 jobs:
 
-
   g2-networkx-backend-validation:
 
-
     name: G2 NetworkX Adapter Verification
-
 
     runs-on: ubuntu-latest
 
 
-
     steps:
 
+      - name: Checkout repository
 
-    - name: Checkout repository
-
-      uses: actions/checkout@v4
-
+        uses: actions/checkout@v4
 
 
-    - name: Setup Python
+      - name: Setup Python
 
-      uses: actions/setup-python@v5
+        uses: actions/setup-python@v5
 
-      with:
+        with:
 
-        python-version: "3.11"
-
-
-
-    - name: Install G2 dependencies
-
-      run: |
-
-        python -m pip install --upgrade pip
-
-        pip install networkx
+          python-version: "3.11"
 
 
+      - name: Install G2 dependencies
 
-    - name: Run G2 backend validation
+        run: |
 
-      run: |
+          python -m pip install --upgrade pip
 
-
-        python <<'PY'
-
-
-        import json
-
-        from pathlib import Path
+          pip install networkx
 
 
+      - name: Run G2 backend validation
 
-        print("=" * 60)
+        run: |
 
-        print("G2 Semantic Graph NetworkX Backend Validation")
+          python <<'PY'
 
-        print("=" * 60)
+          import json
 
-
-
-        from audit_engine.semantic_audit.core.semantic_graph import (
-
-            SemanticGraph,
-
-            SemanticNode,
-
-            SemanticEdge,
-
-        )
+          from pathlib import Path
 
 
-        from audit_engine.semantic_audit.graph.backend.networkx_adapter import (
+          print("=" * 60)
 
-            NetworkXAdapter,
+          print("G2 Semantic Graph NetworkX Backend Validation")
 
-        )
-
-
-
-        print("[PASS] Imports")
+          print("=" * 60)
 
 
-
-        graph = SemanticGraph()
-
-
-
-        graph.add_node(
-
-            
-            SemanticNode(
-                node_id="module.main",
-                entity_type="SoftwareModule",
-                attributes={}
-            )
-
-        )
-
-
-
-        graph.add_node(
-
-            
-            SemanticNode(
-                node_id="module.research",
-                entity_type="SoftwareModule",
-                attributes={}
-            )
-
-        )
-
-
-
-        
-         graph.add_edge(
-
-            SemanticEdge(
-        
-                  source_id="module.main",
-          
-                  target_id="module.research",
-          
-                  relation_type="IMPORTS",
-          
-                  attributes={}
-          
-              )
-          
+          from audit_engine.semantic_audit.core.semantic_graph import (
+              SemanticGraph,
+              SemanticNode,
+              SemanticEdge,
           )
 
-     
 
+          from audit_engine.semantic_audit.graph.backend.networkx_adapter import (
+              NetworkXAdapter,
+          )
 
 
-        print("[PASS] Semantic graph creation")
+          print("[PASS] Imports")
 
 
+          graph = SemanticGraph()
 
-        adapter = NetworkXAdapter(graph)
 
+          graph.add_node(
+              SemanticNode(
+                  node_id="module.main",
+                  entity_type="SoftwareModule",
+                  attributes={}
+              )
+          )
 
 
-        assert "module.main" in adapter.nodes()
+          graph.add_node(
+              SemanticNode(
+                  node_id="module.research",
+                  entity_type="SoftwareModule",
+                  attributes={}
+              )
+          )
 
-        assert "module.research" in adapter.nodes()
 
+          graph.add_edge(
+              SemanticEdge(
+                  source_id="module.main",
+                  target_id="module.research",
+                  relation_type="IMPORTS",
+                  attributes={}
+              )
+          )
 
 
-        edges = adapter.edges()
+          print("[PASS] Semantic graph creation")
 
 
+          adapter = NetworkXAdapter(graph)
 
-        assert len(edges) == 1
 
-        assert edges[0]["relation"] == "IMPORTS"
+          assert "module.main" in adapter.nodes()
 
+          assert "module.research" in adapter.nodes()
 
 
-        print("[PASS] NetworkX conversion")
+          edges = adapter.edges()
 
 
+          assert len(edges) == 1
 
-        neighbours = adapter.neighbors(
+          assert edges[0]["relation"] == "IMPORTS"
 
-            "module.main"
 
-        )
+          print("[PASS] NetworkX conversion")
 
 
-        assert "module.research" in neighbours
+          neighbours = adapter.neighbors(
+              "module.main"
+          )
 
 
+          assert "module.research" in neighbours
 
-        print("[PASS] Graph traversal")
 
+          print("[PASS] Graph traversal")
 
 
-        core_file = Path(
+          core_file = Path(
+              "audit_engine/semantic_audit/core/semantic_graph.py"
+          )
 
-            "audit_engine/semantic_audit/core/semantic_graph.py"
 
-        )
+          core_text = core_file.read_text(
+              encoding="utf-8"
+          ).lower()
 
 
+          assert "networkx" not in core_text
 
-        core_text = core_file.read_text(
 
-            encoding="utf-8"
+          print("[PASS] Core/backend separation")
 
-        ).lower()
 
+          result = {
 
+              "workflow":
+                  "02 - Semantic Graph G2 Backend Validation",
 
-        assert "networkx" not in core_text
+              "status":
+                  "PASSED",
 
+              "checks": {
 
+                  "semantic_graph_import": True,
 
-        print("[PASS] Core/backend separation")
+                  "node_creation": True,
 
+                  "edge_creation": True,
 
+                  "networkx_conversion": True,
 
-        result = {
+                  "relationship_preservation": True,
 
+                  "core_backend_separation": True
 
-            "workflow":
+              },
 
-            "02 - Semantic Graph G2 Backend Validation",
+              "graph": {
 
+                  "nodes": adapter.nodes(),
 
-            "status":
+                  "edges": edges
 
-            "PASSED",
+              }
 
+          }
 
-            "checks":
 
-            {
+          Path(
+              "semantic_graph_g2_backend_result.json"
+          ).write_text(
+              json.dumps(
+                  result,
+                  indent=4
+              ),
+              encoding="utf-8"
+          )
 
-                "semantic_graph_import": True,
 
-                "node_creation": True,
+          print()
 
-                "edge_creation": True,
+          print(json.dumps(result, indent=4))
 
-                "networkx_conversion": True,
+          print()
 
-                "relationship_preservation": True,
+          print("G2 validation completed successfully.")
 
-                "core_backend_separation": True
 
-            },
+          PY
 
 
-            "graph":
+      - name: Upload G2 validation artifact
 
-            {
+        uses: actions/upload-artifact@v4
 
-                "nodes": adapter.nodes(),
+        with:
 
-                "edges": edges
+          name: semantic_graph_g2_backend_result
 
-            }
-
-        }
-
-
-
-        Path(
-
-            "semantic_graph_g2_backend_result.json"
-
-        ).write_text(
-
-            json.dumps(
-
-                result,
-
-                indent=4
-
-            ),
-
-            encoding="utf-8"
-
-        )
-
-
-
-        print()
-
-        print(json.dumps(result, indent=4))
-
-        print()
-
-        print("G2 validation completed successfully.")
-
-
-
-        PY
-
-
-
-    - name: Upload G2 validation artifact
-
-      uses: actions/upload-artifact@v4
-
-      with:
-
-        name: semantic_graph_g2_backend_result
-
-        path: semantic_graph_g2_backend_result.json
+          path: semantic_graph_g2_backend_result.json
