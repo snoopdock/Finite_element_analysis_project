@@ -1,0 +1,76 @@
+name: 10 - Semantic Graph SciPy Projection Design Validation
+
+on:
+
+  workflow_dispatch:
+
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - "docs/decisions/ADR-010-scipy-sparse-projection-contract.md"
+      - "docs/architecture/scipy_sparse_projection_design.md"
+      - ".github/workflows/10_semantic_graph_scipy_projection_design_validation.yml"
+
+
+jobs:
+
+  scipy-design-validation:
+
+    name: Validate SciPy Projection Design Boundary
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate design artifacts
+        run: |
+
+          python <<'PY'
+
+          from pathlib import Path
+
+
+          adr = Path(
+              "docs/decisions/ADR-010-scipy-sparse-projection-contract.md"
+          ).read_text(
+              encoding="utf-8"
+          )
+
+          design = Path(
+              "docs/architecture/scipy_sparse_projection_design.md"
+          ).read_text(
+              encoding="utf-8"
+          )
+
+
+          required_terms = [
+              "SemanticGraph remains authoritative",
+              "Node identity",
+              "Loss reporting is mandatory",
+              "metadata",
+              "relation",
+              "identity_mapping",
+              "loss_report",
+          ]
+
+
+          combined = adr + "\n" + design
+
+
+          for term in required_terms:
+              assert term in combined, (
+                  f"Missing design requirement: {term}"
+              )
+
+
+          assert "SciPy Adapter" in combined
+
+          print(
+              "SciPy projection design validation passed."
+          )
+
+          PY
