@@ -2,6 +2,9 @@ name: 11 - Semantic Graph SciPy Adapter Validation
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - stage1/section-uuids
 
 jobs:
 
