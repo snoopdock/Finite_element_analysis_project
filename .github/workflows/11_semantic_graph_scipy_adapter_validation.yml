@@ -1,0 +1,91 @@
+name: 11 - Semantic Graph SciPy Adapter Validation
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  scipy-adapter-validation:
+
+    name: Validate Hybrid SciPy Adapter
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install scipy numpy
+
+      - name: Validate SciPy adapter
+        run: |
+
+          python <<'PY'
+
+          from audit_engine.semantic_audit.core.semantic_graph import (
+              SemanticGraph,
+              SemanticNode,
+              SemanticEdge,
+          )
+
+          from audit_engine.semantic_audit.graph.backend.scipy_adapter import (
+              SciPyAdapter,
+          )
+
+
+          graph = SemanticGraph()
+
+          graph.add_node(
+              SemanticNode(
+                  node_id="claim.001",
+                  entity_type="Claim"
+              )
+          )
+
+          graph.add_node(
+              SemanticNode(
+                  node_id="paper.001",
+                  entity_type="Paper"
+              )
+          )
+
+          graph.add_edge(
+              SemanticEdge(
+                  source_id="claim.001",
+                  target_id="paper.001",
+                  relation_type="SUPPORTED_BY"
+              )
+          )
+
+
+          adapter = SciPyAdapter(graph)
+
+          matrix = adapter.export()
+
+          assert matrix.shape == (2, 2)
+
+          mapping = adapter.identity_mapping()
+
+          assert mapping["semantic_to_index"]["claim.001"] == 0
+
+          assert mapping["index_to_semantic"][1] == "paper.001"
+
+
+          loss = adapter.loss_report()
+
+          assert "metadata_inside_matrix" in loss["lost"]
+
+          print(
+              "SciPy hybrid adapter validation passed."
+          )
+
+          PY
