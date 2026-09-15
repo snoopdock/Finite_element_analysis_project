@@ -1,0 +1,59 @@
+name: 08 - Semantic Graph Adapter Interface Validation
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - "audit_engine/semantic_audit/graph/backend/adapter_interface.py"
+      - "docs/decisions/ADR-008-semantic-graph-adapter-interface.md"
+      - ".github/workflows/08_semantic_graph_adapter_interface_validation.yml"
+
+
+jobs:
+
+  adapter-interface-validation:
+
+    name: Validate Semantic Graph Adapter Contract
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate interface
+        run: |
+
+          python <<'PY'
+
+          from audit_engine.semantic_audit.graph.backend.adapter_interface import (
+              SemanticGraphAdapter
+          )
+
+          required = {
+              "export",
+              "capabilities",
+              "identity_mapping",
+              "loss_report",
+          }
+
+          discovered = set(
+              SemanticGraphAdapter.__abstractmethods__
+          )
+
+          assert required == discovered
+
+          print(
+              "Semantic Graph Adapter Interface validation passed."
+          )
+
+          PY
