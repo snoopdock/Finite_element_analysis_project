@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/semantic_graph_schema.json",
+  "title": "Universal Semantic Graph Serialized Schema",
+  "description": "Machine-readable contract for the portable serialized form of the repository's library-independent SemanticGraph.",
+  "type": "object",
+  "required": [
+    "nodes",
+    "edges"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "attributes",
+        "metadata"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable semantic identifier within the graph. Backends may create local indices but must retain a reversible mapping."
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Open, domain-extensible semantic entity type. The core schema intentionally defines no closed enumeration."
+        },
+        "attributes": {
+          "type": "object",
+          "description": "Domain-level properties describing the represented entity.",
+          "additionalProperties": true
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Record, extraction, processing, or provenance metadata.",
+          "additionalProperties": true
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": [
+        "source",
+        "target",
+        "relation",
+        "attributes",
+        "metadata"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Source semantic node identifier."
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Target semantic node identifier."
+        },
+        "relation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Open, domain-extensible semantic relation type. The core schema intentionally defines no closed enumeration."
+        },
+        "attributes": {
+          "type": "object",
+          "description": "Domain-level properties describing the semantic relationship.",
+          "additionalProperties": true
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Record, extraction, processing, or provenance metadata for the relationship.",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}
