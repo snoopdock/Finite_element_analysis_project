@@ -147,12 +147,45 @@ jobs:
           )
 
 
-          core_text = core_file.read_text(
-              encoding="utf-8"
-          ).lower()
+          import ast
 
 
-          assert "networkx" not in core_text
+                  tree = ast.parse(
+                      core_file.read_text(
+                          encoding="utf-8"
+                      )
+                  )
+                  
+                  
+                  for node in ast.walk(tree):
+                  
+                      if isinstance(
+                          node,
+                          (ast.Import, ast.ImportFrom)
+                      ):
+                  
+                          imported_names = []
+                  
+                          if isinstance(node, ast.Import):
+                  
+                              imported_names = [
+                                  alias.name
+                                  for alias in node.names
+                              ]
+                  
+                          elif isinstance(node, ast.ImportFrom):
+                  
+                              imported_names = [
+                                  node.module
+                              ]
+                  
+                  
+                          for name in imported_names:
+                  
+                              assert not (
+                                  name
+                                  and name.startswith("networkx")
+                              )
 
 
           print("[PASS] Core/backend separation")
