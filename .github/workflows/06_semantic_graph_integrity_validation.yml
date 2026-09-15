@@ -1,0 +1,422 @@
+name: 06 - Semantic Graph Integrity Validation
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - "audit_engine/semantic_audit/core/semantic_graph.py"
+      - "audit_engine/semantic_audit/graph/builder.py"
+      - "audit_engine/semantic_audit/graph/backend/networkx_adapter.py"
+      - "docs/decisions/ADR-006-semantic-graph-integrity-policy.md"
+      - "docs/schemas/semantic_graph_schema.json"
+      - ".github/workflows/06_semantic_graph_integrity_validation.yml"
+
+jobs:
+  semantic-graph-integrity-validation:
+
+    name: G2.5 Semantic Graph Integrity Policy
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install jsonschema networkx
+
+      - name: Validate semantic graph integrity policy
+        run: |
+          python <<'PY'
+          import json
+          from pathlib import Path
+          from types import SimpleNamespace
+
+          from jsonschema import Draft202012Validator
+
+          from audit_engine.semantic_audit.core.semantic_graph import (
+              SemanticGraph,
+              SemanticNode,
+              SemanticEdge,
+          )
+
+          from audit_engine.semantic_audit.graph.builder import (
+              SemanticGraphBuilder,
+          )
+
+          from audit_engine.semantic_audit.graph.backend.networkx_adapter import (
+              NetworkXAdapter,
+          )
+
+
+          print("=" * 72)
+          print("G2.5 Semantic Graph Integrity Validation")
+          print("=" * 72)
+
+
+          # ------------------------------------------------------------
+          # 1. Unique node identity
+          # ------------------------------------------------------------
+
+          graph = SemanticGraph()
+
+          graph.add_node(
+              SemanticNode(
+                  node_id="entity.a",
+                  entity_type="Concept",
+              )
+          )
+
+          try:
+              graph.add_node(
+                  SemanticNode(
+                      node_id="entity.a",
+                      entity_type="DifferentConcept",
+                  )
+              )
+          except ValueError:
+              pass
+          else:
+              raise AssertionError(
+                  "Duplicate node_id was not rejected."
+              )
+
+          assert len(graph.nodes) == 1
+
+          print("[PASS] Duplicate node identities are rejected")
+
+
+          # ------------------------------------------------------------
+          # 2. Empty semantic identifiers/types are rejected
+          # ------------------------------------------------------------
+
+          invalid_node_cases = [
+              SemanticNode(
+                  node_id="",
+                  entity_type="Concept",
+              ),
+              SemanticNode(
+                  node_id="entity.invalid",
+                  entity_type="",
+              ),
+          ]
+
+          for node in invalid_node_cases:
+
+              invalid_graph = SemanticGraph()
+
+              try:
+                  invalid_graph.add_node(node)
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError(
+                      "Invalid semantic node was accepted."
+                  )
+
+          print("[PASS] Empty node identity/type values are rejected")
+
+
+          # ------------------------------------------------------------
+          # 3. Dangling edges are rejected
+          # ------------------------------------------------------------
+
+          dangling_graph = SemanticGraph()
+
+          dangling_graph.add_node(
+              SemanticNode(
+                  node_id="known",
+                  entity_type="Concept",
+              )
+          )
+
+          dangling_cases = [
+              SemanticEdge(
+                  source_id="known",
+                  target_id="missing",
+                  relation_type="REFERENCES",
+              ),
+              SemanticEdge(
+                  source_id="missing",
+                  target_id="known",
+                  relation_type="REFERENCES",
+              ),
+          ]
+
+          for edge in dangling_cases:
+
+              try:
+                  dangling_graph.add_edge(edge)
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError(
+                      "Dangling semantic edge was not rejected."
+                  )
+
+          assert len(dangling_graph.edges) == 0
+
+          print("[PASS] Dangling edges are rejected")
+
+
+          # ------------------------------------------------------------
+          # 4. Valid edges remain supported
+          # ------------------------------------------------------------
+
+          valid_graph = SemanticGraph()
+
+          valid_graph.add_node(
+              SemanticNode(
+                  node_id="claim.1",
+                  entity_type="ScientificClaim",
+              )
+          )
+
+          valid_graph.add_node(
+              SemanticNode(
+                  node_id="paper.1",
+                  entity_type="ResearchPaper",
+              )
+          )
+
+          valid_graph.add_edge(
+              SemanticEdge(
+                  source_id="claim.1",
+                  target_id="paper.1",
+                  relation_type="SUPPORTED_BY",
+                  metadata={
+                      "producer": "llm",
+                  },
+              )
+          )
+
+          assert len(valid_graph.edges) == 1
+
+          print("[PASS] Valid semantic edges remain supported")
+
+
+          # ------------------------------------------------------------
+          # 5. Parallel edges remain valid
+          # ------------------------------------------------------------
+
+          valid_graph.add_edge(
+              SemanticEdge(
+                  source_id="claim.1",
+                  target_id="paper.1",
+                  relation_type="SUPPORTED_BY",
+                  metadata={
+                      "producer": "human_review",
+                  },
+              )
+          )
+
+          assert len(valid_graph.edges) == 2
+
+          assert (
+              valid_graph.edges[0].metadata["producer"]
+              != valid_graph.edges[1].metadata["producer"]
+          )
+
+          print("[PASS] Parallel semantic edges are preserved")
+
+
+          # ------------------------------------------------------------
+          # 6. Self-loops remain valid
+          # ------------------------------------------------------------
+
+          recursive_graph = SemanticGraph()
+
+          recursive_graph.add_node(
+              SemanticNode(
+                  node_id="function.recursive",
+                  entity_type="Function",
+              )
+          )
+
+          recursive_graph.add_edge(
+              SemanticEdge(
+                  source_id="function.recursive",
+                  target_id="function.recursive",
+                  relation_type="CALLS",
+              )
+          )
+
+          assert len(recursive_graph.edges) == 1
+
+          print("[PASS] Self-loop relationships remain supported")
+
+
+          # ------------------------------------------------------------
+          # 7. Current software SemanticGraphBuilder remains compatible
+          # ------------------------------------------------------------
+
+          report = SimpleNamespace(
+              imports=[
+                  SimpleNamespace(
+                      file="main.py",
+                      module="research.evidence",
+                      line=4,
+                      imported_symbols=[
+                          "get_reading_summary",
+                      ],
+                  )
+              ],
+              symbols=[
+                  SimpleNamespace(
+                      file="main.py",
+                      module="research.evidence",
+                      symbol="get_reading_summary",
+                      line=12,
+                      usage_type="call",
+                  )
+              ],
+          )
+
+          builder = SemanticGraphBuilder()
+
+          built_graph = builder.build(report)
+
+          built_node_ids = {
+              node.node_id
+              for node in built_graph.nodes
+          }
+
+          assert "main.py" in built_node_ids
+          assert "research.evidence" in built_node_ids
+          assert (
+              "research.evidence.get_reading_summary"
+              in built_node_ids
+          )
+
+          assert all(
+              built_graph.has_node(edge.source_id)
+              and built_graph.has_node(edge.target_id)
+              for edge in built_graph.edges
+          )
+
+          assert len(built_node_ids) == len(
+              built_graph.nodes
+          )
+
+          print("[PASS] Existing software graph builder remains compatible")
+
+
+          # ------------------------------------------------------------
+          # 8. NetworkX projection preserves the stricter graph
+          # ------------------------------------------------------------
+
+          adapter = NetworkXAdapter(
+              valid_graph
+          )
+
+          backend_edges = adapter.edges()
+
+          assert len(backend_edges) == 2
+
+          assert all(
+              edge["relation"] == "SUPPORTED_BY"
+              for edge in backend_edges
+          )
+
+          assert {
+              edge["metadata"]["producer"]
+              for edge in backend_edges
+          } == {
+              "llm",
+              "human_review",
+          }
+
+          print("[PASS] NetworkX preserves valid parallel-edge semantics")
+
+
+          # ------------------------------------------------------------
+          # 9. Portable serialized payload remains schema-compatible
+          # ------------------------------------------------------------
+
+          schema = json.loads(
+              Path(
+                  "docs/schemas/semantic_graph_schema.json"
+              ).read_text(
+                  encoding="utf-8"
+              )
+          )
+
+          validator = Draft202012Validator(
+              schema
+          )
+
+          serialized = valid_graph.to_dict()
+
+          validator.validate(
+              serialized
+          )
+
+          assert set(serialized.keys()) == {
+              "nodes",
+              "edges",
+          }
+
+          print("[PASS] G2.5 serialized payload remains schema-compatible")
+
+
+          # ------------------------------------------------------------
+          # 10. Produce artifact
+          # ------------------------------------------------------------
+
+          result = {
+              "workflow": "06 - Semantic Graph Integrity Validation",
+              "milestone": "G2.5",
+              "status": "PASSED",
+              "policies": {
+                  "unique_node_id": "reject_duplicates",
+                  "dangling_edges": "reject",
+                  "parallel_edges": "allow",
+                  "self_loops": "allow",
+                  "graph_level_metadata": "deferred",
+                  "serialized_envelope_versioning": "deferred",
+              },
+              "checks": {
+                  "duplicate_node_rejection": True,
+                  "invalid_node_rejection": True,
+                  "dangling_edge_rejection": True,
+                  "valid_edge_support": True,
+                  "parallel_edge_support": True,
+                  "self_loop_support": True,
+                  "current_builder_compatibility": True,
+                  "networkx_parallel_edge_preservation": True,
+                  "serialized_schema_compatibility": True,
+              },
+          }
+
+          Path(
+              "semantic_graph_g2_5_integrity_result.json"
+          ).write_text(
+              json.dumps(
+                  result,
+                  indent=2,
+              ),
+              encoding="utf-8",
+          )
+
+          print()
+          print(json.dumps(result, indent=2))
+          print()
+          print("G2.5 integrity validation completed successfully.")
+          PY
+
+      - name: Upload G2.5 integrity validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic_graph_g2_5_integrity_result
+          path: semantic_graph_g2_5_integrity_result.json
