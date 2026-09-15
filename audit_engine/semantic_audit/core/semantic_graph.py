@@ -1,22 +1,18 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 
 @dataclass
 class SemanticNode:
     """
-    Represents an entity inside the semantic graph.
+    Represents an identifiable semantic entity.
 
-    Examples:
-    - Python module
-    - Function
-    - Class
-    - Contract
-    - Scientific article
-    - Claim
+    The core intentionally does not impose a closed domain vocabulary.
+    Examples include software modules, functions, scientific claims,
+    documents, concepts, equations, evidence items, and source records.
 
     RDF compatibility:
-    Node identity maps to an RDF resource.
+    node_id may later map to an RDF resource identifier.
     """
 
     node_id: str
@@ -35,19 +31,14 @@ class SemanticNode:
 @dataclass
 class SemanticEdge:
     """
-    Represents a typed relationship between two semantic entities.
+    Represents a directed typed semantic relationship.
 
-    Examples:
-    - IMPORTS
-    - CALLS
-    - READS
-    - WRITES
-    - MUTATES
-    - SUPPORTS
-    - DERIVED_FROM
+    The core intentionally does not impose a closed relation vocabulary.
+    Examples include IMPORTS, CALLS, SUPPORTED_BY, DERIVED_FROM,
+    REFERENCES, DEFINES, and other domain-specific relations.
 
     RDF compatibility:
-    relation_type maps to an RDF predicate.
+    relation_type may later map to an RDF predicate.
     """
 
     source_id: str
@@ -70,19 +61,24 @@ class SemanticGraph:
     """
     Library-independent semantic graph representation.
 
-    Designed as a directed attributed multigraph.
+    The graph is designed as a directed attributed multigraph.
 
-    Future backends:
+    Core integrity invariants:
+    - node_id is unique within one graph snapshot
+    - an edge may only reference nodes already present in the graph
+    - parallel edges are allowed
+    - self-loops are allowed
+
+    Backend libraries must adapt to this model rather than defining it.
+
+    Candidate computational or export backends include:
     - NetworkX
     - igraph
     - graph-tool
     - SNAP
-    - SciPy sparse graphs
-
-    Future exports:
+    - SciPy sparse graph operations
     - RDF/Turtle
-    - OWL-compatible structures
-    - Formal verification models
+    - OWL-compatible representations
     """
 
     nodes: List[SemanticNode] = field(
@@ -100,7 +96,28 @@ class SemanticGraph:
     ) -> None:
         """
         Add a semantic entity.
+
+        node_id is the identity key within this graph snapshot.
+
+        Silent overwrite, merge, or duplicate insertion is prohibited.
+        Identity resolution and entity merging belong to explicit
+        domain-level processes rather than this core method.
         """
+
+        if not isinstance(node.node_id, str) or not node.node_id.strip():
+            raise ValueError(
+                "SemanticNode.node_id must be a non-empty string."
+            )
+
+        if not isinstance(node.entity_type, str) or not node.entity_type.strip():
+            raise ValueError(
+                "SemanticNode.entity_type must be a non-empty string."
+            )
+
+        if self.has_node(node.node_id):
+            raise ValueError(
+                f"Duplicate semantic node_id: {node.node_id!r}"
+            )
 
         self.nodes.append(
             node
@@ -113,7 +130,60 @@ class SemanticGraph:
     ) -> None:
         """
         Add a semantic relationship.
+
+        Canonical SemanticGraph instances do not permit dangling edges.
+        Both endpoint nodes must already exist.
+
+        Parallel relationships and self-loops remain valid because they
+        can represent distinct semantic observations or relation types.
         """
+
+        if (
+            not isinstance(edge.source_id, str)
+            or not edge.source_id.strip()
+        ):
+            raise ValueError(
+                "SemanticEdge.source_id must be a non-empty string."
+            )
+
+        if (
+            not isinstance(edge.target_id, str)
+            or not edge.target_id.strip()
+        ):
+            raise ValueError(
+                "SemanticEdge.target_id must be a non-empty string."
+            )
+
+        if (
+            not isinstance(edge.relation_type, str)
+            or not edge.relation_type.strip()
+        ):
+            raise ValueError(
+                "SemanticEdge.relation_type must be a non-empty string."
+            )
+
+        missing_nodes = []
+
+        if not self.has_node(edge.source_id):
+            missing_nodes.append(
+                edge.source_id
+            )
+
+        if not self.has_node(edge.target_id):
+            missing_nodes.append(
+                edge.target_id
+            )
+
+        if missing_nodes:
+            missing_display = ", ".join(
+                repr(node_id)
+                for node_id in missing_nodes
+            )
+
+            raise ValueError(
+                "SemanticEdge references node(s) not present "
+                f"in the graph: {missing_display}"
+            )
 
         self.edges.append(
             edge
@@ -125,7 +195,7 @@ class SemanticGraph:
         node_id: str
     ) -> SemanticNode | None:
         """
-        Retrieve a node by identifier.
+        Retrieve a node by semantic identifier.
         """
 
         for node in self.nodes:
@@ -141,7 +211,7 @@ class SemanticGraph:
         node_id: str
     ) -> bool:
         """
-        Check whether a node exists.
+        Check whether a semantic node identifier exists.
         """
 
         return self.get_node(
@@ -151,9 +221,18 @@ class SemanticGraph:
 
     def to_dict(self) -> dict:
         """
-        Convert graph into a JSON-compatible structure.
+        Convert the graph into the current portable JSON-compatible form.
 
-        This structure is intentionally RDF-friendly.
+        The serialized field names intentionally differ from some
+        in-memory names:
+
+        node_id       -> id
+        entity_type   -> type
+        source_id     -> source
+        target_id     -> target
+        relation_type -> relation
+
+        The payload shape remains unchanged from the G2/G2.5 contract.
         """
 
         return {
