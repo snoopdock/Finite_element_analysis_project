@@ -1,188 +1,207 @@
-"""
-NetworkX backend adapter for SemanticGraph.
-
-This module provides computational capabilities
-without changing the semantic graph model.
-
-NetworkX is treated only as a backend.
-"""
-
-
-from typing import List, Dict, Any
+from typing import Any, Dict
 
 import networkx as nx
 
-from ...core.semantic_graph import (
-    SemanticGraph,
-    SemanticNode,
-    SemanticEdge,
+from audit_engine.semantic_audit.core.semantic_graph import SemanticGraph
+from audit_engine.semantic_audit.graph.backend.adapter_interface import (
+    SemanticGraphAdapter,
 )
 
 
-class NetworkXAdapter:
+class NetworkXAdapter(SemanticGraphAdapter):
     """
-    Adapter between SemanticGraph and NetworkX MultiDiGraph.
+    Official NetworkX projection adapter.
 
-    The SemanticGraph remains the authoritative model.
+    SemanticGraph remains the source of truth.
 
-    NetworkX is only used for:
-        - traversal
-        - analysis
-        - visualization
+    This class converts the universal semantic representation into a
+    NetworkX MultiDiGraph while preserving:
+
+    - semantic node identifiers
+    - node entity types
+    - node attributes
+    - node metadata
+    - edge relation types
+    - edge attributes
+    - edge metadata
+
+    NetworkX is used only as a computational backend.
     """
 
-    def __init__(self, graph: SemanticGraph):
-
+    def __init__(
+        self,
+        graph: SemanticGraph,
+    ):
         self.semantic_graph = graph
 
-        self._graph = nx.MultiDiGraph()
+        self.graph = nx.MultiDiGraph()
 
-        self._load_graph()
+        self._semantic_to_backend: Dict[str, Any] = {}
+
+        self._backend_to_semantic: Dict[Any, str] = {}
+
+        self._build()
 
 
-    def _load_graph(self) -> None:
+    def _build(self) -> None:
         """
-        Convert universal SemanticGraph into NetworkX representation.
-
-        NetworkX is only a computational backend.
-        The semantic graph remains authoritative.
+        Project SemanticGraph into NetworkX.
         """
 
         for node in self.semantic_graph.nodes:
 
-            self._graph.add_node(
+            backend_id = node.node_id
 
-                node.node_id,
+            self._semantic_to_backend[node.node_id] = backend_id
 
+            self._backend_to_semantic[backend_id] = node.node_id
+
+            self.graph.add_node(
+                backend_id,
                 entity_type=node.entity_type,
-
+                attributes=node.attributes,
                 metadata=node.metadata,
-
-                **node.attributes
-
             )
 
 
         for edge in self.semantic_graph.edges:
 
-            self._graph.add_edge(
+            source = self._semantic_to_backend[
+                edge.source_id
+            ]
 
-                edge.source_id,
+            target = self._semantic_to_backend[
+                edge.target_id
+            ]
 
-                edge.target_id,
-
+            self.graph.add_edge(
+                source,
+                target,
                 relation=edge.relation_type,
-
+                attributes=edge.attributes,
                 metadata=edge.metadata,
-
-                **edge.attributes
-
             )
 
 
-    def nodes(self) -> List[str]:
+    def export(self) -> nx.MultiDiGraph:
         """
-        Return node identifiers.
+        Return NetworkX representation.
         """
 
-        return list(self._graph.nodes)
+        return self.graph
 
 
-
-    def edges(self) -> List[Dict[str, Any]]:
+    def backend_graph(self) -> nx.MultiDiGraph:
         """
-        Return graph relationships.
+        Backward-compatible alias.
+        """
+
+        return self.graph
+
+
+    def nodes(self):
+        """
+        Return backend node identifiers.
+        """
+
+        return list(
+            self.graph.nodes
+        )
+
+
+    def edges(self):
+        """
+        Return semantic edge information from NetworkX.
         """
 
         result = []
 
-        for source, target, data in self._graph.edges(
+        for _, _, data in self.graph.edges(
             data=True
         ):
 
             result.append(
-                {
-                    "source": source,
-                    "target": target,
-                    **data
-                }
+                data
             )
 
         return result
 
 
-
     def neighbors(
         self,
-        node_id: str
-    ) -> List[str]:
-
-        """
-        Return outgoing relationships.
-        """
-
-        return list(
-            self._graph.successors(node_id)
-        )
-
-
-
-    def predecessors(
-        self,
-        node_id: str
-    ) -> List[str]:
-
-        """
-        Return incoming relationships.
-        """
-
-        return list(
-            self._graph.predecessors(node_id)
-        )
-
-
-
-    def find_paths(
-        self,
-        source: str,
-        target: str
+        node_id: str,
     ):
-
         """
-        Find directed paths between nodes.
+        Return outgoing semantic neighbors.
         """
 
         return list(
-            nx.all_simple_paths(
-                self._graph,
-                source,
-                target
+            self.graph.neighbors(
+                node_id
             )
         )
 
 
-
-    def degree(
-        self,
-        node_id: str
-    ) -> int:
-
+    def capabilities(self) -> Dict[str, Any]:
         """
-        Return total graph degree.
+        Describe NetworkX preservation capabilities.
         """
 
-        return self._graph.degree(node_id)
+        return {
+
+            "backend": "networkx",
+
+            "directed_graph": True,
+
+            "multiedges": True,
+
+            "self_loops": True,
+
+            "node_attributes": True,
+
+            "edge_attributes": True,
+
+            "metadata": True,
+
+            "lossless": True,
+
+        }
 
 
-
-    def backend_graph(self):
+    def identity_mapping(self) -> Dict[str, Dict[Any, str]]:
         """
-        Expose NetworkX graph for advanced operations.
-
-        Use carefully.
-
-        The semantic graph should still be modified
-        through SemanticGraph APIs.
+        Return reversible semantic/backend identity mapping.
         """
 
-        return self._graph
+        return {
+
+            "semantic_to_backend":
+                dict(
+                    self._semantic_to_backend
+                ),
+
+            "backend_to_semantic":
+                dict(
+                    self._backend_to_semantic
+                ),
+
+        }
+
+
+    def loss_report(self) -> Dict[str, Any]:
+        """
+        Report projection information loss.
+
+        NetworkX MultiDiGraph can preserve all current SemanticGraph
+        information used by the repository.
+        """
+
+        return {
+
+            "lossless": True,
+
+            "lost": [],
+
+            "transformed": [],
+
+        }
