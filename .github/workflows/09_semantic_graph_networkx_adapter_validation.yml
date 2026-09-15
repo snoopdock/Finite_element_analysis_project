@@ -1,0 +1,150 @@
+name: 09 - Semantic Graph NetworkX Official Adapter Validation
+
+on:
+
+  workflow_dispatch:
+
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - "audit_engine/semantic_audit/graph/backend/networkx_adapter.py"
+      - "audit_engine/semantic_audit/graph/backend/adapter_interface.py"
+      - "docs/decisions/ADR-009-networkx-official-adapter.md"
+      - ".github/workflows/09_semantic_graph_networkx_adapter_validation.yml"
+
+
+jobs:
+
+  networkx-adapter-validation:
+
+    name: Validate Official NetworkX Semantic Adapter
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install networkx
+
+
+      - name: Validate NetworkX adapter contract
+        run: |
+
+          python <<'PY'
+
+          from audit_engine.semantic_audit.core.semantic_graph import (
+              SemanticGraph,
+              SemanticNode,
+              SemanticEdge,
+          )
+
+          from audit_engine.semantic_audit.graph.backend.networkx_adapter import (
+              NetworkXAdapter,
+          )
+
+
+          graph = SemanticGraph()
+
+
+          graph.add_node(
+              SemanticNode(
+                  node_id="claim.001",
+                  entity_type="ScientificClaim",
+                  attributes={
+                      "topic": "acoustics"
+                  },
+                  metadata={
+                      "source": "paper.pdf"
+                  },
+              )
+          )
+
+
+          graph.add_node(
+              SemanticNode(
+                  node_id="paper.001",
+                  entity_type="ResearchPaper",
+              )
+          )
+
+
+          graph.add_edge(
+              SemanticEdge(
+                  source_id="claim.001",
+                  target_id="paper.001",
+                  relation_type="SUPPORTED_BY",
+                  metadata={
+                      "confidence": 0.95
+                  },
+              )
+          )
+
+
+          adapter = NetworkXAdapter(graph)
+
+
+          assert isinstance(
+              adapter.export(),
+              type(adapter.backend_graph())
+          )
+
+
+          capabilities = adapter.capabilities()
+
+          assert capabilities["backend"] == "networkx"
+          assert capabilities["multiedges"] is True
+          assert capabilities["metadata"] is True
+          assert capabilities["lossless"] is True
+
+
+          mapping = adapter.identity_mapping()
+
+          assert (
+              mapping["semantic_to_backend"]["claim.001"]
+              == "claim.001"
+          )
+
+
+          assert (
+              mapping["backend_to_semantic"]["paper.001"]
+              == "paper.001"
+          )
+
+
+          loss = adapter.loss_report()
+
+          assert loss["lossless"] is True
+          assert loss["lost"] == []
+
+
+          edges = adapter.edges()
+
+          assert len(edges) == 1
+
+          assert edges[0]["relation"] == "SUPPORTED_BY"
+
+          assert (
+              edges[0]["metadata"]["confidence"]
+              == 0.95
+          )
+
+
+          print(
+              "NetworkX official adapter validation passed."
+          )
+
+          PY
