@@ -1,0 +1,512 @@
+name: 05 - Semantic Graph Contract Validation
+
+on:
+  workflow_dispatch:
+
+  # Temporary branch trigger so the workflow is registered and easy to verify.
+  # After the first successful run, this can be removed to make the workflow manual-only.
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - "audit_engine/semantic_audit/core/semantic_graph.py"
+      - "audit_engine/semantic_audit/graph/backend/networkx_adapter.py"
+      - "docs/architecture/semantic_graph_contract.md"
+      - "docs/decisions/ADR-005-semantic-graph-universal-core.md"
+      - "docs/schemas/semantic_graph_schema.json"
+      - ".github/workflows/05_semantic_graph_contract_validation.yml"
+
+jobs:
+  semantic-graph-contract-validation:
+
+    name: G2.5 Universal Semantic Graph Contract
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install jsonschema networkx
+
+      - name: Validate universal semantic graph contract
+        run: |
+          python <<'PY'
+          import ast
+          import json
+          from dataclasses import fields
+          from pathlib import Path
+
+          from jsonschema import Draft202012Validator
+
+          from audit_engine.semantic_audit.core.semantic_graph import (
+              SemanticGraph,
+              SemanticNode,
+              SemanticEdge,
+          )
+
+          from audit_engine.semantic_audit.graph.backend.networkx_adapter import (
+              NetworkXAdapter,
+          )
+
+
+          print("=" * 72)
+          print("G2.5 Universal Semantic Graph Contract Validation")
+          print("=" * 72)
+
+
+          # ------------------------------------------------------------
+          # 1. Load and validate the machine-readable contract schema
+          # ------------------------------------------------------------
+
+          schema_path = Path(
+              "docs/schemas/semantic_graph_schema.json"
+          )
+
+          schema = json.loads(
+              schema_path.read_text(
+                  encoding="utf-8"
+              )
+          )
+
+          Draft202012Validator.check_schema(schema)
+
+          validator = Draft202012Validator(schema)
+
+          print("[PASS] JSON Schema is valid Draft 2020-12")
+
+
+          # ------------------------------------------------------------
+          # 2. Verify the canonical in-memory dataclass contract
+          # ------------------------------------------------------------
+
+          node_fields = [
+              field.name
+              for field in fields(SemanticNode)
+          ]
+
+          edge_fields = [
+              field.name
+              for field in fields(SemanticEdge)
+          ]
+
+          assert node_fields == [
+              "node_id",
+              "entity_type",
+              "attributes",
+              "metadata",
+          ]
+
+          assert edge_fields == [
+              "source_id",
+              "target_id",
+              "relation_type",
+              "attributes",
+              "metadata",
+          ]
+
+          print("[PASS] Canonical node/edge field contract")
+
+
+          # ------------------------------------------------------------
+          # 3. Build a software/code semantic graph
+          # ------------------------------------------------------------
+
+          software_graph = SemanticGraph()
+
+          software_graph.add_node(
+              SemanticNode(
+                  node_id="module.main",
+                  entity_type="SoftwareModule",
+                  attributes={
+                      "language": "python",
+                      "role": "entrypoint",
+                  },
+                  metadata={
+                      "producer": "ast",
+                      "source": "main.py",
+                  },
+              )
+          )
+
+          software_graph.add_node(
+              SemanticNode(
+                  node_id="module.research",
+                  entity_type="SoftwareModule",
+                  attributes={
+                      "language": "python",
+                  },
+                  metadata={
+                      "producer": "ast",
+                      "source": "research/__init__.py",
+                  },
+              )
+          )
+
+          software_graph.add_edge(
+              SemanticEdge(
+                  source_id="module.main",
+                  target_id="module.research",
+                  relation_type="IMPORTS",
+                  attributes={
+                      "observed": True,
+                  },
+                  metadata={
+                      "producer": "ast",
+                  },
+              )
+          )
+
+          software_serialized = software_graph.to_dict()
+
+          validator.validate(software_serialized)
+
+          assert software_serialized["nodes"][0]["attributes"]["language"] == "python"
+          assert software_serialized["nodes"][0]["metadata"]["producer"] == "ast"
+          assert software_serialized["edges"][0]["relation"] == "IMPORTS"
+          assert software_serialized["edges"][0]["attributes"]["observed"] is True
+
+          print("[PASS] Software/code domain uses universal core")
+
+
+          # ------------------------------------------------------------
+          # 4. Build a scientific/text semantic graph
+          # ------------------------------------------------------------
+
+          scientific_graph = SemanticGraph()
+
+          scientific_graph.add_node(
+              SemanticNode(
+                  node_id="claim.001",
+                  entity_type="ScientificClaim",
+                  attributes={
+                      "statement": (
+                          "A reported configuration increases "
+                          "sound transmission loss."
+                      ),
+                      "confidence": 0.91,
+                  },
+                  metadata={
+                      "producer": "llm",
+                      "source": "paper.pdf",
+                      "source_span": "p.12",
+                  },
+              )
+          )
+
+          scientific_graph.add_node(
+              SemanticNode(
+                  node_id="paper.example",
+                  entity_type="ResearchPaper",
+                  attributes={
+                      "title": "Example acoustics study",
+                  },
+                  metadata={
+                      "producer": "document_parser",
+                      "source": "paper.pdf",
+                  },
+              )
+          )
+
+          scientific_graph.add_edge(
+              SemanticEdge(
+                  source_id="claim.001",
+                  target_id="paper.example",
+                  relation_type="SUPPORTED_BY",
+                  attributes={
+                      "confidence": 0.84,
+                  },
+                  metadata={
+                      "producer": "llm",
+                      "source_span": "p.12",
+                  },
+              )
+          )
+
+          scientific_serialized = scientific_graph.to_dict()
+
+          validator.validate(scientific_serialized)
+
+          assert (
+              scientific_serialized["nodes"][0]["type"]
+              == "ScientificClaim"
+          )
+
+          assert (
+              scientific_serialized["edges"][0]["relation"]
+              == "SUPPORTED_BY"
+          )
+
+          assert (
+              scientific_serialized["edges"][0]["metadata"]["producer"]
+              == "llm"
+          )
+
+          print("[PASS] Scientific/text domain uses universal core")
+
+
+          # ------------------------------------------------------------
+          # 5. Verify an additional document/LaTeX-style graph
+          # ------------------------------------------------------------
+
+          document_graph = SemanticGraph()
+
+          document_graph.add_node(
+              SemanticNode(
+                  node_id="section.methods",
+                  entity_type="DocumentSection",
+                  attributes={
+                      "title": "Methods",
+                  },
+                  metadata={
+                      "producer": "latex_parser",
+                      "source": "main.tex",
+                  },
+              )
+          )
+
+          document_graph.add_node(
+              SemanticNode(
+                  node_id="concept.boundary_condition",
+                  entity_type="Concept",
+                  attributes={
+                      "label": "Boundary condition",
+                  },
+                  metadata={
+                      "producer": "llm",
+                      "source": "main.tex",
+                  },
+              )
+          )
+
+          document_graph.add_edge(
+              SemanticEdge(
+                  source_id="section.methods",
+                  target_id="concept.boundary_condition",
+                  relation_type="DEFINES",
+                  attributes={},
+                  metadata={
+                      "producer": "semantic_extractor",
+                  },
+              )
+          )
+
+          document_serialized = document_graph.to_dict()
+
+          validator.validate(document_serialized)
+
+          print("[PASS] Document/LaTeX domain uses universal core")
+
+
+          # ------------------------------------------------------------
+          # 6. Verify serialized names remain portable and backend-neutral
+          # ------------------------------------------------------------
+
+          for serialized_graph in (
+              software_serialized,
+              scientific_serialized,
+              document_serialized,
+          ):
+
+              for node in serialized_graph["nodes"]:
+
+                  assert set(node.keys()) == {
+                      "id",
+                      "type",
+                      "attributes",
+                      "metadata",
+                  }
+
+              for edge in serialized_graph["edges"]:
+
+                  assert set(edge.keys()) == {
+                      "source",
+                      "target",
+                      "relation",
+                      "attributes",
+                      "metadata",
+                  }
+
+          print("[PASS] Portable serialization contract")
+
+
+          # ------------------------------------------------------------
+          # 7. Verify semantic identity inside test fixtures
+          #
+          # This validates the contract fixtures without changing the
+          # current core's duplicate-node policy, which remains an
+          # explicit future architecture decision.
+          # ------------------------------------------------------------
+
+          for serialized_graph in (
+              software_serialized,
+              scientific_serialized,
+              document_serialized,
+          ):
+
+              node_ids = [
+                  node["id"]
+                  for node in serialized_graph["nodes"]
+              ]
+
+              assert len(node_ids) == len(set(node_ids))
+
+          print("[PASS] Stable unique node identities in contract fixtures")
+
+
+          # ------------------------------------------------------------
+          # 8. Verify NetworkX remains an adapter, not the core model
+          # ------------------------------------------------------------
+
+          adapter = NetworkXAdapter(software_graph)
+
+          assert "module.main" in adapter.nodes()
+          assert "module.research" in adapter.nodes()
+
+          backend = adapter.backend_graph()
+
+          main_data = backend.nodes["module.main"]
+
+          assert main_data["entity_type"] == "SoftwareModule"
+          assert main_data["language"] == "python"
+          assert main_data["metadata"]["producer"] == "ast"
+
+          backend_edges = adapter.edges()
+
+          assert len(backend_edges) == 1
+          assert backend_edges[0]["relation"] == "IMPORTS"
+          assert backend_edges[0]["observed"] is True
+          assert backend_edges[0]["metadata"]["producer"] == "ast"
+
+          assert "module.research" in adapter.neighbors(
+              "module.main"
+          )
+
+          print("[PASS] NetworkX adapter preserves tested semantics")
+
+
+          # ------------------------------------------------------------
+          # 9. Verify the core imports no backend-specific graph library
+          # ------------------------------------------------------------
+
+          core_file = Path(
+              "audit_engine/semantic_audit/core/semantic_graph.py"
+          )
+
+          tree = ast.parse(
+              core_file.read_text(
+                  encoding="utf-8"
+              )
+          )
+
+          forbidden_roots = {
+              "networkx",
+              "scipy",
+              "rdflib",
+              "igraph",
+              "graph_tool",
+              "snap",
+          }
+
+          discovered_forbidden_imports = []
+
+          for node in ast.walk(tree):
+
+              if isinstance(node, ast.Import):
+
+                  for alias in node.names:
+
+                      root = alias.name.split(".")[0]
+
+                      if root in forbidden_roots:
+                          discovered_forbidden_imports.append(
+                              alias.name
+                          )
+
+              elif isinstance(node, ast.ImportFrom):
+
+                  if node.module:
+
+                      root = node.module.split(".")[0]
+
+                      if root in forbidden_roots:
+                          discovered_forbidden_imports.append(
+                              node.module
+                          )
+
+          assert not discovered_forbidden_imports, (
+              "SemanticGraph core imports backend-specific libraries: "
+              + ", ".join(discovered_forbidden_imports)
+          )
+
+          print("[PASS] Core/backend dependency separation")
+
+
+          # ------------------------------------------------------------
+          # 10. Produce validation artifact
+          # ------------------------------------------------------------
+
+          result = {
+              "workflow": "05 - Semantic Graph Contract Validation",
+              "milestone": "G2.5",
+              "status": "PASSED",
+              "checks": {
+                  "json_schema_valid": True,
+                  "canonical_field_contract": True,
+                  "software_domain_supported": True,
+                  "scientific_text_domain_supported": True,
+                  "document_latex_domain_supported": True,
+                  "portable_serialization": True,
+                  "fixture_identity_uniqueness": True,
+                  "networkx_projection": True,
+                  "networkx_semantic_preservation": True,
+                  "core_backend_separation": True,
+              },
+              "domains": {
+                  "software": software_serialized,
+                  "scientific_text": scientific_serialized,
+                  "document_latex": document_serialized,
+              },
+              "deferred_contract_decisions": [
+                  "duplicate_node_policy",
+                  "dangling_edge_policy",
+                  "graph_level_metadata",
+                  "graph_schema_versioning",
+                  "formal_provenance_schema",
+                  "domain_vocabulary_validation",
+                  "adapter_loss_reporting",
+                  "deterministic_ordering",
+                  "deserialization_round_trip",
+              ],
+          }
+
+          Path(
+              "semantic_graph_g2_5_contract_result.json"
+          ).write_text(
+              json.dumps(
+                  result,
+                  indent=2,
+              ),
+              encoding="utf-8",
+          )
+
+          print()
+          print(json.dumps(result, indent=2))
+          print()
+          print("G2.5 semantic graph contract validation completed successfully.")
+          PY
+
+      - name: Upload G2.5 contract validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic_graph_g2_5_contract_result
+          path: semantic_graph_g2_5_contract_result.json
