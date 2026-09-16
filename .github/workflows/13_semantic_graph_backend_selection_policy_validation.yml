@@ -1,0 +1,101 @@
+name: 13 - Semantic Graph Backend Selection Policy Validation
+
+
+on:
+
+  workflow_dispatch:
+
+
+jobs:
+
+
+  backend-selection-validation:
+
+
+    name: Validate Backend Selection Policy
+
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+
+      - name: Checkout stage1 development branch
+
+        uses: actions/checkout@v4
+
+        with:
+
+          ref: stage1/section-uuids
+
+
+
+      - name: Setup Python
+
+        uses: actions/setup-python@v5
+
+        with:
+
+          python-version: "3.11"
+
+
+
+      - name: Validate backend selector
+
+        run: |
+
+
+          python <<'PY'
+
+
+          from audit_engine.semantic_audit.graph.backend.capability_registry import (
+              create_default_registry,
+          )
+
+
+          from audit_engine.semantic_audit.graph.backend.backend_selector import (
+              BackendSelectionPolicy,
+          )
+
+
+
+          registry = create_default_registry()
+
+
+
+          selector = BackendSelectionPolicy(
+              registry
+          )
+
+
+
+          semantic_backend = selector.select(
+              {
+                  "metadata": True,
+                  "multiedges": True,
+              }
+          )
+
+
+          assert semantic_backend == "networkx"
+
+
+
+          numerical_backend = selector.select(
+              {
+                  "sparse_matrix": True,
+              }
+          )
+
+
+          assert numerical_backend == "scipy"
+
+
+
+          print(
+              "Semantic Graph Backend Selection Policy validation passed."
+          )
+
+
+          PY
