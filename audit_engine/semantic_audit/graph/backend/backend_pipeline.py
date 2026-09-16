@@ -1,14 +1,15 @@
 """
-Semantic Graph Backend Pipeline.
-
-Coordinates backend selection,
-adapter creation,
-execution,
-and result generation.
+Backend pipeline producing provenance-aware results.
 """
 
 from audit_engine.semantic_audit.graph.backend.execution_result import (
     BackendExecutionResult,
+)
+
+from audit_engine.semantic_audit.graph.backend.provenance import (
+    ProvenanceRecord,
+    TransformationRecord,
+    LossAssessment,
 )
 
 
@@ -20,9 +21,7 @@ class BackendPipeline:
 
     def execute(self, requirements, context):
 
-        backend_name = self.selector.select(
-            requirements
-        )
+        backend_name = self.selector.select(requirements)
 
         adapter = self.factory.create(
             backend_name,
@@ -35,14 +34,20 @@ class BackendPipeline:
             metadata={
                 "task_type": context.task_type,
             },
-            provenance={
-                "source": "BackendPipeline",
-            },
-            transformations=[
-                "backend_selection",
-                "adapter_creation",
+            provenance_records=[
+                ProvenanceRecord(
+                    source="SemanticGraph",
+                    backend=backend_name,
+                )
             ],
-            loss_report={
-                "lossless": True,
-            },
+            transformation_records=[
+                TransformationRecord(
+                    operation="backend_projection",
+                    input_type="SemanticGraph",
+                    output_type=adapter.__class__.__name__,
+                )
+            ],
+            loss_assessment=LossAssessment(
+                lossless=True
+            ),
         )
