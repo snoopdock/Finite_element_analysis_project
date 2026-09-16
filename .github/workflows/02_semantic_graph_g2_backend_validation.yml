@@ -5,10 +5,7 @@ on:
 
   workflow_dispatch:
 
-  push:
-
-    branches:
-      - stage1/section-uuids
+  
       
 
 jobs:
