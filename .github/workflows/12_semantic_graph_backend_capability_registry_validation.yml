@@ -1,0 +1,107 @@
+name: 12 - Semantic Graph Backend Capability Registry Validation
+
+
+on:
+
+  workflow_dispatch:
+
+
+jobs:
+
+
+  capability-registry-validation:
+
+
+    name: Validate Backend Capability Registry
+
+
+    runs-on: ubuntu-latest
+
+
+
+    steps:
+
+
+
+      - name: Checkout stage1 development branch
+
+        uses: actions/checkout@v4
+
+        with:
+
+          ref: stage1/section-uuids
+
+
+
+      - name: Setup Python
+
+        uses: actions/setup-python@v5
+
+        with:
+
+          python-version: "3.11"
+
+
+
+      - name: Validate registry
+
+        run: |
+
+
+          python <<'PY'
+
+
+          from audit_engine.semantic_audit.graph.backend.capability_registry import (
+
+              create_default_registry,
+
+          )
+
+
+
+          registry = create_default_registry()
+
+
+
+          backends = registry.list_backends()
+
+
+
+          assert "networkx" in backends
+
+          assert "scipy" in backends
+
+
+
+          data = registry.describe()
+
+
+
+          assert data["networkx"]["lossless"] is True
+
+
+          assert data["networkx"]["metadata"] is True
+
+
+          assert data["networkx"]["multiedges"] is True
+
+
+
+          assert data["scipy"]["lossless"] is False
+
+
+          assert data["scipy"]["sparse_matrix"] is True
+
+
+          assert data["scipy"]["relation_side_channel"] is True
+
+
+
+          print(
+
+              "Semantic Graph Backend Capability Registry validation passed."
+
+          )
+
+
+          PY
