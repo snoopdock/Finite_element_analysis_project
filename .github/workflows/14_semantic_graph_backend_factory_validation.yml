@@ -1,0 +1,100 @@
+name: 14 - Semantic Graph Backend Factory Validation
+
+
+on:
+
+  workflow_dispatch:
+
+
+jobs:
+
+
+  backend-factory-validation:
+
+
+    name: Validate Backend Factory Layer
+
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+
+      - name: Checkout stage1 development branch
+
+        uses: actions/checkout@v4
+
+        with:
+
+          ref: stage1/section-uuids
+
+
+
+      - name: Setup Python
+
+        uses: actions/setup-python@v5
+
+        with:
+
+          python-version: "3.11"
+
+
+
+      - name: Validate backend factory
+
+        run: |
+
+
+          python <<'PY'
+
+
+          from audit_engine.semantic_audit.core.semantic_graph import (
+              SemanticGraph,
+          )
+
+
+          from audit_engine.semantic_audit.graph.backend.backend_factory import (
+              BackendFactory,
+          )
+
+
+
+          graph = SemanticGraph()
+
+
+
+          factory = BackendFactory()
+
+
+
+          networkx_adapter = factory.create(
+              "networkx",
+              graph,
+          )
+
+
+          scipy_adapter = factory.create(
+              "scipy",
+              graph,
+          )
+
+
+
+          assert networkx_adapter.__class__.__name__ == (
+              "NetworkXAdapter"
+          )
+
+
+          assert scipy_adapter.__class__.__name__ == (
+              "SciPyAdapter"
+          )
+
+
+
+          print(
+              "Semantic Graph Backend Factory validation passed."
+          )
+
+
+          PY
