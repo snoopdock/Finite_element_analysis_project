@@ -5,9 +5,7 @@ on:
 
   # Temporary branch trigger so the workflow is registered and easy to verify.
   # After the first successful run, this can be removed to make the workflow manual-only.
-  push:
-    branches:
-      - stage1/section-uuids
+  
     paths:
       - "audit_engine/semantic_audit/core/semantic_graph.py"
       - "audit_engine/semantic_audit/graph/backend/networkx_adapter.py"
