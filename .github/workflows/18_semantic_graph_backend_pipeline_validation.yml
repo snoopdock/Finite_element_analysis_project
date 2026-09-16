@@ -1,0 +1,70 @@
+name: 18 - Semantic Graph Backend Pipeline Validation
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  backend-pipeline-validation:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout stage1 development branch
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install networkx scipy numpy
+
+      - name: Validate backend pipeline
+        run: |
+
+          python <<'PY'
+
+          from audit_engine.semantic_audit.core.semantic_graph import SemanticGraph
+          from audit_engine.semantic_audit.graph.backend.backend_pipeline import BackendPipeline
+          from audit_engine.semantic_audit.graph.backend.capability_registry import create_default_registry
+          from audit_engine.semantic_audit.graph.backend.backend_selector import BackendSelectionPolicy
+          from audit_engine.semantic_audit.graph.backend.backend_factory import BackendFactory
+          from audit_engine.semantic_audit.graph.backend.execution_context import BackendExecutionContext
+
+          graph = SemanticGraph()
+
+          context = BackendExecutionContext(
+              graph=graph,
+              task_type="semantic_analysis",
+          )
+
+          pipeline = BackendPipeline(
+              BackendSelectionPolicy(
+                  create_default_registry()
+              ),
+              BackendFactory(),
+          )
+
+          adapter, backend = pipeline.execute(
+              {
+                  "metadata": True,
+                  "multiedges": True,
+              },
+              context,
+          )
+
+          assert backend == "networkx"
+          assert adapter.__class__.__name__ == "NetworkXAdapter"
+
+          print(
+              "Semantic Graph Backend Pipeline validation passed."
+          )
+
+          PY
