@@ -1,39 +1,36 @@
 """
-Semantic Graph Backend Factory.
-
-Creates adapter instances from selected backend identifiers.
+Semantic Graph Backend Factory with lazy backend imports.
 """
-
-
-from audit_engine.semantic_audit.graph.backend.networkx_adapter import (
-    NetworkXAdapter,
-)
-
-from audit_engine.semantic_audit.graph.backend.scipy_adapter import (
-    SciPyAdapter,
-)
 
 
 class BackendFactory:
 
     def __init__(self):
-        self._adapters = {
-            "networkx": NetworkXAdapter,
-            "scipy": SciPyAdapter,
+        self._backend_names = {
+            "networkx",
+            "scipy",
         }
 
+    def register(self, name):
+        self._backend_names.add(name)
 
-    def register(self, name, adapter_class):
-        self._adapters[name] = adapter_class
-
+    def available_backends(self):
+        return sorted(self._backend_names)
 
     def create(self, backend_name, graph):
 
-        if backend_name not in self._adapters:
-            raise ValueError(
-                f"Unknown backend: {backend_name}"
+        if backend_name == "networkx":
+            from audit_engine.semantic_audit.graph.backend.networkx_adapter import (
+                NetworkXAdapter,
             )
+            return NetworkXAdapter(graph)
 
-        adapter_class = self._adapters[backend_name]
+        if backend_name == "scipy":
+            from audit_engine.semantic_audit.graph.backend.scipy_adapter import (
+                SciPyAdapter,
+            )
+            return SciPyAdapter(graph)
 
-        return adapter_class(graph)
+        raise ValueError(
+            f"Unknown backend: {backend_name}"
+        )
