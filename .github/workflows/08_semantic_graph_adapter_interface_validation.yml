@@ -3,9 +3,7 @@ name: 08 - Semantic Graph Adapter Interface Validation
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - stage1/section-uuids
+  
     paths:
       - "audit_engine/semantic_audit/graph/backend/adapter_interface.py"
       - "docs/decisions/ADR-008-semantic-graph-adapter-interface.md"
