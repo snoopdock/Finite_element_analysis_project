@@ -4,9 +4,7 @@ on:
 
   workflow_dispatch:
 
-  push:
-    branches:
-      - stage1/section-uuids
+  
     paths:
       - "docs/decisions/ADR-010-scipy-sparse-projection-contract.md"
       - "docs/architecture/scipy_sparse_projection_design.md"
