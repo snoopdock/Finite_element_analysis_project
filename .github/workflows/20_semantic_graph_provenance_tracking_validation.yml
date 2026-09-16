@@ -1,0 +1,92 @@
+name: 20 - Semantic Graph Provenance Tracking Validation
+
+
+on:
+
+  workflow_dispatch:
+
+
+jobs:
+
+
+  provenance-validation:
+
+
+    name: Validate Provenance and Transformation Tracking
+
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+
+      - name: Checkout stage1 development branch
+
+        uses: actions/checkout@v4
+
+        with:
+
+          ref: stage1/section-uuids
+
+
+
+      - name: Setup Python
+
+        uses: actions/setup-python@v5
+
+        with:
+
+          python-version: "3.11"
+
+
+
+      - name: Validate provenance models
+
+        run: |
+
+
+          python <<'PY'
+
+
+          from audit_engine.semantic_audit.graph.backend.provenance import (
+              ProvenanceRecord,
+              TransformationRecord,
+              LossAssessment,
+          )
+
+
+          provenance = ProvenanceRecord(
+              source="SemanticGraph",
+              backend="networkx",
+              description="graph projection",
+          )
+
+
+          transformation = TransformationRecord(
+              operation="semantic_projection",
+              input_type="SemanticGraph",
+              output_type="NetworkXGraph",
+          )
+
+
+          loss = LossAssessment(
+              lossless=True,
+          )
+
+
+          assert provenance.to_dict()["backend"] == "networkx"
+
+          assert transformation.to_dict()["operation"] == (
+              "semantic_projection"
+          )
+
+          assert loss.to_dict()["lossless"] is True
+
+
+          print(
+              "Semantic Graph Provenance and Transformation Tracking validation passed."
+          )
+
+
+          PY
