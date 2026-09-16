@@ -3,11 +3,7 @@ name: 01 - Semantic Graph G1 Validation
 
 on:
 
-  push:
-
-    branches:
-
-      - stage1/section-uuids
+  
 
 
   workflow_dispatch:
