@@ -1,0 +1,71 @@
+name: 21 - Semantic Graph Result Provenance Integration Validation
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  result-provenance-validation:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout stage1 development branch
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate provenance integration
+        run: |
+
+          python <<'PY'
+
+          from audit_engine.semantic_audit.graph.backend.execution_result import (
+              BackendExecutionResult,
+          )
+
+          from audit_engine.semantic_audit.graph.backend.provenance import (
+              ProvenanceRecord,
+              TransformationRecord,
+              LossAssessment,
+          )
+
+          result = BackendExecutionResult(
+              backend="networkx",
+              output="graph",
+              provenance_records=[
+                  ProvenanceRecord(
+                      source="SemanticGraph",
+                      backend="networkx",
+                  )
+              ],
+              transformation_records=[
+                  TransformationRecord(
+                      operation="projection",
+                      input_type="SemanticGraph",
+                      output_type="NetworkXGraph",
+                  )
+              ],
+              loss_assessment=LossAssessment(
+                  lossless=True
+              ),
+          )
+
+          summary = result.summary()
+
+          assert summary["backend"] == "networkx"
+          assert summary["provenance_count"] == 1
+          assert summary["transformation_count"] == 1
+          assert summary["lossless"] is True
+
+          print(
+              "Semantic Graph Result Provenance Integration validation passed."
+          )
+
+          PY
