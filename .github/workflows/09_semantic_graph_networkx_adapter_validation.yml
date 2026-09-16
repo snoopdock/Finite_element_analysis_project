@@ -4,9 +4,7 @@ on:
 
   workflow_dispatch:
 
-  push:
-    branches:
-      - stage1/section-uuids
+  
     paths:
       - "audit_engine/semantic_audit/graph/backend/networkx_adapter.py"
       - "audit_engine/semantic_audit/graph/backend/adapter_interface.py"
