@@ -18,7 +18,9 @@ jobs:
     runs-on: ubuntu-latest
 
 
+
     steps:
+
 
 
       - name: Checkout stage1 development branch
@@ -38,6 +40,16 @@ jobs:
         with:
 
           python-version: "3.11"
+
+
+
+      - name: Install dependencies
+
+        run: |
+
+          python -m pip install --upgrade pip
+
+          pip install networkx scipy numpy
 
 
 
@@ -84,6 +96,7 @@ jobs:
           assert networkx_adapter.__class__.__name__ == (
               "NetworkXAdapter"
           )
+
 
 
           assert scipy_adapter.__class__.__name__ == (
