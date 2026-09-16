@@ -3,9 +3,7 @@ name: 06 - Semantic Graph Integrity Validation
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - stage1/section-uuids
+  
     paths:
       - "audit_engine/semantic_audit/core/semantic_graph.py"
       - "audit_engine/semantic_audit/graph/builder.py"
