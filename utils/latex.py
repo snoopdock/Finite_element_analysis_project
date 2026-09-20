@@ -88,4 +88,19 @@ def balanced_braces(text: str) -> str:
     return text
 
 
-check_balanced_braces = balanced_braces
+def check_balanced_braces(text: str) -> bool:
+    if not text:
+        return True
+
+    depth = 0
+
+    for char in text:
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+
+        if depth < 0:
+            return False
+
+    return depth == 0
