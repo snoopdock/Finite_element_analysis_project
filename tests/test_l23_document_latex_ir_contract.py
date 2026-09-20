@@ -28,7 +28,10 @@ def _create_document():
     return build_document_model(
         {
             "title": "Contract Test",
-            "metadata": {"source": "L1-L23-L"},
+            "objective": "Validate deterministic rendering of a semantic document boundary.",
+            "metadata": {
+                "source": "L1-L23-L",
+            },
         },
         [
             {
