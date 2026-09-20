@@ -13,15 +13,15 @@ permissions:
 
 jobs:
   pytest:
-    name: "pytest validation - stage1-section-uuids"
+    name: "pytest validation - stage1/section-uuids"
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout stage1-section-uuids
         uses: actions/checkout@v4
         with:
-          ref: stage1-section-uuids
-
+          ref: stage1/section-uuids
+          
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
