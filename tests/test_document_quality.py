@@ -1,5 +1,4 @@
-from document_quality_checks import validate_sections
-
+from processing.document_quality_checks import validate_sections
 
 def test_duplicate_sections_are_detected():
     report = validate_sections(
