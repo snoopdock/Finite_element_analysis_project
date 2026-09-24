@@ -57,6 +57,14 @@ def _extract_equations(content: str) -> List[str]:
     seen = set()
     for equation in equations:
         equation = equation.strip()
+
+        if equation.lower() in {
+            "",
+            "latex",
+            "equation",
+        }:
+            continue
+
         if equation and equation not in seen:
             seen.add(equation)
             result.append(equation)
@@ -66,10 +74,12 @@ def _extract_equations(content: str) -> List[str]:
 def _extract_citations(content, allowed_sources=None):
     result = set()
 
-    # existing extraction logic should populate this
-    citations = extract_existing_logic(content)
+    matches = re.findall(
+        r"\[([^\]]+)\]",
+        str(content),
+    )
 
-    for group in citations:
+    for group in matches:
         for part in group.split(","):
             part = part.strip()
 
@@ -82,6 +92,7 @@ def _extract_citations(content, allowed_sources=None):
             result.add(part)
 
     return sorted(result)
+
 
 
 class DynamicWriter:
@@ -350,9 +361,22 @@ class DynamicWriter:
         if not paragraphs:
             return None
 
+        concepts = self._get_relevant_concepts(
+            topic,
+            kb,
+        )
+
+        allowed_sources: Set[str] = set()
+
+        for concept in concepts:
+            allowed_sources.update(
+                concept.get("source_ids", [])
+            )
+
         section = self._assemble_section(
             topic,
             paragraphs,
+            allowed_sources,
         )
 
         if existing_section is not None:
@@ -679,6 +703,7 @@ CRITICAL RULES:
         self,
         topic: str,
         paragraphs: List[str],
+        allowed_sources: Optional[Set[str]] = None,
     ) -> Dict:
         content = "\n\n".join(
             paragraphs
