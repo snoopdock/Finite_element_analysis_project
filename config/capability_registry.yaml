@@ -1,0 +1,33 @@
+capabilities:
+
+  document_quality:
+    provides:
+      - document_quality_checks
+      - document_quality_report
+    depends_on: []
+
+  document_diagnostics:
+    provides:
+      - document_diagnostics
+    depends_on:
+      - document_quality
+
+  latex_artifact_diagnostics:
+    provides:
+      - latex_artifact_diagnostics
+    depends_on:
+      - document_diagnostics
+
+  quality_feedback:
+    provides:
+      - quality_feedback
+      - quality_feedback_rule
+    depends_on:
+      - document_diagnostics
+
+  generation_constraints:
+    provides:
+      - generation_constraint
+      - constraint_builder
+    depends_on:
+      - quality_feedback
