@@ -1,0 +1,102 @@
+{
+  "s2_2a514cd276e01e493d923e733c3aedda0556381b": {
+    "first_read_at": "2026-09-24T13:21:56.495505+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T13:21:56.495535+00:00",
+        "extracted": {
+          "concepts": 2,
+          "procedures": 1,
+          "equations": 0,
+          "rules": 1
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 2,
+      "equations": 0,
+      "procedures": 1,
+      "rules": 1
+    }
+  },
+  "wiki_discontinuous_galerkin_method": {
+    "first_read_at": "2026-09-24T13:21:56.495540+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T13:21:56.495547+00:00",
+        "extracted": {
+          "concepts": 0,
+          "procedures": 1,
+          "equations": 0,
+          "rules": 1
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 0,
+      "equations": 0,
+      "procedures": 1,
+      "rules": 1
+    }
+  },
+  "wiki_boris_galerkin": {
+    "first_read_at": "2026-09-24T13:21:56.495551+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T13:21:56.495558+00:00",
+        "extracted": {
+          "concepts": 1,
+          "procedures": 0,
+          "equations": 0,
+          "rules": 0
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 1,
+      "equations": 0,
+      "procedures": 0,
+      "rules": 0
+    }
+  },
+  "wiki_galerkin_method": {
+    "first_read_at": "2026-09-24T13:21:56.495561+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T13:21:56.495566+00:00",
+        "extracted": {
+          "concepts": 1,
+          "procedures": 1,
+          "equations": 2,
+          "rules": 0
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 1,
+      "equations": 2,
+      "procedures": 1,
+      "rules": 0
+    }
+  }
+}

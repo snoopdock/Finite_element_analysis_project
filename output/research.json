@@ -1,0 +1,89 @@
+{
+  "concepts": [
+    {
+      "name": "Variational Principles",
+      "explanation": "Variational principles form the mathematical foundation of the Finite Element Method (FEM). They involve minimizing a functional derived from the governing differential equation, often representing physical quantities like energy. This approach transforms the problem into finding a function that satisfies the Euler-Lagrange equation. The roots of variational methods trace back to the 17th century with problems like the brachistochrone, as noted in the historical context of FEM.",
+      "mathematical_formulation": "\\delta \\Pi = 0 \\quad \\text{where} \\quad \\Pi = \\int_{\\Omega} \\left( \\frac{1}{2} \\mathbf{\\varepsilon}^T \\mathbf{D} \\mathbf{\\varepsilon} - \\mathbf{f}^T \\mathbf{u} \\right) d\\Omega",
+      "source_ids": [
+        "s2_2a514cd276e01e493d923e733c3aedda0556381b"
+      ]
+    },
+    {
+      "name": "Piecewise Polynomial Approximation",
+      "explanation": "FEM approximates solutions to partial differential equations (PDEs) using piecewise polynomial functions over a discretized domain. These functions are defined on elements (e.g., triangles, quadrilaterals) and ensure continuity across element boundaries. This approach allows for flexible modeling of complex geometries and varying material properties. The method's versatility stems from its ability to handle irregular domains and non-uniform meshes.",
+      "mathematical_formulation": "u_h(\\mathbf{x}) = \\sum_{i=1}^{N} N_i(\\mathbf{x}) u_i \\quad \\text{where} \\quad N_i \\in C^0(\\Omega)",
+      "source_ids": [
+        "s2_2a514cd276e01e493d923e733c3aedda0556381b"
+      ]
+    },
+    {
+      "name": "Galerkin Method",
+      "explanation": "The Galerkin method is a core technique in FEM that projects the residual of a differential equation onto a finite-dimensional space of test functions. It ensures that the approximate solution satisfies the weak form of the equation. This method is foundational for deriving discrete equations and is closely tied to variational principles. It is distinct from other methods like the Ritz method due to its use of test functions independent of the trial functions.",
+      "mathematical_formulation": "\\int_{\\Omega} \\mathbf{w}^T \\mathbf{R}(\\mathbf{u}_h) d\\Omega = 0 \\quad \\text{for all} \\quad \\mathbf{w} \\in V_h",
+      "source_ids": [
+        "wiki_galerkin_method",
+        "wiki_boris_galerkin"
+      ]
+    }
+  ],
+  "procedures": [
+    {
+      "step_number": 1,
+      "title": "Discretization of the Domain",
+      "description": "The physical domain is divided into smaller, simpler subdomains called elements. This process, known as meshing, defines the geometry and connectivity of elements. The choice of element type (e.g., triangular, quadrilateral) depends on the problem's complexity. A fine mesh improves accuracy but increases computational cost, requiring a balance between precision and efficiency.",
+      "equations": [
+        "\\Omega = \\bigcup_{e=1}^{E} \\Omega_e"
+      ],
+      "source_ids": [
+        "s2_2a514cd276e01e493d923e733c3aedda0556381b"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Formulation of Element Equations",
+      "description": "For each element, local basis functions are defined to approximate the solution. The weak form of the governing equation is applied, and the residual is projected onto test functions. This results in a system of equations for each element, which are then assembled into a global system. The process involves computing stiffness matrices and load vectors for individual elements.",
+      "equations": [
+        "\\mathbf{K}^e = \\int_{\\Omega_e} \\mathbf{B}^T \\mathbf{D} \\mathbf{B} d\\Omega_e",
+        "\\mathbf{F}^e = \\int_{\\Omega_e} \\mathbf{N}^T \\mathbf{f} d\\Omega_e"
+      ],
+      "source_ids": [
+        "wiki_galerkin_method",
+        "wiki_discontinuous_galerkin_method"
+      ]
+    }
+  ],
+  "equations": [
+    {
+      "name": "Weak Form of PDE",
+      "latex": "\\int_{\\Omega} \\mathbf{w}^T \\mathbf{L}(\\mathbf{u}) d\\Omega = \\int_{\\Omega} \\mathbf{w}^T \\mathbf{f} d\\Omega + \\int_{\\Gamma} \\mathbf{w}^T \\mathbf{t} d\\Gamma",
+      "explanation": "This equation represents the weighted residual form of a PDE. \\mathbf{L}(\\mathbf{u}) is the differential operator applied to the solution \\mathbf{u}, \\mathbf{w} are test functions, \\mathbf{f} is the body force, and \\mathbf{t} is the traction on the boundary \\Gamma. The weak form allows for less restrictive continuity requirements on the solution compared to the strong form.",
+      "source_ids": [
+        "wiki_galerkin_method"
+      ]
+    },
+    {
+      "name": "Bilinear Form in Galerkin Method",
+      "latex": "a(u_h, v_h) = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\mathbf{B}^T \\mathbf{D} \\mathbf{B} d\\Omega_e",
+      "explanation": "The bilinear form \\( a(u_h, v_h) $ computes the stiffness matrix by integrating the product of strain-displacement matrices (\\mathbf{B}) and material properties (\\mathbf{D}) over each element. This form ensures the discrete solution satisfies the variational principle, linking the physical properties of the material to the numerical approximation.",
+      "source_ids": [
+        "wiki_galerkin_method"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule": "Continuity of Basis Functions",
+      "explanation": "The choice of continuous or discontinuous basis functions depends on the problem's nature. Continuous functions ensure smooth solutions, while discontinuous functions (as in Discontinuous Galerkin methods) handle shocks or discontinuities. This rule ensures numerical stability and accuracy, particularly in problems with sharp gradients or material interfaces.",
+      "source_ids": [
+        "wiki_discontinuous_galerkin_method"
+      ]
+    },
+    {
+      "rule": "Mesh Refinement Near Gradients",
+      "explanation": "Regions with high solution gradients require finer meshes to capture local behavior accurately. This rule prevents numerical errors and ensures convergence. It is critical in problems involving stress concentrations, fluid flow, or electromagnetic fields where localized effects dominate.",
+      "source_ids": [
+        "s2_2a514cd276e01e493d923e733c3aedda0556381b"
+      ]
+    }
+  ]
+}

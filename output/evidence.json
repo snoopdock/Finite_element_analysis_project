@@ -1,5 +1,122 @@
 [
   {
+    "source_id": "s2_2a514cd276e01e493d923e733c3aedda0556381b",
+    "url": "https://journals.riverpublishers.com/index.php/ACES/article/download/12889/15013",
+    "retrieved_at": "2026-09-24T13:21:35.960065+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "History of Finite Element Method",
+    "source_type": "academic",
+    "content_type": "application/pdf",
+    "title": "A Brief History of Finite Element Method and Its Applications to Computational Electromagnetics",
+    "authors": [
+      "S. Selleri"
+    ],
+    "metadata": {
+      "abstract": "The development of the finite element method is traced, from its deepest roots, reaching back to the birth of calculus of variations in the 17th century, to its earliest steps, in parallel with the advent of computers, up to its applications in electromagnetics and its flourishing as one of the most versatile numerical methods in the field. A survey on papers published on finite elements, and on ACES Journal in particular, is also included.",
+      "year": 2022,
+      "citation_count": 0,
+      "word_count": 5189,
+      "page_count": 9,
+      "open_access_pdf_available": true,
+      "full_text_available": true,
+      "full_text_status": "parsed_full_text"
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/s2_2a514cd276e01e493d923e733c3aedda0556381b.txt",
+    "status": "parsed_full_text",
+    "query_contexts": [
+      "History of Finite Element Method"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.825865,
+      "lexical": 0.839445,
+      "source_quality": 0.85,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "History of Finite Element Method",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Finite Element Method with Energy Minimization": 0.2125,
+        "Cut Finite Element Method": 0.2125,
+        "History of Finite Element Method": 0.825865
+      }
+    }
+  },
+  {
+    "source_id": "s2_eaf356665b0d4c3c3924daad7781b556567ed77f",
+    "url": "https://www.semanticscholar.org/paper/eaf356665b0d4c3c3924daad7781b556567ed77f",
+    "retrieved_at": "2026-09-24T13:21:35.960065+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "History of Finite Element Method",
+    "source_type": "academic",
+    "content_type": "text/plain",
+    "title": "History of Finite Element Method: A Review",
+    "authors": [
+      "Lovely Sabat",
+      "C. Kundu"
+    ],
+    "metadata": {
+      "abstract": "",
+      "year": 2020,
+      "citation_count": 35,
+      "word_count": 0,
+      "page_count": null,
+      "open_access_pdf_available": false,
+      "full_text_available": false,
+      "full_text_status": "abstract_only"
+    },
+    "full_text_path": null,
+    "status": "abstract_only",
+    "query_contexts": [
+      "History of Finite Element Method"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.825865,
+      "lexical": 0.839445,
+      "source_quality": 0.85,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "History of Finite Element Method",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Finite Element Method with Energy Minimization": 0.2125,
+        "Cut Finite Element Method": 0.2125,
+        "History of Finite Element Method": 0.825865
+      }
+    }
+  },
+  {
     "source_id": "wiki_discontinuous_galerkin_method",
     "url": "https://en.wikipedia.org/wiki/Discontinuous_Galerkin_method",
     "retrieved_at": "2026-09-24T13:19:47.467892+00:00",
@@ -103,58 +220,6 @@
     }
   },
   {
-    "source_id": "wiki_galerkin_method",
-    "url": "https://en.wikipedia.org/wiki/Galerkin_method",
-    "retrieved_at": "2026-09-24T13:19:47.467892+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Galerkin method",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "determined by <span class=\"searchmatch\">finite</span> sets of basis functions. They are named after the Soviet mathematician Boris <span class=\"searchmatch\">Galerkin</span>. Often when referring to a <span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span>, one also",
-      "word_count": 1883
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_galerkin_method.txt",
-    "status": "cached_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "galerkin dimension reduction finite element method",
-    "query_contexts": [
-      "galerkin dimension reduction finite element method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.444183,
-      "lexical": 0.419722,
-      "source_quality": 0.55,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "discontinuous galerkin finite element method",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "hierarchical polynomial finite element method": 0.1375,
-        "discontinuous galerkin finite element method": 0.444183,
-        "galerkin dimension reduction finite element method": 0.341955
-      }
-    }
-  },
-  {
     "source_id": "wiki_list_of_numerical_analysis_topics",
     "url": "https://en.wikipedia.org/wiki/List_of_numerical_analysis_topics",
     "retrieved_at": "2026-09-24T13:19:47.467892+00:00",
@@ -254,6 +319,111 @@
         "finite element method verification validation numerical stability": 0.1375,
         "Loubignac iteration finite element method": 0.1375,
         "analytic element method finite element method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_galerkin_method",
+    "url": "https://en.wikipedia.org/wiki/Galerkin_method",
+    "retrieved_at": "2026-09-24T13:21:35.960065+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Galerkin method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "Bubnov–Galerkin <span class=\"searchmatch\">method</span> (after Ivan Bubnov) does not require the bilinear form to be symmetric and substitutes the <span class=\"searchmatch\">energy</span> <span class=\"searchmatch\">minimization</span> <span class=\"searchmatch\">with</span> orthogonality",
+      "word_count": 1883
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_galerkin_method.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Finite Element Method with Energy Minimization",
+    "query_contexts": [
+      "Finite Element Method with Energy Minimization",
+      "galerkin dimension reduction finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.260173,
+      "lexical": 0.167889,
+      "source_quality": 0.55,
+      "section_relevance": 0.135452,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method mathematical foundation weak form Galerkin method",
+      "query_index": 0,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Finite Element Method with Energy Minimization": 0.1375,
+        "Cut Finite Element Method": 0.1375,
+        "History of Finite Element Method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_computational_electromagnetics",
+    "url": "https://en.wikipedia.org/wiki/Computational_electromagnetics",
+    "retrieved_at": "2026-09-24T13:21:35.960065+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Computational electromagnetics",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "(CEM), computational electrodynamics or electromagnetic <span class=\"searchmatch\">modeling</span> is the process of <span class=\"searchmatch\">modeling</span> the interaction of electromagnetic fields with physical objects",
+      "word_count": 3919
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_computational_electromagnetics.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method practical implementation modeling rules",
+    "query_contexts": [
+      "finite element method practical implementation modeling rules"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.1375,
+      "lexical": 0.0,
+      "source_quality": 0.55,
+      "section_relevance": 0.0,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Cut Finite Element Method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Finite Element Method with Energy Minimization": 0.1375,
+        "Cut Finite Element Method": 0.1375,
+        "History of Finite Element Method": 0.1375
       }
     }
   },
