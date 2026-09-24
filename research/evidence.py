@@ -391,7 +391,11 @@ def merge_evidence(old: List[Dict], new: List[Dict], max_keep: int = 200) -> Lis
     return values[:max(0, int(max_keep))]
 
 
-def merge_knowledge(existing_kb: Dict, new_extraction: Dict) -> Dict:
+def merge_knowledge(
+    existing_kb: Dict,
+    new_extraction: Dict,
+    valid_source_ids: Optional[set] = None,
+) -> Dict:
     """Merge extracted knowledge while retaining all known source IDs."""
     if not isinstance(new_extraction, dict):
         return existing_kb or {}
@@ -418,6 +422,13 @@ def merge_knowledge(existing_kb: Dict, new_extraction: Dict) -> Dict:
             new_sources = new_item.get("source_ids", [])
             if not isinstance(new_sources, list):
                 new_sources = []
+
+            if valid_source_ids is not None:
+                new_sources = [
+                    sid
+                    for sid in new_sources
+                    if sid in valid_source_ids
+                ]
             if not key:
                 existing.append(new_item)
                 continue
@@ -426,6 +437,13 @@ def merge_knowledge(existing_kb: Dict, new_extraction: Dict) -> Dict:
                 old_sources = old_item.get("source_ids", [])
                 if not isinstance(old_sources, list):
                     old_sources = []
+
+                if valid_source_ids is not None:
+                    old_sources = [
+                        sid
+                        for sid in old_sources
+                        if sid in valid_source_ids
+                    ]
                 old_item["source_ids"] = sorted(set(old_sources) | set(new_sources))
                 old_explanation = str(old_item.get("explanation", ""))
                 new_explanation = str(new_item.get("explanation", ""))
