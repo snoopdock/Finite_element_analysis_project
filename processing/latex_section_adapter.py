@@ -19,22 +19,22 @@ from typing import Any
 
 def _paragraph_block(text: str) -> dict[str, Any]:
     return {
-        "type": "paragraph",
+        "type": "text",
         "text": text.strip(),
     }
 
 
 def _equation_block(equation: str) -> dict[str, Any]:
     return {
-        "type": "equation",
-        "latex": equation.strip(),
+        "type": "math",
+        "expression": equation.strip(),
     }
 
 
 def _citation_block(citation_id: str) -> dict[str, Any]:
     return {
         "type": "citation",
-        "id": citation_id.strip(),
+        "source_ids": [citation_id.strip()],
     }
 
 
