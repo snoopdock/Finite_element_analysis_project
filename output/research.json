@@ -34,7 +34,8 @@
       "mathematical_formulation": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
       "source_ids": [
         "wiki_babu_ka_lax_milgram_theorem"
-      ]
+      ],
+      "concept_id": "1bcd5a0a-3995-4183-bc3b-676bcafad0ca"
     },
     {
       "name": "Bilinear Form",
@@ -42,7 +43,8 @@
       "mathematical_formulation": "B(u, v) = \\int_\\Omega \\nabla u \\cdot \\nabla v \\, dx",
       "source_ids": [
         "wiki_babu_ka_lax_milgram_theorem"
-      ]
+      ],
+      "concept_id": "332742cc-2823-4ccd-851b-14f2b7f3bdda"
     },
     {
       "name": "High-Degree Basis Functions",
@@ -50,6 +52,23 @@
       "mathematical_formulation": "\\phi_i(x) = \\prod_{j \\neq i} \\frac{x - x_j}{x_i - x_j}",
       "source_ids": [
         "wiki_spectral_element_method"
+      ],
+      "concept_id": "e3f06c40-c08a-4dfb-82fc-54c144d1e111"
+    },
+    {
+      "name": "Finite Element Method",
+      "explanation": "The Finite Element Method (FEM) is a numerical technique used to approximate solutions to partial differential equations (PDEs) by discretizing a complex domain into smaller, simpler parts called finite elements. It is particularly effective for handling irregular geometries and complex boundary conditions, making it suitable for problems where analytical solutions are infeasible. FEM transforms continuous equations into a system of algebraic equations through variational principles or weighted residual methods, enabling computational solutions. In computational electromagnetics, FEM is employed to model electromagnetic fields in structures with curved or non-orthogonal geometries, offering higher accuracy compared to methods like FDTD for such cases.",
+      "mathematical_formulation": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma",
+      "source_ids": [
+        "wiki_computational_electromagnetics"
+      ]
+    },
+    {
+      "name": "Discretization",
+      "explanation": "Discretization is the process of dividing a continuous domain into discrete elements to approximate solutions numerically. In FEM, this involves creating a mesh of elements where the solution is computed at nodes, and interpolation functions define behavior within each element. This approach reduces complex PDEs to manageable algebraic equations, enabling computational analysis. Discretization is critical for handling irregular geometries and varying material properties, as it allows localized refinement where higher accuracy is required.",
+      "mathematical_formulation": "\\Omega \\approx \\bigcup_{i=1}^N \\Omega_i",
+      "source_ids": [
+        "wiki_computational_electromagnetics"
       ]
     }
   ],
@@ -65,7 +84,7 @@
         "s2_2a514cd276e01e493d923e733c3aedda0556381b",
         "wiki_spectral_element_method"
       ],
-      "proposition_id": "e4799dc9-bbc9-4b25-8c20-55d31afcd3c5"
+      "proposition_id": "895587a8-e1c0-4056-9411-e0c55505adaa"
     },
     {
       "step_number": 2,
@@ -92,7 +111,8 @@
       "source_ids": [
         "wiki_babu_ka_lax_milgram_theorem",
         "wiki_spectral_element_method"
-      ]
+      ],
+      "proposition_id": "bac6ce89-24cd-4350-bc83-63807197c743"
     },
     {
       "step_number": 3,
@@ -103,6 +123,29 @@
       ],
       "source_ids": [
         "wiki_spectral_element_method"
+      ],
+      "proposition_id": "1c6cf19d-7850-4ad8-b339-2d62c7990e1c"
+    },
+    {
+      "step_number": 1,
+      "title": "Mesh Generation",
+      "description": "The first step in FEM involves creating a mesh that divides the problem domain into finite elements. This mesh must conform to the geometry of the physical system, with element sizes adjusted to balance accuracy and computational cost. For complex geometries, curved elements or higher-order interpolation functions are used to improve approximation. The quality of the mesh directly impacts the accuracy of the solution, requiring careful consideration of element types and distribution.",
+      "equations": [
+        "\\Omega \\approx \\bigcup_{i=1}^N \\Omega_i"
+      ],
+      "source_ids": [
+        "wiki_computational_electromagnetics"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Formulation of Weak Form",
+      "description": "The weak form of the governing PDEs is derived by multiplying the equation by a test function and integrating over the domain. This process reduces the order of derivatives, making it feasible to use piecewise continuous functions for approximation. The weak form ensures compatibility between the discrete solution and the original equations, enabling the application of variational principles. It also facilitates the incorporation of boundary conditions into the numerical framework.",
+      "equations": [
+        "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma"
+      ],
+      "source_ids": [
+        "wiki_computational_electromagnetics"
       ]
     }
   ],
@@ -131,7 +174,8 @@
       "explanation": "This equation represents the weak formulation of a PDE, where $ B(u, v) $ is a bilinear form encoding the differential operator, $ f $ is the source term, and $ v $ is a test function. The solution $ u $ must satisfy this equation for all admissible $ v $, ensuring compatibility with the problem's boundary conditions.",
       "source_ids": [
         "wiki_babu_ka_lax_milgram_theorem"
-      ]
+      ],
+      "proposition_id": "869412b0-8747-4fe3-8f67-e362e98d84e5"
     },
     {
       "name": "Coercivity Condition",
@@ -139,7 +183,8 @@
       "explanation": "This condition ensures the bilinear form $ B $ is uniformly positive definite, guaranteeing the existence and uniqueness of the weak solution. The constant $ c $ quantifies the lower bound of the form's magnitude relative to the norm of $ u $, preventing ill-conditioning in the numerical system.",
       "source_ids": [
         "wiki_babu_ka_lax_milgram_theorem"
-      ]
+      ],
+      "proposition_id": "8cdf2fd7-4c58-4046-83dc-aafde3a30240"
     },
     {
       "name": "Galerkin Projection",
@@ -147,6 +192,23 @@
       "explanation": "The Galerkin method projects the weak form onto a finite-dimensional subspace spanned by basis functions $ \\phi_i $. This results in a system of algebraic equations where the coefficients $ u_i $ are determined by satisfying the weak form for each basis function $ \\phi_j $, ensuring consistency with the original PDE.",
       "source_ids": [
         "wiki_spectral_element_method"
+      ],
+      "proposition_id": "182daafd-798f-4a32-bb5b-f66dd40c32a6"
+    },
+    {
+      "name": "Governing Equation for Electrostatics",
+      "latex": "\\nabla \\cdot (\\epsilon \\nabla V) = -\\rho",
+      "explanation": "This equation describes the distribution of electric potential $ V $ in a medium with permittivity $ \\epsilon $ and charge density $ \\rho $. The finite element method discretizes this equation to compute $ V $ numerically, accounting for varying material properties and boundary conditions.",
+      "source_ids": [
+        "wiki_computational_electromagnetics"
+      ]
+    },
+    {
+      "name": "Weak Form of Maxwell's Equations",
+      "latex": "\\int_{\\Omega} (\\mathbf{E} \\cdot \\nabla \\times \\mathbf{H}^*) \\, d\\Omega = \\int_{\\Omega} \\mathbf{J} \\cdot \\mathbf{H}^* \\, d\\Omega",
+      "explanation": "This weak form represents the integral formulation of Maxwell's equations, where $ \\mathbf{E} $ is the electric field, $ \\mathbf{H} $ is the magnetic field, and $ \\mathbf{J} $ is the current density. It is used in FEM to approximate solutions for electromagnetic problems by transforming differential equations into algebraic systems.",
+      "source_ids": [
+        "wiki_computational_electromagnetics"
       ]
     }
   ],
@@ -172,20 +234,37 @@
       "explanation": "The bilinear form must satisfy coercivity to guarantee a unique and stable solution. Violations can lead to non-physical oscillations or failure to converge, especially in problems with complex geometries or material properties.",
       "source_ids": [
         "wiki_babu_ka_lax_milgram_theorem"
-      ]
+      ],
+      "proposition_id": "227e047c-3b6e-4da2-855a-49629468f74a"
     },
     {
       "rule": "Use High-Order Basis Functions for Smooth Solutions",
       "explanation": "High-degree polynomials (e.g., in spectral element methods) provide exponential convergence for smooth solutions, reducing computational costs compared to low-order FEM. This is critical for problems requiring high accuracy, such as fluid dynamics or wave propagation.",
       "source_ids": [
         "wiki_spectral_element_method"
-      ]
+      ],
+      "proposition_id": "8d43f6d0-8ab1-4d99-bb4d-6f8e49a5a5dd"
     },
     {
       "rule": "Refine Mesh Near Singularities",
       "explanation": "Mesh refinement in regions with high gradients or singularities (e.g., cracks, sharp corners) improves accuracy by resolving local behavior. Poorly refined meshes can lead to significant errors in stress or strain predictions.",
       "source_ids": [
         "wiki_spectral_element_method"
+      ],
+      "proposition_id": "9930e6f4-7812-4b77-bba2-4bd47b9e7b64"
+    },
+    {
+      "rule": "Use of Symmetry",
+      "explanation": "Leveraging symmetry in modeling reduces computational complexity by limiting the domain to a fraction of the full structure. This rule is critical for efficiency, as it decreases the number of elements and equations, while maintaining accuracy for symmetric problems.",
+      "source_ids": [
+        "wiki_computational_electromagnetics"
+      ]
+    },
+    {
+      "rule": "Element Type Selection",
+      "explanation": "Choosing appropriate element types (e.g., triangular, quadrilateral, curved) ensures accurate representation of geometry and field behavior. This rule is essential for capturing complex shapes and avoiding numerical errors in regions with high field gradients.",
+      "source_ids": [
+        "wiki_computational_electromagnetics"
       ]
     }
   ]

@@ -198,5 +198,55 @@
       "procedures": 0,
       "rules": 0
     }
+  },
+  "wiki_computational_electromagnetics": {
+    "first_read_at": "2026-09-24T19:36:10.597703+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T19:36:10.597733+00:00",
+        "extracted": {
+          "concepts": 2,
+          "procedures": 2,
+          "equations": 2,
+          "rules": 2
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 2,
+      "equations": 2,
+      "procedures": 2,
+      "rules": 2
+    }
+  },
+  "wiki_finite_difference_time_domain_method": {
+    "first_read_at": "2026-09-24T19:36:10.597741+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T19:36:10.597753+00:00",
+        "extracted": {
+          "concepts": 0,
+          "equations": 0,
+          "procedures": 0,
+          "rules": 0
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 0,
+      "equations": 0,
+      "procedures": 0,
+      "rules": 0
+    }
   }
 }
