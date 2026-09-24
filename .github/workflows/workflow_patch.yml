@@ -1,0 +1,12 @@
+# Add this after pytest execution.
+
+- name: Generate quality report artifact
+  run: |
+    python -m processing.quality_report_cli \
+      --output artifacts/quality_report.json
+
+- name: Upload quality report artifact
+  uses: actions/upload-artifact@v4
+  with:
+    name: quality-report
+    path: artifacts/quality_report.json
