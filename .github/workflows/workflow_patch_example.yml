@@ -1,0 +1,7 @@
+# Add after tests complete in GitHub Actions
+
+- name: Upload quality artifacts
+  uses: actions/upload-artifact@v4
+  with:
+    name: quality-report
+    path: artifacts/quality_report.json
