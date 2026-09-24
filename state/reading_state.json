@@ -98,5 +98,105 @@
       "procedures": 1,
       "rules": 0
     }
+  },
+  "wiki_babu_ka_lax_milgram_theorem": {
+    "first_read_at": "2026-09-24T19:33:43.197722+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T19:33:43.197746+00:00",
+        "extracted": {
+          "concepts": 2,
+          "procedures": 1,
+          "equations": 2,
+          "rules": 1
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 2,
+      "equations": 2,
+      "procedures": 1,
+      "rules": 1
+    }
+  },
+  "wiki_crystal_plasticity": {
+    "first_read_at": "2026-09-24T19:33:43.197750+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T19:33:43.197757+00:00",
+        "extracted": {
+          "concepts": 0,
+          "equations": 0,
+          "procedures": 0,
+          "rules": 0
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 0,
+      "equations": 0,
+      "procedures": 0,
+      "rules": 0
+    }
+  },
+  "wiki_spectral_element_method": {
+    "first_read_at": "2026-09-24T19:33:43.197760+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T19:33:43.197766+00:00",
+        "extracted": {
+          "concepts": 1,
+          "procedures": 3,
+          "equations": 1,
+          "rules": 2
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 1,
+      "equations": 1,
+      "procedures": 3,
+      "rules": 2
+    }
+  },
+  "wiki_navier_stokes_existence_and_smoothness": {
+    "first_read_at": "2026-09-24T19:33:43.197769+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T19:33:43.197774+00:00",
+        "extracted": {
+          "concepts": 0,
+          "equations": 0,
+          "procedures": 0,
+          "rules": 0
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 0,
+      "equations": 0,
+      "procedures": 0,
+      "rules": 0
+    }
   }
 }

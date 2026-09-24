@@ -85,11 +85,13 @@ The following map shows the currently recorded concept structure. Concepts are m
 
 \section{Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method}
 
-Variational principles form the mathematical foundation of the Finite Element Method (FEM), involving the minimization of a functional derived from the governing differential equation. This approach transforms the problem into finding a function that satisfies the Euler-Lagrange equation. The roots of variational methods trace back to the 17th century with problems like the brachistochrone, as noted in the historical context of FEM [s2\_2a514cd276e01e493d923e733c3aedda0556381b]. The weak form of a partial differential equation, which is a crucial step in the finite element procedure, can be derived from the variational principle. It represents the weighted residual form of a PDE, where \$\textbackslash{}mathbf\{L\}(\textbackslash{}mathbf\{u\})\$ is the differential operator applied to the solution \$\textbackslash{}mathbf\{u\}\$, \$\textbackslash{}mathbf\{w\}\$ are test functions, \$\textbackslash{}mathbf\{f\}\$ is the body force, and \$\textbackslash{}mathbf\{t\}\$ is the traction on the boundary \$\textbackslash{}Gamma\$. The weak form allows for less restrictive continuity requirements on the solution compared to the strong form, and it is essential for the formulation of the element equations in the Galerkin method.
+Variational principles form the mathematical foundation of the Finite Element Method (FEM), involving the minimization of a functional derived from the governing differential equation. This approach transforms the problem into finding a function that satisfies the Euler-Lagrange equation. The weak form of partial differential equations is a crucial step in the finite element procedure, which involves transforming the strong form of a partial differential equation into an equivalent integral form. The weak form is typically expressed as a bilinear equation involving the solution and test functions, as shown in \$B(u, v) = \textbackslash{}langle f, v \textbackslash{}rangle \textbackslash{}quad \textbackslash{}text\{for all \} v \textbackslash{}in V\$. This equation represents the weighted residual form of a PDE, where \$\textbackslash{}mathbf\{L\}(\textbackslash{}mathbf\{u\})\$ is the differential operator applied to the solution \$\textbackslash{}mathbf\{u\}\$, \$\textbackslash{}mathbf\{w\}\$ are test functions, \$\textbackslash{}mathbf\{f\}\$ is the body force, and \$\textbackslash{}mathbf\{t\}\$ is the traction on the boundary \$\textbackslash{}Gamma\$. The weak form allows for less restrictive continuity requirements on the solution compared to the strong form.
 
-The Galerkin method is a core technique in the Finite Element Method (FEM) that projects the residual of a differential equation onto a finite-dimensional space of test functions. This method ensures that the approximate solution satisfies the weak form of the equation, which is a weighted residual form of the partial differential equation (PDE). The weak form is represented by the equation \$\textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{L\}(\textbackslash{}mathbf\{u\}) d\textbackslash{}Omega = \textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{f\} d\textbackslash{}Omega + \textbackslash{}int\_\{\textbackslash{}Gamma\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{t\} d\textbackslash{}Gamma\$ [wiki\_galerkin\_method]. The Galerkin method is distinct from other methods like the Ritz method due to its use of test functions independent of the trial functions. The process involves computing stiffness matrices and load vectors for individual elements, which are then assembled into a global system. This is achieved by projecting the residual onto test functions, resulting in a system of equations for each element. The Galerkin method is foundational for deriving discrete equations and is closely tied to variational principles, as noted in [wiki\_boris\_galerkin].
+The Galerkin method is a core technique in the Finite Element Method (FEM) that projects the residual of a differential equation onto a finite-dimensional space of test functions. It ensures that the approximate solution satisfies the weak form of the equation. This method is foundational for deriving discrete equations and is closely tied to variational principles. The Galerkin method involves approximating the solution \$u\_h\$ as a linear combination of basis functions \$\textbackslash{}phi\_i\$, resulting in a system of algebraic equations where the coefficients \$u\_i\$ are determined by satisfying the weak form for each basis function \$\textbackslash{}phi\_j\$. The Galerkin projection is given by \$ \textbackslash{}sum\_\{i=1\}\textasciicircum{}N u\_i B(\textbackslash{}phi\_i, \textbackslash{}phi\_j) = \textbackslash{}langle f, \textbackslash{}phi\_j \textbackslash{}rangle \textbackslash{}quad \textbackslash{}text\{for \} j = 1, \textbackslash{}dots, N \$, where \$B(\textbackslash{}phi\_i, \textbackslash{}phi\_j)\$ is the bilinear form computing the stiffness matrix by integrating the product of strain-displacement matrices and material properties over each element.
 
-The bilinear form in the Galerkin method computes the stiffness matrix by integrating the product of strain-displacement matrices (\textbackslash{}mathbf\{B\}) and material properties (\textbackslash{}mathbf\{D\}) over each element. This form ensures the discrete solution satisfies the variational principle, linking the physical properties of the material to the numerical approximation. The bilinear form is given by \$a(u\_h, v\_h) = \textbackslash{}sum\_\{e=1\}\textasciicircum{}\{E\} \textbackslash{}int\_\{\textbackslash{}Omega\_e\} \textbackslash{}mathbf\{B\}\textasciicircum{}T \textbackslash{}mathbf\{D\} \textbackslash{}mathbf\{B\} d\textbackslash{}Omega\_e\$. The choice of continuous or discontinuous basis functions depends on the problem's nature, with continuous functions ensuring smooth solutions and discontinuous functions handling shocks or discontinuities. This rule ensures numerical stability and accuracy, particularly in problems with sharp gradients or material interfaces.
+The bilinear form plays a pivotal role in the weak formulation of partial differential equations, as it encodes the differential operator of the problem and satisfies continuity and coercivity conditions to guarantee the existence and uniqueness of the weak solution. In the context of the finite element method, the bilinear form is used to construct the system of equations by discretizing the domain into elements and approximating the solution with basis functions. This approach is central to the weak formulation, which transforms a partial differential equation into an integral form by multiplying with a test function and integrating over the domain, as expressed by the equation \$B(u, v) = \textbackslash{}langle f, v \textbackslash{}rangle \textbackslash{}quad \textbackslash{}text\{for all \} v \textbackslash{}in V\$ [wiki\_babu\_ka\_lax\_milgram\_theorem]. The Galerkin method, a core technique in FEM, relies on the weak formulation and projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation [wiki\_galerkin\_method], [wiki\_boris\_galerkin].
+
+\[B(u, v) = \langle f, v \rangle \quad \text{for all } v \in V\]
 
 \[\mathbf{L}(\mathbf{u})\]
 
@@ -99,31 +101,31 @@ The bilinear form in the Galerkin method computes the stiffness matrix by integr
 
 \[\mathbf{f}\]
 
-\[\mathbf{t}\]
+\cite{ref3}
 
-\cite{ref1}
+\cite{ref12}
 
-\cite{ref8}
-
-\cite{ref9}
+\cite{ref13}
 
 \section{The Finite Element Procedure: Discretization and Mesh Generation}
 
-The physical domain is divided into smaller, simpler subdomains called elements through a process known as meshing. This defines the geometry and connectivity of elements, with the choice of element type (e.g., triangular, quadrilateral) depending on the problem's complexity. A fine mesh improves accuracy but increases computational cost, requiring a balance between precision and efficiency. The finite element method (FEM) approximates solutions to partial differential equations (PDEs) using piecewise polynomial functions over a discretized domain, ensuring continuity across element boundaries. This approach allows for flexible modeling of complex geometries and varying material properties. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation.
+The discretization of the domain is a critical step in the finite element procedure, where the physical domain is divided into smaller, simpler subdomains called elements through a process known as meshing. This process defines the geometry and connectivity of elements, with the choice of element type depending on the problem's complexity. A fine mesh improves accuracy but increases computational cost, requiring a balance between precision and efficiency. The finite element method approximates solutions to partial differential equations using piecewise polynomial functions over a discretized domain, ensuring continuity across element boundaries. This approach allows for flexible modeling of complex geometries and varying material properties.
 
-Variational principles form the mathematical foundation of the Finite Element Method (FEM), involving the minimization of a functional derived from the governing differential equation. This approach transforms the problem into finding a function that satisfies the Euler-Lagrange equation, as described by the variational principle \$\textbackslash{}delta \textbackslash{}Pi = 0\$ where \$\textbackslash{}Pi = \textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}left( \textbackslash{}frac\{1\}\{2\} \textbackslash{}mathbf\{\textbackslash{}varepsilon\}\textasciicircum{}T \textbackslash{}mathbf\{D\} \textbackslash{}mathbf\{\textbackslash{}varepsilon\} - \textbackslash{}mathbf\{f\}\textasciicircum{}T \textbackslash{}mathbf\{u\} \textbackslash{}right) d\textbackslash{}Omega\$ [s2\_2a514cd276e01e493d923e733c3aedda0556381b]. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation [wiki\_galerkin\_method], [wiki\_boris\_galerkin]. This method is closely tied to variational principles and is foundational for deriving discrete equations.
+The weak formulation of a partial differential equation is a crucial step in the finite element procedure, where the strong form is transformed into an integral form by multiplying with a test function and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The weak form is typically expressed as a bilinear equation involving the solution \$u\$ and a test function \$v\$, as given by \$B(u, v) = \textbackslash{}langle f, v \textbackslash{}rangle \textbackslash{}quad \textbackslash{}text\{for all \} v \textbackslash{}in V\$ [wiki\_babu\_ka\_lax\_milgram\_theorem]. This equation represents the weak formulation of a PDE, where \$B(u, v)\$ is a bilinear form encoding the differential operator, \$f\$ is the source term, and \$v\$ is a test function. The solution \$u\$ must satisfy this equation for all admissible \$v\$, ensuring compatibility with the problem's boundary conditions.
 
-The bilinear form \textbackslash{}( a(u\_h, v\_h) \textbackslash{}) computes the stiffness matrix by integrating the product of strain-displacement matrices (\textbackslash{}mathbf\{B\}) and material properties (\textbackslash{}mathbf\{D\}) over each element. This form ensures the discrete solution satisfies the variational principle, linking the physical properties of the material to the numerical approximation. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation. This process involves computing stiffness matrices and load vectors for individual elements, which are then assembled into a global system.
+Mesh generation strategies play a crucial role in refining the accuracy of finite element simulations, particularly in regions with high gradients or singularities. To achieve this, it is essential to refine the mesh near these areas, ensuring that the local behavior is accurately captured. Additionally, the use of piecewise polynomial approximation enables flexible modeling of complex geometries and varying material properties. This approach is particularly effective when combined with high-degree basis functions, such as Lagrange or Chebyshev polynomials, which can achieve exponential convergence rates for smooth solutions. The bilinear form in the Galerkin method, which computes the stiffness matrix by integrating the product of strain-displacement matrices and material properties over each element, ensures the discrete solution satisfies the variational principle.
 
-\[\delta \Pi = 0\]
+\[u\]
 
-\[\Pi = \int_{\Omega} \left( \frac{1}{2} \mathbf{\varepsilon}^T \mathbf{D} \mathbf{\varepsilon} - \mathbf{f}^T \mathbf{u} \right) d\Omega\]
+\[v\]
 
-\cite{ref1}
+\[B(u, v) = \langle f, v \rangle \quad \text{for all } v \in V\]
 
-\cite{ref8}
+\[B(u, v)\]
 
-\cite{ref9}
+\[f\]
+
+\cite{ref3}
 
 \section{The Finite Element Procedure: Weak Formulation and Algebraic Equations}
 
@@ -137,45 +139,55 @@ The Galerkin method is a core technique in the finite element method that projec
 
 \[a(u_h, v_h) = \sum_{e=1}^{E} \int_{\Omega_e} \mathbf{B}^T \mathbf{D} \mathbf{B} d\Omega_e\]
 
-\cite{ref9}
+\cite{ref13}
 
 \section{The Finite Element Procedure: Numerical Solution and Convergence Analysis}
 
-The finite element procedure involves a numerical solution to the weak form of the partial differential equation, which is obtained by applying the Galerkin method. This method approximates the solution using a set of basis functions, resulting in a system of algebraic equations. The numerical solution is then obtained by solving this system of equations, which can be done using various methods such as direct or iterative solvers. The accuracy of the numerical solution depends on the choice of basis functions and the mesh size, with finer meshes generally leading to more accurate solutions.
+The weak formulation is a crucial step in the finite element procedure, transforming the strong form of a partial differential equation into an equivalent integral form by multiplying with a test function and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The weak form is typically expressed as a bilinear equation involving the solution \$u\$ and a test function \$v\$, as given by \$B(u, v) = \textbackslash{}langle f, v \textbackslash{}rangle \textbackslash{}quad \textbackslash{}text\{for all \} v \textbackslash{}in V\$ [wiki\_babu\_ka\_lax\_milgram\_theorem]. This formulation enables the use of variational principles and ensures compatibility with numerical discretization, making it central to the finite element method.
 
-The convergence analysis of finite element methods involves evaluating the accuracy of the numerical solution by comparing it with the exact solution. This is typically achieved through error estimation techniques, which provide an upper bound on the error between the numerical and exact solutions. The error estimation is often based on the interpolation error, which arises from the approximation of the solution using a finite set of basis functions. In the context of finite element methods, the interpolation error can be estimated using the Céa's lemma, which states that the error in the energy norm is bounded by the interpolation error. This provides a theoretical framework for assessing the accuracy of finite element solutions and identifying the need for mesh refinement or other improvements.
+The convergence analysis of the finite element procedure relies on the coercivity condition, which ensures the bilinear form \$B\$ is uniformly positive definite, guaranteeing the existence and uniqueness of the weak solution. This condition is mathematically represented as \$|B(u, u)| \textbackslash{}geq c \textbackslash{}|u\textbackslash{}|\textasciicircum{}2 \textbackslash{}quad \textbackslash{}text\{for some \} c > 0\$ [wiki\_babu\_ka\_lax\_milgram\_theorem]. Furthermore, mesh refinement near gradients is a critical rule to prevent numerical errors and ensure convergence, particularly in problems involving stress concentrations, fluid flow, or electromagnetic fields where localized effects dominate [s2\_2a514cd276e01e493d923e733c3aedda0556381b]. By refining the mesh near singularities, such as cracks or sharp corners, the accuracy of the solution can be significantly improved, as poor mesh refinement can lead to substantial errors in stress or strain predictions [wiki\_spectral\_element\_method].
 
-The implementation and numerical stability of the finite element procedure are crucial for achieving accurate results in finite element method (FEM) simulations. To ensure numerical stability, the finite element procedure must be implemented with a suitable choice of basis functions and a stable numerical integration scheme. For instance, the use of \$H\textasciicircum{}1\$-conforming basis functions can help to improve the stability of the numerical solution, while the use of a stable quadrature rule, such as the Gauss-Legendre rule, can help to reduce numerical errors. By carefully selecting the basis functions and numerical integration scheme, the finite element procedure can be made more stable and accurate, leading to improved results in FEM simulations.
+The solution of the linear system in the Galerkin method is obtained by applying the Galerkin projection, which projects the weak form onto a finite-dimensional subspace spanned by basis functions \$\textbackslash{}phi\_i\$. This results in a system of algebraic equations where the coefficients \$u\_i\$ are determined by satisfying the weak form for each basis function \$\textbackslash{}phi\_j\$, ensuring consistency with the original PDE. The system of equations is then solved using direct or iterative methods to obtain the unknown coefficients of the basis functions. The solution is then post-processed to compute derived quantities like stresses, strains, or fluxes at desired locations. The bilinear form \$a(u\_h, v\_h)\$, which computes the stiffness matrix by integrating the product of strain-displacement matrices (\$\textbackslash{}mathbf\{B\}\$) and material properties (\$\textbackslash{}mathbf\{D\}\$) over each element, plays a crucial role in this process, as it ensures the discrete solution satisfies the variational principle, linking the physical properties of the material to the numerical approximation [wiki\_galerkin\_method].
 
-\[H^1\]
+\[u\]
 
-\section{Rules for Modeling Physical Phenomena with FEM}
+\[v\]
 
-The finite element method (FEM) relies on variational principles to ensure consistency with physical phenomena. These principles involve minimizing a functional derived from the governing differential equation, often representing physical quantities like energy. The Euler-Lagrange equation is a direct consequence of this approach, as noted in [s2\_2a514cd276e01e493d923e733c3aedda0556381b]. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation. This method is closely tied to variational principles and is used to derive discrete equations. The weak form of a partial differential equation is given by \$\textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{L\}(\textbackslash{}mathbf\{u\}) d\textbackslash{}Omega = \textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{f\} d\textbackslash{}Omega + \textbackslash{}int\_\{\textbackslash{}Gamma\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{t\} d\textbackslash{}Gamma\$, as shown in [wiki\_galerkin\_method]. The choice of element type and mesh density is critical in achieving accurate results, as a fine mesh improves accuracy but increases computational cost.
+\[B(u, v) = \langle f, v \rangle \quad \text{for all } v \in V\]
 
-The finite element method (FEM) relies on discretization and approximation techniques to model physical phenomena. A critical aspect of this process is the use of piecewise polynomial approximation, where the solution to a partial differential equation (PDE) is approximated using piecewise polynomial functions over a discretized domain. This approach ensures continuity across element boundaries, allowing for flexible modeling of complex geometries and varying material properties. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation. This method is closely tied to variational principles and is essential for deriving discrete equations.
+\[B\]
 
-The finite element method (FEM) relies on the Galerkin method to derive discrete equations, which involves projecting the residual of a differential equation onto a finite-dimensional space of test functions. This process ensures that the approximate solution satisfies the weak form of the equation, as stated in the Galerkin method's weighted residual form: \$ \textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{L\}(\textbackslash{}mathbf\{u\}) d\textbackslash{}Omega = \textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{f\} d\textbackslash{}Omega + \textbackslash{}int\_\{\textbackslash{}Gamma\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{t\} d\textbackslash{}Gamma \$ [wiki\_galerkin\_method]. The Galerkin method is a core technique in FEM, closely tied to variational principles, and distinct from other methods like the Ritz method due to its use of test functions independent of the trial functions [wiki\_boris\_galerkin]. For each element, local basis functions are defined to approximate the solution, and the weak form of the governing equation is applied, resulting in a system of equations for each element, which are then assembled into a global system [wiki\_galerkin\_method].
-
-\[\int_{\Omega} \mathbf{w}^T \mathbf{L}(\mathbf{u}) d\Omega = \int_{\Omega} \mathbf{w}^T \mathbf{f} d\Omega + \int_{\Gamma} \mathbf{w}^T \mathbf{t} d\Gamma\]
+\[|B(u, u)| \geq c \|u\|^2 \quad \text{for some } c > 0\]
 
 \cite{ref1}
 
-\cite{ref8}
+\cite{ref3}
 
-\cite{ref9}
+\cite{ref13}
+
+\cite{ref7}
+
+\section{Rules for Modeling Physical Phenomena with FEM}
+
+Variational principles form the mathematical foundation of the Finite Element Method (FEM), involving the minimization of a functional derived from the governing differential equation. This approach transforms the problem into finding a function that satisfies the Euler-Lagrange equation, as noted in the historical context of FEM. The weak formulation, a crucial step in the finite element procedure, transforms the strong form of a partial differential equation into an equivalent integral form by multiplying with a test function and integrating over the domain. This is represented by the equation \$B(u, v) = \textbackslash{}langle f, v \textbackslash{}rangle \textbackslash{}quad \textbackslash{}text\{for all \} v \textbackslash{}in V\$, where \$B(u, v)\$ is a bilinear form encoding the differential operator, \$f\$ is the source term, and \$v\$ is a test function. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation. This method is foundational for deriving discrete equations and is closely tied to variational principles.
+
+The finite element method (FEM) relies on variational principles to ensure consistency with physical phenomena. These principles involve minimizing a functional derived from the governing differential equation. To achieve higher accuracy per element, spectral element methods use high-degree polynomial basis functions, often Lagrange or Chebyshev polynomials, which enable exponential convergence rates for smooth solutions. In contrast, traditional FEM approximates solutions using piecewise polynomial functions over a discretized domain, defined on elements and ensuring continuity across element boundaries. This approach allows for flexible modeling of complex geometries and varying material properties.
+
+The Galerkin method is a core technique in the Finite Element Method (FEM) that ensures the approximate solution satisfies the weak form of the equation. This method projects the residual of a differential equation onto a finite-dimensional space of test functions, distinct from other methods like the Ritz method. The bilinear form, a function that maps pairs of functions to real numbers, is used to construct the system of equations by discretizing the domain into elements and approximating the solution with basis functions. The bilinear form \$a(u\_h, v\_h) = \textbackslash{}sum\_\{e=1\}\textasciicircum{}\{E\} \textbackslash{}int\_\{\textbackslash{}Omega\_e\} \textbackslash{}mathbf\{B\}\textasciicircum{}T \textbackslash{}mathbf\{D\} \textbackslash{}mathbf\{B\} d\textbackslash{}Omega\_e\$ computes the stiffness matrix by integrating the product of strain-displacement matrices and material properties over each element, ensuring the discrete solution satisfies the variational principle. To guarantee a unique and stable solution, the bilinear form must satisfy coercivity, a critical rule in FEM.
+
+\[B(u, v) = \langle f, v \rangle \quad \text{for all } v \in V\]
+
+\[B(u, v)\]
+
+\[f\]
+
+\[v\]
+
+\[a(u_h, v_h) = \sum_{e=1}^{E} \int_{\Omega_e} \mathbf{B}^T \mathbf{D} \mathbf{B} d\Omega_e\]
 
 \section{Verification, Validation, and Best Practices}
 
-Verification and validation techniques play a crucial role in ensuring the accuracy and reliability of finite element method (FEM) simulations. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation. This method is closely tied to variational principles, which form the mathematical foundation of the Finite Element Method (FEM). The weak form of a partial differential equation, represented by \$\textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{L\}(\textbackslash{}mathbf\{u\}) d\textbackslash{}Omega = \textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{f\} d\textbackslash{}Omega + \textbackslash{}int\_\{\textbackslash{}Gamma\} \textbackslash{}mathbf\{w\}\textasciicircum{}T \textbackslash{}mathbf\{t\} d\textbackslash{}Gamma\$, allows for less restrictive continuity requirements on the solution compared to the strong form. The bilinear form \$a(u\_h, v\_h) = \textbackslash{}sum\_\{e=1\}\textasciicircum{}\{E\} \textbackslash{}int\_\{\textbackslash{}Omega\_e\} \textbackslash{}mathbf\{B\}\textasciicircum{}T \textbackslash{}mathbf\{D\} \textbackslash{}mathbf\{B\} d\textbackslash{}Omega\_e\$ computes the stiffness matrix by integrating the product of strain-displacement matrices and material properties over each element, ensuring the discrete solution satisfies the variational principle.
-
-To implement the Galerkin method and piecewise polynomial approximation effectively, it is essential to adhere to certain best practices. Firstly, the choice of basis functions, whether continuous or discontinuous, should be guided by the problem's nature. Continuous functions ensure smooth solutions, while discontinuous functions handle shocks or discontinuities. Secondly, the continuity of basis functions across element boundaries is crucial for maintaining numerical stability and accuracy. This is particularly important in problems with sharp gradients or material interfaces. Finally, the use of variational principles, which involve minimizing a functional derived from the governing differential equation, provides a solid mathematical foundation for the finite element method. By following these guidelines, practitioners can ensure that their implementation of the Galerkin method and piecewise polynomial approximation is accurate and reliable.
-
-The discretization and formulation of element equations are crucial steps in the finite element method. The process begins with the discretization of the domain, where the physical domain is divided into smaller, simpler subdomains called elements through meshing. This defines the geometry and connectivity of elements, with the choice of element type depending on the problem's complexity. The weak form of the governing equation is then applied to each element, resulting in a system of equations for each element, which are assembled into a global system. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation. This process involves computing stiffness matrices and load vectors for individual elements, allowing for flexible modeling of complex geometries and varying material properties. The piecewise polynomial approximation, a fundamental concept in FEM, enables the method to handle irregular domains and non-uniform meshes, making it a versatile tool for solving partial differential equations.
-
-\[\int_{\Omega} \mathbf{w}^T \mathbf{L}(\mathbf{u}) d\Omega = \int_{\Omega} \mathbf{w}^T \mathbf{f} d\Omega + \int_{\Gamma} \mathbf{w}^T \mathbf{t} d\Gamma\]
-
-\[a(u_h, v_h) = \sum_{e=1}^{E} \int_{\Omega_e} \mathbf{B}^T \mathbf{D} \mathbf{B} d\Omega_e\]
+Verification and validation techniques play a crucial role in ensuring the accuracy and reliability of finite element method (FEM) simulations. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation. This method is foundational for deriving discrete equations and is closely tied to variational principles. The weak formulation, which transforms a partial differential equation into an integral form by multiplying with a test function and integrating over the domain, is central to the finite element method. It enables the use of variational principles and ensures compatibility with numerical discretization. The bilinear form, a function that maps pairs of functions from a Sobolev space to real numbers, encodes the differential operator of the problem and is used to construct the system of equations by discretizing the domain into elements and approximating the solution with basis functions.
 
 \section{Introduction and Scope of the Finite Element Method}
 
@@ -184,15 +196,19 @@ Variational principles form the mathematical foundation of the Finite Element Me
 \begin{thebibliography}{99}
   \bibitem{ref1} \textit{A Brief History of Finite Element Method and Its Applications to Computational Electromagnetics}. [Semantic\_Scholar] Available at: \url{https://journals.riverpublishers.com/index.php/ACES/article/download/12889/15013}
   \bibitem{ref2} \textit{History of Finite Element Method: A Review}. [Semantic\_Scholar] Available at: \url{https://www.semanticscholar.org/paper/eaf356665b0d4c3c3924daad7781b556567ed77f}
-  \bibitem{ref3} \textit{Crystal plasticity}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Crystal_plasticity}
-  \bibitem{ref4} \textit{Discontinuous Galerkin method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Discontinuous_Galerkin_method}
-  \bibitem{ref5} \textit{Loubignac iteration}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Loubignac_iteration}
-  \bibitem{ref6} \textit{Spectral element method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Spectral_element_method}
-  \bibitem{ref7} \textit{List of numerical analysis topics}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/List_of_numerical_analysis_topics}
-  \bibitem{ref8} \textit{Boris Galerkin}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Boris_Galerkin}
-  \bibitem{ref9} \textit{Galerkin method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Galerkin_method}
-  \bibitem{ref10} \textit{Computational electromagnetics}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Computational_electromagnetics}
-  \bibitem{ref11} \textit{Finite-difference time-domain method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Finite-difference_time-domain_method}
+  \bibitem{ref3} \textit{Babuška–Lax–Milgram theorem}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Babuška–Lax–Milgram_theorem}
+  \bibitem{ref4} \textit{Crystal plasticity}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Crystal_plasticity}
+  \bibitem{ref5} \textit{Discontinuous Galerkin method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Discontinuous_Galerkin_method}
+  \bibitem{ref6} \textit{Loubignac iteration}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Loubignac_iteration}
+  \bibitem{ref7} \textit{Spectral element method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Spectral_element_method}
+  \bibitem{ref8} \textit{Symmetry of Solutions and Domain-Reduction Finite Element Method for Second-Order Linear Elliptic Dirichlet Boundary Value Problems on Bounded Domains}. [Semantic\_Scholar] Available at: \url{https://www.semanticscholar.org/paper/5b4956388a89708ddd77c291c8de336dade52a19}
+  \bibitem{ref9} \textit{GPU-based matrix-free finite element solver exploiting symmetry of elemental matrices}. [Semantic\_Scholar] Available at: \url{https://www.semanticscholar.org/paper/c0bed50284f65723577bf6c016d9966b00d9315e}
+  \bibitem{ref10} \textit{Navier–Stokes existence and smoothness}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Navier–Stokes_existence_and_smoothness}
+  \bibitem{ref11} \textit{List of numerical analysis topics}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/List_of_numerical_analysis_topics}
+  \bibitem{ref12} \textit{Boris Galerkin}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Boris_Galerkin}
+  \bibitem{ref13} \textit{Galerkin method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Galerkin_method}
+  \bibitem{ref14} \textit{Computational electromagnetics}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Computational_electromagnetics}
+  \bibitem{ref15} \textit{Finite-difference time-domain method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Finite-difference_time-domain_method}
 \end{thebibliography}
 
 \newpage
@@ -216,15 +232,19 @@ It records when each source was fetched, from which provider, and its unique ide
 \endfoot
   1 & \texttt{s2\_2a514cd276e01e493d923e733c3aedda0556381b} & A Brief History of Finite Element Method and Its Application & Semantic\_Scholar & 2026-09-24 13:21 UTC \\
   2 & \texttt{s2\_eaf356665b0d4c3c3924daad7781b556567ed77f} & History of Finite Element Method: A Review & Semantic\_Scholar & 2026-09-24 13:21 UTC \\
-  3 & \texttt{wiki\_crystal\_plasticity} & Crystal plasticity & Wikipedia & 2026-09-24 18:20 UTC \\
-  4 & \texttt{wiki\_discontinuous\_galerkin\_method} & Discontinuous Galerkin method & Wikipedia & 2026-09-24 13:19 UTC \\
-  5 & \texttt{wiki\_loubignac\_iteration} & Loubignac iteration & Wikipedia & 2026-09-24 18:20 UTC \\
-  6 & \texttt{wiki\_spectral\_element\_method} & Spectral element method & Wikipedia & 2026-09-24 18:20 UTC \\
-  7 & \texttt{wiki\_list\_of\_numerical\_analysis\_topics} & List of numerical analysis topics & Wikipedia & 2026-09-24 13:19 UTC \\
-  8 & \texttt{wiki\_boris\_galerkin} & Boris Galerkin & Wikipedia & 2026-09-24 13:11 UTC \\
-  9 & \texttt{wiki\_galerkin\_method} & Galerkin method & Wikipedia & 2026-09-24 13:21 UTC \\
-  10 & \texttt{wiki\_computational\_electromagnetics} & Computational electromagnetics & Wikipedia & 2026-09-24 13:21 UTC \\
-  11 & \texttt{wiki\_finite\_difference\_time\_domain\_method} & Finite-difference time-domain method & Wikipedia & 2026-09-24 13:11 UTC \\
+  3 & \texttt{wiki\_babu\_ka\_lax\_milgram\_theorem} & Babuška–Lax–Milgram theorem & Wikipedia & 2026-09-24 19:33 UTC \\
+  4 & \texttt{wiki\_crystal\_plasticity} & Crystal plasticity & Wikipedia & 2026-09-24 18:20 UTC \\
+  5 & \texttt{wiki\_discontinuous\_galerkin\_method} & Discontinuous Galerkin method & Wikipedia & 2026-09-24 13:19 UTC \\
+  6 & \texttt{wiki\_loubignac\_iteration} & Loubignac iteration & Wikipedia & 2026-09-24 18:20 UTC \\
+  7 & \texttt{wiki\_spectral\_element\_method} & Spectral element method & Wikipedia & 2026-09-24 18:20 UTC \\
+  8 & \texttt{s2\_5b4956388a89708ddd77c291c8de336dade52a19} & Symmetry of Solutions and Domain-Reduction Finite Element Me & Semantic\_Scholar & 2026-09-24 19:33 UTC \\
+  9 & \texttt{s2\_c0bed50284f65723577bf6c016d9966b00d9315e} & GPU-based matrix-free finite element solver exploiting symme & Semantic\_Scholar & 2026-09-24 19:33 UTC \\
+  10 & \texttt{wiki\_navier\_stokes\_existence\_and\_smoothness} & Navier–Stokes existence and smoothness & Wikipedia & 2026-09-24 19:33 UTC \\
+  11 & \texttt{wiki\_list\_of\_numerical\_analysis\_topics} & List of numerical analysis topics & Wikipedia & 2026-09-24 13:19 UTC \\
+  12 & \texttt{wiki\_boris\_galerkin} & Boris Galerkin & Wikipedia & 2026-09-24 13:11 UTC \\
+  13 & \texttt{wiki\_galerkin\_method} & Galerkin method & Wikipedia & 2026-09-24 13:21 UTC \\
+  14 & \texttt{wiki\_computational\_electromagnetics} & Computational electromagnetics & Wikipedia & 2026-09-24 13:21 UTC \\
+  15 & \texttt{wiki\_finite\_difference\_time\_domain\_method} & Finite-difference time-domain method & Wikipedia & 2026-09-24 13:11 UTC \\
 \end{longtable}
 
 \normalsize

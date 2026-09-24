@@ -117,6 +117,58 @@
     }
   },
   {
+    "source_id": "wiki_babu_ka_lax_milgram_theorem",
+    "url": "https://en.wikipedia.org/wiki/Babuška–Lax–Milgram_theorem",
+    "retrieved_at": "2026-09-24T19:33:20.886789+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Babuška–Lax–Milgram theorem",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "In mathematics, the Babuška–<span class=\"searchmatch\">Lax</span>–<span class=\"searchmatch\">Milgram</span> <span class=\"searchmatch\">theorem</span> is a generalization of the famous <span class=\"searchmatch\">Lax</span>–<span class=\"searchmatch\">Milgram</span> <span class=\"searchmatch\">theorem</span>, which gives conditions under which a bilinear form",
+      "word_count": 890
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_babu_ka_lax_milgram_theorem.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Lax Milgram theorem finite element method",
+    "query_contexts": [
+      "Lax Milgram theorem finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Lax Milgram theorem finite element method",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Lax Milgram theorem finite element method": 0.750865,
+        "symmetry of matrix finite element method": 0.1375,
+        "proof existence uniqueness finite element method": 0.1375
+      }
+    }
+  },
+  {
     "source_id": "wiki_crystal_plasticity",
     "url": "https://en.wikipedia.org/wiki/Crystal_plasticity",
     "retrieved_at": "2026-09-24T18:20:19.039217+00:00",
@@ -321,6 +373,177 @@
         "Crystal plasticity finite element method": 0.1375,
         "Loubignac iteration finite element method": 0.1375,
         "Spectral element method finite element": 0.750865
+      }
+    }
+  },
+  {
+    "source_id": "s2_5b4956388a89708ddd77c291c8de336dade52a19",
+    "url": "https://www.semanticscholar.org/paper/5b4956388a89708ddd77c291c8de336dade52a19",
+    "retrieved_at": "2026-09-24T19:33:20.886789+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "symmetry of matrix finite element method",
+    "source_type": "academic",
+    "content_type": "text/plain",
+    "title": "Symmetry of Solutions and Domain-Reduction Finite Element Method for Second-Order Linear Elliptic Dirichlet Boundary Value Problems on Bounded Domains",
+    "authors": [
+      "Xianlong Pan",
+      "Wei Jiang"
+    ],
+    "metadata": {
+      "abstract": "Combining classical group theory and partial differential equation theory, this paper investigates the symmetry group $\\operatorname{Sym}(u)$ of the unique solution $u$ to the second-order linear elliptic boundary value problem on an $n$-dimensional bounded domain $\\Omega$ $-\\sum_{i,j=1}^{n} a_{ij}(x)u_{x_ix_j} + \\sum_{i=1}^{n} b_i(x)u_{x_i} + c(x)u = f(x), x\\in \\Omega$, $u(x) = h(x), x\\in \\partial \\Omega$, The following symmetry groups are defined and characterized respectively: the symmetry group $\\operatorname{Sym}(A)$ of the second-order coefficient matrix function $A(x)=(a_{ij}(x))_{n\\times n}$; the symmetry group $\\operatorname{Sym}(b)$ of the first-order coefficient column vector function $b(x)=(b_{1}(x),b_{2}(x),\\cdots,b_{n}(x))^{T}$; the symmetry group $\\operatorname{Sym}(c)$ of the zero-order coefficient function $c(x)$; the symmetry group $\\operatorname{Sym}(f)$ of the internal source function $f(x)$; and the symmetry group $\\operatorname{Sym}(h)$ of the boundary source function $h(x)$. This paper rigorously proves that the common symmetry group $\\operatorname{Sym}(A)\\cap\\operatorname{Sym}(b) \\cap\\operatorname{Sym}(c) \\cap\\operatorname{Sym}(f) \\cap\\operatorname{Sym}(h)$ is a subgroup of $\\operatorname{Sym}(u)$. In addition, if the common symmetry group contains several mirror symmetry elements, the original second-order linear elliptic boundary value problem on the entire domain $\\Omega$ can be reduced to the corresponding boundary value problem on a certain subdomain. It is strictly proven in this paper that the new boundary condition imposed on the boundary of the subdomain is the homogeneous generalized Neumann boundary condition. The linear finite element method is used to numerically solve the second-order linear elliptic boundary value problem on the subdomain, thereby achieving domain reduction and significantly reducing the computational cost.",
+      "year": 2026,
+      "citation_count": 1,
+      "word_count": 228,
+      "page_count": null,
+      "open_access_pdf_available": false,
+      "full_text_available": false,
+      "full_text_status": "abstract_only"
+    },
+    "full_text_path": null,
+    "status": "abstract_only",
+    "query_contexts": [
+      "symmetry of matrix finite element method"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "symmetry of matrix finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Lax Milgram theorem finite element method": 0.2125,
+        "symmetry of matrix finite element method": 0.519183,
+        "proof existence uniqueness finite element method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "s2_c0bed50284f65723577bf6c016d9966b00d9315e",
+    "url": "https://www.semanticscholar.org/paper/c0bed50284f65723577bf6c016d9966b00d9315e",
+    "retrieved_at": "2026-09-24T19:33:20.886789+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "symmetry of matrix finite element method",
+    "source_type": "academic",
+    "content_type": "text/plain",
+    "title": "GPU-based matrix-free finite element solver exploiting symmetry of elemental matrices",
+    "authors": [
+      "Utpal Kiran",
+      "S. Gautam",
+      "D. Sharma"
+    ],
+    "metadata": {
+      "abstract": "",
+      "year": 2020,
+      "citation_count": 24,
+      "word_count": 0,
+      "page_count": null,
+      "open_access_pdf_available": false,
+      "full_text_available": false,
+      "full_text_status": "abstract_only"
+    },
+    "full_text_path": null,
+    "status": "abstract_only",
+    "query_contexts": [
+      "symmetry of matrix finite element method"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "symmetry of matrix finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Lax Milgram theorem finite element method": 0.2125,
+        "symmetry of matrix finite element method": 0.519183,
+        "proof existence uniqueness finite element method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "wiki_navier_stokes_existence_and_smoothness",
+    "url": "https://en.wikipedia.org/wiki/Navier–Stokes_existence_and_smoothness",
+    "retrieved_at": "2026-09-24T19:33:20.886789+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Navier–Stokes existence and smoothness",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "using techniques such as the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> or spectral <span class=\"searchmatch\">methods</span>. Here, we will use the <span class=\"searchmatch\">finite</span> difference <span class=\"searchmatch\">method</span>. To do this, we can divide the",
+      "word_count": 6315
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_navier_stokes_existence_and_smoothness.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "proof existence uniqueness finite element method",
+    "query_contexts": [
+      "proof existence uniqueness finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.341955,
+      "lexical": 0.279815,
+      "source_quality": 0.55,
+      "section_relevance": 0.225753,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "proof existence uniqueness finite element method",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Lax Milgram theorem finite element method": 0.1375,
+        "symmetry of matrix finite element method": 0.1375,
+        "proof existence uniqueness finite element method": 0.341955
       }
     }
   },

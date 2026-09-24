@@ -6,7 +6,8 @@
       "mathematical_formulation": "\\delta \\Pi = 0 \\quad \\text{where} \\quad \\Pi = \\int_{\\Omega} \\left( \\frac{1}{2} \\mathbf{\\varepsilon}^T \\mathbf{D} \\mathbf{\\varepsilon} - \\mathbf{f}^T \\mathbf{u} \\right) d\\Omega",
       "source_ids": [
         "s2_2a514cd276e01e493d923e733c3aedda0556381b"
-      ]
+      ],
+      "concept_id": "a647d601-49af-4780-8125-03ed9904adc1"
     },
     {
       "name": "Piecewise Polynomial Approximation",
@@ -14,7 +15,8 @@
       "mathematical_formulation": "u_h(\\mathbf{x}) = \\sum_{i=1}^{N} N_i(\\mathbf{x}) u_i \\quad \\text{where} \\quad N_i \\in C^0(\\Omega)",
       "source_ids": [
         "s2_2a514cd276e01e493d923e733c3aedda0556381b"
-      ]
+      ],
+      "concept_id": "9148c6de-5a3c-4088-bc8b-c93aa485a39b"
     },
     {
       "name": "Galerkin Method",
@@ -23,6 +25,31 @@
       "source_ids": [
         "wiki_galerkin_method",
         "wiki_boris_galerkin"
+      ],
+      "concept_id": "d578b9a8-ca7e-4508-b665-ce98162b0b1b"
+    },
+    {
+      "name": "Weak Formulation",
+      "explanation": "The weak formulation transforms a partial differential equation into an integral form by multiplying with a test function and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. It is central to the finite element method as it enables the use of variational principles and ensures compatibility with numerical discretization. The weak form is typically expressed as a bilinear equation involving the solution and test functions.",
+      "mathematical_formulation": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "name": "Bilinear Form",
+      "explanation": "A bilinear form is a function that maps pairs of functions from a Sobolev space to real numbers, encoding the differential operator of the problem. It must satisfy continuity and coercivity conditions to guarantee the existence and uniqueness of the weak solution. In FEM, the bilinear form is used to construct the system of equations by discretizing the domain into elements and approximating the solution with basis functions.",
+      "mathematical_formulation": "B(u, v) = \\int_\\Omega \\nabla u \\cdot \\nabla v \\, dx",
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "name": "High-Degree Basis Functions",
+      "explanation": "Spectral element methods use high-degree polynomial basis functions to achieve higher accuracy per element compared to traditional FEM. These basis functions, often Lagrange or Chebyshev polynomials, enable exponential convergence rates for smooth solutions. They are defined over non-uniformly spaced nodes and are tailored to maintain orthogonality, reducing computational costs while improving approximation quality.",
+      "mathematical_formulation": "\\phi_i(x) = \\prod_{j \\neq i} \\frac{x - x_j}{x_i - x_j}",
+      "source_ids": [
+        "wiki_spectral_element_method"
       ]
     }
   ],
@@ -35,8 +62,10 @@
         "\\Omega = \\bigcup_{e=1}^{E} \\Omega_e"
       ],
       "source_ids": [
-        "s2_2a514cd276e01e493d923e733c3aedda0556381b"
-      ]
+        "s2_2a514cd276e01e493d923e733c3aedda0556381b",
+        "wiki_spectral_element_method"
+      ],
+      "proposition_id": "e4799dc9-bbc9-4b25-8c20-55d31afcd3c5"
     },
     {
       "step_number": 2,
@@ -49,6 +78,31 @@
       "source_ids": [
         "wiki_galerkin_method",
         "wiki_discontinuous_galerkin_method"
+      ],
+      "proposition_id": "52090d12-2888-486a-ad23-adabff380be0"
+    },
+    {
+      "step_number": 2,
+      "title": "Assembly of the Global System",
+      "description": "Local element matrices and vectors are assembled into a global system of equations by summing contributions from all elements. This involves integrating the bilinear form over each element and combining them into a global stiffness matrix and load vector. The assembly process ensures compatibility between elements and enforces boundary conditions at the global level.",
+      "equations": [
+        "K_{ij} = \\sum_{e=1}^N \\int_{\\Omega_e} \\nabla \\phi_i \\cdot \\nabla \\phi_j \\, dx",
+        "F_i = \\sum_{e=1}^N \\int_{\\Omega_e} f \\phi_i \\, dx"
+      ],
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem",
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Solution of the Linear System",
+      "description": "The assembled global system is solved using direct or iterative methods to obtain the unknown coefficients of the basis functions. This step requires efficient solvers to handle large-scale problems, especially with high-degree basis functions. The solution is then post-processed to compute derived quantities like stresses, strains, or fluxes at desired locations.",
+      "equations": [
+        "K \\mathbf{u} = \\mathbf{F}"
+      ],
+      "source_ids": [
+        "wiki_spectral_element_method"
       ]
     }
   ],
@@ -59,7 +113,8 @@
       "explanation": "This equation represents the weighted residual form of a PDE. \\mathbf{L}(\\mathbf{u}) is the differential operator applied to the solution \\mathbf{u}, \\mathbf{w} are test functions, \\mathbf{f} is the body force, and \\mathbf{t} is the traction on the boundary \\Gamma. The weak form allows for less restrictive continuity requirements on the solution compared to the strong form.",
       "source_ids": [
         "wiki_galerkin_method"
-      ]
+      ],
+      "proposition_id": "ae14f6c9-09aa-4a80-bcf4-e9ff668caf28"
     },
     {
       "name": "Bilinear Form in Galerkin Method",
@@ -67,6 +122,31 @@
       "explanation": "The bilinear form \\( a(u_h, v_h) $ computes the stiffness matrix by integrating the product of strain-displacement matrices (\\mathbf{B}) and material properties (\\mathbf{D}) over each element. This form ensures the discrete solution satisfies the variational principle, linking the physical properties of the material to the numerical approximation.",
       "source_ids": [
         "wiki_galerkin_method"
+      ],
+      "proposition_id": "996b02b0-d8d7-4326-bdbb-78befec28eaf"
+    },
+    {
+      "name": "Weak Form Equation",
+      "latex": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
+      "explanation": "This equation represents the weak formulation of a PDE, where $ B(u, v) $ is a bilinear form encoding the differential operator, $ f $ is the source term, and $ v $ is a test function. The solution $ u $ must satisfy this equation for all admissible $ v $, ensuring compatibility with the problem's boundary conditions.",
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "name": "Coercivity Condition",
+      "latex": "|B(u, u)| \\geq c \\|u\\|^2 \\quad \\text{for some } c > 0",
+      "explanation": "This condition ensures the bilinear form $ B $ is uniformly positive definite, guaranteeing the existence and uniqueness of the weak solution. The constant $ c $ quantifies the lower bound of the form's magnitude relative to the norm of $ u $, preventing ill-conditioning in the numerical system.",
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "name": "Galerkin Projection",
+      "latex": "\\sum_{i=1}^N u_i B(\\phi_i, \\phi_j) = \\langle f, \\phi_j \\rangle \\quad \\text{for } j = 1, \\dots, N",
+      "explanation": "The Galerkin method projects the weak form onto a finite-dimensional subspace spanned by basis functions $ \\phi_i $. This results in a system of algebraic equations where the coefficients $ u_i $ are determined by satisfying the weak form for each basis function $ \\phi_j $, ensuring consistency with the original PDE.",
+      "source_ids": [
+        "wiki_spectral_element_method"
       ]
     }
   ],
@@ -76,13 +156,36 @@
       "explanation": "The choice of continuous or discontinuous basis functions depends on the problem's nature. Continuous functions ensure smooth solutions, while discontinuous functions (as in Discontinuous Galerkin methods) handle shocks or discontinuities. This rule ensures numerical stability and accuracy, particularly in problems with sharp gradients or material interfaces.",
       "source_ids": [
         "wiki_discontinuous_galerkin_method"
-      ]
+      ],
+      "proposition_id": "8e65509d-3113-47cf-ac5c-232d021b8a94"
     },
     {
       "rule": "Mesh Refinement Near Gradients",
       "explanation": "Regions with high solution gradients require finer meshes to capture local behavior accurately. This rule prevents numerical errors and ensures convergence. It is critical in problems involving stress concentrations, fluid flow, or electromagnetic fields where localized effects dominate.",
       "source_ids": [
         "s2_2a514cd276e01e493d923e733c3aedda0556381b"
+      ],
+      "proposition_id": "cba3e284-f1b7-4ef9-bf47-65b4a847874c"
+    },
+    {
+      "rule": "Ensure Coercivity of the Bilinear Form",
+      "explanation": "The bilinear form must satisfy coercivity to guarantee a unique and stable solution. Violations can lead to non-physical oscillations or failure to converge, especially in problems with complex geometries or material properties.",
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "rule": "Use High-Order Basis Functions for Smooth Solutions",
+      "explanation": "High-degree polynomials (e.g., in spectral element methods) provide exponential convergence for smooth solutions, reducing computational costs compared to low-order FEM. This is critical for problems requiring high accuracy, such as fluid dynamics or wave propagation.",
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "rule": "Refine Mesh Near Singularities",
+      "explanation": "Mesh refinement in regions with high gradients or singularities (e.g., cracks, sharp corners) improves accuracy by resolving local behavior. Poorly refined meshes can lead to significant errors in stress or strain predictions.",
+      "source_ids": [
+        "wiki_spectral_element_method"
       ]
     }
   ]
