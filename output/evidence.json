@@ -826,7 +826,7 @@
   {
     "source_id": "wiki_computational_electromagnetics",
     "url": "https://en.wikipedia.org/wiki/Computational_electromagnetics",
-    "retrieved_at": "2026-09-24T19:35:53.347533+00:00",
+    "retrieved_at": "2026-09-24T19:41:08.408565+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Computational electromagnetics",
@@ -864,21 +864,21 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "Galerkin orthogonality finite element method",
+      "best_query": "FEM CPFEM implementation",
       "query_index": 3,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.1375,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "Galerkin orthogonality finite element method": 0.1375,
-        "symmetry of the matrix finite element method": 0.1375
+        "FEM CPFEM implementation": 0.1375,
+        "Loubignac iteration FEM": 0.1375
       }
     }
   },
   {
     "source_id": "wiki_finite_difference_time_domain_method",
     "url": "https://en.wikipedia.org/wiki/Finite-difference_time-domain_method",
-    "retrieved_at": "2026-09-24T13:11:40.920432+00:00",
+    "retrieved_at": "2026-09-24T19:41:08.408565+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Finite-difference time-domain method",
@@ -915,14 +915,68 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "Loubignac iteration finite element method",
+      "best_query": "FEM CPFEM implementation",
       "query_index": 3,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.1375,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "Loubignac iteration finite element method": 0.1375,
-        "analytic element method finite element method": 0.1375
+        "FEM CPFEM implementation": 0.1375,
+        "Loubignac iteration FEM": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_finite_element_method",
+    "url": "https://en.wikipedia.org/wiki/Finite_element_method",
+    "retrieved_at": "2026-09-24T19:41:08.408565+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Finite element method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "<span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (FEM) is a popular <span class=\"searchmatch\">method</span> for numerically solving differential equations arising in engineering and <span class=\"searchmatch\">mathematical</span> modeling. Typical",
+      "word_count": 6417
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_finite_element_method.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "FEM CPFEM implementation",
+      "Loubignac iteration FEM",
+      "finite element method mathematical foundation weak form Galerkin method",
+      "finite element method practical implementation modeling rules"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.1375,
+      "lexical": 0.0,
+      "source_quality": 0.55,
+      "section_relevance": 0.0,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "FEM CPFEM implementation",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "FEM CPFEM implementation": 0.1375,
+        "Loubignac iteration FEM": 0.1375
       }
     }
   }

@@ -248,5 +248,30 @@
       "procedures": 0,
       "rules": 0
     }
+  },
+  "wiki_finite_element_method": {
+    "first_read_at": "2026-09-24T19:41:26.430465+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T19:41:26.430495+00:00",
+        "extracted": {
+          "concepts": 4,
+          "procedures": 4,
+          "equations": 3,
+          "rules": 3
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 4,
+      "equations": 3,
+      "procedures": 4,
+      "rules": 3
+    }
   }
 }

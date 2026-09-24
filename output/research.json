@@ -33,7 +33,8 @@
       "explanation": "The weak formulation transforms a partial differential equation into an integral form by multiplying with a test function and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. It is central to the finite element method as it enables the use of variational principles and ensures compatibility with numerical discretization. The weak form is typically expressed as a bilinear equation involving the solution and test functions.",
       "mathematical_formulation": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
       "source_ids": [
-        "wiki_babu_ka_lax_milgram_theorem"
+        "wiki_babu_ka_lax_milgram_theorem",
+        "wiki_finite_element_method"
       ],
       "concept_id": "1bcd5a0a-3995-4183-bc3b-676bcafad0ca"
     },
@@ -60,15 +61,27 @@
       "explanation": "The Finite Element Method (FEM) is a numerical technique used to approximate solutions to partial differential equations (PDEs) by discretizing a complex domain into smaller, simpler parts called finite elements. It is particularly effective for handling irregular geometries and complex boundary conditions, making it suitable for problems where analytical solutions are infeasible. FEM transforms continuous equations into a system of algebraic equations through variational principles or weighted residual methods, enabling computational solutions. In computational electromagnetics, FEM is employed to model electromagnetic fields in structures with curved or non-orthogonal geometries, offering higher accuracy compared to methods like FDTD for such cases.",
       "mathematical_formulation": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma",
       "source_ids": [
-        "wiki_computational_electromagnetics"
-      ]
+        "wiki_computational_electromagnetics",
+        "wiki_finite_element_method"
+      ],
+      "concept_id": "24a3b538-816d-470a-8bce-ef94ba687247"
     },
     {
       "name": "Discretization",
       "explanation": "Discretization is the process of dividing a continuous domain into discrete elements to approximate solutions numerically. In FEM, this involves creating a mesh of elements where the solution is computed at nodes, and interpolation functions define behavior within each element. This approach reduces complex PDEs to manageable algebraic equations, enabling computational analysis. Discretization is critical for handling irregular geometries and varying material properties, as it allows localized refinement where higher accuracy is required.",
       "mathematical_formulation": "\\Omega \\approx \\bigcup_{i=1}^N \\Omega_i",
       "source_ids": [
-        "wiki_computational_electromagnetics"
+        "wiki_computational_electromagnetics",
+        "wiki_finite_element_method"
+      ],
+      "concept_id": "46b0f3cc-913b-4b17-8a74-6c35313070dc"
+    },
+    {
+      "name": "Assembly",
+      "explanation": "Assembly combines element-level equations into a global system of algebraic equations. This process ensures continuity of the solution across element boundaries through node-based interpolation. The stiffness matrix and load vector are accumulated by summing contributions from individual elements. Assembly is essential for representing the entire problem domain as a unified system.",
+      "mathematical_formulation": "K_{global} = \\sum_{e=1}^{N} K_e, \\quad F_{global} = \\sum_{e=1}^{N} F_e",
+      "source_ids": [
+        "wiki_finite_element_method"
       ]
     }
   ],
@@ -135,7 +148,8 @@
       ],
       "source_ids": [
         "wiki_computational_electromagnetics"
-      ]
+      ],
+      "proposition_id": "b7d433bb-ee2c-4579-bcc7-383dc99e21d4"
     },
     {
       "step_number": 2,
@@ -146,6 +160,51 @@
       ],
       "source_ids": [
         "wiki_computational_electromagnetics"
+      ],
+      "proposition_id": "6eaf41ba-b09b-4f97-914f-8e941133dbb2"
+    },
+    {
+      "step_number": 1,
+      "title": "Domain Discretization",
+      "description": "The problem domain is divided into a mesh of finite elements. This step requires defining geometry, material properties, and boundary conditions. The mesh quality affects accuracy and computational cost. Elements can be of various types (e.g., triangular, quadrilateral) depending on the problem.",
+      "equations": [
+        "\\Omega = \\bigcup_{e=1}^{N} \\Omega_e"
+      ],
+      "source_ids": [
+        "wiki_finite_element_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Element Equation Formulation",
+      "description": "Local equations are derived for each element using trial and test functions. These equations approximate the original PDEs within the element. The Galerkin method is commonly used to ensure consistency. The element equations capture the behavior of the system in localized regions.",
+      "equations": [
+        "\\int_{\\Omega_e} \\nabla v \\cdot \\nabla u_e \\, d\\Omega_e = \\int_{\\Omega_e} v f \\, d\\Omega_e"
+      ],
+      "source_ids": [
+        "wiki_finite_element_method"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Global System Assembly",
+      "description": "Element equations are assembled into a global system by mapping local degrees of freedom to global nodes. This step ensures compatibility between adjacent elements. The global stiffness matrix and force vector are constructed through matrix addition. The assembled system represents the entire problem domain.",
+      "equations": [
+        "K_{global} = \\sum_{e=1}^{N} K_e, \\quad F_{global} = \\sum_{e=1}^{N} F_e"
+      ],
+      "source_ids": [
+        "wiki_finite_element_method"
+      ]
+    },
+    {
+      "step_number": 4,
+      "title": "Solution of Algebraic Equations",
+      "description": "The global system of equations is solved using numerical techniques like Gaussian elimination or iterative solvers. This step yields the approximate solution at nodal points. The solution is then post-processed to extract quantities of interest. Accuracy depends on mesh density and element order.",
+      "equations": [
+        "K_{global} U = F_{global}"
+      ],
+      "source_ids": [
+        "wiki_finite_element_method"
       ]
     }
   ],
@@ -155,6 +214,7 @@
       "latex": "\\int_{\\Omega} \\mathbf{w}^T \\mathbf{L}(\\mathbf{u}) d\\Omega = \\int_{\\Omega} \\mathbf{w}^T \\mathbf{f} d\\Omega + \\int_{\\Gamma} \\mathbf{w}^T \\mathbf{t} d\\Gamma",
       "explanation": "This equation represents the weighted residual form of a PDE. \\mathbf{L}(\\mathbf{u}) is the differential operator applied to the solution \\mathbf{u}, \\mathbf{w} are test functions, \\mathbf{f} is the body force, and \\mathbf{t} is the traction on the boundary \\Gamma. The weak form allows for less restrictive continuity requirements on the solution compared to the strong form.",
       "source_ids": [
+        "wiki_finite_element_method",
         "wiki_galerkin_method"
       ],
       "proposition_id": "ae14f6c9-09aa-4a80-bcf4-e9ff668caf28"
@@ -201,7 +261,8 @@
       "explanation": "This equation describes the distribution of electric potential $ V $ in a medium with permittivity $ \\epsilon $ and charge density $ \\rho $. The finite element method discretizes this equation to compute $ V $ numerically, accounting for varying material properties and boundary conditions.",
       "source_ids": [
         "wiki_computational_electromagnetics"
-      ]
+      ],
+      "proposition_id": "7711e24e-a9aa-4001-9017-00c051431da7"
     },
     {
       "name": "Weak Form of Maxwell's Equations",
@@ -209,6 +270,23 @@
       "explanation": "This weak form represents the integral formulation of Maxwell's equations, where $ \\mathbf{E} $ is the electric field, $ \\mathbf{H} $ is the magnetic field, and $ \\mathbf{J} $ is the current density. It is used in FEM to approximate solutions for electromagnetic problems by transforming differential equations into algebraic systems.",
       "source_ids": [
         "wiki_computational_electromagnetics"
+      ],
+      "proposition_id": "2adb5bca-2f3d-4897-a690-0544e4d93a26"
+    },
+    {
+      "name": "Element Stiffness Matrix",
+      "latex": "K_e = \\int_{\\Omega_e} B^T D B \\, d\\Omega_e",
+      "explanation": "This equation computes the stiffness matrix for an element. $ B $ is the strain-displacement matrix, $ D $ is the material property matrix, and $ \\Omega_e $ is the element domain. It relates nodal displacements to internal forces.",
+      "source_ids": [
+        "wiki_finite_element_method"
+      ]
+    },
+    {
+      "name": "Global System of Equations",
+      "latex": "K_{global} U = F_{global}",
+      "explanation": "This equation represents the assembled system of algebraic equations. $ K_{global} $ is the global stiffness matrix, $ U $ is the vector of unknown nodal values, and $ F_{global} $ is the global force vector. Solving this system provides the numerical solution.",
+      "source_ids": [
+        "wiki_finite_element_method"
       ]
     }
   ],
@@ -258,13 +336,36 @@
       "explanation": "Leveraging symmetry in modeling reduces computational complexity by limiting the domain to a fraction of the full structure. This rule is critical for efficiency, as it decreases the number of elements and equations, while maintaining accuracy for symmetric problems.",
       "source_ids": [
         "wiki_computational_electromagnetics"
-      ]
+      ],
+      "proposition_id": "ee500168-25b5-4008-8929-02fd8918b505"
     },
     {
       "rule": "Element Type Selection",
       "explanation": "Choosing appropriate element types (e.g., triangular, quadrilateral, curved) ensures accurate representation of geometry and field behavior. This rule is essential for capturing complex shapes and avoiding numerical errors in regions with high field gradients.",
       "source_ids": [
         "wiki_computational_electromagnetics"
+      ],
+      "proposition_id": "14f0dbae-9be4-4386-a0a0-8cdddc93ea6b"
+    },
+    {
+      "rule": "Mesh Convergence",
+      "explanation": "The mesh must be sufficiently refined to capture solution gradients. Coarse meshes may lead to inaccurate results, while excessive refinement increases computational cost. Convergence studies ensure numerical solutions approach the true solution as mesh density increases.",
+      "source_ids": [
+        "wiki_finite_element_method"
+      ]
+    },
+    {
+      "rule": "Boundary Condition Application",
+      "explanation": "Boundary conditions must be accurately applied to reflect physical constraints. Essential (Dirichlet) and natural (Neumann) conditions require distinct treatment in the weak form. Incorrect application leads to non-physical solutions.",
+      "source_ids": [
+        "wiki_finite_element_method"
+      ]
+    },
+    {
+      "rule": "Material Property Assignment",
+      "explanation": "Material properties must be correctly assigned to elements to reflect real-world behavior. Heterogeneous materials require proper segmentation in the mesh. Incorrect properties result in erroneous stress, strain, or thermal distributions.",
+      "source_ids": [
+        "wiki_finite_element_method"
       ]
     }
   ]

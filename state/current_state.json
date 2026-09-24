@@ -2,9 +2,9 @@
   "schema_version": 5,
   "topic": "Finite Element Method Theory Implementation and Modeling Rules",
   "objective": "Produce a comprehensive technical guideline explaining how the Finite Element Method works\nincluding mathematical foundation, step-by-step procedure, and rules for modeling physical phenomena.\n",
-  "cycle": 6,
-  "iteration": 6,
-  "last_run": "2026-09-24T19:36:31.679154+00:00",
+  "cycle": 7,
+  "iteration": 7,
+  "last_run": "2026-09-24T19:41:48.288813+00:00",
   "last_run_status": "success",
   "knowledge_base": {
     "concepts": [
@@ -41,7 +41,8 @@
         "explanation": "The weak formulation transforms a partial differential equation into an integral form by multiplying with a test function and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. It is central to the finite element method as it enables the use of variational principles and ensures compatibility with numerical discretization. The weak form is typically expressed as a bilinear equation involving the solution and test functions.",
         "mathematical_formulation": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
         "source_ids": [
-          "wiki_babu_ka_lax_milgram_theorem"
+          "wiki_babu_ka_lax_milgram_theorem",
+          "wiki_finite_element_method"
         ],
         "concept_id": "1bcd5a0a-3995-4183-bc3b-676bcafad0ca"
       },
@@ -68,7 +69,8 @@
         "explanation": "The Finite Element Method (FEM) is a numerical technique used to approximate solutions to partial differential equations (PDEs) by discretizing a complex domain into smaller, simpler parts called finite elements. It is particularly effective for handling irregular geometries and complex boundary conditions, making it suitable for problems where analytical solutions are infeasible. FEM transforms continuous equations into a system of algebraic equations through variational principles or weighted residual methods, enabling computational solutions. In computational electromagnetics, FEM is employed to model electromagnetic fields in structures with curved or non-orthogonal geometries, offering higher accuracy compared to methods like FDTD for such cases.",
         "mathematical_formulation": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma",
         "source_ids": [
-          "wiki_computational_electromagnetics"
+          "wiki_computational_electromagnetics",
+          "wiki_finite_element_method"
         ],
         "concept_id": "24a3b538-816d-470a-8bce-ef94ba687247"
       },
@@ -77,9 +79,19 @@
         "explanation": "Discretization is the process of dividing a continuous domain into discrete elements to approximate solutions numerically. In FEM, this involves creating a mesh of elements where the solution is computed at nodes, and interpolation functions define behavior within each element. This approach reduces complex PDEs to manageable algebraic equations, enabling computational analysis. Discretization is critical for handling irregular geometries and varying material properties, as it allows localized refinement where higher accuracy is required.",
         "mathematical_formulation": "\\Omega \\approx \\bigcup_{i=1}^N \\Omega_i",
         "source_ids": [
-          "wiki_computational_electromagnetics"
+          "wiki_computational_electromagnetics",
+          "wiki_finite_element_method"
         ],
         "concept_id": "46b0f3cc-913b-4b17-8a74-6c35313070dc"
+      },
+      {
+        "name": "Assembly",
+        "explanation": "Assembly combines element-level equations into a global system of algebraic equations. This process ensures continuity of the solution across element boundaries through node-based interpolation. The stiffness matrix and load vector are accumulated by summing contributions from individual elements. Assembly is essential for representing the entire problem domain as a unified system.",
+        "mathematical_formulation": "K_{global} = \\sum_{e=1}^{N} K_e, \\quad F_{global} = \\sum_{e=1}^{N} F_e",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "concept_id": "0def28b2-5044-465b-9cc0-908285c68169"
       }
     ],
     "procedures": [
@@ -159,6 +171,54 @@
           "wiki_computational_electromagnetics"
         ],
         "proposition_id": "6eaf41ba-b09b-4f97-914f-8e941133dbb2"
+      },
+      {
+        "step_number": 1,
+        "title": "Domain Discretization",
+        "description": "The problem domain is divided into a mesh of finite elements. This step requires defining geometry, material properties, and boundary conditions. The mesh quality affects accuracy and computational cost. Elements can be of various types (e.g., triangular, quadrilateral) depending on the problem.",
+        "equations": [
+          "\\Omega = \\bigcup_{e=1}^{N} \\Omega_e"
+        ],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "proposition_id": "74b70a14-f9e2-4880-8258-3da339cfc8fb"
+      },
+      {
+        "step_number": 2,
+        "title": "Element Equation Formulation",
+        "description": "Local equations are derived for each element using trial and test functions. These equations approximate the original PDEs within the element. The Galerkin method is commonly used to ensure consistency. The element equations capture the behavior of the system in localized regions.",
+        "equations": [
+          "\\int_{\\Omega_e} \\nabla v \\cdot \\nabla u_e \\, d\\Omega_e = \\int_{\\Omega_e} v f \\, d\\Omega_e"
+        ],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "proposition_id": "b1b0aa99-81a4-4e2c-a239-48f5b9865b44"
+      },
+      {
+        "step_number": 3,
+        "title": "Global System Assembly",
+        "description": "Element equations are assembled into a global system by mapping local degrees of freedom to global nodes. This step ensures compatibility between adjacent elements. The global stiffness matrix and force vector are constructed through matrix addition. The assembled system represents the entire problem domain.",
+        "equations": [
+          "K_{global} = \\sum_{e=1}^{N} K_e, \\quad F_{global} = \\sum_{e=1}^{N} F_e"
+        ],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "proposition_id": "0f2ae1cb-ae46-42ed-a466-15539d5472ff"
+      },
+      {
+        "step_number": 4,
+        "title": "Solution of Algebraic Equations",
+        "description": "The global system of equations is solved using numerical techniques like Gaussian elimination or iterative solvers. This step yields the approximate solution at nodal points. The solution is then post-processed to extract quantities of interest. Accuracy depends on mesh density and element order.",
+        "equations": [
+          "K_{global} U = F_{global}"
+        ],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "proposition_id": "2c320fe9-8012-4735-800e-9fe27e78c6f6"
       }
     ],
     "equations": [
@@ -167,9 +227,10 @@
         "latex": "\\int_{\\Omega} \\mathbf{w}^T \\mathbf{L}(\\mathbf{u}) d\\Omega = \\int_{\\Omega} \\mathbf{w}^T \\mathbf{f} d\\Omega + \\int_{\\Gamma} \\mathbf{w}^T \\mathbf{t} d\\Gamma",
         "explanation": "This equation represents the weighted residual form of a PDE. \\mathbf{L}(\\mathbf{u}) is the differential operator applied to the solution \\mathbf{u}, \\mathbf{w} are test functions, \\mathbf{f} is the body force, and \\mathbf{t} is the traction on the boundary \\Gamma. The weak form allows for less restrictive continuity requirements on the solution compared to the strong form.",
         "source_ids": [
+          "wiki_finite_element_method",
           "wiki_galerkin_method"
         ],
-        "proposition_id": "ae14f6c9-09aa-4a80-bcf4-e9ff668caf28"
+        "proposition_id": "9ebb63c4-b450-4372-be4b-7bb3603e974a"
       },
       {
         "name": "Bilinear Form in Galerkin Method",
@@ -224,6 +285,24 @@
           "wiki_computational_electromagnetics"
         ],
         "proposition_id": "2adb5bca-2f3d-4897-a690-0544e4d93a26"
+      },
+      {
+        "name": "Element Stiffness Matrix",
+        "latex": "K_e = \\int_{\\Omega_e} B^T D B \\, d\\Omega_e",
+        "explanation": "This equation computes the stiffness matrix for an element. $ B $ is the strain-displacement matrix, $ D $ is the material property matrix, and $ \\Omega_e $ is the element domain. It relates nodal displacements to internal forces.",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "proposition_id": "f876d0dd-5f5a-4a50-95f0-d9f4d71314d6"
+      },
+      {
+        "name": "Global System of Equations",
+        "latex": "K_{global} U = F_{global}",
+        "explanation": "This equation represents the assembled system of algebraic equations. $ K_{global} $ is the global stiffness matrix, $ U $ is the vector of unknown nodal values, and $ F_{global} $ is the global force vector. Solving this system provides the numerical solution.",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "proposition_id": "94e14e09-a2a5-4892-a038-fdf07730f759"
       }
     ],
     "rules": [
@@ -282,6 +361,30 @@
           "wiki_computational_electromagnetics"
         ],
         "proposition_id": "14f0dbae-9be4-4386-a0a0-8cdddc93ea6b"
+      },
+      {
+        "rule": "Mesh Convergence",
+        "explanation": "The mesh must be sufficiently refined to capture solution gradients. Coarse meshes may lead to inaccurate results, while excessive refinement increases computational cost. Convergence studies ensure numerical solutions approach the true solution as mesh density increases.",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "proposition_id": "e852fc20-8b5e-49d1-bf0b-93f6307ddd93"
+      },
+      {
+        "rule": "Boundary Condition Application",
+        "explanation": "Boundary conditions must be accurately applied to reflect physical constraints. Essential (Dirichlet) and natural (Neumann) conditions require distinct treatment in the weak form. Incorrect application leads to non-physical solutions.",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "proposition_id": "ad1a5510-74b5-47df-bbe9-e27ec0216c6e"
+      },
+      {
+        "rule": "Material Property Assignment",
+        "explanation": "Material properties must be correctly assigned to elements to reflect real-world behavior. Heterogeneous materials require proper segmentation in the mesh. Incorrect properties result in erroneous stress, strain, or thermal distributions.",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "proposition_id": "0228226f-1c02-4783-b84b-92c2308a9d35"
       }
     ]
   },
@@ -326,7 +429,8 @@
         "name": "Weak Formulation",
         "type": "concept",
         "source_ids": [
-          "wiki_babu_ka_lax_milgram_theorem"
+          "wiki_babu_ka_lax_milgram_theorem",
+          "wiki_finite_element_method"
         ],
         "status": "active",
         "parent_concept_ids": [],
@@ -359,7 +463,8 @@
         "name": "Finite Element Method",
         "type": "concept",
         "source_ids": [
-          "wiki_computational_electromagnetics"
+          "wiki_computational_electromagnetics",
+          "wiki_finite_element_method"
         ],
         "status": "active",
         "parent_concept_ids": [],
@@ -370,7 +475,19 @@
         "name": "Discretization",
         "type": "concept",
         "source_ids": [
-          "wiki_computational_electromagnetics"
+          "wiki_computational_electromagnetics",
+          "wiki_finite_element_method"
+        ],
+        "status": "active",
+        "parent_concept_ids": [],
+        "aliases": []
+      },
+      "0def28b2-5044-465b-9cc0-908285c68169": {
+        "concept_id": "0def28b2-5044-465b-9cc0-908285c68169",
+        "name": "Assembly",
+        "type": "concept",
+        "source_ids": [
+          "wiki_finite_element_method"
         ],
         "status": "active",
         "parent_concept_ids": [],
@@ -896,7 +1013,10 @@
         "method": "",
         "approximation": [],
         "scope": "",
-        "scope_notes": ""
+        "scope_notes": "",
+        "candidate_concept_ids": [
+          "0def28b2-5044-465b-9cc0-908285c68169"
+        ]
       },
       "1c6cf19d-7850-4ad8-b339-2d62c7990e1c": {
         "proposition_id": "1c6cf19d-7850-4ad8-b339-2d62c7990e1c",
@@ -1149,6 +1269,373 @@
         "approximation": [],
         "scope": "",
         "scope_notes": ""
+      },
+      "9ebb63c4-b450-4372-be4b-7bb3603e974a": {
+        "proposition_id": "9ebb63c4-b450-4372-be4b-7bb3603e974a",
+        "statement": "Weak Form of PDE",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_finite_element_method",
+          "wiki_galerkin_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "equation",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "f876d0dd-5f5a-4a50-95f0-d9f4d71314d6": {
+        "proposition_id": "f876d0dd-5f5a-4a50-95f0-d9f4d71314d6",
+        "statement": "Element Stiffness Matrix",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "equation",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "94e14e09-a2a5-4892-a038-fdf07730f759": {
+        "proposition_id": "94e14e09-a2a5-4892-a038-fdf07730f759",
+        "statement": "Global System of Equations",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "equation",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "e852fc20-8b5e-49d1-bf0b-93f6307ddd93": {
+        "proposition_id": "e852fc20-8b5e-49d1-bf0b-93f6307ddd93",
+        "statement": "Mesh Convergence",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "rule",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "ad1a5510-74b5-47df-bbe9-e27ec0216c6e": {
+        "proposition_id": "ad1a5510-74b5-47df-bbe9-e27ec0216c6e",
+        "statement": "Boundary Condition Application",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "rule",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "0228226f-1c02-4783-b84b-92c2308a9d35": {
+        "proposition_id": "0228226f-1c02-4783-b84b-92c2308a9d35",
+        "statement": "Material Property Assignment",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "rule",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "74b70a14-f9e2-4880-8258-3da339cfc8fb": {
+        "proposition_id": "74b70a14-f9e2-4880-8258-3da339cfc8fb",
+        "statement": "Domain Discretization",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "procedure",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": "",
+        "candidate_concept_ids": [
+          "46b0f3cc-913b-4b17-8a74-6c35313070dc"
+        ]
+      },
+      "b1b0aa99-81a4-4e2c-a239-48f5b9865b44": {
+        "proposition_id": "b1b0aa99-81a4-4e2c-a239-48f5b9865b44",
+        "statement": "Element Equation Formulation",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "procedure",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "0f2ae1cb-ae46-42ed-a466-15539d5472ff": {
+        "proposition_id": "0f2ae1cb-ae46-42ed-a466-15539d5472ff",
+        "statement": "Global System Assembly",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "procedure",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": "",
+        "candidate_concept_ids": [
+          "0def28b2-5044-465b-9cc0-908285c68169"
+        ]
+      },
+      "2c320fe9-8012-4735-800e-9fe27e78c6f6": {
+        "proposition_id": "2c320fe9-8012-4735-800e-9fe27e78c6f6",
+        "statement": "Solution of Algebraic Equations",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "procedure",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
       }
     },
     "relationships": {},
@@ -1225,6 +1712,36 @@
         "type": "concept",
         "source_ids": [
           "wiki_computational_electromagnetics"
+        ]
+      },
+      {
+        "event": "provenance_extended",
+        "concept_id": "1bcd5a0a-3995-4183-bc3b-676bcafad0ca",
+        "source_ids_added": [
+          "wiki_finite_element_method"
+        ]
+      },
+      {
+        "event": "provenance_extended",
+        "concept_id": "24a3b538-816d-470a-8bce-ef94ba687247",
+        "source_ids_added": [
+          "wiki_finite_element_method"
+        ]
+      },
+      {
+        "event": "provenance_extended",
+        "concept_id": "46b0f3cc-913b-4b17-8a74-6c35313070dc",
+        "source_ids_added": [
+          "wiki_finite_element_method"
+        ]
+      },
+      {
+        "event": "concept_discovered",
+        "concept_id": "0def28b2-5044-465b-9cc0-908285c68169",
+        "name": "Assembly",
+        "type": "concept",
+        "source_ids": [
+          "wiki_finite_element_method"
         ]
       }
     ],
@@ -1420,6 +1937,97 @@
           "wiki_computational_electromagnetics"
         ],
         "framework": ""
+      },
+      {
+        "proposition_id": "0228226f-1c02-4783-b84b-92c2308a9d35",
+        "event": "discovered",
+        "fingerprint": "77e7afd5b83a18b6",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "0f2ae1cb-ae46-42ed-a466-15539d5472ff",
+        "event": "discovered",
+        "fingerprint": "4241350e6b0b4288",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "2c320fe9-8012-4735-800e-9fe27e78c6f6",
+        "event": "discovered",
+        "fingerprint": "458895f718f30986",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "74b70a14-f9e2-4880-8258-3da339cfc8fb",
+        "event": "discovered",
+        "fingerprint": "daaf2edd634eaab0",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "94e14e09-a2a5-4892-a038-fdf07730f759",
+        "event": "discovered",
+        "fingerprint": "39b5d61528f8546b",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "9ebb63c4-b450-4372-be4b-7bb3603e974a",
+        "event": "discovered",
+        "fingerprint": "f7262614224ac456",
+        "source_ids": [
+          "wiki_finite_element_method",
+          "wiki_galerkin_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "ad1a5510-74b5-47df-bbe9-e27ec0216c6e",
+        "event": "discovered",
+        "fingerprint": "ba4779e111f1f1a7",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "b1b0aa99-81a4-4e2c-a239-48f5b9865b44",
+        "event": "discovered",
+        "fingerprint": "6d2229bb22b9aa1b",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "e852fc20-8b5e-49d1-bf0b-93f6307ddd93",
+        "event": "discovered",
+        "fingerprint": "bb68c3406cd2dd41",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "f876d0dd-5f5a-4a50-95f0-d9f4d71314d6",
+        "event": "discovered",
+        "fingerprint": "02e57a3d2a7dba38",
+        "source_ids": [
+          "wiki_finite_element_method"
+        ],
+        "framework": ""
       }
     ]
   },
@@ -1427,13 +2035,13 @@
   "sections": [
     {
       "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
-      "content": "Variational principles form the mathematical foundation of the Finite Element Method (FEM), involving the minimization of a functional derived from the governing differential equation. This approach transforms the problem into finding a function that satisfies the Euler-Lagrange equation, as noted in the historical context of FEM [s2_2a514cd276e01e493d923e733c3aedda0556381b]. The weak form of the governing PDEs is derived by multiplying the equation by a test function and integrating over the domain, reducing the order of derivatives and enabling the application of variational principles [wiki_computational_electromagnetics]. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation [wiki_galerkin_method, wiki_boris_galerkin].\n\nThe Galerkin method is a core technique in the Finite Element Method (FEM) that projects the residual of a differential equation onto a finite-dimensional space of test functions. This ensures that the approximate solution satisfies the weak form of the equation. The Galerkin projection is formulated as $\\sum_{i=1}^N u_i B(\\phi_i, \\phi_j) = \\langle f, \\phi_j \\rangle$ for $j = 1, \\dots, N$, where $u_i$ are the coefficients of the approximate solution, $\\phi_i$ are the basis functions, and $B(\\phi_i, \\phi_j)$ is the bilinear form. The weak form of the PDE is given by $\\int_{\\Omega} \\mathbf{w}^T \\mathbf{L}(\\mathbf{u}) d\\Omega = \\int_{\\Omega} \\mathbf{w}^T \\mathbf{f} d\\Omega + \\int_{\\Gamma} \\mathbf{w}^T \\mathbf{t} d\\Gamma$, where $\\mathbf{w}$ are test functions, $\\mathbf{f}$ is the body force, and $\\mathbf{t}$ is the traction on the boundary $\\Gamma$. The Galerkin method is a fundamental concept in FEM, closely tied to variational principles, and is distinct from other methods like the Ritz method due to its use of test functions independent of the trial functions [wiki_galerkin_method, wiki_boris_galerkin].\n\nThe weak form equation, $B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V$, represents the weak formulation of a partial differential equation, where $B(u, v)$ is a bilinear form encoding the differential operator, $f$ is the source term, and $v$ is a test function. This equation is central to the finite element method as it enables the use of variational principles and ensures compatibility with numerical discretization. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation. The formulation of the weak form involves multiplying the original equation by a test function and integrating over the domain, reducing the order of derivatives and facilitating the incorporation of boundary conditions into the numerical framework.",
+      "content": "The weak form of partial differential equations is a crucial concept in the Finite Element Method (FEM), enabling the use of variational principles and ensuring compatibility with numerical discretization. By transforming the strong form of a partial differential equation into an equivalent integral equation, the weak form allows for less restrictive continuity requirements on the solution compared to the strong form. This is achieved through the use of test functions, as demonstrated in the weak form of Maxwell's equations, where $ \\int_{\\Omega} (\\mathbf{E} \\cdot \\nabla \\times \\mathbf{H}^*) \\, d\\Omega = \\int_{\\Omega} \\mathbf{J} \\cdot \\mathbf{H}^* \\, d\\Omega $ [wiki_computational_electromagnetics]. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation [wiki_galerkin_method, wiki_boris_galerkin].\n\nThe Galerkin method is a core technique in the Finite Element Method (FEM) that projects the residual of a differential equation onto a finite-dimensional space of test functions. This ensures that the approximate solution satisfies the weak form of the equation, which is derived by multiplying the original equation by a test function and integrating over the domain. The Galerkin projection, given by $\\sum_{i=1}^N u_i B(\\phi_i, \\phi_j) = \\langle f, \\phi_j \\rangle$ for $j = 1, \\dots, N$, results in a system of algebraic equations where the coefficients $u_i$ are determined by satisfying the weak form for each basis function $\\phi_j$. This process is foundational for deriving discrete equations and is closely tied to variational principles, as noted in the historical context of FEM [s2_2a514cd276e01e493d923e733c3aedda0556381b]. The Galerkin method is distinct from other methods like the Ritz method due to its use of test functions independent of the trial functions, as described in the wiki_galerkin_method.\n\nThe formulation of the weak form is a crucial step in the Finite Element Method (FEM), enabling the application of variational principles and ensuring compatibility with numerical discretization. By transforming the strong form of a partial differential equation into an equivalent integral form, the weak form reduces the order of derivatives, making it feasible to use piecewise continuous functions for approximation. This process involves multiplying the equation by a test function and integrating over the domain, resulting in a bilinear equation involving the solution and test functions. The weak form is typically expressed as $B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V$, where $B(u, v)$ represents the bilinear form and $\\langle f, v \\rangle$ represents the linear form. This formulation is central to the finite element method, as it enables the use of variational principles and ensures compatibility with numerical discretization.",
       "key_equations": [
+        "\\int_{\\Omega} (\\mathbf{E} \\cdot \\nabla \\times \\mathbf{H}^*) \\, d\\Omega = \\int_{\\Omega} \\mathbf{J} \\cdot \\mathbf{H}^* \\, d\\Omega",
         "\\sum_{i=1}^N u_i B(\\phi_i, \\phi_j) = \\langle f, \\phi_j \\rangle",
         "j = 1, \\dots, N",
         "u_i",
-        "\\phi_i",
-        "B(\\phi_i, \\phi_j)"
+        "\\phi_j"
       ],
       "citations_used": [
         "s2_2a514cd276e01e493d923e733c3aedda0556381b",
@@ -1448,14 +2056,10 @@
     },
     {
       "title": "The Finite Element Procedure: Discretization and Mesh Generation",
-      "content": "The discretization of the domain is a critical step in the finite element procedure, where the physical domain is divided into smaller, simpler subdomains called elements. This process, known as meshing, defines the geometry and connectivity of elements. The choice of element type (e.g., triangular, quadrilateral) depends on the problem's complexity. A fine mesh improves accuracy but increases computational cost, requiring a balance between precision and efficiency. As the domain is discretized, the solution is approximated using piecewise polynomial functions over a discretized domain, ensuring continuity across element boundaries. This approach allows for flexible modeling of complex geometries and varying material properties. The weak formulation, which transforms a partial differential equation into an integral form by multiplying with a test function and integrating over the domain, is central to the finite element method as it enables the use of variational principles and ensures compatibility with numerical discretization.\n\nThe weak formulation is a crucial step in the finite element procedure, transforming the strong form of a partial differential equation into an equivalent integral form by multiplying with a test function and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The weak form is typically expressed as a bilinear equation involving the solution $u$ and a test function $v$, as shown in the equation $B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V$ [wiki_babu_ka_lax_milgram_theorem]. The weak formulation ensures compatibility between the discrete solution and the original equations, enabling the application of variational principles and facilitating the incorporation of boundary conditions into the numerical framework.\n\nRefining the mesh near singularities is crucial for achieving improved accuracy in finite element simulations. This is because poorly refined meshes can lead to significant errors in stress or strain predictions, particularly in regions with high gradients or singularities such as cracks or sharp corners. To address this, mesh refinement techniques can be employed to resolve local behavior, thereby enhancing the overall accuracy of the solution. As noted in the spectral element method, high-degree polynomial basis functions can also be used to achieve higher accuracy per element, enabling exponential convergence rates for smooth solutions.",
-      "key_equations": [
-        "u",
-        "v",
-        "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V"
-      ],
+      "content": "The discretization of the domain is a critical step in the finite element procedure, where the physical domain is divided into smaller, simpler subdomains called elements. This process, known as meshing, defines the geometry and connectivity of elements. The choice of element type (e.g., triangular, quadrilateral) depends on the problem's complexity, with a fine mesh improving accuracy but increasing computational cost. Discretization is the process of dividing a continuous domain into discrete elements to approximate solutions numerically, reducing complex partial differential equations to manageable algebraic equations.\n\nThe creation of a mesh that defines the geometry and connectivity of elements is a crucial step in the Finite Element Procedure. This mesh must conform to the geometry of the physical system, with element sizes adjusted to balance accuracy and computational cost. For complex geometries, curved elements or higher-order interpolation functions are used to improve approximation. The quality of the mesh directly impacts the accuracy of the solution, requiring careful consideration of element types and distribution.\n\nMesh convergence is a critical aspect of the finite element method, ensuring the accuracy and reliability of the results. The mesh must be sufficiently refined to capture solution gradients, as coarse meshes may lead to inaccurate results, while excessive refinement increases computational cost. Convergence studies verify that numerical solutions approach the true solution as mesh density increases, thereby validating the accuracy of the finite element method [wiki_finite_element_method]. This process is essential for handling complex geometries and varying material properties, as it allows localized refinement of the mesh to capture solution gradients accurately.",
+      "key_equations": [],
       "citations_used": [
-        "wiki_babu_ka_lax_milgram_theorem"
+        "wiki_finite_element_method"
       ],
       "section_id": "d62a9ba4-e892-440c-b401-9de777388556",
       "parent_section_ids": [
@@ -1468,13 +2072,18 @@
     },
     {
       "title": "The Finite Element Procedure: Weak Formulation and Algebraic Equations",
-      "content": "The weak formulation of partial differential equations is a crucial step in the finite element procedure. It involves transforming the strong form of a partial differential equation into an equivalent weak form, which is then approximated using piecewise polynomial functions over a discretized domain. This approach, known as the finite element method, approximates solutions to partial differential equations using functions defined on elements, such as triangles or quadrilaterals, and ensures continuity across element boundaries. The Galerkin method, a core technique in FEM, projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation. The process of deriving discrete equations using the Galerkin method is closely tied to variational principles, which involve minimizing a functional derived from the governing differential equation.\n\nPiecewise polynomial approximation is a fundamental concept in the finite element method, where solutions to partial differential equations are approximated using piecewise polynomial functions over a discretized domain. These functions are defined on elements (e.g., triangles, quadrilaterals) and ensure continuity across element boundaries. The method's versatility stems from its ability to handle irregular domains and non-uniform meshes, allowing for flexible modeling of complex geometries and varying material properties. This approach is enabled by the Galerkin method, which projects the residual of a differential equation onto a finite-dimensional space of test functions, ensuring that the approximate solution satisfies the weak form of the equation. The Galerkin method is a core technique in FEM that is closely tied to variational principles, which form the mathematical foundation of the Finite Element Method.\n\nThe Galerkin method is a core technique in the finite element method that projects the residual of a differential equation onto a finite-dimensional space of test functions. This process involves computing stiffness matrices and load vectors for individual elements, which are then assembled into a global system. The Galerkin method ensures that the approximate solution satisfies the weak form of the equation, as represented by the weighted residual form of a PDE: $\\int_{\\Omega} \\mathbf{w}^T \\mathbf{L}(\\mathbf{u}) d\\Omega = \\int_{\\Omega} \\mathbf{w}^T \\mathbf{f} d\\Omega + \\int_{\\Gamma} \\mathbf{w}^T \\mathbf{t} d\\Gamma$ [wiki_galerkin_method]. The bilinear form $a(u_h, v_h) = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\mathbf{B}^T \\mathbf{D} \\mathbf{B} d\\Omega_e$ [wiki_galerkin_method] computes the stiffness matrix by integrating the product of strain-displacement matrices and material properties over each element, ensuring the discrete solution satisfies the variational principle.",
+      "content": "The formulation of the weak form involves transforming the strong form of a partial differential equation into an equivalent integral form by multiplying the equation with a test function and integrating over the domain. This process reduces the order of derivatives, making it feasible to use piecewise continuous functions for approximation. The weak form ensures compatibility between the discrete solution and the original equations, enabling the application of variational principles. It also facilitates the incorporation of boundary conditions into the numerical framework, as seen in the weak form of Maxwell's equations: $ \\int_{\\Omega} (\\mathbf{E} \\cdot \\nabla \\times \\mathbf{H}^*) \\, d\\Omega = \\int_{\\Omega} \\mathbf{J} \\cdot \\mathbf{H}^* \\, d\\Omega $ [wiki_computational_electromagnetics].\n\nThe Galerkin projection is a fundamental concept in the finite element method, enabling the derivation of element equations from the weak form of partial differential equations. By projecting the weak form onto a finite-dimensional subspace spanned by basis functions $ \\phi_i $, the Galerkin method results in a system of algebraic equations where the coefficients $ u_i $ are determined by satisfying the weak form for each basis function $ \\phi_j $, ensuring consistency with the original PDE. This process is mathematically represented by the equation $\\sum_{i=1}^N u_i B(\\phi_i, \\phi_j) = \\langle f, \\phi_j \\rangle \\quad \\text{for } j = 1, \\dots, N$ [wiki_spectral_element_method]. The element equation formulation involves local equations derived for each element using trial and test functions, approximating the original PDEs within the element, and capturing the behavior of the system in localized regions [wiki_finite_element_method].\n\nThe weak formulation of Maxwell's equations is a crucial step in the finite element method, enabling the approximation of solutions for electromagnetic problems by transforming differential equations into algebraic systems. The weak form of Maxwell's equations is given by $ \\int_{\\Omega} (\\mathbf{E} \\cdot \\nabla \\times \\mathbf{H}^*) \\, d\\Omega = \\int_{\\Omega} \\mathbf{J} \\cdot \\mathbf{H}^* \\, d\\Omega $ [wiki_computational_electromagnetics]. This equation represents the integral formulation of Maxwell's equations, where $ \\mathbf{E} $ is the electric field, $ \\mathbf{H} $ is the magnetic field, and $ \\mathbf{J} $ is the current density. The weak form ensures compatibility between the discrete solution and the original equations, enabling the application of variational principles. By applying the Galerkin method, the weak form is projected onto a finite-dimensional subspace spanned by basis functions $ \\phi_i $, resulting in a system of algebraic equations where the coefficients $ u_i $ are determined by satisfying the weak form for each basis function $ \\phi_j $ [wiki_spectral_element_method]. This process involves computing stiffness matrices and load vectors for individual elements, which are then assembled into a global system.",
       "key_equations": [
-        "\\int_{\\Omega} \\mathbf{w}^T \\mathbf{L}(\\mathbf{u}) d\\Omega = \\int_{\\Omega} \\mathbf{w}^T \\mathbf{f} d\\Omega + \\int_{\\Gamma} \\mathbf{w}^T \\mathbf{t} d\\Gamma",
-        "a(u_h, v_h) = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\mathbf{B}^T \\mathbf{D} \\mathbf{B} d\\Omega_e"
+        "\\int_{\\Omega} (\\mathbf{E} \\cdot \\nabla \\times \\mathbf{H}^*) \\, d\\Omega = \\int_{\\Omega} \\mathbf{J} \\cdot \\mathbf{H}^* \\, d\\Omega",
+        "\\phi_i",
+        "u_i",
+        "\\phi_j",
+        "\\sum_{i=1}^N u_i B(\\phi_i, \\phi_j) = \\langle f, \\phi_j \\rangle \\quad \\text{for } j = 1, \\dots, N"
       ],
       "citations_used": [
-        "wiki_galerkin_method"
+        "wiki_computational_electromagnetics",
+        "wiki_finite_element_method",
+        "wiki_spectral_element_method"
       ],
       "section_id": "fb8b0122-71b0-4f73-b022-d64ec3bea97a",
       "parent_section_ids": [
@@ -1487,18 +2096,17 @@
     },
     {
       "title": "The Finite Element Procedure: Numerical Solution and Convergence Analysis",
-      "content": "The discretization of the domain is a critical step in the finite element procedure, where the physical domain is divided into smaller, simpler subdomains called elements. This process, known as meshing, defines the geometry and connectivity of elements, and the choice of element type depends on the problem's complexity. A fine mesh improves accuracy but increases computational cost, requiring a balance between precision and efficiency. As the domain is discretized, the continuous problem is transformed into a system of algebraic equations, enabling computational analysis. This approach is particularly effective for handling irregular geometries and complex boundary conditions, making it suitable for problems where analytical solutions are infeasible.\n\nThe weak formulation plays a pivotal role in transforming the partial differential equation into an integral form, thereby enabling the Finite Element Method. By multiplying the equation with a test function and integrating over the domain, the weak form reduces the order of derivatives, allowing for piecewise continuous approximations. This approach ensures compatibility between the discrete solution and the original equations, facilitating the incorporation of boundary conditions into the numerical framework. The weak form is typically expressed as a bilinear equation involving the solution and test function, as represented by $B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V$, where $B(u, v)$ is a bilinear form encoding the differential operator and $f$ is the source term. This formulation is central to the finite element method, enabling the use of variational principles and ensuring compatibility with numerical discretization, as stated in the Lax-Milgram theorem [wiki_babu_ka_lax_milgram_theorem].\n\nThe conditions required for the bilinear form to ensure the convergence of the Finite Element Procedure involve coercivity and continuity. The coercivity condition, denoted as $|B(u, u)| \\geq c \\|u\\|^2 \\quad \\text{for some } c > 0$, ensures the bilinear form is uniformly positive definite, guaranteeing the existence and uniqueness of the weak solution [wiki_babu_ka_lax_milgram_theorem]. Additionally, the bilinear form must satisfy continuity conditions to guarantee the existence of the weak solution. In the context of the Galerkin method, the bilinear form $a(u_h, v_h) = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\mathbf{B}^T \\mathbf{D} \\mathbf{B} d\\Omega_e$ computes the stiffness matrix by integrating the product of strain-displacement matrices and material properties over each element [wiki_galerkin_method]. The weak form of the governing PDEs is derived by multiplying the equation by a test function and integrating over the domain, ensuring compatibility between the discrete solution and the original equations [wiki_computational_electromagnetics].",
+      "content": "The weak formulation is a crucial step in the finite element procedure, where the strong form of a partial differential equation is transformed into an equivalent integral form. This is achieved by multiplying the equation by a test function and integrating over the domain, reducing the order of derivatives and enabling the use of piecewise continuous functions for approximation. The resulting weak form equation is expressed as $B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V$, where $B(u, v)$ is a bilinear form encoding the differential operator, $f$ is the source term, and $v$ is a test function. This approach ensures compatibility between the discrete solution and the original equations, facilitating the incorporation of boundary conditions into the numerical framework [wiki_babu_ka_lax_milgram_theorem, wiki_computational_electromagnetics].\n\nThe convergence analysis of the finite element method is a critical step in ensuring the accuracy and reliability of numerical solutions. Through mesh refinement and discretization, the method approximates solutions by dividing the continuous domain into discrete elements. As the mesh is refined, the solution gradients are captured more accurately, and the numerical solution converges to the true solution. This is achieved by ensuring that the mesh density is sufficient to capture localized effects, such as stress concentrations or fluid flow, where high solution gradients are present. The quality of the mesh directly impacts the accuracy of the solution, and careful consideration of element types and distribution is required. By following these guidelines, the finite element method can provide accurate and reliable solutions to complex engineering problems.\n\nThe assembly of the global system is a crucial step in the finite element procedure, where local element matrices and vectors are combined into a unified system of algebraic equations. This process, governed by the equation $K_{global} U = F_{global}$, involves summing contributions from individual elements to form the global stiffness matrix $K_{global} = \\sum_{e=1}^{N} K_e$ and load vector $F_{global} = \\sum_{e=1}^{N} F_e$. The assembly process ensures compatibility between elements and enforces boundary conditions at the global level, ultimately yielding the numerical solution through the solution of the global system of equations using numerical techniques like Gaussian elimination or iterative solvers.",
       "key_equations": [
         "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
         "B(u, v)",
         "f",
-        "|B(u, u)| \\geq c \\|u\\|^2 \\quad \\text{for some } c > 0",
-        "a(u_h, v_h) = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\mathbf{B}^T \\mathbf{D} \\mathbf{B} d\\Omega_e"
+        "v",
+        "K_{global} U = F_{global}"
       ],
       "citations_used": [
         "wiki_babu_ka_lax_milgram_theorem",
-        "wiki_computational_electromagnetics",
-        "wiki_galerkin_method"
+        "wiki_computational_electromagnetics"
       ],
       "section_id": "f532c681-2abf-4771-b682-9f3ec18fe3f4",
       "parent_section_ids": [
@@ -1511,16 +2119,12 @@
     },
     {
       "title": "Rules for Modeling Physical Phenomena with FEM",
-      "content": "The formulation of the weak formulation is a crucial step in the finite element method (FEM), enabling the use of variational principles and ensuring compatibility with numerical discretization. By multiplying the governing partial differential equation with a test function and integrating over the domain, the weak form is derived, reducing the order of derivatives and facilitating the use of piecewise continuous functions for approximation. This process ensures compatibility between the discrete solution and the original equations, allowing for the incorporation of boundary conditions into the numerical framework. As exemplified by the weak form of Maxwell's equations, $ \\int_{\\Omega} (\\mathbf{E} \\cdot \\nabla \\times \\mathbf{H}^*) \\, d\\Omega = \\int_{\\Omega} \\mathbf{J} \\cdot \\mathbf{H}^* \\, d\\Omega $, the weak formulation is a fundamental concept in FEM, as it enables the use of flexible modeling approaches, such as piecewise polynomial approximation, to approximate solutions to partial differential equations.\n\nPiecewise polynomial approximation is a fundamental concept in the Finite Element Method (FEM), enabling the representation of complex geometries and varying material properties. This approach involves approximating solutions to partial differential equations (PDEs) using piecewise polynomial functions over a discretized domain, as described in [s2_2a514cd276e01e493d923e733c3aedda0556381b]. These functions are defined on elements (e.g., triangles, quadrilaterals) and ensure continuity across element boundaries. The versatility of FEM stems from its ability to handle irregular domains and non-uniform meshes, making it a powerful tool for modeling complex physical phenomena.\n\nThe bilinear form plays a crucial role in the Galerkin method, enabling the computation of the stiffness matrix by integrating the product of strain-displacement matrices (\\mathbf{B}) and material properties (\\mathbf{D}) over each element. This form ensures the discrete solution satisfies the variational principle, linking the physical properties of the material to the numerical approximation. Specifically, the bilinear form $ a(u_h, v_h) $ is defined as $ a(u_h, v_h) = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\mathbf{B}^T \\mathbf{D} \\mathbf{B} d\\Omega_e $, as per the Galerkin method's formulation [wiki_galerkin_method]. This form is essential for deriving discrete equations and is closely tied to variational principles, which form the mathematical foundation of the Finite Element Method (FEM) [s2_2a514cd276e01e493d923e733c3aedda0556381b].",
+      "content": "Variational principles form the mathematical foundation of the Finite Element Method (FEM), enabling the transformation of partial differential equations into an equivalent integral form. This approach, rooted in the 17th century with problems like the brachistochrone, involves minimizing a functional derived from the governing differential equation, often representing physical quantities like energy. The roots of variational methods can be expressed as $\\delta \\Pi = 0 \\quad \\text{where} \\quad \\Pi = \\int_{\\Omega} \\left( \\frac{1}{2} \\mathbf{\\varepsilon}^T \\mathbf{D} \\mathbf{\\varepsilon} - \\mathbf{f}^T \\mathbf{u} \\right) d\\Omega$. The weak formulation, a crucial step in the finite element procedure, transforms the strong form of a partial differential equation into an equivalent integral form by multiplying with a test function and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The weak form is typically expressed as a bilinear equation involving the test function and the residual, $B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V$. The finite element method, a numerical technique used to approximate solutions to partial differential equations, relies on the weak formulation to ensure compatibility with numerical discretization. By using variational principles, FEM transforms continuous equations into a system of algebraic equations through the Galerkin method, which projects the residual of a differential equation onto a finite-dimensional space of test functions. This method ensures that the approximate solution satisfies the weak form of the equation, linking the physical properties of the material to the numerical approximation.",
       "key_equations": [
-        "\\int_{\\Omega} (\\mathbf{E} \\cdot \\nabla \\times \\mathbf{H}^*) \\, d\\Omega = \\int_{\\Omega} \\mathbf{J} \\cdot \\mathbf{H}^* \\, d\\Omega",
-        "a(u_h, v_h)",
-        "a(u_h, v_h) = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\mathbf{B}^T \\mathbf{D} \\mathbf{B} d\\Omega_e"
+        "\\delta \\Pi = 0 \\quad \\text{where} \\quad \\Pi = \\int_{\\Omega} \\left( \\frac{1}{2} \\mathbf{\\varepsilon}^T \\mathbf{D} \\mathbf{\\varepsilon} - \\mathbf{f}^T \\mathbf{u} \\right) d\\Omega",
+        "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V"
       ],
-      "citations_used": [
-        "s2_2a514cd276e01e493d923e733c3aedda0556381b",
-        "wiki_galerkin_method"
-      ],
+      "citations_used": [],
       "section_id": "377ff898-a73d-402b-bca5-a974f9651a9f",
       "parent_section_ids": [],
       "generated_from": "writer",
@@ -1560,6 +2164,7 @@
     "wiki_crystal_plasticity",
     "wiki_discontinuous_galerkin_method",
     "wiki_finite_difference_time_domain_method",
+    "wiki_finite_element_method",
     "wiki_galerkin_method",
     "wiki_list_of_numerical_analysis_topics",
     "wiki_loubignac_iteration",
@@ -1574,6 +2179,7 @@
     "wiki_crystal_plasticity",
     "wiki_discontinuous_galerkin_method",
     "wiki_finite_difference_time_domain_method",
+    "wiki_finite_element_method",
     "wiki_galerkin_method",
     "wiki_navier_stokes_existence_and_smoothness",
     "wiki_spectral_element_method"
@@ -1585,12 +2191,14 @@
         true,
         true,
         true,
+        true,
         true
       ],
       "2b273c7e-f2eb-4021-aeaf-4a587fff3d71": [
         true
       ],
       "377ff898-a73d-402b-bca5-a974f9651a9f": [
+        true,
         true,
         true,
         true,
@@ -1608,14 +2216,17 @@
         true,
         true,
         true,
+        true,
         true
       ],
       "f532c681-2abf-4771-b682-9f3ec18fe3f4": [
         true,
         true,
+        true,
         true
       ],
       "fb8b0122-71b0-4f73-b022-d64ec3bea97a": [
+        true,
         true,
         true
       ],
@@ -1627,22 +2238,22 @@
     },
     "anomalies": {
       "transition:95bd7ae9-fe41-4661-be18-121c92a9c855:2b273c7e-f2eb-4021-aeaf-4a587fff3d71": 0,
-      "transition:d62a9ba4-e892-440c-b401-9de777388556:fb8b0122-71b0-4f73-b022-d64ec3bea97a": 0,
+      "transition:d62a9ba4-e892-440c-b401-9de777388556:fb8b0122-71b0-4f73-b022-d64ec3bea97a": 1,
       "transition:3b76874e-6f81-477d-9018-effa21df7d1a:7e749ee6-70b0-4648-b39a-c9e8548ac1f7": 0,
-      "transition:95bd7ae9-fe41-4661-be18-121c92a9c855:d62a9ba4-e892-440c-b401-9de777388556": 4,
+      "transition:95bd7ae9-fe41-4661-be18-121c92a9c855:d62a9ba4-e892-440c-b401-9de777388556": 0,
       "transition:377ff898-a73d-402b-bca5-a974f9651a9f:3b76874e-6f81-477d-9018-effa21df7d1a": 0,
-      "transition:f532c681-2abf-4771-b682-9f3ec18fe3f4:377ff898-a73d-402b-bca5-a974f9651a9f": 0,
-      "transition:fb8b0122-71b0-4f73-b022-d64ec3bea97a:f532c681-2abf-4771-b682-9f3ec18fe3f4": 1
+      "transition:f532c681-2abf-4771-b682-9f3ec18fe3f4:377ff898-a73d-402b-bca5-a974f9651a9f": 1,
+      "transition:fb8b0122-71b0-4f73-b022-d64ec3bea97a:f532c681-2abf-4771-b682-9f3ec18fe3f4": 0
     },
     "anomaly_counts": {
       "transition:95bd7ae9-fe41-4661-be18-121c92a9c855:2b273c7e-f2eb-4021-aeaf-4a587fff3d71": 0,
       "too_simple:2b273c7e-f2eb-4021-aeaf-4a587fff3d71": 0,
-      "transition:d62a9ba4-e892-440c-b401-9de777388556:fb8b0122-71b0-4f73-b022-d64ec3bea97a": 0,
+      "transition:d62a9ba4-e892-440c-b401-9de777388556:fb8b0122-71b0-4f73-b022-d64ec3bea97a": 1,
       "transition:3b76874e-6f81-477d-9018-effa21df7d1a:7e749ee6-70b0-4648-b39a-c9e8548ac1f7": 0,
-      "transition:95bd7ae9-fe41-4661-be18-121c92a9c855:d62a9ba4-e892-440c-b401-9de777388556": 4,
+      "transition:95bd7ae9-fe41-4661-be18-121c92a9c855:d62a9ba4-e892-440c-b401-9de777388556": 0,
       "transition:377ff898-a73d-402b-bca5-a974f9651a9f:3b76874e-6f81-477d-9018-effa21df7d1a": 0,
-      "transition:f532c681-2abf-4771-b682-9f3ec18fe3f4:377ff898-a73d-402b-bca5-a974f9651a9f": 0,
-      "transition:fb8b0122-71b0-4f73-b022-d64ec3bea97a:f532c681-2abf-4771-b682-9f3ec18fe3f4": 1
+      "transition:f532c681-2abf-4771-b682-9f3ec18fe3f4:377ff898-a73d-402b-bca5-a974f9651a9f": 1,
+      "transition:fb8b0122-71b0-4f73-b022-d64ec3bea97a:f532c681-2abf-4771-b682-9f3ec18fe3f4": 0
     },
     "section_titles": {
       "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method": "95bd7ae9-fe41-4661-be18-121c92a9c855",
@@ -1656,15 +2267,15 @@
     }
   },
   "convergence_diagnostics": {
-    "eta_variance": 0.01166222222222222,
+    "eta_variance": 0.014328888888888875,
     "invariant_violations": 0,
     "adjust_actions": 0,
     "consecutive_clean_cycles": 0,
     "incomplete_sections": 1,
-    "unstable_sections": 2,
-    "reading_coverage": 77.8,
-    "citation_coverage": 35.3,
-    "lexical_support_coverage": 66.7,
+    "unstable_sections": 1,
+    "reading_coverage": 80.0,
+    "citation_coverage": 47.1,
+    "lexical_support_coverage": 62.5,
     "invalid_citation_sections": 0,
     "converged": false,
     "reasons": [
@@ -1676,7 +2287,7 @@
   },
   "retrieval_report": {
     "status": "partial_failure",
-    "retrieved_at": "2026-09-24T19:35:53.347533+00:00",
+    "retrieved_at": "2026-09-24T19:41:08.408565+00:00",
     "query_count": 5,
     "providers": {
       "arxiv": {
@@ -1685,7 +2296,13 @@
           {
             "status": "empty_result",
             "returned_records": 0,
-            "query": "Galerkin orthogonality finite element method",
+            "query": "FEM CPFEM implementation",
+            "provider": "arxiv"
+          },
+          {
+            "status": "empty_result",
+            "returned_records": 0,
+            "query": "Loubignac iteration FEM",
             "provider": "arxiv"
           },
           {
@@ -1704,12 +2321,6 @@
             "status": "empty_result",
             "returned_records": 0,
             "query": "finite element method verification validation numerical stability",
-            "provider": "arxiv"
-          },
-          {
-            "status": "empty_result",
-            "returned_records": 0,
-            "query": "symmetry of the matrix finite element method",
             "provider": "arxiv"
           }
         ],
@@ -1717,12 +2328,20 @@
         "returned_records": 0
       },
       "semantic_scholar": {
-        "status": "partial_failure",
+        "status": "rate_limited",
         "attempts": [
           {
             "status": "rate_limited",
             "provider": "semantic_scholar",
-            "query": "Galerkin orthogonality finite element method",
+            "query": "FEM CPFEM implementation",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "Loubignac iteration FEM",
             "requested_results": 2,
             "http_status": 429,
             "returned_records": 0
@@ -1736,13 +2355,12 @@
             "returned_records": 0
           },
           {
-            "status": "success",
+            "status": "rate_limited",
             "provider": "semantic_scholar",
             "query": "finite element method practical implementation modeling rules",
             "requested_results": 2,
-            "returned_records": 2,
-            "records_with_oa_pdf": 0,
-            "records_with_full_text": 0
+            "http_status": 429,
+            "returned_records": 0
           },
           {
             "status": "rate_limited",
@@ -1751,26 +2369,24 @@
             "requested_results": 2,
             "http_status": 429,
             "returned_records": 0
-          },
-          {
-            "status": "rate_limited",
-            "provider": "semantic_scholar",
-            "query": "symmetry of the matrix finite element method",
-            "requested_results": 2,
-            "http_status": 429,
-            "returned_records": 0
           }
         ],
         "queries_attempted": 5,
-        "returned_records": 2
+        "returned_records": 0
       },
       "wikipedia": {
         "status": "success",
         "attempts": [
           {
             "status": "success",
+            "returned_records": 1,
+            "query": "FEM CPFEM implementation",
+            "provider": "wikipedia"
+          },
+          {
+            "status": "success",
             "returned_records": 2,
-            "query": "Galerkin orthogonality finite element method",
+            "query": "Loubignac iteration FEM",
             "provider": "wikipedia"
           },
           {
@@ -1790,20 +2406,14 @@
             "returned_records": 2,
             "query": "finite element method verification validation numerical stability",
             "provider": "wikipedia"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "symmetry of the matrix finite element method",
-            "provider": "wikipedia"
           }
         ],
         "queries_attempted": 5,
-        "returned_records": 10
+        "returned_records": 9
       }
     },
-    "returned_records": 8,
-    "selected_records": 4
+    "returned_records": 5,
+    "selected_records": 3
   },
   "retrieval_history": {
     "events": [
@@ -2759,11 +3369,156 @@
           "selected_records": 4
         },
         "schema_version": 1
+      },
+      {
+        "event_id": "retrieval-22029d30-e718-421d-81ea-457eebc3fe9f",
+        "cycle": 6,
+        "retrieved_at": "2026-09-24T19:41:11.546072+00:00",
+        "query_scope": [],
+        "report": {
+          "status": "partial_failure",
+          "retrieved_at": "2026-09-24T19:41:08.408565+00:00",
+          "query_count": 5,
+          "providers": {
+            "arxiv": {
+              "status": "empty_result",
+              "attempts": [
+                {
+                  "status": "empty_result",
+                  "returned_records": 0,
+                  "query": "FEM CPFEM implementation",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "empty_result",
+                  "returned_records": 0,
+                  "query": "Loubignac iteration FEM",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "empty_result",
+                  "returned_records": 0,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "empty_result",
+                  "returned_records": 0,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "empty_result",
+                  "returned_records": 0,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "arxiv"
+                }
+              ],
+              "queries_attempted": 5,
+              "returned_records": 0
+            },
+            "semantic_scholar": {
+              "status": "rate_limited",
+              "attempts": [
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "FEM CPFEM implementation",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "Loubignac iteration FEM",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method practical implementation modeling rules",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method verification validation numerical stability",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                }
+              ],
+              "queries_attempted": 5,
+              "returned_records": 0
+            },
+            "wikipedia": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 1,
+                  "query": "FEM CPFEM implementation",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "Loubignac iteration FEM",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "wikipedia"
+                }
+              ],
+              "queries_attempted": 5,
+              "returned_records": 9
+            }
+          },
+          "returned_records": 5,
+          "selected_records": 3
+        },
+        "acquisition_assessment": {
+          "status": "partial_provider_availability",
+          "operational_status": "partial_failure",
+          "available_provider_count": 2,
+          "unavailable_provider_count": 1,
+          "returned_records": 5,
+          "selected_records": 3
+        },
+        "schema_version": 1
       }
     ]
   },
   "last_budget_check": {
-    "time": "2026-09-24T19:35:49.037762+00:00",
+    "time": "2026-09-24T19:41:02.634352+00:00",
     "type": "local",
     "message": "Local limit: 20 calls"
   },
@@ -2796,19 +3551,10 @@
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
     },
     {
-      "section_id": "377ff898-a73d-402b-bca5-a974f9651a9f",
-      "title": "Rules for Modeling Physical Phenomena with FEM",
-      "eta": 0.6400000000000001,
-      "priority": 0.6400000000000001,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
-    {
-      "section_id": "3b76874e-6f81-477d-9018-effa21df7d1a",
-      "title": "Verification, Validation, and Best Practices",
-      "eta": 0.6200000000000001,
-      "priority": 0.6200000000000001,
+      "section_id": "fb8b0122-71b0-4f73-b022-d64ec3bea97a",
+      "title": "The Finite Element Procedure: Weak Formulation and Algebraic Equations",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
       "selected": true,
       "model_index": 0,
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
@@ -2823,10 +3569,19 @@
       "model": "@cf/meta/llama-3.2-3b-instruct"
     },
     {
-      "section_id": "fb8b0122-71b0-4f73-b022-d64ec3bea97a",
-      "title": "The Finite Element Procedure: Weak Formulation and Algebraic Equations",
-      "eta": 0.45999999999999996,
-      "priority": 0.45999999999999996,
+      "section_id": "377ff898-a73d-402b-bca5-a974f9651a9f",
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "section_id": "3b76874e-6f81-477d-9018-effa21df7d1a",
+      "title": "Verification, Validation, and Best Practices",
+      "eta": 0.42000000000000004,
+      "priority": 0.42000000000000004,
       "selected": false,
       "model_index": 2,
       "model": "@cf/meta/llama-3.2-3b-instruct"
@@ -3291,6 +4046,86 @@
       "model_index": 2,
       "model": "@cf/meta/llama-3.2-3b-instruct",
       "fingerprint": "b1675e5dd7689e7dd3bd276029e651f88a83e0691cf2756f048be11e36c8e325"
+    },
+    {
+      "section_id": "95bd7ae9-fe41-4661-be18-121c92a9c855",
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "eta": 0.7,
+      "priority": 0.7,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "423ec5f9b7d8c66c1b55c72ef51f816f96ccb064d84b2f7c7f97c36fcb543eb2"
+    },
+    {
+      "section_id": "d62a9ba4-e892-440c-b401-9de777388556",
+      "title": "The Finite Element Procedure: Discretization and Mesh Generation",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "156b4c6ff0260f069071d300b2351c79c4667a2cc400f5e9903b29293510ef1c"
+    },
+    {
+      "section_id": "f532c681-2abf-4771-b682-9f3ec18fe3f4",
+      "title": "The Finite Element Procedure: Numerical Solution and Convergence Analysis",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "94b0516d2ccc6b8b8a61789b55f9790c0af6688e42a6a585fb702028ff607c06"
+    },
+    {
+      "section_id": "fb8b0122-71b0-4f73-b022-d64ec3bea97a",
+      "title": "The Finite Element Procedure: Weak Formulation and Algebraic Equations",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "144febfe4558408532f7e64800352071f2db43478ada422da430c6046e6a579d"
+    },
+    {
+      "section_id": null,
+      "title": "The Finite Element Procedure",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "3588ccdb0164e028eb2ee8c89149a9f35bfff84b8caea08ea0e83cf4e22a2ea0"
+    },
+    {
+      "section_id": "377ff898-a73d-402b-bca5-a974f9651a9f",
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "eb715ab631bd64a3340d1859114dc02fde97d19cd632dbc43e08a225ffbfcb8c"
+    },
+    {
+      "section_id": "3b76874e-6f81-477d-9018-effa21df7d1a",
+      "title": "Verification, Validation, and Best Practices",
+      "eta": 0.42000000000000004,
+      "priority": 0.42000000000000004,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "66229d70393890f7ee839b9c68f74f4dfbd969ed68d2c22e964c296377f360ef"
+    },
+    {
+      "section_id": "7e749ee6-70b0-4648-b39a-c9e8548ac1f7",
+      "title": "Introduction and Scope of the Finite Element Method",
+      "eta": 0.4,
+      "priority": 0.4,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "b1675e5dd7689e7dd3bd276029e651f88a83e0691cf2756f048be11e36c8e325"
     }
   ],
   "last_semantic_review": {
@@ -3320,7 +4155,18 @@
   "last_semantic_feedback": {
     "sections": {}
   },
-  "last_adjustment_decision": null,
+  "last_adjustment_decision": {
+    "action": "split_section",
+    "section_id": "7e749ee6-70b0-4648-b39a-c9e8548ac1f7",
+    "section_ids": [],
+    "reason": "Section has 134 words",
+    "adjustment_score": {
+      "severity": 0.95,
+      "persistence": 0.0,
+      "cost": 0.75,
+      "score": 0.5125
+    }
+  },
   "model_usage": {
     "total_calls": 20,
     "logical_calls": 20,
@@ -3328,14 +4174,15 @@
     "failed_calls": 0,
     "http_attempts": 20,
     "per_model": {
-      "@cf/meta/llama-3.1-8b-instruct-fast": 19,
+      "@cf/meta/llama-3.1-8b-instruct-fast": 17,
       "@cf/qwen/qwen3-30b-a3b-fp8": 1,
-      "@cf/meta/llama-3.2-3b-instruct": 0
+      "@cf/meta/llama-3.2-3b-instruct": 2
     },
     "max_logical_calls": 20,
     "extraction_stats": {
-      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 19,
-      "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8:known_patterns": 1
+      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 17,
+      "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8:known_patterns": 1,
+      "cloudflare:@cf/meta/llama-3.2-3b-instruct:known_patterns": 2
     },
     "learned_paths": {
       "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast": [
@@ -3355,11 +4202,21 @@
           "message",
           "content"
         ]
+      ],
+      "cloudflare:@cf/meta/llama-3.2-3b-instruct": [
+        [
+          "result",
+          "choices",
+          0,
+          "message",
+          "content"
+        ]
       ]
     }
   },
   "parser_stats": {
     "cloudflare:strict": 2,
-    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 5
+    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 4,
+    "@cf/meta/llama-3.2-3b-instruct:strict": 1
   }
 }
