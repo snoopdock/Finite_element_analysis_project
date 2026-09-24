@@ -35,7 +35,14 @@ def _strip_bad_citations(text: str, allowed_sources: Set[str]) -> str:
 
 
 def _extract_equations(content: str) -> List[str]:
-    equations: List[str] = []
+    equations = [
+    eq for eq in equations
+    if eq.strip().lower() not in {
+        "",
+        "latex",
+        "equation"
+                                }
+                ]
     equations.extend(re.findall(r"\\\[(.+?)\\\]", content, re.DOTALL))
     equations.extend(re.findall(r"\$\$(.+?)\$\$", content, re.DOTALL))
     equations.extend(
@@ -56,25 +63,17 @@ def _extract_equations(content: str) -> List[str]:
     return result
 
 
-def _extract_citations(
-    content: str,
-    allowed_sources: Optional[Set[str]] = None,
-) -> List[str]:
-    allowed_sources = allowed_sources or set()
-    citations = re.findall(
-        r"\[([\w.\-]+(?:,\s*[\w.\-]+)*)\]",
-        content,
-    )
-    result = set()
-    for group in citations:
-        for part in group.split(","):
-            part = part.strip()
-            if not part:
-                continue
-            if allowed_sources and part not in allowed_sources:
-                continue
-            result.add(part)
-    return sorted(result)
+def _extract_citations(content, allowed_sources=None):
+
+    citations = extract_existing_logic(content)
+
+    if allowed_sources:
+        citations = [
+            c for c in citations
+            if c in allowed_sources
+        ]
+
+    return citations
 
 
 class DynamicWriter:
@@ -684,7 +683,7 @@ CRITICAL RULES:
                 content
             )[:5],
             "citations_used": _extract_citations(
-                content
+                content,allowed_sources
             ),
         }
 
