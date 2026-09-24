@@ -82,6 +82,23 @@
       "mathematical_formulation": "K_{global} = \\sum_{e=1}^{N} K_e, \\quad F_{global} = \\sum_{e=1}^{N} F_e",
       "source_ids": [
         "wiki_finite_element_method"
+      ],
+      "concept_id": "0def28b2-5044-465b-9cc0-908285c68169"
+    },
+    {
+      "name": "Gradient Discretisation Method (GDM)",
+      "explanation": "The Gradient Discretisation Method (GDM) is a numerical framework for solving diffusion problems, encompassing both linear and non-linear, steady-state and time-dependent scenarios. It employs finite-dimensional spaces and reconstruction operators for functions and gradients, enabling convergence proofs for various problems. GDM generalizes classical methods like conforming Finite Elements, Mixed Finite Elements, and Discontinuous Galerkin, while accommodating non-conforming and meshless schemes. Core properties of GDM ensure convergence without requiring strong regularity assumptions on solutions or model data, making it robust for complex physical phenomena.",
+      "mathematical_formulation": "For a linear diffusion problem, the weak form of Poisson's equation is: $ \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx $ for all $ v \\in H_0^1(\\Omega) $.",
+      "source_ids": [
+        "wiki_gradient_discretisation_method"
+      ]
+    },
+    {
+      "name": "Finite Element Space",
+      "explanation": "A finite element space is a discrete approximation of the continuous solution space, constructed using basis functions defined over a mesh. It enables the representation of solutions as linear combinations of these basis functions, ensuring local continuity and flexibility for complex geometries. The choice of basis functions (e.g., Lagrange polynomials) influences the accuracy and convergence of the method. This space is critical for transforming partial differential equations into a system of algebraic equations.",
+      "mathematical_formulation": "The finite element space $ V_h \\subset H^1(\\Omega) $ is defined as $ V_h = \\{ v_h \\in C^0(\\Omega) : v_h|_K \\in \\mathbb{P}_k(K) \\text{ for all } K \\in \\mathcal{T}_h \\} $, where $ \\mathcal{T}_h $ is the mesh and $ \\mathbb{P}_k $ denotes polynomial spaces.",
+      "source_ids": [
+        "wiki_gradient_discretisation_method"
       ]
     }
   ],
@@ -172,7 +189,8 @@
       ],
       "source_ids": [
         "wiki_finite_element_method"
-      ]
+      ],
+      "proposition_id": "74b70a14-f9e2-4880-8258-3da339cfc8fb"
     },
     {
       "step_number": 2,
@@ -183,7 +201,8 @@
       ],
       "source_ids": [
         "wiki_finite_element_method"
-      ]
+      ],
+      "proposition_id": "b1b0aa99-81a4-4e2c-a239-48f5b9865b44"
     },
     {
       "step_number": 3,
@@ -194,7 +213,8 @@
       ],
       "source_ids": [
         "wiki_finite_element_method"
-      ]
+      ],
+      "proposition_id": "0f2ae1cb-ae46-42ed-a466-15539d5472ff"
     },
     {
       "step_number": 4,
@@ -205,6 +225,31 @@
       ],
       "source_ids": [
         "wiki_finite_element_method"
+      ],
+      "proposition_id": "2c320fe9-8012-4735-800e-9fe27e78c6f6"
+    },
+    {
+      "step_number": 1,
+      "title": "Define the Gradient Discretization",
+      "description": "Select a finite-dimensional space $ X_D $ and two reconstruction operators: one for functions $ R_D $ and one for gradients $ \\nabla_D $. These operators approximate the continuous solution and its gradient in the discrete space. The choice of $ X_D $ and reconstruction operators must satisfy core properties to ensure convergence. This step establishes the framework for substituting continuous elements with discrete counterparts.",
+      "equations": [
+        "X_D \\subset H^1(\\Omega)",
+        "R_D: X_D \\rightarrow L^2(\\Omega)",
+        "\\nabla_D: X_D \\rightarrow L^2(\\Omega)^d"
+      ],
+      "source_ids": [
+        "wiki_gradient_discretisation_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Formulate the Weak Problem",
+      "description": "Transform the original partial differential equation into its weak form by multiplying with a test function and integrating over the domain. This step ensures the problem is well-posed for numerical approximation, even with irregular solutions. The weak form incorporates boundary conditions and balances the solution's energy. It serves as the foundation for deriving the discrete system of equations.",
+      "equations": [
+        "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx \\quad \\forall v \\in H_0^1(\\Omega)"
+      ],
+      "source_ids": [
+        "wiki_gradient_discretisation_method"
       ]
     }
   ],
@@ -217,7 +262,7 @@
         "wiki_finite_element_method",
         "wiki_galerkin_method"
       ],
-      "proposition_id": "ae14f6c9-09aa-4a80-bcf4-e9ff668caf28"
+      "proposition_id": "9ebb63c4-b450-4372-be4b-7bb3603e974a"
     },
     {
       "name": "Bilinear Form in Galerkin Method",
@@ -279,7 +324,8 @@
       "explanation": "This equation computes the stiffness matrix for an element. $ B $ is the strain-displacement matrix, $ D $ is the material property matrix, and $ \\Omega_e $ is the element domain. It relates nodal displacements to internal forces.",
       "source_ids": [
         "wiki_finite_element_method"
-      ]
+      ],
+      "proposition_id": "f876d0dd-5f5a-4a50-95f0-d9f4d71314d6"
     },
     {
       "name": "Global System of Equations",
@@ -287,6 +333,23 @@
       "explanation": "This equation represents the assembled system of algebraic equations. $ K_{global} $ is the global stiffness matrix, $ U $ is the vector of unknown nodal values, and $ F_{global} $ is the global force vector. Solving this system provides the numerical solution.",
       "source_ids": [
         "wiki_finite_element_method"
+      ],
+      "proposition_id": "94e14e09-a2a5-4892-a038-fdf07730f759"
+    },
+    {
+      "name": "Poisson's Equation",
+      "latex": "-\\nabla \\cdot (\\nabla u) = f \\quad \\text{in} \\quad \\Omega",
+      "explanation": "This describes steady-state diffusion, where $ u $ is the solution variable (e.g., temperature, displacement), $ f $ is a source term, and $ \\nabla $ denotes the gradient operator. The equation governs phenomena like heat conduction and electrostatics.",
+      "source_ids": [
+        "wiki_gradient_discretisation_method"
+      ]
+    },
+    {
+      "name": "Weak Form of Poisson's Equation",
+      "latex": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
+      "explanation": "This integral form relaxes the differentiability requirements of the classical equation, allowing solutions in $ H^1(\\Omega) $. The test function $ v $ belongs to a suitable function space, ensuring compatibility with boundary conditions.",
+      "source_ids": [
+        "wiki_gradient_discretisation_method"
       ]
     }
   ],
@@ -352,20 +415,37 @@
       "explanation": "The mesh must be sufficiently refined to capture solution gradients. Coarse meshes may lead to inaccurate results, while excessive refinement increases computational cost. Convergence studies ensure numerical solutions approach the true solution as mesh density increases.",
       "source_ids": [
         "wiki_finite_element_method"
-      ]
+      ],
+      "proposition_id": "e852fc20-8b5e-49d1-bf0b-93f6307ddd93"
     },
     {
       "rule": "Boundary Condition Application",
       "explanation": "Boundary conditions must be accurately applied to reflect physical constraints. Essential (Dirichlet) and natural (Neumann) conditions require distinct treatment in the weak form. Incorrect application leads to non-physical solutions.",
       "source_ids": [
         "wiki_finite_element_method"
-      ]
+      ],
+      "proposition_id": "ad1a5510-74b5-47df-bbe9-e27ec0216c6e"
     },
     {
       "rule": "Material Property Assignment",
       "explanation": "Material properties must be correctly assigned to elements to reflect real-world behavior. Heterogeneous materials require proper segmentation in the mesh. Incorrect properties result in erroneous stress, strain, or thermal distributions.",
       "source_ids": [
         "wiki_finite_element_method"
+      ],
+      "proposition_id": "0228226f-1c02-4783-b84b-92c2308a9d35"
+    },
+    {
+      "rule": "Convergence via Core Properties",
+      "explanation": "The Gradient Discretisation Method requires specific core properties (e.g., consistency, coercivity, limit-conformity) to guarantee convergence. These ensure that discrete solutions approximate the continuous solution accurately, even for non-linear or irregular problems.",
+      "source_ids": [
+        "wiki_gradient_discretisation_method"
+      ]
+    },
+    {
+      "rule": "Mesh Flexibility",
+      "explanation": "FEM allows arbitrary polygonal or polyhedral meshes, enabling accurate modeling of complex geometries. This flexibility is critical for applications in engineering and physics where irregular domains are common.",
+      "source_ids": [
+        "wiki_gradient_discretisation_method"
       ]
     }
   ]
