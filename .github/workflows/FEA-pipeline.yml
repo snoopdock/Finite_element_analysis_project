@@ -13,11 +13,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
+          ref: ${{ github.ref }}
+
+      - name: Debug branch information
+        run: |
+          echo "Workflow ref:"
+          echo "${{ github.ref }}"
+
+          echo "Workflow ref name:"
+          echo "${{ github.ref_name }}"
+
+          echo "Checked out branch:"
+          git branch --show-current
+
+          echo "Commit:"
+          git log -1 --oneline
 
       - name: Install Tesseract OCR
         run: |
@@ -73,7 +89,8 @@ jobs:
       - name: Generate Quality Report Artifact
         if: always()
         run: |
-          python -m processing.quality_report_cli             --output artifacts/quality_report.json
+          python -m processing.quality_report_cli \
+            --output artifacts/quality_report.json
 
       - name: Upload Quality Report Artifact
         if: always()
@@ -92,6 +109,7 @@ jobs:
           from research.content_cache import cleanup_cache, get_cache_stats
 
           stats = cleanup_cache()
+
           print(
               "Cache: "
               f"{stats['total_size_mb']:.2f} MB / "
@@ -100,7 +118,9 @@ jobs:
           )
 
           if stats["total_size_mb"] > stats["max_size_mb"] + 1e-6:
-              raise SystemExit("Raw-text cache remains above configured limit")
+              raise SystemExit(
+                  "Raw-text cache remains above configured limit"
+              )
           PY
 
       - name: Report raw-text cache usage
@@ -114,7 +134,7 @@ jobs:
           fi
 
       - name: Commit generated state and outputs
-        if: github.ref == 'refs/heads/main'
+        if: github.event_name == 'workflow_dispatch'
         run: |
           if [ -z "$(git status --porcelain)" ]; then
             echo "No changes to commit."
@@ -123,9 +143,13 @@ jobs:
 
           git config user.name "guideline-bot"
           git config user.email "guideline-bot@users.noreply.github.com"
+
           git add -A
-          git commit -m "Current State: $(date -u +%Y-%m-%d_%H:%M)"
-          git push origin HEAD:stage1/section-uuids
+
+          git commit \
+            -m "Current State: $(date -u +%Y-%m-%d_%H:%M)"
+
+          git push origin HEAD:${{ github.ref_name }}
 
       - name: Upload Error Artifacts
         if: failure()
