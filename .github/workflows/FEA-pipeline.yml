@@ -125,7 +125,7 @@ jobs:
           git config user.email "guideline-bot@users.noreply.github.com"
           git add -A
           git commit -m "Current State: $(date -u +%Y-%m-%d_%H:%M)"
-          git push origin HEAD:${{ github.ref_name }}
+          git push origin HEAD:${{ github.ref }}
 
       - name: Upload Error Artifacts
         if: failure()
