@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3_extract_equations
 """Dynamic academic writer with stable section identity and ranked evidence."""
 
 from __future__ import annotations
@@ -34,27 +34,19 @@ def _strip_bad_citations(text: str, allowed_sources: Set[str]) -> str:
     return re.sub(r"\[([^\]]+)\]", replace, str(text))
 
 
-def _extract_equations(content: str) -> List[str]:
-    equations = [
-    eq for eq in equations
-    if eq.strip().lower() not in {
-        "",
-        "latex",
-        "equation"
-                                }
-                ]
-    equations.extend(re.findall(r"\\\[(.+?)\\\]", content, re.DOTALL))
-    equations.extend(re.findall(r"\$\$(.+?)\$\$", content, re.DOTALL))
-    equations.extend(
-        re.findall(
-            r"(?<!\$)\$(?!\$)(.+?)(?<!\$)\$(?!\$)",
-            content,
-            re.DOTALL,
-        )
+def _extract_equations(content):
+    equations = []
+
+    matches = re.findall(
+        r"\$(.*?)\$",
+        str(content),
+        flags=re.DOTALL,
     )
 
-    result = []
-    seen = set()
+    equations.extend(matches)
+
+    cleaned = []
+
     for equation in equations:
         equation = equation.strip()
 
@@ -65,10 +57,10 @@ def _extract_equations(content: str) -> List[str]:
         }:
             continue
 
-        if equation and equation not in seen:
-            seen.add(equation)
-            result.append(equation)
-    return result
+        if equation not in cleaned:
+            cleaned.append(equation)
+
+    return cleaned
 
 
 def _extract_citations(content, allowed_sources=None):
