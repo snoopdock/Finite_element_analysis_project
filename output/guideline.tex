@@ -1,0 +1,144 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, amsfonts, bm, mathtools}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{newunicodechar}
+\usepackage[strings]{underscore}
+\usepackage{cite}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+
+% Fix layout warnings
+\setlength{\emergencystretch}{3em}
+\sloppy
+
+% Math compatibility layer
+\makeatletter
+\newcommand{\@safemath}[1]{%
+  \expandafter\let\csname orig@#1\expandafter\endcsname\csname #1\endcsname
+  \expandafter\renewcommand\csname #1\endcsname{\ensuremath{\csname orig@#1\endcsname}}%
+}
+\@safemath{in}\@safemath{nabla}\@safemath{delta}\@safemath{partial}
+\@safemath{int}\@safemath{sum}\@safemath{prod}
+\@safemath{alpha}\@safemath{beta}\@safemath{gamma}\@safemath{sigma}
+\@safemath{epsilon}\@safemath{omega}\@safemath{theta}\@safemath{lambda}\@safemath{mu}
+\let\orig@mathbf\mathbf
+\renewcommand{\mathbf}[1]{\ensuremath{\orig@mathbf{#1}}}
+\makeatother
+
+% Unicode safety net
+\newunicodechar{∫}{\ensuremath{\int}}
+\newunicodechar{∑}{\ensuremath{\sum}}
+\newunicodechar{σ}{\ensuremath{\sigma}}
+\newunicodechar{ε}{\ensuremath{\varepsilon}}
+\newunicodechar{γ}{\ensuremath{\gamma}}
+\newunicodechar{Ω}{\ensuremath{\Omega}}
+\newunicodechar{∂}{\ensuremath{\partial}}
+\newunicodechar{∇}{\ensuremath{\nabla}}
+\newunicodechar{→}{\ensuremath{\rightarrow}}
+\newunicodechar{⇒}{\ensuremath{\Rightarrow}}
+\newunicodechar{≤}{\ensuremath{\le}}
+\newunicodechar{≥}{\ensuremath{\ge}}
+\newunicodechar{≠}{\ensuremath{\neq}}
+\newunicodechar{≈}{\ensuremath{\approx}}
+\newunicodechar{×}{\ensuremath{\times}}
+
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\title{\textbf{Finite Element Method Theory Implementation and Modeling Rules}}
+\author{Automated Scientific Pipeline}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Objective}
+Produce a comprehensive technical guideline explaining how the Finite Element Method works
+including mathematical foundation, step-by-step procedure, and rules for modeling physical phenomena.
+
+
+\section{Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method}
+
+The distinction between the Strong Form and Weak Form of a partial differential equation (PDE) is crucial in the mathematical foundation of numerical methods. The Strong Form, also known as the strong formulation, requires that the PDE be satisfied exactly at every point in the domain, often expressed as \$a(u,v) = L(v)\$, where \$a(u,v)\$ is a bilinear form and \$L(v)\$ is a linear functional. In contrast, the Weak Form, or weak formulation, involves a variational formulation that seeks to minimize the residual of the PDE, often expressed as \$\textbackslash{}int\_\{\textbackslash{}Omega\} F(x,u,\textbackslash{}nabla u) dx = 0\$. This difference in formulation has significant implications for the development and analysis of numerical methods, including the Galerkin method.
+
+The Weak Form of a partial differential equation (PDE) is derived by multiplying the PDE with a weighting function and integrating over the domain. This process eliminates the need for the PDE to be satisfied pointwise, allowing for a more flexible and general formulation. The Weak Form is significant because it enables the use of variational methods, such as the Ritz method and the Galerkin method, to approximate the solution of the PDE. By minimizing the residual of the Weak Form, these methods can provide a stable and efficient way to solve complex PDE problems, making them a cornerstone of modern numerical analysis.
+
+The Galerkin Method is a numerical technique used to solve partial differential equations (PDEs) by projecting the solution onto a finite-dimensional subspace. This is achieved by multiplying the Weak Form of the PDE with a set of basis functions and integrating over the domain, resulting in a system of linear equations. The Galerkin Method is particularly useful for problems with complex geometries and non-linear behavior, as it allows for the use of a wide range of basis functions to approximate the solution. By minimizing the residual of the PDE, the Galerkin Method ensures that the numerical solution satisfies the Weak Form, thereby maintaining numerical stability and accuracy.
+
+\[a(u,v) = L(v)\]
+
+\[a(u,v)\]
+
+\[L(v)\]
+
+\[\int_{\Omega} F(x,u,\nabla u) dx = 0\]
+
+\section{Rules for Modeling Physical Phenomena with FEM}
+
+Discretization and meshing techniques play a pivotal role in achieving accurate results in finite element method (FEM) simulations. The process of mesh generation involves creating a network of elements, which can be either structured or unstructured, to approximate the complex geometry of the problem domain. A well-designed mesh should capture the essential features of the physical phenomenon being modeled, such as stress concentrations or fluid flow patterns. The choice of mesh type and density can significantly impact the accuracy and computational efficiency of the FEM results. Therefore, it is essential to carefully select the discretization and meshing techniques to ensure that the FEM model accurately represents the underlying physical behavior.
+
+Boundary conditions and constraints are essential components in finite element method (FEM) modeling, as they define the behavior of the physical system at its boundaries. In FEM, boundary conditions are typically classified into Dirichlet and Neumann types, where Dirichlet conditions specify the value of the solution at the boundary, while Neumann conditions specify the flux or derivative of the solution at the boundary. Constraints, on the other hand, are used to enforce additional physical or mathematical conditions, such as incompressibility or non-penetration, within the domain. The accurate representation of boundary conditions and constraints is crucial to obtain reliable results in FEM simulations.
+
+Numerical methods for solving linear and non-linear FEM equations are crucial in achieving accurate results in finite element method (FEM) simulations. The choice of numerical method depends on the type of problem being solved, with linear methods such as the conjugate gradient method being suitable for linear systems, while non-linear methods such as the Newton-Raphson method are used for non-linear systems. The solution of FEM equations often involves the use of iterative methods, such as the Jacobi and Gauss-Seidel methods, which are used to solve large sparse systems of equations. These methods are often used in conjunction with preconditioning techniques to improve the convergence rate of the solution.
+
+\section{Verification, Validation, and Best Practices}
+
+Verification methods and techniques are essential in ensuring the accuracy and reliability of numerical simulations. Various techniques, such as code verification and solution verification, are employed to validate the correctness of the numerical solution. Code verification involves checking the implementation of the numerical method against known analytical solutions, whereas solution verification involves comparing the numerical solution with experimental or analytical data. These techniques are crucial in identifying and addressing errors or inaccuracies in the numerical simulation, thereby ensuring that the results obtained are reliable and trustworthy.
+
+Validation strategies and approaches are crucial in ensuring the accuracy and reliability of numerical simulations. Various validation techniques, such as code validation and solution validation, are employed to validate the correctness of the numerical solutions. Code validation involves verifying the correctness of the numerical code, whereas solution validation involves verifying the correctness of the numerical solution. Effective validation strategies and approaches can be achieved through the use of benchmark problems, which provide a known solution for comparison with the numerical solution.
+
+To ensure data integrity and accuracy, it is essential to adhere to best practices in data management. This includes implementing robust data validation techniques, such as range checking and data type verification, to prevent errors and inconsistencies. Additionally, data backup and recovery procedures should be established to prevent data loss in the event of system failures or other disruptions. Furthermore, data should be stored in a secure and organized manner, with clear documentation and metadata to facilitate easy retrieval and analysis.
+
+\begin{thebibliography}{99}
+  \bibitem{ref1} \textit{Loubignac iteration}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Loubignac_iteration}
+  \bibitem{ref2} \textit{Boris Galerkin}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Boris_Galerkin}
+  \bibitem{ref3} \textit{Finite-difference time-domain method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Finite-difference_time-domain_method}
+\end{thebibliography}
+
+\newpage
+\section*{Appendix: Source Provenance}
+\addcontentsline{toc}{section}{Appendix: Source Provenance}
+\small
+The following table provides the complete retrieval receipt for each source used in this document.
+It records when each source was fetched, from which provider, and its unique identifier.
+\vspace{1em}
+
+\begin{longtable}{@{} p{0.5cm} p{3.5cm} p{5cm} p{1.5cm} p{3cm} @{}}
+\toprule
+\textbf{\#} & \textbf{Source ID} & \textbf{Title} & \textbf{Type} & \textbf{Retrieved At} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{Source ID} & \textbf{Title} & \textbf{Type} & \textbf{Retrieved At} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+  1 & \texttt{wiki\_loubignac\_iteration} & Loubignac iteration & Wikipedia & 2026-09-24 13:11 UTC \\
+  2 & \texttt{wiki\_boris\_galerkin} & Boris Galerkin & Wikipedia & 2026-09-24 13:11 UTC \\
+  3 & \texttt{wiki\_finite\_difference\_time\_domain\_method} & Finite-difference time-domain method & Wikipedia & 2026-09-24 13:11 UTC \\
+\end{longtable}
+
+\normalsize
+\vspace{1em}
+\textbf{Information Type Classification:}
+\begin{itemize}
+  \item \textbf{General Knowledge}: Textbook-level facts common across FEM literature. No specific citation required.
+  \item \textbf{Attributed Knowledge}: Specific claims borrowed from another author's work. Cited with source reference.
+  \item \textbf{Novel Contribution}: Original results unique to the source paper. Cited as primary source.
+  \item \textbf{Synthesized Knowledge}: Conclusions derived by combining multiple sources. All contributing sources cited.
+\end{itemize}
+
+\end{document}

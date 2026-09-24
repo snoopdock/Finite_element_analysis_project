@@ -1,72 +1,155 @@
 [
   {
-    "source_id": "wikipedia_finite_element_method_in_structural_mechanics",
-    "title": "Finite element method in structural mechanics",
-    "abstract": "The finite element method (FEM) is a powerful technique originally developed for the numerical solution of complex problems in structural mechanics, and it remains the method of choice for analyzing complex systems. In FEM, the structural system is modeled by a set of appropriate finite elements interconnected at discrete points called nodes. Elements may have physical properties such as thickness, coefficient of thermal expansion, density, Young's modulus, shear modulus and Poisson's ratio.",
-    "url": "https://en.wikipedia.org/wiki/Finite_element_method_in_structural_mechanics",
-    "source_type": "wikipedia"
-  },
-  {
-    "source_id": "wikipedia_finite_element_method",
-    "title": "Finite element method",
-    "abstract": "Finite element method (FEM) is a popular method for numerically solving differential equations arising in engineering and mathematical modeling. Typical problem areas of interest include the traditional fields of structural analysis, heat transfer, fluid flow, mass transport, and electromagnetic potential. Computers are usually used to perform the calculations required. With high-speed supercomputers, better solutions can be achieved and are often required to solve the largest and most complex problems.",
-    "url": "https://en.wikipedia.org/wiki/Finite_element_method",
-    "source_type": "wikipedia"
-  },
-  
-  {
-    "source_id": "wikipedia_variational_multiscale_method",
-    "title": "Variational multiscale method",
-    "abstract": "The variational multiscale method (VMS) is a technique used for deriving models and numerical methods for multiscale phenomena. The VMS framework has been mainly applied to design stabilized finite element methods in which stability of the standard Galerkin method is not ensured both in terms of singular perturbation and of compatibility conditions with the finite element spaces.",
-    "url": "https://en.wikipedia.org/wiki/Variational_multiscale_method",
-    "source_type": "wikipedia"
-  },
-  {
-    "source_id": "wikipedia_energy_release_rate_fracture_mechanics_",
-    "title": "Energy release rate (fracture mechanics)",
-    "abstract": "In fracture mechanics, the energy release rate, , is the rate at which energy is transformed as a material undergoes fracture. Mathematically, the energy release rate is expressed as the decrease in total potential energy per increase in fracture surface area, and is thus expressed in terms of energy per unit area. Various energy balances can be constructed relating the energy released during fracture to the energy of the resulting new surface, as well as other dissipative processes such as plasticity and heat generation. The energy release rate is central to the field of fracture mechanics when solving problems and estimating material properties related to fracture and fatigue.",
-    "url": "https://en.wikipedia.org/wiki/Energy_release_rate_(fracture_mechanics)",
-    "source_type": "wikipedia"
-  },
-  {
-    "source_id": "wikipedia_direct_stiffness_method",
-    "title": "Direct stiffness method",
-    "abstract": "In structural engineering, the direct stiffness method, also known as the matrix stiffness method, is a structural analysis technique particularly suited for computer-automated analysis of complex structures including the statically indeterminate type. It is a matrix method that makes use of the members' stiffness relations for computing member forces and displacements in structures. The direct stiffness method is the most common implementation of the finite element method (FEM). In applying the method, the system must be modeled as a set of simpler, idealized elements interconnected at the nodes. The material stiffness properties of these elements are then, through linear algebra, compiled into a single matrix equation which governs the behaviour of the entire idealized structure. The structure’s unknown displacements and forces can then be determined by solving this equation. The direct stiffness method forms the basis for most finite element software.",
-    "url": "https://en.wikipedia.org/wiki/Direct_stiffness_method",
-    "source_type": "wikipedia"
-  },
-  {
-    "source_id": "wiki_finite_element_method_in_structural_mechanics",
-    "url": "https://en.wikipedia.org/wiki/Finite_element_method_in_structural_mechanics",
-    "retrieved_at": "2026-08-30T17:29:15.095105+00:00",
+    "source_id": "wiki_loubignac_iteration",
+    "url": "https://en.wikipedia.org/wiki/Loubignac_iteration",
+    "retrieved_at": "2026-09-24T13:11:40.920432+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
-    "title": "Finite element method in structural mechanics",
+    "title": "Loubignac iteration",
     "authors": [
       "Wikipedia Contributors"
     ],
     "metadata": {
-      "abstract": "The <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (FEM) is a powerful technique originally developed for the numerical solution of complex problems in <span class=\"searchmatch\">structural</span> <span class=\"searchmatch\">mechanics</span>, and",
-      "word_count": 2256
+      "abstract": "mathematics, <span class=\"searchmatch\">Loubignac</span> <span class=\"searchmatch\">iteration</span> is an <span class=\"searchmatch\">iterative</span> <span class=\"searchmatch\">method</span> in <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">methods</span>. It gives continuous stress field. It is named after Gilles <span class=\"searchmatch\">Loubignac</span>, who published",
+      "word_count": 35
     },
-    "full_text_path": "output/raw_text/wiki_finite_element_method_in_structural_mechanics.txt",
-    "status": "parsed_full_text"
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_loubignac_iteration.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Loubignac iteration finite element method",
+    "query_contexts": [
+      "Loubignac iteration finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Loubignac iteration finite element method",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Loubignac iteration finite element method": 0.750865,
+        "analytic element method finite element method": 0.1375
+      }
+    }
   },
   {
-    "source_id": "wiki_finite_element_method",
-    "url": "https://en.wikipedia.org/wiki/Finite_element_method",
-    "retrieved_at": "2026-08-30T17:29:16.706366+00:00",
+    "source_id": "wiki_boris_galerkin",
+    "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
+    "retrieved_at": "2026-09-24T13:11:40.920432+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
-    "title": "Finite element method",
+    "title": "Boris Galerkin",
     "authors": [
       "Wikipedia Contributors"
     ],
     "metadata": {
-      "abstract": "element <span class=\"searchmatch\">method</span> <span class=\"searchmatch\">Finite</span> difference <span class=\"searchmatch\">method</span> <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">element</span> machine <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> in <span class=\"searchmatch\">structural</span> <span class=\"searchmatch\">mechanics</span> <span class=\"searchmatch\">Finite</span> volume <span class=\"s",
-      "word_count": 6417
+      "abstract": "problem in <span class=\"searchmatch\">weak</span> <span class=\"searchmatch\">form</span>. Most well-known in the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> The Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> The streamline upwind Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> (SUPG) The",
+      "word_count": 1835
     },
-    "full_text_path": "output/raw_text/wiki_finite_element_method.txt",
-    "status": "parsed_full_text"
-  },]
-  
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_boris_galerkin.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.260173,
+      "lexical": 0.167889,
+      "source_quality": 0.55,
+      "section_relevance": 0.135452,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method mathematical foundation weak form Galerkin method",
+      "query_index": 0,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Loubignac iteration finite element method": 0.1375,
+        "analytic element method finite element method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_finite_difference_time_domain_method",
+    "url": "https://en.wikipedia.org/wiki/Finite-difference_time-domain_method",
+    "retrieved_at": "2026-09-24T13:11:40.920432+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Finite-difference time-domain method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "<span class=\"searchmatch\">Finite</span>-difference time-domain (FDTD) or Yee&#039;s <span class=\"searchmatch\">method</span> (named after the Chinese American applied mathematician Kane S. Yee, born 1934) is a <span class=\"searchmatch\">numerical</span> analysis",
+      "word_count": 2409
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_finite_difference_time_domain_method.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method verification validation numerical stability",
+    "query_contexts": [
+      "finite element method verification validation numerical stability"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.1375,
+      "lexical": 0.0,
+      "source_quality": 0.55,
+      "section_relevance": 0.0,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Loubignac iteration finite element method",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Loubignac iteration finite element method": 0.1375,
+        "analytic element method finite element method": 0.1375
+      }
+    }
+  }
+]
