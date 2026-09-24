@@ -91,7 +91,8 @@
       "mathematical_formulation": "For a linear diffusion problem, the weak form of Poisson's equation is: $ \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx $ for all $ v \\in H_0^1(\\Omega) $.",
       "source_ids": [
         "wiki_gradient_discretisation_method"
-      ]
+      ],
+      "concept_id": "c6f81619-8f7c-40a2-b9e2-5879ad5d5e27"
     },
     {
       "name": "Finite Element Space",
@@ -99,6 +100,23 @@
       "mathematical_formulation": "The finite element space $ V_h \\subset H^1(\\Omega) $ is defined as $ V_h = \\{ v_h \\in C^0(\\Omega) : v_h|_K \\in \\mathbb{P}_k(K) \\text{ for all } K \\in \\mathcal{T}_h \\} $, where $ \\mathcal{T}_h $ is the mesh and $ \\mathbb{P}_k $ denotes polynomial spaces.",
       "source_ids": [
         "wiki_gradient_discretisation_method"
+      ],
+      "concept_id": "dd23bf77-4643-449e-b224-b49f3a4344dc"
+    },
+    {
+      "name": "Optimization-based Collapse Load Calculation",
+      "explanation": "Finite Element Limit Analysis (FELA) computes upper or lower bound plastic collapse loads using optimization techniques. Unlike traditional nonlinear FEM, it avoids time-stepping by directly solving for collapse loads. The method formulates problems in kinematic or equilibrium forms, ensuring rigorous bounds on collapse loads. It is particularly effective in geotechnical applications like slope stability analysis.",
+      "mathematical_formulation": "\\min_{\\mathbf{\\sigma}} \\mathbf{f}^T \\mathbf{u} \\quad \\text{subject to} \\quad \\mathbf{K} \\mathbf{u} = \\mathbf{f}, \\quad \\mathbf{\\sigma} \\in \\mathcal{S}",
+      "source_ids": [
+        "wiki_finite_element_limit_analysis"
+      ]
+    },
+    {
+      "name": "Petrov-Galerkin Method",
+      "explanation": "The Petrov-Galerkin method approximates solutions to partial differential equations with non-symmetric operators. It uses distinct function spaces for test and trial functions, allowing flexibility in handling odd-order terms. This approach generalizes the Bubnov-Galerkin method by relaxing the requirement for identical basis functions. It is critical for problems where orthogonality constraints are impractical.",
+      "mathematical_formulation": "Find $ u_n \\in V_n $ such that $ a(u_n, w_m) = f(w_m) $ for all $ w_m \\in W_m $",
+      "source_ids": [
+        "wiki_petrov_galerkin_method"
       ]
     }
   ],
@@ -239,7 +257,8 @@
       ],
       "source_ids": [
         "wiki_gradient_discretisation_method"
-      ]
+      ],
+      "proposition_id": "12367943-39f2-4a75-b305-4a4c4035b25f"
     },
     {
       "step_number": 2,
@@ -250,6 +269,29 @@
       ],
       "source_ids": [
         "wiki_gradient_discretisation_method"
+      ],
+      "proposition_id": "edec19f0-8719-49ca-89aa-d551113e6426"
+    },
+    {
+      "step_number": 1,
+      "title": "Weak Formulation of the Problem",
+      "description": "Transform the original differential equation into a weak form by multiplying with a test function and integrating over the domain. This allows handling of non-smooth solutions and incorporates boundary conditions naturally. The weak form ensures compatibility between the solution and test function spaces. It serves as the foundation for discretization in FEM.",
+      "equations": [
+        "a(u, w) = f(w) \\quad \\forall w \\in W"
+      ],
+      "source_ids": [
+        "wiki_petrov_galerkin_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Subspace Approximation",
+      "description": "Select finite-dimensional subspaces $ V_n \\subset V $ and $ W_m \\subset W $ to approximate the solution and test functions. The choice of subspaces affects accuracy and computational cost. This step reduces the infinite-dimensional problem to a finite system of equations. The subspaces must satisfy compatibility conditions for convergence.",
+      "equations": [
+        "v_n \\in V_n, \\quad w_m \\in W_m"
+      ],
+      "source_ids": [
+        "wiki_petrov_galerkin_method"
       ]
     }
   ],
@@ -342,7 +384,8 @@
       "explanation": "This describes steady-state diffusion, where $ u $ is the solution variable (e.g., temperature, displacement), $ f $ is a source term, and $ \\nabla $ denotes the gradient operator. The equation governs phenomena like heat conduction and electrostatics.",
       "source_ids": [
         "wiki_gradient_discretisation_method"
-      ]
+      ],
+      "proposition_id": "2d8591b9-c55a-407f-aa86-654ee2d8cd6f"
     },
     {
       "name": "Weak Form of Poisson's Equation",
@@ -350,6 +393,23 @@
       "explanation": "This integral form relaxes the differentiability requirements of the classical equation, allowing solutions in $ H^1(\\Omega) $. The test function $ v $ belongs to a suitable function space, ensuring compatibility with boundary conditions.",
       "source_ids": [
         "wiki_gradient_discretisation_method"
+      ],
+      "proposition_id": "d67196f8-560a-47f9-8537-eada5bfd1039"
+    },
+    {
+      "name": "Weak Formulation",
+      "latex": "a(u, w) = f(w) \\quad \\forall w \\in W",
+      "explanation": "Here, $ a(u, w) $ represents a bilinear form encoding the differential operator, $ f(w) $ is a linear functional for external loads, $ u $ is the solution function, and $ w $ is the test function. The equation holds for all $ w $ in the test function space $ W $.",
+      "source_ids": [
+        "wiki_petrov_galerkin_method"
+      ]
+    },
+    {
+      "name": "Optimization Problem in FELA",
+      "latex": "\\min_{\\mathbf{\\sigma}} \\mathbf{f}^T \\mathbf{u} \\quad \\text{subject to} \\quad \\mathbf{K} \\mathbf{u} = \\mathbf{f}, \\quad \\mathbf{\\sigma} \\in \\mathcal{S}",
+      "explanation": "This minimizes the work done by external forces $ \\mathbf{f} $ subject to equilibrium $ \\mathbf{K} \\mathbf{u} = \\mathbf{f} $ and yield conditions $ \\mathbf{\\sigma} \\in \\mathcal{S} $. $ \\mathbf{\\sigma} $ denotes stress fields, $ \\mathbf{u} $ is displacement, and $ \\mathbf{K} $ is the stiffness matrix.",
+      "source_ids": [
+        "wiki_finite_element_limit_analysis"
       ]
     }
   ],
@@ -439,13 +499,29 @@
       "explanation": "The Gradient Discretisation Method requires specific core properties (e.g., consistency, coercivity, limit-conformity) to guarantee convergence. These ensure that discrete solutions approximate the continuous solution accurately, even for non-linear or irregular problems.",
       "source_ids": [
         "wiki_gradient_discretisation_method"
-      ]
+      ],
+      "proposition_id": "c928d222-7d46-4ec8-8c74-1a3b0f807970"
     },
     {
       "rule": "Mesh Flexibility",
       "explanation": "FEM allows arbitrary polygonal or polyhedral meshes, enabling accurate modeling of complex geometries. This flexibility is critical for applications in engineering and physics where irregular domains are common.",
       "source_ids": [
         "wiki_gradient_discretisation_method"
+      ],
+      "proposition_id": "29ec8922-488b-4995-99b3-b2dafa43fa8e"
+    },
+    {
+      "rule": "Distinct Function Spaces for Test and Trial Functions",
+      "explanation": "In Petrov-Galerkin methods, test and trial functions must belong to different spaces to handle non-symmetric operators. This ensures stability and accuracy for problems with odd-order terms. It prevents spurious solutions arising from insufficient constraint enforcement.",
+      "source_ids": [
+        "wiki_petrov_galerkin_method"
+      ]
+    },
+    {
+      "rule": "Bound Consistency in FELA",
+      "explanation": "FELA requires kinematic or equilibrium formulations to produce rigorous upper or lower bound solutions. Mixed formulations must maintain duality to avoid non-physical results. This ensures reliability for critical geotechnical design applications.",
+      "source_ids": [
+        "wiki_finite_element_limit_analysis"
       ]
     }
   ]

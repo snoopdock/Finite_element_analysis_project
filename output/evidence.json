@@ -273,6 +273,58 @@
     }
   },
   {
+    "source_id": "wiki_finite_element_limit_analysis",
+    "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
+    "retrieved_at": "2026-09-24T20:04:26.452476+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Finite element limit analysis",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "A <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">limit</span> <span class=\"searchmatch\">analysis</span> (FELA) uses optimisation techniques to directly compute the upper or lower bound plastic collapse load (or <span class=\"searchmatch\">limit</span> load)",
+      "word_count": 301
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_finite_element_limit_analysis.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element limit analysis",
+    "query_contexts": [
+      "finite element limit analysis"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element limit analysis",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "finite element limit analysis": 0.750865,
+        "galerkin orthogonality": 0.1375,
+        "a-fem": 0.1375
+      }
+    }
+  },
+  {
     "source_id": "wiki_loubignac_iteration",
     "url": "https://en.wikipedia.org/wiki/Loubignac_iteration",
     "retrieved_at": "2026-09-24T18:20:19.039217+00:00",
@@ -498,7 +550,7 @@
   {
     "source_id": "wiki_galerkin_method",
     "url": "https://en.wikipedia.org/wiki/Galerkin_method",
-    "retrieved_at": "2026-09-24T19:35:53.347533+00:00",
+    "retrieved_at": "2026-09-24T20:04:26.452476+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Galerkin method",
@@ -506,18 +558,19 @@
       "Wikipedia Contributors"
     ],
     "metadata": {
-      "abstract": "Bubnov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> (after Ivan Bubnov) does not require the bilinear form to be symmetric and substitutes the energy minimization with <span class=\"searchmatch\">orthogonality</span> constraints",
+      "abstract": "Bubnov–<span class=\"searchmatch\">Galerkin</span> method (after Ivan Bubnov) does not require the bilinear form to be symmetric and substitutes the energy minimization with <span class=\"searchmatch\">orthogonality</span> constraints",
       "word_count": 1883
     },
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_galerkin_method.txt",
     "status": "cached_full_text",
     "provider": "wikipedia",
     "source_type": "wikipedia",
-    "query_context": "Galerkin orthogonality finite element method",
+    "query_context": "galerkin orthogonality",
     "query_contexts": [
       "Finite Element Method with Energy Minimization",
       "Galerkin orthogonality finite element method",
       "galerkin dimension reduction finite element method",
+      "galerkin orthogonality",
       "symmetry of the matrix finite element method"
     ],
     "provider_names": [
@@ -538,14 +591,15 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "Galerkin orthogonality finite element method",
-      "query_index": 3,
+      "best_query": "galerkin orthogonality",
+      "query_index": 4,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.260173,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "Galerkin orthogonality finite element method": 0.444183,
-        "symmetry of the matrix finite element method": 0.1375
+        "finite element limit analysis": 0.1375,
+        "galerkin orthogonality": 0.444183,
+        "a-fem": 0.1375
       }
     }
   },
@@ -597,6 +651,58 @@
         "finite element method verification validation numerical stability": 0.1375,
         "finite element method gradient discretization": 0.444183,
         "cut finite element method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_petrov_galerkin_method",
+    "url": "https://en.wikipedia.org/wiki/Petrov–Galerkin_method",
+    "retrieved_at": "2026-09-24T20:04:26.452476+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Petrov–Galerkin method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "equation, Petrov–<span class=\"searchmatch\">Galerkin</span> method can be viewed as applying a projection that is not necessarily <span class=\"searchmatch\">orthogonal</span>, in contrast to Bubnov-<span class=\"searchmatch\">Galerkin</span> method. It is",
+      "word_count": 871
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_petrov_galerkin_method.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "galerkin orthogonality",
+    "query_contexts": [
+      "galerkin orthogonality"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.444183,
+      "lexical": 0.419722,
+      "source_quality": 0.55,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "galerkin orthogonality",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "finite element limit analysis": 0.1375,
+        "galerkin orthogonality": 0.444183,
+        "a-fem": 0.1375
       }
     }
   },

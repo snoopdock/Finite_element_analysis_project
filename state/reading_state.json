@@ -323,5 +323,55 @@
       "procedures": 0,
       "rules": 0
     }
+  },
+  "wiki_finite_element_limit_analysis": {
+    "first_read_at": "2026-09-24T20:04:45.350626+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T20:04:45.350657+00:00",
+        "extracted": {
+          "concepts": 1,
+          "procedures": 0,
+          "equations": 1,
+          "rules": 1
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 1,
+      "equations": 1,
+      "procedures": 0,
+      "rules": 1
+    }
+  },
+  "wiki_petrov_galerkin_method": {
+    "first_read_at": "2026-09-24T20:04:45.350664+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-09-24T20:04:45.350672+00:00",
+        "extracted": {
+          "concepts": 1,
+          "procedures": 2,
+          "equations": 1,
+          "rules": 1
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 1,
+      "equations": 1,
+      "procedures": 2,
+      "rules": 1
+    }
   }
 }
