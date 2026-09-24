@@ -1,24 +1,24 @@
 # FEA Pipeline - Cycle Report
 
-**Time:** 2026-09-24T13:22:27.468344+00:00
-**Cycle:** 3
-**Total Iterations:** 3
+**Time:** 2026-09-24T18:21:03.810744+00:00
+**Cycle:** 4
+**Total Iterations:** 4
 **Converged:** False
 
 ## Convergence Diagnostics
 
-- Eta variance: 0.00908444444444444
+- Eta variance: 0.009973333333333336
 - Invariant violations: 0
 - Adjust actions: 0
 - Incomplete sections: 1
 - Unstable sections: 7
-- Reading coverage: 44.40%
+- Reading coverage: 30.00%
 
 ## This Cycle
 
 - Correction queries used: 0
 - New sources found: True
-- Extracted: True
+- Extracted: False
 - Sections written: True
 - Adjustment executed: none
 - Write phase skipped: False
@@ -26,5 +26,4 @@
 
 ## Errors
 
-- Section 'Verification, Validation, and Best Practices': paragraph 3 failed after 2 attempts
-- Section 'Introduction and Scope of the Finite Element Method': paragraph 3 failed after 2 attempts
+- Extract validation failed: Extraction contained no valid source-supported items.

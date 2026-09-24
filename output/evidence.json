@@ -117,6 +117,58 @@
     }
   },
   {
+    "source_id": "wiki_crystal_plasticity",
+    "url": "https://en.wikipedia.org/wiki/Crystal_plasticity",
+    "retrieved_at": "2026-09-24T18:20:19.039217+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Crystal plasticity",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "formulations of <span class=\"searchmatch\">crystal</span> <span class=\"searchmatch\">plasticity</span> are the one based on the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> known as <span class=\"searchmatch\">Crystal</span> <span class=\"searchmatch\">Plasticity</span> <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">Element</span> <span class=\"searchmatch\">Method</span> (CPFEM), which is",
+      "word_count": 437
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_crystal_plasticity.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Crystal plasticity finite element method",
+    "query_contexts": [
+      "Crystal plasticity finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Crystal plasticity finite element method",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Crystal plasticity finite element method": 0.750865,
+        "Loubignac iteration finite element method": 0.1375,
+        "Spectral element method finite element": 0.1375
+      }
+    }
+  },
+  {
     "source_id": "wiki_discontinuous_galerkin_method",
     "url": "https://en.wikipedia.org/wiki/Discontinuous_Galerkin_method",
     "retrieved_at": "2026-09-24T13:19:47.467892+00:00",
@@ -171,7 +223,7 @@
   {
     "source_id": "wiki_loubignac_iteration",
     "url": "https://en.wikipedia.org/wiki/Loubignac_iteration",
-    "retrieved_at": "2026-09-24T13:11:40.920432+00:00",
+    "retrieved_at": "2026-09-24T18:20:19.039217+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Loubignac iteration",
@@ -209,13 +261,66 @@
         "citation_support": 0.0
       },
       "best_query": "Loubignac iteration finite element method",
-      "query_index": 3,
+      "query_index": 4,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.1375,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
+        "Crystal plasticity finite element method": 0.1375,
         "Loubignac iteration finite element method": 0.750865,
-        "analytic element method finite element method": 0.1375
+        "Spectral element method finite element": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_spectral_element_method",
+    "url": "https://en.wikipedia.org/wiki/Spectral_element_method",
+    "retrieved_at": "2026-09-24T18:20:19.039217+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Spectral element method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "equations, a topic in mathematics, the <span class=\"searchmatch\">spectral</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (SEM) is a formulation of the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (FEM) that uses high-degree piecewise",
+      "word_count": 1024
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_spectral_element_method.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Spectral element method finite element",
+    "query_contexts": [
+      "Spectral element method finite element"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Spectral element method finite element",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Crystal plasticity finite element method": 0.1375,
+        "Loubignac iteration finite element method": 0.1375,
+        "Spectral element method finite element": 0.750865
       }
     }
   },
