@@ -26,11 +26,15 @@ from processing.document_renderer import (
     render_document,
 )
 
+from processing.latex_section_adapter import (
+    adapt_sections_to_latex_ir,
+)
 from utils.text import (
     load_json,
     save_json,
     save_text,
 )
+
 
 
 EXTRACT_SYSTEM = """You are a senior computational mechanics researcher.
@@ -981,10 +985,15 @@ def phase_assemble(state, paths):
         )
         return False
 
+ 
+    latex_sections = adapt_sections_to_latex_ir(
+    sections
+    )
+
     tex_content = render_document(
-        state,
-        sections,
-        evidence,
+    state,
+    latex_sections,
+    evidence,
     )
 
     save_text(
