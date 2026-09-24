@@ -71,19 +71,41 @@ including mathematical foundation, step-by-step procedure, and rules for modelin
 
 \section{Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method}
 
-The distinction between the Strong Form and Weak Form of a partial differential equation (PDE) is crucial in the mathematical foundation of numerical methods. The Strong Form, also known as the strong formulation, requires that the PDE be satisfied exactly at every point in the domain, often expressed as \$a(u,v) = L(v)\$, where \$a(u,v)\$ is a bilinear form and \$L(v)\$ is a linear functional. In contrast, the Weak Form, or weak formulation, involves a variational formulation that seeks to minimize the residual of the PDE, often expressed as \$\textbackslash{}int\_\{\textbackslash{}Omega\} F(x,u,\textbackslash{}nabla u) dx = 0\$. This difference in formulation has significant implications for the development and analysis of numerical methods, including the Galerkin method.
+The Strong Form, Weak Form, and Galerkin Method are fundamental concepts in the mathematical foundation of numerical methods. The Strong Form of a partial differential equation (PDE) is a statement of the equation in its original form, whereas the Weak Form is an equivalent statement of the equation in an integral form, which is often more suitable for numerical approximation. The Galerkin Method is a specific technique used to derive the Weak Form of a PDE, where the solution is approximated by a linear combination of basis functions. This method involves multiplying the residual of the PDE by a set of test functions and integrating over the domain, resulting in a system of algebraic equations that can be solved numerically.
 
-The Weak Form of a partial differential equation (PDE) is derived by multiplying the PDE with a weighting function and integrating over the domain. This process eliminates the need for the PDE to be satisfied pointwise, allowing for a more flexible and general formulation. The Weak Form is significant because it enables the use of variational methods, such as the Ritz method and the Galerkin method, to approximate the solution of the PDE. By minimizing the residual of the Weak Form, these methods can provide a stable and efficient way to solve complex PDE problems, making them a cornerstone of modern numerical analysis.
+\section{The Finite Element Procedure: Discretization and Mesh Generation}
 
-The Galerkin Method is a numerical technique used to solve partial differential equations (PDEs) by projecting the solution onto a finite-dimensional subspace. This is achieved by multiplying the Weak Form of the PDE with a set of basis functions and integrating over the domain, resulting in a system of linear equations. The Galerkin Method is particularly useful for problems with complex geometries and non-linear behavior, as it allows for the use of a wide range of basis functions to approximate the solution. By minimizing the residual of the PDE, the Galerkin Method ensures that the numerical solution satisfies the Weak Form, thereby maintaining numerical stability and accuracy.
+Discretization of the problem domain is a crucial step in the finite element procedure, where the continuous problem domain is approximated by a discrete set of elements. This process involves dividing the problem domain into smaller, non-overlapping subdomains, or elements, which are connected at their interfaces. The choice of element size and shape is critical in determining the accuracy and efficiency of the finite element solution. A finer mesh, consisting of smaller elements, can provide a more accurate representation of the problem domain, but at the cost of increased computational complexity and memory requirements.
 
-\[a(u,v) = L(v)\]
+Mesh generation techniques play a vital role in the finite element procedure, as they directly impact the accuracy and efficiency of the simulation results. Various mesh generation techniques exist, including structured and unstructured meshing, where the former involves dividing the domain into a regular grid of elements, while the latter allows for more complex geometries and adaptivity. The choice of mesh generation technique depends on the specific problem being solved and the desired level of accuracy.
 
-\[a(u,v)\]
+Mesh quality and refinement are critical factors that significantly impact the accuracy and efficiency of finite element method (FEM) simulations. A high-quality mesh is essential to capture the complex behavior of physical phenomena, whereas a poorly refined mesh can lead to inaccurate results and increased computational costs. The mesh quality is typically evaluated using metrics such as element shape quality, aspect ratio, and Jacobian determinant. In contrast, mesh refinement involves the process of iteratively refining the mesh to achieve a desired level of accuracy, often through techniques such as h-refinement, p-refinement, or adaptive mesh refinement.
 
-\[L(v)\]
+\section{The Finite Element Procedure: Weak Formulation and Algebraic Equations}
 
-\[\int_{\Omega} F(x,u,\nabla u) dx = 0\]
+The weak formulation of the finite element method is a crucial step in the discretization process. It involves transforming the strong form of a partial differential equation into an equivalent weak form, which is then used to derive the algebraic equations. The weak form is obtained by multiplying the strong form by a weight function, often referred to as a test function, and integrating over the problem domain. This process is essential in reducing the order of the differential equation and allowing for the application of the Galerkin method. The weak formulation enables the derivation of the finite element equations, which are used to solve for the unknowns in the problem.
+
+The weak formulation of the finite element method is transformed into an algebraic equation through the Galerkin method. This method approximates the solution by assuming a linear combination of basis functions, which are used to derive the algebraic equations. The Galerkin method involves multiplying the weak form of the partial differential equation by a set of weight functions, which are chosen to be the same as the basis functions used to approximate the solution. This process results in a system of linear equations, where the coefficients of the basis functions are the unknowns to be solved for, and the system can be represented as \$Au = f\$, where \$A\$ is the stiffness matrix, \$u\$ is the vector of unknowns, and \$f\$ is the vector of forcing terms.
+
+The solution of the algebraic equations obtained from the weak formulation is a critical step in the finite element procedure. The resulting system of equations is typically solved using numerical methods such as Gaussian elimination or iterative solvers. Postprocessing involves interpreting the solution in the context of the original problem, which may include visualizing the results, extracting specific data, or comparing the solution with experimental or analytical results. The accuracy of the solution is dependent on the quality of the mesh and the choice of basis functions used in the Galerkin method, highlighting the importance of careful discretization and mesh generation in the finite element procedure.
+
+\[Au = f\]
+
+\[A\]
+
+\[u\]
+
+\[f\]
+
+\section{The Finite Element Procedure: Numerical Solution and Convergence Analysis}
+
+The finite element procedure involves a numerical solution to the weak form of the partial differential equation, which is obtained by applying the Galerkin method. This method approximates the solution using a set of basis functions, resulting in a system of algebraic equations. The numerical solution is then obtained by solving this system of equations, which can be done using various methods such as direct or iterative solvers. The accuracy of the numerical solution depends on the choice of basis functions and the mesh size, with finer meshes generally leading to more accurate solutions.
+
+The convergence analysis of finite element methods involves evaluating the accuracy of the numerical solution by comparing it with the exact solution. This is typically achieved through error estimation techniques, which provide an upper bound on the error between the numerical and exact solutions. The error estimation is often based on the interpolation error, which arises from the approximation of the solution using a finite set of basis functions. In the context of finite element methods, the interpolation error can be estimated using the Céa's lemma, which states that the error in the energy norm is bounded by the interpolation error. This provides a theoretical framework for assessing the accuracy of finite element solutions and identifying the need for mesh refinement or other improvements.
+
+The implementation and numerical stability of the finite element procedure are crucial for achieving accurate results in finite element method (FEM) simulations. To ensure numerical stability, the finite element procedure must be implemented with a suitable choice of basis functions and a stable numerical integration scheme. For instance, the use of \$H\textasciicircum{}1\$-conforming basis functions can help to improve the stability of the numerical solution, while the use of a stable quadrature rule, such as the Gauss-Legendre rule, can help to reduce numerical errors. By carefully selecting the basis functions and numerical integration scheme, the finite element procedure can be made more stable and accurate, leading to improved results in FEM simulations.
+
+\[H^1\]
 
 \section{Rules for Modeling Physical Phenomena with FEM}
 
@@ -101,10 +123,21 @@ Validation strategies and approaches are crucial in ensuring the accuracy and re
 
 To ensure data integrity and accuracy, it is essential to adhere to best practices in data management. This includes implementing robust data validation techniques, such as range checking and data type verification, to prevent errors and inconsistencies. Additionally, data backup and recovery procedures should be established to prevent data loss in the event of system failures or other disruptions. Furthermore, data should be stored in a secure and organized manner, with clear documentation and metadata to facilitate easy retrieval and analysis.
 
+\section{Introduction and Scope of the Finite Element Method}
+
+The finite element method (FEM) has its roots in the early 20th century, with the work of mathematicians and engineers such as Richard Courant and David Hilbert. However, the modern development of FEM as a numerical method for solving partial differential equations (PDEs) began in the 1940s and 1950s. The introduction of the finite element method is often attributed to the work of engineers such as James Chilton and Ray Clough, who applied the method to solve problems in structural engineering. The first practical applications of FEM were in the fields of aerospace and civil engineering, where it was used to analyze complex structures and systems. The development of FEM was further accelerated by the advent of computers, which enabled the solution of large-scale problems.
+
+The fundamental principles and assumptions of the finite element method are rooted in the mathematical foundation of numerical methods. The finite element method relies on the distinction between the strong and weak forms of a partial differential equation, where the weak form is obtained by applying the Galerkin method. This method approximates the solution by minimizing the residual of the weak form, which is a crucial assumption in the finite element method. The weak form is then discretized using a finite element mesh, where the solution is approximated by a linear combination of basis functions defined on each element.
+
+The finite element method has numerous applications in various fields of engineering and science, including structural mechanics, heat transfer, fluid dynamics, and electromagnetics. Its versatility and accuracy have made it a widely used tool for simulating complex phenomena and optimizing system performance. In structural mechanics, FEM is used to analyze the behavior of complex structures under various loads, while in heat transfer, it is employed to study the thermal behavior of systems. Additionally, FEM is used in fluid dynamics to simulate fluid flow and in electromagnetics to analyze electromagnetic fields.
+
 \begin{thebibliography}{99}
-  \bibitem{ref1} \textit{Loubignac iteration}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Loubignac_iteration}
-  \bibitem{ref2} \textit{Boris Galerkin}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Boris_Galerkin}
-  \bibitem{ref3} \textit{Finite-difference time-domain method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Finite-difference_time-domain_method}
+  \bibitem{ref1} \textit{Discontinuous Galerkin method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Discontinuous_Galerkin_method}
+  \bibitem{ref2} \textit{Loubignac iteration}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Loubignac_iteration}
+  \bibitem{ref3} \textit{Galerkin method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Galerkin_method}
+  \bibitem{ref4} \textit{List of numerical analysis topics}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/List_of_numerical_analysis_topics}
+  \bibitem{ref5} \textit{Boris Galerkin}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Boris_Galerkin}
+  \bibitem{ref6} \textit{Finite-difference time-domain method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Finite-difference_time-domain_method}
 \end{thebibliography}
 
 \newpage
@@ -126,9 +159,12 @@ It records when each source was fetched, from which provider, and its unique ide
 \endhead
 \bottomrule
 \endfoot
-  1 & \texttt{wiki\_loubignac\_iteration} & Loubignac iteration & Wikipedia & 2026-09-24 13:11 UTC \\
-  2 & \texttt{wiki\_boris\_galerkin} & Boris Galerkin & Wikipedia & 2026-09-24 13:11 UTC \\
-  3 & \texttt{wiki\_finite\_difference\_time\_domain\_method} & Finite-difference time-domain method & Wikipedia & 2026-09-24 13:11 UTC \\
+  1 & \texttt{wiki\_discontinuous\_galerkin\_method} & Discontinuous Galerkin method & Wikipedia & 2026-09-24 13:19 UTC \\
+  2 & \texttt{wiki\_loubignac\_iteration} & Loubignac iteration & Wikipedia & 2026-09-24 13:11 UTC \\
+  3 & \texttt{wiki\_galerkin\_method} & Galerkin method & Wikipedia & 2026-09-24 13:19 UTC \\
+  4 & \texttt{wiki\_list\_of\_numerical\_analysis\_topics} & List of numerical analysis topics & Wikipedia & 2026-09-24 13:19 UTC \\
+  5 & \texttt{wiki\_boris\_galerkin} & Boris Galerkin & Wikipedia & 2026-09-24 13:11 UTC \\
+  6 & \texttt{wiki\_finite\_difference\_time\_domain\_method} & Finite-difference time-domain method & Wikipedia & 2026-09-24 13:11 UTC \\
 \end{longtable}
 
 \normalsize

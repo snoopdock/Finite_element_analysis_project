@@ -1,5 +1,57 @@
 [
   {
+    "source_id": "wiki_discontinuous_galerkin_method",
+    "url": "https://en.wikipedia.org/wiki/Discontinuous_Galerkin_method",
+    "retrieved_at": "2026-09-24T13:19:47.467892+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Discontinuous Galerkin method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "<span class=\"searchmatch\">discontinuous</span> <span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">methods</span> (DG <span class=\"searchmatch\">methods</span>) form a class of numerical <span class=\"searchmatch\">methods</span> for solving differential equations. They combine features of the <span class=\"searchmatch\">finite</span>",
+      "word_count": 3977
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_discontinuous_galerkin_method.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "discontinuous galerkin finite element method",
+    "query_contexts": [
+      "discontinuous galerkin finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "discontinuous galerkin finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "hierarchical polynomial finite element method": 0.1375,
+        "discontinuous galerkin finite element method": 0.750865,
+        "galerkin dimension reduction finite element method": 0.341955
+      }
+    }
+  },
+  {
     "source_id": "wiki_loubignac_iteration",
     "url": "https://en.wikipedia.org/wiki/Loubignac_iteration",
     "retrieved_at": "2026-09-24T13:11:40.920432+00:00",
@@ -47,6 +99,110 @@
         "finite element method verification validation numerical stability": 0.1375,
         "Loubignac iteration finite element method": 0.750865,
         "analytic element method finite element method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_galerkin_method",
+    "url": "https://en.wikipedia.org/wiki/Galerkin_method",
+    "retrieved_at": "2026-09-24T13:19:47.467892+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Galerkin method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "determined by <span class=\"searchmatch\">finite</span> sets of basis functions. They are named after the Soviet mathematician Boris <span class=\"searchmatch\">Galerkin</span>. Often when referring to a <span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span>, one also",
+      "word_count": 1883
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_galerkin_method.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "galerkin dimension reduction finite element method",
+    "query_contexts": [
+      "galerkin dimension reduction finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.444183,
+      "lexical": 0.419722,
+      "source_quality": 0.55,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "discontinuous galerkin finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "hierarchical polynomial finite element method": 0.1375,
+        "discontinuous galerkin finite element method": 0.444183,
+        "galerkin dimension reduction finite element method": 0.341955
+      }
+    }
+  },
+  {
+    "source_id": "wiki_list_of_numerical_analysis_topics",
+    "url": "https://en.wikipedia.org/wiki/List_of_numerical_analysis_topics",
+    "retrieved_at": "2026-09-24T13:19:47.467892+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "List of numerical analysis topics",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "consistent with the constraints See also: Interval boundary <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span>, Interval <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> Loss of significance Numerical error Numerical stability",
+      "word_count": 8705
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_list_of_numerical_analysis_topics.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "hierarchical polynomial finite element method",
+    "query_contexts": [
+      "hierarchical polynomial finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.290841,
+      "lexical": 0.209861,
+      "source_quality": 0.55,
+      "section_relevance": 0.169315,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method verification validation numerical stability",
+      "query_index": 2,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.290841,
+        "hierarchical polynomial finite element method": 0.1375,
+        "discontinuous galerkin finite element method": 0.1375,
+        "galerkin dimension reduction finite element method": 0.1375
       }
     }
   },
