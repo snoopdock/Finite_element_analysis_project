@@ -16,8 +16,8 @@ def test_section_adapter_creates_blocks():
 
     assert result["title"] == "Introduction"
     assert len(result["blocks"]) == 3
-    assert result["blocks"][0]["type"] == "paragraph"
-    assert result["blocks"][1]["type"] == "equation"
+    assert result["blocks"][0]["type"] == "text"
+    assert result["blocks"][1]["type"] == "math"
     assert result["blocks"][2]["type"] == "citation"
 
 
