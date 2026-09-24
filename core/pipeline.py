@@ -29,6 +29,11 @@ from processing.document_renderer import (
 from processing.latex_section_adapter import (
     adapt_sections_to_latex_ir,
 )
+
+from processing.evidence_adapter import (
+    adapt_evidence_to_references,
+)
+
 from utils.text import (
     load_json,
     save_json,
@@ -990,10 +995,15 @@ def phase_assemble(state, paths):
     sections
     )
 
+    
+    latex_evidence = adapt_evidence_to_references(
+    evidence
+    )
+
     tex_content = render_document(
     state,
     latex_sections,
-    evidence,
+    latex_evidence,
     )
 
     save_text(
