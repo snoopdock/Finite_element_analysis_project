@@ -842,9 +842,17 @@ def phase_extract(
         "knowledge_base",
         {},
     )
+    valid_source_ids = {
+        item.get("source_id")
+        for item in evidence
+        if isinstance(item, dict)
+        and item.get("source_id")
+    }
+
     updated_kb = merge_knowledge(
         existing_kb,
         cleaned,
+        valid_source_ids,
     )
 
     state["knowledge_base"] = updated_kb
