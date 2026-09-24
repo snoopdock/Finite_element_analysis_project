@@ -64,16 +64,24 @@ def _extract_equations(content: str) -> List[str]:
 
 
 def _extract_citations(content, allowed_sources=None):
+    result = set()
 
+    # existing extraction logic should populate this
     citations = extract_existing_logic(content)
 
-    if allowed_sources:
-        citations = [
-            c for c in citations
-            if c in allowed_sources
-        ]
+    for group in citations:
+        for part in group.split(","):
+            part = part.strip()
 
-    return citations
+            if not part:
+                continue
+
+            if allowed_sources and part not in allowed_sources:
+                continue
+
+            result.add(part)
+
+    return sorted(result)
 
 
 class DynamicWriter:
