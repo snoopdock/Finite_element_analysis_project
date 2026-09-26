@@ -275,7 +275,7 @@
   {
     "source_id": "wiki_finite_element_limit_analysis",
     "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
-    "retrieved_at": "2026-09-24T20:04:26.452476+00:00",
+    "retrieved_at": "2026-09-26T17:27:52.062940+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Finite element limit analysis",
@@ -319,15 +319,15 @@
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
         "finite element limit analysis": 0.750865,
-        "galerkin orthogonality": 0.1375,
-        "a-fem": 0.1375
+        "loubignac iteration": 0.1375,
+        "spectral element method": 0.1375
       }
     }
   },
   {
     "source_id": "wiki_loubignac_iteration",
     "url": "https://en.wikipedia.org/wiki/Loubignac_iteration",
-    "retrieved_at": "2026-09-24T18:20:19.039217+00:00",
+    "retrieved_at": "2026-09-26T17:27:52.062940+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Loubignac iteration",
@@ -335,16 +335,17 @@
       "Wikipedia Contributors"
     ],
     "metadata": {
-      "abstract": "mathematics, <span class=\"searchmatch\">Loubignac</span> <span class=\"searchmatch\">iteration</span> is an <span class=\"searchmatch\">iterative</span> <span class=\"searchmatch\">method</span> in <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">methods</span>. It gives continuous stress field. It is named after Gilles <span class=\"searchmatch\">Loubignac</span>, who published",
+      "abstract": "mathematics, <span class=\"searchmatch\">Loubignac</span> <span class=\"searchmatch\">iteration</span> is an <span class=\"searchmatch\">iterative</span> method in finite element methods. It gives continuous stress field. It is named after Gilles <span class=\"searchmatch\">Loubignac</span>, who published",
       "word_count": 35
     },
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_loubignac_iteration.txt",
     "status": "parsed_full_text",
     "provider": "wikipedia",
     "source_type": "wikipedia",
-    "query_context": "Loubignac iteration finite element method",
+    "query_context": "loubignac iteration",
     "query_contexts": [
-      "Loubignac iteration finite element method"
+      "Loubignac iteration finite element method",
+      "loubignac iteration"
     ],
     "provider_names": [
       "wikipedia"
@@ -364,22 +365,22 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "Loubignac iteration finite element method",
+      "best_query": "loubignac iteration",
       "query_index": 4,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.1375,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "Crystal plasticity finite element method": 0.1375,
-        "Loubignac iteration finite element method": 0.750865,
-        "Spectral element method finite element": 0.1375
+        "finite element limit analysis": 0.1375,
+        "loubignac iteration": 0.750865,
+        "spectral element method": 0.1375
       }
     }
   },
   {
     "source_id": "wiki_spectral_element_method",
     "url": "https://en.wikipedia.org/wiki/Spectral_element_method",
-    "retrieved_at": "2026-09-24T18:20:19.039217+00:00",
+    "retrieved_at": "2026-09-26T17:27:52.062940+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Spectral element method",
@@ -387,16 +388,17 @@
       "Wikipedia Contributors"
     ],
     "metadata": {
-      "abstract": "equations, a topic in mathematics, the <span class=\"searchmatch\">spectral</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (SEM) is a formulation of the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (FEM) that uses high-degree piecewise",
+      "abstract": "equations, a topic in mathematics, the <span class=\"searchmatch\">spectral</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (SEM) is a formulation of the finite <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (FEM) that uses high-degree piecewise",
       "word_count": 1024
     },
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_spectral_element_method.txt",
     "status": "cached_full_text",
     "provider": "wikipedia",
     "source_type": "wikipedia",
-    "query_context": "Spectral element method finite element",
+    "query_context": "spectral element method",
     "query_contexts": [
-      "Spectral element method finite element"
+      "Spectral element method finite element",
+      "spectral element method"
     ],
     "provider_names": [
       "wikipedia"
@@ -416,15 +418,15 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "Spectral element method finite element",
+      "best_query": "spectral element method",
       "query_index": 5,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.1375,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "Crystal plasticity finite element method": 0.1375,
-        "Loubignac iteration finite element method": 0.1375,
-        "Spectral element method finite element": 0.750865
+        "finite element limit analysis": 0.1375,
+        "loubignac iteration": 0.1375,
+        "spectral element method": 0.750865
       }
     }
   },

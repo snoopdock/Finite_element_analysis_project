@@ -109,7 +109,8 @@
       "mathematical_formulation": "\\min_{\\mathbf{\\sigma}} \\mathbf{f}^T \\mathbf{u} \\quad \\text{subject to} \\quad \\mathbf{K} \\mathbf{u} = \\mathbf{f}, \\quad \\mathbf{\\sigma} \\in \\mathcal{S}",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "concept_id": "550989bd-07c0-4689-aebc-94ddcee5587c"
     },
     {
       "name": "Petrov-Galerkin Method",
@@ -117,6 +118,15 @@
       "mathematical_formulation": "Find $ u_n \\in V_n $ such that $ a(u_n, w_m) = f(w_m) $ for all $ w_m \\in W_m $",
       "source_ids": [
         "wiki_petrov_galerkin_method"
+      ],
+      "concept_id": "563e96af-7e54-445a-8067-025cfb41c520"
+    },
+    {
+      "name": "Loubignac iteration",
+      "explanation": "Loubignac iteration is an iterative method used in finite element methods to achieve convergence in nonlinear problems. It generates a continuous stress field, which is critical for accurate stress analysis in solid mechanics. The method was introduced by Gilles Loubignac in 1977 and is particularly useful for handling complex material behaviors. It differs from standard Newton-Raphson methods by focusing on stress continuity rather than displacement fields.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_loubignac_iteration"
       ]
     }
   ],
@@ -281,7 +291,8 @@
       ],
       "source_ids": [
         "wiki_petrov_galerkin_method"
-      ]
+      ],
+      "proposition_id": "95bded53-db89-4c7c-b0d4-86c975885ce1"
     },
     {
       "step_number": 2,
@@ -292,7 +303,8 @@
       ],
       "source_ids": [
         "wiki_petrov_galerkin_method"
-      ]
+      ],
+      "proposition_id": "fd3ee4bb-a4ee-4371-9d44-5e8d54236ae7"
     }
   ],
   "equations": [
@@ -402,7 +414,8 @@
       "explanation": "Here, $ a(u, w) $ represents a bilinear form encoding the differential operator, $ f(w) $ is a linear functional for external loads, $ u $ is the solution function, and $ w $ is the test function. The equation holds for all $ w $ in the test function space $ W $.",
       "source_ids": [
         "wiki_petrov_galerkin_method"
-      ]
+      ],
+      "proposition_id": "b685bd0f-ba5d-4386-a6d1-91a712e9b54e"
     },
     {
       "name": "Optimization Problem in FELA",
@@ -410,7 +423,8 @@
       "explanation": "This minimizes the work done by external forces $ \\mathbf{f} $ subject to equilibrium $ \\mathbf{K} \\mathbf{u} = \\mathbf{f} $ and yield conditions $ \\mathbf{\\sigma} \\in \\mathcal{S} $. $ \\mathbf{\\sigma} $ denotes stress fields, $ \\mathbf{u} $ is displacement, and $ \\mathbf{K} $ is the stiffness matrix.",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "proposition_id": "356edefd-bea1-4b0b-b413-d639f069d2b7"
     }
   ],
   "rules": [
@@ -515,14 +529,16 @@
       "explanation": "In Petrov-Galerkin methods, test and trial functions must belong to different spaces to handle non-symmetric operators. This ensures stability and accuracy for problems with odd-order terms. It prevents spurious solutions arising from insufficient constraint enforcement.",
       "source_ids": [
         "wiki_petrov_galerkin_method"
-      ]
+      ],
+      "proposition_id": "4436a4c3-c9bf-40be-9072-56d3712d3cd5"
     },
     {
       "rule": "Bound Consistency in FELA",
       "explanation": "FELA requires kinematic or equilibrium formulations to produce rigorous upper or lower bound solutions. Mixed formulations must maintain duality to avoid non-physical results. This ensures reliability for critical geotechnical design applications.",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "proposition_id": "7c717408-8c9f-4f5b-b67d-60a179b5cc92"
     }
   ]
 }
