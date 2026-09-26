@@ -273,6 +273,57 @@
     }
   },
   {
+    "source_id": "wiki_fast_fourier_transform",
+    "url": "https://en.wikipedia.org/wiki/Fast_Fourier_transform",
+    "retrieved_at": "2026-09-26T17:32:14.670989+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Fast Fourier transform",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "A <span class=\"searchmatch\">fast</span> <span class=\"searchmatch\">Fourier</span> <span class=\"searchmatch\">transform</span> (FFT) is an algorithm that computes the discrete <span class=\"searchmatch\">Fourier</span> <span class=\"searchmatch\">transform</span> (DFT), or its inverse (IDFT), of a sequence. A <span class=\"searchmatch\">Fourier</span> transform",
+      "word_count": 5742
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_fast_fourier_transform.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method fast fourier transform",
+    "query_contexts": [
+      "finite element method fast fourier transform"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method fast fourier transform",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "finite element method gradient discretization method": 0.1375,
+        "finite element method fast fourier transform": 0.750865
+      }
+    }
+  },
+  {
     "source_id": "wiki_finite_element_limit_analysis",
     "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
     "retrieved_at": "2026-09-26T17:27:52.062940+00:00",
@@ -427,6 +478,57 @@
         "finite element limit analysis": 0.1375,
         "loubignac iteration": 0.1375,
         "spectral element method": 0.750865
+      }
+    }
+  },
+  {
+    "source_id": "wiki_fourier_transform_on_finite_groups",
+    "url": "https://en.wikipedia.org/wiki/Fourier_transform_on_finite_groups",
+    "retrieved_at": "2026-09-26T17:32:14.670989+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Fourier transform on finite groups",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "the <span class=\"searchmatch\">Fourier</span> <span class=\"searchmatch\">transform</span> on <span class=\"searchmatch\">finite</span> groups is a generalization of the discrete <span class=\"searchmatch\">Fourier</span> <span class=\"searchmatch\">transform</span> from cyclic to arbitrary <span class=\"searchmatch\">finite</span> groups. The <span class=\"searchmatch\">Fourier</span> transform",
+      "word_count": 1917
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_fourier_transform_on_finite_groups.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method fast fourier transform",
+    "query_contexts": [
+      "finite element method fast fourier transform"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.54641,
+      "lexical": 0.55963,
+      "source_quality": 0.55,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method fast fourier transform",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "finite element method gradient discretization method": 0.1375,
+        "finite element method fast fourier transform": 0.54641
       }
     }
   },
@@ -876,7 +978,7 @@
   {
     "source_id": "wiki_boris_galerkin",
     "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
-    "retrieved_at": "2026-09-24T13:11:40.920432+00:00",
+    "retrieved_at": "2026-09-26T17:32:14.670989+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Boris Galerkin",
@@ -919,8 +1021,8 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.260173,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "Loubignac iteration finite element method": 0.1375,
-        "analytic element method finite element method": 0.1375
+        "finite element method gradient discretization method": 0.1375,
+        "finite element method fast fourier transform": 0.1375
       }
     }
   },
