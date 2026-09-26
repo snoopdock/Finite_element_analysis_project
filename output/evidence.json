@@ -119,7 +119,7 @@
   {
     "source_id": "wiki_babu_ka_lax_milgram_theorem",
     "url": "https://en.wikipedia.org/wiki/Babuška–Lax–Milgram_theorem",
-    "retrieved_at": "2026-09-24T19:33:20.886789+00:00",
+    "retrieved_at": "2026-09-26T17:40:38.959221+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Babuška–Lax–Milgram theorem",
@@ -134,8 +134,9 @@
     "status": "parsed_full_text",
     "provider": "wikipedia",
     "source_type": "wikipedia",
-    "query_context": "Lax Milgram theorem finite element method",
+    "query_context": "Lax Milgram theorem Finite Element Method",
     "query_contexts": [
+      "Lax Milgram theorem Finite Element Method",
       "Lax Milgram theorem finite element method"
     ],
     "provider_names": [
@@ -156,15 +157,15 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "Lax Milgram theorem finite element method",
-      "query_index": 3,
+      "best_query": "Lax Milgram theorem Finite Element Method",
+      "query_index": 5,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.1375,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "Lax Milgram theorem finite element method": 0.750865,
-        "symmetry of matrix finite element method": 0.1375,
-        "proof existence uniqueness finite element method": 0.1375
+        "Finite Element Method with Energy Minimization": 0.1375,
+        "Applied Element Method Finite Element": 0.1375,
+        "Lax Milgram theorem Finite Element Method": 0.750865
       }
     }
   },
@@ -653,62 +654,6 @@
     }
   },
   {
-    "source_id": "wiki_galerkin_method",
-    "url": "https://en.wikipedia.org/wiki/Galerkin_method",
-    "retrieved_at": "2026-09-24T20:04:26.452476+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Galerkin method",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "Bubnov–<span class=\"searchmatch\">Galerkin</span> method (after Ivan Bubnov) does not require the bilinear form to be symmetric and substitutes the energy minimization with <span class=\"searchmatch\">orthogonality</span> constraints",
-      "word_count": 1883
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_galerkin_method.txt",
-    "status": "cached_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "galerkin orthogonality",
-    "query_contexts": [
-      "Finite Element Method with Energy Minimization",
-      "Galerkin orthogonality finite element method",
-      "galerkin dimension reduction finite element method",
-      "galerkin orthogonality",
-      "symmetry of the matrix finite element method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.444183,
-      "lexical": 0.419722,
-      "source_quality": 0.55,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "galerkin orthogonality",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "finite element limit analysis": 0.1375,
-        "galerkin orthogonality": 0.444183,
-        "a-fem": 0.1375
-      }
-    }
-  },
-  {
     "source_id": "wiki_gradient_discretisation_method",
     "url": "https://en.wikipedia.org/wiki/Gradient_discretisation_method",
     "retrieved_at": "2026-09-24T19:43:32.504703+00:00",
@@ -814,7 +759,7 @@
   {
     "source_id": "s2_055a3c431d1499d48b2a4d543ceb587f183bdbbd",
     "url": "https://www.semanticscholar.org/paper/055a3c431d1499d48b2a4d543ceb587f183bdbbd",
-    "retrieved_at": "2026-09-24T19:35:53.347533+00:00",
+    "retrieved_at": "2026-09-26T17:40:38.959221+00:00",
     "retriever_module": "research.semantic_scholar",
     "provider": "semantic_scholar",
     "query_context": "finite element method practical implementation modeling rules",
@@ -867,8 +812,9 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.365841,
         "finite element method verification validation numerical stability": 0.2125,
-        "Galerkin orthogonality finite element method": 0.2125,
-        "symmetry of the matrix finite element method": 0.2125
+        "Finite Element Method with Energy Minimization": 0.2125,
+        "Applied Element Method Finite Element": 0.2125,
+        "Lax Milgram theorem Finite Element Method": 0.2125
       }
     }
   },
@@ -979,7 +925,7 @@
   {
     "source_id": "wiki_boris_galerkin",
     "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
-    "retrieved_at": "2026-09-26T17:32:14.670989+00:00",
+    "retrieved_at": "2026-09-26T17:40:38.959221+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Boris Galerkin",
@@ -1022,8 +968,66 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.260173,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "finite element method gradient discretization method": 0.1375,
-        "finite element method fast fourier transform": 0.1375
+        "Finite Element Method with Energy Minimization": 0.1375,
+        "Applied Element Method Finite Element": 0.1375,
+        "Lax Milgram theorem Finite Element Method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_galerkin_method",
+    "url": "https://en.wikipedia.org/wiki/Galerkin_method",
+    "retrieved_at": "2026-09-26T17:40:38.959221+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Galerkin method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "Bubnov–Galerkin <span class=\"searchmatch\">method</span> (after Ivan Bubnov) does not require the bilinear form to be symmetric and substitutes the <span class=\"searchmatch\">energy</span> <span class=\"searchmatch\">minimization</span> <span class=\"searchmatch\">with</span> orthogonality",
+      "word_count": 1883
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_galerkin_method.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Finite Element Method with Energy Minimization",
+    "query_contexts": [
+      "Finite Element Method with Energy Minimization",
+      "Galerkin orthogonality finite element method",
+      "Lax Milgram theorem Finite Element Method",
+      "galerkin dimension reduction finite element method",
+      "galerkin orthogonality",
+      "symmetry of the matrix finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.260173,
+      "lexical": 0.167889,
+      "source_quality": 0.55,
+      "section_relevance": 0.135452,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method mathematical foundation weak form Galerkin method",
+      "query_index": 0,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Finite Element Method with Energy Minimization": 0.1375,
+        "Applied Element Method Finite Element": 0.1375,
+        "Lax Milgram theorem Finite Element Method": 0.1375
       }
     }
   },
