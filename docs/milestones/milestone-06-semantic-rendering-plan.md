@@ -1,10 +1,10 @@
 # Milestone 06 — Semantic Rendering Validation
 
 ## Phase
-Discovery phase.
+Discovery
 
 ## Purpose
-Discover the real repository interfaces before implementing the semantic rendering adapter.
+Discover repository interfaces before implementing the semantic rendering adapter.
 
 Target boundary:
 
@@ -16,14 +16,11 @@ Document to LaTeX IR projection
         v
 processing.latex_ir.DocumentModel
 
-## Current action
-This package only adds discovery tests and a GitHub workflow.
-No production code is modified.
+## Workflow model
 
-## Expected output
-The workflow log should show:
-- document model classes and signatures
-- LaTeX IR classes and signatures
-- pipeline functions and signatures
+The stable dispatcher workflow lives on main.
+Milestone tests remain on developing.
 
-After reviewing the logs, the next implementation package will contain the real adapter.
+## Next step
+
+Review logs and implement the real adapter.
