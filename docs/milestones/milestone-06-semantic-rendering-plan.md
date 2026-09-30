@@ -1,15 +1,34 @@
-# Milestone 06 Discovery Package v3
+# Milestone 06 — Projection Implementation
 
-Run the dispatcher with:
+## Goal
 
-pytest tests/test_milestone06_repository_interfaces.py -v -s
+Create the first semantic rendering path:
 
-The -s flag is required so GitHub Actions logs show discovery output.
+core.document_model.Document
 
-The output will provide:
-- class names
-- signatures
-- annotations
-- dataclass fields
+        |
 
-This information is required before implementing the Document -> LaTeX IR adapter.
+        v
+
+DocumentModelToLatexIR
+
+        |
+
+        v
+
+processing.latex_ir.DocumentModel
+
+
+## Scope
+
+This first patch:
+- does not replace the legacy pipeline;
+- introduces a new boundary;
+- validates section and text projection.
+
+## Future extensions
+
+After this boundary is stable:
+- CitationOccurrence -> CitationBlock
+- EquationOccurrence -> MathBlock
+- CrossReferenceOccurrence -> CrossReferenceBlock
