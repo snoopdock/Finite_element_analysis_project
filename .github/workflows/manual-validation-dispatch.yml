@@ -37,4 +37,4 @@ jobs:
 
       - name: Run validation tests
         run: |
-          pytest ${{ inputs.test_path }} -v
+          pytest ${{ inputs.test_path }} -v -s
