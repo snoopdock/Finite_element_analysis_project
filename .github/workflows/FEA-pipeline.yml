@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "0 */6 * * *"
   workflow_dispatch:
+    inputs:
+      fresh_start:
+        description: "Reset persisted runtime state/output/cache before running"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -77,11 +83,35 @@ jobs:
             raw-text-cache-${{ runner.os }}-
             raw-text-cache-
 
+      - name: Reset runtime state for fresh start
+        if: github.event_name == 'workflow_dispatch' && inputs.fresh_start
+        run: |
+          echo "Fresh start requested: removing generated runtime state and outputs."
+
+          rm -f \
+            state/current_state.json \
+            state/reading_state.json \
+            output/evidence.json \
+            output/research.json \
+            output/sections.json \
+            output/guideline.tex \
+            output/validation_report.md \
+            output/document.semantic-candidate.json \
+            output/error.txt
+
+          rm -rf output/raw_text
+
+          mkdir -p state output output/raw_text
+          touch state/.gitkeep output/.gitkeep
+
+          echo "Runtime reset complete."
+          git status --short
+
       - name: Run FEA Pipeline
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          FEA_MAX_LLM_CALLS: 50
+          FEA_MAX_LLM_CALLS: 100
           FEA_CACHE_MAX_SIZE_MB: 500
         run: |
           python main.py --config config.yaml
