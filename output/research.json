@@ -1,0 +1,103 @@
+{
+  "concepts": [
+    {
+      "name": "Weak Formulation",
+      "explanation": "The weak formulation is a mathematical framework used in the Finite Element Method to transform differential equations into integral equations. It allows for solutions that may not satisfy the original differential equation pointwise but satisfy an integral form. This approach is essential for handling complex geometries and boundary conditions. The weak form is derived by multiplying the differential equation by a test function and integrating over the domain.",
+      "mathematical_formulation": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
+      "source_ids": [
+        "arxiv_1712.01211v2",
+        "arxiv_2210.16907v1"
+      ]
+    },
+    {
+      "name": "Discretization",
+      "explanation": "Discretization involves dividing the problem domain into smaller, manageable subdomains called elements. This process converts the continuous problem into a discrete system of equations. The solution is approximated using basis functions defined over each element. Discretization is critical for numerical computation as it reduces infinite-dimensional problems to finite-dimensional ones.",
+      "mathematical_formulation": "u_h(x) = \\sum_{i=1}^N N_i(x) u_i",
+      "source_ids": [
+        "arxiv_1712.01211v2",
+        "arxiv_2210.16907v1"
+      ]
+    },
+    {
+      "name": "Galerkin Method",
+      "explanation": "The Galerkin method is a technique for approximating solutions to differential equations by projecting the problem onto a finite-dimensional space. It ensures that the residual of the approximate solution is orthogonal to the test function space. This method forms the basis for many finite element formulations. The Galerkin approach is widely used due to its stability and accuracy in solving partial differential equations.",
+      "mathematical_formulation": "\\mathcal{R}(u_h) = 0 \\quad \\text{for all } v_h \\in V_h",
+      "source_ids": [
+        "arxiv_1712.01211v2",
+        "wiki_boris_galerkin"
+      ]
+    }
+  ],
+  "procedures": [
+    {
+      "step_number": 1,
+      "title": "Mesh Generation",
+      "description": "The first step in FEM is to create a mesh that divides the domain into discrete elements. The quality of the mesh significantly affects the accuracy of the solution. Elements can be of various types (e.g., triangles, quadrilaterals) depending on the problem geometry. A well-constructed mesh ensures proper resolution of the solution across the domain.",
+      "equations": [
+        "\\Omega = \\bigcup_{e=1}^E \\Omega_e"
+      ],
+      "source_ids": [
+        "arxiv_2210.16907v1"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Assembly of Global Stiffness Matrix",
+      "description": "The local stiffness matrices from individual elements are assembled into a global stiffness matrix. This matrix represents the system of equations governing the entire domain. The assembly process involves mapping element degrees of freedom to the global system. Proper assembly ensures that the interactions between elements are correctly accounted for.",
+      "equations": [
+        "K_{ij} = \\sum_{e=1}^E K_{ij}^{(e)}"
+      ],
+      "source_ids": [
+        "arxiv_1712.01211v2"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Solution of Linear System",
+      "description": "Once the global stiffness matrix and load vector are assembled, the system of linear equations is solved for the unknown nodal values. This step typically involves direct or iterative solvers depending on the problem size. The solution provides the approximate values of the primary variable at each node. Accurate solution of the linear system is crucial for the overall FEM result.",
+      "equations": [
+        "K U = F"
+      ],
+      "source_ids": [
+        "arxiv_1712.01211v2"
+      ]
+    }
+  ],
+  "equations": [
+    {
+      "name": "Weak Form of Poisson's Equation",
+      "latex": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
+      "explanation": "This equation represents the weak form of Poisson's equation. The left-hand side involves the gradient of the solution $ u $ and test function $ v $, while the right-hand side includes the source term $ f $. The integration is performed over the domain $ \\Omega $. This form is derived by multiplying the original PDE by a test function and integrating.",
+      "source_ids": [
+        "arxiv_1712.01211v2",
+        "arxiv_2210.16907v1"
+      ]
+    },
+    {
+      "name": "Discrete Approximation",
+      "latex": "u_h(x) = \\sum_{i=1}^N N_i(x) u_i",
+      "explanation": "This equation defines the discrete approximation $ u_h(x) $ of the exact solution $ u(x) $. The $ N_i(x) $ are basis functions, and $ u_i $ are the nodal values. The approximation is constructed by combining basis functions weighted by their corresponding nodal values. This forms the basis for the finite element solution.",
+      "source_ids": [
+        "arxiv_1712.01211v2",
+        "arxiv_2210.16907v1"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule": "Use of Curved Elements",
+      "explanation": "Curved elements are essential for accurately modeling domains with complex geometries. They improve the approximation of boundaries and reduce discretization errors. The use of curved elements is particularly important in problems involving nonlinear geometries or high gradients.",
+      "source_ids": [
+        "arxiv_2210.16907v1"
+      ]
+    },
+    {
+      "rule": "Orthogonality Condition",
+      "explanation": "The Galerkin method enforces an orthogonality condition between the residual and the test function space. This ensures that the approximate solution minimizes the error in a weighted sense. The orthogonality condition is fundamental to the stability and convergence of the FEM solution.",
+      "source_ids": [
+        "arxiv_1712.01211v2",
+        "wiki_boris_galerkin"
+      ]
+    }
+  ]
+}

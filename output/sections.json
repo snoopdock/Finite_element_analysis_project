@@ -12,80 +12,153 @@
     "citations_used": [],
     "section_id": "f92f9fae-f333-4869-aeba-56da0b33f3b0",
     "generated_from": "writer",
-    "status": "complete"
+    "status": "complete",
+    "parent_section_ids": []
   },
   {
     "title": "The Finite Element Procedure",
-    "content": "The finite element procedure is a numerical method used to approximate the solution of partial differential equations. It involves discretizing the domain into smaller elements, typically using a mesh of triangles or quadrilaterals in two dimensions or tetrahedra in three dimensions. The solution is then expressed as a linear combination of basis functions, which are defined on each element. This approach allows for the representation of complex geometries and the solution of problems with varying material properties. The finite element method can be used to solve a wide range of problems, including those involving heat transfer, fluid flow, and structural mechanics.\n\nDiscretization and mesh generation are crucial steps in the finite element procedure, as they enable the approximation of the solution of partial differential equations. The mesh, composed of elements such as triangles or quadrilaterals, serves as a discretized representation of the domain. The quality of the mesh significantly affects the accuracy and efficiency of the finite element analysis. A well-designed mesh should minimize element distortion and ensure that the elements are sufficiently small to capture the desired level of detail in the solution. This is particularly important in regions where the solution exhibits high gradients or singularities.\n\nThe solution techniques employed in finite element methods are designed to converge to the exact solution of the partial differential equation. This is achieved through the use of iterative methods, such as the conjugate gradient method, which minimize the residual error between the approximate and exact solutions. The convergence of these methods is typically measured using the L2 norm, which provides a quantitative estimate of the error between the approximate and exact solutions. As the number of iterations increases, the L2 norm decreases, indicating that the solution is converging to the exact solution.",
-    "key_equations": [],
-    "citations_used": [],
+    "content": "Discretization is a critical step in the finite element procedure, involving the division of the problem domain into smaller, manageable subdomains called elements. This process converts the continuous problem into a discrete system of equations, allowing for the approximation of the solution using basis functions defined over each element. The discrete approximation $u_h(x) = \\sum_{i=1}^N N_i(x) u_i$ is constructed by combining basis functions weighted by their corresponding nodal values. As a result, the infinite-dimensional problem is reduced to a finite-dimensional one, facilitating numerical computation. The Galerkin method, which involves projecting the problem onto a finite-dimensional space, is a technique used to approximate solutions to differential equations, ensuring the residual of the approximate solution is orthogonal to the test function space.\n\nThe Galerkin method is a fundamental component of the finite element procedure, enabling the transformation of differential equations into integral equations. This technique involves projecting the problem onto a finite-dimensional space, ensuring that the residual of the approximate solution is orthogonal to the test function space. The Galerkin method enforces an orthogonality condition between the residual and the test function space, which is essential for the stability and convergence of the FEM solution. This approach is widely used due to its stability and accuracy in solving partial differential equations, as demonstrated by the weak form of Poisson's equation, $\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx$ [arxiv_1712.01211v2, arxiv_2210.16907v1].\n\nThe weak formulation is a mathematical framework used in the Finite Element Method to transform differential equations into integral equations. It allows for solutions that may not satisfy the original differential equation pointwise but satisfy an integral form. This approach is essential for handling complex geometries and boundary conditions. The weak form of Poisson's equation is given by $ \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx $, where $ u $ is the solution, $ v $ is the test function, and $ f $ is the source term. The Galerkin method is a technique for approximating solutions to differential equations by projecting the problem onto a finite-dimensional space, ensuring that the residual of the approximate solution is orthogonal to the test function space. This method forms the basis for many finite element formulations.",
+    "key_equations": [
+      "u_h(x) = \\sum_{i=1}^N N_i(x) u_i",
+      "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
+      "u",
+      "v",
+      "f"
+    ],
+    "citations_used": [
+      "arxiv_1712.01211v2",
+      "arxiv_2210.16907v1"
+    ],
     "section_id": "8436963f-4053-4c65-bbda-0d7278b782cc",
+    "parent_section_ids": [],
     "generated_from": "writer",
     "status": "complete"
   },
   {
     "title": "Rules for Modeling Physical Phenomena with FEM",
-    "content": "When creating finite element models, it is essential to follow specific rules to ensure accurate simulations of physical phenomena. One critical aspect is the discretization process, which involves dividing the domain into smaller elements to approximate the solution of partial differential equations. The choice of discretization method and mesh generation technique can significantly impact the accuracy and reliability of the results. For instance, a uniform mesh may not capture complex geometries or material properties, while adaptive mesh refinement can provide more accurate solutions.\n\nIn finite element method (FEM) simulations, boundary and initial conditions play a crucial role in defining the constraints of the physical problem. These conditions are essential in specifying the behavior of the system at the boundaries and the initial state of the system. The boundary conditions can be classified into Dirichlet and Neumann conditions, where the former specifies the value of the solution at the boundary, and the latter specifies the flux or derivative of the solution at the boundary. The initial conditions, on the other hand, define the initial state of the system, which is essential in capturing the transient behavior of the system. Proper specification of these conditions is critical in obtaining accurate results from FEM simulations.\n\nMaterial modeling and constitutive equations are essential components in defining the behavior of materials in finite element method (FEM) simulations. Constitutive equations describe the relationship between the material's internal variables and the external loads, thereby governing the material's response to different stimuli. The choice of constitutive equation depends on the specific material being modeled, with common examples including linear elasticity, plasticity, and viscoelasticity. By accurately capturing the material's behavior, FEM simulations can provide valuable insights into the system's response to various loading conditions, ultimately informing the design and optimization of real-world structures and systems.",
-    "key_equations": [],
-    "citations_used": [],
+    "content": "To ensure mesh quality in the Finite Element Method (FEM), several critical rules must be followed. Firstly, the use of curved elements is essential for accurately modeling domains with complex geometries, as they improve the approximation of boundaries and reduce discretization errors [arxiv_2210.16907v1]. Additionally, the orthogonality condition, which is fundamental to the stability and convergence of the FEM solution, must be enforced between the residual and the test function space [arxiv_1712.01211v2, wiki_boris_galerkin]. Furthermore, the mesh should be constructed to ensure proper resolution of the solution across the domain, as the quality of the mesh significantly affects the accuracy of the solution [arxiv_2210.16907v1]. By following these rules, the accuracy and reliability of the FEM solution can be significantly improved.\n\nThe proper implementation of the weak formulation is critical for accurate results in the Finite Element Method. This involves transforming the differential equation into an integral equation through the weak form, which allows for solutions that may not satisfy the original differential equation pointwise but satisfy an integral form. The weak form of Poisson's equation, for instance, is given by $ \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx $, where $ u $ is the solution, $ v $ is the test function, and $ f $ is the source term. To ensure accurate implementation, it is essential to use curved elements, particularly in problems involving nonlinear geometries or high gradients, as they improve the approximation of boundaries and reduce discretization errors.\n\nThe accurate solution of linear systems is a critical step in the Finite Element Method (FEM). Once the global stiffness matrix and load vector are assembled, the system of linear equations is solved for the unknown nodal values using direct or iterative solvers, depending on the problem size. This step is crucial for obtaining the approximate values of the primary variable at each node, as stated in [arxiv_1712.01211v2]. Furthermore, the discretization process, which involves dividing the problem domain into smaller elements, is essential for reducing infinite-dimensional problems to finite-dimensional ones, as shown in $u_h(x) = \\sum_{i=1}^N N_i(x) u_i$ [arxiv_1712.01211v2, arxiv_2210.16907v1]. By following these guidelines, practitioners can ensure accurate simulations of physical phenomena using the FEM.",
+    "key_equations": [
+      "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
+      "u",
+      "v",
+      "f",
+      "u_h(x) = \\sum_{i=1}^N N_i(x) u_i"
+    ],
+    "citations_used": [
+      "arxiv_1712.01211v2",
+      "arxiv_2210.16907v1",
+      "wiki_boris_galerkin"
+    ],
     "section_id": "ed05c243-4464-4fd6-b247-0a9b7d68881b",
+    "parent_section_ids": [],
     "generated_from": "writer",
     "status": "complete"
   },
   {
-    "section_id": "13376a73-b777-4274-90de-4be38b383537",
     "title": "Verification, Validation, and Best Practices: Importance of Verification and Validation in Finite Element Modeling",
-    "content": "",
+    "content": "The weak formulation is a crucial mathematical framework in the Finite Element Method, enabling the transformation of differential equations into integral equations. This approach is essential for handling complex geometries and boundary conditions, as it allows for solutions that may not satisfy the original differential equation pointwise but satisfy an integral form. The weak form of a differential equation, such as Poisson's equation, is derived by multiplying the equation by a test function and integrating over the domain, as shown in the equation $\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx$ [arxiv_1712.01211v2, arxiv_2210.16907v1]. The use of curved elements is also critical for accurately modeling domains with complex geometries, improving the approximation of boundaries and reducing discretization errors [arxiv_2210.16907v1]. By leveraging the weak formulation and curved elements, finite element models can provide accurate solutions to complex problems.\n\nDiscretization plays a pivotal role in transforming continuous problems into discrete systems, enabling the finite element method to approximate solutions to partial differential equations. By dividing the problem domain into smaller, manageable subdomains called elements, discretization reduces infinite-dimensional problems to finite-dimensional ones. The solution is approximated using basis functions defined over each element, as expressed by the equation $u_h(x) = \\sum_{i=1}^N N_i(x) u_i$ [arxiv_1712.01211v2, arxiv_2210.16907v1]. The quality of the mesh generated during the discretization process significantly affects the accuracy of the solution, highlighting the importance of proper mesh generation [arxiv_2210.16907v1]. Furthermore, the use of curved elements is essential for accurately modeling domains with complex geometries, improving the approximation of boundaries and reducing discretization errors [arxiv_2210.16907v1].\n\nThe Galerkin method is a fundamental technique for approximating solutions to differential equations by projecting the problem onto a finite-dimensional space. This method ensures that the residual of the approximate solution is orthogonal to the test function space, as expressed by the equation $\\mathcal{R}(u_h) = 0 \\quad \\text{for all } v_h \\in V_h$ [arxiv_1712.01211v2]. The Galerkin approach is widely used due to its stability and accuracy in solving partial differential equations [wiki_boris_galerkin]. By combining the Galerkin method with the weak formulation, which transforms differential equations into integral equations, the finite element method can effectively approximate solutions to complex problems. The weak formulation is essential for handling complex geometries and boundary conditions, as demonstrated by the equation $\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx$ [arxiv_1712.01211v2, arxiv_2210.16907v1].",
+    "key_equations": [
+      "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
+      "u_h(x) = \\sum_{i=1}^N N_i(x) u_i",
+      "\\mathcal{R}(u_h) = 0 \\quad \\text{for all } v_h \\in V_h"
+    ],
+    "citations_used": [
+      "arxiv_1712.01211v2",
+      "arxiv_2210.16907v1",
+      "wiki_boris_galerkin"
+    ],
+    "section_id": "13376a73-b777-4274-90de-4be38b383537",
     "parent_section_ids": [
       "766f2c6c-a4ef-4787-90d7-c8ac99ef7c8c"
     ],
     "generated_from": "split",
-    "status": "needs_generation",
-    "parent_content_reference": "Verification and validation methods are essential components of the finite element procedure. Verification involves checking the accuracy of the numerical solution by comparing it with an exact solution or a known analytical solution. On the other hand, validation involves assessing the accuracy of the numerical solution by comparing it with experimental data or physical measurements. The process of verification and validation is crucial to ensure that the finite element model accurately represe...",
     "subsection_index": 0,
-    "key_equations": [],
-    "citations_used": []
+    "parent_content_reference": "Verification and validation methods are essential components of the finite element procedure. Verification involves checking the accuracy of the numerical solution by comparing it with an exact solution or a known analytical solution. On the other hand, validation involves assessing the accuracy of the numerical solution by comparing it with experimental data or physical measurements. The process of verification and validation is crucial to ensure that the finite element model accurately represe...",
+    "status": "complete"
   },
   {
-    "section_id": "07a2903b-c224-4c6a-ae74-0476d01ab30c",
     "title": "Verification, Validation, and Best Practices: Best Practices for Data Integrity and Verification",
-    "content": "",
+    "content": "Verification and validation techniques are essential for ensuring data integrity in the finite element method. The weak formulation, a mathematical framework used to transform differential equations into integral equations, allows for solutions that may not satisfy the original differential equation pointwise but satisfy an integral form. This approach is critical for handling complex geometries and boundary conditions. The weak form of Poisson's equation, for instance, is given by $ \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx $, where $ u $ is the solution, $ v $ is the test function, and $ f $ is the source term. Discretization, which involves dividing the problem domain into smaller elements, is also a crucial step in ensuring data integrity. By approximating the solution using basis functions defined over each element, discretization reduces infinite-dimensional problems to finite-dimensional ones, as shown by the discrete approximation $ u_h(x) = \\sum_{i=1}^N N_i(x) u_i $.\n\nThe discretization process, which involves dividing the problem domain into smaller, manageable subdomains called elements, is critical for numerical computation as it reduces infinite-dimensional problems to finite-dimensional ones. This is achieved through the use of basis functions defined over each element, as expressed by $u_h(x) = \\sum_{i=1}^N N_i(x) u_i$ [arxiv_1712.01211v2, arxiv_2210.16907v1]. A well-constructed mesh, created through the mesh generation procedure, significantly affects the accuracy of the solution, ensuring proper resolution of the solution across the domain [arxiv_2210.16907v1]. The mesh generation procedure is the first step in the finite element method, and the quality of the mesh is essential for achieving accurate solutions.\n\nThe Galerkin method is a fundamental technique for approximating solutions to differential equations by projecting the problem onto a finite-dimensional space. It ensures that the residual of the approximate solution is orthogonal to the test function space, as enforced by the orthogonality condition, which is critical for the stability and convergence of the FEM solution. This approach is widely used due to its stability and accuracy in solving partial differential equations, as stated in [arxiv_1712.01211v2] and [wiki_boris_galerkin]. To ensure convergence, it is essential to verify that the Galerkin method satisfies the orthogonality condition, which can be achieved by checking that the residual is orthogonal to the test function space, as expressed by the equation $ \\mathcal{R}(u_h) = 0 \\quad \\text{for all } v_h \\in V_h $.",
+    "key_equations": [
+      "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
+      "u",
+      "v",
+      "f",
+      "u_h(x) = \\sum_{i=1}^N N_i(x) u_i"
+    ],
+    "citations_used": [
+      "arxiv_1712.01211v2",
+      "arxiv_2210.16907v1",
+      "wiki_boris_galerkin"
+    ],
+    "section_id": "07a2903b-c224-4c6a-ae74-0476d01ab30c",
     "parent_section_ids": [
       "766f2c6c-a4ef-4787-90d7-c8ac99ef7c8c"
     ],
     "generated_from": "split",
-    "status": "needs_generation",
-    "parent_content_reference": "Verification and validation methods are essential components of the finite element procedure. Verification involves checking the accuracy of the numerical solution by comparing it with an exact solution or a known analytical solution. On the other hand, validation involves assessing the accuracy of the numerical solution by comparing it with experimental data or physical measurements. The process of verification and validation is crucial to ensure that the finite element model accurately represe...",
     "subsection_index": 1,
-    "key_equations": [],
-    "citations_used": []
+    "parent_content_reference": "Verification and validation methods are essential components of the finite element procedure. Verification involves checking the accuracy of the numerical solution by comparing it with an exact solution or a known analytical solution. On the other hand, validation involves assessing the accuracy of the numerical solution by comparing it with experimental data or physical measurements. The process of verification and validation is crucial to ensure that the finite element model accurately represe...",
+    "status": "complete"
   },
   {
-    "section_id": "b0345dc9-ef4e-4f64-8d8e-17210eb2df7e",
     "title": "Verification, Validation, and Best Practices: Common Pitfalls and Systematic Approaches to Verification and Validation",
-    "content": "",
+    "content": "Discretization is a critical step in the finite element method, involving the division of the problem domain into smaller, manageable subdomains called elements. This process converts the continuous problem into a discrete system of equations, approximated using basis functions defined over each element. A common pitfall in discretization is the poor quality of the mesh, which significantly affects the accuracy of the solution. The discrete approximation of the exact solution is given by $u_h(x) = \\sum_{i=1}^N N_i(x) u_i$, where $N_i(x)$ are basis functions and $u_i$ are the nodal values. The quality of the mesh and the choice of basis functions are essential in ensuring accurate simulations of physical phenomena.\n\nSystematic approaches to verification and validation in the finite element method involve ensuring the accuracy and reliability of the numerical solution. The weak formulation, a mathematical framework used to transform differential equations into integral equations, is essential for handling complex geometries and boundary conditions. This approach is derived by multiplying the differential equation by a test function and integrating over the domain, as seen in the weak form of Poisson's equation: $ \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx $ [arxiv_1712.01211v2, arxiv_2210.16907v1]. The Galerkin method, a technique for approximating solutions to differential equations, ensures that the residual of the approximate solution is orthogonal to the test function space, forming the basis for many finite element formulations [arxiv_1712.01211v2, wiki_boris_galerkin]. By combining these systematic approaches, finite element practitioners can ensure the accuracy and reliability of their numerical solutions.\n\nThe quality of the mesh significantly affects the accuracy of the solution in the finite element method. A well-constructed mesh ensures proper resolution of the solution across the domain. The mesh generation procedure is the first step in FEM, and it involves dividing the domain into discrete elements of various types, such as triangles or quadrilaterals, depending on the problem geometry. As stated in [arxiv_2210.16907v1], the quality of the mesh is crucial for obtaining accurate numerical results. The Galerkin method, which forms the basis for many finite element formulations, relies on the quality of the mesh to ensure stability and accuracy in solving partial differential equations.",
+    "key_equations": [
+      "u_h(x) = \\sum_{i=1}^N N_i(x) u_i",
+      "N_i(x)",
+      "u_i",
+      "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx"
+    ],
+    "citations_used": [
+      "arxiv_1712.01211v2",
+      "arxiv_2210.16907v1",
+      "wiki_boris_galerkin"
+    ],
+    "section_id": "b0345dc9-ef4e-4f64-8d8e-17210eb2df7e",
     "parent_section_ids": [
       "766f2c6c-a4ef-4787-90d7-c8ac99ef7c8c"
     ],
     "generated_from": "split",
-    "status": "needs_generation",
-    "parent_content_reference": "Verification and validation methods are essential components of the finite element procedure. Verification involves checking the accuracy of the numerical solution by comparing it with an exact solution or a known analytical solution. On the other hand, validation involves assessing the accuracy of the numerical solution by comparing it with experimental data or physical measurements. The process of verification and validation is crucial to ensure that the finite element model accurately represe...",
     "subsection_index": 2,
-    "key_equations": [],
-    "citations_used": []
+    "parent_content_reference": "Verification and validation methods are essential components of the finite element procedure. Verification involves checking the accuracy of the numerical solution by comparing it with an exact solution or a known analytical solution. On the other hand, validation involves assessing the accuracy of the numerical solution by comparing it with experimental data or physical measurements. The process of verification and validation is crucial to ensure that the finite element model accurately represe...",
+    "status": "complete"
   },
   {
-    "section_id": "95da75c2-0837-42d4-9bc8-cb743cc1a92e",
     "title": "Verification, Validation, and Best Practices: Implementing Multiple Verification and Validation Methods",
-    "content": "",
+    "content": "Implementing the weak formulation is crucial for accurate solutions in the finite element method. The weak form of a differential equation, such as Poisson's equation, is derived by multiplying the original PDE by a test function and integrating over the domain. This approach is essential for handling complex geometries and boundary conditions. The weak form of Poisson's equation is given by $ \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx $, as shown in [arxiv_1712.01211v2] and [arxiv_2210.16907v1]. The Galerkin method, which forms the basis for many finite element formulations, ensures that the residual of the approximate solution is orthogonal to the test function space. By implementing the weak formulation and using the Galerkin method, accurate solutions can be obtained, which is critical for the overall FEM result.\n\nOptimizing discretization and mesh generation is crucial for efficient finite element methods (FEM). Discretization involves dividing the problem domain into smaller, manageable subdomains called elements, which converts the continuous problem into a discrete system of equations ($u_h(x) = \\sum_{i=1}^N N_i(x) u_i$) [arxiv_1712.01211v2, arxiv_2210.16907v1]. A well-constructed mesh ensures proper resolution of the solution across the domain, and the quality of the mesh significantly affects the accuracy of the solution [arxiv_2210.16907v1]. The use of curved elements is essential for accurately modeling domains with complex geometries, improving the approximation of boundaries and reducing discretization errors [arxiv_2210.16907v1]. By optimizing discretization and mesh generation, FEM can provide accurate and efficient solutions to complex problems.\n\nChoosing the appropriate Galerkin method for differential equations is crucial for accurate solutions in the finite element method. The Galerkin method ensures that the residual of the approximate solution is orthogonal to the test function space, as expressed by the orthogonality condition $\\mathcal{R}(u_h) = 0 \\quad \\text{for all } v_h \\in V_h$ [arxiv_1712.01211v2]. This approach forms the basis for many finite element formulations and is widely used due to its stability and accuracy in solving partial differential equations [wiki_boris_galerkin]. By selecting the correct Galerkin method, practitioners can ensure that their finite element solutions accurately capture the underlying physics of the problem, leading to reliable and trustworthy results.",
+    "key_equations": [
+      "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
+      "u_h(x) = \\sum_{i=1}^N N_i(x) u_i",
+      "\\mathcal{R}(u_h) = 0 \\quad \\text{for all } v_h \\in V_h"
+    ],
+    "citations_used": [
+      "arxiv_1712.01211v2",
+      "arxiv_2210.16907v1",
+      "wiki_boris_galerkin"
+    ],
+    "section_id": "95da75c2-0837-42d4-9bc8-cb743cc1a92e",
     "parent_section_ids": [
       "766f2c6c-a4ef-4787-90d7-c8ac99ef7c8c"
     ],
     "generated_from": "split",
-    "status": "needs_generation",
-    "parent_content_reference": "Verification and validation methods are essential components of the finite element procedure. Verification involves checking the accuracy of the numerical solution by comparing it with an exact solution or a known analytical solution. On the other hand, validation involves assessing the accuracy of the numerical solution by comparing it with experimental data or physical measurements. The process of verification and validation is crucial to ensure that the finite element model accurately represe...",
     "subsection_index": 3,
-    "key_equations": [],
-    "citations_used": []
+    "parent_content_reference": "Verification and validation methods are essential components of the finite element procedure. Verification involves checking the accuracy of the numerical solution by comparing it with an exact solution or a known analytical solution. On the other hand, validation involves assessing the accuracy of the numerical solution by comparing it with experimental data or physical measurements. The process of verification and validation is crucial to ensure that the finite element model accurately represe...",
+    "status": "complete"
+  },
+  {
+    "title": "Introduction and Scope of the Finite Element Method",
+    "content": "The Finite Element Method transforms differential equations into integral equations through the Weak Formulation, enabling solutions that may not satisfy the original equation. This approach is essential for handling complex geometries and boundary conditions. The weak form of a differential equation, such as Poisson's equation, is derived by multiplying the equation by a test function and integrating over the domain, as shown by the equation $\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx$ [arxiv_1712.01211v2, arxiv_2210.16907v1]. The Galerkin method, a technique for approximating solutions to differential equations, forms the basis for many finite element formulations, ensuring stability and accuracy in solving partial differential equations [arxiv_1712.01211v2, wiki_boris_galerkin].\n\nDiscretization is a crucial step in the Finite Element Method, where the problem domain is divided into smaller elements, converting the continuous problem into a discrete system of equations. This process involves dividing the problem domain into smaller, manageable subdomains called elements, which are then used to approximate the solution using basis functions defined over each element. The solution is represented as $u_h(x) = \\sum_{i=1}^N N_i(x) u_i$ [arxiv_1712.01211v2], [arxiv_2210.16907v1]. Discretization is critical for numerical computation as it reduces infinite-dimensional problems to finite-dimensional ones, enabling the solution of complex problems.\n\nThe Galerkin method is a fundamental technique in the Finite Element Method, used to approximate solutions to differential equations by projecting the problem onto a finite-dimensional space. This method ensures that the residual of the approximate solution is orthogonal to the test function space, forming the basis for many finite element formulations. The Galerkin approach is widely used due to its stability and accuracy in solving partial differential equations, as stated in [arxiv_1712.01211v2] and [wiki_boris_galerkin]. By enforcing an orthogonality condition, the Galerkin method guarantees the stability and convergence of the FEM solution, making it a crucial component of the Finite Element Method.",
+    "key_equations": [
+      "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
+      "u_h(x) = \\sum_{i=1}^N N_i(x) u_i"
+    ],
+    "citations_used": [
+      "arxiv_1712.01211v2",
+      "arxiv_2210.16907v1",
+      "wiki_boris_galerkin"
+    ],
+    "section_id": "0eb3debd-75f1-4302-9715-c7001e35fe41",
+    "generated_from": "writer",
+    "status": "complete"
   }
 ]

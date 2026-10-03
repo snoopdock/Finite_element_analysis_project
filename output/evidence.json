@@ -156,6 +156,64 @@
     }
   },
   {
+    "source_id": "arxiv_1712.01211v2",
+    "url": "https://arxiv.org/pdf/1712.01211v2.pdf",
+    "retrieved_at": "2026-10-03T19:11:06.535150+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "A Unified Study of Continuous and Discontinuous Galerkin Methods",
+    "authors": [
+      "Qingguo Hong",
+      "Fei Wang",
+      "Shuonan Wu",
+      "Jinchao Xu"
+    ],
+    "metadata": {
+      "abstract": "A unified study is presented in this paper for the design and analysis of different finite element methods (FEMs), including conforming and nonconforming FEMs, mixed FEMs, hybrid FEMs,discontinuous Galerkin (DG) methods, hybrid discontinuous Galerkin (HDG) methods and weak Galerkin (WG) methods. Both HDG and WG are shown to admit inf-sup conditions that hold uniformly with respect to both mesh and penalization parameters. In addition, by taking the limit of the stabilization parameters, a WG method is shown to converge to a mixed method whereas an HDG method is shown to converge to a primal method. Furthermore, a special class of DG methods, known as the mixed DG methods, is presented to fill a gap revealed in the unified framework.",
+      "published": "2017-12-04T17:29:26Z",
+      "page_count": 39,
+      "word_count": 16348
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1712.01211v2.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "FEM discontinuous Galerkin methods",
+    "query_contexts": [
+      "FEM discontinuous Galerkin methods"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.672524,
+      "lexical": 0.629584,
+      "source_quality": 0.85,
+      "section_relevance": 0.507944,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "FEM discontinuous Galerkin methods",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.335173,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "FEM gradient discretization method": 0.2125,
+        "FEM discontinuous Galerkin methods": 0.672524,
+        "FEM applications": 0.2125
+      }
+    }
+  },
+  {
     "source_id": "arxiv_1501.01918v1",
     "url": "https://arxiv.org/pdf/1501.01918v1.pdf",
     "retrieved_at": "2026-10-03T19:03:35.077624+00:00",
@@ -209,6 +267,171 @@
         "Crystal plasticity finite element method": 0.2125,
         "Applied element method": 0.2125,
         "Céa's lemma": 0.62141
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2112.01267v1",
+    "url": "https://arxiv.org/pdf/2112.01267v1.pdf",
+    "retrieved_at": "2026-10-03T19:11:06.535150+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Bradley-Terry Modeling with Multiple Game Outcomes with Applications to College Hockey",
+    "authors": [
+      "John T. Whelan",
+      "Jacob E. Klein"
+    ],
+    "metadata": {
+      "abstract": "The Bradley-Terry model has previously been used in both Bayesian and frequentist interpretations to evaluate the strengths of sports teams based on win-loss game results. It has also been extended to handle additional possible results such as ties. We implement a generalization which includes multiple possible outcomes such as wins or losses in regulation, overtime, or shootouts. A natural application is to ice hockey competitions such as international matches, European professional leagues, and NCAA hockey, all of which use a zero-sum point system which values overtime and shootout wins as 1/3 of a win, and overtime and shootout losses as 1/3 of a win. We incorporate this into the probability model, and evaluate the posterior distributions for the associated strength parameters using techniques such as Gaussian expansion about maximum a posteriori estimates, and Hamiltonian Monte Carlo.",
+      "published": "2021-12-02T14:14:43Z",
+      "page_count": 22,
+      "word_count": 9007
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2112.01267v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "FEM applications",
+    "query_contexts": [
+      "FEM applications"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "FEM applications",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.365841,
+        "finite element method verification validation numerical stability": 0.2125,
+        "FEM gradient discretization method": 0.2125,
+        "FEM discontinuous Galerkin methods": 0.2125,
+        "FEM applications": 0.519183
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2210.16907v1",
+    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
+    "retrieved_at": "2026-10-03T19:11:06.535150+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
+    "authors": [
+      "Dan Li",
+      "Chunmei Wang",
+      "Junping Wang"
+    ],
+    "metadata": {
+      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
+      "published": "2022-10-30T18:14:18Z",
+      "page_count": 0,
+      "word_count": 9773
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
+    "full_text_available": true,
+    "status": "cached_full_text",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "FEM discontinuous Galerkin methods",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "FEM gradient discretization method": 0.2125,
+        "FEM discontinuous Galerkin methods": 0.519183,
+        "FEM applications": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "wiki_boris_galerkin",
+    "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
+    "retrieved_at": "2026-10-03T19:11:06.535150+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Boris Galerkin",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "problem in <span class=\"searchmatch\">weak</span> <span class=\"searchmatch\">form</span>. Most well-known in the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> The Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> The streamline upwind Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> (SUPG) The",
+      "word_count": 1835
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_boris_galerkin.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.290841,
+      "lexical": 0.209861,
+      "source_quality": 0.55,
+      "section_relevance": 0.169315,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "FEM discontinuous Galerkin methods",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "FEM gradient discretization method": 0.1375,
+        "FEM discontinuous Galerkin methods": 0.290841,
+        "FEM applications": 0.1375
       }
     }
   }
