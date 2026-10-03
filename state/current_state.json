@@ -1,0 +1,684 @@
+{
+  "schema_version": 6,
+  "topic": "Finite Element Method Theory Implementation and Modeling Rules",
+  "objective": "Produce a comprehensive technical guideline explaining how the Finite Element Method works\nincluding mathematical foundation, step-by-step procedure, and rules for modeling physical phenomena.\n",
+  "cycle": 1,
+  "iteration": 1,
+  "last_run": "2026-10-03T18:07:57.223240+00:00",
+  "last_run_status": "partial",
+  "knowledge_base": {},
+  "knowledge_graph": {
+    "concepts": {},
+    "propositions": {},
+    "relationships": {},
+    "relationship_candidates": {},
+    "concept_history": [],
+    "proposition_history": []
+  },
+  "knowledge_graph_violations": [],
+  "domain_semantic_model": {
+    "schema_version": 1,
+    "equation_candidates": {},
+    "equations": {}
+  },
+  "semantic_candidate_document_id": "743c2aa8-790e-5a15-b63b-6758c778b2e0",
+  "sections": [
+    {
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "content": "The Strong Form is a fundamental concept in the mathematical foundation of numerical methods, particularly in the context of partial differential equations. However, due to the lack of specific information, a detailed definition, assumptions, and mathematical derivation of the Strong Form cannot be provided. In general, the Strong Form is often associated with the Galerkin method, which is a weighted residual technique used to approximate the solution of a differential equation. The Galerkin method involves projecting the residual of the differential equation onto a set of basis functions, resulting in a system of algebraic equations that can be solved numerically. Further discussion on the Strong Form and its mathematical derivation is not available in the provided information.\n\nThe Weak Form of a partial differential equation is a variational formulation that involves the use of bilinear forms. A bilinear form $a(u, v)$ is a function that takes two functions $u$ and $v$ as input and produces a scalar value. In the context of the Weak Form, the bilinear form is used to define a weak equation that is equivalent to the original strong equation. The boundary conditions of the problem are also incorporated into the Weak Form, which typically involves the use of a linear functional $L(v)$ that represents the boundary conditions. The Weak Form provides a more flexible and general framework for solving partial differential equations, and it serves as the foundation for the Galerkin method.\n\nThe Galerkin Method is a discretization technique that utilizes weighted residuals to approximate the solution of a partial differential equation. In this method, the residual of the weak form is weighted by a set of basis functions, and the resulting equation is solved to obtain an approximate solution. The Galerkin Method is based on the concept of orthogonality, where the residual is orthogonal to the subspace of the basis functions. This property ensures that the approximate solution satisfies the weak form of the equation, and the method is widely used in various fields, including fluid dynamics and structural mechanics.",
+      "key_equations": [
+        "a(u, v)",
+        "u",
+        "v",
+        "L(v)"
+      ],
+      "citations_used": [],
+      "section_id": "f31bb7bd-233f-41b9-b3be-4b472bba7534",
+      "generated_from": "writer",
+      "status": "complete",
+      "parent_section_ids": []
+    },
+    {
+      "title": "The Finite Element Procedure",
+      "content": "The Finite Element Procedure is a numerical method used to solve partial differential equations. It involves discretizing the domain into smaller elements, typically using a mesh of triangles or quadrilaterals. Each element is associated with a set of unknowns, such as nodal values, which are used to approximate the solution. The Finite Element Procedure typically involves three main steps: assembling the element matrices, applying boundary conditions, and solving the resulting system of equations. This process allows for the approximation of complex solutions to partial differential equations, enabling the analysis of a wide range of physical phenomena.\n\nDiscretization and mesh generation are crucial steps in the Finite Element Procedure. The domain is divided into smaller elements, typically using a mesh of triangles or quadrilaterals, to approximate the solution of the partial differential equation. The choice of mesh type and density significantly affects the accuracy and computational efficiency of the method. A finer mesh can provide a more accurate representation of the solution but increases the computational cost. The mesh generation process involves creating a set of nodes and elements that satisfy the desired accuracy and computational requirements.\n\nThe solution and postprocessing stages in the Finite Element Procedure involve obtaining the approximate solution from the system of equations obtained after applying the Galerkin method. This is typically achieved through the use of numerical methods such as Gaussian elimination or iterative solvers. Once the solution is obtained, postprocessing techniques are employed to extract meaningful information from the numerical solution, such as visualizing the solution distribution or computing derived quantities like stresses and strains. These postprocessing steps are essential for interpreting the results and drawing conclusions from the Finite Element analysis.",
+      "key_equations": [],
+      "citations_used": [],
+      "section_id": "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4",
+      "generated_from": "writer",
+      "status": "complete",
+      "parent_section_ids": []
+    },
+    {
+      "section_id": "49944ad3-4833-462a-a665-96e9788e181a",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Choosing Appropriate Material Models for FEM Simulations",
+      "content": "",
+      "parent_section_ids": [
+        "1d99bea0-81e8-4aba-af72-c89a77483a42"
+      ],
+      "generated_from": "split",
+      "status": "needs_generation",
+      "parent_content_reference": "When selecting appropriate material models for Finite Element Method (FEM) simulations, it is essential to consider the specific characteristics of the material being modeled. The choice of material model depends on the type of material, its behavior under different loading conditions, and the accuracy required for the simulation. For example, in the case of linear elastic materials, a simple Hooke's law-based material model may be sufficient. However, for more complex materials such as nonlinea...",
+      "subsection_index": 0,
+      "key_equations": [],
+      "citations_used": []
+    },
+    {
+      "section_id": "2d1385c0-1e74-4997-b159-f89379263873",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Boundary Conditions and Constraints in FEM Modeling",
+      "content": "",
+      "parent_section_ids": [
+        "1d99bea0-81e8-4aba-af72-c89a77483a42"
+      ],
+      "generated_from": "split",
+      "status": "needs_generation",
+      "parent_content_reference": "When selecting appropriate material models for Finite Element Method (FEM) simulations, it is essential to consider the specific characteristics of the material being modeled. The choice of material model depends on the type of material, its behavior under different loading conditions, and the accuracy required for the simulation. For example, in the case of linear elastic materials, a simple Hooke's law-based material model may be sufficient. However, for more complex materials such as nonlinea...",
+      "subsection_index": 1,
+      "key_equations": [],
+      "citations_used": []
+    },
+    {
+      "section_id": "a415e864-688a-4fd4-8269-b230c44b5e3c",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Meshing and Discretization Techniques for Accurate FEM Results",
+      "content": "",
+      "parent_section_ids": [
+        "1d99bea0-81e8-4aba-af72-c89a77483a42"
+      ],
+      "generated_from": "split",
+      "status": "needs_generation",
+      "parent_content_reference": "When selecting appropriate material models for Finite Element Method (FEM) simulations, it is essential to consider the specific characteristics of the material being modeled. The choice of material model depends on the type of material, its behavior under different loading conditions, and the accuracy required for the simulation. For example, in the case of linear elastic materials, a simple Hooke's law-based material model may be sufficient. However, for more complex materials such as nonlinea...",
+      "subsection_index": 2,
+      "key_equations": [],
+      "citations_used": []
+    },
+    {
+      "title": "Verification, Validation, and Best Practices",
+      "content": "Verification and validation are two distinct concepts in the context of numerical methods, particularly in the Finite Element Method (FEM). Verification refers to the process of ensuring that the numerical solution accurately represents the mathematical model, often through the use of analytical solutions or benchmark problems. On the other hand, validation involves assessing the accuracy of the numerical solution in relation to real-world physical phenomena, typically through comparison with experimental data or observational results. Understanding the difference between verification and validation is crucial in ensuring the reliability and applicability of numerical simulations.\n\nTo establish best practices for data integrity and accuracy, it is essential to implement rigorous verification and validation procedures. This involves not only ensuring that the numerical solution accurately represents the mathematical formulation, but also that the results obtained are reliable and consistent with the underlying physical phenomena being modeled. By adopting a systematic approach to verification and validation, researchers and practitioners can increase confidence in their results and minimize the risk of errors or inaccuracies.\n\nTo ensure reliable results, it is crucial to implement quality control measures throughout the Finite Element Method (FEM) process. This involves establishing a clear and transparent documentation of the simulation setup, including the selection of material models and the definition of boundary conditions. Furthermore, it is essential to implement regular checks and balances to verify the accuracy of the numerical solution, such as comparing the results with analytical solutions or experimental data. By following these best practices, researchers and engineers can increase the confidence in their results and ensure that their simulations accurately represent the physical phenomena being modeled.",
+      "key_equations": [],
+      "citations_used": [],
+      "section_id": "efa5e3e7-12da-4869-b0d9-5617bb7930f3",
+      "generated_from": "writer",
+      "status": "complete",
+      "parent_section_ids": []
+    }
+  ],
+  "processed_sources": [
+    "arxiv_2210.16907v1",
+    "arxiv_2304.12030v2",
+    "arxiv_cs_0609119v2",
+    "wiki_flexibility_method"
+  ],
+  "processed_sources_extracted": [],
+  "iteration_history_data": {
+    "audits": {
+      "f31bb7bd-233f-41b9-b3be-4b472bba7534": [
+        true
+      ],
+      "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4": [
+        true
+      ],
+      "1d99bea0-81e8-4aba-af72-c89a77483a42": [
+        true
+      ],
+      "efa5e3e7-12da-4869-b0d9-5617bb7930f3": [
+        true
+      ]
+    },
+    "anomalies": {
+      "transition:a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4:1d99bea0-81e8-4aba-af72-c89a77483a42": 1,
+      "transition:1d99bea0-81e8-4aba-af72-c89a77483a42:efa5e3e7-12da-4869-b0d9-5617bb7930f3": 1
+    },
+    "anomaly_counts": {
+      "transition:a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4:1d99bea0-81e8-4aba-af72-c89a77483a42": 1,
+      "transition:1d99bea0-81e8-4aba-af72-c89a77483a42:efa5e3e7-12da-4869-b0d9-5617bb7930f3": 1,
+      "too_simple:1d99bea0-81e8-4aba-af72-c89a77483a42": 0
+    },
+    "section_titles": {
+      "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method": "f31bb7bd-233f-41b9-b3be-4b472bba7534",
+      "The Finite Element Procedure": "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4",
+      "Rules for Modeling Physical Phenomena with FEM": "1d99bea0-81e8-4aba-af72-c89a77483a42",
+      "Verification, Validation, and Best Practices": "efa5e3e7-12da-4869-b0d9-5617bb7930f3",
+      "Rules for Modeling Physical Phenomena with FEM: Choosing Appropriate Material Models for FEM Simulations": "49944ad3-4833-462a-a665-96e9788e181a",
+      "Rules for Modeling Physical Phenomena with FEM: Boundary Conditions and Constraints in FEM Modeling": "2d1385c0-1e74-4997-b159-f89379263873",
+      "Rules for Modeling Physical Phenomena with FEM: Meshing and Discretization Techniques for Accurate FEM Results": "a415e864-688a-4fd4-8269-b230c44b5e3c"
+    }
+  },
+  "convergence_diagnostics": {
+    "eta_variance": 0.0014799999999999987,
+    "invariant_violations": 0,
+    "adjust_actions": 0,
+    "consecutive_clean_cycles": 0,
+    "incomplete_sections": 0,
+    "unstable_sections": 0,
+    "reading_coverage": 0.0,
+    "citation_coverage": 0.0,
+    "lexical_support_coverage": 0.0,
+    "invalid_citation_sections": 0,
+    "converged": false,
+    "reasons": [
+      "citation_evidence_unavailable",
+      "sufficient_reading"
+    ]
+  },
+  "retrieval_report": {
+    "status": "partial_failure",
+    "retrieved_at": "2026-10-03T18:07:19.999048+00:00",
+    "query_count": 5,
+    "providers": {
+      "arxiv": {
+        "status": "success",
+        "attempts": [
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "FEM flexibility method",
+            "provider": "arxiv"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "FEM vs FDM",
+            "provider": "arxiv"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "finite element method mathematical foundation weak form Galerkin method",
+            "provider": "arxiv"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "finite element method practical implementation modeling rules",
+            "provider": "arxiv"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "finite element method verification validation numerical stability",
+            "provider": "arxiv"
+          }
+        ],
+        "queries_attempted": 5,
+        "returned_records": 10
+      },
+      "semantic_scholar": {
+        "status": "rate_limited",
+        "attempts": [
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "FEM flexibility method",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "FEM vs FDM",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "finite element method mathematical foundation weak form Galerkin method",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "finite element method practical implementation modeling rules",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "finite element method verification validation numerical stability",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          }
+        ],
+        "queries_attempted": 5,
+        "returned_records": 0
+      },
+      "wikipedia": {
+        "status": "success",
+        "attempts": [
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "FEM flexibility method",
+            "provider": "wikipedia"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "FEM vs FDM",
+            "provider": "wikipedia"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "finite element method mathematical foundation weak form Galerkin method",
+            "provider": "wikipedia"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "finite element method practical implementation modeling rules",
+            "provider": "wikipedia"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "finite element method verification validation numerical stability",
+            "provider": "wikipedia"
+          }
+        ],
+        "queries_attempted": 5,
+        "returned_records": 10
+      }
+    },
+    "returned_records": 15,
+    "selected_records": 4
+  },
+  "retrieval_history": {
+    "events": [
+      {
+        "event_id": "retrieval-77febba0-04ac-4916-936d-db410c12d5ec",
+        "cycle": 0,
+        "retrieved_at": "2026-10-03T18:07:40.037640+00:00",
+        "query_scope": [],
+        "report": {
+          "status": "partial_failure",
+          "retrieved_at": "2026-10-03T18:07:19.999048+00:00",
+          "query_count": 5,
+          "providers": {
+            "arxiv": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "FEM flexibility method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "FEM vs FDM",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "arxiv"
+                }
+              ],
+              "queries_attempted": 5,
+              "returned_records": 10
+            },
+            "semantic_scholar": {
+              "status": "rate_limited",
+              "attempts": [
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "FEM flexibility method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "FEM vs FDM",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method practical implementation modeling rules",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method verification validation numerical stability",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                }
+              ],
+              "queries_attempted": 5,
+              "returned_records": 0
+            },
+            "wikipedia": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "FEM flexibility method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "FEM vs FDM",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "wikipedia"
+                }
+              ],
+              "queries_attempted": 5,
+              "returned_records": 10
+            }
+          },
+          "returned_records": 15,
+          "selected_records": 4
+        },
+        "acquisition_assessment": {
+          "status": "partial_provider_availability",
+          "operational_status": "partial_failure",
+          "available_provider_count": 2,
+          "unavailable_provider_count": 1,
+          "returned_records": 15,
+          "selected_records": 4
+        },
+        "schema_version": 1
+      }
+    ]
+  },
+  "last_budget_check": {
+    "time": "2026-10-03T18:07:15.583453+00:00",
+    "type": "local",
+    "message": "Local limit: 20 calls"
+  },
+  "last_writing_decisions": [
+    {
+      "section_id": null,
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "eta": 0.9,
+      "priority": 0.9,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": null,
+      "title": "The Finite Element Procedure",
+      "eta": 0.86,
+      "priority": 0.86,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": null,
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.8400000000000001,
+      "priority": 0.8400000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": null,
+      "title": "Verification, Validation, and Best Practices",
+      "eta": 0.8200000000000001,
+      "priority": 0.8200000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": null,
+      "title": "Introduction and Scope of the Finite Element Method",
+      "eta": 0.8,
+      "priority": 0.8,
+      "selected": false,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    }
+  ],
+  "decision_history": [
+    {
+      "section_id": null,
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "eta": 0.9,
+      "priority": 0.9,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "78789e7b3fa53f6899a74c682e942cf98b2a27c451dc75190e50534f1a310550"
+    },
+    {
+      "section_id": null,
+      "title": "The Finite Element Procedure",
+      "eta": 0.86,
+      "priority": 0.86,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "b12aa7937e8f7d314985d2a3e15de5c15e80f9a061de9f55ac56bcd349611372"
+    },
+    {
+      "section_id": null,
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.8400000000000001,
+      "priority": 0.8400000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "0217a0aa44c2fad199570cb5573f73cec02272ae13b606d46b126a16edbfac60"
+    },
+    {
+      "section_id": null,
+      "title": "Verification, Validation, and Best Practices",
+      "eta": 0.8200000000000001,
+      "priority": 0.8200000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "b7a4927a9eccc46207fb5c952752c81275aca9d57975cf4c10bb596c22a10652"
+    },
+    {
+      "section_id": null,
+      "title": "Introduction and Scope of the Finite Element Method",
+      "eta": 0.8,
+      "priority": 0.8,
+      "selected": false,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "a82d8bb915c02bccef85cc2b18e49e547eec4a874f5e0e124362f6db2aa794d7"
+    }
+  ],
+  "last_semantic_review": {
+    "enabled": false,
+    "claims_checked": 0,
+    "claims_supported": 0,
+    "claims_contradicted": 0,
+    "claims_insufficient": 0,
+    "verification_skipped": true,
+    "reports": []
+  },
+  "last_perspective_analysis": {
+    "jobs_checked": 0,
+    "relationships_added": 0,
+    "reports": []
+  },
+  "pending_evidence_queries": [],
+  "last_correction_plan": {
+    "evidence_queries": [],
+    "perspective_jobs": [],
+    "rewrite_jobs": [],
+    "query_count": 0,
+    "perspective_count": 0,
+    "rewrite_count": 0
+  },
+  "last_correction_results": [],
+  "last_semantic_feedback": {
+    "sections": {}
+  },
+  "last_adjustment_decision": {
+    "action": "split_section",
+    "section_id": "1d99bea0-81e8-4aba-af72-c89a77483a42",
+    "section_ids": [],
+    "reason": "Section has 313 words",
+    "adjustment_score": {
+      "severity": 0.95,
+      "persistence": 0.0,
+      "cost": 0.75,
+      "score": 0.5125
+    }
+  },
+  "semantic_candidate_status": {
+    "status": "candidate",
+    "authoritative_for_rendering": false,
+    "sections": [
+      {
+        "section_id": "f31bb7bd-233f-41b9-b3be-4b472bba7534",
+        "semantic_marker_count": 0,
+        "annotated_equation_ids": [],
+        "annotated_source_ids": [],
+        "diagnostics": []
+      },
+      {
+        "section_id": "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4",
+        "semantic_marker_count": 0,
+        "annotated_equation_ids": [],
+        "annotated_source_ids": [],
+        "diagnostics": []
+      },
+      {
+        "section_id": "49944ad3-4833-462a-a665-96e9788e181a",
+        "semantic_marker_count": 0,
+        "annotated_equation_ids": [],
+        "annotated_source_ids": [],
+        "diagnostics": []
+      },
+      {
+        "section_id": "2d1385c0-1e74-4997-b159-f89379263873",
+        "semantic_marker_count": 0,
+        "annotated_equation_ids": [],
+        "annotated_source_ids": [],
+        "diagnostics": []
+      },
+      {
+        "section_id": "a415e864-688a-4fd4-8269-b230c44b5e3c",
+        "semantic_marker_count": 0,
+        "annotated_equation_ids": [],
+        "annotated_source_ids": [],
+        "diagnostics": []
+      },
+      {
+        "section_id": "efa5e3e7-12da-4869-b0d9-5617bb7930f3",
+        "semantic_marker_count": 0,
+        "annotated_equation_ids": [],
+        "annotated_source_ids": [],
+        "diagnostics": []
+      }
+    ],
+    "semantic_marker_count": 0
+  },
+  "model_usage": {
+    "total_calls": 19,
+    "logical_calls": 19,
+    "successful_calls": 19,
+    "failed_calls": 0,
+    "http_attempts": 19,
+    "per_model": {
+      "@cf/meta/llama-3.1-8b-instruct-fast": 17,
+      "@cf/qwen/qwen3-30b-a3b-fp8": 1,
+      "@cf/meta/llama-3.2-3b-instruct": 1
+    },
+    "max_logical_calls": 100,
+    "extraction_stats": {
+      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 17,
+      "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8:known_patterns": 1,
+      "cloudflare:@cf/meta/llama-3.2-3b-instruct:known_patterns": 1
+    },
+    "learned_paths": {
+      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast": [
+        [
+          "result",
+          "choices",
+          0,
+          "message",
+          "content"
+        ]
+      ],
+      "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8": [
+        [
+          "result",
+          "choices",
+          0,
+          "message",
+          "content"
+        ]
+      ],
+      "cloudflare:@cf/meta/llama-3.2-3b-instruct": [
+        [
+          "result",
+          "choices",
+          0,
+          "message",
+          "content"
+        ]
+      ]
+    }
+  },
+  "parser_stats": {
+    "cloudflare:strict": 3,
+    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 4
+  }
+}

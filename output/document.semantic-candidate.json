@@ -1,0 +1,163 @@
+{
+  "type": "document",
+  "document_id": "743c2aa8-790e-5a15-b63b-6758c778b2e0",
+  "version": 1,
+  "children": [
+    {
+      "type": "section",
+      "section_id": "f31bb7bd-233f-41b9-b3be-4b472bba7534",
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "children": [
+        {
+          "type": "paragraph",
+          "inline_content": [
+            {
+              "type": "text",
+              "text": "The Strong Form is a fundamental concept in the mathematical foundation of numerical methods, particularly in the context of partial differential equations. However, due to the lack of specific information, a detailed definition, assumptions, and mathematical derivation of the Strong Form cannot be provided. In general, the Strong Form is often associated with the Galerkin method, which is a weighted residual technique used to approximate the solution of a differential equation. The Galerkin method involves projecting the residual of the differential equation onto a set of basis functions, resulting in a system of algebraic equations that can be solved numerically. Further discussion on the Strong Form and its mathematical derivation is not available in the provided information.\n\nThe Weak Form of a partial differential equation is a variational formulation that involves the use of bilinear forms. A bilinear form $a(u, v)$ is a function that takes two functions $u$ and $v$ as input and produces a scalar value. In the context of the Weak Form, the bilinear form is used to define a weak equation that is equivalent to the original strong equation. The boundary conditions of the problem are also incorporated into the Weak Form, which typically involves the use of a linear functional $L(v)$ that represents the boundary conditions. The Weak Form provides a more flexible and general framework for solving partial differential equations, and it serves as the foundation for the Galerkin method.\n\nThe Galerkin Method is a discretization technique that utilizes weighted residuals to approximate the solution of a partial differential equation. In this method, the residual of the weak form is weighted by a set of basis functions, and the resulting equation is solved to obtain an approximate solution. The Galerkin Method is based on the concept of orthogonality, where the residual is orthogonal to the subspace of the basis functions. This property ensures that the approximate solution satisfies the weak form of the equation, and the method is widely used in various fields, including fluid dynamics and structural mechanics."
+            }
+          ]
+        }
+      ],
+      "parent_section_ids": [],
+      "status": "complete",
+      "generated_from": "writer"
+    },
+    {
+      "type": "section",
+      "section_id": "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4",
+      "title": "The Finite Element Procedure",
+      "children": [
+        {
+          "type": "paragraph",
+          "inline_content": [
+            {
+              "type": "text",
+              "text": "The Finite Element Procedure is a numerical method used to solve partial differential equations. It involves discretizing the domain into smaller elements, typically using a mesh of triangles or quadrilaterals. Each element is associated with a set of unknowns, such as nodal values, which are used to approximate the solution. The Finite Element Procedure typically involves three main steps: assembling the element matrices, applying boundary conditions, and solving the resulting system of equations. This process allows for the approximation of complex solutions to partial differential equations, enabling the analysis of a wide range of physical phenomena.\n\nDiscretization and mesh generation are crucial steps in the Finite Element Procedure. The domain is divided into smaller elements, typically using a mesh of triangles or quadrilaterals, to approximate the solution of the partial differential equation. The choice of mesh type and density significantly affects the accuracy and computational efficiency of the method. A finer mesh can provide a more accurate representation of the solution but increases the computational cost. The mesh generation process involves creating a set of nodes and elements that satisfy the desired accuracy and computational requirements.\n\nThe solution and postprocessing stages in the Finite Element Procedure involve obtaining the approximate solution from the system of equations obtained after applying the Galerkin method. This is typically achieved through the use of numerical methods such as Gaussian elimination or iterative solvers. Once the solution is obtained, postprocessing techniques are employed to extract meaningful information from the numerical solution, such as visualizing the solution distribution or computing derived quantities like stresses and strains. These postprocessing steps are essential for interpreting the results and drawing conclusions from the Finite Element analysis."
+            }
+          ]
+        }
+      ],
+      "parent_section_ids": [],
+      "status": "complete",
+      "generated_from": "writer"
+    },
+    {
+      "type": "section",
+      "section_id": "49944ad3-4833-462a-a665-96e9788e181a",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Choosing Appropriate Material Models for FEM Simulations",
+      "children": [],
+      "parent_section_ids": [
+        "1d99bea0-81e8-4aba-af72-c89a77483a42"
+      ],
+      "status": "needs_generation",
+      "generated_from": "split",
+      "subsection_index": 0
+    },
+    {
+      "type": "section",
+      "section_id": "2d1385c0-1e74-4997-b159-f89379263873",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Boundary Conditions and Constraints in FEM Modeling",
+      "children": [],
+      "parent_section_ids": [
+        "1d99bea0-81e8-4aba-af72-c89a77483a42"
+      ],
+      "status": "needs_generation",
+      "generated_from": "split",
+      "subsection_index": 1
+    },
+    {
+      "type": "section",
+      "section_id": "a415e864-688a-4fd4-8269-b230c44b5e3c",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Meshing and Discretization Techniques for Accurate FEM Results",
+      "children": [],
+      "parent_section_ids": [
+        "1d99bea0-81e8-4aba-af72-c89a77483a42"
+      ],
+      "status": "needs_generation",
+      "generated_from": "split",
+      "subsection_index": 2
+    },
+    {
+      "type": "section",
+      "section_id": "efa5e3e7-12da-4869-b0d9-5617bb7930f3",
+      "title": "Verification, Validation, and Best Practices",
+      "children": [
+        {
+          "type": "paragraph",
+          "inline_content": [
+            {
+              "type": "text",
+              "text": "Verification and validation are two distinct concepts in the context of numerical methods, particularly in the Finite Element Method (FEM). Verification refers to the process of ensuring that the numerical solution accurately represents the mathematical model, often through the use of analytical solutions or benchmark problems. On the other hand, validation involves assessing the accuracy of the numerical solution in relation to real-world physical phenomena, typically through comparison with experimental data or observational results. Understanding the difference between verification and validation is crucial in ensuring the reliability and applicability of numerical simulations.\n\nTo establish best practices for data integrity and accuracy, it is essential to implement rigorous verification and validation procedures. This involves not only ensuring that the numerical solution accurately represents the mathematical formulation, but also that the results obtained are reliable and consistent with the underlying physical phenomena being modeled. By adopting a systematic approach to verification and validation, researchers and practitioners can increase confidence in their results and minimize the risk of errors or inaccuracies.\n\nTo ensure reliable results, it is crucial to implement quality control measures throughout the Finite Element Method (FEM) process. This involves establishing a clear and transparent documentation of the simulation setup, including the selection of material models and the definition of boundary conditions. Furthermore, it is essential to implement regular checks and balances to verify the accuracy of the numerical solution, such as comparing the results with analytical solutions or experimental data. By following these best practices, researchers and engineers can increase the confidence in their results and ensure that their simulations accurately represent the physical phenomena being modeled."
+            }
+          ]
+        }
+      ],
+      "parent_section_ids": [],
+      "status": "complete",
+      "generated_from": "writer"
+    }
+  ],
+  "metadata": {
+    "publication_role": "semantic_candidate",
+    "authoritative_for_rendering": false,
+    "shadow_report": {
+      "status": "candidate",
+      "authoritative_for_rendering": false,
+      "sections": [
+        {
+          "section_id": "f31bb7bd-233f-41b9-b3be-4b472bba7534",
+          "semantic_marker_count": 0,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [],
+          "diagnostics": []
+        },
+        {
+          "section_id": "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4",
+          "semantic_marker_count": 0,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [],
+          "diagnostics": []
+        },
+        {
+          "section_id": "49944ad3-4833-462a-a665-96e9788e181a",
+          "semantic_marker_count": 0,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [],
+          "diagnostics": []
+        },
+        {
+          "section_id": "2d1385c0-1e74-4997-b159-f89379263873",
+          "semantic_marker_count": 0,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [],
+          "diagnostics": []
+        },
+        {
+          "section_id": "a415e864-688a-4fd4-8269-b230c44b5e3c",
+          "semantic_marker_count": 0,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [],
+          "diagnostics": []
+        },
+        {
+          "section_id": "efa5e3e7-12da-4869-b0d9-5617bb7930f3",
+          "semantic_marker_count": 0,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [],
+          "diagnostics": []
+        }
+      ],
+      "semantic_marker_count": 0
+    }
+  },
+  "source_snapshot": {
+    "legacy_section_ids": [
+      "f31bb7bd-233f-41b9-b3be-4b472bba7534",
+      "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4",
+      "49944ad3-4833-462a-a665-96e9788e181a",
+      "2d1385c0-1e74-4997-b159-f89379263873",
+      "a415e864-688a-4fd4-8269-b230c44b5e3c",
+      "efa5e3e7-12da-4869-b0d9-5617bb7930f3"
+    ]
+  }
+}
