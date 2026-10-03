@@ -1,5 +1,178 @@
 [
   {
+    "source_id": "s2_0fb362f2f8848d66b6db1312e6826c995530007f",
+    "url": "https://www.semanticscholar.org/paper/0fb362f2f8848d66b6db1312e6826c995530007f",
+    "retrieved_at": "2026-10-03T19:48:54.000407+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "scaled boundary finite element method",
+    "source_type": "academic",
+    "content_type": "text/plain",
+    "title": "Improved double-phase-field algorithm based on scaled boundary finite element method for rock-like materials",
+    "authors": [
+      "Yue Zhuo",
+      "De-Gao Zou",
+      "Kai Chen",
+      "Y. Qu",
+      "Guo-Yang Yi",
+      "Shanlin Tian"
+    ],
+    "metadata": {
+      "abstract": "",
+      "year": 2025,
+      "citation_count": 40,
+      "word_count": 0,
+      "page_count": null,
+      "open_access_pdf_available": false,
+      "full_text_available": false,
+      "full_text_status": "abstract_only"
+    },
+    "full_text_path": null,
+    "status": "abstract_only",
+    "query_contexts": [
+      "scaled boundary finite element method"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.825865,
+      "lexical": 0.839445,
+      "source_quality": 0.85,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "scaled boundary finite element method",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Cea's lemma finite element method": 0.2125,
+        "Loubignac iteration finite element method": 0.2125,
+        "scaled boundary finite element method": 0.825865
+      }
+    }
+  },
+  {
+    "source_id": "s2_4e7432623a977f5f79172d5eb5d9435ce62007d3",
+    "url": "https://www.semanticscholar.org/paper/4e7432623a977f5f79172d5eb5d9435ce62007d3",
+    "retrieved_at": "2026-10-03T19:48:54.000407+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "scaled boundary finite element method",
+    "source_type": "academic",
+    "content_type": "text/plain",
+    "title": "Scaled Boundary Finite Element Method",
+    "authors": [
+      "D. Abend"
+    ],
+    "metadata": {
+      "abstract": "",
+      "year": 2016,
+      "citation_count": 1,
+      "word_count": 0,
+      "page_count": null,
+      "open_access_pdf_available": false,
+      "full_text_available": false,
+      "full_text_status": "abstract_only"
+    },
+    "full_text_path": null,
+    "status": "abstract_only",
+    "query_contexts": [
+      "scaled boundary finite element method"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.825865,
+      "lexical": 0.839445,
+      "source_quality": 0.85,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "scaled boundary finite element method",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Cea's lemma finite element method": 0.2125,
+        "Loubignac iteration finite element method": 0.2125,
+        "scaled boundary finite element method": 0.825865
+      }
+    }
+  },
+  {
+    "source_id": "wiki_loubignac_iteration",
+    "url": "https://en.wikipedia.org/wiki/Loubignac_iteration",
+    "retrieved_at": "2026-10-03T19:48:54.000407+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Loubignac iteration",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "mathematics, <span class=\"searchmatch\">Loubignac</span> <span class=\"searchmatch\">iteration</span> is an <span class=\"searchmatch\">iterative</span> <span class=\"searchmatch\">method</span> in <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">methods</span>. It gives continuous stress field. It is named after Gilles <span class=\"searchmatch\">Loubignac</span>, who published",
+      "word_count": 35
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_loubignac_iteration.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Loubignac iteration finite element method",
+    "query_contexts": [
+      "Loubignac iteration finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Loubignac iteration finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Cea's lemma finite element method": 0.1375,
+        "Loubignac iteration finite element method": 0.750865,
+        "scaled boundary finite element method": 0.1375
+      }
+    }
+  },
+  {
     "source_id": "wiki_mixed_finite_element_method",
     "url": "https://en.wikipedia.org/wiki/Mixed_finite_element_method",
     "retrieved_at": "2026-10-03T19:37:05.186779+00:00",
@@ -48,6 +221,58 @@
         "Finite Element Method with Energy Minimization": 0.1375,
         "Mixed Finite Element Method": 0.750865,
         "Scaled Boundary Finite Element Method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_c_a_s_lemma",
+    "url": "https://en.wikipedia.org/wiki/Céa's_lemma",
+    "retrieved_at": "2026-10-03T19:48:54.000407+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Céa's lemma",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "<span class=\"searchmatch\">Céa&#039;s</span> <span class=\"searchmatch\">lemma</span> is a <span class=\"searchmatch\">lemma</span> in mathematics. Introduced by Jean <span class=\"searchmatch\">Céa</span> in his Ph.D. dissertation, it is an important tool for proving error estimates for the finite",
+      "word_count": 2163
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_c_a_s_lemma.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Cea's lemma finite element method",
+    "query_contexts": [
+      "Cea's lemma finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.54641,
+      "lexical": 0.55963,
+      "source_quality": 0.55,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Cea's lemma finite element method",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Cea's lemma finite element method": 0.54641,
+        "Loubignac iteration finite element method": 0.1375,
+        "scaled boundary finite element method": 0.1375
       }
     }
   },

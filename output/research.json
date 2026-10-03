@@ -6,7 +6,8 @@
       "mathematical_formulation": "\\begin{cases} \\mathbf{K} \\mathbf{u} + \\mathbf{B}^T \\boldsymbol{\\lambda} = \\mathbf{f} \\\\ \\mathbf{B} \\mathbf{u} = \\mathbf{0} \\end{cases}",
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "concept_id": "5c917ca4-f7cb-493e-b664-577da184efd9"
     },
     {
       "name": "Primal Finite Element Method",
@@ -14,6 +15,23 @@
       "mathematical_formulation": "\\mathbf{K} \\mathbf{u} = \\mathbf{f}",
       "source_ids": [
         "wiki_mixed_finite_element_method"
+      ],
+      "concept_id": "8589a043-fc12-4793-bb6b-d3be91ce0fd9"
+    },
+    {
+      "name": "Céa's Lemma",
+      "explanation": "Céa's Lemma provides a theoretical foundation for analyzing errors in finite element methods applied to elliptic partial differential equations. It establishes that the discrete solution in a finite-dimensional subspace approximates the true solution in a Hilbert space. The lemma relies on the properties of continuity and coercivity of the bilinear form, ensuring the existence and uniqueness of solutions. This concept is critical for proving convergence and stability of finite element approximations.",
+      "mathematical_formulation": "Let $ V $ be a Hilbert space with norm $ \\|\\cdot\\| $. For a bilinear form $ a: V \\times V \\to \\mathbb{R} $ satisfying $ |a(v, w)| \\leq \\gamma \\|v\\| \\|w\\| $ (continuity) and $ a(v, v) \\geq \\alpha \\|v\\|^2 $ (coercivity), and a bounded linear functional $ L: V \\to \\mathbb{R} $, the solution $ u \\in V $ to $ a(u, v) = L(v) $ for all $ v \\in V $ is approximated by $ u_h \\in V_h $, a subspace of $ V $.",
+      "source_ids": [
+        "wiki_c_a_s_lemma"
+      ]
+    },
+    {
+      "name": "Loubignac Iteration",
+      "explanation": "Loubignac iteration is an iterative finite element method designed to produce a continuous stress field. It is particularly useful in problems requiring smooth stress distributions, such as in solid mechanics. The method iteratively refines solutions to satisfy equilibrium and compatibility conditions. Named after Gilles Loubignac, it contributes to improving the accuracy of stress approximations in finite element analysis.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_loubignac_iteration"
       ]
     }
   ],
@@ -27,7 +45,8 @@
       ],
       "source_ids": [
         "arxiv_1902.01090v2"
-      ]
+      ],
+      "proposition_id": "f2dce875-c517-4608-bbc2-6240325929ba"
     },
     {
       "step_number": 2,
@@ -37,7 +56,21 @@
         "\\Phi(x) \\approx \\sum_{i=1}^N \\Phi_i \\phi_i(x)"
       ],
       "source_ids": [
-        "arxiv_1902.01090v2"
+        "arxiv_1902.01090v2",
+        "wiki_c_a_s_lemma"
+      ],
+      "proposition_id": "3640d967-66d6-41ab-a358-edccb1a11cfb"
+    },
+    {
+      "step_number": 1,
+      "title": "Problem Formulation",
+      "description": "Define the Hilbert space $ V $ and the bilinear form $ a: V \\times V \\to \\mathbb{R} $, ensuring it satisfies continuity and coercivity. Introduce a bounded linear functional $ L: V \\to \\mathbb{R} $ to represent the problem's forcing terms. This step establishes the mathematical framework for the finite element method.",
+      "equations": [
+        "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
+        "a(v, v) \\geq \\alpha \\|v\\|^2"
+      ],
+      "source_ids": [
+        "wiki_c_a_s_lemma"
       ]
     }
   ],
@@ -48,7 +81,8 @@
       "explanation": "This equation represents the weak form of an elliptic PDE. $\\alpha$ is the diffusion coefficient, $\\Phi$ is the solution variable, $v$ is the test function, $\\sigma$ enforces boundary conditions, $f$ is the source term, $\\Omega$ is the domain, and $\\Gamma$ is the boundary.",
       "source_ids": [
         "arxiv_1902.01090v2"
-      ]
+      ],
+      "proposition_id": "93cd3fcb-6663-48e8-864e-fe721d654a19"
     },
     {
       "name": "Saddle Point System",
@@ -56,6 +90,31 @@
       "explanation": "This system arises in mixed formulations, where $\\mathbf{K}$ is the stiffness matrix, $\\mathbf{B}$ enforces constraints via Lagrange multipliers $\\boldsymbol{\\lambda}$, and $\\mathbf{u}$ represents primary variables. The non-definite structure complicates solution strategies.",
       "source_ids": [
         "wiki_mixed_finite_element_method"
+      ],
+      "proposition_id": "b9d7e143-ffc5-4cec-8286-6f6584d34428"
+    },
+    {
+      "name": "Continuity Condition",
+      "latex": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
+      "explanation": "This equation ensures the bilinear form $ a $ is bounded, where $ \\gamma $ is a positive constant, and $ \\|\\cdot\\| $ denotes the norm in the Hilbert space $ V $. It guarantees that small changes in $ v $ or $ w $ result in proportionally small changes in $ a(v, w) $.",
+      "source_ids": [
+        "wiki_c_a_s_lemma"
+      ]
+    },
+    {
+      "name": "Coercivity Condition",
+      "latex": "a(v, v) \\geq \\alpha \\|v\\|^2",
+      "explanation": "This inequality ensures the bilinear form $ a $ is uniformly positive definite, with $ \\alpha $ a positive constant. It guarantees the existence and uniqueness of the solution to the variational problem.",
+      "source_ids": [
+        "wiki_c_a_s_lemma"
+      ]
+    },
+    {
+      "name": "Variational Equation",
+      "latex": "a(u, v) = L(v)",
+      "explanation": "This equation defines the weak form of the partial differential equation, where $ u $ is the solution in the Hilbert space $ V $, $ v $ is a test function, and $ L(v) $ represents the action of the linear functional. It is the foundation of the finite element method.",
+      "source_ids": [
+        "wiki_c_a_s_lemma"
       ]
     }
   ],
@@ -65,13 +124,22 @@
       "explanation": "Mixed finite elements prevent numerical locking in nearly incompressible problems by decoupling stress and strain fields. This ensures stability and accuracy where primal methods fail due to rank deficiency.",
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "proposition_id": "37a09435-2e52-46fc-a141-158d47f95738"
     },
     {
       "rule": "Enforce Continuity Weakly in Hybrid Methods",
       "explanation": "Hybrid methods use boundary Lagrange multipliers to weakly enforce inter-element continuity, reducing degrees of freedom and eliminating negative pivots from mixed formulations. This improves solver efficiency and robustness.",
       "source_ids": [
         "wiki_mixed_finite_element_method"
+      ],
+      "proposition_id": "ddaf55db-f9ff-4c5f-bb97-5f580ceec51a"
+    },
+    {
+      "rule": "Coercivity and Continuity Requirement",
+      "explanation": "The bilinear form must satisfy both continuity and coercivity to ensure the well-posedness of the variational problem. These conditions guarantee the existence, uniqueness, and stability of the finite element solution, preventing numerical instabilities during computation.",
+      "source_ids": [
+        "wiki_c_a_s_lemma"
       ]
     }
   ]
