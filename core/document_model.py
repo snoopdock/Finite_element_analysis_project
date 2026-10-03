@@ -18,7 +18,7 @@ from core.section_identity import (
 )
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 def _new_id() -> str:
@@ -44,6 +44,29 @@ class Text:
     def to_dict(self) -> Dict[str, Any]:
         self.validate()
         return {"type": self.type, "text": self.text}
+
+
+@dataclass
+class InlineMath:
+    """Renderer-neutral inline mathematical content.
+
+    Inline mathematics is presentation structure, not a domain equation.  It
+    therefore carries the mathematical expression but no equation identity.
+    Scientifically authoritative equations remain referenced through
+    ``EquationOccurrence``.
+    """
+
+    expression: str
+
+    type: str = field(init=False, default="inline_math")
+
+    def validate(self) -> None:
+        if not isinstance(self.expression, str) or not self.expression.strip():
+            raise DocumentModelError("InlineMath.expression must be non-empty.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        self.validate()
+        return {"type": self.type, "expression": self.expression}
 
 
 @dataclass
@@ -94,7 +117,7 @@ class CrossReferenceOccurrence:
         }
 
 
-InlineNode = Union[Text, CitationOccurrence, CrossReferenceOccurrence]
+InlineNode = Union[Text, InlineMath, CitationOccurrence, CrossReferenceOccurrence]
 
 
 @dataclass
@@ -109,7 +132,10 @@ class Paragraph:
         if not isinstance(self.inline_content, list):
             raise DocumentModelError("Paragraph.inline_content must be a list.")
         for node in self.inline_content:
-            if not isinstance(node, (Text, CitationOccurrence, CrossReferenceOccurrence)):
+            if not isinstance(
+                node,
+                (Text, InlineMath, CitationOccurrence, CrossReferenceOccurrence),
+            ):
                 raise DocumentModelError(
                     f"Unsupported paragraph inline node: {type(node).__name__}."
                 )
@@ -125,6 +151,29 @@ class Paragraph:
     @classmethod
     def from_text(cls, text: str) -> "Paragraph":
         return cls(inline_content=[Text(text)])
+
+
+@dataclass
+class DisplayMath:
+    """Renderer-neutral display mathematics without domain-object authority.
+
+    This node exists for migration fidelity when legacy authoring contains a
+    display expression that has not been promoted to an authoritative domain
+    equation.  Once a domain equation is authorized, publication placement is
+    represented by ``EquationOccurrence`` instead.
+    """
+
+    expression: str
+
+    type: str = field(init=False, default="display_math")
+
+    def validate(self) -> None:
+        if not isinstance(self.expression, str) or not self.expression.strip():
+            raise DocumentModelError("DisplayMath.expression must be non-empty.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        self.validate()
+        return {"type": self.type, "expression": self.expression}
 
 
 @dataclass
@@ -293,6 +342,7 @@ class Table:
 
 SectionChild = Union[
     Paragraph,
+    DisplayMath,
     EquationOccurrence,
     EquationProposalReference,
     Figure,
@@ -332,7 +382,14 @@ class Section:
         for child in self.children:
             if not isinstance(
                 child,
-                (Paragraph, EquationOccurrence, EquationProposalReference, Figure, Table),
+                (
+                    Paragraph,
+                    DisplayMath,
+                    EquationOccurrence,
+                    EquationProposalReference,
+                    Figure,
+                    Table,
+                ),
             ):
                 raise DocumentModelError(
                     f"Unsupported section child: {type(child).__name__}."

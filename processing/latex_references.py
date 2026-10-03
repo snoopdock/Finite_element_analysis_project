@@ -22,7 +22,8 @@ def format_retrieval_timestamp(retrieved_at):
 
 def format_source_type(source_type):
     """Format an internal source type for publication display."""
-    return escape_latex(source_type.replace("research.", "").title())
+    display = source_type.replace("research.", "").replace("_", " ").title()
+    return escape_latex(display)
 
 
 def format_bibliography_reference(reference):
@@ -46,17 +47,21 @@ def format_bibliography(references):
     return "\n".join(items) if items else "  \\bibitem{none} No sources retrieved."
 
 
-def format_provenance_row(index, reference, title_limit=60):
-    """Format one provenance table row.
+def _format_breakable_source_id(source_id):
+    """Format a source identifier with URL-style discretionary line breaks."""
+    # ``\nolinkurl`` is presentation-only and handles underscores/long tokens
+    # without creating a clickable link. Source IDs are pipeline-controlled
+    # identifiers rather than arbitrary authorial LaTeX.
+    return rf"\nolinkurl{{{source_id}}}"
 
-    Truncation is applied to the source title before LaTeX escaping so the limit
-    refers to source characters rather than rendered escape sequences.
-    """
-    source_id = escape_latex(reference.source_id)
-    title = escape_latex(reference.title[:title_limit])
+
+def format_provenance_row(index, reference):
+    """Format one provenance row without truncating source metadata."""
+    source_id = _format_breakable_source_id(reference.source_id)
+    title = escape_latex(reference.title)
     retrieved = escape_latex(format_retrieval_timestamp(reference.retrieved_at))
     return (
-        f"  {index + 1} & \\texttt{{{source_id}}} & {title} & "
+        f"  {index + 1} & {source_id} & {title} & "
         f"{format_source_type(reference.source_type)} & {retrieved} \\\\"
     )
 

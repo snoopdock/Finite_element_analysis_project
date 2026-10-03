@@ -1,4 +1,4 @@
-version: 1
+version: 2
 purpose: >-
   Define the persisted semantic document representation used to organize
   scientific material for publication without duplicating scientific authority.
@@ -43,6 +43,23 @@ entities:
   text:
     required_fields:
       - text
+
+  inline_math:
+    required_fields:
+      - expression
+    authoritative: false
+    rule: >-
+      Inline mathematical notation is publication structure only. It must not
+      be treated as an authoritative domain equation or assigned equation_id.
+
+  display_math:
+    required_fields:
+      - expression
+    authoritative: false
+    rule: >-
+      Display mathematics without an authoritative equation_id may be
+      preserved for migration/rendering fidelity, but must remain distinct
+      from equation_occurrence.
 
   equation_occurrence:
     identity: occurrence_id
@@ -135,6 +152,7 @@ structure:
   section_children:
     allowed_types:
       - paragraph
+      - display_math
       - equation_occurrence
       - equation_proposal_reference
       - figure
@@ -142,6 +160,7 @@ structure:
   paragraph_inline_content:
     allowed_types:
       - text
+      - inline_math
       - citation_occurrence
       - cross_reference_occurrence
 

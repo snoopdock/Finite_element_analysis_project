@@ -2,7 +2,9 @@ import pytest
 
 from core.document_model import (
     CitationOccurrence,
+    DisplayMath,
     EquationOccurrence,
+    InlineMath,
     Paragraph,
 )
 from writing.section_document_adapter import (
@@ -111,3 +113,26 @@ def test_unknown_semantic_reference_is_not_silently_substituted():
             source_ids=set(),
             target_ids=set(),
         )
+
+
+def test_migration_adapter_structures_math_and_projects_it_back_without_authority():
+    section = legacy_section_to_document_section(
+        {
+            "section_id": SECTION_ID,
+            "title": "Math Migration",
+            "content": "Let $u_h$ vary.\n\n$a(u,v)=L(v)$",
+        },
+        parse_inline_math=True,
+    )
+
+    assert any(
+        isinstance(node, InlineMath)
+        for child in section.children
+        if isinstance(child, Paragraph)
+        for node in child.inline_content
+    )
+    assert any(isinstance(child, DisplayMath) for child in section.children)
+
+    projected = document_section_to_legacy(section, include_derived_metadata=False)
+    assert "$u_h$" in projected["content"]
+    assert "$a(u,v)=L(v)$" in projected["content"]

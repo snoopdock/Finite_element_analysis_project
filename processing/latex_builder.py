@@ -75,13 +75,11 @@ def build_latex_document(state, sections, evidence):
         r"\newunicodechar{Ω}{\ensuremath{\Omega}}",
         r"\newunicodechar{∂}{\ensuremath{\partial}}",
         r"\newunicodechar{∇}{\ensuremath{\nabla}}",
-        r"\newunicodechar{→}{\ensuremath{\rightarrow}}",
         r"\newunicodechar{⇒}{\ensuremath{\Rightarrow}}",
         r"\newunicodechar{≤}{\ensuremath{\le}}",
         r"\newunicodechar{≥}{\ensuremath{\ge}}",
         r"\newunicodechar{≠}{\ensuremath{\neq}}",
         r"\newunicodechar{≈}{\ensuremath{\approx}}",
-        r"\newunicodechar{×}{\ensuremath{\times}}",
         "",
         r"\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}",
         "",
@@ -134,7 +132,12 @@ def build_latex_document(state, sections, evidence):
         r"It records when each source was fetched, from which provider, and its unique identifier.",
         r"\vspace{1em}",
         r"",
-        r"\begin{longtable}{@{} p{0.5cm} p{3.5cm} p{5cm} p{1.5cm} p{3cm} @{}}",
+        r"\begin{longtable}{@{}"
+        r">{\raggedright\arraybackslash}p{0.5cm} "
+        r">{\raggedright\arraybackslash}p{3.1cm} "
+        r">{\raggedright\arraybackslash}p{5.7cm} "
+        r">{\raggedright\arraybackslash}p{2.0cm} "
+        r">{\raggedright\arraybackslash}p{2.7cm} @{}}",
         r"\toprule",
         r"\textbf{\#} & \textbf{Source ID} & \textbf{Title} & \textbf{Type} & \textbf{Retrieved At} \\",
         r"\midrule",

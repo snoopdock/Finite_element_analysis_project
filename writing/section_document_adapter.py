@@ -46,6 +46,7 @@ def legacy_section_to_document_section(
     source_ids: Optional[Set[str]] = None,
     target_ids: Optional[Set[str]] = None,
     proposal_ids: Optional[Set[str]] = None,
+    parse_inline_math: bool = False,
 ) -> Section:
     """Convert one writer section, using semantic markers when explicitly present.
 
@@ -78,9 +79,10 @@ def legacy_section_to_document_section(
         "subsection_index": section.get("subsection_index"),
     }
 
-    if marker_present:
+    if marker_present or parse_inline_math:
         return assemble_section(
             authoring_text=content,
+            parse_legacy_math=parse_inline_math,
             **common,
         )
 
@@ -113,12 +115,16 @@ def document_section_to_legacy(
             for node in child.inline_content:
                 if node.type == "text":
                     parts.append(node.text)
+                elif node.type == "inline_math":
+                    parts.append(f"${node.expression}$")
                 elif node.type == "citation_occurrence":
                     parts.append(f"[[CITE:{node.source_id}]]")
                     citation_ids.append(node.source_id)
                 elif node.type == "cross_reference_occurrence":
                     parts.append(f"[[REF:{node.target_id}]]")
             paragraphs.append("".join(parts))
+        elif child.type == "display_math":
+            paragraphs.append(f"${child.expression}$")
         elif child.type == "equation_occurrence":
             equation_ids.append(child.equation_id)
             paragraphs.append(f"[[EQ:{child.equation_id}]]")

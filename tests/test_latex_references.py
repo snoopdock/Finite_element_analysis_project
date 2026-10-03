@@ -50,13 +50,18 @@ def test_retrieval_timestamp_preserves_unparseable_value():
     assert format_retrieval_timestamp("not-a-timestamp") == "not-a-timestamp"
 
 
-def test_provenance_truncates_source_title_before_latex_escaping():
+def test_provenance_preserves_full_source_title_and_makes_long_ids_breakable():
     title = "A" * 59 + "&" + "B" * 20
-    rendered = format_provenance_row(0, _reference(title=title))
+    rendered = format_provenance_row(
+        0,
+        _reference(
+            source_id="wiki_finite_element_limit_analysis",
+            title=title,
+        ),
+    )
 
-    assert r"A" * 1
-    assert r"A" * 59 + r"\&" in rendered
-    assert "B" not in rendered
+    assert r"A" * 59 + r"\&" + "B" * 20 in rendered
+    assert r"\nolinkurl{wiki_finite_element_limit_analysis}" in rendered
 
 
 def test_provenance_table_has_explicit_empty_source_fallback():

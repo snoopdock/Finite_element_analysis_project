@@ -2,11 +2,13 @@ import pytest
 
 from core.document_model import (
     CitationOccurrence,
+    DisplayMath,
     Document,
     DocumentModelError,
     EquationOccurrence,
     EquationProposal,
     EquationProposalReference,
+    InlineMath,
     Paragraph,
     Section,
     Text,
@@ -14,6 +16,33 @@ from core.document_model import (
     document_from_legacy_sections,
     validate_document_references,
 )
+
+
+def test_math_nodes_are_renderer_neutral_and_distinct_from_equation_identity():
+    paragraph = Paragraph(
+        inline_content=[
+            Text("Let "),
+            InlineMath("u_h \\in V_h"),
+            Text(" be admissible."),
+        ]
+    )
+    section = Section(
+        title="Math",
+        children=[paragraph, DisplayMath("a(u,v)=L(v)")],
+    )
+    document = Document(children=[section])
+
+    serialized = document.to_dict()
+
+    assert serialized["version"] == 2
+    assert serialized["children"][0]["children"][0]["inline_content"][1] == {
+        "type": "inline_math",
+        "expression": "u_h \\in V_h",
+    }
+    assert serialized["children"][0]["children"][1] == {
+        "type": "display_math",
+        "expression": "a(u,v)=L(v)",
+    }
 
 
 def test_legacy_sections_preserve_identity_and_lineage_without_inference():

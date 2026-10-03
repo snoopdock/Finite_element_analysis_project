@@ -9,8 +9,10 @@ import uuid
 from core.document_model import (
     CitationOccurrence,
     CrossReferenceOccurrence,
+    DisplayMath,
     EquationOccurrence,
     EquationProposalReference,
+    InlineMath,
     Paragraph,
     Section,
     Text,
@@ -20,6 +22,59 @@ from core.semantic_markers import SemanticMarker, TextSegment, parse_authoring_t
 
 
 _OCCURRENCE_NAMESPACE = uuid.UUID("8e5e8d8d-84f0-4d1d-8d3f-2ce2d6ad6b25")
+
+
+def _iter_legacy_math(text: str):
+    """Yield ordered legacy prose/math fragments without interpreting meaning.
+
+    Only unescaped single-dollar delimiters are recognized.  Malformed or
+    unmatched dollar signs remain ordinary text.  This parser is used solely
+    by the explicit migration path; the semantic marker protocol itself does
+    not require LaTeX delimiters.
+    """
+    cursor = 0
+    length = len(text)
+    while cursor < length:
+        start = cursor
+        while start < length:
+            if text[start] == "$" and (start == 0 or text[start - 1] != "\\"):
+                # ``$$`` belongs to a different legacy syntax and is left
+                # untouched rather than guessed here.
+                if start + 1 < length and text[start + 1] == "$":
+                    start += 2
+                    continue
+                break
+            start += 1
+
+        if start >= length:
+            yield ("text", text[cursor:], cursor, length)
+            return
+
+        end = start + 1
+        while end < length:
+            if text[end] == "$" and text[end - 1] != "\\":
+                if end + 1 < length and text[end + 1] == "$":
+                    end += 2
+                    continue
+                break
+            end += 1
+
+        if end >= length:
+            yield ("text", text[cursor:], cursor, length)
+            return
+
+        if start > cursor:
+            yield ("text", text[cursor:start], cursor, start)
+        yield ("math", text[start + 1:end], start, end + 1)
+        cursor = end + 1
+
+
+def _legacy_math_is_standalone(text: str, start: int, end: int) -> bool:
+    line_start = text.rfind("\n", 0, start) + 1
+    line_end = text.find("\n", end)
+    if line_end < 0:
+        line_end = len(text)
+    return text[line_start:line_end].strip() == text[start:end].strip()
 
 
 class DocumentAssemblyError(DocumentModelError):
@@ -125,6 +180,7 @@ def assemble_section(
     status: Optional[str] = None,
     generated_from: Optional[str] = None,
     subsection_index: Optional[int] = None,
+    parse_legacy_math: bool = False,
 ) -> Section:
     """Assemble one writer result into an ordered semantic document section.
 
@@ -160,10 +216,28 @@ def assemble_section(
             children.append(Paragraph(inline_content=list(inline_nodes)))
             inline_nodes.clear()
 
+    def append_text_segment(text: str) -> None:
+        if not parse_legacy_math:
+            if text:
+                inline_nodes.append(Text(text))
+            return
+
+        for fragment_type, payload, start, end in _iter_legacy_math(text):
+            if not payload:
+                continue
+            if fragment_type == "text":
+                inline_nodes.append(Text(payload))
+                continue
+
+            if _legacy_math_is_standalone(text, start, end):
+                flush_paragraph()
+                children.append(DisplayMath(payload))
+            else:
+                inline_nodes.append(InlineMath(payload))
+
     for segment_index, segment in enumerate(segments):
         if isinstance(segment, TextSegment):
-            if segment.text:
-                inline_nodes.append(Text(segment.text))
+            append_text_segment(segment.text)
             continue
 
         if not isinstance(segment, SemanticMarker):

@@ -32,3 +32,14 @@ def test_builder_uses_normalized_reference_identity_for_bibliography_and_citatio
     assert "Reference \\& Title" in tex
     assert "[Article]" in tex
     assert "2026-09-05 10:00 UTC" in tex
+
+
+def test_builder_uses_ragged_right_provenance_columns():
+    tex = build_latex_document(
+        {"topic": "Builder Test", "objective": "Layout", "knowledge_graph": {}},
+        [{"title": "Text", "blocks": [{"type": "text", "text": "Body"}]}],
+        [],
+    )
+
+    assert r">{\raggedright\arraybackslash}p{3.1cm}" in tex
+    assert r">{\raggedright\arraybackslash}p{5.7cm}" in tex

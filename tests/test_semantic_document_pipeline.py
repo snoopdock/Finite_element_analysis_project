@@ -1,12 +1,19 @@
 import json
 
-from core.document_model import CitationOccurrence, EquationOccurrence, Paragraph
+from core.document_model import (
+    CitationOccurrence,
+    EquationOccurrence,
+    InlineMath,
+    Paragraph,
+    Text,
+)
 from core.domain_semantic_model import (
     empty_domain_semantic_model,
     ingest_equation_candidates,
     promote_equation_candidate,
 )
 from core.semantic_document_pipeline import (
+    analyze_latex_ir_readiness,
     build_semantic_candidate_document,
     persist_semantic_candidate_document,
 )
@@ -109,3 +116,38 @@ def test_shadow_generation_does_not_change_active_legacy_assembly(tmp_path):
     assert phase_assemble(state, legacy_paths) is True
     after = latex_path.read_text(encoding="utf-8")
     assert after == before
+
+
+def test_candidate_document_is_structurally_ready_for_latex_ir_without_raw_math_in_text():
+    state = {
+        "topic": "FEM",
+        "objective": "Guide",
+        "domain_semantic_model": empty_domain_semantic_model(),
+        "sections": [
+            {
+                "section_id": SECTION_ID,
+                "title": "Inline Math",
+                "content": "Let $u_h \\in V_h$ satisfy $a(u_h,v)=L(v)$ [s1].",
+                "parent_section_ids": [],
+            }
+        ],
+    }
+
+    document, report = build_semantic_candidate_document(
+        state,
+        evidence=[{"source_id": "s1"}],
+    )
+    paragraph = document.children[0].children[0]
+
+    assert isinstance(paragraph, Paragraph)
+    assert sum(isinstance(node, InlineMath) for node in paragraph.inline_content) == 2
+    assert not any(
+        isinstance(node, Text) and "$" in node.text
+        for node in paragraph.inline_content
+    )
+    readiness = analyze_latex_ir_readiness(document)
+    assert readiness["ready"] is True
+    assert readiness["counts"]["inline_math"] == 2
+    assert readiness["counts"]["raw_math_text_nodes"] == 0
+    assert report["latex_ir_readiness"] == readiness
+    assert document.metadata["latex_ir_readiness"] == readiness

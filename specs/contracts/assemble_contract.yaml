@@ -1,4 +1,4 @@
-version: 1
+version: 2
 purpose: >-
   Define the deterministic transformation from LLM authoring output into the
   persisted semantic document model.
@@ -44,6 +44,16 @@ transformation:
     rule: >-
       Unmarked text is preserved as free-form authorial content without
       semantic inference.
+  legacy_math_migration:
+    enabled_by_default: false
+    rule: >-
+      When explicitly enabled for compatibility migration, dollar-delimited
+      mathematical notation may be parsed structurally into inline_math or
+      display_math without granting domain-equation authority or inventing an
+      equation_id.
+    inline_output: inline_math
+    display_output: display_math
+    scientific_authority: false
   EQ:
     output: equation_occurrence
     payload_from_registry: true

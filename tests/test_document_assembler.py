@@ -7,8 +7,10 @@ from core.document_assembler import (
 )
 from core.document_model import (
     CitationOccurrence,
+    DisplayMath,
     EquationOccurrence,
     EquationProposalReference,
+    InlineMath,
     Paragraph,
     Text,
 )
@@ -63,6 +65,51 @@ def test_assembly_occurrence_ids_are_deterministic():
     second = assemble_section(**kwargs).to_dict()
 
     assert first == second
+
+
+def test_explicit_legacy_math_migration_structures_inline_and_display_math():
+    section = assemble_section(
+        section_id=SECTION_ID,
+        title="Legacy Math Migration",
+        authoring_text=(
+            "Let $u_h \\in V_h$ be the approximation.\n\n"
+            "$a(u,v)=L(v)$\n\n"
+            "Supported [[CITE:source-1]]."
+        ),
+        equation_ids=set(),
+        source_ids={"source-1"},
+        target_ids=set(),
+        parse_legacy_math=True,
+    )
+
+    assert isinstance(section.children[0], Paragraph)
+    assert any(
+        isinstance(node, InlineMath)
+        for node in section.children[0].inline_content
+    )
+    assert any(isinstance(child, DisplayMath) for child in section.children)
+    assert not any(
+        isinstance(node, Text) and "$" in node.text
+        for child in section.children
+        if isinstance(child, Paragraph)
+        for node in child.inline_content
+    )
+
+
+def test_semantic_assembly_does_not_parse_legacy_math_unless_explicitly_enabled():
+    section = assemble_section(
+        section_id=SECTION_ID,
+        title="Strict Semantic Assembly",
+        authoring_text="Let $u_h$ be the approximation [[CITE:source-1]].",
+        equation_ids=set(),
+        source_ids={"source-1"},
+        target_ids=set(),
+    )
+
+    assert isinstance(section.children[0], Paragraph)
+    assert section.children[0].inline_content[0] == Text(
+        "Let $u_h$ be the approximation "
+    )
 
 
 def test_repeated_references_get_distinct_occurrences():

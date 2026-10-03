@@ -5,10 +5,21 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Any, Dict, Mapping, Sequence
 import uuid
 
-from core.document_model import Document
+from core.document_model import (
+    CitationOccurrence,
+    CrossReferenceOccurrence,
+    DisplayMath,
+    Document,
+    EquationOccurrence,
+    EquationProposalReference,
+    InlineMath,
+    Paragraph,
+    Text,
+)
 from core.document_persistence import save_document
 from core.domain_semantic_model import get_authorized_equation_ids
 from writing.section_document_adapter import legacy_section_to_document_section
@@ -16,6 +27,69 @@ from writing.semantic_authoring_shadow import annotate_legacy_authoring
 
 
 _SEMANTIC_DOCUMENT_NAMESPACE = uuid.UUID("10381eed-bb45-4f7a-89ec-d894b112e1ab")
+_RAW_INLINE_MATH_RE = re.compile(r"(?<!\\)\$(?!\$).+?(?<!\\)\$", flags=re.DOTALL)
+
+
+def analyze_latex_ir_readiness(document: Document) -> Dict[str, Any]:
+    """Describe whether semantic publication content is structurally IR-ready.
+
+    Readiness here means that legacy dollar-delimited mathematics is no longer
+    hidden inside ``Text`` nodes and that no unresolved equation proposal is
+    present.  It deliberately does not claim that the current LaTeX IR already
+    has matching block types; that is the next boundary.
+    """
+    counts = {
+        "sections": 0,
+        "paragraphs": 0,
+        "text_nodes": 0,
+        "inline_math": 0,
+        "display_math": 0,
+        "equation_occurrences": 0,
+        "citation_occurrences": 0,
+        "cross_reference_occurrences": 0,
+        "equation_proposal_references": 0,
+        "raw_math_text_nodes": 0,
+    }
+    diagnostics: list[str] = []
+
+    for section in document.children:
+        counts["sections"] += 1
+        for child in section.children:
+            if isinstance(child, Paragraph):
+                counts["paragraphs"] += 1
+                for node in child.inline_content:
+                    if isinstance(node, Text):
+                        counts["text_nodes"] += 1
+                        if _RAW_INLINE_MATH_RE.search(node.text):
+                            counts["raw_math_text_nodes"] += 1
+                            diagnostics.append(
+                                f"raw_math_in_text:{section.section_id}"
+                            )
+                    elif isinstance(node, InlineMath):
+                        counts["inline_math"] += 1
+                    elif isinstance(node, CitationOccurrence):
+                        counts["citation_occurrences"] += 1
+                    elif isinstance(node, CrossReferenceOccurrence):
+                        counts["cross_reference_occurrences"] += 1
+            elif isinstance(child, DisplayMath):
+                counts["display_math"] += 1
+            elif isinstance(child, EquationOccurrence):
+                counts["equation_occurrences"] += 1
+            elif isinstance(child, EquationProposalReference):
+                counts["equation_proposal_references"] += 1
+                diagnostics.append(
+                    f"unresolved_equation_proposal:{section.section_id}:{child.proposal_id}"
+                )
+
+    ready = (
+        counts["raw_math_text_nodes"] == 0
+        and counts["equation_proposal_references"] == 0
+    )
+    return {
+        "ready": ready,
+        "counts": counts,
+        "diagnostics": diagnostics,
+    }
 
 
 def _document_id(state: Dict[str, Any]) -> str:
@@ -66,8 +140,24 @@ def build_semantic_candidate_document(
             source_ids=source_ids,
             target_ids=set(),
             proposal_ids=set(),
+            parse_inline_math=True,
         )
         semantic_sections.append(semantic_section)
+
+        inline_math_count = 0
+        display_math_count = 0
+        equation_occurrence_count = 0
+        for child in semantic_section.children:
+            if isinstance(child, Paragraph):
+                inline_math_count += sum(
+                    isinstance(node, InlineMath)
+                    for node in child.inline_content
+                )
+            elif isinstance(child, DisplayMath):
+                display_math_count += 1
+            elif isinstance(child, EquationOccurrence):
+                equation_occurrence_count += 1
+
         section_reports.append(
             {
                 "section_id": semantic_section.section_id,
@@ -77,6 +167,9 @@ def build_semantic_candidate_document(
                 ),
                 "annotated_equation_ids": list(shadow.annotated_equation_ids),
                 "annotated_source_ids": list(shadow.annotated_source_ids),
+                "inline_math_count": inline_math_count,
+                "display_math_count": display_math_count,
+                "equation_occurrence_count": equation_occurrence_count,
                 "diagnostics": list(shadow.diagnostics),
             }
         )
@@ -95,7 +188,6 @@ def build_semantic_candidate_document(
         metadata={
             "publication_role": "semantic_candidate",
             "authoritative_for_rendering": False,
-            "shadow_report": report,
         },
         source_snapshot={
             "legacy_section_ids": [
@@ -105,6 +197,11 @@ def build_semantic_candidate_document(
             ]
         },
     )
+    document.validate()
+    readiness = analyze_latex_ir_readiness(document)
+    report["latex_ir_readiness"] = readiness
+    document.metadata["shadow_report"] = report
+    document.metadata["latex_ir_readiness"] = readiness
     document.validate()
     return document, report
 
