@@ -35,6 +35,7 @@ from analysis.oaa_loop import OAALoop
 from analysis.writing_indicator import WritingIndicator
 from analysis.retrieval_event import create_retrieval_event
 from core.retrieval_history_state import append_retrieval_event
+from core.semantic_document_pipeline import persist_semantic_candidate_document
 from analysis.retrieval_attention_runtime import process_live_retrieval_attention
 
 from research.reading_tracker import load_reading_state
@@ -106,6 +107,9 @@ def main():
             "sections": ROOT / "output" / "sections.json",
             "latex": ROOT / "output" / "guideline.tex",
             "report": ROOT / "output" / "validation_report.md",
+            "semantic_candidate_document": (
+                ROOT / "output" / "document.semantic-candidate.json"
+            ),
         }
 
         state = initialize_state(paths, config)
@@ -512,6 +516,30 @@ def main():
                 state.pop("pending_adjustment", None)
             else:
                 state.pop("pending_adjustment", None)
+
+        try:
+            evidence_for_semantic_candidate = load_json(
+                paths["evidence"],
+                [],
+            )
+            if not isinstance(evidence_for_semantic_candidate, list):
+                evidence_for_semantic_candidate = []
+            persist_semantic_candidate_document(
+                state,
+                paths,
+                evidence=evidence_for_semantic_candidate,
+            )
+        except Exception as exc:
+            state["semantic_candidate_status"] = {
+                "status": "failed",
+                "authoritative_for_rendering": False,
+                "error": str(exc),
+            }
+            print(
+                "  [Semantic candidate] Shadow generation failed: "
+                f"{exc}",
+                file=sys.stderr,
+            )
 
         assembled = phase_assemble(
             state,
