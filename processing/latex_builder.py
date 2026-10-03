@@ -2,16 +2,21 @@
 """LaTeX document building utilities with provenance tracking."""
 
 from processing.latex_graph import render_concept_graph, render_perspective_table
-from processing.latex_ir import build_document_model
+from processing.latex_ir import DocumentModel, build_document_model, validate_document_model
 from processing.latex_references import format_bibliography, format_provenance_table
 from processing.latex_renderer import render_body
 from utils.latex import escape_text
 
 
 def build_latex_document(state, sections, evidence):
-    # Build the semantic document once. References, citations, and section bodies
-    # must all derive from this normalized representation.
+    """Compatibility entry point for legacy IR dictionaries."""
     document = build_document_model(state, sections, evidence)
+    return build_latex_document_from_model(state, document)
+
+
+def build_latex_document_from_model(state, document: DocumentModel):
+    """Build complete LaTeX from an already-projected renderer-neutral model."""
+    validate_document_model(document)
     topic = document.topic
     objective = document.objective
     graph = state.get("knowledge_graph", {})

@@ -1,4 +1,15 @@
-"""Semantic intermediate representation for generated scientific documents."""
+"""Renderer-neutral LaTeX intermediate representation.
+
+The module supports two input generations during migration:
+
+* compatibility blocks (``TextBlock``, ``MathBlock``, ``CitationBlock``,
+  ``LegacyLatexBlock``), still accepted by older adapters; and
+* ordered semantic paragraph/equation blocks produced from
+  ``core.document_model.Document``.
+
+Scientific identity remains outside this module.  The IR carries identifiers
+only for traceability and rendering; it never invents or redefines them.
+"""
 
 from __future__ import annotations
 
@@ -10,6 +21,11 @@ class DocumentModelError(ValueError):
     """Raised when input cannot satisfy the document-model contract."""
 
 
+# ---------------------------------------------------------------------------
+# Compatibility block language
+# ---------------------------------------------------------------------------
+
+
 @dataclass(frozen=True)
 class TextBlock:
     text: str
@@ -17,12 +33,14 @@ class TextBlock:
 
 @dataclass(frozen=True)
 class MathBlock:
+    """Renderer-neutral display math without authoritative equation identity."""
+
     expression: str
 
 
 @dataclass(frozen=True)
 class CitationBlock:
-    """A citation referring to one or more normalized source identifiers."""
+    """Compatibility citation block referring to normalized source IDs."""
 
     source_ids: tuple[str, ...]
 
@@ -34,13 +52,72 @@ class LegacyLatexBlock:
     source: str
 
 
-DocumentBlock = TextBlock | MathBlock | CitationBlock | LegacyLatexBlock
+# ---------------------------------------------------------------------------
+# Canonical ordered paragraph language used by Document -> LaTeX IR
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class IRTextSpan:
+    text: str
+
+
+@dataclass(frozen=True)
+class IRMathSpan:
+    """Inline mathematical presentation with no domain-equation authority."""
+
+    expression: str
+
+
+@dataclass(frozen=True)
+class IRCitationSpan:
+    """Inline citation occurrence preserving document ordering and identity."""
+
+    source_ids: tuple[str, ...]
+    occurrence_id: str = ""
+
+
+ParagraphInline = IRTextSpan | IRMathSpan | IRCitationSpan
+
+
+@dataclass(frozen=True)
+class ParagraphBlock:
+    """Ordered inline content for one semantic paragraph."""
+
+    content: tuple[ParagraphInline, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class EquationBlock:
+    """Rendered placement of an authoritative domain equation.
+
+    ``equation_id`` identifies the scientific object. ``occurrence_id``
+    identifies this document placement. The resolved expression is copied into
+    the IR as rendering payload; the semantic domain model remains authoritative.
+    """
+
+    equation_id: str
+    expression: str
+    occurrence_id: str
+    label: str | None = None
+    caption: str | None = None
+
+
+DocumentBlock = (
+    TextBlock
+    | MathBlock
+    | CitationBlock
+    | LegacyLatexBlock
+    | ParagraphBlock
+    | EquationBlock
+)
 
 
 @dataclass(frozen=True)
 class SectionModel:
     title: str
     blocks: tuple[DocumentBlock, ...] = field(default_factory=tuple)
+    section_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -59,6 +136,7 @@ class DocumentModel:
     objective: str
     sections: tuple[SectionModel, ...]
     references: tuple[ReferenceModel, ...] = field(default_factory=tuple)
+    source_document_id: str = ""
 
 
 def _as_text(value: Any, field_name: str, *, default: str = "") -> str:
@@ -77,6 +155,65 @@ def _require_keys(value: Mapping[str, Any], allowed: set[str], context: str) -> 
         )
 
 
+def _normalize_inline_content(
+    values: Sequence[Mapping[str, Any]],
+    *,
+    context: str,
+) -> tuple[ParagraphInline, ...]:
+    if not isinstance(values, Sequence) or isinstance(values, (str, bytes)):
+        raise DocumentModelError(f"{context} must be a sequence")
+
+    result: list[ParagraphInline] = []
+    for index, raw in enumerate(values):
+        item_context = f"{context}[{index}]"
+        if not isinstance(raw, Mapping):
+            raise DocumentModelError(f"{item_context} must be a mapping")
+        kind = raw.get("type")
+        if kind == "text":
+            _require_keys(raw, {"type", "text"}, item_context)
+            text = _as_text(raw.get("text"), f"{item_context}.text")
+            if text:
+                result.append(IRTextSpan(text))
+        elif kind == "inline_math":
+            _require_keys(raw, {"type", "expression"}, item_context)
+            expression = _as_text(
+                raw.get("expression"), f"{item_context}.expression"
+            ).strip()
+            if not expression:
+                raise DocumentModelError(
+                    f"{item_context}.expression must not be empty"
+                )
+            result.append(IRMathSpan(expression))
+        elif kind == "citation":
+            _require_keys(raw, {"type", "source_ids", "occurrence_id"}, item_context)
+            raw_ids = raw.get("source_ids")
+            if not isinstance(raw_ids, Sequence) or isinstance(raw_ids, (str, bytes)):
+                raise DocumentModelError(f"{item_context}.source_ids must be a sequence")
+            source_ids = tuple(
+                _as_text(source_id, f"{item_context}.source_ids[{source_index}]").strip()
+                for source_index, source_id in enumerate(raw_ids)
+            )
+            occurrence_id = _as_text(
+                raw.get("occurrence_id"), f"{item_context}.occurrence_id"
+            ).strip()
+            if not source_ids or any(not source_id for source_id in source_ids):
+                raise DocumentModelError(
+                    f"{item_context}.source_ids must contain non-empty strings"
+                )
+            if len(set(source_ids)) != len(source_ids):
+                raise DocumentModelError(
+                    f"{item_context}.source_ids must not contain duplicates"
+                )
+            result.append(IRCitationSpan(source_ids, occurrence_id=occurrence_id))
+        else:
+            raise DocumentModelError(
+                f"unsupported paragraph inline type {kind!r} in {item_context}"
+            )
+    if not result:
+        raise DocumentModelError(f"{context} must contain at least one renderable item")
+    return tuple(result)
+
+
 def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionModel, ...]:
     """Normalize the closed section input language without guessing semantics."""
 
@@ -87,8 +224,18 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
     for index, section in enumerate(sections):
         if not isinstance(section, Mapping):
             raise DocumentModelError(f"section {index} must be a mapping")
-        _require_keys(section, {"title", "blocks"}, f"section {index}")
-        title = _as_text(section.get("title"), f"section {index}.title", default="Untitled").strip() or "Untitled"
+        _require_keys(section, {"title", "blocks", "section_id"}, f"section {index}")
+        title = (
+            _as_text(
+                section.get("title"),
+                f"section {index}.title",
+                default="Untitled",
+            ).strip()
+            or "Untitled"
+        )
+        section_id = _as_text(
+            section.get("section_id"), f"section {index}.section_id"
+        ).strip()
         if "blocks" not in section:
             raise DocumentModelError(f"section {index}.blocks is required")
         raw_blocks = section["blocks"]
@@ -108,21 +255,85 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
                 parsed.append(TextBlock(text))
             elif kind == "math":
                 _require_keys(block, {"type", "expression"}, context)
-                expression = _as_text(block.get("expression"), f"{context}.expression").strip()
+                expression = _as_text(
+                    block.get("expression"), f"{context}.expression"
+                ).strip()
                 if not expression:
-                    raise DocumentModelError(f"{context}.expression must not be empty")
+                    raise DocumentModelError(
+                        f"{context}.expression must not be empty"
+                    )
                 parsed.append(MathBlock(expression))
             elif kind == "citation":
                 _require_keys(block, {"type", "source_ids"}, context)
                 raw_ids = block.get("source_ids")
                 if not isinstance(raw_ids, Sequence) or isinstance(raw_ids, (str, bytes)):
                     raise DocumentModelError(f"{context}.source_ids must be a sequence")
-                source_ids = tuple(_as_text(source_id, f"{context}.source_ids[{source_index}]").strip() for source_index, source_id in enumerate(raw_ids))
+                source_ids = tuple(
+                    _as_text(
+                        source_id,
+                        f"{context}.source_ids[{source_index}]",
+                    ).strip()
+                    for source_index, source_id in enumerate(raw_ids)
+                )
                 if not source_ids or any(not source_id for source_id in source_ids):
-                    raise DocumentModelError(f"{context}.source_ids must contain non-empty strings")
+                    raise DocumentModelError(
+                        f"{context}.source_ids must contain non-empty strings"
+                    )
                 if len(set(source_ids)) != len(source_ids):
-                    raise DocumentModelError(f"{context}.source_ids must not contain duplicates")
+                    raise DocumentModelError(
+                        f"{context}.source_ids must not contain duplicates"
+                    )
                 parsed.append(CitationBlock(source_ids))
+            elif kind == "paragraph":
+                _require_keys(block, {"type", "content"}, context)
+                parsed.append(
+                    ParagraphBlock(
+                        _normalize_inline_content(
+                            block.get("content", ()), context=f"{context}.content"
+                        )
+                    )
+                )
+            elif kind == "equation":
+                _require_keys(
+                    block,
+                    {
+                        "type",
+                        "equation_id",
+                        "expression",
+                        "occurrence_id",
+                        "label",
+                        "caption",
+                    },
+                    context,
+                )
+                equation_id = _as_text(
+                    block.get("equation_id"), f"{context}.equation_id"
+                ).strip()
+                expression = _as_text(
+                    block.get("expression"), f"{context}.expression"
+                ).strip()
+                occurrence_id = _as_text(
+                    block.get("occurrence_id"), f"{context}.occurrence_id"
+                ).strip()
+                label = block.get("label")
+                caption = block.get("caption")
+                if not equation_id or not expression or not occurrence_id:
+                    raise DocumentModelError(
+                        f"{context} requires equation_id, expression, and occurrence_id"
+                    )
+                if label is not None and not isinstance(label, str):
+                    raise DocumentModelError(f"{context}.label must be a string or null")
+                if caption is not None and not isinstance(caption, str):
+                    raise DocumentModelError(f"{context}.caption must be a string or null")
+                parsed.append(
+                    EquationBlock(
+                        equation_id=equation_id,
+                        expression=expression,
+                        occurrence_id=occurrence_id,
+                        label=label,
+                        caption=caption,
+                    )
+                )
             elif kind == "legacy_latex":
                 _require_keys(block, {"type", "source"}, context)
                 source = _as_text(block.get("source"), f"{context}.source")
@@ -130,8 +341,12 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
                     raise DocumentModelError(f"{context}.source must not be empty")
                 parsed.append(LegacyLatexBlock(source))
             else:
-                raise DocumentModelError(f"unsupported block type {kind!r} in {context}")
-        normalized.append(SectionModel(title=title, blocks=tuple(parsed)))
+                raise DocumentModelError(
+                    f"unsupported block type {kind!r} in {context}"
+                )
+        normalized.append(
+            SectionModel(title=title, blocks=tuple(parsed), section_id=section_id)
+        )
     return tuple(normalized)
 
 
@@ -157,8 +372,47 @@ def normalize_references(evidence: Sequence[Mapping[str, Any]]) -> tuple[Referen
         if source_id in seen_source_ids:
             raise DocumentModelError(f"duplicate source_id in evidence: {source_id!r}")
         seen_source_ids.add(source_id)
-        references.append(ReferenceModel(source_id=source_id, title=_as_text(source.get("title"), "title", default="Unknown Title"), url=_as_text(source.get("url"), "url"), source_type=_as_text(source.get("retriever_module"), "retriever_module", default="misc"), retrieved_at=_as_text(source.get("retrieved_at"), "retrieved_at", default="N/A"), citation_key=f"ref{index + 1}"))
+        references.append(
+            ReferenceModel(
+                source_id=source_id,
+                title=_as_text(source.get("title"), "title", default="Unknown Title"),
+                url=_as_text(source.get("url"), "url"),
+                source_type=_as_text(
+                    source.get("retriever_module"),
+                    "retriever_module",
+                    default="misc",
+                ),
+                retrieved_at=_as_text(
+                    source.get("retrieved_at"), "retrieved_at", default="N/A"
+                ),
+                citation_key=f"ref{index + 1}",
+            )
+        )
     return tuple(references)
+
+
+def _validate_source_ids(
+    source_ids: tuple[str, ...],
+    *,
+    context: str,
+    reference_ids: set[str],
+) -> None:
+    if not isinstance(source_ids, tuple):
+        raise DocumentModelError(f"{context}.source_ids must be a tuple")
+    if not source_ids or any(
+        not isinstance(source_id, str) or not source_id.strip()
+        for source_id in source_ids
+    ):
+        raise DocumentModelError(
+            f"{context}.source_ids must contain non-empty strings"
+        )
+    if len(set(source_ids)) != len(source_ids):
+        raise DocumentModelError(f"{context}.source_ids must not contain duplicates")
+    missing = [source_id for source_id in source_ids if source_id not in reference_ids]
+    if missing:
+        raise DocumentModelError(
+            f"{context} references unknown source_id(s): {', '.join(missing)}"
+        )
 
 
 def validate_document_model(document: DocumentModel) -> None:
@@ -169,7 +423,11 @@ def validate_document_model(document: DocumentModel) -> None:
     if not isinstance(document.topic, str) or not isinstance(document.objective, str):
         raise DocumentModelError("document topic and objective must be strings")
     if not document.topic.strip() or not document.objective.strip():
-        raise DocumentModelError("document topic and objective must be non-empty strings")
+        raise DocumentModelError(
+            "document topic and objective must be non-empty strings"
+        )
+    if not isinstance(document.source_document_id, str):
+        raise DocumentModelError("document source_document_id must be a string")
     if not isinstance(document.sections, tuple) or not isinstance(document.references, tuple):
         raise DocumentModelError("document sections and references must be tuples")
 
@@ -178,16 +436,29 @@ def validate_document_model(document: DocumentModel) -> None:
     for index, reference in enumerate(document.references):
         if not isinstance(reference, ReferenceModel):
             raise DocumentModelError(f"reference {index} must be a ReferenceModel")
-        for field_name in ("source_id", "title", "url", "source_type", "retrieved_at", "citation_key"):
+        for field_name in (
+            "source_id",
+            "title",
+            "url",
+            "source_type",
+            "retrieved_at",
+            "citation_key",
+        ):
             if not isinstance(getattr(reference, field_name), str):
-                raise DocumentModelError(f"reference {index}.{field_name} must be a string")
+                raise DocumentModelError(
+                    f"reference {index}.{field_name} must be a string"
+                )
         if not reference.source_id.strip():
             raise DocumentModelError(f"reference {index}.source_id must not be empty")
         if reference.source_id in reference_ids:
-            raise DocumentModelError(f"duplicate source_id in document: {reference.source_id!r}")
+            raise DocumentModelError(
+                f"duplicate source_id in document: {reference.source_id!r}"
+            )
         reference_ids.add(reference.source_id)
         if not reference.citation_key.strip() or reference.citation_key in citation_keys:
-            raise DocumentModelError(f"invalid or duplicate citation_key: {reference.citation_key!r}")
+            raise DocumentModelError(
+                f"invalid or duplicate citation_key: {reference.citation_key!r}"
+            )
         citation_keys.add(reference.citation_key)
 
     for section_index, section in enumerate(document.sections):
@@ -196,39 +467,128 @@ def validate_document_model(document: DocumentModel) -> None:
         if not isinstance(section.title, str):
             raise DocumentModelError(f"section {section_index}.title must be a string")
         if not section.title.strip():
-            raise DocumentModelError(f"section {section_index}.title must be a non-empty string")
+            raise DocumentModelError(
+                f"section {section_index}.title must be a non-empty string"
+            )
+        if not isinstance(section.section_id, str):
+            raise DocumentModelError(
+                f"section {section_index}.section_id must be a string"
+            )
         if not isinstance(section.blocks, tuple):
             raise DocumentModelError(f"section {section_index}.blocks must be a tuple")
         for block_index, block in enumerate(section.blocks):
             context = f"section {section_index}.blocks[{block_index}]"
-            if not isinstance(block, (TextBlock, MathBlock, CitationBlock, LegacyLatexBlock)):
+            if not isinstance(
+                block,
+                (
+                    TextBlock,
+                    MathBlock,
+                    CitationBlock,
+                    LegacyLatexBlock,
+                    ParagraphBlock,
+                    EquationBlock,
+                ),
+            ):
                 raise DocumentModelError(f"{context} has an invalid block type")
             if isinstance(block, TextBlock):
                 if not isinstance(block.text, str) or not block.text:
-                    raise DocumentModelError(f"{context}.text must be a non-empty string")
+                    raise DocumentModelError(
+                        f"{context}.text must be a non-empty string"
+                    )
             elif isinstance(block, MathBlock):
                 if not isinstance(block.expression, str) or not block.expression.strip():
-                    raise DocumentModelError(f"{context}.expression must be a non-empty string")
+                    raise DocumentModelError(
+                        f"{context}.expression must be a non-empty string"
+                    )
             elif isinstance(block, LegacyLatexBlock):
                 if not isinstance(block.source, str) or not block.source:
-                    raise DocumentModelError(f"{context}.source must be a non-empty string")
-            else:
-                if not isinstance(block.source_ids, tuple):
-                    raise DocumentModelError(f"{context}.source_ids must be a tuple")
-                if not block.source_ids or any(not isinstance(source_id, str) or not source_id.strip() for source_id in block.source_ids):
-                    raise DocumentModelError(f"{context}.source_ids must contain non-empty strings")
-                if len(set(block.source_ids)) != len(block.source_ids):
-                    raise DocumentModelError(f"{context}.source_ids must not contain duplicates")
-                missing = [source_id for source_id in block.source_ids if source_id not in reference_ids]
-                if missing:
-                    raise DocumentModelError(f"{context} references unknown source_id(s): {', '.join(missing)}")
+                    raise DocumentModelError(
+                        f"{context}.source must be a non-empty string"
+                    )
+            elif isinstance(block, CitationBlock):
+                _validate_source_ids(
+                    block.source_ids,
+                    context=context,
+                    reference_ids=reference_ids,
+                )
+            elif isinstance(block, ParagraphBlock):
+                if not isinstance(block.content, tuple) or not block.content:
+                    raise DocumentModelError(
+                        f"{context}.content must be a non-empty tuple"
+                    )
+                for inline_index, inline in enumerate(block.content):
+                    inline_context = f"{context}.content[{inline_index}]"
+                    if isinstance(inline, IRTextSpan):
+                        if not isinstance(inline.text, str) or not inline.text:
+                            raise DocumentModelError(
+                                f"{inline_context}.text must be non-empty"
+                            )
+                    elif isinstance(inline, IRMathSpan):
+                        if (
+                            not isinstance(inline.expression, str)
+                            or not inline.expression.strip()
+                        ):
+                            raise DocumentModelError(
+                                f"{inline_context}.expression must be non-empty"
+                            )
+                    elif isinstance(inline, IRCitationSpan):
+                        if not isinstance(inline.occurrence_id, str):
+                            raise DocumentModelError(
+                                f"{inline_context}.occurrence_id must be a string"
+                            )
+                        _validate_source_ids(
+                            inline.source_ids,
+                            context=inline_context,
+                            reference_ids=reference_ids,
+                        )
+                    else:
+                        raise DocumentModelError(
+                            f"{inline_context} has an invalid inline type"
+                        )
+            elif isinstance(block, EquationBlock):
+                if not isinstance(block.equation_id, str) or not block.equation_id.strip():
+                    raise DocumentModelError(
+                        f"{context}.equation_id must be non-empty"
+                    )
+                if not isinstance(block.expression, str) or not block.expression.strip():
+                    raise DocumentModelError(
+                        f"{context}.expression must be non-empty"
+                    )
+                if (
+                    not isinstance(block.occurrence_id, str)
+                    or not block.occurrence_id.strip()
+                ):
+                    raise DocumentModelError(
+                        f"{context}.occurrence_id must be non-empty"
+                    )
+                if block.label is not None and not isinstance(block.label, str):
+                    raise DocumentModelError(
+                        f"{context}.label must be a string or None"
+                    )
+                if block.caption is not None and not isinstance(block.caption, str):
+                    raise DocumentModelError(
+                        f"{context}.caption must be a string or None"
+                    )
 
 
-def build_document_model(state: Mapping[str, Any], sections: Sequence[Mapping[str, Any]], evidence: Sequence[Mapping[str, Any]]) -> DocumentModel:
-    """Build and validate the semantic document model consumed by a renderer."""
+def build_document_model(
+    state: Mapping[str, Any],
+    sections: Sequence[Mapping[str, Any]],
+    evidence: Sequence[Mapping[str, Any]],
+) -> DocumentModel:
+    """Build and validate the renderer-neutral document model from legacy IR input."""
 
     if not isinstance(state, Mapping):
         raise DocumentModelError("state must be a mapping")
-    document = DocumentModel(topic=_as_text(state.get("topic"), "topic", default="Finite Element Method Guideline"), objective=_as_text(state.get("objective"), "objective"), sections=normalize_sections(sections), references=normalize_references(evidence))
+    document = DocumentModel(
+        topic=_as_text(
+            state.get("topic"),
+            "topic",
+            default="Finite Element Method Guideline",
+        ),
+        objective=_as_text(state.get("objective"), "objective"),
+        sections=normalize_sections(sections),
+        references=normalize_references(evidence),
+    )
     validate_document_model(document)
     return document

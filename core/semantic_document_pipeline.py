@@ -206,6 +206,41 @@ def build_semantic_candidate_document(
     return document, report
 
 
+
+def build_semantic_render_document(
+    state: Dict[str, Any],
+    *,
+    evidence: Sequence[Mapping[str, Any]],
+) -> tuple[Document, Dict[str, Any]]:
+    """Build the deterministic semantic document used by active LaTeX projection.
+
+    The persisted candidate remains a migration/audit artifact. This function
+    promotes the same deterministic structure to rendering authority only after
+    its IR-readiness checks pass. No scientific object is created or promoted
+    here.
+    """
+    document, candidate_report = build_semantic_candidate_document(
+        state,
+        evidence=evidence,
+    )
+    readiness = candidate_report.get("latex_ir_readiness", {})
+    if not isinstance(readiness, dict) or not readiness.get("ready"):
+        diagnostics = readiness.get("diagnostics", []) if isinstance(readiness, dict) else []
+        raise ValueError(
+            "Semantic document is not ready for LaTeX IR projection: "
+            + "; ".join(str(item) for item in diagnostics)
+        )
+
+    report = deepcopy(candidate_report)
+    report["status"] = "renderable"
+    report["authoritative_for_rendering"] = True
+    document.metadata["publication_role"] = "active_rendering_source"
+    document.metadata["authoritative_for_rendering"] = True
+    document.metadata["shadow_report"] = report
+    document.metadata["latex_ir_readiness"] = deepcopy(readiness)
+    document.validate()
+    return document, report
+
 def persist_semantic_candidate_document(
     state: Dict[str, Any],
     paths: Mapping[str, Any],

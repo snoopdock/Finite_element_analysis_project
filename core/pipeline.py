@@ -23,17 +23,9 @@ from research.reading_tracker import (
     save_reading_state,
 )
 
-from processing.document_renderer import (
-    render_document,
-)
-
-from processing.latex_section_adapter import (
-    adapt_sections_to_latex_ir,
-)
-
-from processing.evidence_adapter import (
-    adapt_evidence_to_references,
-)
+from processing.document_renderer import render_document_model
+from processing.document_to_latex_ir import project_document_to_latex_ir
+from core.semantic_document_pipeline import build_semantic_render_document
 
 from utils.text import (
     load_json,
@@ -1004,20 +996,27 @@ def phase_assemble(state, paths):
         )
         return False
 
- 
-    latex_sections = adapt_sections_to_latex_ir(
-    sections
+    semantic_document, semantic_report = build_semantic_render_document(
+        state,
+        evidence=evidence,
     )
-
-    
-    latex_evidence = adapt_evidence_to_references(
-    evidence
+    latex_document = project_document_to_latex_ir(
+        semantic_document,
+        state=state,
+        evidence=evidence,
+        domain_model=state.get("domain_semantic_model", {}),
     )
+    state["semantic_render_status"] = semantic_report
+    state["latex_ir_projection_status"] = {
+        "status": "success",
+        "source_document_id": latex_document.source_document_id,
+        "section_count": len(latex_document.sections),
+        "reference_count": len(latex_document.references),
+    }
 
-    tex_content = render_document(
-    state,
-    latex_sections,
-    latex_evidence,
+    tex_content = render_document_model(
+        state,
+        latex_document,
     )
 
     save_text(
@@ -1026,7 +1025,7 @@ def phase_assemble(state, paths):
     )
 
     print(
-        f"LaTeX assembled. {len(sections)} sections.",
+        f"LaTeX assembled through semantic IR. {len(sections)} sections.",
         file=sys.stderr,
     )
 

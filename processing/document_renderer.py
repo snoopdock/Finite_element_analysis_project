@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Rendering boundary for structured documents.
 
-This module deliberately contains the public renderer contract first. The
-legacy LaTeX builder remains the compatibility implementation until the
-individual rendering operations are migrated behind this boundary.
+Legacy callers may still supply normalized section/reference mappings. The
+canonical semantic path now projects ``core.document_model.Document`` into a
+``processing.latex_ir.DocumentModel`` before entering this module.
 """
 
 from typing import Any, Mapping, Sequence
+
+from processing.latex_ir import DocumentModel
 
 
 def render_document(
@@ -14,12 +16,17 @@ def render_document(
     sections: Sequence[Mapping[str, Any]],
     evidence: Sequence[Mapping[str, Any]],
 ) -> str:
-    """Render a structured document through the compatibility boundary.
-
-    The function preserves the existing pipeline contract while establishing
-    a single entry point for the future node-oriented renderer. Keeping the
-    import local avoids an import cycle during the migration.
-    """
+    """Compatibility renderer for legacy LaTeX-IR dictionaries."""
     from processing.latex_builder import build_latex_document
 
     return build_latex_document(state, sections, evidence)
+
+
+def render_document_model(
+    state: Mapping[str, Any],
+    document: DocumentModel,
+) -> str:
+    """Render an already-projected canonical LaTeX IR document."""
+    from processing.latex_builder import build_latex_document_from_model
+
+    return build_latex_document_from_model(state, document)
