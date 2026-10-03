@@ -42,7 +42,8 @@
       "mathematical_formulation": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma",
       "source_ids": [
         "wiki_spectral_element_method"
-      ]
+      ],
+      "concept_id": "ebaf7307-0636-438a-8b61-766fc3157f09"
     },
     {
       "name": "High-Degree Polynomial Basis Functions",
@@ -50,6 +51,15 @@
       "mathematical_formulation": "u_h(x) = \\sum_{i=1}^{N} N_i(x) u_i",
       "source_ids": [
         "wiki_spectral_element_method"
+      ],
+      "concept_id": "556948d2-2e33-4776-9a9e-941da0a820ce"
+    },
+    {
+      "name": "Galerkin's Method",
+      "explanation": "Galerkin's Method is an approximate technique for solving differential equations, particularly boundary value problems. It forms the mathematical foundation for the Finite Element Method (FEM) by converting strong forms of differential equations into weak forms. The method uses test functions to minimize the residual error over the domain, leading to a system of algebraic equations. This approach enables the discretization of complex physical systems into manageable subdomains for numerical analysis.",
+      "mathematical_formulation": "\\int_{\\Omega} L(u) v \\, d\\Omega = 0",
+      "source_ids": [
+        "wiki_boris_galerkin"
       ]
     }
   ],
@@ -101,7 +111,8 @@
       ],
       "source_ids": [
         "wiki_spectral_element_method"
-      ]
+      ],
+      "proposition_id": "f971edbb-23e4-4464-8009-15881f8421f2"
     },
     {
       "step_number": 2,
@@ -112,7 +123,8 @@
       ],
       "source_ids": [
         "wiki_spectral_element_method"
-      ]
+      ],
+      "proposition_id": "aba2a68c-9e0b-4305-bea2-4de873e7f679"
     },
     {
       "step_number": 3,
@@ -123,7 +135,8 @@
       ],
       "source_ids": [
         "wiki_spectral_element_method"
-      ]
+      ],
+      "proposition_id": "3872f657-530f-4f17-8f6d-16a04b792ea4"
     }
   ],
   "equations": [
@@ -178,7 +191,8 @@
       "explanation": "This equation represents the weak form of the Poisson equation. The left-hand side computes the inner product of gradients for the solution $u$ and test function $v$. The right-hand side includes the source term $f$ and Neumann boundary conditions $g$. Integration over the domain $\\Omega$ and boundary $\\partial\\Omega$ ensures global balance.",
       "source_ids": [
         "wiki_spectral_element_method"
-      ]
+      ],
+      "proposition_id": "b7687293-0721-4e64-9efd-ef6e7e5e73c3"
     },
     {
       "name": "Stiffness Matrix Assembly",
@@ -186,6 +200,15 @@
       "explanation": "The stiffness matrix $K$ is assembled by summing element contributions. Each entry $K_{ij}$ corresponds to the integral of the product of gradients of basis functions $N_i$ and $N_j$ over element $\\Omega_e$. This matrix encodes the system's physical properties and governs the solution's behavior.",
       "source_ids": [
         "wiki_spectral_element_method"
+      ],
+      "proposition_id": "22af8049-7c21-4a7b-9e47-d05c1a8d52ae"
+    },
+    {
+      "name": "Galerkin Weak Form",
+      "latex": "\\int_{\\Omega} L(u) v \\, d\\Omega = 0",
+      "explanation": "This equation represents the core of Galerkin's Method, where $ L(u) $ is the differential operator applied to the solution $ u $, $ v $ are test functions, and $ \\Omega $ is the domain. The integral ensures the residual error is orthogonal to the test functions, providing an approximate solution.",
+      "source_ids": [
+        "wiki_boris_galerkin"
       ]
     }
   ],
@@ -219,14 +242,16 @@
       "explanation": "Higher polynomial orders reduce discretization error more rapidly than mesh refinement. However, very high orders may increase computational costs and numerical instability. The method's robustness to mesh size and polynomial order (up to 32) ensures reliable performance across diverse applications.",
       "source_ids": [
         "arxiv_1512.02390v2"
-      ]
+      ],
+      "proposition_id": "4224c6a9-1fb2-4255-9fce-f0ccc3bdb2b9"
     },
     {
       "rule": "Basis Function Orthogonality",
       "explanation": "Using orthogonal basis functions (e.g., Chebyshev or Legendre polynomials) minimizes stiffness matrix conditioning issues. This property simplifies numerical integration and improves solution convergence rates, especially for spectral elements.",
       "source_ids": [
         "wiki_spectral_element_method"
-      ]
+      ],
+      "proposition_id": "9a2b5bba-6091-45e6-9451-bd8ec0a397a0"
     }
   ]
 }

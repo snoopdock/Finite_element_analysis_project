@@ -618,7 +618,7 @@
   {
     "source_id": "arxiv_1509.00440v1",
     "url": "https://arxiv.org/pdf/1509.00440v1.pdf",
-    "retrieved_at": "2026-10-03T19:37:05.186779+00:00",
+    "retrieved_at": "2026-10-03T19:53:02.067684+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -638,14 +638,17 @@
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1509.00440v1.txt",
     "full_text_available": true,
     "status": "cached_full_text",
-    "query_context": "finite element method practical implementation modeling rules",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
     "query_contexts": [
       "Finite Element Method with Energy Minimization",
       "Mixed Finite Element Method",
       "Scaled Boundary Finite Element Method",
+      "cut finite element method",
       "finite element method mathematical foundation weak form Galerkin method",
       "finite element method practical implementation modeling rules",
-      "finite element method verification validation numerical stability"
+      "finite element method verification validation numerical stability",
+      "hp finite element method",
+      "scaled boundary finite element method"
     ],
     "provider_names": [
       "arxiv"
@@ -665,22 +668,22 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "Scaled Boundary Finite Element Method",
+      "best_query": "scaled boundary finite element method",
       "query_index": 5,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "Finite Element Method with Energy Minimization": 0.2125,
-        "Mixed Finite Element Method": 0.2125,
-        "Scaled Boundary Finite Element Method": 0.519183
+        "hp finite element method": 0.2125,
+        "cut finite element method": 0.2125,
+        "scaled boundary finite element method": 0.519183
       }
     }
   },
   {
     "source_id": "arxiv_1902.01090v2",
     "url": "https://arxiv.org/pdf/1902.01090v2.pdf",
-    "retrieved_at": "2026-10-03T19:37:05.186779+00:00",
+    "retrieved_at": "2026-10-03T19:53:02.067684+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -698,9 +701,10 @@
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1902.01090v2.txt",
     "full_text_available": true,
     "status": "parsed_full_text",
-    "query_context": "Scaled Boundary Finite Element Method",
+    "query_context": "scaled boundary finite element method",
     "query_contexts": [
-      "Scaled Boundary Finite Element Method"
+      "Scaled Boundary Finite Element Method",
+      "scaled boundary finite element method"
     ],
     "provider_names": [
       "arxiv"
@@ -720,15 +724,15 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "Scaled Boundary Finite Element Method",
+      "best_query": "scaled boundary finite element method",
       "query_index": 5,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "Finite Element Method with Energy Minimization": 0.2125,
-        "Mixed Finite Element Method": 0.2125,
-        "Scaled Boundary Finite Element Method": 0.519183
+        "hp finite element method": 0.2125,
+        "cut finite element method": 0.2125,
+        "scaled boundary finite element method": 0.519183
       }
     }
   },
@@ -790,7 +794,7 @@
   {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-03T19:51:37.691139+00:00",
+    "retrieved_at": "2026-10-03T19:53:02.067684+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -836,9 +840,61 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "spectral element method finite element method": 0.2125,
-        "galerkin dimension reduction finite element method": 0.2125,
-        "hpk-fem finite element method": 0.2125
+        "hp finite element method": 0.2125,
+        "cut finite element method": 0.2125,
+        "scaled boundary finite element method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "wiki_boris_galerkin",
+    "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
+    "retrieved_at": "2026-10-03T19:53:02.067684+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Boris Galerkin",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "problem in <span class=\"searchmatch\">weak</span> <span class=\"searchmatch\">form</span>. Most well-known in the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> The Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> The streamline upwind Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> (SUPG) The",
+      "word_count": 1835
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_boris_galerkin.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.260173,
+      "lexical": 0.167889,
+      "source_quality": 0.55,
+      "section_relevance": 0.135452,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method mathematical foundation weak form Galerkin method",
+      "query_index": 0,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "hp finite element method": 0.1375,
+        "cut finite element method": 0.1375,
+        "scaled boundary finite element method": 0.1375
       }
     }
   }

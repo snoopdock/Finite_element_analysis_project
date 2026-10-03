@@ -124,74 +124,25 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The Primal Finite Element Method relies on direct discretization of primary variables without additional fields, resulting in a simpler but less robust approach for certain physical phenomena. This method is termed 'irreducible' and typically uses symmetric positive definite systems. However, it faces challenges in problems with constraints or incompressibility, where mixed formulations excel. The primal approach is less suitable for problems requiring efficient solutions for numerically ill-posed problems, such as almost incompressible elasticity.\n\nThe assembly of the stiffness matrix "
-            },
-            {
-              "type": "inline_math",
-              "expression": "K"
-            },
-            {
-              "type": "text",
-              "text": " is a critical step in the Finite Element Method (FEM), as it encodes the system's physical properties and governs the solution's behavior. The matrix is assembled by summing element contributions, where each entry "
-            },
-            {
-              "type": "inline_math",
-              "expression": "K_{ij}"
-            },
-            {
-              "type": "text",
-              "text": " corresponds to the integral of the product of gradients of basis functions "
-            },
-            {
-              "type": "inline_math",
-              "expression": "N_i"
-            },
-            {
-              "type": "text",
-              "text": " and "
-            },
-            {
-              "type": "inline_math",
-              "expression": "N_j"
-            },
-            {
-              "type": "text",
-              "text": " over element "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\Omega_e"
-            },
-            {
-              "type": "text",
-              "text": ". This process involves computing element-level integrals and assembling them into a global system of equations, which couples degrees of freedom across the domain "
+              "text": "Céa's Lemma provides a theoretical foundation for analyzing errors in finite element methods applied to elliptic partial differential equations. This concept is critical for proving convergence and stability of finite element approximations. Mathematically, Céa's Lemma establishes that the discrete solution in a finite-dimensional subspace approximates the true solution in a Hilbert space, relying on the properties of continuity and coercivity of the bilinear form. As stated in "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "b91a0273-1925-5e30-bf16-2ec9a8be7188",
-              "source_id": "wiki_spectral_element_method"
+              "occurrence_id": "0c22bcda-6a96-5d28-a475-9bd187895f31",
+              "source_id": "wiki_c_a_s_lemma"
             },
             {
               "type": "text",
-              "text": ". The choice of basis functions, such as high-degree polynomials, affects the conditioning of the stiffness matrix and the efficiency of numerical integration "
+              "text": ", the lemma ensures the existence and uniqueness of solutions, thereby providing a robust framework for the finite element method. This theoretical foundation is essential for understanding the implications of Céa's Lemma on the accuracy and reliability of finite element solutions.\n\nThe Primal Finite Element Method and the Mixed Finite Element Method are two distinct approaches to solving partial differential equations (PDEs). The Primal Finite Element Method relies on direct discretization of primary variables without additional fields, resulting in a simpler but less robust approach for certain physical phenomena, as stated in the concept of Primal Finite Element Method. In contrast, the Mixed Finite Element Method introduces additional fields to solve PDEs, constrained using Lagrange multipliers, as described in the concept of Mixed Finite Element Method. This approach is particularly effective in problems with constraints or incompressibility, where mixed formulations excel, as stated in the concept of Mixed Finite Element Method.\n\nIn the realm of finite element methods, iterative techniques play a crucial role in achieving accurate solutions. One such method is the Loubignac iteration, an iterative finite element method designed to produce a continuous stress field. This approach is particularly useful in problems requiring smooth stress distributions, such as in solid mechanics. The Loubignac iteration iteratively refines solutions to satisfy equilibrium and compatibility conditions, thereby improving the accuracy of stress approximations in finite element analysis "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "73ad37ba-1b44-5827-b0ae-509bd4f6c433",
-              "source_id": "wiki_spectral_element_method"
+              "occurrence_id": "cf1608eb-c2d1-5bdc-a7f2-2256ca07956c",
+              "source_id": "wiki_loubignac_iteration"
             },
             {
               "type": "text",
-              "text": ".\n\nIn contrast to the Primal Finite Element Method, the Mixed Finite Element Method introduces additional fields to solve partial differential equations, constrained using Lagrange multipliers to enable efficient solutions for numerically ill-posed problems like almost incompressible elasticity. This method results in a saddle point system with non-definite matrices, requiring specialized solvers. The mixed formulation prevents numerical locking in nearly incompressible problems by decoupling stress and strain fields, ensuring stability and accuracy where primal methods fail due to rank deficiency "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "fd022177-a395-5951-870c-757059bc1a8b",
-              "source_id": "wiki_mixed_finite_element_method"
-            },
-            {
-              "type": "text",
-              "text": "."
+              "text": ". This method is essential for applications where precise stress distributions are critical, such as in the analysis of structural integrity."
             }
           ]
         }
@@ -210,24 +161,16 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Verification and validation are crucial steps in the finite element method, ensuring that the numerical solution accurately represents the physical phenomenon being modeled. Céa's Lemma provides a theoretical foundation for analyzing errors in finite element methods, establishing that the discrete solution approximates the true solution in a Hilbert space. However, certain physical phenomena, such as incompressible materials, pose challenges to primal finite element methods, which solve PDEs without additional fields. In these cases, mixed finite element methods, which introduce additional fields constrained using Lagrange multipliers, offer a more robust approach, as evident from the mixed formulation: "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\begin{cases} \\mathbf{K} \\mathbf{u} + \\mathbf{B}^T \\boldsymbol{\\lambda} = \\mathbf{f} \\\\ \\mathbf{B} \\mathbf{u} = \\mathbf{0} \\end{cases}"
-            },
-            {
-              "type": "text",
-              "text": " "
+              "text": "Verification and validation techniques are essential for ensuring the accuracy of finite element methods. Céa's Lemma provides a theoretical foundation for analyzing errors in finite element methods applied to elliptic partial differential equations, establishing that the discrete solution in a finite-dimensional subspace approximates the true solution in a Hilbert space. This concept is critical for proving convergence and stability of finite element approximations. Furthermore, the choice of basis functions affects the conditioning of the stiffness matrix and the efficiency of numerical integration, with high-degree polynomials allowing for exponential error reduction with increasing polynomial order. In particular, mixed finite elements are preferred for incompressible materials, as they prevent numerical locking by decoupling stress and strain fields, ensuring stability and accuracy where primal methods fail.\n\nWhen implementing high-degree polynomial basis functions, it is essential to consider the implications on the stiffness matrix assembly and the overall accuracy of the finite element method. The choice of basis functions affects the conditioning of the stiffness matrix, and high-degree polynomials can lead to exponential error reduction with increasing polynomial order. To ensure efficient representation of solutions, it is crucial to select basis functions that balance accuracy and computational cost. This involves careful handling of boundary conditions and material properties during the discretization process, as outlined in "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "736f100c-ccf3-5a5c-a18d-940aac6ab456",
-              "source_id": "wiki_mixed_finite_element_method"
+              "occurrence_id": "cdcf3a19-7856-5748-b529-f8cc0bd0a4cd",
+              "source_id": "arxiv_1902.01090v2"
             },
             {
               "type": "text",
-              "text": ".\n\nThe mixed finite element method is a crucial approach for implementing finite element methods, particularly in problems involving incompressible materials. By introducing additional fields to solve partial differential equations, mixed formulations decouple stress and strain fields, preventing numerical locking and ensuring stability and accuracy. This is achieved through the use of Lagrange multipliers, which constrain the additional fields and result in a saddle point system with non-definite matrices. Hybrid methods further refine this by enforcing continuity weakly through boundary Lagrange fields, reducing degrees of freedom and eliminating negative pivots from mixed formulations. As a result, mixed elements are essential for modeling incompressible materials, and hybrid methods provide an efficient and robust approach for solving such problems.\n\nAnalyzing error estimates and convergence rates using Céa's Lemma is crucial for verifying the accuracy of finite element solutions. Céa's Lemma provides a theoretical foundation for establishing the relationship between the discrete solution and the true solution in a Hilbert space, as stated in "
+              "text": " and "
             },
             {
               "type": "citation_occurrence",
@@ -236,7 +179,7 @@
             },
             {
               "type": "text",
-              "text": ". By leveraging the properties of continuity and coercivity of the bilinear form, Céa's Lemma ensures the existence and uniqueness of solutions, thereby facilitating the analysis of convergence rates. Furthermore, the choice of basis functions, such as high-degree polynomials, significantly impacts the efficiency of numerical integration and the conditioning of the stiffness matrix, as discussed in "
+              "text": ". The weak formulation, which transforms PDEs into integral equations, forms the foundation for the Galerkin method and enables the use of piecewise polynomial basis functions, as described in "
             },
             {
               "type": "citation_occurrence",
@@ -245,16 +188,7 @@
             },
             {
               "type": "text",
-              "text": ". This is particularly relevant when employing high-degree polynomial basis functions, which enable exponential error reduction with increasing polynomial order, as demonstrated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "17c18c9f-0962-583d-b916-454eaa24ee61",
-              "source_id": "arxiv_1512.02390v2"
-            },
-            {
-              "type": "text",
-              "text": "."
+              "text": ".\n\nComparing the efficiency of primal and mixed finite element methods reveals significant differences in their approach to solving partial differential equations. Primal finite element methods, which solve PDEs without additional fields, rely on direct discretization of primary variables, resulting in a simpler but less robust approach for certain physical phenomena. In contrast, mixed finite element methods introduce additional fields to solve PDEs, constrained using Lagrange multipliers, enabling efficient solutions for numerically ill-posed problems like almost incompressible elasticity. The mixed approach results in a saddle point system with non-definite matrices, requiring specialized solvers, but prevents numerical locking in nearly incompressible problems by decoupling stress and strain fields."
             }
           ]
         }
@@ -273,7 +207,7 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The Primal Finite Element Method is a foundation for direct discretization, relying on the direct discretization of primary variables without additional fields. This approach is termed 'irreducible' and typically uses symmetric positive definite systems. The method faces challenges in problems with constraints or incompressibility, where mixed formulations excel. For instance, the mixed finite element method introduces additional fields to solve partial differential equations, contrasting with primal methods, and results in a saddle point system with non-definite matrices. This is particularly useful in problems requiring efficient solutions for numerically ill-posed problems like almost incompressible elasticity, where mixed finite elements prevent numerical locking in nearly incompressible problems by decoupling stress and strain fields.\n\nCéa's Lemma provides a theoretical foundation for analyzing errors in finite element methods applied to elliptic partial differential equations. It establishes that the discrete solution in a finite-dimensional subspace approximates the true solution in a Hilbert space. The lemma relies on the properties of continuity and coercivity of the bilinear form, ensuring the existence and uniqueness of solutions. This concept is critical for proving convergence and stability of finite element approximations. According to Céa's Lemma, the error between the discrete and true solutions is bounded by the difference between the discrete and true solutions, which is a function of the mesh size and the polynomial order. The trade-off between mesh size and polynomial order is a crucial aspect of finite element methods, as higher polynomial orders reduce discretization error more rapidly than mesh refinement, but may increase computational costs and numerical instability "
+              "text": "The Finite Element Method (FEM) is a numerical technique used to approximate solutions to partial differential equations (PDEs). The method's robustness to mesh size and polynomial order, as demonstrated by the mesh size and polynomial order trade-off, ensures reliable performance across diverse applications "
             },
             {
               "type": "citation_occurrence",
@@ -282,7 +216,7 @@
             },
             {
               "type": "text",
-              "text": ".\n\nThe advanced finite element methods, such as the Mixed Finite Element Method and Loubignac Iteration, offer improved solutions for complex physical phenomena. The Mixed Finite Element Method introduces additional fields to solve partial differential equations, contrasting with primal methods, and results in a saddle point system with non-definite matrices, requiring specialized solvers "
+              "text": ". This is particularly evident in the use of higher polynomial orders, which reduce discretization error more rapidly than mesh refinement. In contrast, primal finite element methods solve PDEs without additional fields, relying on direct discretization of primary variables, and are termed 'irreducible' "
             },
             {
               "type": "citation_occurrence",
@@ -291,25 +225,42 @@
             },
             {
               "type": "text",
-              "text": ". This approach is particularly useful in problems requiring smooth stress distributions, such as in solid mechanics, where Loubignac Iteration can iteratively refine solutions to satisfy equilibrium and compatibility conditions, contributing to improving the accuracy of stress approximations in finite element analysis "
+              "text": ". However, these methods face challenges in problems with constraints or incompressibility, where mixed formulations excel. The mixed finite element method, on the other hand, introduces additional fields to solve PDEs, constrained using Lagrange multipliers, enabling efficient solutions for numerically ill-posed problems "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "fbbb2f5b-3c3d-54b8-b09f-d79f19588136",
-              "source_id": "wiki_loubignac_iteration"
-            },
-            {
-              "type": "text",
-              "text": ". By decoupling stress and strain fields, mixed finite elements prevent numerical locking in nearly incompressible problems, ensuring stability and accuracy where primal methods fail due to rank deficiency "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "cbc3d597-a793-5a77-8303-af793f473aa7",
+              "occurrence_id": "820b6e5f-bba0-5ba6-ab9f-bc3c4fa5cb5f",
               "source_id": "wiki_mixed_finite_element_method"
             },
             {
               "type": "text",
-              "text": "."
+              "text": ".\n\nThe theoretical foundations of the Finite Element Method (FEM) are rooted in the weak formulation and Céa's Lemma. The weak formulation, as demonstrated by the integral equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma "
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "1ef39f78-4a8b-5a36-9224-0f91fea4e3c7",
+              "source_id": "wiki_spectral_element_method"
+            },
+            {
+              "type": "text",
+              "text": ", transforms partial differential equations (PDEs) into integral equations by multiplying with test functions and integrating over the domain. This approach reduces the smoothness requirements for solutions, enabling the use of piecewise polynomial basis functions. Céa's Lemma, a fundamental concept in the theory of FEM, provides a theoretical foundation for analyzing errors in finite element methods applied to elliptic partial differential equations "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "210b3ebc-545b-5b11-b63d-850fb1851c48",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ". It establishes that the discrete solution in a finite-dimensional subspace approximates the true solution in a Hilbert space, relying on the properties of continuity and coercivity of the bilinear form. This concept is critical for proving convergence and stability of finite element approximations.\n\nThe Advanced Finite Element Methods: Mixed and Primal Approaches offer distinct solutions to partial differential equations (PDEs). Primal finite element methods, which solve PDEs without additional fields, rely on direct discretization of primary variables and are termed 'irreducible'. However, these methods face challenges in problems with constraints or incompressibility, where mixed formulations excel. In contrast, the mixed finite element method introduces additional fields to solve PDEs, constrained using Lagrange multipliers, enabling efficient solutions for numerically ill-posed problems like almost incompressible elasticity. This approach results in a saddle point system with non-definite matrices, requiring specialized solvers."
             }
           ]
         }
@@ -340,60 +291,59 @@
         },
         {
           "section_id": "886e8411-9702-45ed-b8de-f324d1e883c3",
-          "semantic_marker_count": 3,
+          "semantic_marker_count": 2,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
-            "wiki_spectral_element_method",
-            "wiki_spectral_element_method",
-            "wiki_mixed_finite_element_method"
+            "wiki_c_a_s_lemma",
+            "wiki_loubignac_iteration"
           ],
-          "inline_math_count": 5,
+          "inline_math_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
           "section_id": "4c334faa-7b66-450d-be76-dd27c05dd1ef",
-          "semantic_marker_count": 4,
+          "semantic_marker_count": 3,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
-            "wiki_mixed_finite_element_method",
+            "arxiv_1902.01090v2",
             "wiki_c_a_s_lemma",
-            "wiki_spectral_element_method",
-            "arxiv_1512.02390v2"
+            "wiki_spectral_element_method"
           ],
-          "inline_math_count": 1,
+          "inline_math_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
           "section_id": "5b1f82f1-eb16-4194-ac8e-49fc18ff762a",
-          "semantic_marker_count": 4,
+          "semantic_marker_count": 5,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
             "arxiv_1512.02390v2",
             "wiki_mixed_finite_element_method",
-            "wiki_loubignac_iteration",
-            "wiki_mixed_finite_element_method"
+            "wiki_mixed_finite_element_method",
+            "wiki_spectral_element_method",
+            "wiki_c_a_s_lemma"
           ],
-          "inline_math_count": 0,
+          "inline_math_count": 1,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         }
       ],
-      "semantic_marker_count": 12,
+      "semantic_marker_count": 11,
       "latex_ir_readiness": {
         "ready": true,
         "counts": {
           "sections": 4,
           "paragraphs": 4,
-          "text_nodes": 32,
-          "inline_math": 16,
+          "text_nodes": 26,
+          "inline_math": 11,
           "display_math": 0,
           "equation_occurrences": 0,
-          "citation_occurrences": 12,
+          "citation_occurrences": 11,
           "cross_reference_occurrences": 0,
           "equation_proposal_references": 0,
           "raw_math_text_nodes": 0
@@ -406,11 +356,11 @@
       "counts": {
         "sections": 4,
         "paragraphs": 4,
-        "text_nodes": 32,
-        "inline_math": 16,
+        "text_nodes": 26,
+        "inline_math": 11,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 12,
+        "citation_occurrences": 11,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "raw_math_text_nodes": 0
