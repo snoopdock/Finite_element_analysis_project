@@ -5,6 +5,7 @@ import sys
 import time
 
 from processing.llm_parser import LLMJSONParseError
+from core.domain_semantic_model import ingest_equation_candidates
 
 from research.evidence import (
     retrieve_evidence_parallel,
@@ -856,6 +857,11 @@ def phase_extract(
     )
 
     state["knowledge_base"] = updated_kb
+    state["domain_semantic_model"] = ingest_equation_candidates(
+        state.get("domain_semantic_model", {}),
+        cleaned.get("equations", []),
+        valid_source_ids,
+    )
 
     save_json(
         paths["research"],
