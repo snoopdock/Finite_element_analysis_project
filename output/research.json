@@ -6,7 +6,8 @@
       "mathematical_formulation": "",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "concept_id": "58118c0a-1410-4dac-88d9-57476166d49b"
     },
     {
       "name": "Loubignac Iteration",
@@ -14,6 +15,25 @@
       "mathematical_formulation": "",
       "source_ids": [
         "wiki_loubignac_iteration"
+      ],
+      "concept_id": "11fd0a0d-60f1-48f0-9eb0-8a0982f80fb4"
+    },
+    {
+      "name": "Weak Formulation",
+      "explanation": "The weak formulation is a foundational concept in the Finite Element Method (FEM) that transforms partial differential equations (PDEs) into integral equations. It involves multiplying the PDE by a test function and integrating over the domain, which reduces the requirement for solution differentiability. This approach allows for the use of piecewise continuous basis functions, enabling the approximation of solutions on complex geometries. The weak form is critical for deriving the discrete system of equations solved in FEM.",
+      "mathematical_formulation": "Find $ u \\in V $ such that $ a(u, v) = L(v) $ for all $ v \\in V $, where $ a(\\cdot, \\cdot) $ is a bilinear form and $ L(\\cdot) $ is a linear functional.",
+      "source_ids": [
+        "arxiv_1209.2311v1",
+        "arxiv_1211.2353v1"
+      ]
+    },
+    {
+      "name": "Discontinuous Galerkin Methods",
+      "explanation": "Discontinuous Galerkin (DG) methods are a class of FEM that allow solutions to be discontinuous across element boundaries. They use piecewise polynomial basis functions and enforce continuity weakly through numerical fluxes. DG methods are particularly effective for problems with shocks, discontinuities, or high gradients. They offer flexibility in mesh design and can handle adaptive refinement efficiently.",
+      "mathematical_formulation": "The DG solution $ u_h $ satisfies $ \\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx $ for all $ v_h \\in V_h $.",
+      "source_ids": [
+        "arxiv_1209.2311v1",
+        "arxiv_1211.2353v1"
       ]
     }
   ],
@@ -25,7 +45,8 @@
       "equations": [],
       "source_ids": [
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "proposition_id": "cfc54e16-ec7f-434e-bcb6-fd7d7763de79"
     },
     {
       "step_number": 2,
@@ -34,6 +55,28 @@
       "equations": [],
       "source_ids": [
         "wiki_loubignac_iteration"
+      ],
+      "proposition_id": "6bbfc157-9f3d-4fb2-af2a-98f5c709c9ef"
+    },
+    {
+      "step_number": 1,
+      "title": "Mesh Generation",
+      "description": "The first step in FEM is to discretize the computational domain into a mesh of non-overlapping elements. The mesh must conform to the geometry and resolve regions of interest. For adaptive methods, the mesh is refined iteratively based on error estimates. The quality of the mesh significantly impacts the accuracy and efficiency of the solution.",
+      "equations": [],
+      "source_ids": [
+        "arxiv_1209.2311v1",
+        "arxiv_1211.2353v1"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Assembly of Global System",
+      "description": "Local element matrices are computed using the weak form and basis functions. These matrices are then assembled into a global system of equations. The assembly process involves summing contributions from all elements, ensuring compatibility between adjacent elements through numerical fluxes in DG methods. The resulting system is solved iteratively or directly to obtain the discrete solution.",
+      "equations": [
+        "\\sum_{K} \\left( \\int_K \\nabla u_h \\cdot \\nabla v_h dx \\right) = \\int_{\\Omega} f v_h dx"
+      ],
+      "source_ids": [
+        "arxiv_1211.2353v1"
       ]
     }
   ],
@@ -44,6 +87,15 @@
       "explanation": "This equation represents the optimization problem in FELA, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints. The goal is to minimize the objective function while satisfying physical laws.",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
+      ],
+      "proposition_id": "b0111703-fc53-4022-9fe9-91c3eb47098e"
+    },
+    {
+      "name": "Error Estimate for DG Methods",
+      "latex": "O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right)",
+      "explanation": "This equation describes the error bound for a DG/Strang splitting method, where $ \\tau $ is the time step, $ h $ is the mesh size, and $ q $ is the polynomial order. The error comprises temporal ( $ \\tau^2 $ ) and spatial ( $ h^q $ ) components, with a coupling term ( $ h^q/\\tau $ ). It quantifies the convergence rate of the method under suitable assumptions.",
+      "source_ids": [
+        "arxiv_1211.2353v1"
       ]
     }
   ],
@@ -53,13 +105,29 @@
       "explanation": "FELA avoids time-stepping by directly computing collapse loads via optimization, ensuring efficiency and accuracy for geotechnical stability problems.",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "proposition_id": "0197bb4a-526e-4463-a2cc-8976fbf70efb"
     },
     {
       "rule": "Ensure Stress Continuity with Iterative Methods",
       "explanation": "Loubignac iteration enforces continuous stress fields, which is critical for accurate stress analysis in finite element simulations.",
       "source_ids": [
         "wiki_loubignac_iteration"
+      ],
+      "proposition_id": "3a84c511-aede-46e3-b62c-1fb69214821b"
+    },
+    {
+      "rule": "Stabilizing Parameters",
+      "explanation": "In DG methods, stabilizing parameters must be sufficiently large to ensure numerical stability. These parameters control the penalty term for discontinuities across element interfaces, preventing oscillations and ensuring convergence. Proper selection is critical for maintaining accuracy and robustness, especially in adaptive schemes.",
+      "source_ids": [
+        "arxiv_1209.2311v1"
+      ]
+    },
+    {
+      "rule": "Adaptive Mesh Refinement",
+      "explanation": "Adaptive mesh refinement improves efficiency by concentrating computational resources where errors are largest. It requires error indicators to guide refinement and coarsening. This rule ensures that the mesh evolves dynamically, balancing accuracy and computational cost without excessive resolution in smooth regions.",
+      "source_ids": [
+        "arxiv_1209.2311v1"
       ]
     }
   ]

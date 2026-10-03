@@ -2,10 +2,10 @@
   "schema_version": 6,
   "topic": "Finite Element Method Theory Implementation and Modeling Rules",
   "objective": "Produce a comprehensive technical guideline explaining how the Finite Element Method works\nincluding mathematical foundation, step-by-step procedure, and rules for modeling physical phenomena.\n",
-  "cycle": 2,
-  "iteration": 2,
-  "last_run": "2026-10-03T18:10:36.703874+00:00",
-  "last_run_status": "partial",
+  "cycle": 3,
+  "iteration": 3,
+  "last_run": "2026-10-03T18:14:05.429861+00:00",
+  "last_run_status": "success",
   "knowledge_base": {
     "concepts": [
       {
@@ -25,6 +25,26 @@
           "wiki_loubignac_iteration"
         ],
         "concept_id": "11fd0a0d-60f1-48f0-9eb0-8a0982f80fb4"
+      },
+      {
+        "name": "Weak Formulation",
+        "explanation": "The weak formulation is a foundational concept in the Finite Element Method (FEM) that transforms partial differential equations (PDEs) into integral equations. It involves multiplying the PDE by a test function and integrating over the domain, which reduces the requirement for solution differentiability. This approach allows for the use of piecewise continuous basis functions, enabling the approximation of solutions on complex geometries. The weak form is critical for deriving the discrete system of equations solved in FEM.",
+        "mathematical_formulation": "Find $ u \\in V $ such that $ a(u, v) = L(v) $ for all $ v \\in V $, where $ a(\\cdot, \\cdot) $ is a bilinear form and $ L(\\cdot) $ is a linear functional.",
+        "source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1"
+        ],
+        "concept_id": "92ab196b-6abf-4b8e-97e9-b41d652db99c"
+      },
+      {
+        "name": "Discontinuous Galerkin Methods",
+        "explanation": "Discontinuous Galerkin (DG) methods are a class of FEM that allow solutions to be discontinuous across element boundaries. They use piecewise polynomial basis functions and enforce continuity weakly through numerical fluxes. DG methods are particularly effective for problems with shocks, discontinuities, or high gradients. They offer flexibility in mesh design and can handle adaptive refinement efficiently.",
+        "mathematical_formulation": "The DG solution $ u_h $ satisfies $ \\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx $ for all $ v_h \\in V_h $.",
+        "source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1"
+        ],
+        "concept_id": "a99e9524-42b7-45f4-8013-b441d09318d3"
       }
     ],
     "procedures": [
@@ -47,6 +67,29 @@
           "wiki_loubignac_iteration"
         ],
         "proposition_id": "6bbfc157-9f3d-4fb2-af2a-98f5c709c9ef"
+      },
+      {
+        "step_number": 1,
+        "title": "Mesh Generation",
+        "description": "The first step in FEM is to discretize the computational domain into a mesh of non-overlapping elements. The mesh must conform to the geometry and resolve regions of interest. For adaptive methods, the mesh is refined iteratively based on error estimates. The quality of the mesh significantly impacts the accuracy and efficiency of the solution.",
+        "equations": [],
+        "source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1"
+        ],
+        "proposition_id": "6eab849c-93a8-4b0c-8b79-b466a7d4169b"
+      },
+      {
+        "step_number": 2,
+        "title": "Assembly of Global System",
+        "description": "Local element matrices are computed using the weak form and basis functions. These matrices are then assembled into a global system of equations. The assembly process involves summing contributions from all elements, ensuring compatibility between adjacent elements through numerical fluxes in DG methods. The resulting system is solved iteratively or directly to obtain the discrete solution.",
+        "equations": [
+          "\\sum_{K} \\left( \\int_K \\nabla u_h \\cdot \\nabla v_h dx \\right) = \\int_{\\Omega} f v_h dx"
+        ],
+        "source_ids": [
+          "arxiv_1211.2353v1"
+        ],
+        "proposition_id": "3085a4fb-c94a-43c2-826d-747a90f44da9"
       }
     ],
     "equations": [
@@ -58,6 +101,15 @@
           "wiki_finite_element_limit_analysis"
         ],
         "proposition_id": "b0111703-fc53-4022-9fe9-91c3eb47098e"
+      },
+      {
+        "name": "Error Estimate for DG Methods",
+        "latex": "O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right)",
+        "explanation": "This equation describes the error bound for a DG/Strang splitting method, where $ \\tau $ is the time step, $ h $ is the mesh size, and $ q $ is the polynomial order. The error comprises temporal ( $ \\tau^2 $ ) and spatial ( $ h^q $ ) components, with a coupling term ( $ h^q/\\tau $ ). It quantifies the convergence rate of the method under suitable assumptions.",
+        "source_ids": [
+          "arxiv_1211.2353v1"
+        ],
+        "proposition_id": "52243a69-b406-4102-95ed-e909cd5f0419"
       }
     ],
     "rules": [
@@ -76,6 +128,22 @@
           "wiki_loubignac_iteration"
         ],
         "proposition_id": "3a84c511-aede-46e3-b62c-1fb69214821b"
+      },
+      {
+        "rule": "Stabilizing Parameters",
+        "explanation": "In DG methods, stabilizing parameters must be sufficiently large to ensure numerical stability. These parameters control the penalty term for discontinuities across element interfaces, preventing oscillations and ensuring convergence. Proper selection is critical for maintaining accuracy and robustness, especially in adaptive schemes.",
+        "source_ids": [
+          "arxiv_1209.2311v1"
+        ],
+        "proposition_id": "6c0d5432-f1bf-40c0-bda0-76f96b9f50cf"
+      },
+      {
+        "rule": "Adaptive Mesh Refinement",
+        "explanation": "Adaptive mesh refinement improves efficiency by concentrating computational resources where errors are largest. It requires error indicators to guide refinement and coarsening. This rule ensures that the mesh evolves dynamically, balancing accuracy and computational cost without excessive resolution in smooth regions.",
+        "source_ids": [
+          "arxiv_1209.2311v1"
+        ],
+        "proposition_id": "23f1111f-7a65-461a-beb5-eef219631a84"
       }
     ]
   },
@@ -98,6 +166,30 @@
         "type": "concept",
         "source_ids": [
           "wiki_loubignac_iteration"
+        ],
+        "status": "active",
+        "parent_concept_ids": [],
+        "aliases": []
+      },
+      "92ab196b-6abf-4b8e-97e9-b41d652db99c": {
+        "concept_id": "92ab196b-6abf-4b8e-97e9-b41d652db99c",
+        "name": "Weak Formulation",
+        "type": "concept",
+        "source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1"
+        ],
+        "status": "active",
+        "parent_concept_ids": [],
+        "aliases": []
+      },
+      "a99e9524-42b7-45f4-8013-b441d09318d3": {
+        "concept_id": "a99e9524-42b7-45f4-8013-b441d09318d3",
+        "name": "Discontinuous Galerkin Methods",
+        "type": "concept",
+        "source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1"
         ],
         "status": "active",
         "parent_concept_ids": [],
@@ -284,6 +376,187 @@
         "approximation": [],
         "scope": "",
         "scope_notes": ""
+      },
+      "52243a69-b406-4102-95ed-e909cd5f0419": {
+        "proposition_id": "52243a69-b406-4102-95ed-e909cd5f0419",
+        "statement": "Error Estimate for DG Methods",
+        "concept_ids": [],
+        "source_ids": [
+          "arxiv_1211.2353v1"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "equation",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "6c0d5432-f1bf-40c0-bda0-76f96b9f50cf": {
+        "proposition_id": "6c0d5432-f1bf-40c0-bda0-76f96b9f50cf",
+        "statement": "Stabilizing Parameters",
+        "concept_ids": [],
+        "source_ids": [
+          "arxiv_1209.2311v1"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "rule",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "23f1111f-7a65-461a-beb5-eef219631a84": {
+        "proposition_id": "23f1111f-7a65-461a-beb5-eef219631a84",
+        "statement": "Adaptive Mesh Refinement",
+        "concept_ids": [],
+        "source_ids": [
+          "arxiv_1209.2311v1"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "rule",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "6eab849c-93a8-4b0c-8b79-b466a7d4169b": {
+        "proposition_id": "6eab849c-93a8-4b0c-8b79-b466a7d4169b",
+        "statement": "Mesh Generation",
+        "concept_ids": [],
+        "source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "procedure",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "3085a4fb-c94a-43c2-826d-747a90f44da9": {
+        "proposition_id": "3085a4fb-c94a-43c2-826d-747a90f44da9",
+        "statement": "Assembly of Global System",
+        "concept_ids": [],
+        "source_ids": [
+          "arxiv_1211.2353v1"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "procedure",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
       }
     },
     "relationships": {},
@@ -305,6 +578,26 @@
         "type": "concept",
         "source_ids": [
           "wiki_loubignac_iteration"
+        ]
+      },
+      {
+        "event": "concept_discovered",
+        "concept_id": "92ab196b-6abf-4b8e-97e9-b41d652db99c",
+        "name": "Weak Formulation",
+        "type": "concept",
+        "source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1"
+        ]
+      },
+      {
+        "event": "concept_discovered",
+        "concept_id": "a99e9524-42b7-45f4-8013-b441d09318d3",
+        "name": "Discontinuous Galerkin Methods",
+        "type": "concept",
+        "source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1"
         ]
       }
     ],
@@ -353,6 +646,52 @@
           "wiki_finite_element_limit_analysis"
         ],
         "framework": ""
+      },
+      {
+        "proposition_id": "23f1111f-7a65-461a-beb5-eef219631a84",
+        "event": "discovered",
+        "fingerprint": "c5933b65437cdf1c",
+        "source_ids": [
+          "arxiv_1209.2311v1"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "3085a4fb-c94a-43c2-826d-747a90f44da9",
+        "event": "discovered",
+        "fingerprint": "24f66dea1c014e02",
+        "source_ids": [
+          "arxiv_1211.2353v1"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "52243a69-b406-4102-95ed-e909cd5f0419",
+        "event": "discovered",
+        "fingerprint": "5a6709c57e5cc798",
+        "source_ids": [
+          "arxiv_1211.2353v1"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "6c0d5432-f1bf-40c0-bda0-76f96b9f50cf",
+        "event": "discovered",
+        "fingerprint": "20bf1ce295e95d24",
+        "source_ids": [
+          "arxiv_1209.2311v1"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "6eab849c-93a8-4b0c-8b79-b466a7d4169b",
+        "event": "discovered",
+        "fingerprint": "a310ae7a615ae093",
+        "source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1"
+        ],
+        "framework": ""
       }
     ]
   },
@@ -370,6 +709,17 @@
           "wiki_finite_element_limit_analysis"
         ],
         "status": "candidate"
+      },
+      "EQC-dd7409d02387a6aa4cdf": {
+        "candidate_id": "EQC-dd7409d02387a6aa4cdf",
+        "fingerprint": "dd7409d02387a6aa4cdf65c5ff3ffd7d2d4fba0806ff6042d0b2df7fbe1ea211",
+        "name": "Error Estimate for DG Methods",
+        "expression": "O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right)",
+        "meaning": "This equation describes the error bound for a DG/Strang splitting method, where $ \\tau $ is the time step, $ h $ is the mesh size, and $ q $ is the polynomial order. The error comprises temporal ( $ \\tau^2 $ ) and spatial ( $ h^q $ ) components, with a coupling term ( $ h^q/\\tau $ ). It quantifies the convergence rate of the method under suitable assumptions.",
+        "source_ids": [
+          "arxiv_1211.2353v1"
+        ],
+        "status": "candidate"
       }
     },
     "equations": {}
@@ -378,18 +728,22 @@
   "sections": [
     {
       "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
-      "content": "The Strong Form is a fundamental concept in the mathematical foundation of numerical methods, particularly in the context of partial differential equations. However, due to the lack of specific information, a detailed definition, assumptions, and mathematical derivation of the Strong Form cannot be provided. In general, the Strong Form is often associated with the Galerkin method, which is a weighted residual technique used to approximate the solution of a differential equation. The Galerkin method involves projecting the residual of the differential equation onto a set of basis functions, resulting in a system of algebraic equations that can be solved numerically. Further discussion on the Strong Form and its mathematical derivation is not available in the provided information.\n\nThe Weak Form of a partial differential equation is a variational formulation that involves the use of bilinear forms. A bilinear form $a(u, v)$ is a function that takes two functions $u$ and $v$ as input and produces a scalar value. In the context of the Weak Form, the bilinear form is used to define a weak equation that is equivalent to the original strong equation. The boundary conditions of the problem are also incorporated into the Weak Form, which typically involves the use of a linear functional $L(v)$ that represents the boundary conditions. The Weak Form provides a more flexible and general framework for solving partial differential equations, and it serves as the foundation for the Galerkin method.\n\nThe Galerkin Method is a discretization technique that utilizes weighted residuals to approximate the solution of a partial differential equation. In this method, the residual of the weak form is weighted by a set of basis functions, and the resulting equation is solved to obtain an approximate solution. The Galerkin Method is based on the concept of orthogonality, where the residual is orthogonal to the subspace of the basis functions. This property ensures that the approximate solution satisfies the weak form of the equation, and the method is widely used in various fields, including fluid dynamics and structural mechanics.",
+      "content": "The weak formulation is a foundational concept in the Finite Element Method (FEM) that transforms partial differential equations (PDEs) into integral equations. It involves multiplying the PDE by a test function and integrating over the domain, which reduces the requirement for solution differentiability. This approach allows for the use of piecewise continuous basis functions, enabling the approximation of solutions on complex geometries. By finding $ u \\in V $ such that $ a(u, v) = L(v) $ for all $ v \\in V $, where $ a(\\cdot, \\cdot) $ is a bilinear form and $ L(\\cdot) $ is a linear functional, the weak form provides a powerful tool for deriving the discrete system of equations.\n\nDiscontinuous Galerkin Methods allow solutions to be discontinuous across element boundaries, leveraging piecewise polynomial basis functions and enforcing continuity weakly through numerical fluxes. This flexibility enables DG methods to effectively handle problems with shocks, discontinuities, or high gradients, making them particularly effective in applications where such phenomena are present. The DG solution $u_h$ satisfies $ \\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx $ for all $v_h \\in V_h$, as demonstrated in [arxiv_1209.2311v1] and [arxiv_1211.2353v1].\n\nThe optimization-based approach in Finite Element Limit Analysis (FELA) formulates the collapse load determination problem as an optimization task. This involves defining objective functions and constraints based on kinematic or equilibrium principles. The method directly solves for upper or lower bound solutions without incremental time-stepping, leveraging mathematical programming techniques to ensure stability and accuracy in geotechnical applications. The optimization objective function can be represented as $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints. The weak formulation, a foundational concept in the Finite Element Method, transforms partial differential equations into integral equations, allowing for the use of piecewise continuous basis functions and enabling the approximation of solutions on complex geometries.",
       "key_equations": [
-        "a(u, v)",
-        "u",
-        "v",
-        "L(v)"
+        "u \\in V",
+        "a(u, v) = L(v)",
+        "v \\in V",
+        "a(\\cdot, \\cdot)",
+        "L(\\cdot)"
       ],
-      "citations_used": [],
+      "citations_used": [
+        "arxiv_1209.2311v1",
+        "arxiv_1211.2353v1"
+      ],
       "section_id": "f31bb7bd-233f-41b9-b3be-4b472bba7534",
+      "parent_section_ids": [],
       "generated_from": "writer",
-      "status": "complete",
-      "parent_section_ids": []
+      "status": "complete"
     },
     {
       "title": "The Finite Element Procedure",
@@ -452,7 +806,7 @@
     },
     {
       "title": "Rules for Modeling Physical Phenomena with FEM: Meshing and Discretization Techniques for Accurate FEM Results",
-      "content": "When choosing the right discretization technique for FEM modeling, it is essential to consider the specific requirements of the problem at hand. In applications where accurate stress distribution analysis is crucial, Loubignac iteration can be a valuable tool. This iterative method refines stress fields to achieve continuity, ensuring that stress fields satisfy equilibrium and compatibility conditions. In contrast, Finite Element Limit Analysis (FELA) is a method that uses optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems. By leveraging mathematical programming techniques, FELA directly solves for upper or lower bound solutions without incremental time-stepping, making it a reliable choice for geotechnical applications.\n\nIn Finite Element Limit Analysis (FELA), optimization strategies are employed to accurately determine collapse loads in geotechnical engineering applications. The optimization objective function is formulated as $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints [wiki_finite_element_limit_analysis]. By directly solving for upper or lower bound solutions without incremental time-stepping, FELA ensures stability and accuracy in geotechnical applications, as stated in [wiki_finite_element_limit_analysis]. This approach is particularly useful for problems like slope stability and bearing capacity calculations, where accurate stress distribution analysis is crucial.\n\nLoubignac iteration is a critical procedure in iterative stress field refinement, ensuring continuity and accuracy in FEM modeling. This method iteratively refines stress fields to achieve equilibrium and compatibility conditions, as stated in the PROCEDURE: Iterative Stress Field Refinement fact. Loubignac iteration was introduced in 1977 and is designed to improve stress continuity in numerical solutions, addressing issues related to discontinuous stresses in traditional finite element formulations, as per the CONCEPT: Loubignac Iteration fact. By enforcing continuous stress fields, Loubignac iteration is essential for accurate stress analysis in finite element simulations, as per the RULE: Ensure Stress Continuity with Iterative Methods fact. This is particularly important in applications requiring accurate stress distribution analysis, such as in geotechnical stability problems, where optimization-based methods like FELA are employed to directly compute collapse loads, as stated in the PROCEDURE: Optimization-Based Collapse Load Determination fact.",
+      "content": "Mesh generation techniques play a crucial role in achieving accurate Finite Element Method (FEM) results. The quality of the mesh significantly impacts the accuracy and efficiency of the solution, as it must conform to the geometry and resolve regions of interest. For adaptive methods, the mesh is refined iteratively based on error estimates, improving efficiency by concentrating computational resources where errors are largest [arxiv_1209.2311v1]. Discontinuous Galerkin (DG) methods, a class of FEM that allow solutions to be discontinuous across element boundaries, offer flexibility in mesh design and can handle adaptive refinement efficiently [arxiv_1211.2353v1]. The weak formulation, a foundational concept in FEM, transforms partial differential equations into integral equations, enabling the approximation of solutions on complex geometries [arxiv_1209.2311v1].\n\nThe discretization of the weak formulation in the Finite Element Method (FEM) is a crucial step in achieving accurate results. Discontinuous Galerkin (DG) methods, which allow solutions to be discontinuous across element boundaries, are particularly effective for problems with shocks, discontinuities, or high gradients. In contrast, Loubignac iteration is an iterative finite element method that generates continuous stress fields, addressing issues related to discontinuous stresses in traditional finite element formulations. By enforcing continuous stress fields, Loubignac iteration ensures stress continuity, which is critical for accurate stress analysis in finite element simulations. This is in line with the rule that iterative methods should ensure stress continuity, as stated in [wiki_loubignac_iteration]. The weak formulation, as described in [arxiv_1209.2311v1] and [arxiv_1211.2353v1], provides a foundational concept for deriving the discrete system of equations in FEM, which is essential for the application of DG methods and Loubignac iteration.\n\nOptimization techniques in Finite Element Limit Analysis (FELA) play a crucial role in determining collapse loads for mechanical systems. By formulating the problem as an optimization task, FELA directly computes upper or lower bound solutions without incremental time-stepping, ensuring stability and accuracy in geotechnical applications. This approach is achieved through the minimization of an objective function, represented by the equation $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints [wiki_finite_element_limit_analysis]. By leveraging mathematical programming techniques, FELA avoids time-stepping, ensuring efficiency and accuracy for geotechnical stability problems, as stated in [wiki_finite_element_limit_analysis]. This approach is particularly useful in applications requiring accurate stress distribution analysis, where iterative methods such as Loubignac iteration can be employed to enforce continuous stress fields, as discussed in [wiki_loubignac_iteration].",
       "key_equations": [
         "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}",
         "\\mathbf{\\sigma}",
@@ -460,7 +814,10 @@
         "\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
       ],
       "citations_used": [
-        "wiki_finite_element_limit_analysis"
+        "arxiv_1209.2311v1",
+        "arxiv_1211.2353v1",
+        "wiki_finite_element_limit_analysis",
+        "wiki_loubignac_iteration"
       ],
       "section_id": "a415e864-688a-4fd4-8269-b230c44b5e3c",
       "parent_section_ids": [
@@ -472,95 +829,145 @@
       "status": "complete"
     },
     {
-      "section_id": "7f5ea2a1-a387-4613-b69f-6b8c844d0af7",
       "title": "Verification, Validation, and Best Practices: Verification vs. Validation in Numerical Methods",
-      "content": "",
+      "content": "Verification and validation of discontinuous Galerkin methods are crucial to ensure solution accuracy. Discontinuous Galerkin (DG) methods are a class of Finite Element Methods that allow solutions to be discontinuous across element boundaries, using piecewise polynomial basis functions and enforcing continuity weakly through numerical fluxes. The DG solution $u_h$ satisfies $\\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx$ for all $v_h \\in V_h$ [arxiv_1209.2311v1]. Local element matrices are computed using the weak form and basis functions, then assembled into a global system of equations, ensuring compatibility between adjacent elements through numerical fluxes in DG methods [arxiv_1211.2353v1]. Stabilizing parameters must be sufficiently large to ensure numerical stability, controlling the penalty term for discontinuities across element interfaces [arxiv_1209.2311v1].\n\nLoubignac iteration is an iterative finite element method that generates continuous stress fields, addressing issues related to discontinuous stresses in traditional finite element formulations. This method is particularly useful in applications requiring accurate stress distribution analysis. Loubignac iteration enforces continuous stress fields, which is critical for accurate stress analysis in finite element simulations. The method iteratively refines stress fields to achieve continuity, starting with an initial stress approximation and updating it through successive iterations. This process ensures that stress fields satisfy equilibrium and compatibility conditions, improving the reliability of stress predictions in complex mechanical systems. [wiki_loubignac_iteration]\n\nStabilizing parameters in numerical methods, particularly in Discontinuous Galerkin (DG) formulations, play a crucial role in ensuring convergence and accuracy in Finite Element Limit Analysis (FELA) applications. According to the DG method's weak formulation, stabilizing parameters must be sufficiently large to prevent oscillations and ensure numerical stability [arxiv_1209.2311v1]. This is particularly important in adaptive schemes where the mesh size and time step are dynamically adjusted. By controlling the penalty term for discontinuities across element interfaces, stabilizing parameters maintain the accuracy and robustness of the solution. This is essential in geotechnical engineering applications, such as slope stability and bearing capacity calculations, where precise stress distribution analysis is critical.",
+      "key_equations": [
+        "u_h",
+        "\\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx",
+        "v_h \\in V_h"
+      ],
+      "citations_used": [
+        "arxiv_1209.2311v1",
+        "arxiv_1211.2353v1",
+        "wiki_loubignac_iteration"
+      ],
+      "section_id": "7f5ea2a1-a387-4613-b69f-6b8c844d0af7",
       "parent_section_ids": [
         "efa5e3e7-12da-4869-b0d9-5617bb7930f3"
       ],
       "generated_from": "split",
-      "status": "needs_generation",
-      "parent_content_reference": "Verification and validation are two distinct concepts in the context of numerical methods, particularly in the Finite Element Method (FEM). Verification refers to the process of ensuring that the numerical solution accurately represents the mathematical model, often through the use of analytical solutions or benchmark problems. On the other hand, validation involves assessing the accuracy of the numerical solution in relation to real-world physical phenomena, typically through comparison with ex...",
       "subsection_index": 0,
-      "key_equations": [],
-      "citations_used": []
+      "parent_content_reference": "Verification and validation are two distinct concepts in the context of numerical methods, particularly in the Finite Element Method (FEM). Verification refers to the process of ensuring that the numerical solution accurately represents the mathematical model, often through the use of analytical solutions or benchmark problems. On the other hand, validation involves assessing the accuracy of the numerical solution in relation to real-world physical phenomena, typically through comparison with ex...",
+      "status": "complete"
     },
     {
-      "section_id": "1b3ae7a5-fedb-4eaf-bf0a-52663f2456b4",
       "title": "Verification, Validation, and Best Practices: Establishing Best Practices for Verification and Validation",
-      "content": "",
+      "content": "The foundation for verification and validation of numerical methods, particularly in the context of the Finite Element Method (FEM), relies heavily on the weak formulation and discontinuous Galerkin (DG) methods. The weak formulation, as described by the equation $a(u, v) = L(v)$ for all $v \\in V$, transforms partial differential equations into integral equations, enabling the use of piecewise continuous basis functions and facilitating the approximation of solutions on complex geometries. DG methods, on the other hand, allow solutions to be discontinuous across element boundaries, using piecewise polynomial basis functions and enforcing continuity weakly through numerical fluxes. This approach is particularly effective for problems with shocks, discontinuities, or high gradients, as demonstrated by the error estimate for DG methods, which describes the error bound as $O(\\tau^2 + h^q + \\frac{h^q}{\\tau})$ [arxiv_1211.2353v1].\n\nIn the context of Finite Element Limit Analysis (FELA), optimization techniques play a crucial role in computing upper or lower bound plastic collapse loads for mechanical systems. FELA formulates the problem as an optimization task to compute collapse loads, involving the definition of objective functions and constraints based on kinematic or equilibrium principles. This approach directly solves for upper or lower bound solutions without incremental time-stepping, leveraging mathematical programming techniques to ensure stability and accuracy in geotechnical applications. The optimization objective function in FELA is given by $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints [wiki_finite_element_limit_analysis].\n\nLoubignac iteration is a crucial iterative refinement method that ensures stress continuity in numerical solutions, particularly in the context of discontinuous Galerkin (DG) methods. This method iteratively refines stress fields to achieve continuity, starting with an initial stress approximation and updating it through successive iterations. The Loubignac iteration process ensures that stress fields satisfy equilibrium and compatibility conditions, thereby improving the reliability of stress predictions in complex mechanical systems. The error bound for DG methods, described by $O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right)$, highlights the importance of adaptive mesh refinement in balancing accuracy and computational cost. By employing Loubignac iteration and adaptive mesh refinement, numerical solutions can be significantly improved, particularly in applications requiring accurate stress distribution analysis.",
+      "key_equations": [
+        "a(u, v) = L(v)",
+        "v \\in V",
+        "O(\\tau^2 + h^q + \\frac{h^q}{\\tau})",
+        "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}",
+        "\\mathbf{\\sigma}"
+      ],
+      "citations_used": [
+        "arxiv_1211.2353v1",
+        "wiki_finite_element_limit_analysis"
+      ],
+      "section_id": "1b3ae7a5-fedb-4eaf-bf0a-52663f2456b4",
       "parent_section_ids": [
         "efa5e3e7-12da-4869-b0d9-5617bb7930f3"
       ],
       "generated_from": "split",
-      "status": "needs_generation",
-      "parent_content_reference": "Verification and validation are two distinct concepts in the context of numerical methods, particularly in the Finite Element Method (FEM). Verification refers to the process of ensuring that the numerical solution accurately represents the mathematical model, often through the use of analytical solutions or benchmark problems. On the other hand, validation involves assessing the accuracy of the numerical solution in relation to real-world physical phenomena, typically through comparison with ex...",
       "subsection_index": 1,
-      "key_equations": [],
-      "citations_used": []
+      "parent_content_reference": "Verification and validation are two distinct concepts in the context of numerical methods, particularly in the Finite Element Method (FEM). Verification refers to the process of ensuring that the numerical solution accurately represents the mathematical model, often through the use of analytical solutions or benchmark problems. On the other hand, validation involves assessing the accuracy of the numerical solution in relation to real-world physical phenomena, typically through comparison with ex...",
+      "status": "complete"
     },
     {
-      "section_id": "17ced97f-6865-4937-b5d5-ba6f0ff9e7c2",
       "title": "Verification, Validation, and Best Practices: Quality Control Measures for Reliable Results in FEM",
-      "content": "",
+      "content": "The quality of the mesh significantly impacts the accuracy and efficiency of the solution in the Finite Element Method (FEM). The first step in FEM is to discretize the computational domain into a mesh of non-overlapping elements, which must conform to the geometry and resolve regions of interest. For adaptive methods, the mesh is refined iteratively based on error estimates, as dictated by the rule of adaptive mesh refinement. This rule ensures that the mesh evolves dynamically, balancing accuracy and computational cost without excessive resolution in smooth regions. According to the error estimate for DG methods, the error bound is given by $ O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right) $, where $ \\tau $ is the time step, $ h $ is the mesh size, and $ q $ is the polynomial order. This equation quantifies the convergence rate of the method under suitable assumptions.\n\nThe validation of Finite Element Method (FEM) solutions relies heavily on the weak formulation and discontinuous Galerkin (DG) methods. The weak formulation, as described by the equation $a(u, v) = L(v)$ for all $v \\in V$, transforms partial differential equations into integral equations, allowing for the use of piecewise continuous basis functions. In contrast, DG methods, as exemplified by the equation $\\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx$, enforce continuity weakly through numerical fluxes, making them particularly effective for problems with shocks, discontinuities, or high gradients. The choice between these two approaches depends on the specific requirements of the problem at hand, and a thorough validation process is necessary to ensure the accuracy and reliability of the results.\n\nOptimization and iterative refinement are crucial components of Finite Element Limit Analysis (FELA), a method that leverages optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems. According to the optimization objective function, $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, the goal is to minimize the objective function while satisfying physical laws [wiki_finite_element_limit_analysis]. To achieve accurate stress distribution analysis, Loubignac iteration can be employed, which iteratively refines stress fields to achieve continuity, ensuring that stress fields satisfy equilibrium and compatibility conditions [wiki_loubignac_iteration]. This method is particularly useful in applications requiring accurate stress distribution analysis, such as those addressed by FELA in geotechnical engineering.",
+      "key_equations": [
+        "O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right)",
+        "\\tau",
+        "h",
+        "q",
+        "a(u, v) = L(v)"
+      ],
+      "citations_used": [
+        "wiki_finite_element_limit_analysis",
+        "wiki_loubignac_iteration"
+      ],
+      "section_id": "17ced97f-6865-4937-b5d5-ba6f0ff9e7c2",
       "parent_section_ids": [
         "efa5e3e7-12da-4869-b0d9-5617bb7930f3"
       ],
       "generated_from": "split",
-      "status": "needs_generation",
-      "parent_content_reference": "Verification and validation are two distinct concepts in the context of numerical methods, particularly in the Finite Element Method (FEM). Verification refers to the process of ensuring that the numerical solution accurately represents the mathematical model, often through the use of analytical solutions or benchmark problems. On the other hand, validation involves assessing the accuracy of the numerical solution in relation to real-world physical phenomena, typically through comparison with ex...",
       "subsection_index": 2,
-      "key_equations": [],
-      "citations_used": []
+      "parent_content_reference": "Verification and validation are two distinct concepts in the context of numerical methods, particularly in the Finite Element Method (FEM). Verification refers to the process of ensuring that the numerical solution accurately represents the mathematical model, often through the use of analytical solutions or benchmark problems. On the other hand, validation involves assessing the accuracy of the numerical solution in relation to real-world physical phenomena, typically through comparison with ex...",
+      "status": "complete"
     },
     {
-      "section_id": "95615825-bf2a-4a2d-8530-fd1b61ff1cfb",
       "title": "Verification, Validation, and Best Practices: Implementing Systematic Verification and Validation Procedures",
-      "content": "",
+      "content": "Implementing Systematic Verification Procedures for Finite Element Limit Analysis (FELA) involves ensuring the accuracy and reliability of the method's results. According to the optimization objective function, the goal is to minimize the objective function $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, which represents the optimization problem in FELA, while satisfying physical laws. To achieve this, FELA formulates the problem as an optimization task to compute collapse loads, avoiding time-stepping by directly determining collapse loads via optimization. This is in line with the rule that FELA should use optimization for direct collapse load calculation [wiki_finite_element_limit_analysis]. Furthermore, to ensure accurate stress analysis, it is essential to use iterative methods that enforce continuous stress fields, such as Loubignac iteration, which addresses issues related to discontinuous stresses in traditional finite element formulations [wiki_loubignac_iteration].\n\nTo ensure stress continuity in finite element simulations, Loubignac iteration is employed to iteratively refine stress fields. This method, introduced in 1977, generates continuous stress fields by updating the initial stress approximation through successive iterations, thus satisfying equilibrium and compatibility conditions [wiki_loubignac_iteration]. The Loubignac iteration procedure is critical for improving the reliability of stress predictions in complex mechanical systems. By enforcing continuous stress fields, Loubignac iteration addresses issues related to discontinuous stresses in traditional finite element formulations, making it particularly useful in applications requiring accurate stress distribution analysis [wiki_loubignac_iteration]. The weak formulation, a foundational concept in the Finite Element Method, also plays a crucial role in ensuring stress continuity by transforming partial differential equations into integral equations, which allows for the use of piecewise continuous basis functions [arxiv_1209.2311v1].\n\nOptimizing Discontinuous Galerkin Methods through Error Estimation and Mesh Adaptation is crucial for achieving accurate solutions in complex problems. By employing adaptive mesh refinement, the mesh is dynamically evolved to concentrate computational resources where errors are largest, thereby balancing accuracy and computational cost. The error estimate for Discontinuous Galerkin (DG) methods, given by $ O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right) $ [arxiv_1211.2353v1], quantifies the convergence rate of the method under suitable assumptions. This equation describes the error bound for a DG/Strang splitting method, where $ \\tau $ is the time step, $ h $ is the mesh size, and $ q $ is the polynomial order. The assembly of the global system, involving the summation of local element matrices and ensuring compatibility between adjacent elements through numerical fluxes, is a critical step in the DG method. By combining error estimation and adaptive mesh refinement, DG methods can efficiently handle complex problems with shocks, discontinuities, or high gradients, making them a powerful tool in numerical simulations.",
+      "key_equations": [
+        "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}",
+        "O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right)",
+        "\\tau",
+        "h",
+        "q"
+      ],
+      "citations_used": [
+        "arxiv_1209.2311v1",
+        "arxiv_1211.2353v1",
+        "wiki_finite_element_limit_analysis",
+        "wiki_loubignac_iteration"
+      ],
+      "section_id": "95615825-bf2a-4a2d-8530-fd1b61ff1cfb",
       "parent_section_ids": [
         "efa5e3e7-12da-4869-b0d9-5617bb7930f3"
       ],
       "generated_from": "split",
-      "status": "needs_generation",
-      "parent_content_reference": "Verification and validation are two distinct concepts in the context of numerical methods, particularly in the Finite Element Method (FEM). Verification refers to the process of ensuring that the numerical solution accurately represents the mathematical model, often through the use of analytical solutions or benchmark problems. On the other hand, validation involves assessing the accuracy of the numerical solution in relation to real-world physical phenomena, typically through comparison with ex...",
       "subsection_index": 3,
-      "key_equations": [],
-      "citations_used": []
+      "parent_content_reference": "Verification and validation are two distinct concepts in the context of numerical methods, particularly in the Finite Element Method (FEM). Verification refers to the process of ensuring that the numerical solution accurately represents the mathematical model, often through the use of analytical solutions or benchmark problems. On the other hand, validation involves assessing the accuracy of the numerical solution in relation to real-world physical phenomena, typically through comparison with ex...",
+      "status": "complete"
     },
     {
       "title": "Introduction and Scope of the Finite Element Method",
-      "content": "The Finite Element Method (FEM) has become a crucial tool in geotechnical stability problems, particularly in applications such as slope stability and bearing capacity calculations. Finite Element Limit Analysis (FELA), a method that leverages optimization techniques, is widely applied in this field. FELA formulates the problem as an optimization task to compute collapse loads, directly solving for upper or lower bound solutions without incremental time-stepping (wiki_finite_element_limit_analysis). This approach ensures efficiency and accuracy in geotechnical stability problems by avoiding time-stepping and leveraging mathematical programming techniques to ensure stability and accuracy. The optimization objective function in FELA is represented by the equation $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints (wiki_finite_element_limit_analysis).\n\nIn the context of finite element simulations, iterative methods play a crucial role in refining stress fields to achieve continuity. Loubignac iteration, introduced in 1977, is an iterative finite element method that generates continuous stress fields by iteratively refining stress fields to satisfy equilibrium and compatibility conditions. This method addresses issues related to discontinuous stresses in traditional finite element formulations, particularly in applications requiring accurate stress distribution analysis. By enforcing continuous stress fields, Loubignac iteration ensures the reliability of stress predictions in complex mechanical systems. As a result, it is widely applied in geotechnical engineering for problems like slope stability and bearing capacity calculations, where accurate stress distribution analysis is essential.",
+      "content": "The Finite Element Method (FEM) relies on the weak formulation to transform partial differential equations (PDEs) into integral equations, enabling the use of piecewise continuous basis functions and approximation of solutions on complex geometries. This approach is critical for deriving the discrete system of equations. The first step in FEM is to discretize the computational domain into a mesh of non-overlapping elements, which significantly impacts the accuracy and efficiency of the solution. Discontinuous Galerkin (DG) methods, a class of FEM, allow solutions to be discontinuous across element boundaries, offering flexibility in mesh design and handling adaptive refinement efficiently. The DG solution satisfies the equation $ \\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx $ for all $ v_h \\in V_h $.\n\nThe weak formulation is a foundational concept in the Finite Element Method (FEM) that transforms partial differential equations (PDEs) into integral equations by multiplying the PDE with a test function and integrating over the domain. This approach reduces the requirement for solution differentiability, allowing for the use of piecewise continuous basis functions and enabling the approximation of solutions on complex geometries. The weak form is critical for deriving the discrete system of equations, which is then solved iteratively or directly to obtain the discrete solution. According to [arxiv_1209.2311v1], the weak formulation is essential for the development of FEM, and it has been widely used in various applications, including structural mechanics and fluid dynamics.\n\nThe Finite Element Limit Analysis (FELA) is an optimization-based method that computes upper or lower bound plastic collapse loads for mechanical systems by formulating the problem as an optimization task. According to the optimization objective function, the goal is to minimize the cost vector $\\mathbf{c}^T \\mathbf{\\sigma}$ while satisfying physical laws, as represented by the equation $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ [wiki_finite_element_limit_analysis]. This approach avoids time-stepping by directly determining collapse loads, ensuring efficiency and accuracy for geotechnical stability problems [wiki_finite_element_limit_analysis]. The Loubignac iteration, an iterative finite element method, is also employed to refine stress fields and achieve continuity, which is critical for improving the reliability of stress predictions in complex mechanical systems [wiki_loubignac_iteration].",
       "key_equations": [
-        "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}",
-        "\\mathbf{\\sigma}",
-        "\\mathbf{c}",
-        "\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
+        "\\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx",
+        "v_h \\in V_h",
+        "\\mathbf{c}^T \\mathbf{\\sigma}",
+        "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
       ],
-      "citations_used": [],
+      "citations_used": [
+        "arxiv_1209.2311v1",
+        "wiki_finite_element_limit_analysis",
+        "wiki_loubignac_iteration"
+      ],
       "section_id": "c687ce33-c603-4de7-926e-6ed541f212b1",
+      "parent_section_ids": [],
       "generated_from": "writer",
-      "status": "complete",
-      "parent_section_ids": []
+      "status": "complete"
     }
   ],
   "processed_sources": [
+    "arxiv_1209.2311v1",
+    "arxiv_1211.2353v1",
     "arxiv_2210.16907v1",
+    "arxiv_2211.17093v1",
     "arxiv_2304.12030v2",
     "arxiv_2410.12614v1",
     "arxiv_cs_0609119v2",
     "wiki_finite_element_limit_analysis",
     "wiki_flexibility_method",
+    "wiki_list_of_numerical_analysis_topics",
     "wiki_loubignac_iteration"
   ],
   "processed_sources_extracted": [
+    "arxiv_1209.2311v1",
+    "arxiv_1211.2353v1",
+    "arxiv_2211.17093v1",
     "arxiv_2304.12030v2",
     "arxiv_2410.12614v1",
+    "arxiv_cs_0609119v2",
     "wiki_finite_element_limit_analysis",
     "wiki_loubignac_iteration"
   ],
   "iteration_history_data": {
     "audits": {
       "f31bb7bd-233f-41b9-b3be-4b472bba7534": [
+        true,
         true
       ],
       "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4": [
@@ -580,25 +987,47 @@
         true
       ],
       "a415e864-688a-4fd4-8269-b230c44b5e3c": [
+        true,
         true
       ],
       "c687ce33-c603-4de7-926e-6ed541f212b1": [
+        true,
+        true
+      ],
+      "1b3ae7a5-fedb-4eaf-bf0a-52663f2456b4": [
+        true
+      ],
+      "95615825-bf2a-4a2d-8530-fd1b61ff1cfb": [
+        true
+      ],
+      "17ced97f-6865-4937-b5d5-ba6f0ff9e7c2": [
+        true
+      ],
+      "7f5ea2a1-a387-4613-b69f-6b8c844d0af7": [
         true
       ]
     },
     "anomalies": {
       "transition:a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4:1d99bea0-81e8-4aba-af72-c89a77483a42": 0,
       "transition:1d99bea0-81e8-4aba-af72-c89a77483a42:efa5e3e7-12da-4869-b0d9-5617bb7930f3": 0,
-      "transition:a415e864-688a-4fd4-8269-b230c44b5e3c:efa5e3e7-12da-4869-b0d9-5617bb7930f3": 1,
-      "transition:efa5e3e7-12da-4869-b0d9-5617bb7930f3:c687ce33-c603-4de7-926e-6ed541f212b1": 1
+      "transition:a415e864-688a-4fd4-8269-b230c44b5e3c:efa5e3e7-12da-4869-b0d9-5617bb7930f3": 0,
+      "transition:efa5e3e7-12da-4869-b0d9-5617bb7930f3:c687ce33-c603-4de7-926e-6ed541f212b1": 0,
+      "transition:2d1385c0-1e74-4997-b159-f89379263873:a415e864-688a-4fd4-8269-b230c44b5e3c": 1,
+      "transition:7f5ea2a1-a387-4613-b69f-6b8c844d0af7:1b3ae7a5-fedb-4eaf-bf0a-52663f2456b4": 1,
+      "transition:17ced97f-6865-4937-b5d5-ba6f0ff9e7c2:95615825-bf2a-4a2d-8530-fd1b61ff1cfb": 1,
+      "transition:95615825-bf2a-4a2d-8530-fd1b61ff1cfb:c687ce33-c603-4de7-926e-6ed541f212b1": 1
     },
     "anomaly_counts": {
       "transition:a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4:1d99bea0-81e8-4aba-af72-c89a77483a42": 0,
       "transition:1d99bea0-81e8-4aba-af72-c89a77483a42:efa5e3e7-12da-4869-b0d9-5617bb7930f3": 0,
       "too_simple:1d99bea0-81e8-4aba-af72-c89a77483a42": 0,
-      "transition:a415e864-688a-4fd4-8269-b230c44b5e3c:efa5e3e7-12da-4869-b0d9-5617bb7930f3": 1,
-      "transition:efa5e3e7-12da-4869-b0d9-5617bb7930f3:c687ce33-c603-4de7-926e-6ed541f212b1": 1,
-      "too_simple:efa5e3e7-12da-4869-b0d9-5617bb7930f3": 0
+      "transition:a415e864-688a-4fd4-8269-b230c44b5e3c:efa5e3e7-12da-4869-b0d9-5617bb7930f3": 0,
+      "transition:efa5e3e7-12da-4869-b0d9-5617bb7930f3:c687ce33-c603-4de7-926e-6ed541f212b1": 0,
+      "too_simple:efa5e3e7-12da-4869-b0d9-5617bb7930f3": 0,
+      "transition:2d1385c0-1e74-4997-b159-f89379263873:a415e864-688a-4fd4-8269-b230c44b5e3c": 1,
+      "transition:7f5ea2a1-a387-4613-b69f-6b8c844d0af7:1b3ae7a5-fedb-4eaf-bf0a-52663f2456b4": 1,
+      "transition:17ced97f-6865-4937-b5d5-ba6f0ff9e7c2:95615825-bf2a-4a2d-8530-fd1b61ff1cfb": 1,
+      "transition:95615825-bf2a-4a2d-8530-fd1b61ff1cfb:c687ce33-c603-4de7-926e-6ed541f212b1": 1
     },
     "section_titles": {
       "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method": "f31bb7bd-233f-41b9-b3be-4b472bba7534",
@@ -616,14 +1045,14 @@
     }
   },
   "convergence_diagnostics": {
-    "eta_variance": 0.015240000000000007,
+    "eta_variance": 0.029261764705882355,
     "invariant_violations": 0,
     "adjust_actions": 0,
     "consecutive_clean_cycles": 0,
-    "incomplete_sections": 3,
-    "unstable_sections": 6,
-    "reading_coverage": 23.5,
-    "citation_coverage": 0.0,
+    "incomplete_sections": 4,
+    "unstable_sections": 10,
+    "reading_coverage": 26.3,
+    "citation_coverage": 50.0,
     "lexical_support_coverage": 0.0,
     "invalid_citation_sections": 0,
     "converged": false,
@@ -636,8 +1065,8 @@
   },
   "retrieval_report": {
     "status": "partial_failure",
-    "retrieved_at": "2026-10-03T18:09:49.885865+00:00",
-    "query_count": 5,
+    "retrieved_at": "2026-10-03T18:13:02.132253+00:00",
+    "query_count": 6,
     "providers": {
       "arxiv": {
         "status": "success",
@@ -645,7 +1074,19 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "finite element limit analysis",
+            "query": "Crystal plasticity finite element method gap analysis",
+            "provider": "arxiv"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "CutFEM gap analysis",
+            "provider": "arxiv"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "Discontinuous Galerkin methods gap analysis",
             "provider": "arxiv"
           },
           {
@@ -665,16 +1106,10 @@
             "returned_records": 2,
             "query": "finite element method verification validation numerical stability",
             "provider": "arxiv"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "loubignac iteration finite element method",
-            "provider": "arxiv"
           }
         ],
-        "queries_attempted": 5,
-        "returned_records": 10
+        "queries_attempted": 6,
+        "returned_records": 12
       },
       "semantic_scholar": {
         "status": "rate_limited",
@@ -682,7 +1117,23 @@
           {
             "status": "rate_limited",
             "provider": "semantic_scholar",
-            "query": "finite element limit analysis",
+            "query": "Crystal plasticity finite element method gap analysis",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "CutFEM gap analysis",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "Discontinuous Galerkin methods gap analysis",
             "requested_results": 2,
             "http_status": 429,
             "returned_records": 0
@@ -710,17 +1161,9 @@
             "requested_results": 2,
             "http_status": 429,
             "returned_records": 0
-          },
-          {
-            "status": "rate_limited",
-            "provider": "semantic_scholar",
-            "query": "loubignac iteration finite element method",
-            "requested_results": 2,
-            "http_status": 429,
-            "returned_records": 0
           }
         ],
-        "queries_attempted": 5,
+        "queries_attempted": 6,
         "returned_records": 0
       },
       "wikipedia": {
@@ -729,7 +1172,19 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "finite element limit analysis",
+            "query": "Crystal plasticity finite element method gap analysis",
+            "provider": "wikipedia"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "CutFEM gap analysis",
+            "provider": "wikipedia"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "Discontinuous Galerkin methods gap analysis",
             "provider": "wikipedia"
           },
           {
@@ -749,19 +1204,13 @@
             "returned_records": 2,
             "query": "finite element method verification validation numerical stability",
             "provider": "wikipedia"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "loubignac iteration finite element method",
-            "provider": "wikipedia"
           }
         ],
-        "queries_attempted": 5,
-        "returned_records": 10
+        "queries_attempted": 6,
+        "returned_records": 12
       }
     },
-    "returned_records": 13,
+    "returned_records": 21,
     "selected_records": 4
   },
   "retrieval_history": {
@@ -1055,29 +1504,212 @@
           "selected_records": 4
         },
         "schema_version": 1
+      },
+      {
+        "event_id": "retrieval-097960e7-b078-49d1-ba28-88ebcdd1e6cf",
+        "cycle": 2,
+        "retrieved_at": "2026-10-03T18:13:23.824333+00:00",
+        "query_scope": [],
+        "report": {
+          "status": "partial_failure",
+          "retrieved_at": "2026-10-03T18:13:02.132253+00:00",
+          "query_count": 6,
+          "providers": {
+            "arxiv": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "Crystal plasticity finite element method gap analysis",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "CutFEM gap analysis",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "Discontinuous Galerkin methods gap analysis",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "arxiv"
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 12
+            },
+            "semantic_scholar": {
+              "status": "rate_limited",
+              "attempts": [
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "Crystal plasticity finite element method gap analysis",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "CutFEM gap analysis",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "Discontinuous Galerkin methods gap analysis",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method practical implementation modeling rules",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method verification validation numerical stability",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 0
+            },
+            "wikipedia": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "Crystal plasticity finite element method gap analysis",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "CutFEM gap analysis",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "Discontinuous Galerkin methods gap analysis",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "wikipedia"
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 12
+            }
+          },
+          "returned_records": 21,
+          "selected_records": 4
+        },
+        "acquisition_assessment": {
+          "status": "partial_provider_availability",
+          "operational_status": "partial_failure",
+          "available_provider_count": 2,
+          "unavailable_provider_count": 1,
+          "returned_records": 21,
+          "selected_records": 4
+        },
+        "schema_version": 1
       }
     ]
   },
   "last_budget_check": {
-    "time": "2026-10-03T18:09:45.157340+00:00",
+    "time": "2026-10-03T18:12:58.344873+00:00",
     "type": "local",
     "message": "Local limit: 20 calls"
   },
   "last_writing_decisions": [
     {
-      "section_id": "2d1385c0-1e74-4997-b159-f89379263873",
-      "title": "Rules for Modeling Physical Phenomena with FEM: Boundary Conditions and Constraints in FEM Modeling",
-      "eta": 0.8400000000000001,
-      "priority": 0.8400000000000001,
+      "section_id": "1b3ae7a5-fedb-4eaf-bf0a-52663f2456b4",
+      "title": "Verification, Validation, and Best Practices: Establishing Best Practices for Verification and Validation",
+      "eta": 0.8200000000000001,
+      "priority": 0.8200000000000001,
       "selected": true,
       "model_index": 0,
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
     },
     {
-      "section_id": "49944ad3-4833-462a-a665-96e9788e181a",
-      "title": "Rules for Modeling Physical Phenomena with FEM: Choosing Appropriate Material Models for FEM Simulations",
-      "eta": 0.8400000000000001,
-      "priority": 0.8400000000000001,
+      "section_id": "95615825-bf2a-4a2d-8530-fd1b61ff1cfb",
+      "title": "Verification, Validation, and Best Practices: Implementing Systematic Verification and Validation Procedures",
+      "eta": 0.8200000000000001,
+      "priority": 0.8200000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": "17ced97f-6865-4937-b5d5-ba6f0ff9e7c2",
+      "title": "Verification, Validation, and Best Practices: Quality Control Measures for Reliable Results in FEM",
+      "eta": 0.8200000000000001,
+      "priority": 0.8200000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": "7f5ea2a1-a387-4613-b69f-6b8c844d0af7",
+      "title": "Verification, Validation, and Best Practices: Verification vs. Validation in Numerical Methods",
+      "eta": 0.8200000000000001,
+      "priority": 0.8200000000000001,
       "selected": true,
       "model_index": 0,
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
@@ -1085,33 +1717,6 @@
     {
       "section_id": "a415e864-688a-4fd4-8269-b230c44b5e3c",
       "title": "Rules for Modeling Physical Phenomena with FEM: Meshing and Discretization Techniques for Accurate FEM Results",
-      "eta": 0.8400000000000001,
-      "priority": 0.8400000000000001,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
-    {
-      "section_id": null,
-      "title": "Introduction and Scope of the Finite Element Method",
-      "eta": 0.8,
-      "priority": 0.8,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
-    {
-      "section_id": "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4",
-      "title": "The Finite Element Procedure",
-      "eta": 0.6599999999999999,
-      "priority": 0.6599999999999999,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
-    {
-      "section_id": null,
-      "title": "Rules for Modeling Physical Phenomena with FEM",
       "eta": 0.6400000000000001,
       "priority": 0.6400000000000001,
       "selected": true,
@@ -1119,11 +1724,20 @@
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
     },
     {
-      "section_id": "efa5e3e7-12da-4869-b0d9-5617bb7930f3",
+      "section_id": null,
       "title": "Verification, Validation, and Best Practices",
       "eta": 0.6200000000000001,
       "priority": 0.6200000000000001,
-      "selected": false,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": "c687ce33-c603-4de7-926e-6ed541f212b1",
+      "title": "Introduction and Scope of the Finite Element Method",
+      "eta": 0.6000000000000001,
+      "priority": 0.6000000000000001,
+      "selected": true,
       "model_index": 0,
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
     },
@@ -1132,6 +1746,42 @@
       "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
       "eta": 0.5,
       "priority": 0.5,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "section_id": "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4",
+      "title": "The Finite Element Procedure",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "section_id": null,
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "section_id": "2d1385c0-1e74-4997-b159-f89379263873",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Boundary Conditions and Constraints in FEM Modeling",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "section_id": "49944ad3-4833-462a-a665-96e9788e181a",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Choosing Appropriate Material Models for FEM Simulations",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
       "selected": false,
       "model_index": 2,
       "model": "@cf/meta/llama-3.2-3b-instruct"
@@ -1267,6 +1917,126 @@
       "model_index": 2,
       "model": "@cf/meta/llama-3.2-3b-instruct",
       "fingerprint": "cce4ea95bc865a3921e6d5bf4ea21e65a3a7ac982ec2441f36bab09f0301049c"
+    },
+    {
+      "section_id": "1b3ae7a5-fedb-4eaf-bf0a-52663f2456b4",
+      "title": "Verification, Validation, and Best Practices: Establishing Best Practices for Verification and Validation",
+      "eta": 0.8200000000000001,
+      "priority": 0.8200000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "969e3a70496fac6d961079bcfd76e0a357fc9bd048ae58ad0d7239750848455e"
+    },
+    {
+      "section_id": "95615825-bf2a-4a2d-8530-fd1b61ff1cfb",
+      "title": "Verification, Validation, and Best Practices: Implementing Systematic Verification and Validation Procedures",
+      "eta": 0.8200000000000001,
+      "priority": 0.8200000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "6ad5ac7ead61f25acb9fd6d177be7b2b27e21bfc3200445df98d0e2aaf06e3ee"
+    },
+    {
+      "section_id": "17ced97f-6865-4937-b5d5-ba6f0ff9e7c2",
+      "title": "Verification, Validation, and Best Practices: Quality Control Measures for Reliable Results in FEM",
+      "eta": 0.8200000000000001,
+      "priority": 0.8200000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "b7778d197e1a4505bd352a52159ef6eb733d8aa54b966980f33582484aefd084"
+    },
+    {
+      "section_id": "7f5ea2a1-a387-4613-b69f-6b8c844d0af7",
+      "title": "Verification, Validation, and Best Practices: Verification vs. Validation in Numerical Methods",
+      "eta": 0.8200000000000001,
+      "priority": 0.8200000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "7a877d2a83058271f0bc1298e8ff23b5457329885c46c1cc01bd8c3e7bb35eb8"
+    },
+    {
+      "section_id": "a415e864-688a-4fd4-8269-b230c44b5e3c",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Meshing and Discretization Techniques for Accurate FEM Results",
+      "eta": 0.6400000000000001,
+      "priority": 0.6400000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "029a99a2ec0635ddf1b7d8ef1c906e1bd5137107711a80a9a314cda4706ba863"
+    },
+    {
+      "section_id": null,
+      "title": "Verification, Validation, and Best Practices",
+      "eta": 0.6200000000000001,
+      "priority": 0.6200000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "7b4324b0e6a7e8539ccb8a1b0fe558f0787a41875820e79ec218e4819077ad3a"
+    },
+    {
+      "section_id": "c687ce33-c603-4de7-926e-6ed541f212b1",
+      "title": "Introduction and Scope of the Finite Element Method",
+      "eta": 0.6000000000000001,
+      "priority": 0.6000000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "8c452148a90a7d1befd56de9e12dc0e98744958bdc4eec0b575081d9eb15d017"
+    },
+    {
+      "section_id": "f31bb7bd-233f-41b9-b3be-4b472bba7534",
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "eta": 0.5,
+      "priority": 0.5,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "05a6a929fee568969e7fcb0d03b8357c4eaaf6c7c01dba2e1427e0c818898ee2"
+    },
+    {
+      "section_id": "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4",
+      "title": "The Finite Element Procedure",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "530edbeedd2b93b499e6a00a5e799b5f89574293227c055a972e58b2af043ccd"
+    },
+    {
+      "section_id": null,
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "9a35da0f99b9c4c38ddf725507984c90c32cb990ddeb186ada15b35fad7da1f8"
+    },
+    {
+      "section_id": "2d1385c0-1e74-4997-b159-f89379263873",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Boundary Conditions and Constraints in FEM Modeling",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "2c1ffb65df59019558127f116ababef3d8d2ec5a08704c1e9b0d911aa6a9510b"
+    },
+    {
+      "section_id": "49944ad3-4833-462a-a665-96e9788e181a",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Choosing Appropriate Material Models for FEM Simulations",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "2329145afebf7c080502779958a1c2a01571880b0c2e47c66a58706c805d9f0d"
     }
   ],
   "last_semantic_review": {
@@ -1296,27 +2066,19 @@
   "last_semantic_feedback": {
     "sections": {}
   },
-  "last_adjustment_decision": {
-    "action": "split_section",
-    "section_id": "efa5e3e7-12da-4869-b0d9-5617bb7930f3",
-    "section_ids": [],
-    "reason": "Section has 267 words",
-    "adjustment_score": {
-      "severity": 0.95,
-      "persistence": 0.0,
-      "cost": 0.75,
-      "score": 0.5125
-    }
-  },
+  "last_adjustment_decision": null,
   "semantic_candidate_status": {
     "status": "candidate",
     "authoritative_for_rendering": false,
     "sections": [
       {
         "section_id": "f31bb7bd-233f-41b9-b3be-4b472bba7534",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 2,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
+        "annotated_source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1"
+        ],
         "diagnostics": []
       },
       {
@@ -1362,68 +2124,99 @@
       },
       {
         "section_id": "a415e864-688a-4fd4-8269-b230c44b5e3c",
-        "semantic_marker_count": 2,
+        "semantic_marker_count": 9,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1",
+          "arxiv_1209.2311v1",
+          "wiki_loubignac_iteration",
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1",
           "wiki_finite_element_limit_analysis",
-          "wiki_finite_element_limit_analysis"
+          "wiki_finite_element_limit_analysis",
+          "wiki_loubignac_iteration"
         ],
         "diagnostics": []
       },
       {
         "section_id": "7f5ea2a1-a387-4613-b69f-6b8c844d0af7",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 5,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
+        "annotated_source_ids": [
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1",
+          "arxiv_1209.2311v1",
+          "wiki_loubignac_iteration",
+          "arxiv_1209.2311v1"
+        ],
         "diagnostics": []
       },
       {
         "section_id": "1b3ae7a5-fedb-4eaf-bf0a-52663f2456b4",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 2,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
+        "annotated_source_ids": [
+          "arxiv_1211.2353v1",
+          "wiki_finite_element_limit_analysis"
+        ],
         "diagnostics": []
       },
       {
         "section_id": "17ced97f-6865-4937-b5d5-ba6f0ff9e7c2",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 2,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
+        "annotated_source_ids": [
+          "wiki_finite_element_limit_analysis",
+          "wiki_loubignac_iteration"
+        ],
         "diagnostics": []
       },
       {
         "section_id": "95615825-bf2a-4a2d-8530-fd1b61ff1cfb",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 6,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
+        "annotated_source_ids": [
+          "wiki_finite_element_limit_analysis",
+          "wiki_loubignac_iteration",
+          "wiki_loubignac_iteration",
+          "wiki_loubignac_iteration",
+          "arxiv_1209.2311v1",
+          "arxiv_1211.2353v1"
+        ],
         "diagnostics": []
       },
       {
         "section_id": "c687ce33-c603-4de7-926e-6ed541f212b1",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 4,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
+        "annotated_source_ids": [
+          "arxiv_1209.2311v1",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "wiki_loubignac_iteration"
+        ],
         "diagnostics": []
       }
     ],
-    "semantic_marker_count": 19
+    "semantic_marker_count": 47
   },
   "model_usage": {
-    "total_calls": 25,
-    "logical_calls": 25,
-    "successful_calls": 25,
+    "total_calls": 30,
+    "logical_calls": 30,
+    "successful_calls": 30,
     "failed_calls": 0,
-    "http_attempts": 25,
+    "http_attempts": 30,
     "per_model": {
-      "@cf/meta/llama-3.1-8b-instruct-fast": 23,
+      "@cf/meta/llama-3.1-8b-instruct-fast": 25,
       "@cf/qwen/qwen3-30b-a3b-fp8": 1,
-      "@cf/meta/llama-3.2-3b-instruct": 1
+      "@cf/meta/llama-3.2-3b-instruct": 4
     },
     "max_logical_calls": 100,
     "extraction_stats": {
-      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 23,
+      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 25,
       "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8:known_patterns": 1,
-      "cloudflare:@cf/meta/llama-3.2-3b-instruct:known_patterns": 1
+      "cloudflare:@cf/meta/llama-3.2-3b-instruct:known_patterns": 4
     },
     "learned_paths": {
       "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast": [
@@ -1438,10 +2231,7 @@
       "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8": [
         [
           "result",
-          "choices",
-          0,
-          "message",
-          "content"
+          "response"
         ]
       ],
       "cloudflare:@cf/meta/llama-3.2-3b-instruct": [
@@ -1456,7 +2246,9 @@
     }
   },
   "parser_stats": {
-    "cloudflare:strict": 3,
-    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 5
+    "cloudflare:strict": 1,
+    "cloudflare:normalized": 1,
+    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 6,
+    "@cf/meta/llama-3.2-3b-instruct:strict": 1
   }
 }
