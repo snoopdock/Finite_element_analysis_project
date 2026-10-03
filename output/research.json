@@ -1,0 +1,66 @@
+{
+  "concepts": [
+    {
+      "name": "Finite Element Limit Analysis (FELA)",
+      "explanation": "FELA is a method that uses optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems. Unlike conventional nonlinear finite element methods, it avoids time-stepping by directly determining collapse loads. It can be formulated in kinematic or equilibrium forms, focusing on stability analysis. This approach is widely applied in geotechnical engineering for problems like slope stability and bearing capacity calculations.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_finite_element_limit_analysis"
+      ]
+    },
+    {
+      "name": "Loubignac Iteration",
+      "explanation": "Loubignac iteration is an iterative finite element method that generates continuous stress fields. It was introduced in 1977 and is designed to improve stress continuity in numerical solutions. This method addresses issues related to discontinuous stresses in traditional finite element formulations. It is particularly useful in applications requiring accurate stress distribution analysis.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_loubignac_iteration"
+      ]
+    }
+  ],
+  "procedures": [
+    {
+      "step_number": 1,
+      "title": "Optimization-Based Collapse Load Determination",
+      "description": "FELA formulates the problem as an optimization task to compute collapse loads. This involves defining objective functions and constraints based on kinematic or equilibrium principles. The method directly solves for upper or lower bound solutions without incremental time-stepping. It leverages mathematical programming techniques to ensure stability and accuracy in geotechnical applications.",
+      "equations": [],
+      "source_ids": [
+        "wiki_finite_element_limit_analysis"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Iterative Stress Field Refinement",
+      "description": "Loubignac iteration iteratively refines stress fields to achieve continuity. It starts with an initial stress approximation and updates it through successive iterations. The process ensures that stress fields satisfy equilibrium and compatibility conditions. This method is critical for improving the reliability of stress predictions in complex mechanical systems.",
+      "equations": [],
+      "source_ids": [
+        "wiki_loubignac_iteration"
+      ]
+    }
+  ],
+  "equations": [
+    {
+      "name": "Optimization Objective Function",
+      "latex": "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}",
+      "explanation": "This equation represents the optimization problem in FELA, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints. The goal is to minimize the objective function while satisfying physical laws.",
+      "source_ids": [
+        "wiki_finite_element_limit_analysis"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule": "Use Optimization for Direct Collapse Load Calculation",
+      "explanation": "FELA avoids time-stepping by directly computing collapse loads via optimization, ensuring efficiency and accuracy for geotechnical stability problems.",
+      "source_ids": [
+        "wiki_finite_element_limit_analysis"
+      ]
+    },
+    {
+      "rule": "Ensure Stress Continuity with Iterative Methods",
+      "explanation": "Loubignac iteration enforces continuous stress fields, which is critical for accurate stress analysis in finite element simulations.",
+      "source_ids": [
+        "wiki_loubignac_iteration"
+      ]
+    }
+  ]
+}

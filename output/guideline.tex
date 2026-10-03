@@ -87,25 +87,96 @@ The Galerkin Method is a discretization technique that utilizes weighted residua
 
 \section{The Finite Element Procedure}
 
-The Finite Element Procedure is a numerical method used to solve partial differential equations. It involves discretizing the domain into smaller elements, typically using a mesh of triangles or quadrilaterals. Each element is associated with a set of unknowns, such as nodal values, which are used to approximate the solution. The Finite Element Procedure typically involves three main steps: assembling the element matrices, applying boundary conditions, and solving the resulting system of equations. This process allows for the approximation of complex solutions to partial differential equations, enabling the analysis of a wide range of physical phenomena.
+The Finite Element Procedure for Optimization-Based Collapse Load Determination using Finite Element Limit Analysis (FELA) involves formulating the problem as an optimization task to compute collapse loads. This is achieved by defining objective functions and constraints based on kinematic or equilibrium principles, as expressed in the optimization objective function: \$\textbackslash{}min\_\{\textbackslash{}mathbf\{\textbackslash{}sigma\}\} \textbackslash{}mathbf\{c\}\textasciicircum{}T \textbackslash{}mathbf\{\textbackslash{}sigma\} \textbackslash{}quad \textbackslash{}text\{subject to\} \textbackslash{}quad \textbackslash{}mathbf\{A\}\textbackslash{}mathbf\{\textbackslash{}sigma\} = \textbackslash{}mathbf\{b\}\$ [wiki\_finite\_element\_limit\_analysis]. By directly solving for upper or lower bound solutions without incremental time-stepping, FELA leverages mathematical programming techniques to ensure stability and accuracy in geotechnical applications [wiki\_finite\_element\_limit\_analysis]. This approach is widely applied in geotechnical engineering for problems like slope stability and bearing capacity calculations, where accurate stress distribution analysis is crucial [wiki\_finite\_element\_limit\_analysis].
 
-Discretization and mesh generation are crucial steps in the Finite Element Procedure. The domain is divided into smaller elements, typically using a mesh of triangles or quadrilaterals, to approximate the solution of the partial differential equation. The choice of mesh type and density significantly affects the accuracy and computational efficiency of the method. A finer mesh can provide a more accurate representation of the solution but increases the computational cost. The mesh generation process involves creating a set of nodes and elements that satisfy the desired accuracy and computational requirements.
+In the context of the Finite Element Procedure, iterative stress field refinement is a critical step to ensure accurate stress predictions in complex mechanical systems. This is achieved through the use of Loubignac iteration, an iterative finite element method that generates continuous stress fields. Introduced in 1977, Loubignac iteration addresses issues related to discontinuous stresses in traditional finite element formulations, particularly useful in applications requiring accurate stress distribution analysis [wiki\_loubignac\_iteration]. By enforcing continuous stress fields, Loubignac iteration ensures that stress fields satisfy equilibrium and compatibility conditions, thereby improving the reliability of stress predictions [wiki\_loubignac\_iteration]. This iterative process is essential for refining stress fields and achieving continuity, which is critical for accurate stress analysis in finite element simulations [wiki\_loubignac\_iteration].
 
-The solution and postprocessing stages in the Finite Element Procedure involve obtaining the approximate solution from the system of equations obtained after applying the Galerkin method. This is typically achieved through the use of numerical methods such as Gaussian elimination or iterative solvers. Once the solution is obtained, postprocessing techniques are employed to extract meaningful information from the numerical solution, such as visualizing the solution distribution or computing derived quantities like stresses and strains. These postprocessing steps are essential for interpreting the results and drawing conclusions from the Finite Element analysis.
+\[\min_{\mathbf{\sigma}} \mathbf{c}^T \mathbf{\sigma} \quad \text{subject to} \quad \mathbf{A}\mathbf{\sigma} = \mathbf{b}\]
 
-\section{Verification, Validation, and Best Practices}
+\cite{ref1}
 
-Verification and validation are two distinct concepts in the context of numerical methods, particularly in the Finite Element Method (FEM). Verification refers to the process of ensuring that the numerical solution accurately represents the mathematical model, often through the use of analytical solutions or benchmark problems. On the other hand, validation involves assessing the accuracy of the numerical solution in relation to real-world physical phenomena, typically through comparison with experimental data or observational results. Understanding the difference between verification and validation is crucial in ensuring the reliability and applicability of numerical simulations.
+\cite{ref2}
 
-To establish best practices for data integrity and accuracy, it is essential to implement rigorous verification and validation procedures. This involves not only ensuring that the numerical solution accurately represents the mathematical formulation, but also that the results obtained are reliable and consistent with the underlying physical phenomena being modeled. By adopting a systematic approach to verification and validation, researchers and practitioners can increase confidence in their results and minimize the risk of errors or inaccuracies.
+\section{Rules for Modeling Physical Phenomena with FEM: Choosing Appropriate Material Models for FEM Simulations}
 
-To ensure reliable results, it is crucial to implement quality control measures throughout the Finite Element Method (FEM) process. This involves establishing a clear and transparent documentation of the simulation setup, including the selection of material models and the definition of boundary conditions. Furthermore, it is essential to implement regular checks and balances to verify the accuracy of the numerical solution, such as comparing the results with analytical solutions or experimental data. By following these best practices, researchers and engineers can increase the confidence in their results and ensure that their simulations accurately represent the physical phenomena being modeled.
+When choosing material models for FEM simulations, it is essential to consider the type of problem being addressed. In geotechnical stability applications, such as slope stability and bearing capacity calculations, Finite Element Limit Analysis (FELA) is a suitable method. FELA formulates the problem as an optimization task to compute collapse loads, directly solving for upper or lower bound solutions without incremental time-stepping [wiki\_finite\_element\_limit\_analysis]. This approach leverages mathematical programming techniques to ensure stability and accuracy. In contrast, general mechanical systems may require more conventional nonlinear finite element methods, which can be computationally intensive and prone to convergence issues. By selecting the appropriate material model based on the problem type, users can ensure accurate and efficient FEM simulations.
+
+When selecting material models for FEM simulations, it is crucial to consider the requirements of stress continuity and optimization. Loubignac iteration, introduced in 1977, is an iterative finite element method that generates continuous stress fields, addressing issues related to discontinuous stresses in traditional finite element formulations [wiki\_loubignac\_iteration]. This method is particularly useful in applications requiring accurate stress distribution analysis. Furthermore, Finite Element Limit Analysis (FELA) formulates the problem as an optimization task to compute collapse loads, involving defining objective functions and constraints based on kinematic or equilibrium principles [wiki\_finite\_element\_limit\_analysis]. The optimization objective function is represented by \$\textbackslash{}min\_\{\textbackslash{}mathbf\{\textbackslash{}sigma\}\} \textbackslash{}mathbf\{c\}\textasciicircum{}T \textbackslash{}mathbf\{\textbackslash{}sigma\} \textbackslash{}quad \textbackslash{}text\{subject to\} \textbackslash{}quad \textbackslash{}mathbf\{A\}\textbackslash{}mathbf\{\textbackslash{}sigma\} = \textbackslash{}mathbf\{b\}\$, where \$\textbackslash{}mathbf\{\textbackslash{}sigma\}\$ is the stress field, \$\textbackslash{}mathbf\{c\}\$ is a cost vector, and \$\textbackslash{}mathbf\{A\}\textbackslash{}mathbf\{\textbackslash{}sigma\} = \textbackslash{}mathbf\{b\}\$ enforces equilibrium constraints [wiki\_finite\_element\_limit\_analysis].
+
+When determining the optimal material model for FEM simulations, it is crucial to consider the requirements of direct collapse load calculation versus iterative stress field refinement. Finite Element Limit Analysis (FELA) is a method that leverages optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems, directly solving for collapse loads without incremental time-stepping. This is in contrast to iterative stress field refinement methods, such as Loubignac iteration, which generates continuous stress fields through successive iterations to ensure stress continuity and equilibrium. The choice between these approaches depends on the specific needs of the simulation, with FELA being particularly useful for geotechnical engineering applications where stability analysis is critical.
+
+\[\min_{\mathbf{\sigma}} \mathbf{c}^T \mathbf{\sigma} \quad \text{subject to} \quad \mathbf{A}\mathbf{\sigma} = \mathbf{b}\]
+
+\[\mathbf{\sigma}\]
+
+\[\mathbf{c}\]
+
+\[\mathbf{A}\mathbf{\sigma} = \mathbf{b}\]
+
+\cite{ref1}
+
+\cite{ref2}
+
+\section{Rules for Modeling Physical Phenomena with FEM: Boundary Conditions and Constraints in FEM Modeling}
+
+The application of optimization-based methods is crucial for accurate collapse load determination in geotechnical engineering. Finite Element Limit Analysis (FELA), a method that leverages optimization techniques, directly computes upper or lower bound plastic collapse loads for mechanical systems without incremental time-stepping [wiki\_finite\_element\_limit\_analysis]. This approach is particularly useful in geotechnical applications, such as slope stability and bearing capacity calculations. The optimization problem in FELA can be formulated as minimizing the objective function \$\textbackslash{}min\_\{\textbackslash{}mathbf\{\textbackslash{}sigma\}\} \textbackslash{}mathbf\{c\}\textasciicircum{}T \textbackslash{}mathbf\{\textbackslash{}sigma\} \textbackslash{}quad \textbackslash{}text\{subject to\} \textbackslash{}quad \textbackslash{}mathbf\{A\}\textbackslash{}mathbf\{\textbackslash{}sigma\} = \textbackslash{}mathbf\{b\}\$, where \$\textbackslash{}mathbf\{\textbackslash{}sigma\}\$ is the stress field, \$\textbackslash{}mathbf\{c\}\$ is a cost vector, and \$\textbackslash{}mathbf\{A\}\textbackslash{}mathbf\{\textbackslash{}sigma\} = \textbackslash{}mathbf\{b\}\$ enforces equilibrium constraints [wiki\_finite\_element\_limit\_analysis]. By directly solving for collapse loads via optimization, FELA ensures efficiency and accuracy for geotechnical stability problems, adhering to the rule of using optimization for direct collapse load calculation [wiki\_finite\_element\_limit\_analysis].
+
+Implementing iterative stress field refinement techniques, such as Loubignac iteration, is crucial for improving the reliability of stress predictions in complex mechanical systems. This method iteratively refines stress fields to achieve continuity, ensuring that stress fields satisfy equilibrium and compatibility conditions. As stated in the Loubignac iteration article, this process starts with an initial stress approximation and updates it through successive iterations, addressing issues related to discontinuous stresses in traditional finite element formulations. The optimization objective function, as represented by the equation \$\textbackslash{}min\_\{\textbackslash{}mathbf\{\textbackslash{}sigma\}\} \textbackslash{}mathbf\{c\}\textasciicircum{}T \textbackslash{}mathbf\{\textbackslash{}sigma\} \textbackslash{}quad \textbackslash{}text\{subject to\} \textbackslash{}quad \textbackslash{}mathbf\{A\}\textbackslash{}mathbf\{\textbackslash{}sigma\} = \textbackslash{}mathbf\{b\}\$, is essential in FELA for determining upper or lower bound plastic collapse loads. By leveraging iterative methods like Loubignac iteration, FEM results can be significantly improved, leading to more accurate stress analysis and stability analysis in geotechnical engineering applications. [wiki\_finite\_element\_limit\_analysis] [wiki\_loubignac\_iteration]
+
+To ensure efficient and accurate FEM modeling, strategic application of boundary conditions and constraints is crucial. The use of optimization-based methods, such as Finite Element Limit Analysis (FELA), is beneficial for direct collapse load determination in geotechnical engineering, as it avoids time-stepping and leverages mathematical programming techniques to ensure stability and accuracy [wiki\_finite\_element\_limit\_analysis]. Additionally, iterative stress field refinement techniques, such as Loubignac iteration, are essential for improving the reliability of stress predictions in complex mechanical systems by enforcing continuous stress fields [wiki\_loubignac\_iteration]. By incorporating these strategies, FEM models can provide accurate and reliable results, enabling informed decision-making in various engineering applications.
+
+\[\min_{\mathbf{\sigma}} \mathbf{c}^T \mathbf{\sigma} \quad \text{subject to} \quad \mathbf{A}\mathbf{\sigma} = \mathbf{b}\]
+
+\[\mathbf{\sigma}\]
+
+\[\mathbf{c}\]
+
+\[\mathbf{A}\mathbf{\sigma} = \mathbf{b}\]
+
+\cite{ref1}
+
+\cite{ref2}
+
+\section{Rules for Modeling Physical Phenomena with FEM: Meshing and Discretization Techniques for Accurate FEM Results}
+
+When choosing the right discretization technique for FEM modeling, it is essential to consider the specific requirements of the problem at hand. In applications where accurate stress distribution analysis is crucial, Loubignac iteration can be a valuable tool. This iterative method refines stress fields to achieve continuity, ensuring that stress fields satisfy equilibrium and compatibility conditions. In contrast, Finite Element Limit Analysis (FELA) is a method that uses optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems. By leveraging mathematical programming techniques, FELA directly solves for upper or lower bound solutions without incremental time-stepping, making it a reliable choice for geotechnical applications.
+
+In Finite Element Limit Analysis (FELA), optimization strategies are employed to accurately determine collapse loads in geotechnical engineering applications. The optimization objective function is formulated as \$\textbackslash{}min\_\{\textbackslash{}mathbf\{\textbackslash{}sigma\}\} \textbackslash{}mathbf\{c\}\textasciicircum{}T \textbackslash{}mathbf\{\textbackslash{}sigma\} \textbackslash{}quad \textbackslash{}text\{subject to\} \textbackslash{}quad \textbackslash{}mathbf\{A\}\textbackslash{}mathbf\{\textbackslash{}sigma\} = \textbackslash{}mathbf\{b\}\$, where \$\textbackslash{}mathbf\{\textbackslash{}sigma\}\$ is the stress field, \$\textbackslash{}mathbf\{c\}\$ is a cost vector, and \$\textbackslash{}mathbf\{A\}\textbackslash{}mathbf\{\textbackslash{}sigma\} = \textbackslash{}mathbf\{b\}\$ enforces equilibrium constraints [wiki\_finite\_element\_limit\_analysis]. By directly solving for upper or lower bound solutions without incremental time-stepping, FELA ensures stability and accuracy in geotechnical applications, as stated in [wiki\_finite\_element\_limit\_analysis]. This approach is particularly useful for problems like slope stability and bearing capacity calculations, where accurate stress distribution analysis is crucial.
+
+Loubignac iteration is a critical procedure in iterative stress field refinement, ensuring continuity and accuracy in FEM modeling. This method iteratively refines stress fields to achieve equilibrium and compatibility conditions, as stated in the PROCEDURE: Iterative Stress Field Refinement fact. Loubignac iteration was introduced in 1977 and is designed to improve stress continuity in numerical solutions, addressing issues related to discontinuous stresses in traditional finite element formulations, as per the CONCEPT: Loubignac Iteration fact. By enforcing continuous stress fields, Loubignac iteration is essential for accurate stress analysis in finite element simulations, as per the RULE: Ensure Stress Continuity with Iterative Methods fact. This is particularly important in applications requiring accurate stress distribution analysis, such as in geotechnical stability problems, where optimization-based methods like FELA are employed to directly compute collapse loads, as stated in the PROCEDURE: Optimization-Based Collapse Load Determination fact.
+
+\[\min_{\mathbf{\sigma}} \mathbf{c}^T \mathbf{\sigma} \quad \text{subject to} \quad \mathbf{A}\mathbf{\sigma} = \mathbf{b}\]
+
+\[\mathbf{\sigma}\]
+
+\[\mathbf{c}\]
+
+\[\mathbf{A}\mathbf{\sigma} = \mathbf{b}\]
+
+\cite{ref1}
+
+\section{Introduction and Scope of the Finite Element Method}
+
+The Finite Element Method (FEM) has become a crucial tool in geotechnical stability problems, particularly in applications such as slope stability and bearing capacity calculations. Finite Element Limit Analysis (FELA), a method that leverages optimization techniques, is widely applied in this field. FELA formulates the problem as an optimization task to compute collapse loads, directly solving for upper or lower bound solutions without incremental time-stepping (wiki\_finite\_element\_limit\_analysis). This approach ensures efficiency and accuracy in geotechnical stability problems by avoiding time-stepping and leveraging mathematical programming techniques to ensure stability and accuracy. The optimization objective function in FELA is represented by the equation \$\textbackslash{}min\_\{\textbackslash{}mathbf\{\textbackslash{}sigma\}\} \textbackslash{}mathbf\{c\}\textasciicircum{}T \textbackslash{}mathbf\{\textbackslash{}sigma\} \textbackslash{}quad \textbackslash{}text\{subject to\} \textbackslash{}quad \textbackslash{}mathbf\{A\}\textbackslash{}mathbf\{\textbackslash{}sigma\} = \textbackslash{}mathbf\{b\}\$, where \$\textbackslash{}mathbf\{\textbackslash{}sigma\}\$ is the stress field, \$\textbackslash{}mathbf\{c\}\$ is a cost vector, and \$\textbackslash{}mathbf\{A\}\textbackslash{}mathbf\{\textbackslash{}sigma\} = \textbackslash{}mathbf\{b\}\$ enforces equilibrium constraints (wiki\_finite\_element\_limit\_analysis).
+
+In the context of finite element simulations, iterative methods play a crucial role in refining stress fields to achieve continuity. Loubignac iteration, introduced in 1977, is an iterative finite element method that generates continuous stress fields by iteratively refining stress fields to satisfy equilibrium and compatibility conditions. This method addresses issues related to discontinuous stresses in traditional finite element formulations, particularly in applications requiring accurate stress distribution analysis. By enforcing continuous stress fields, Loubignac iteration ensures the reliability of stress predictions in complex mechanical systems. As a result, it is widely applied in geotechnical engineering for problems like slope stability and bearing capacity calculations, where accurate stress distribution analysis is essential.
+
+\[\min_{\mathbf{\sigma}} \mathbf{c}^T \mathbf{\sigma} \quad \text{subject to} \quad \mathbf{A}\mathbf{\sigma} = \mathbf{b}\]
+
+\[\mathbf{\sigma}\]
+
+\[\mathbf{c}\]
+
+\[\mathbf{A}\mathbf{\sigma} = \mathbf{b}\]
 
 \begin{thebibliography}{99}
-  \bibitem{ref1} \textit{Strategy flexibility in university mathematics}. [Arxiv\_Fulltext] Available at: \url{https://arxiv.org/pdf/2304.12030v2.pdf}
-  \bibitem{ref2} \textit{Verification, Validation and Integrity of Distributed and Interchanged Rule Based Policies and Contracts in the Semantic Web}. [Arxiv\_Fulltext] Available at: \url{https://arxiv.org/pdf/cs/0609119v2.pdf}
-  \bibitem{ref3} \textit{Curved Elements in Weak Galerkin Finite Element Methods}. [Arxiv\_Fulltext] Available at: \url{https://arxiv.org/pdf/2210.16907v1.pdf}
-  \bibitem{ref4} \textit{Flexibility method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Flexibility_method}
+  \bibitem{ref1} \textit{Finite element limit analysis}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Finite_element_limit_analysis}
+  \bibitem{ref2} \textit{Loubignac iteration}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Loubignac_iteration}
+  \bibitem{ref3} \textit{Strategy flexibility in university mathematics}. [Arxiv\_Fulltext] Available at: \url{https://arxiv.org/pdf/2304.12030v2.pdf}
+  \bibitem{ref4} \textit{Mixed-precision finite element kernels and assembly: Rounding error analysis and hardware acceleration}. [Arxiv\_Fulltext] Available at: \url{https://arxiv.org/pdf/2410.12614v1.pdf}
+  \bibitem{ref5} \textit{Verification, Validation and Integrity of Distributed and Interchanged Rule Based Policies and Contracts in the Semantic Web}. [Arxiv\_Fulltext] Available at: \url{https://arxiv.org/pdf/cs/0609119v2.pdf}
+  \bibitem{ref6} \textit{Curved Elements in Weak Galerkin Finite Element Methods}. [Arxiv\_Fulltext] Available at: \url{https://arxiv.org/pdf/2210.16907v1.pdf}
+  \bibitem{ref7} \textit{Flexibility method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Flexibility_method}
 \end{thebibliography}
 
 \newpage
@@ -127,10 +198,13 @@ It records when each source was fetched, from which provider, and its unique ide
 \endhead
 \bottomrule
 \endfoot
-  1 & \texttt{arxiv\_2304.12030v2} & Strategy flexibility in university mathematics & Arxiv\_Fulltext & 2026-10-03 18:07 UTC \\
-  2 & \texttt{arxiv\_cs\_0609119v2} & Verification, Validation and Integrity of Distributed and In & Arxiv\_Fulltext & 2026-10-03 18:07 UTC \\
-  3 & \texttt{arxiv\_2210.16907v1} & Curved Elements in Weak Galerkin Finite Element Methods & Arxiv\_Fulltext & 2026-10-03 18:07 UTC \\
-  4 & \texttt{wiki\_flexibility\_method} & Flexibility method & Wikipedia & 2026-10-03 18:07 UTC \\
+  1 & \texttt{wiki\_finite\_element\_limit\_analysis} & Finite element limit analysis & Wikipedia & 2026-10-03 18:09 UTC \\
+  2 & \texttt{wiki\_loubignac\_iteration} & Loubignac iteration & Wikipedia & 2026-10-03 18:09 UTC \\
+  3 & \texttt{arxiv\_2304.12030v2} & Strategy flexibility in university mathematics & Arxiv\_Fulltext & 2026-10-03 18:07 UTC \\
+  4 & \texttt{arxiv\_2410.12614v1} & Mixed-precision finite element kernels and assembly: Roundin & Arxiv\_Fulltext & 2026-10-03 18:09 UTC \\
+  5 & \texttt{arxiv\_cs\_0609119v2} & Verification, Validation and Integrity of Distributed and In & Arxiv\_Fulltext & 2026-10-03 18:09 UTC \\
+  6 & \texttt{arxiv\_2210.16907v1} & Curved Elements in Weak Galerkin Finite Element Methods & Arxiv\_Fulltext & 2026-10-03 18:07 UTC \\
+  7 & \texttt{wiki\_flexibility\_method} & Flexibility method & Wikipedia & 2026-10-03 18:07 UTC \\
 \end{longtable}
 
 \normalsize
