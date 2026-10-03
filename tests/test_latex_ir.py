@@ -91,6 +91,31 @@ def test_document_model_limits_references_to_renderer_contract():
     assert [reference.source_id for reference in document.references] == ["one", "two"]
 
 
+
+def test_citations_can_resolve_sources_beyond_legacy_25_reference_boundary():
+    evidence = [
+        {"source_id": f"source-{index}", "title": f"Source {index}"}
+        for index in range(1, 28)
+    ]
+
+    document = build_document_model(
+        {"topic": "Test", "objective": "Objective"},
+        [
+            {
+                "title": "Evidence",
+                "blocks": [
+                    {"type": "citation", "source_ids": ["source-27"]},
+                ],
+            }
+        ],
+        evidence,
+    )
+
+    assert len(document.references) == 27
+    assert document.references[-1].source_id == "source-27"
+    assert document.references[-1].citation_key == "ref27"
+    assert r"\cite{ref27}" in render_body(document)
+
 def test_citation_blocks_resolve_against_explicit_reference_keys():
     document = build_document_model(
         {"topic": "Test", "objective": "Objective"},
