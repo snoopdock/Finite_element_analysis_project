@@ -1,25 +1,25 @@
 [
   {
-    "source_id": "wiki_applied_element_method",
-    "url": "https://en.wikipedia.org/wiki/Applied_element_method",
-    "retrieved_at": "2026-10-03T19:03:35.077624+00:00",
+    "source_id": "wiki_mixed_finite_element_method",
+    "url": "https://en.wikipedia.org/wiki/Mixed_finite_element_method",
+    "retrieved_at": "2026-10-03T19:37:05.186779+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
-    "title": "Applied element method",
+    "title": "Mixed finite element method",
     "authors": [
       "Wikipedia Contributors"
     ],
     "metadata": {
-      "abstract": "The <span class=\"searchmatch\">applied</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (AEM) is a numerical analysis used in predicting the continuum and discrete behavior of structures. The modeling <span class=\"searchmatch\">method</span> in AEM",
-      "word_count": 1349
+      "abstract": "In numerical analysis, a <span class=\"searchmatch\">mixed</span> <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span>, is a variant of the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> in which extra fields to be solved are introduced during",
+      "word_count": 389
     },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_applied_element_method.txt",
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_mixed_finite_element_method.txt",
     "status": "parsed_full_text",
     "provider": "wikipedia",
     "source_type": "wikipedia",
-    "query_context": "Applied element method",
+    "query_context": "Mixed Finite Element Method",
     "query_contexts": [
-      "Applied element method"
+      "Mixed Finite Element Method"
     ],
     "provider_names": [
       "wikipedia"
@@ -39,51 +39,61 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "Applied element method",
+      "best_query": "Mixed Finite Element Method",
       "query_index": 4,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.1375,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "Crystal plasticity finite element method": 0.1375,
-        "Applied element method": 0.750865,
-        "Céa's lemma": 0.1375
+        "Finite Element Method with Energy Minimization": 0.1375,
+        "Mixed Finite Element Method": 0.750865,
+        "Scaled Boundary Finite Element Method": 0.1375
       }
     }
   },
   {
-    "source_id": "wiki_c_a_s_lemma",
-    "url": "https://en.wikipedia.org/wiki/Céa's_lemma",
-    "retrieved_at": "2026-10-03T19:03:35.077624+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Céa's lemma",
+    "source_id": "arxiv_1509.00440v1",
+    "url": "https://arxiv.org/pdf/1509.00440v1.pdf",
+    "retrieved_at": "2026-10-03T19:37:05.186779+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "A non-symmetric coupling of the finite volume method and the boundary element method",
     "authors": [
-      "Wikipedia Contributors"
+      "Christoph Erath",
+      "Günther Of",
+      "Francisco-Javier Sayas"
     ],
     "metadata": {
-      "abstract": "<span class=\"searchmatch\">Céa&#039;s</span> <span class=\"searchmatch\">lemma</span> is a <span class=\"searchmatch\">lemma</span> in mathematics. Introduced by Jean <span class=\"searchmatch\">Céa</span> in his Ph.D. dissertation, it is an important tool for proving error estimates for the finite",
-      "word_count": 2163
+      "abstract": "As model problem we consider the prototype for flow and transport of a concentration in porous media in an interior domain and couple it with a diffusion process in the corresponding unbounded exterior domain. To solve the problem we develop a new non-symmetric coupling between the vertex-centered finite volume and boundary element method. This discretization provides naturally conservation of local fluxes and with an upwind option also stability in the convection dominated case. We aim to provide a first rigorous analysis of the system for different model parameters; stability, convergence, and a~priori estimates. This includes the use of an implicit stabilization, known from the finite element and boundary element method coupling. Some numerical experiments conclude the work and confirm the theoretical results.",
+      "published": "2015-09-01T18:59:36Z",
+      "page_count": 0,
+      "word_count": 9985
     },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_c_a_s_lemma.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "Céa's lemma",
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1509.00440v1.txt",
+    "full_text_available": true,
+    "status": "cached_full_text",
+    "query_context": "finite element method practical implementation modeling rules",
     "query_contexts": [
-      "Céa's lemma"
+      "Finite Element Method with Energy Minimization",
+      "Mixed Finite Element Method",
+      "Scaled Boundary Finite Element Method",
+      "finite element method mathematical foundation weak form Galerkin method",
+      "finite element method practical implementation modeling rules",
+      "finite element method verification validation numerical stability"
     ],
     "provider_names": [
-      "wikipedia"
+      "arxiv"
     ],
     "source_types": [
-      "wikipedia"
+      "preprint"
     ],
     "ranking": {
-      "score": 0.750865,
-      "lexical": 0.839445,
-      "source_quality": 0.55,
-      "section_relevance": 0.677259,
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
       "citation_support": 0.0,
       "weights": {
         "lexical": 0.65,
@@ -91,51 +101,54 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "Céa's lemma",
+      "best_query": "Scaled Boundary Finite Element Method",
       "query_index": 5,
       "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "Crystal plasticity finite element method": 0.1375,
-        "Applied element method": 0.1375,
-        "Céa's lemma": 0.750865
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Finite Element Method with Energy Minimization": 0.2125,
+        "Mixed Finite Element Method": 0.2125,
+        "Scaled Boundary Finite Element Method": 0.519183
       }
     }
   },
   {
-    "source_id": "wiki_crystal_plasticity",
-    "url": "https://en.wikipedia.org/wiki/Crystal_plasticity",
-    "retrieved_at": "2026-10-03T19:03:35.077624+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Crystal plasticity",
+    "source_id": "arxiv_1902.01090v2",
+    "url": "https://arxiv.org/pdf/1902.01090v2.pdf",
+    "retrieved_at": "2026-10-03T19:37:05.186779+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Finite element analysis for identifying the reaction coefficient in PDE from boundary observations",
     "authors": [
-      "Wikipedia Contributors"
+      "Tran Nhan Tam Quyen"
     ],
     "metadata": {
-      "abstract": "formulations of <span class=\"searchmatch\">crystal</span> <span class=\"searchmatch\">plasticity</span> are the one based on the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> known as <span class=\"searchmatch\">Crystal</span> <span class=\"searchmatch\">Plasticity</span> <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">Element</span> <span class=\"searchmatch\">Method</span> (CPFEM), which is",
-      "word_count": 437
+      "abstract": "This work is devoted to the nonlinear inverse problem of identifying the reaction coefficient in an elliptic boundary value problem from single Cauchy data on a part of the boundary. We then examine simultaneously two elliptic boundary value problems generated from the available Cauchy data. The output least squares method with the Tikhonov regularization is applied to find approximations of the sought coefficient. We discretize the PDEs with piecewise linear finite elements. The stability and convergence of this technique are then established. A numerical experiment is presented to illustrate our theoretical findings.",
+      "published": "2019-02-04T09:06:35Z",
+      "page_count": 23,
+      "word_count": 9039
     },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_crystal_plasticity.txt",
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1902.01090v2.txt",
+    "full_text_available": true,
     "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "Crystal plasticity finite element method",
+    "query_context": "Scaled Boundary Finite Element Method",
     "query_contexts": [
-      "Crystal plasticity finite element method"
+      "Scaled Boundary Finite Element Method"
     ],
     "provider_names": [
-      "wikipedia"
+      "arxiv"
     ],
     "source_types": [
-      "wikipedia"
+      "preprint"
     ],
     "ranking": {
-      "score": 0.750865,
-      "lexical": 0.839445,
-      "source_quality": 0.55,
-      "section_relevance": 0.677259,
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
       "citation_support": 0.0,
       "weights": {
         "lexical": 0.65,
@@ -143,295 +156,70 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "Crystal plasticity finite element method",
+      "best_query": "Scaled Boundary Finite Element Method",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Finite Element Method with Energy Minimization": 0.2125,
+        "Mixed Finite Element Method": 0.2125,
+        "Scaled Boundary Finite Element Method": 0.519183
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_astro_ph_0510346v1",
+    "url": "https://arxiv.org/pdf/astro-ph/0510346v1.pdf",
+    "retrieved_at": "2026-10-03T19:37:05.186779+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "The Dark Energy Survey",
+    "authors": [
+      " The Dark Energy Survey Collaboration"
+    ],
+    "metadata": {
+      "abstract": "We describe the Dark Energy Survey (DES), a proposed optical-near infrared survey of 5000 sq. deg of the South Galactic Cap to ~24th magnitude in SDSS griz, that would use a new 3 sq. deg CCD camera to be mounted on the Blanco 4-m telescope at Cerro Telolo Inter-American Observatory (CTIO). The survey data will allow us to measure the dark energy and dark matter densities and the dark energy equation of state through four independent methods: galaxy clusters, weak gravitational lensing tomography, galaxy angular clustering, and supernova distances. These methods are doubly complementary: they constrain different combinations of cosmological model parameters and are subject to different systematic errors. By deriving the four sets of measurements from the same data set with a common analysis framework, we will obtain important cross checks of the systematic errors and thereby make a substantial and robust advance in the precision of dark energy measurements.",
+      "published": "2005-10-12T13:33:59Z",
+      "page_count": 42,
+      "word_count": 21790
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_astro_ph_0510346v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "Finite Element Method with Energy Minimization",
+    "query_contexts": [
+      "Finite Element Method with Energy Minimization"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Finite Element Method with Energy Minimization",
       "query_index": 3,
       "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "Crystal plasticity finite element method": 0.750865,
-        "Applied element method": 0.1375,
-        "Céa's lemma": 0.1375
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_1712.01211v2",
-    "url": "https://arxiv.org/pdf/1712.01211v2.pdf",
-    "retrieved_at": "2026-10-03T19:11:06.535150+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "A Unified Study of Continuous and Discontinuous Galerkin Methods",
-    "authors": [
-      "Qingguo Hong",
-      "Fei Wang",
-      "Shuonan Wu",
-      "Jinchao Xu"
-    ],
-    "metadata": {
-      "abstract": "A unified study is presented in this paper for the design and analysis of different finite element methods (FEMs), including conforming and nonconforming FEMs, mixed FEMs, hybrid FEMs,discontinuous Galerkin (DG) methods, hybrid discontinuous Galerkin (HDG) methods and weak Galerkin (WG) methods. Both HDG and WG are shown to admit inf-sup conditions that hold uniformly with respect to both mesh and penalization parameters. In addition, by taking the limit of the stabilization parameters, a WG method is shown to converge to a mixed method whereas an HDG method is shown to converge to a primal method. Furthermore, a special class of DG methods, known as the mixed DG methods, is presented to fill a gap revealed in the unified framework.",
-      "published": "2017-12-04T17:29:26Z",
-      "page_count": 39,
-      "word_count": 16348
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1712.01211v2.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "FEM discontinuous Galerkin methods",
-    "query_contexts": [
-      "FEM discontinuous Galerkin methods"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.672524,
-      "lexical": 0.629584,
-      "source_quality": 0.85,
-      "section_relevance": 0.507944,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "FEM discontinuous Galerkin methods",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.335173,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "FEM gradient discretization method": 0.2125,
-        "FEM discontinuous Galerkin methods": 0.672524,
-        "FEM applications": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_1501.01918v1",
-    "url": "https://arxiv.org/pdf/1501.01918v1.pdf",
-    "retrieved_at": "2026-10-03T19:03:35.077624+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Ehrenfeucht's lemma in set theory",
-    "authors": [
-      "Gunter Fuchs",
-      "Victoria Gitman",
-      "Joel David Hamkins"
-    ],
-    "metadata": {
-      "abstract": "Ehrenfeucht's lemma (1973) asserts that whenever one element of a model of Peano arithmetic is definable from another, then they satisfy different types. We consider here the analogue of Ehrenfeucht's lemma for models of set theory. The original argument applies directly to the ordinal-definable elements of any model of set theory, and in particular, Ehrenfeucht's lemma holds fully for models of set theory satisfying $V=HOD$. We show that the lemma can fail, however, in models of set theory with $V\\neq HOD$, and it necessarily fails in the forcing extension to add a generic Cohen real. We go on to formulate a scheme of natural parametric generalizations of Ehrenfeucht's lemma, namely, the principles of the form $EL(A,P,Q)$, which asserts that whenever an object $b$ is definable from some $a\\in A$ using parameters in $P$, with $b\\neq a$, then the types of $a$ and $b$ over $Q$ are different. We also consider various analogues of Ehrenfeucht's lemma obtained by using algebraicity in place of definability, where a set $b$ is algebraic in $a$ if it is a member of a finite set definable from $a$ (as in Hamkins, Leahy arXiv:1305.5953). Ehrenfeucht's lemma holds for the ordinal-algebraic sets, we prove, if and only if the ordinal-algebraic and ordinal-definable sets coincide. Using similar analysis, we answer two open questions posed by Hamkins and Leahy, by showing that (i) algebraicity and definability need not coincide in models of set theory and (ii) the internal and external notions of being ordinal algebraic need not coincide.",
-      "published": "2015-01-08T18:10:44Z",
-      "page_count": 13,
-      "word_count": 7594
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1501.01918v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "Céa's lemma",
-    "query_contexts": [
-      "Céa's lemma"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.62141,
-      "lexical": 0.55963,
-      "source_quality": 0.85,
-      "section_relevance": 0.451506,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Céa's lemma",
-      "query_index": 5,
-      "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "Crystal plasticity finite element method": 0.2125,
-        "Applied element method": 0.2125,
-        "Céa's lemma": 0.62141
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2112.01267v1",
-    "url": "https://arxiv.org/pdf/2112.01267v1.pdf",
-    "retrieved_at": "2026-10-03T19:11:06.535150+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Bradley-Terry Modeling with Multiple Game Outcomes with Applications to College Hockey",
-    "authors": [
-      "John T. Whelan",
-      "Jacob E. Klein"
-    ],
-    "metadata": {
-      "abstract": "The Bradley-Terry model has previously been used in both Bayesian and frequentist interpretations to evaluate the strengths of sports teams based on win-loss game results. It has also been extended to handle additional possible results such as ties. We implement a generalization which includes multiple possible outcomes such as wins or losses in regulation, overtime, or shootouts. A natural application is to ice hockey competitions such as international matches, European professional leagues, and NCAA hockey, all of which use a zero-sum point system which values overtime and shootout wins as 1/3 of a win, and overtime and shootout losses as 1/3 of a win. We incorporate this into the probability model, and evaluate the posterior distributions for the associated strength parameters using techniques such as Gaussian expansion about maximum a posteriori estimates, and Hamiltonian Monte Carlo.",
-      "published": "2021-12-02T14:14:43Z",
-      "page_count": 22,
-      "word_count": 9007
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2112.01267v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "FEM applications",
-    "query_contexts": [
-      "FEM applications"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.519183,
-      "lexical": 0.419722,
-      "source_quality": 0.85,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "FEM applications",
-      "query_index": 5,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.365841,
-        "finite element method verification validation numerical stability": 0.2125,
-        "FEM gradient discretization method": 0.2125,
-        "FEM discontinuous Galerkin methods": 0.2125,
-        "FEM applications": 0.519183
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2210.16907v1",
-    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
-    "retrieved_at": "2026-10-03T19:11:06.535150+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
-    "authors": [
-      "Dan Li",
-      "Chunmei Wang",
-      "Junping Wang"
-    ],
-    "metadata": {
-      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
-      "published": "2022-10-30T18:14:18Z",
-      "page_count": 0,
-      "word_count": 9773
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
-    "full_text_available": true,
-    "status": "cached_full_text",
-    "query_context": "finite element method mathematical foundation weak form Galerkin method",
-    "query_contexts": [
-      "finite element method mathematical foundation weak form Galerkin method"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.519183,
-      "lexical": 0.419722,
-      "source_quality": 0.85,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "FEM discontinuous Galerkin methods",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "FEM gradient discretization method": 0.2125,
-        "FEM discontinuous Galerkin methods": 0.519183,
-        "FEM applications": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "wiki_boris_galerkin",
-    "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
-    "retrieved_at": "2026-10-03T19:11:06.535150+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Boris Galerkin",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "problem in <span class=\"searchmatch\">weak</span> <span class=\"searchmatch\">form</span>. Most well-known in the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> The Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> The streamline upwind Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> (SUPG) The",
-      "word_count": 1835
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_boris_galerkin.txt",
-    "status": "cached_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "finite element method mathematical foundation weak form Galerkin method",
-    "query_contexts": [
-      "finite element method mathematical foundation weak form Galerkin method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.290841,
-      "lexical": 0.209861,
-      "source_quality": 0.55,
-      "section_relevance": 0.169315,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "FEM discontinuous Galerkin methods",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "FEM gradient discretization method": 0.1375,
-        "FEM discontinuous Galerkin methods": 0.290841,
-        "FEM applications": 0.1375
+        "Finite Element Method with Energy Minimization": 0.519183,
+        "Mixed Finite Element Method": 0.2125,
+        "Scaled Boundary Finite Element Method": 0.2125
       }
     }
   }

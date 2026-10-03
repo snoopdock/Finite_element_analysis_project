@@ -1,102 +1,77 @@
 {
   "concepts": [
     {
-      "name": "Weak Formulation",
-      "explanation": "The weak formulation is a mathematical framework used in the Finite Element Method to transform differential equations into integral equations. It allows for solutions that may not satisfy the original differential equation pointwise but satisfy an integral form. This approach is essential for handling complex geometries and boundary conditions. The weak form is derived by multiplying the differential equation by a test function and integrating over the domain.",
-      "mathematical_formulation": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
+      "name": "Mixed Finite Element Method",
+      "explanation": "The mixed finite element method introduces additional fields to solve partial differential equations, contrasting with primal methods. These extra fields are constrained using Lagrange multipliers, enabling efficient solutions for numerically ill-posed problems like almost incompressible elasticity. The method results in a saddle point system with non-definite matrices, requiring specialized solvers. Hybrid methods further refine this by enforcing continuity weakly through boundary Lagrange fields, reducing degrees of freedom.",
+      "mathematical_formulation": "\\begin{cases} \\mathbf{K} \\mathbf{u} + \\mathbf{B}^T \\boldsymbol{\\lambda} = \\mathbf{f} \\\\ \\mathbf{B} \\mathbf{u} = \\mathbf{0} \\end{cases}",
       "source_ids": [
-        "arxiv_1712.01211v2",
-        "arxiv_2210.16907v1"
+        "wiki_mixed_finite_element_method"
       ]
     },
     {
-      "name": "Discretization",
-      "explanation": "Discretization involves dividing the problem domain into smaller, manageable subdomains called elements. This process converts the continuous problem into a discrete system of equations. The solution is approximated using basis functions defined over each element. Discretization is critical for numerical computation as it reduces infinite-dimensional problems to finite-dimensional ones.",
-      "mathematical_formulation": "u_h(x) = \\sum_{i=1}^N N_i(x) u_i",
+      "name": "Primal Finite Element Method",
+      "explanation": "Primal finite element methods solve PDEs without additional fields, relying on direct discretization of primary variables. They are termed 'irreducible' and typically use symmetric positive definite systems. These methods face challenges in problems with constraints or incompressibility, where mixed formulations excel. The primal approach is simpler but less robust for certain physical phenomena.",
+      "mathematical_formulation": "\\mathbf{K} \\mathbf{u} = \\mathbf{f}",
       "source_ids": [
-        "arxiv_1712.01211v2",
-        "arxiv_2210.16907v1"
-      ]
-    },
-    {
-      "name": "Galerkin Method",
-      "explanation": "The Galerkin method is a technique for approximating solutions to differential equations by projecting the problem onto a finite-dimensional space. It ensures that the residual of the approximate solution is orthogonal to the test function space. This method forms the basis for many finite element formulations. The Galerkin approach is widely used due to its stability and accuracy in solving partial differential equations.",
-      "mathematical_formulation": "\\mathcal{R}(u_h) = 0 \\quad \\text{for all } v_h \\in V_h",
-      "source_ids": [
-        "arxiv_1712.01211v2",
-        "wiki_boris_galerkin"
+        "wiki_mixed_finite_element_method"
       ]
     }
   ],
   "procedures": [
     {
       "step_number": 1,
-      "title": "Mesh Generation",
-      "description": "The first step in FEM is to create a mesh that divides the domain into discrete elements. The quality of the mesh significantly affects the accuracy of the solution. Elements can be of various types (e.g., triangles, quadrilaterals) depending on the problem geometry. A well-constructed mesh ensures proper resolution of the solution across the domain.",
+      "title": "Weak Formulation",
+      "description": "Convert the governing PDEs into a weak (variational) form by multiplying with test functions and integrating over the domain. This allows handling of irregular geometries and discontinuous coefficients. The weak form ensures compatibility with numerical discretization and enforces boundary conditions weakly. It forms the basis for assembling the global stiffness matrix.",
       "equations": [
-        "\\Omega = \\bigcup_{e=1}^E \\Omega_e"
+        "\\int_{\\Omega} \\alpha \\nabla \\Phi \\cdot \\nabla v \\, d\\Omega + \\int_{\\Gamma} \\sigma \\Phi v \\, d\\Gamma = \\int_{\\Omega} f v \\, d\\Omega"
       ],
       "source_ids": [
-        "arxiv_2210.16907v1"
+        "arxiv_1902.01090v2"
       ]
     },
     {
       "step_number": 2,
-      "title": "Assembly of Global Stiffness Matrix",
-      "description": "The local stiffness matrices from individual elements are assembled into a global stiffness matrix. This matrix represents the system of equations governing the entire domain. The assembly process involves mapping element degrees of freedom to the global system. Proper assembly ensures that the interactions between elements are correctly accounted for.",
+      "title": "Discretization",
+      "description": "Approximate the weak form using piecewise polynomial basis functions over a mesh. This transforms the infinite-dimensional problem into a finite system of equations. The choice of basis functions (e.g., linear, quadratic) affects accuracy and computational cost. Discretization requires careful handling of boundary conditions and material properties.",
       "equations": [
-        "K_{ij} = \\sum_{e=1}^E K_{ij}^{(e)}"
+        "\\Phi(x) \\approx \\sum_{i=1}^N \\Phi_i \\phi_i(x)"
       ],
       "source_ids": [
-        "arxiv_1712.01211v2"
-      ]
-    },
-    {
-      "step_number": 3,
-      "title": "Solution of Linear System",
-      "description": "Once the global stiffness matrix and load vector are assembled, the system of linear equations is solved for the unknown nodal values. This step typically involves direct or iterative solvers depending on the problem size. The solution provides the approximate values of the primary variable at each node. Accurate solution of the linear system is crucial for the overall FEM result.",
-      "equations": [
-        "K U = F"
-      ],
-      "source_ids": [
-        "arxiv_1712.01211v2"
+        "arxiv_1902.01090v2"
       ]
     }
   ],
   "equations": [
     {
-      "name": "Weak Form of Poisson's Equation",
-      "latex": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
-      "explanation": "This equation represents the weak form of Poisson's equation. The left-hand side involves the gradient of the solution $ u $ and test function $ v $, while the right-hand side includes the source term $ f $. The integration is performed over the domain $ \\Omega $. This form is derived by multiplying the original PDE by a test function and integrating.",
+      "name": "Elliptic PDE Weak Form",
+      "latex": "\\int_{\\Omega} \\alpha \\nabla \\Phi \\cdot \\nabla v \\, d\\Omega + \\int_{\\Gamma} \\sigma \\Phi v \\, d\\Gamma = \\int_{\\Omega} f v \\, d\\Omega",
+      "explanation": "This equation represents the weak form of an elliptic PDE. $\\alpha$ is the diffusion coefficient, $\\Phi$ is the solution variable, $v$ is the test function, $\\sigma$ enforces boundary conditions, $f$ is the source term, $\\Omega$ is the domain, and $\\Gamma$ is the boundary.",
       "source_ids": [
-        "arxiv_1712.01211v2",
-        "arxiv_2210.16907v1"
+        "arxiv_1902.01090v2"
       ]
     },
     {
-      "name": "Discrete Approximation",
-      "latex": "u_h(x) = \\sum_{i=1}^N N_i(x) u_i",
-      "explanation": "This equation defines the discrete approximation $ u_h(x) $ of the exact solution $ u(x) $. The $ N_i(x) $ are basis functions, and $ u_i $ are the nodal values. The approximation is constructed by combining basis functions weighted by their corresponding nodal values. This forms the basis for the finite element solution.",
+      "name": "Saddle Point System",
+      "latex": "\\begin{bmatrix} \\mathbf{K} & \\mathbf{B}^T \\\\ \\mathbf{B} & \\mathbf{0} \\end{bmatrix} \\begin{bmatrix} \\mathbf{u} \\\\ \\boldsymbol{\\lambda} \\end{bmatrix} = \\begin{bmatrix} \\mathbf{f} \\\\ \\mathbf{0} \\end{bmatrix}",
+      "explanation": "This system arises in mixed formulations, where $\\mathbf{K}$ is the stiffness matrix, $\\mathbf{B}$ enforces constraints via Lagrange multipliers $\\boldsymbol{\\lambda}$, and $\\mathbf{u}$ represents primary variables. The non-definite structure complicates solution strategies.",
       "source_ids": [
-        "arxiv_1712.01211v2",
-        "arxiv_2210.16907v1"
+        "wiki_mixed_finite_element_method"
       ]
     }
   ],
   "rules": [
     {
-      "rule": "Use of Curved Elements",
-      "explanation": "Curved elements are essential for accurately modeling domains with complex geometries. They improve the approximation of boundaries and reduce discretization errors. The use of curved elements is particularly important in problems involving nonlinear geometries or high gradients.",
+      "rule": "Use Mixed Elements for Incompressible Materials",
+      "explanation": "Mixed finite elements prevent numerical locking in nearly incompressible problems by decoupling stress and strain fields. This ensures stability and accuracy where primal methods fail due to rank deficiency.",
       "source_ids": [
-        "arxiv_2210.16907v1"
+        "wiki_mixed_finite_element_method"
       ]
     },
     {
-      "rule": "Orthogonality Condition",
-      "explanation": "The Galerkin method enforces an orthogonality condition between the residual and the test function space. This ensures that the approximate solution minimizes the error in a weighted sense. The orthogonality condition is fundamental to the stability and convergence of the FEM solution.",
+      "rule": "Enforce Continuity Weakly in Hybrid Methods",
+      "explanation": "Hybrid methods use boundary Lagrange multipliers to weakly enforce inter-element continuity, reducing degrees of freedom and eliminating negative pivots from mixed formulations. This improves solver efficiency and robustness.",
       "source_ids": [
-        "arxiv_1712.01211v2",
-        "wiki_boris_galerkin"
+        "wiki_mixed_finite_element_method"
       ]
     }
   ]

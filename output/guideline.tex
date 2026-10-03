@@ -67,183 +67,41 @@ Produce a comprehensive technical guideline explaining how the Finite Element Me
 including mathematical foundation, step-by-step procedure, and rules for modeling physical phenomena.
 
 
-\section{Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method}
+\section{Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method (merged with The Finite Element Procedure)}
 
-The Strong Form and Weak Form are two fundamental concepts in the mathematical foundation of finite element methods. The Strong Form is a statement of the governing partial differential equation, which is satisfied exactly by the solution. In contrast, the Weak Form is an integral statement of the same equation, which is derived by multiplying the equation by a weight function and integrating over the domain. This process eliminates the need for the weight function to vanish at the boundary, allowing for a broader class of functions to be used as test functions. The Weak Form is a more general and flexible formulation, which is essential for the development of the Galerkin method.
+The Primal Finite Element Method is a foundation for direct discretization, relying on the direct discretization of primary variables without additional fields. This approach is termed 'irreducible' and typically uses symmetric positive definite systems, as described by the equation \(\mathbf{K} \mathbf{u} = \mathbf{f}\) \cite{ref1}. However, primal methods face challenges in problems with constraints or incompressibility, where mixed formulations excel. The weak form, which is a crucial step in the discretization process, involves converting the governing partial differential equations into a weak (variational) form by multiplying with test functions and integrating over the domain, as shown in the equation \(\int_{\Omega} \alpha \nabla \Phi \cdot \nabla v \, d\Omega + \int_{\Gamma} \sigma \Phi v \, d\Gamma = \int_{\Omega} f v \, d\Omega\) \cite{ref3}.
 
-The Weak Form is derived by multiplying the Strong Form by a weight function and integrating over the domain. This process results in the Weak Form, which is a statement of the governing partial differential equation in an integral form. Mathematically, the Weak Form can be expressed as \$ \textbackslash{}int\_\{\textbackslash{}Omega\} w \textbackslash{}mathcal\{L\} u \textbackslash{}, d\textbackslash{}Omega = \textbackslash{}int\_\{\textbackslash{}Omega\} w f \textbackslash{}, d\textbackslash{}Omega \$, where \$w\$ is the weight function, \$u\$ is the solution, \$\textbackslash{}mathcal\{L\}\$ is the differential operator, and \$f\$ is the source term. This formulation is essential for the Galerkin method, which is a numerical technique used to approximate the solution of partial differential equations.
+The weak form of a partial differential equation (PDE) plays a pivotal role in the mathematical foundation of the finite element method. By converting the governing PDEs into a weak (variational) form through multiplication with test functions and integration over the domain, as described in the procedure of weak formulation \cite{ref3}, irregular geometries and discontinuous coefficients can be effectively handled. This weak form ensures compatibility with numerical discretization and enforces boundary conditions weakly, forming the basis for assembling the global stiffness matrix. For instance, the weak form of an elliptic PDE is given by \(\int_{\Omega} \alpha \nabla \Phi \cdot \nabla v \, d\Omega + \int_{\Gamma} \sigma \Phi v \, d\Gamma = \int_{\Omega} f v \, d\Omega\) \cite{ref3}, where \(\alpha\) is the diffusion coefficient, \(\Phi\) is the solution variable, \(v\) is the test function, \(\sigma\) enforces boundary conditions, \(f\) is the source term, \(\Omega\) is the domain, and \(\Gamma\) is the boundary.
 
-The Galerkin Method is a numerical technique used to approximate the solution of partial differential equations. It involves finding a weak solution that satisfies the Weak Form by minimizing the residual in a weighted norm. The Galerkin Method can be implemented using a finite element basis, where the solution is approximated as a linear combination of basis functions. The coefficients of the linear combination are determined by minimizing the residual, resulting in a system of linear equations that can be solved numerically. The numerical stability of the Galerkin Method depends on the choice of basis functions and the weighting used in the Weak Form, with some choices leading to stable and accurate solutions while others may result in unstable or inaccurate results.
+The mixed finite element method introduces additional fields to solve partial differential equations, contrasting with primal methods. These extra fields are constrained using Lagrange multipliers, enabling efficient solutions for numerically ill-posed problems like almost incompressible elasticity. The method results in a saddle point system with non-definite matrices, requiring specialized solvers. For instance, the mixed formulation of an elliptic PDE can be represented as: \(\begin{cases} \mathbf{K} \mathbf{u} + \mathbf{B}^T \boldsymbol{\lambda} = \mathbf{f} \\ \mathbf{B} \mathbf{u} = \mathbf{0} \end{cases}\), where \(\mathbf{K}\) is the stiffness matrix, \(\mathbf{u}\) is the displacement field, \(\mathbf{B}\) is the constraint matrix, \(\boldsymbol{\lambda}\) is the Lagrange multiplier, and \(\mathbf{f}\) is the source term. This formulation prevents numerical locking in nearly incompressible problems by decoupling stress and strain fields, ensuring stability and accuracy where primal methods fail due to rank deficiency \cite{ref1}.
 
-\[\int_{\Omega} w \mathcal{L} u \, d\Omega = \int_{\Omega} w f \, d\Omega\]
+The Primal Finite Element Method is a direct discretization approach that solves partial differential equations (PDEs) without additional fields, relying on the direct discretization of primary variables. This 'irreducible' method typically uses symmetric positive definite systems, but faces challenges in problems with constraints or incompressibility. The discretization of the weak form using piecewise polynomial basis functions over a mesh transforms the infinite-dimensional problem into a finite system of equations, as described by the equation \(\mathbf{K} \mathbf{u} = \mathbf{f}\) \cite{ref1}. The choice of basis functions affects accuracy and computational cost, requiring careful handling of boundary conditions and material properties \cite{ref3}.
 
-\[w\]
+The weak formulation is a crucial step in the finite element procedure, enabling the handling of irregular geometries and discontinuous coefficients. By multiplying the governing PDEs with test functions and integrating over the domain, the weak form is obtained, which forms the basis for assembling the global stiffness matrix. For elliptic PDEs, the weak form is represented by the equation \(\int_{\Omega} \alpha \nabla \Phi \cdot \nabla v \, d\Omega + \int_{\Gamma} \sigma \Phi v \, d\Gamma = \int_{\Omega} f v \, d\Omega\) \cite{ref3}. This formulation allows for the approximation of the weak form using piecewise polynomial basis functions over a mesh, transforming the infinite-dimensional problem into a finite system of equations \cite{ref3}.
 
-\[u\]
-
-\[\mathcal{L}\]
-
-\[f\]
-
-\section{The Finite Element Procedure}
-
-Discretization is a critical step in the finite element procedure, involving the division of the problem domain into smaller, manageable subdomains called elements. This process converts the continuous problem into a discrete system of equations, allowing for the approximation of the solution using basis functions defined over each element. The discrete approximation \$u\_h(x) = \textbackslash{}sum\_\{i=1\}\textasciicircum{}N N\_i(x) u\_i\$ is constructed by combining basis functions weighted by their corresponding nodal values. As a result, the infinite-dimensional problem is reduced to a finite-dimensional one, facilitating numerical computation. The Galerkin method, which involves projecting the problem onto a finite-dimensional space, is a technique used to approximate solutions to differential equations, ensuring the residual of the approximate solution is orthogonal to the test function space.
-
-The Galerkin method is a fundamental component of the finite element procedure, enabling the transformation of differential equations into integral equations. This technique involves projecting the problem onto a finite-dimensional space, ensuring that the residual of the approximate solution is orthogonal to the test function space. The Galerkin method enforces an orthogonality condition between the residual and the test function space, which is essential for the stability and convergence of the FEM solution. This approach is widely used due to its stability and accuracy in solving partial differential equations, as demonstrated by the weak form of Poisson's equation, \$\textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}nabla u \textbackslash{}cdot \textbackslash{}nabla v \textbackslash{}, dx = \textbackslash{}int\_\{\textbackslash{}Omega\} f v \textbackslash{}, dx\$ [arxiv\_1712.01211v2, arxiv\_2210.16907v1].
-
-The weak formulation is a mathematical framework used in the Finite Element Method to transform differential equations into integral equations. It allows for solutions that may not satisfy the original differential equation pointwise but satisfy an integral form. This approach is essential for handling complex geometries and boundary conditions. The weak form of Poisson's equation is given by \$ \textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}nabla u \textbackslash{}cdot \textbackslash{}nabla v \textbackslash{}, dx = \textbackslash{}int\_\{\textbackslash{}Omega\} f v \textbackslash{}, dx \$, where \$ u \$ is the solution, \$ v \$ is the test function, and \$ f \$ is the source term. The Galerkin method is a technique for approximating solutions to differential equations by projecting the problem onto a finite-dimensional space, ensuring that the residual of the approximate solution is orthogonal to the test function space. This method forms the basis for many finite element formulations.
-
-\[u_h(x) = \sum_{i=1}^N N_i(x) u_i\]
-
-\[\int_{\Omega} \nabla u \cdot \nabla v \, dx = \int_{\Omega} f v \, dx\]
-
-\[u\]
-
-\[v\]
-
-\[f\]
-
-\cite{ref4}
-
-\cite{ref7}
+The mixed finite element method introduces additional fields to solve partial differential equations, contrasting with primal methods. These extra fields are constrained using Lagrange multipliers, enabling efficient solutions for numerically ill-posed problems like almost incompressible elasticity. The method results in a saddle point system with non-definite matrices, requiring specialized solvers. The saddle point system is represented by the equation \(\begin{bmatrix} \mathbf{K} & \mathbf{B}^T \\ \mathbf{B} & \mathbf{0} \end{bmatrix} \begin{bmatrix} \mathbf{u} \\ \boldsymbol{\lambda} \end{bmatrix} = \begin{bmatrix} \mathbf{f} \\ \mathbf{0} \end{bmatrix}\) \cite{ref1}. This approach prevents numerical locking in nearly incompressible problems by decoupling stress and strain fields, ensuring stability and accuracy where primal methods fail due to rank deficiency \cite{ref1}.
 
 \section{Rules for Modeling Physical Phenomena with FEM}
 
-To ensure mesh quality in the Finite Element Method (FEM), several critical rules must be followed. Firstly, the use of curved elements is essential for accurately modeling domains with complex geometries, as they improve the approximation of boundaries and reduce discretization errors [arxiv\_2210.16907v1]. Additionally, the orthogonality condition, which is fundamental to the stability and convergence of the FEM solution, must be enforced between the residual and the test function space [arxiv\_1712.01211v2, wiki\_boris\_galerkin]. Furthermore, the mesh should be constructed to ensure proper resolution of the solution across the domain, as the quality of the mesh significantly affects the accuracy of the solution [arxiv\_2210.16907v1]. By following these rules, the accuracy and reliability of the FEM solution can be significantly improved.
+When choosing between primal and mixed finite element methods for modeling physical phenomena, it is essential to consider the specific characteristics of the problem at hand. Primal finite element methods, which solve partial differential equations (PDEs) without additional fields, are termed 'irreducible' and typically use symmetric positive definite systems. However, these methods face challenges in problems with constraints or incompressibility, where mixed formulations excel. In contrast, mixed finite element methods introduce additional fields to solve PDEs, constrained using Lagrange multipliers, enabling efficient solutions for numerically ill-posed problems like almost incompressible elasticity \cite{ref1}. This distinction is crucial in selecting the most suitable approach for a given physical phenomenon, as mixed methods can prevent numerical locking in nearly incompressible problems by decoupling stress and strain fields \cite{ref1}.
 
-The proper implementation of the weak formulation is critical for accurate results in the Finite Element Method. This involves transforming the differential equation into an integral equation through the weak form, which allows for solutions that may not satisfy the original differential equation pointwise but satisfy an integral form. The weak form of Poisson's equation, for instance, is given by \$ \textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}nabla u \textbackslash{}cdot \textbackslash{}nabla v \textbackslash{}, dx = \textbackslash{}int\_\{\textbackslash{}Omega\} f v \textbackslash{}, dx \$, where \$ u \$ is the solution, \$ v \$ is the test function, and \$ f \$ is the source term. To ensure accurate implementation, it is essential to use curved elements, particularly in problems involving nonlinear geometries or high gradients, as they improve the approximation of boundaries and reduce discretization errors.
+Formulating and discretizing elliptic PDEs for FEM analysis involves converting the governing equations into a weak (variational) form by multiplying with test functions and integrating over the domain, as described in \cite{ref3}. This process ensures compatibility with numerical discretization and enforces boundary conditions weakly. The weak form of an elliptic PDE is represented by the equation \(\int_{\Omega} \alpha \nabla \Phi \cdot \nabla v \, d\Omega + \int_{\Gamma} \sigma \Phi v \, d\Gamma = \int_{\Omega} f v \, d\Omega\), where \(\alpha\) is the diffusion coefficient, \(\Phi\) is the solution variable, \(v\) is the test function, \(\sigma\) enforces boundary conditions, \(f\) is the source term, \(\Omega\) is the domain, and \(\Gamma\) is the boundary. The Primal Finite Element Method, which solves PDEs without additional fields, relies on the direct discretization of primary variables and is termed 'irreducible', typically using symmetric positive definite systems.
 
-The accurate solution of linear systems is a critical step in the Finite Element Method (FEM). Once the global stiffness matrix and load vector are assembled, the system of linear equations is solved for the unknown nodal values using direct or iterative solvers, depending on the problem size. This step is crucial for obtaining the approximate values of the primary variable at each node, as stated in [arxiv\_1712.01211v2]. Furthermore, the discretization process, which involves dividing the problem domain into smaller elements, is essential for reducing infinite-dimensional problems to finite-dimensional ones, as shown in \$u\_h(x) = \textbackslash{}sum\_\{i=1\}\textasciicircum{}N N\_i(x) u\_i\$ [arxiv\_1712.01211v2, arxiv\_2210.16907v1]. By following these guidelines, practitioners can ensure accurate simulations of physical phenomena using the FEM.
+When selecting appropriate rules for stability and accuracy in FEM simulations, it is crucial to consider the specific characteristics of the problem at hand. In particular, mixed finite elements are recommended for incompressible materials, as they prevent numerical locking by decoupling stress and strain fields. This ensures stability and accuracy where primal methods fail due to rank deficiency, as described in \cite{ref1}. The mixed approach introduces additional fields to solve partial differential equations, constrained using Lagrange multipliers, resulting in a saddle point system with non-definite matrices. This requires specialized solvers, as evident from the system of equations: \(\begin{cases} \mathbf{K} \mathbf{u} + \mathbf{B}^T \boldsymbol{\lambda} = \mathbf{f} \\ \mathbf{B} \mathbf{u} = \mathbf{0} \end{cases}\), where \(\mathbf{K}\) is the stiffness matrix, \(\mathbf{B}\) enforces constraints via Lagrange multipliers \(\boldsymbol{\lambda}\), and \(\mathbf{u}\) represents primary variables, as shown in \cite{ref1}.
 
-\[\int_{\Omega} \nabla u \cdot \nabla v \, dx = \int_{\Omega} f v \, dx\]
+\section{Verification, Validation, and Best Practices}
 
-\[u\]
+Verification and validation of discretization methods are crucial steps in ensuring the accuracy and reliability of numerical simulations. The choice of discretization method, such as the primal finite element method, directly affects the outcome of the simulation. Primal finite element methods solve partial differential equations without additional fields, relying on the direct discretization of primary variables, as evidenced by the equation \(\mathbf{K} \mathbf{u} = \mathbf{f}\) \cite{ref1}. However, these methods face challenges in problems with constraints or incompressibility, where mixed formulations excel. Discretization involves approximating the weak form using piecewise polynomial basis functions over a mesh, transforming the infinite-dimensional problem into a finite system of equations \cite{ref3}. This process requires careful handling of boundary conditions and material properties.
 
-\[v\]
+When formulating and solving saddle point systems, best practices emphasize the importance of careful handling of constraints and additional fields. The mixed finite element method, which introduces Lagrange multipliers to enforce constraints, results in a saddle point system with non-definite matrices, requiring specialized solvers. This approach is particularly effective in numerically ill-posed problems, such as almost incompressible elasticity, where primal methods face challenges. The saddle point system can be represented as \(\begin{bmatrix} \mathbf{K} & \mathbf{B}^T \\ \mathbf{B} & \mathbf{0} \end{bmatrix} \begin{bmatrix} \mathbf{u} \\ \boldsymbol{\lambda} \end{bmatrix} = \begin{bmatrix} \mathbf{f} \\ \mathbf{0} \end{bmatrix}\), where \(\mathbf{K}\) is the stiffness matrix, \(\mathbf{B}\) enforces constraints, and \(\mathbf{u}\) represents primary variables \cite{ref1}.
 
-\[f\]
-
-\[u_h(x) = \sum_{i=1}^N N_i(x) u_i\]
-
-\cite{ref4}
-
-\cite{ref7}
-
-\cite{ref8}
-
-\section{Verification, Validation, and Best Practices: Importance of Verification and Validation in Finite Element Modeling}
-
-The weak formulation is a crucial mathematical framework in the Finite Element Method, enabling the transformation of differential equations into integral equations. This approach is essential for handling complex geometries and boundary conditions, as it allows for solutions that may not satisfy the original differential equation pointwise but satisfy an integral form. The weak form of a differential equation, such as Poisson's equation, is derived by multiplying the equation by a test function and integrating over the domain, as shown in the equation \$\textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}nabla u \textbackslash{}cdot \textbackslash{}nabla v \textbackslash{}, dx = \textbackslash{}int\_\{\textbackslash{}Omega\} f v \textbackslash{}, dx\$ [arxiv\_1712.01211v2, arxiv\_2210.16907v1]. The use of curved elements is also critical for accurately modeling domains with complex geometries, improving the approximation of boundaries and reducing discretization errors [arxiv\_2210.16907v1]. By leveraging the weak formulation and curved elements, finite element models can provide accurate solutions to complex problems.
-
-Discretization plays a pivotal role in transforming continuous problems into discrete systems, enabling the finite element method to approximate solutions to partial differential equations. By dividing the problem domain into smaller, manageable subdomains called elements, discretization reduces infinite-dimensional problems to finite-dimensional ones. The solution is approximated using basis functions defined over each element, as expressed by the equation \$u\_h(x) = \textbackslash{}sum\_\{i=1\}\textasciicircum{}N N\_i(x) u\_i\$ [arxiv\_1712.01211v2, arxiv\_2210.16907v1]. The quality of the mesh generated during the discretization process significantly affects the accuracy of the solution, highlighting the importance of proper mesh generation [arxiv\_2210.16907v1]. Furthermore, the use of curved elements is essential for accurately modeling domains with complex geometries, improving the approximation of boundaries and reducing discretization errors [arxiv\_2210.16907v1].
-
-The Galerkin method is a fundamental technique for approximating solutions to differential equations by projecting the problem onto a finite-dimensional space. This method ensures that the residual of the approximate solution is orthogonal to the test function space, as expressed by the equation \$\textbackslash{}mathcal\{R\}(u\_h) = 0 \textbackslash{}quad \textbackslash{}text\{for all \} v\_h \textbackslash{}in V\_h\$ [arxiv\_1712.01211v2]. The Galerkin approach is widely used due to its stability and accuracy in solving partial differential equations [wiki\_boris\_galerkin]. By combining the Galerkin method with the weak formulation, which transforms differential equations into integral equations, the finite element method can effectively approximate solutions to complex problems. The weak formulation is essential for handling complex geometries and boundary conditions, as demonstrated by the equation \$\textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}nabla u \textbackslash{}cdot \textbackslash{}nabla v \textbackslash{}, dx = \textbackslash{}int\_\{\textbackslash{}Omega\} f v \textbackslash{}, dx\$ [arxiv\_1712.01211v2, arxiv\_2210.16907v1].
-
-\[\int_{\Omega} \nabla u \cdot \nabla v \, dx = \int_{\Omega} f v \, dx\]
-
-\[u_h(x) = \sum_{i=1}^N N_i(x) u_i\]
-
-\[\mathcal{R}(u_h) = 0 \quad \text{for all } v_h \in V_h\]
-
-\cite{ref4}
-
-\cite{ref7}
-
-\cite{ref8}
-
-\section{Verification, Validation, and Best Practices: Best Practices for Data Integrity and Verification}
-
-Verification and validation techniques are essential for ensuring data integrity in the finite element method. The weak formulation, a mathematical framework used to transform differential equations into integral equations, allows for solutions that may not satisfy the original differential equation pointwise but satisfy an integral form. This approach is critical for handling complex geometries and boundary conditions. The weak form of Poisson's equation, for instance, is given by \$ \textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}nabla u \textbackslash{}cdot \textbackslash{}nabla v \textbackslash{}, dx = \textbackslash{}int\_\{\textbackslash{}Omega\} f v \textbackslash{}, dx \$, where \$ u \$ is the solution, \$ v \$ is the test function, and \$ f \$ is the source term. Discretization, which involves dividing the problem domain into smaller elements, is also a crucial step in ensuring data integrity. By approximating the solution using basis functions defined over each element, discretization reduces infinite-dimensional problems to finite-dimensional ones, as shown by the discrete approximation \$ u\_h(x) = \textbackslash{}sum\_\{i=1\}\textasciicircum{}N N\_i(x) u\_i \$.
-
-The discretization process, which involves dividing the problem domain into smaller, manageable subdomains called elements, is critical for numerical computation as it reduces infinite-dimensional problems to finite-dimensional ones. This is achieved through the use of basis functions defined over each element, as expressed by \$u\_h(x) = \textbackslash{}sum\_\{i=1\}\textasciicircum{}N N\_i(x) u\_i\$ [arxiv\_1712.01211v2, arxiv\_2210.16907v1]. A well-constructed mesh, created through the mesh generation procedure, significantly affects the accuracy of the solution, ensuring proper resolution of the solution across the domain [arxiv\_2210.16907v1]. The mesh generation procedure is the first step in the finite element method, and the quality of the mesh is essential for achieving accurate solutions.
-
-The Galerkin method is a fundamental technique for approximating solutions to differential equations by projecting the problem onto a finite-dimensional space. It ensures that the residual of the approximate solution is orthogonal to the test function space, as enforced by the orthogonality condition, which is critical for the stability and convergence of the FEM solution. This approach is widely used due to its stability and accuracy in solving partial differential equations, as stated in [arxiv\_1712.01211v2] and [wiki\_boris\_galerkin]. To ensure convergence, it is essential to verify that the Galerkin method satisfies the orthogonality condition, which can be achieved by checking that the residual is orthogonal to the test function space, as expressed by the equation \$ \textbackslash{}mathcal\{R\}(u\_h) = 0 \textbackslash{}quad \textbackslash{}text\{for all \} v\_h \textbackslash{}in V\_h \$.
-
-\[\int_{\Omega} \nabla u \cdot \nabla v \, dx = \int_{\Omega} f v \, dx\]
-
-\[u\]
-
-\[v\]
-
-\[f\]
-
-\[u_h(x) = \sum_{i=1}^N N_i(x) u_i\]
-
-\cite{ref4}
-
-\cite{ref7}
-
-\cite{ref8}
-
-\section{Verification, Validation, and Best Practices: Common Pitfalls and Systematic Approaches to Verification and Validation}
-
-Discretization is a critical step in the finite element method, involving the division of the problem domain into smaller, manageable subdomains called elements. This process converts the continuous problem into a discrete system of equations, approximated using basis functions defined over each element. A common pitfall in discretization is the poor quality of the mesh, which significantly affects the accuracy of the solution. The discrete approximation of the exact solution is given by \$u\_h(x) = \textbackslash{}sum\_\{i=1\}\textasciicircum{}N N\_i(x) u\_i\$, where \$N\_i(x)\$ are basis functions and \$u\_i\$ are the nodal values. The quality of the mesh and the choice of basis functions are essential in ensuring accurate simulations of physical phenomena.
-
-Systematic approaches to verification and validation in the finite element method involve ensuring the accuracy and reliability of the numerical solution. The weak formulation, a mathematical framework used to transform differential equations into integral equations, is essential for handling complex geometries and boundary conditions. This approach is derived by multiplying the differential equation by a test function and integrating over the domain, as seen in the weak form of Poisson's equation: \$ \textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}nabla u \textbackslash{}cdot \textbackslash{}nabla v \textbackslash{}, dx = \textbackslash{}int\_\{\textbackslash{}Omega\} f v \textbackslash{}, dx \$ [arxiv\_1712.01211v2, arxiv\_2210.16907v1]. The Galerkin method, a technique for approximating solutions to differential equations, ensures that the residual of the approximate solution is orthogonal to the test function space, forming the basis for many finite element formulations [arxiv\_1712.01211v2, wiki\_boris\_galerkin]. By combining these systematic approaches, finite element practitioners can ensure the accuracy and reliability of their numerical solutions.
-
-The quality of the mesh significantly affects the accuracy of the solution in the finite element method. A well-constructed mesh ensures proper resolution of the solution across the domain. The mesh generation procedure is the first step in FEM, and it involves dividing the domain into discrete elements of various types, such as triangles or quadrilaterals, depending on the problem geometry. As stated in [arxiv\_2210.16907v1], the quality of the mesh is crucial for obtaining accurate numerical results. The Galerkin method, which forms the basis for many finite element formulations, relies on the quality of the mesh to ensure stability and accuracy in solving partial differential equations.
-
-\[u_h(x) = \sum_{i=1}^N N_i(x) u_i\]
-
-\[N_i(x)\]
-
-\[u_i\]
-
-\[\int_{\Omega} \nabla u \cdot \nabla v \, dx = \int_{\Omega} f v \, dx\]
-
-\cite{ref4}
-
-\cite{ref7}
-
-\cite{ref8}
-
-\section{Verification, Validation, and Best Practices: Implementing Multiple Verification and Validation Methods}
-
-Implementing the weak formulation is crucial for accurate solutions in the finite element method. The weak form of a differential equation, such as Poisson's equation, is derived by multiplying the original PDE by a test function and integrating over the domain. This approach is essential for handling complex geometries and boundary conditions. The weak form of Poisson's equation is given by \$ \textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}nabla u \textbackslash{}cdot \textbackslash{}nabla v \textbackslash{}, dx = \textbackslash{}int\_\{\textbackslash{}Omega\} f v \textbackslash{}, dx \$, as shown in [arxiv\_1712.01211v2] and [arxiv\_2210.16907v1]. The Galerkin method, which forms the basis for many finite element formulations, ensures that the residual of the approximate solution is orthogonal to the test function space. By implementing the weak formulation and using the Galerkin method, accurate solutions can be obtained, which is critical for the overall FEM result.
-
-Optimizing discretization and mesh generation is crucial for efficient finite element methods (FEM). Discretization involves dividing the problem domain into smaller, manageable subdomains called elements, which converts the continuous problem into a discrete system of equations (\$u\_h(x) = \textbackslash{}sum\_\{i=1\}\textasciicircum{}N N\_i(x) u\_i\$) [arxiv\_1712.01211v2, arxiv\_2210.16907v1]. A well-constructed mesh ensures proper resolution of the solution across the domain, and the quality of the mesh significantly affects the accuracy of the solution [arxiv\_2210.16907v1]. The use of curved elements is essential for accurately modeling domains with complex geometries, improving the approximation of boundaries and reducing discretization errors [arxiv\_2210.16907v1]. By optimizing discretization and mesh generation, FEM can provide accurate and efficient solutions to complex problems.
-
-Choosing the appropriate Galerkin method for differential equations is crucial for accurate solutions in the finite element method. The Galerkin method ensures that the residual of the approximate solution is orthogonal to the test function space, as expressed by the orthogonality condition \$\textbackslash{}mathcal\{R\}(u\_h) = 0 \textbackslash{}quad \textbackslash{}text\{for all \} v\_h \textbackslash{}in V\_h\$ [arxiv\_1712.01211v2]. This approach forms the basis for many finite element formulations and is widely used due to its stability and accuracy in solving partial differential equations [wiki\_boris\_galerkin]. By selecting the correct Galerkin method, practitioners can ensure that their finite element solutions accurately capture the underlying physics of the problem, leading to reliable and trustworthy results.
-
-\[\int_{\Omega} \nabla u \cdot \nabla v \, dx = \int_{\Omega} f v \, dx\]
-
-\[u_h(x) = \sum_{i=1}^N N_i(x) u_i\]
-
-\[\mathcal{R}(u_h) = 0 \quad \text{for all } v_h \in V_h\]
-
-\cite{ref4}
-
-\cite{ref7}
-
-\cite{ref8}
-
-\section{Introduction and Scope of the Finite Element Method}
-
-The Finite Element Method transforms differential equations into integral equations through the Weak Formulation, enabling solutions that may not satisfy the original equation. This approach is essential for handling complex geometries and boundary conditions. The weak form of a differential equation, such as Poisson's equation, is derived by multiplying the equation by a test function and integrating over the domain, as shown by the equation \$\textbackslash{}int\_\{\textbackslash{}Omega\} \textbackslash{}nabla u \textbackslash{}cdot \textbackslash{}nabla v \textbackslash{}, dx = \textbackslash{}int\_\{\textbackslash{}Omega\} f v \textbackslash{}, dx\$ [arxiv\_1712.01211v2, arxiv\_2210.16907v1]. The Galerkin method, a technique for approximating solutions to differential equations, forms the basis for many finite element formulations, ensuring stability and accuracy in solving partial differential equations [arxiv\_1712.01211v2, wiki\_boris\_galerkin].
-
-Discretization is a crucial step in the Finite Element Method, where the problem domain is divided into smaller elements, converting the continuous problem into a discrete system of equations. This process involves dividing the problem domain into smaller, manageable subdomains called elements, which are then used to approximate the solution using basis functions defined over each element. The solution is represented as \$u\_h(x) = \textbackslash{}sum\_\{i=1\}\textasciicircum{}N N\_i(x) u\_i\$ [arxiv\_1712.01211v2], [arxiv\_2210.16907v1]. Discretization is critical for numerical computation as it reduces infinite-dimensional problems to finite-dimensional ones, enabling the solution of complex problems.
-
-The Galerkin method is a fundamental technique in the Finite Element Method, used to approximate solutions to differential equations by projecting the problem onto a finite-dimensional space. This method ensures that the residual of the approximate solution is orthogonal to the test function space, forming the basis for many finite element formulations. The Galerkin approach is widely used due to its stability and accuracy in solving partial differential equations, as stated in [arxiv\_1712.01211v2] and [wiki\_boris\_galerkin]. By enforcing an orthogonality condition, the Galerkin method guarantees the stability and convergence of the FEM solution, making it a crucial component of the Finite Element Method.
-
-\[\int_{\Omega} \nabla u \cdot \nabla v \, dx = \int_{\Omega} f v \, dx\]
-
-\[u_h(x) = \sum_{i=1}^N N_i(x) u_i\]
-
-\cite{ref4}
-
-\cite{ref7}
-
-\cite{ref8}
+In conclusion, the choice between the primal finite element method and the mixed finite element method depends on the specific characteristics of the problem at hand. The primal finite element method, which solves partial differential equations without additional fields, is simpler but less robust for certain physical phenomena, particularly those involving constraints or incompressibility. In contrast, the mixed finite element method introduces additional fields to solve PDEs, constrained using Lagrange multipliers, enabling efficient solutions for numerically ill-posed problems like almost incompressible elasticity. As evident from the saddle point system arising in mixed formulations, the non-definite structure complicates solution strategies, but hybrid methods can further refine this by enforcing continuity weakly through boundary Lagrange multipliers, improving solver efficiency and robustness.
 
 \begin{thebibliography}{99}
-  \bibitem{ref1} \textit{Applied element method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Applied_element_method}
-  \bibitem{ref2} \textit{Céa's lemma}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Céa's_lemma}
-  \bibitem{ref3} \textit{Crystal plasticity}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Crystal_plasticity}
-  \bibitem{ref4} \textit{A Unified Study of Continuous and Discontinuous Galerkin Methods}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/1712.01211v2.pdf}
-  \bibitem{ref5} \textit{Ehrenfeucht's lemma in set theory}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/1501.01918v1.pdf}
-  \bibitem{ref6} \textit{Bradley-Terry Modeling with Multiple Game Outcomes with Applications to College Hockey}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/2112.01267v1.pdf}
-  \bibitem{ref7} \textit{Curved Elements in Weak Galerkin Finite Element Methods}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/2210.16907v1.pdf}
-  \bibitem{ref8} \textit{Boris Galerkin}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Boris_Galerkin}
+  \bibitem{ref1} \textit{Mixed finite element method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Mixed_finite_element_method}
+  \bibitem{ref2} \textit{A non-symmetric coupling of the finite volume method and the boundary element method}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/1509.00440v1.pdf}
+  \bibitem{ref3} \textit{Finite element analysis for identifying the reaction coefficient in PDE from boundary observations}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/1902.01090v2.pdf}
+  \bibitem{ref4} \textit{The Dark Energy Survey}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/astro-ph/0510346v1.pdf}
 \end{thebibliography}
 
 \newpage
@@ -265,14 +123,10 @@ It records when each source was fetched, from which provider, and its unique ide
 \endhead
 \bottomrule
 \endfoot
-  1 & \nolinkurl{wiki_applied_element_method} & Applied element method & Wikipedia & 2026-10-03 19:03 UTC \\
-  2 & \nolinkurl{wiki_c_a_s_lemma} & Céa's lemma & Wikipedia & 2026-10-03 19:03 UTC \\
-  3 & \nolinkurl{wiki_crystal_plasticity} & Crystal plasticity & Wikipedia & 2026-10-03 19:03 UTC \\
-  4 & \nolinkurl{arxiv_1712.01211v2} & A Unified Study of Continuous and Discontinuous Galerkin Methods & Arxiv Fulltext & 2026-10-03 19:11 UTC \\
-  5 & \nolinkurl{arxiv_1501.01918v1} & Ehrenfeucht's lemma in set theory & Arxiv Fulltext & 2026-10-03 19:03 UTC \\
-  6 & \nolinkurl{arxiv_2112.01267v1} & Bradley-Terry Modeling with Multiple Game Outcomes with Applications to College Hockey & Arxiv Fulltext & 2026-10-03 19:11 UTC \\
-  7 & \nolinkurl{arxiv_2210.16907v1} & Curved Elements in Weak Galerkin Finite Element Methods & Arxiv Fulltext & 2026-10-03 19:11 UTC \\
-  8 & \nolinkurl{wiki_boris_galerkin} & Boris Galerkin & Wikipedia & 2026-10-03 19:11 UTC \\
+  1 & \nolinkurl{wiki_mixed_finite_element_method} & Mixed finite element method & Wikipedia & 2026-10-03 19:37 UTC \\
+  2 & \nolinkurl{arxiv_1509.00440v1} & A non-symmetric coupling of the finite volume method and the boundary element method & Arxiv Fulltext & 2026-10-03 19:37 UTC \\
+  3 & \nolinkurl{arxiv_1902.01090v2} & Finite element analysis for identifying the reaction coefficient in PDE from boundary observations & Arxiv Fulltext & 2026-10-03 19:37 UTC \\
+  4 & \nolinkurl{arxiv_astro_ph_0510346v1} & The Dark Energy Survey & Arxiv Fulltext & 2026-10-03 19:37 UTC \\
 \end{longtable}
 
 \normalsize
