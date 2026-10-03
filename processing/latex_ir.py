@@ -143,7 +143,7 @@ def normalize_references(evidence: Sequence[Mapping[str, Any]]) -> tuple[Referen
 
     references: list[ReferenceModel] = []
     seen_source_ids: set[str] = set()
-    for index, source in enumerate(evidence[:25]):
+    for index, source in enumerate(evidence):
         if not isinstance(source, Mapping):
             raise DocumentModelError(f"evidence {index} must be a mapping")
         _require_keys(
