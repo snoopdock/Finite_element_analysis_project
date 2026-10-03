@@ -1,7 +1,7 @@
 {
   "type": "document",
   "document_id": "743c2aa8-790e-5a15-b63b-6758c778b2e0",
-  "version": 1,
+  "version": 2,
   "children": [
     {
       "type": "section",
@@ -13,7 +13,7 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The weak formulation is a foundational concept in the Finite Element Method (FEM) that transforms partial differential equations (PDEs) into integral equations. It involves multiplying the PDE by a test function and integrating over the domain, which reduces the requirement for solution differentiability. This approach allows for the use of piecewise continuous basis functions, enabling the approximation of solutions on complex geometries. By finding $ u \\in V $ such that $ a(u, v) = L(v) $ for all $ v \\in V $, where $ a(\\cdot, \\cdot) $ is a bilinear form and $ L(\\cdot) $ is a linear functional, the weak form provides a powerful tool for deriving the discrete system of equations.\n\nDiscontinuous Galerkin Methods allow solutions to be discontinuous across element boundaries, leveraging piecewise polynomial basis functions and enforcing continuity weakly through numerical fluxes. This flexibility enables DG methods to effectively handle problems with shocks, discontinuities, or high gradients, making them particularly effective in applications where such phenomena are present. The DG solution $u_h$ satisfies $ \\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx $ for all $v_h \\in V_h$, as demonstrated in "
+              "text": "The weak formulation is a foundational concept in the Finite Element Method (FEM) that transforms partial differential equations (PDEs) into integral equations, enabling the use of piecewise continuous basis functions and allowing for the approximation of solutions on complex geometries. By multiplying the PDE by a test function and integrating over the domain, the weak form reduces the requirement for solution differentiability, thereby facilitating the use of piecewise continuous basis functions. This approach is critical for deriving the discrete system of equations that underlies the FEM, as demonstrated by the work of "
             },
             {
               "type": "citation_occurrence",
@@ -31,7 +31,31 @@
             },
             {
               "type": "text",
-              "text": ".\n\nThe optimization-based approach in Finite Element Limit Analysis (FELA) formulates the collapse load determination problem as an optimization task. This involves defining objective functions and constraints based on kinematic or equilibrium principles. The method directly solves for upper or lower bound solutions without incremental time-stepping, leveraging mathematical programming techniques to ensure stability and accuracy in geotechnical applications. The optimization objective function can be represented as $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints. The weak formulation, a foundational concept in the Finite Element Method, transforms partial differential equations into integral equations, allowing for the use of piecewise continuous basis functions and enabling the approximation of solutions on complex geometries."
+              "text": ". The weak formulation is also essential for the application of optimization-based methods, such as Finite Element Limit Analysis (FELA), which formulates the problem as an optimization task to compute collapse loads.\n\nThe assembly of the global system involves combining local element matrices into a cohesive system of equations. This process relies on the weak formulation, which transforms partial differential equations into integral equations. Local element matrices are computed using the weak form and basis functions, and these matrices are then assembled into a global system through a process that ensures compatibility between adjacent elements. The assembly process involves summing contributions from all elements, and numerical fluxes in Discontinuous Galerkin methods are used to enforce continuity across element boundaries. The resulting global system is then solved iteratively or directly to obtain the discrete solution.\n\nDiscontinuous Galerkin Methods are a class of Finite Element Methods that allow solutions to be discontinuous across element boundaries, utilizing piecewise polynomial basis functions and enforcing continuity weakly through numerical fluxes. By employing the weak formulation, DG methods transform partial differential equations into integral equations, enabling the use of piecewise continuous basis functions and facilitating the approximation of solutions on complex geometries. The DG solution "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u_h"
+            },
+            {
+              "type": "text",
+              "text": " satisfies "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx"
+            },
+            {
+              "type": "text",
+              "text": " for all "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v_h \\in V_h"
+            },
+            {
+              "type": "text",
+              "text": "."
             }
           ]
         }
@@ -50,57 +74,11 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The Finite Element Procedure for Optimization-Based Collapse Load Determination using Finite Element Limit Analysis (FELA) involves formulating the problem as an optimization task to compute collapse loads. This is achieved by defining objective functions and constraints based on kinematic or equilibrium principles, as expressed in the optimization objective function: $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ "
+              "text": "Finite Element Limit Analysis (FELA) is a method that leverages optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems. Unlike conventional nonlinear finite element methods, it avoids time-stepping by directly determining collapse loads. This approach is widely applied in geotechnical engineering for problems like slope stability and bearing capacity calculations. FELA formulates the problem as an optimization task to compute collapse loads, involving defining objective functions and constraints based on kinematic or equilibrium principles. The method directly solves for upper or lower bound solutions without incremental time-stepping, ensuring efficiency and accuracy for geotechnical stability problems.\n\nLoubignac iteration is an iterative finite element method that generates continuous stress fields. It was introduced in 1977 and is designed to improve stress continuity in numerical solutions. This method addresses issues related to discontinuous stresses in traditional finite element formulations. By iteratively refining stress fields, Loubignac iteration ensures that stress fields satisfy equilibrium and compatibility conditions, which is critical for accurate stress analysis in finite element simulations.\n\nThe weak formulation is a foundational concept in the Finite Element Method (FEM) that transforms partial differential equations (PDEs) into integral equations, enabling the use of piecewise continuous basis functions and reducing the requirement for solution differentiability. By multiplying the PDE by a test function and integrating over the domain, the weak form allows for the approximation of solutions on complex geometries. The weak form is critical for deriving the discrete system of equations that governs the finite element solution. For example, in the context of FELA, the weak form is used to formulate the optimization problem, where the goal is to minimize the objective function while satisfying physical laws, such as "
             },
             {
-              "type": "citation_occurrence",
-              "occurrence_id": "69dbf281-d3b9-5c78-b252-c76ee13522f2",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ". By directly solving for upper or lower bound solutions without incremental time-stepping, FELA leverages mathematical programming techniques to ensure stability and accuracy in geotechnical applications "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "493a79d4-5788-54b6-a260-c093971c2f84",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ". This approach is widely applied in geotechnical engineering for problems like slope stability and bearing capacity calculations, where accurate stress distribution analysis is crucial "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "f4770f03-559c-5c06-adb9-58b7c7901d12",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nIn the context of the Finite Element Procedure, iterative stress field refinement is a critical step to ensure accurate stress predictions in complex mechanical systems. This is achieved through the use of Loubignac iteration, an iterative finite element method that generates continuous stress fields. Introduced in 1977, Loubignac iteration addresses issues related to discontinuous stresses in traditional finite element formulations, particularly useful in applications requiring accurate stress distribution analysis "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "bd7b3dc8-8f92-5fd1-b642-a1f8e004eb55",
-              "source_id": "wiki_loubignac_iteration"
-            },
-            {
-              "type": "text",
-              "text": ". By enforcing continuous stress fields, Loubignac iteration ensures that stress fields satisfy equilibrium and compatibility conditions, thereby improving the reliability of stress predictions "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "13c63111-85d3-5a67-8ad1-b914ff07e153",
-              "source_id": "wiki_loubignac_iteration"
-            },
-            {
-              "type": "text",
-              "text": ". This iterative process is essential for refining stress fields and achieving continuity, which is critical for accurate stress analysis in finite element simulations "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "6b3e8b1d-7585-5de0-b0d8-acdb9b5a71fa",
-              "source_id": "wiki_loubignac_iteration"
+              "type": "inline_math",
+              "expression": "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
             },
             {
               "type": "text",
@@ -150,7 +128,39 @@
             },
             {
               "type": "text",
-              "text": ". The optimization objective function is represented by $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints "
+              "text": ". The optimization objective function is represented by "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\mathbf{\\sigma}"
+            },
+            {
+              "type": "text",
+              "text": " is the stress field, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\mathbf{c}"
+            },
+            {
+              "type": "text",
+              "text": " is a cost vector, and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
+            },
+            {
+              "type": "text",
+              "text": " enforces equilibrium constraints "
             },
             {
               "type": "citation_occurrence",
@@ -181,34 +191,90 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The application of optimization-based methods is crucial for accurate collapse load determination in geotechnical engineering. Finite Element Limit Analysis (FELA), a method that leverages optimization techniques, directly computes upper or lower bound plastic collapse loads for mechanical systems without incremental time-stepping "
+              "text": "The weak formulation is a foundational concept in the Finite Element Method (FEM) that transforms partial differential equations (PDEs) into integral equations, enabling the use of piecewise continuous basis functions and approximation of solutions on complex geometries. This approach reduces the requirement for solution differentiability, allowing for the use of discontinuous Galerkin (DG) methods that enforce continuity weakly through numerical fluxes. The weak form is critical for deriving the discrete system of equations, which is then solved iteratively or directly to obtain the discrete solution. The assembly of local element matrices into a global system of equations is a key step in this process, as described in "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "68c72fce-8863-5259-999d-d6711984d30d",
-              "source_id": "wiki_finite_element_limit_analysis"
+              "occurrence_id": "73e8aac9-d298-5e88-8945-183d7b25a5db",
+              "source_id": "arxiv_1211.2353v1"
             },
             {
               "type": "text",
-              "text": ". This approach is particularly useful in geotechnical applications, such as slope stability and bearing capacity calculations. The optimization problem in FELA can be formulated as minimizing the objective function $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints "
+              "text": ".\n\nDiscontinuous Galerkin Methods allow for discontinuous solutions in the Finite Element Method (FEM) by using piecewise polynomial basis functions and enforcing continuity weakly through numerical fluxes. This approach is particularly effective for problems with shocks, discontinuities, or high gradients. The DG solution "
+            },
+            {
+              "type": "inline_math",
+              "expression": " u_h "
+            },
+            {
+              "type": "text",
+              "text": " satisfies "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx "
+            },
+            {
+              "type": "text",
+              "text": " for all "
+            },
+            {
+              "type": "inline_math",
+              "expression": " v_h \\in V_h "
+            },
+            {
+              "type": "text",
+              "text": ", as shown in "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "81a7d0cf-c2ce-50b7-90b4-6b157c72f17e",
-              "source_id": "wiki_finite_element_limit_analysis"
+              "occurrence_id": "7291806f-97c8-5feb-a206-c853dbfb0bbc",
+              "source_id": "arxiv_1209.2311v1"
             },
             {
               "type": "text",
-              "text": ". By directly solving for collapse loads via optimization, FELA ensures efficiency and accuracy for geotechnical stability problems, adhering to the rule of using optimization for direct collapse load calculation "
+              "text": " and "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "8b053883-ae59-5145-bc58-b3c1b5e14075",
-              "source_id": "wiki_finite_element_limit_analysis"
+              "occurrence_id": "f950a178-8596-525d-98d3-d4d3417ce372",
+              "source_id": "arxiv_1211.2353v1"
             },
             {
               "type": "text",
-              "text": ".\n\nImplementing iterative stress field refinement techniques, such as Loubignac iteration, is crucial for improving the reliability of stress predictions in complex mechanical systems. This method iteratively refines stress fields to achieve continuity, ensuring that stress fields satisfy equilibrium and compatibility conditions. As stated in the Loubignac iteration article, this process starts with an initial stress approximation and updates it through successive iterations, addressing issues related to discontinuous stresses in traditional finite element formulations. The optimization objective function, as represented by the equation $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, is essential in FELA for determining upper or lower bound plastic collapse loads. By leveraging iterative methods like Loubignac iteration, FEM results can be significantly improved, leading to more accurate stress analysis and stability analysis in geotechnical engineering applications. "
+              "text": ". By relaxing the requirement for solution differentiability, DG methods offer flexibility in mesh design and can handle adaptive refinement efficiently. This is in contrast to traditional FEM, which relies on the weak formulation to transform partial differential equations into integral equations, enabling the use of piecewise continuous basis functions.\n\nThe optimization-based collapse load determination using Finite Element Limit Analysis (FELA) involves formulating the problem as an optimization task to compute collapse loads. This is achieved by defining objective functions and constraints based on kinematic or equilibrium principles. The optimization objective function, represented by "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
+            },
+            {
+              "type": "text",
+              "text": ", is a critical component of this process, where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\mathbf{\\sigma}"
+            },
+            {
+              "type": "text",
+              "text": " is the stress field, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\mathbf{c}"
+            },
+            {
+              "type": "text",
+              "text": " is a cost vector, and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
+            },
+            {
+              "type": "text",
+              "text": " enforces equilibrium constraints. By leveraging mathematical programming techniques, FELA ensures stability and accuracy in geotechnical applications, thereby avoiding time-stepping and directly determining collapse loads "
             },
             {
               "type": "citation_occurrence",
@@ -217,34 +283,7 @@
             },
             {
               "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "585ce213-e62f-5072-8743-cc15c664462d",
-              "source_id": "wiki_loubignac_iteration"
-            },
-            {
-              "type": "text",
-              "text": "\n\nTo ensure efficient and accurate FEM modeling, strategic application of boundary conditions and constraints is crucial. The use of optimization-based methods, such as Finite Element Limit Analysis (FELA), is beneficial for direct collapse load determination in geotechnical engineering, as it avoids time-stepping and leverages mathematical programming techniques to ensure stability and accuracy "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "25de45c1-85c7-5322-94cd-50db12b0061d",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ". Additionally, iterative stress field refinement techniques, such as Loubignac iteration, are essential for improving the reliability of stress predictions in complex mechanical systems by enforcing continuous stress fields "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "c3956ed3-5163-5e8b-a413-611ce101ebbb",
-              "source_id": "wiki_loubignac_iteration"
-            },
-            {
-              "type": "text",
-              "text": ". By incorporating these strategies, FEM models can provide accurate and reliable results, enabling informed decision-making in various engineering applications."
+              "text": "."
             }
           ]
         }
@@ -266,7 +305,31 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Mesh generation techniques play a crucial role in achieving accurate Finite Element Method (FEM) results. The quality of the mesh significantly impacts the accuracy and efficiency of the solution, as it must conform to the geometry and resolve regions of interest. For adaptive methods, the mesh is refined iteratively based on error estimates, improving efficiency by concentrating computational resources where errors are largest "
+              "text": "The weak formulation is a foundational concept in the Finite Element Method (FEM) that transforms partial differential equations (PDEs) into integral equations. It involves multiplying the PDE by a test function and integrating over the domain, which reduces the requirement for solution differentiability. This approach allows for the use of piecewise continuous basis functions, enabling the approximation of solutions on complex geometries. The weak form is critical for deriving the discrete system of equations, which is then solved iteratively or directly to obtain the discrete solution. The assembly of local element matrices into a global system of equations is a crucial step in this process, ensuring compatibility between adjacent elements through numerical fluxes in Discontinuous Galerkin (DG) methods. The resulting system is then solved to obtain the discrete solution, which is used to compute upper or lower bound plastic collapse loads for mechanical systems in Finite Element Limit Analysis (FELA).\n\nDiscontinuous Galerkin Methods enable discontinuous solutions in the Finite Element Method (FEM) by allowing solutions to be discontinuous across element boundaries. This is achieved through the use of piecewise polynomial basis functions and the enforcement of continuity weakly through numerical fluxes. The DG solution "
+            },
+            {
+              "type": "inline_math",
+              "expression": " u_h "
+            },
+            {
+              "type": "text",
+              "text": " satisfies "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx "
+            },
+            {
+              "type": "text",
+              "text": " for all "
+            },
+            {
+              "type": "inline_math",
+              "expression": " v_h \\in V_h "
+            },
+            {
+              "type": "text",
+              "text": ", as demonstrated in "
             },
             {
               "type": "citation_occurrence",
@@ -275,7 +338,7 @@
             },
             {
               "type": "text",
-              "text": ". Discontinuous Galerkin (DG) methods, a class of FEM that allow solutions to be discontinuous across element boundaries, offer flexibility in mesh design and can handle adaptive refinement efficiently "
+              "text": " and "
             },
             {
               "type": "citation_occurrence",
@@ -284,70 +347,15 @@
             },
             {
               "type": "text",
-              "text": ". The weak formulation, a foundational concept in FEM, transforms partial differential equations into integral equations, enabling the approximation of solutions on complex geometries "
+              "text": ". This approach offers flexibility in mesh design and can handle adaptive refinement efficiently, making it particularly effective for problems with shocks, discontinuities, or high gradients.\n\nThe Optimization-Based Collapse Load Determination using FELA is a method that formulates the problem as an optimization task to compute collapse loads. This involves defining objective functions and constraints based on kinematic or equilibrium principles, as stated in the PROCEDURE: Optimization-Based Collapse Load Determination. The method directly solves for upper or lower bound solutions without incremental time-stepping, leveraging mathematical programming techniques to ensure stability and accuracy in geotechnical applications. According to the RULE: Use Optimization for Direct Collapse Load Calculation, FELA avoids time-stepping by directly computing collapse loads via optimization, ensuring efficiency and accuracy for geotechnical stability problems. This is achieved through the Optimization Objective Function, represented by the equation "
             },
             {
-              "type": "citation_occurrence",
-              "occurrence_id": "31cb0b62-0084-5ca5-9d82-6b049d62bd34",
-              "source_id": "arxiv_1209.2311v1"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe discretization of the weak formulation in the Finite Element Method (FEM) is a crucial step in achieving accurate results. Discontinuous Galerkin (DG) methods, which allow solutions to be discontinuous across element boundaries, are particularly effective for problems with shocks, discontinuities, or high gradients. In contrast, Loubignac iteration is an iterative finite element method that generates continuous stress fields, addressing issues related to discontinuous stresses in traditional finite element formulations. By enforcing continuous stress fields, Loubignac iteration ensures stress continuity, which is critical for accurate stress analysis in finite element simulations. This is in line with the rule that iterative methods should ensure stress continuity, as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "969ca7b2-9339-5cb9-add9-b151a1699b77",
-              "source_id": "wiki_loubignac_iteration"
+              "type": "inline_math",
+              "expression": "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
             },
             {
               "type": "text",
-              "text": ". The weak formulation, as described in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "fcdd9495-89cd-5efa-b40d-7cffc4b73464",
-              "source_id": "arxiv_1209.2311v1"
-            },
-            {
-              "type": "text",
-              "text": " and "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "298aab80-7371-5ca0-b8f5-b858031fb74c",
-              "source_id": "arxiv_1211.2353v1"
-            },
-            {
-              "type": "text",
-              "text": ", provides a foundational concept for deriving the discrete system of equations in FEM, which is essential for the application of DG methods and Loubignac iteration.\n\nOptimization techniques in Finite Element Limit Analysis (FELA) play a crucial role in determining collapse loads for mechanical systems. By formulating the problem as an optimization task, FELA directly computes upper or lower bound solutions without incremental time-stepping, ensuring stability and accuracy in geotechnical applications. This approach is achieved through the minimization of an objective function, represented by the equation $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "3f74fe10-0fb0-5655-ae9c-7b1988b5fcfc",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ". By leveraging mathematical programming techniques, FELA avoids time-stepping, ensuring efficiency and accuracy for geotechnical stability problems, as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "9de295b0-c3d3-53cd-a042-f698a57a8720",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ". This approach is particularly useful in applications requiring accurate stress distribution analysis, where iterative methods such as Loubignac iteration can be employed to enforce continuous stress fields, as discussed in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "79078a07-f243-53bf-b5fa-5d1796f57ff3",
-              "source_id": "wiki_loubignac_iteration"
-            },
-            {
-              "type": "text",
-              "text": "."
+              "text": ", as described in the EQUATION: Optimization Objective Function. The weak formulation, as stated in the CONCEPT: Weak Formulation, is a foundational concept in the Finite Element Method (FEM) that transforms partial differential equations (PDEs) into integral equations, enabling the use of piecewise continuous basis functions."
             }
           ]
         }
@@ -369,16 +377,72 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Verification and validation of discontinuous Galerkin methods are crucial to ensure solution accuracy. Discontinuous Galerkin (DG) methods are a class of Finite Element Methods that allow solutions to be discontinuous across element boundaries, using piecewise polynomial basis functions and enforcing continuity weakly through numerical fluxes. The DG solution $u_h$ satisfies $\\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx$ for all $v_h \\in V_h$ "
+              "text": "Verification and validation of discontinuous Galerkin methods are crucial to ensure solution accuracy. Discontinuous Galerkin (DG) methods are a class of Finite Element Methods that allow solutions to be discontinuous across element boundaries. They use piecewise polynomial basis functions and enforce continuity weakly through numerical fluxes. The DG solution "
             },
             {
-              "type": "citation_occurrence",
-              "occurrence_id": "60b6d749-2e14-50be-92b7-6724cf7bd130",
-              "source_id": "arxiv_1209.2311v1"
+              "type": "inline_math",
+              "expression": " u_h "
             },
             {
               "type": "text",
-              "text": ". Local element matrices are computed using the weak form and basis functions, then assembled into a global system of equations, ensuring compatibility between adjacent elements through numerical fluxes in DG methods "
+              "text": " satisfies "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx "
+            },
+            {
+              "type": "text",
+              "text": " for all "
+            },
+            {
+              "type": "inline_math",
+              "expression": " v_h \\in V_h "
+            },
+            {
+              "type": "text",
+              "text": ". In DG methods, stabilizing parameters must be sufficiently large to ensure numerical stability. These parameters control the penalty term for discontinuities across element interfaces, preventing oscillations and ensuring convergence. Proper selection is critical for maintaining accuracy and robustness, especially in adaptive schemes. The error bound for a DG/Strang splitting method is given by "
+            },
+            {
+              "type": "inline_math",
+              "expression": " O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right) "
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\tau "
+            },
+            {
+              "type": "text",
+              "text": " is the time step, "
+            },
+            {
+              "type": "inline_math",
+              "expression": " h "
+            },
+            {
+              "type": "text",
+              "text": " is the mesh size, and "
+            },
+            {
+              "type": "inline_math",
+              "expression": " q "
+            },
+            {
+              "type": "text",
+              "text": " is the polynomial order.\n\nLoubignac iteration is an iterative finite element method that generates continuous stress fields, addressing issues related to discontinuous stresses in traditional finite element formulations. This method is particularly useful in applications requiring accurate stress distribution analysis. To implement Loubignac iteration effectively, it is essential to ensure stress continuity with iterative methods, which is critical for accurate stress analysis in finite element simulations. Furthermore, in Discontinuous Galerkin (DG) methods, stabilizing parameters must be sufficiently large to ensure numerical stability, controlling the penalty term for discontinuities across element interfaces and preventing oscillations. The convergence criteria for Loubignac iteration involve iterative refinement of stress fields to achieve continuity, ensuring that stress fields satisfy equilibrium and compatibility conditions.\n\nOptimization-Based Verification of Finite Element Limit Analysis (FELA) is a crucial step in ensuring the accuracy and reliability of collapse load determination in geotechnical engineering. By formulating the problem as an optimization task, FELA directly computes upper or lower bound plastic collapse loads without incremental time-stepping, leveraging mathematical programming techniques to ensure stability and accuracy. This approach is particularly useful in applications requiring stability analysis, such as slope stability and bearing capacity calculations "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "16b82f03-002a-526a-9c68-20ff265847ce",
+              "source_id": "wiki_finite_element_limit_analysis"
+            },
+            {
+              "type": "text",
+              "text": ". The assembly of local element matrices into a global system of equations, as described in "
             },
             {
               "type": "citation_occurrence",
@@ -387,7 +451,7 @@
             },
             {
               "type": "text",
-              "text": ". Stabilizing parameters must be sufficiently large to ensure numerical stability, controlling the penalty term for discontinuities across element interfaces "
+              "text": ", is a fundamental step in the FELA procedure, ensuring compatibility between adjacent elements through numerical fluxes in Discontinuous Galerkin methods. By properly selecting stabilizing parameters, as discussed in "
             },
             {
               "type": "citation_occurrence",
@@ -396,25 +460,7 @@
             },
             {
               "type": "text",
-              "text": ".\n\nLoubignac iteration is an iterative finite element method that generates continuous stress fields, addressing issues related to discontinuous stresses in traditional finite element formulations. This method is particularly useful in applications requiring accurate stress distribution analysis. Loubignac iteration enforces continuous stress fields, which is critical for accurate stress analysis in finite element simulations. The method iteratively refines stress fields to achieve continuity, starting with an initial stress approximation and updating it through successive iterations. This process ensures that stress fields satisfy equilibrium and compatibility conditions, improving the reliability of stress predictions in complex mechanical systems. "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "1ac78e45-4a20-5aa6-a922-630dea469957",
-              "source_id": "wiki_loubignac_iteration"
-            },
-            {
-              "type": "text",
-              "text": "\n\nStabilizing parameters in numerical methods, particularly in Discontinuous Galerkin (DG) formulations, play a crucial role in ensuring convergence and accuracy in Finite Element Limit Analysis (FELA) applications. According to the DG method's weak formulation, stabilizing parameters must be sufficiently large to prevent oscillations and ensure numerical stability "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "90cc4d03-76e4-5704-b995-d63866db1166",
-              "source_id": "arxiv_1209.2311v1"
-            },
-            {
-              "type": "text",
-              "text": ". This is particularly important in adaptive schemes where the mesh size and time step are dynamically adjusted. By controlling the penalty term for discontinuities across element interfaces, stabilizing parameters maintain the accuracy and robustness of the solution. This is essential in geotechnical engineering applications, such as slope stability and bearing capacity calculations, where precise stress distribution analysis is critical."
+              "text": ", DG methods can maintain accuracy and robustness, especially in adaptive schemes."
             }
           ]
         }
@@ -436,16 +482,24 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The foundation for verification and validation of numerical methods, particularly in the context of the Finite Element Method (FEM), relies heavily on the weak formulation and discontinuous Galerkin (DG) methods. The weak formulation, as described by the equation $a(u, v) = L(v)$ for all $v \\in V$, transforms partial differential equations into integral equations, enabling the use of piecewise continuous basis functions and facilitating the approximation of solutions on complex geometries. DG methods, on the other hand, allow solutions to be discontinuous across element boundaries, using piecewise polynomial basis functions and enforcing continuity weakly through numerical fluxes. This approach is particularly effective for problems with shocks, discontinuities, or high gradients, as demonstrated by the error estimate for DG methods, which describes the error bound as $O(\\tau^2 + h^q + \\frac{h^q}{\\tau})$ "
+              "text": "Verification and validation of Finite Element Limit Analysis (FELA) for mechanical systems involve ensuring the accuracy and reliability of the method's results. FELA formulates the problem as an optimization task to compute collapse loads, directly solving for upper or lower bound solutions without incremental time-stepping. This approach leverages mathematical programming techniques to ensure stability and accuracy in geotechnical applications, as stated in the optimization objective function: "
             },
             {
-              "type": "citation_occurrence",
-              "occurrence_id": "3b863d9e-4313-58ff-8fb3-946fefb13884",
-              "source_id": "arxiv_1211.2353v1"
+              "type": "inline_math",
+              "expression": "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
             },
             {
               "type": "text",
-              "text": ".\n\nIn the context of Finite Element Limit Analysis (FELA), optimization techniques play a crucial role in computing upper or lower bound plastic collapse loads for mechanical systems. FELA formulates the problem as an optimization task to compute collapse loads, involving the definition of objective functions and constraints based on kinematic or equilibrium principles. This approach directly solves for upper or lower bound solutions without incremental time-stepping, leveraging mathematical programming techniques to ensure stability and accuracy in geotechnical applications. The optimization objective function in FELA is given by $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, where $\\mathbf{\\sigma}$ is the stress field, $\\mathbf{c}$ is a cost vector, and $\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ enforces equilibrium constraints "
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "a29e33f0-eca0-5d32-86e8-5d671217a879",
+              "source_id": "wiki_finite_element_limit_analysis"
+            },
+            {
+              "type": "text",
+              "text": ". The use of optimization for direct collapse load calculation is a critical aspect of FELA, as it avoids time-stepping and ensures efficiency and accuracy for geotechnical stability problems "
             },
             {
               "type": "citation_occurrence",
@@ -454,7 +508,72 @@
             },
             {
               "type": "text",
-              "text": ".\n\nLoubignac iteration is a crucial iterative refinement method that ensures stress continuity in numerical solutions, particularly in the context of discontinuous Galerkin (DG) methods. This method iteratively refines stress fields to achieve continuity, starting with an initial stress approximation and updating it through successive iterations. The Loubignac iteration process ensures that stress fields satisfy equilibrium and compatibility conditions, thereby improving the reliability of stress predictions in complex mechanical systems. The error bound for DG methods, described by $O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right)$, highlights the importance of adaptive mesh refinement in balancing accuracy and computational cost. By employing Loubignac iteration and adaptive mesh refinement, numerical solutions can be significantly improved, particularly in applications requiring accurate stress distribution analysis."
+              "text": ". Furthermore, iterative stress field refinement techniques, such as Loubignac iteration, can be employed to improve the reliability of stress predictions in complex mechanical systems "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "4bfa9460-63fe-5224-8e0b-50486712e7b2",
+              "source_id": "wiki_loubignac_iteration"
+            },
+            {
+              "type": "text",
+              "text": ".\n\nTo implement Loubignac iteration for stress continuity, it is essential to follow best practices that ensure the accuracy and reliability of the method's results. Loubignac iteration is an iterative finite element method that generates continuous stress fields by iteratively refining stress fields to achieve continuity, thereby enforcing continuous stress fields, which is critical for accurate stress analysis in finite element simulations. This method addresses issues related to discontinuous stresses in traditional finite element formulations and is particularly useful in applications requiring accurate stress distribution analysis. By leveraging the optimization objective function in FELA, which represents the optimization problem in FELA, where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\mathbf{\\sigma}"
+            },
+            {
+              "type": "text",
+              "text": " is the stress field, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\mathbf{c}"
+            },
+            {
+              "type": "text",
+              "text": " is a cost vector, and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
+            },
+            {
+              "type": "text",
+              "text": " enforces equilibrium constraints, the Loubignac iteration can be effectively integrated into FELA to improve the reliability of stress predictions in complex mechanical systems.\n\nError estimation and validation techniques for discontinuous Galerkin methods are crucial to ensure solution accuracy. The error bound for a DG/Strang splitting method is given by "
+            },
+            {
+              "type": "inline_math",
+              "expression": "O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right)"
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\tau"
+            },
+            {
+              "type": "text",
+              "text": " is the time step, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "h"
+            },
+            {
+              "type": "text",
+              "text": " is the mesh size, and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "q"
+            },
+            {
+              "type": "text",
+              "text": " is the polynomial order. This equation quantifies the convergence rate of the method under suitable assumptions. To implement systematic verification and validation procedures for discontinuous Galerkin methods, it is essential to follow best practices that ensure the accuracy and reliability of the method's results. This involves mesh generation, where the first step in FEM is to discretize the computational domain into a mesh of non-overlapping elements. The mesh must conform to the geometry and resolve regions of interest, with the quality of the mesh significantly impacting the accuracy and efficiency of the solution."
             }
           ]
         }
@@ -476,25 +595,7 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The quality of the mesh significantly impacts the accuracy and efficiency of the solution in the Finite Element Method (FEM). The first step in FEM is to discretize the computational domain into a mesh of non-overlapping elements, which must conform to the geometry and resolve regions of interest. For adaptive methods, the mesh is refined iteratively based on error estimates, as dictated by the rule of adaptive mesh refinement. This rule ensures that the mesh evolves dynamically, balancing accuracy and computational cost without excessive resolution in smooth regions. According to the error estimate for DG methods, the error bound is given by $ O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right) $, where $ \\tau $ is the time step, $ h $ is the mesh size, and $ q $ is the polynomial order. This equation quantifies the convergence rate of the method under suitable assumptions.\n\nThe validation of Finite Element Method (FEM) solutions relies heavily on the weak formulation and discontinuous Galerkin (DG) methods. The weak formulation, as described by the equation $a(u, v) = L(v)$ for all $v \\in V$, transforms partial differential equations into integral equations, allowing for the use of piecewise continuous basis functions. In contrast, DG methods, as exemplified by the equation $\\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx$, enforce continuity weakly through numerical fluxes, making them particularly effective for problems with shocks, discontinuities, or high gradients. The choice between these two approaches depends on the specific requirements of the problem at hand, and a thorough validation process is necessary to ensure the accuracy and reliability of the results.\n\nOptimization and iterative refinement are crucial components of Finite Element Limit Analysis (FELA), a method that leverages optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems. According to the optimization objective function, $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, the goal is to minimize the objective function while satisfying physical laws "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "a475a4c9-f083-5bfd-90ec-9f8a82ae7068",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ". To achieve accurate stress distribution analysis, Loubignac iteration can be employed, which iteratively refines stress fields to achieve continuity, ensuring that stress fields satisfy equilibrium and compatibility conditions "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "25e0225f-73e7-579f-9589-2b9a902b6e42",
-              "source_id": "wiki_loubignac_iteration"
-            },
-            {
-              "type": "text",
-              "text": ". This method is particularly useful in applications requiring accurate stress distribution analysis, such as those addressed by FELA in geotechnical engineering."
+              "text": "Verification and validation techniques for Finite Element Limit Analysis (FELA) are essential to ensure the accuracy and reliability of the method's results. FELA formulates the problem as an optimization task to compute collapse loads, involving defining objective functions and constraints based on kinematic or equilibrium principles. The quality of the mesh significantly impacts the accuracy and efficiency of the solution, as it must conform to the geometry and resolve regions of interest. The mesh generation process is critical, and adaptive methods refine the mesh iteratively based on error estimates. The weak formulation, a foundational concept in the Finite Element Method, transforms partial differential equations into integral equations, enabling the use of piecewise continuous basis functions. This approach allows for the approximation of solutions on complex geometries, making it critical for deriving the discrete system.\n\nLoubignac iteration is an iterative finite element method that generates continuous stress fields, addressing issues related to discontinuous stresses in traditional finite element formulations. This method is particularly useful in applications requiring accurate stress distribution analysis. The Loubignac iteration iteratively refines stress fields to achieve continuity, starting with an initial stress approximation and updating it through successive iterations. The process ensures that stress fields satisfy equilibrium and compatibility conditions, which is critical for accurate stress analysis in finite element simulations. The weak formulation, a foundational concept in the Finite Element Method, transforms partial differential equations into integral equations, enabling the use of piecewise continuous basis functions and allowing for the approximation of solutions on complex geometries. By combining the weak formulation with iterative stress field refinement, as implemented in Loubignac iteration, it is possible to ensure stress continuity in numerical solutions, thereby improving the reliability of stress predictions in complex mechanical systems.\n\nThe mesh generation and assembly of the global system in the Finite Element Method (FEM) are critical steps that significantly impact the accuracy and efficiency of the solution. The first step in FEM is to discretize the computational domain into a mesh of non-overlapping elements, which must conform to the geometry and resolve regions of interest. The quality of the mesh is crucial, and adaptive mesh refinement can improve efficiency by concentrating computational resources where errors are largest, guided by error indicators. Local element matrices are computed using the weak form and basis functions, and these matrices are then assembled into a global system of equations through the summation of contributions from all elements, ensuring compatibility between adjacent elements through numerical fluxes in Discontinuous Galerkin (DG) methods. The resulting system is solved iteratively or directly to obtain the discrete solution."
             }
           ]
         }
@@ -516,7 +617,15 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Implementing Systematic Verification Procedures for Finite Element Limit Analysis (FELA) involves ensuring the accuracy and reliability of the method's results. According to the optimization objective function, the goal is to minimize the objective function $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$, which represents the optimization problem in FELA, while satisfying physical laws. To achieve this, FELA formulates the problem as an optimization task to compute collapse loads, avoiding time-stepping by directly determining collapse loads via optimization. This is in line with the rule that FELA should use optimization for direct collapse load calculation "
+              "text": "Verification and validation procedures in Finite Element Limit Analysis (FELA) are crucial to ensure the accuracy and reliability of the method's results. FELA formulates the problem as an optimization task to compute collapse loads, which involves defining objective functions and constraints based on kinematic or equilibrium principles. The optimization objective function, given by "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}"
+            },
+            {
+              "type": "text",
+              "text": ", is minimized while satisfying physical laws "
             },
             {
               "type": "citation_occurrence",
@@ -525,7 +634,7 @@
             },
             {
               "type": "text",
-              "text": ". Furthermore, to ensure accurate stress analysis, it is essential to use iterative methods that enforce continuous stress fields, such as Loubignac iteration, which addresses issues related to discontinuous stresses in traditional finite element formulations "
+              "text": ". To ensure stress continuity, iterative methods such as Loubignac iteration can be employed, which generates continuous stress fields and addresses issues related to discontinuous stresses in traditional finite element formulations "
             },
             {
               "type": "citation_occurrence",
@@ -534,7 +643,7 @@
             },
             {
               "type": "text",
-              "text": ".\n\nTo ensure stress continuity in finite element simulations, Loubignac iteration is employed to iteratively refine stress fields. This method, introduced in 1977, generates continuous stress fields by updating the initial stress approximation through successive iterations, thus satisfying equilibrium and compatibility conditions "
+              "text": ". By leveraging mathematical programming techniques and iterative methods, FELA provides a systematic approach to verification and validation, ensuring efficiency and accuracy in geotechnical stability problems.\n\nImplementing Iterative Stress Field Refinement using Loubignac Iteration is a crucial step in ensuring the accuracy and reliability of stress predictions in complex mechanical systems. Loubignac iteration iteratively refines stress fields to achieve continuity, starting with an initial stress approximation and updating it through successive iterations. This method is critical for improving the reliability of stress predictions, as it ensures that stress fields satisfy equilibrium and compatibility conditions. By enforcing continuous stress fields, Loubignac iteration addresses issues related to discontinuous stresses in traditional finite element formulations, making it particularly useful in applications requiring accurate stress distribution analysis. As stated in "
             },
             {
               "type": "citation_occurrence",
@@ -543,34 +652,52 @@
             },
             {
               "type": "text",
-              "text": ". The Loubignac iteration procedure is critical for improving the reliability of stress predictions in complex mechanical systems. By enforcing continuous stress fields, Loubignac iteration addresses issues related to discontinuous stresses in traditional finite element formulations, making it particularly useful in applications requiring accurate stress distribution analysis "
+              "text": ", Loubignac iteration is an iterative finite element method that generates continuous stress fields, introduced in 1977.\n\nEnsuring accuracy and robustness in numerical simulations is crucial, particularly when employing discontinuous Galerkin methods. These methods, as described in "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "5dbb83ce-16f9-59f4-81fb-e87a519652dc",
-              "source_id": "wiki_loubignac_iteration"
-            },
-            {
-              "type": "text",
-              "text": ". The weak formulation, a foundational concept in the Finite Element Method, also plays a crucial role in ensuring stress continuity by transforming partial differential equations into integral equations, which allows for the use of piecewise continuous basis functions "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "e3b8401f-420e-5530-a2cd-c1de99eaccd9",
+              "occurrence_id": "1060ce55-9da3-57fa-b3d6-6c94a7adc331",
               "source_id": "arxiv_1209.2311v1"
             },
             {
               "type": "text",
-              "text": ".\n\nOptimizing Discontinuous Galerkin Methods through Error Estimation and Mesh Adaptation is crucial for achieving accurate solutions in complex problems. By employing adaptive mesh refinement, the mesh is dynamically evolved to concentrate computational resources where errors are largest, thereby balancing accuracy and computational cost. The error estimate for Discontinuous Galerkin (DG) methods, given by $ O\\left(\\tau^2 + h^q + \\frac{h^q}{\\tau}\\right) $ "
+              "text": ", allow solutions to be discontinuous across element boundaries, making them particularly effective for problems with shocks, discontinuities, or high gradients. The assembly of local element matrices using the weak form and basis functions, as outlined in "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "a363c369-afb2-54d9-9d84-b3485e1d56f6",
+              "occurrence_id": "7f5b6aab-064f-58bf-ab9a-e18a92fd512e",
               "source_id": "arxiv_1211.2353v1"
             },
             {
               "type": "text",
-              "text": ", quantifies the convergence rate of the method under suitable assumptions. This equation describes the error bound for a DG/Strang splitting method, where $ \\tau $ is the time step, $ h $ is the mesh size, and $ q $ is the polynomial order. The assembly of the global system, involving the summation of local element matrices and ensuring compatibility between adjacent elements through numerical fluxes, is a critical step in the DG method. By combining error estimation and adaptive mesh refinement, DG methods can efficiently handle complex problems with shocks, discontinuities, or high gradients, making them a powerful tool in numerical simulations."
+              "text": ", is a critical step in the process. To ensure numerical stability, stabilizing parameters must be sufficiently large, as noted in "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "ff3d7f98-675b-5d09-95fd-8d2372de6f52",
+              "source_id": "arxiv_1209.2311v1"
+            },
+            {
+              "type": "text",
+              "text": ". The quality of the mesh, which is generated through a process of discretizing the computational domain into non-overlapping elements, significantly impacts the accuracy and efficiency of the solution, as discussed in "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "09983949-d26f-537c-900f-9eb4713b289e",
+              "source_id": "arxiv_1209.2311v1"
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "5d5e97d1-1f31-5192-a12d-a941ce2c8579",
+              "source_id": "arxiv_1211.2353v1"
+            },
+            {
+              "type": "text",
+              "text": ". By employing these methods and adhering to these guidelines, researchers can ensure the accuracy and robustness of their numerical simulations."
             }
           ]
         }
@@ -592,7 +719,7 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The Finite Element Method (FEM) relies on the weak formulation to transform partial differential equations (PDEs) into integral equations, enabling the use of piecewise continuous basis functions and approximation of solutions on complex geometries. This approach is critical for deriving the discrete system of equations. The first step in FEM is to discretize the computational domain into a mesh of non-overlapping elements, which significantly impacts the accuracy and efficiency of the solution. Discontinuous Galerkin (DG) methods, a class of FEM, allow solutions to be discontinuous across element boundaries, offering flexibility in mesh design and handling adaptive refinement efficiently. The DG solution satisfies the equation $ \\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx $ for all $ v_h \\in V_h $.\n\nThe weak formulation is a foundational concept in the Finite Element Method (FEM) that transforms partial differential equations (PDEs) into integral equations by multiplying the PDE with a test function and integrating over the domain. This approach reduces the requirement for solution differentiability, allowing for the use of piecewise continuous basis functions and enabling the approximation of solutions on complex geometries. The weak form is critical for deriving the discrete system of equations, which is then solved iteratively or directly to obtain the discrete solution. According to "
+              "text": "The Finite Element Method (FEM) relies on the weak formulation to transform partial differential equations (PDEs) into integral equations, enabling the use of piecewise continuous basis functions and approximation of solutions on complex geometries. The weak form is critical for deriving the discrete system of equations, which is obtained by multiplying the PDE by a test function and integrating over the domain. This approach reduces the requirement for solution differentiability, allowing for the use of discontinuous Galerkin (DG) methods, a class of FEM that enables solutions to be discontinuous across element boundaries. According to "
             },
             {
               "type": "citation_occurrence",
@@ -601,7 +728,7 @@
             },
             {
               "type": "text",
-              "text": ", the weak formulation is essential for the development of FEM, and it has been widely used in various applications, including structural mechanics and fluid dynamics.\n\nThe Finite Element Limit Analysis (FELA) is an optimization-based method that computes upper or lower bound plastic collapse loads for mechanical systems by formulating the problem as an optimization task. According to the optimization objective function, the goal is to minimize the cost vector $\\mathbf{c}^T \\mathbf{\\sigma}$ while satisfying physical laws, as represented by the equation $\\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}$ "
+              "text": ", DG methods use piecewise polynomial basis functions and enforce continuity weakly through numerical fluxes, making them particularly effective for problems with shocks, discontinuities, or high gradients.\n\nFinite Element Limit Analysis (FELA) is an optimization-based method that computes upper or lower bound plastic collapse loads for mechanical systems by formulating the problem as an optimization task to compute collapse loads. According to the optimization objective function, the goal is to minimize the objective function while satisfying physical laws, represented by the equation \\min_{\\mathbf{\\sigma}} \\mathbf{c}^T \\mathbf{\\sigma} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{\\sigma} = \\mathbf{b}. This method avoids time-stepping by directly determining collapse loads, leveraging mathematical programming techniques to ensure stability and accuracy in geotechnical applications, as stated in "
             },
             {
               "type": "citation_occurrence",
@@ -610,21 +737,45 @@
             },
             {
               "type": "text",
-              "text": ". This approach avoids time-stepping by directly determining collapse loads, ensuring efficiency and accuracy for geotechnical stability problems "
+              "text": ".\n\nDiscontinuous Galerkin Methods are a class of Finite Element Methods that allow solutions to be discontinuous across element boundaries, and they use piecewise polynomial basis functions and enforce continuity weakly through the use of stabilization terms. This approach is particularly effective for problems with shocks, discontinuities, or high gradients, as it offers flexibility in mesh design and can handle adaptive refinement efficiently. The DG solution "
             },
             {
-              "type": "citation_occurrence",
-              "occurrence_id": "8924a2b0-f4fb-520b-9383-747e7f6b3f59",
-              "source_id": "wiki_finite_element_limit_analysis"
+              "type": "inline_math",
+              "expression": " u_h "
             },
             {
               "type": "text",
-              "text": ". The Loubignac iteration, an iterative finite element method, is also employed to refine stress fields and achieve continuity, which is critical for improving the reliability of stress predictions in complex mechanical systems "
+              "text": " satisfies "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\sum_{K} \\left( \\int_K \\partial_t u_h v_h dx - \\int_K \\nabla u_h \\cdot \\nabla v_h dx + \\int_{\\partial K} \\hat{u}_h v_h ds \\right) = \\int_{\\Omega} f v_h dx "
+            },
+            {
+              "type": "text",
+              "text": " for all "
+            },
+            {
+              "type": "inline_math",
+              "expression": " v_h \\in V_h "
+            },
+            {
+              "type": "text",
+              "text": ", as demonstrated in "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "0a2aef17-a54e-5090-80d2-2c748182535e",
-              "source_id": "wiki_loubignac_iteration"
+              "occurrence_id": "84393fa8-83d4-5e7d-9c73-fe0e1dcfa87d",
+              "source_id": "arxiv_1209.2311v1"
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "38a54738-8643-59c9-af27-25125c66810f",
+              "source_id": "arxiv_1211.2353v1"
             },
             {
               "type": "text",
@@ -653,20 +804,19 @@
             "arxiv_1209.2311v1",
             "arxiv_1211.2353v1"
           ],
+          "inline_math_count": 3,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
           "section_id": "a75dacaa-8b19-4e5d-a527-e5c5ce76b8c4",
-          "semantic_marker_count": 6,
+          "semantic_marker_count": 0,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis",
-            "wiki_loubignac_iteration",
-            "wiki_loubignac_iteration",
-            "wiki_loubignac_iteration"
-          ],
+          "annotated_source_ids": [],
+          "inline_math_count": 1,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
@@ -679,85 +829,94 @@
             "wiki_finite_element_limit_analysis",
             "wiki_finite_element_limit_analysis"
           ],
+          "inline_math_count": 4,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
           "section_id": "2d1385c0-1e74-4997-b159-f89379263873",
-          "semantic_marker_count": 7,
+          "semantic_marker_count": 4,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis",
-            "wiki_loubignac_iteration",
-            "wiki_finite_element_limit_analysis",
-            "wiki_loubignac_iteration"
+            "arxiv_1211.2353v1",
+            "arxiv_1209.2311v1",
+            "arxiv_1211.2353v1",
+            "wiki_finite_element_limit_analysis"
           ],
+          "inline_math_count": 7,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
           "section_id": "a415e864-688a-4fd4-8269-b230c44b5e3c",
-          "semantic_marker_count": 9,
+          "semantic_marker_count": 2,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
             "arxiv_1209.2311v1",
-            "arxiv_1211.2353v1",
-            "arxiv_1209.2311v1",
-            "wiki_loubignac_iteration",
-            "arxiv_1209.2311v1",
-            "arxiv_1211.2353v1",
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis",
-            "wiki_loubignac_iteration"
+            "arxiv_1211.2353v1"
           ],
+          "inline_math_count": 4,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
           "section_id": "7f5ea2a1-a387-4613-b69f-6b8c844d0af7",
-          "semantic_marker_count": 5,
+          "semantic_marker_count": 3,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
-            "arxiv_1209.2311v1",
+            "wiki_finite_element_limit_analysis",
             "arxiv_1211.2353v1",
-            "arxiv_1209.2311v1",
-            "wiki_loubignac_iteration",
             "arxiv_1209.2311v1"
           ],
+          "inline_math_count": 7,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
           "section_id": "1b3ae7a5-fedb-4eaf-bf0a-52663f2456b4",
-          "semantic_marker_count": 2,
+          "semantic_marker_count": 3,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
-            "arxiv_1211.2353v1",
-            "wiki_finite_element_limit_analysis"
+            "wiki_finite_element_limit_analysis",
+            "wiki_finite_element_limit_analysis",
+            "wiki_loubignac_iteration"
           ],
+          "inline_math_count": 8,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
           "section_id": "17ced97f-6865-4937-b5d5-ba6f0ff9e7c2",
-          "semantic_marker_count": 2,
+          "semantic_marker_count": 0,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "wiki_finite_element_limit_analysis",
-            "wiki_loubignac_iteration"
-          ],
+          "annotated_source_ids": [],
+          "inline_math_count": 0,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
           "section_id": "95615825-bf2a-4a2d-8530-fd1b61ff1cfb",
-          "semantic_marker_count": 6,
+          "semantic_marker_count": 8,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
             "wiki_finite_element_limit_analysis",
             "wiki_loubignac_iteration",
             "wiki_loubignac_iteration",
-            "wiki_loubignac_iteration",
+            "arxiv_1209.2311v1",
+            "arxiv_1211.2353v1",
+            "arxiv_1209.2311v1",
             "arxiv_1209.2311v1",
             "arxiv_1211.2353v1"
           ],
+          "inline_math_count": 1,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
@@ -767,13 +926,48 @@
           "annotated_source_ids": [
             "arxiv_1209.2311v1",
             "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis",
-            "wiki_loubignac_iteration"
+            "arxiv_1209.2311v1",
+            "arxiv_1211.2353v1"
           ],
+          "inline_math_count": 3,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
           "diagnostics": []
         }
       ],
-      "semantic_marker_count": 47
+      "semantic_marker_count": 30,
+      "latex_ir_readiness": {
+        "ready": true,
+        "counts": {
+          "sections": 10,
+          "paragraphs": 10,
+          "text_nodes": 78,
+          "inline_math": 38,
+          "display_math": 0,
+          "equation_occurrences": 0,
+          "citation_occurrences": 30,
+          "cross_reference_occurrences": 0,
+          "equation_proposal_references": 0,
+          "raw_math_text_nodes": 0
+        },
+        "diagnostics": []
+      }
+    },
+    "latex_ir_readiness": {
+      "ready": true,
+      "counts": {
+        "sections": 10,
+        "paragraphs": 10,
+        "text_nodes": 78,
+        "inline_math": 38,
+        "display_math": 0,
+        "equation_occurrences": 0,
+        "citation_occurrences": 30,
+        "cross_reference_occurrences": 0,
+        "equation_proposal_references": 0,
+        "raw_math_text_nodes": 0
+      },
+      "diagnostics": []
     }
   },
   "source_snapshot": {

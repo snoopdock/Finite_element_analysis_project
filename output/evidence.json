@@ -1,5 +1,175 @@
 [
   {
+    "source_id": "s2_b4587b5d343b14ac31a8f5a60093e16c4d261272",
+    "url": "https://www.semanticscholar.org/paper/b4587b5d343b14ac31a8f5a60093e16c4d261272",
+    "retrieved_at": "2026-10-03T18:56:39.479749+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "finite element method fast fourier transform",
+    "source_type": "academic",
+    "content_type": "text/plain",
+    "title": "A finite element method and fast Fourier transform based crystal plasticity simulations study on the evolution of microstructure and mechanical properties of gradient structure copper",
+    "authors": [
+      "Deepak Paliwal",
+      "S. K. Basantia",
+      "M. Yadava",
+      "N. P. Gurao"
+    ],
+    "metadata": {
+      "abstract": "",
+      "year": 2024,
+      "citation_count": 7,
+      "word_count": 0,
+      "page_count": null,
+      "open_access_pdf_available": false,
+      "full_text_available": false,
+      "full_text_status": "abstract_only"
+    },
+    "full_text_path": null,
+    "status": "abstract_only",
+    "query_contexts": [
+      "finite element method fast fourier transform"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.825865,
+      "lexical": 0.839445,
+      "source_quality": 0.85,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method fast fourier transform",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Galerkin dimension reduction finite element method": 0.2125,
+        "finite element method fast fourier transform": 0.825865
+      }
+    }
+  },
+  {
+    "source_id": "s2_d01b6b29d55507be0bbfa2ebd8fdb1c703478df0",
+    "url": "https://doi.org/10.1016/j.commatsci.2022.111348",
+    "retrieved_at": "2026-10-03T18:56:39.479749+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "finite element method fast fourier transform",
+    "source_type": "academic",
+    "content_type": "application/pdf",
+    "title": "Coupling of a multi-GPU accelerated elasto-visco-plastic fast Fourier transform constitutive model with the implicit finite element method",
+    "authors": [
+      "A. Eghtesad",
+      "K. Germaschewski",
+      "M. Knezevic"
+    ],
+    "metadata": {
+      "abstract": "",
+      "year": 2022,
+      "citation_count": 32,
+      "word_count": 0,
+      "page_count": null,
+      "open_access_pdf_available": true,
+      "full_text_available": false,
+      "full_text_status": "pdf_download_failed"
+    },
+    "full_text_path": null,
+    "status": "pdf_download_failed",
+    "query_contexts": [
+      "finite element method fast fourier transform"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.825865,
+      "lexical": 0.839445,
+      "source_quality": 0.85,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method fast fourier transform",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Galerkin dimension reduction finite element method": 0.2125,
+        "finite element method fast fourier transform": 0.825865
+      }
+    }
+  },
+  {
+    "source_id": "wiki_fast_fourier_transform",
+    "url": "https://en.wikipedia.org/wiki/Fast_Fourier_transform",
+    "retrieved_at": "2026-10-03T18:56:39.479749+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Fast Fourier transform",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "A <span class=\"searchmatch\">fast</span> <span class=\"searchmatch\">Fourier</span> <span class=\"searchmatch\">transform</span> (FFT) is an algorithm that computes the discrete <span class=\"searchmatch\">Fourier</span> <span class=\"searchmatch\">transform</span> (DFT), or its inverse (IDFT), of a sequence. A <span class=\"searchmatch\">Fourier</span> transform",
+      "word_count": 5742
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_fast_fourier_transform.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method fast fourier transform",
+    "query_contexts": [
+      "finite element method fast fourier transform"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method fast fourier transform",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Galerkin dimension reduction finite element method": 0.1375,
+        "finite element method fast fourier transform": 0.750865
+      }
+    }
+  },
+  {
     "source_id": "wiki_finite_element_limit_analysis",
     "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
     "retrieved_at": "2026-10-03T18:09:49.885865+00:00",
@@ -154,6 +324,60 @@
         "CutFEM gap analysis": 0.416955,
         "Discontinuous Galerkin methods gap analysis": 0.703192,
         "Crystal plasticity finite element method gap analysis": 0.365841
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_0905.1340v3",
+    "url": "https://arxiv.org/pdf/0905.1340v3.pdf",
+    "retrieved_at": "2026-10-03T18:56:39.479749+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Fast Fourier Transforms for Finite Inverse Semigroups",
+    "authors": [
+      "Martin Malandro"
+    ],
+    "metadata": {
+      "abstract": "We extend the theory of fast Fourier transforms on finite groups to finite inverse semigroups. We use a general method for constructing the irreducible representations of a finite inverse semigroup to reduce the problem of computing its Fourier transform to the problems of computing Fourier transforms on its maximal subgroups and a fast zeta transform on its poset structure. We then exhibit explicit fast algorithms for particular inverse semigroups of interest--specifically, for the rook monoid and its wreath products by arbitrary finite groups.",
+      "published": "2009-05-08T20:50:17Z",
+      "page_count": 30,
+      "word_count": 12235
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_0905.1340v3.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "finite element method fast fourier transform",
+    "query_contexts": [
+      "finite element method fast fourier transform"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.62141,
+      "lexical": 0.55963,
+      "source_quality": 0.85,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method fast fourier transform",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Galerkin dimension reduction finite element method": 0.2125,
+        "finite element method fast fourier transform": 0.62141
       }
     }
   },
