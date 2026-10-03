@@ -1,18 +1,18 @@
 # FEA Pipeline - Cycle Report
 
-**Time:** 2026-10-03T18:57:35.397202+00:00
-**Cycle:** 4
-**Total Iterations:** 4
+**Time:** 2026-10-03T19:04:33.581689+00:00
+**Cycle:** 1
+**Total Iterations:** 1
 **Converged:** False
 
 ## Convergence Diagnostics
 
-- Eta variance: 0.005438235294117653
+- Eta variance: 0.0014799999999999987
 - Invariant violations: 0
 - Adjust actions: 0
 - Incomplete sections: 0
-- Unstable sections: 10
-- Reading coverage: 16.70%
+- Unstable sections: 0
+- Reading coverage: 0.00%
 
 ## This Cycle
 
@@ -20,7 +20,7 @@
 - New sources found: True
 - Extracted: False
 - Sections written: True
-- Adjustment executed: none
+- Adjustment executed: split_section
 - Write phase skipped: False
 - LaTeX assembled: True
 

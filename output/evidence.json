@@ -1,144 +1,25 @@
 [
   {
-    "source_id": "s2_b4587b5d343b14ac31a8f5a60093e16c4d261272",
-    "url": "https://www.semanticscholar.org/paper/b4587b5d343b14ac31a8f5a60093e16c4d261272",
-    "retrieved_at": "2026-10-03T18:56:39.479749+00:00",
-    "retriever_module": "research.semantic_scholar",
-    "provider": "semantic_scholar",
-    "query_context": "finite element method fast fourier transform",
-    "source_type": "academic",
-    "content_type": "text/plain",
-    "title": "A finite element method and fast Fourier transform based crystal plasticity simulations study on the evolution of microstructure and mechanical properties of gradient structure copper",
-    "authors": [
-      "Deepak Paliwal",
-      "S. K. Basantia",
-      "M. Yadava",
-      "N. P. Gurao"
-    ],
-    "metadata": {
-      "abstract": "",
-      "year": 2024,
-      "citation_count": 7,
-      "word_count": 0,
-      "page_count": null,
-      "open_access_pdf_available": false,
-      "full_text_available": false,
-      "full_text_status": "abstract_only"
-    },
-    "full_text_path": null,
-    "status": "abstract_only",
-    "query_contexts": [
-      "finite element method fast fourier transform"
-    ],
-    "provider_names": [
-      "semantic_scholar"
-    ],
-    "source_types": [
-      "academic"
-    ],
-    "ranking": {
-      "score": 0.825865,
-      "lexical": 0.839445,
-      "source_quality": 0.85,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method fast fourier transform",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "Galerkin dimension reduction finite element method": 0.2125,
-        "finite element method fast fourier transform": 0.825865
-      }
-    }
-  },
-  {
-    "source_id": "s2_d01b6b29d55507be0bbfa2ebd8fdb1c703478df0",
-    "url": "https://doi.org/10.1016/j.commatsci.2022.111348",
-    "retrieved_at": "2026-10-03T18:56:39.479749+00:00",
-    "retriever_module": "research.semantic_scholar",
-    "provider": "semantic_scholar",
-    "query_context": "finite element method fast fourier transform",
-    "source_type": "academic",
-    "content_type": "application/pdf",
-    "title": "Coupling of a multi-GPU accelerated elasto-visco-plastic fast Fourier transform constitutive model with the implicit finite element method",
-    "authors": [
-      "A. Eghtesad",
-      "K. Germaschewski",
-      "M. Knezevic"
-    ],
-    "metadata": {
-      "abstract": "",
-      "year": 2022,
-      "citation_count": 32,
-      "word_count": 0,
-      "page_count": null,
-      "open_access_pdf_available": true,
-      "full_text_available": false,
-      "full_text_status": "pdf_download_failed"
-    },
-    "full_text_path": null,
-    "status": "pdf_download_failed",
-    "query_contexts": [
-      "finite element method fast fourier transform"
-    ],
-    "provider_names": [
-      "semantic_scholar"
-    ],
-    "source_types": [
-      "academic"
-    ],
-    "ranking": {
-      "score": 0.825865,
-      "lexical": 0.839445,
-      "source_quality": 0.85,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method fast fourier transform",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "Galerkin dimension reduction finite element method": 0.2125,
-        "finite element method fast fourier transform": 0.825865
-      }
-    }
-  },
-  {
-    "source_id": "wiki_fast_fourier_transform",
-    "url": "https://en.wikipedia.org/wiki/Fast_Fourier_transform",
-    "retrieved_at": "2026-10-03T18:56:39.479749+00:00",
+    "source_id": "wiki_applied_element_method",
+    "url": "https://en.wikipedia.org/wiki/Applied_element_method",
+    "retrieved_at": "2026-10-03T19:03:35.077624+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
-    "title": "Fast Fourier transform",
+    "title": "Applied element method",
     "authors": [
       "Wikipedia Contributors"
     ],
     "metadata": {
-      "abstract": "A <span class=\"searchmatch\">fast</span> <span class=\"searchmatch\">Fourier</span> <span class=\"searchmatch\">transform</span> (FFT) is an algorithm that computes the discrete <span class=\"searchmatch\">Fourier</span> <span class=\"searchmatch\">transform</span> (DFT), or its inverse (IDFT), of a sequence. A <span class=\"searchmatch\">Fourier</span> transform",
-      "word_count": 5742
+      "abstract": "The <span class=\"searchmatch\">applied</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (AEM) is a numerical analysis used in predicting the continuum and discrete behavior of structures. The modeling <span class=\"searchmatch\">method</span> in AEM",
+      "word_count": 1349
     },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_fast_fourier_transform.txt",
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_applied_element_method.txt",
     "status": "parsed_full_text",
     "provider": "wikipedia",
     "source_type": "wikipedia",
-    "query_context": "finite element method fast fourier transform",
+    "query_context": "Applied element method",
     "query_contexts": [
-      "finite element method fast fourier transform"
+      "Applied element method"
     ],
     "provider_names": [
       "wikipedia"
@@ -158,38 +39,39 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "finite element method fast fourier transform",
+      "best_query": "Applied element method",
       "query_index": 4,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.1375,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "Galerkin dimension reduction finite element method": 0.1375,
-        "finite element method fast fourier transform": 0.750865
+        "Crystal plasticity finite element method": 0.1375,
+        "Applied element method": 0.750865,
+        "Céa's lemma": 0.1375
       }
     }
   },
   {
-    "source_id": "wiki_finite_element_limit_analysis",
-    "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
-    "retrieved_at": "2026-10-03T18:09:49.885865+00:00",
+    "source_id": "wiki_c_a_s_lemma",
+    "url": "https://en.wikipedia.org/wiki/Céa's_lemma",
+    "retrieved_at": "2026-10-03T19:03:35.077624+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
-    "title": "Finite element limit analysis",
+    "title": "Céa's lemma",
     "authors": [
       "Wikipedia Contributors"
     ],
     "metadata": {
-      "abstract": "A <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">limit</span> <span class=\"searchmatch\">analysis</span> (FELA) uses optimisation techniques to directly compute the upper or lower bound plastic collapse load (or <span class=\"searchmatch\">limit</span> load)",
-      "word_count": 301
+      "abstract": "<span class=\"searchmatch\">Céa&#039;s</span> <span class=\"searchmatch\">lemma</span> is a <span class=\"searchmatch\">lemma</span> in mathematics. Introduced by Jean <span class=\"searchmatch\">Céa</span> in his Ph.D. dissertation, it is an important tool for proving error estimates for the finite",
+      "word_count": 2163
     },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_finite_element_limit_analysis.txt",
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_c_a_s_lemma.txt",
     "status": "parsed_full_text",
     "provider": "wikipedia",
     "source_type": "wikipedia",
-    "query_context": "finite element limit analysis",
+    "query_context": "Céa's lemma",
     "query_contexts": [
-      "finite element limit analysis"
+      "Céa's lemma"
     ],
     "provider_names": [
       "wikipedia"
@@ -209,148 +91,96 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "finite element limit analysis",
+      "best_query": "Céa's lemma",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Crystal plasticity finite element method": 0.1375,
+        "Applied element method": 0.1375,
+        "Céa's lemma": 0.750865
+      }
+    }
+  },
+  {
+    "source_id": "wiki_crystal_plasticity",
+    "url": "https://en.wikipedia.org/wiki/Crystal_plasticity",
+    "retrieved_at": "2026-10-03T19:03:35.077624+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Crystal plasticity",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "formulations of <span class=\"searchmatch\">crystal</span> <span class=\"searchmatch\">plasticity</span> are the one based on the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> known as <span class=\"searchmatch\">Crystal</span> <span class=\"searchmatch\">Plasticity</span> <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">Element</span> <span class=\"searchmatch\">Method</span> (CPFEM), which is",
+      "word_count": 437
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_crystal_plasticity.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Crystal plasticity finite element method",
+    "query_contexts": [
+      "Crystal plasticity finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Crystal plasticity finite element method",
       "query_index": 3,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.1375,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "finite element limit analysis": 0.750865,
-        "loubignac iteration finite element method": 0.1375
+        "Crystal plasticity finite element method": 0.750865,
+        "Applied element method": 0.1375,
+        "Céa's lemma": 0.1375
       }
     }
   },
   {
-    "source_id": "wiki_loubignac_iteration",
-    "url": "https://en.wikipedia.org/wiki/Loubignac_iteration",
-    "retrieved_at": "2026-10-03T18:09:49.885865+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Loubignac iteration",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "mathematics, <span class=\"searchmatch\">Loubignac</span> <span class=\"searchmatch\">iteration</span> is an <span class=\"searchmatch\">iterative</span> <span class=\"searchmatch\">method</span> in <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">methods</span>. It gives continuous stress field. It is named after Gilles <span class=\"searchmatch\">Loubignac</span>, who published",
-      "word_count": 35
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_loubignac_iteration.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "loubignac iteration finite element method",
-    "query_contexts": [
-      "loubignac iteration finite element method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.750865,
-      "lexical": 0.839445,
-      "source_quality": 0.55,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "loubignac iteration finite element method",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "finite element limit analysis": 0.1375,
-        "loubignac iteration finite element method": 0.750865
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_1209.2311v1",
-    "url": "https://arxiv.org/pdf/1209.2311v1.pdf",
-    "retrieved_at": "2026-10-03T18:13:02.132253+00:00",
+    "source_id": "arxiv_1501.01918v1",
+    "url": "https://arxiv.org/pdf/1501.01918v1.pdf",
+    "retrieved_at": "2026-10-03T19:03:35.077624+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
     "content_type": "application/pdf",
-    "title": "Convergence Analysis of the Lowest Order Weakly Penalized Adaptive Discontinuous Galerkin Methods",
+    "title": "Ehrenfeucht's lemma in set theory",
     "authors": [
-      "Thirupathi Gudi",
-      "Johnny Guzmán"
+      "Gunter Fuchs",
+      "Victoria Gitman",
+      "Joel David Hamkins"
     ],
     "metadata": {
-      "abstract": "In this article, we prove convergence of the weakly penalized adaptive discontinuous Galerkin methods. Unlike other works, we derive the contraction property for various discontinuous Galerkin methods only assuming the stabilizing parameters are large enough to stabilize the method. A central idea in the analysis is to construct an auxiliary solution from the discontinuous Galerkin solution by a simple post processing. Based on the auxiliary solution, we define the adaptive algorithm which guides to the convergence of adaptive discontinuous Galerkin methods.",
-      "published": "2012-09-11T13:09:28Z",
+      "abstract": "Ehrenfeucht's lemma (1973) asserts that whenever one element of a model of Peano arithmetic is definable from another, then they satisfy different types. We consider here the analogue of Ehrenfeucht's lemma for models of set theory. The original argument applies directly to the ordinal-definable elements of any model of set theory, and in particular, Ehrenfeucht's lemma holds fully for models of set theory satisfying $V=HOD$. We show that the lemma can fail, however, in models of set theory with $V\\neq HOD$, and it necessarily fails in the forcing extension to add a generic Cohen real. We go on to formulate a scheme of natural parametric generalizations of Ehrenfeucht's lemma, namely, the principles of the form $EL(A,P,Q)$, which asserts that whenever an object $b$ is definable from some $a\\in A$ using parameters in $P$, with $b\\neq a$, then the types of $a$ and $b$ over $Q$ are different. We also consider various analogues of Ehrenfeucht's lemma obtained by using algebraicity in place of definability, where a set $b$ is algebraic in $a$ if it is a member of a finite set definable from $a$ (as in Hamkins, Leahy arXiv:1305.5953). Ehrenfeucht's lemma holds for the ordinal-algebraic sets, we prove, if and only if the ordinal-algebraic and ordinal-definable sets coincide. Using similar analysis, we answer two open questions posed by Hamkins and Leahy, by showing that (i) algebraicity and definability need not coincide in models of set theory and (ii) the internal and external notions of being ordinal algebraic need not coincide.",
+      "published": "2015-01-08T18:10:44Z",
       "page_count": 13,
-      "word_count": 4500
+      "word_count": 7594
     },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1209.2311v1.txt",
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1501.01918v1.txt",
     "full_text_available": true,
     "status": "parsed_full_text",
-    "query_context": "Discontinuous Galerkin methods gap analysis",
+    "query_context": "Céa's lemma",
     "query_contexts": [
-      "Discontinuous Galerkin methods gap analysis"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.703192,
-      "lexical": 0.671556,
-      "source_quality": 0.85,
-      "section_relevance": 0.541807,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Discontinuous Galerkin methods gap analysis",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.335173,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "CutFEM gap analysis": 0.416955,
-        "Discontinuous Galerkin methods gap analysis": 0.703192,
-        "Crystal plasticity finite element method gap analysis": 0.365841
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_0905.1340v3",
-    "url": "https://arxiv.org/pdf/0905.1340v3.pdf",
-    "retrieved_at": "2026-10-03T18:56:39.479749+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Fast Fourier Transforms for Finite Inverse Semigroups",
-    "authors": [
-      "Martin Malandro"
-    ],
-    "metadata": {
-      "abstract": "We extend the theory of fast Fourier transforms on finite groups to finite inverse semigroups. We use a general method for constructing the irreducible representations of a finite inverse semigroup to reduce the problem of computing its Fourier transform to the problems of computing Fourier transforms on its maximal subgroups and a fast zeta transform on its poset structure. We then exhibit explicit fast algorithms for particular inverse semigroups of interest--specifically, for the rook monoid and its wreath products by arbitrary finite groups.",
-      "published": "2009-05-08T20:50:17Z",
-      "page_count": 30,
-      "word_count": 12235
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_0905.1340v3.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "finite element method fast fourier transform",
-    "query_contexts": [
-      "finite element method fast fourier transform"
+      "Céa's lemma"
     ],
     "provider_names": [
       "arxiv"
@@ -370,459 +200,15 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "finite element method fast fourier transform",
-      "query_index": 4,
+      "best_query": "Céa's lemma",
+      "query_index": 5,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "Galerkin dimension reduction finite element method": 0.2125,
-        "finite element method fast fourier transform": 0.62141
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2211.17093v1",
-    "url": "https://arxiv.org/pdf/2211.17093v1.pdf",
-    "retrieved_at": "2026-10-03T18:13:02.132253+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "CutFEM forward modeling for EEG source analysis",
-    "authors": [
-      "Tim Erdbrügger",
-      "Andreas Westhoff",
-      "Malte Hoeltershinken",
-      "Jan-Ole Radecke",
-      "Yvonne Buschermoehle",
-      "Alena Buyx",
-      "Fabrice Wallois",
-      "Sampsa Pursiainen",
-      "Joachim Gross",
-      "Rebekka Lencer",
-      "Christian Engwer",
-      "Carsten Wolters"
-    ],
-    "metadata": {
-      "abstract": "Source analysis of Electroencephalography (EEG) data requires the computation of the scalp potential induced by current sources in the brain. This so-called EEG forward problem is based on an accurate estimation of the volume conduction effects in the human head, represented by a partial differential equation which can be solved using the finite element method (FEM). FEM offers flexibility when modeling anisotropic tissue conductivities but requires a volumetric discretization, a mesh, of the head domain. Structured hexahedral meshes are easy to create in an automatic fashion, while tetrahedral meshes are better suited to model curved geometries. Tetrahedral meshes thus offer better accuracy, but are more difficult to create. Methods: We introduce CutFEM for EEG forward simulations to integrate the strengths of hexahedra and tetrahedra. It belongs to the family of unfitted finite element methods, decoupling mesh and geometry representation. Following a description of the method, we will employ CutFEM in both controlled spherical scenarios and the reconstruction of somatosensory evoked potentials. Results: CutFEM outperforms competing FEM approaches with regard to numerical accuracy, memory consumption and computational speed while being able to mesh arbitrarily touching compartments. Conclusion: CutFEM balances numerical accuracy, computational efficiency and a smooth approximation of complex geometries that has previously not been available in FEM-based EEG forward modeling.",
-      "published": "2022-11-30T15:48:23Z",
-      "page_count": 9,
-      "word_count": 6809
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2211.17093v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "CutFEM gap analysis",
-    "query_contexts": [
-      "CutFEM gap analysis"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.62141,
-      "lexical": 0.55963,
-      "source_quality": 0.85,
-      "section_relevance": 0.451506,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "CutFEM gap analysis",
-      "query_index": 3,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.365841,
-        "finite element method verification validation numerical stability": 0.2125,
-        "CutFEM gap analysis": 0.62141,
-        "Discontinuous Galerkin methods gap analysis": 0.335173,
-        "Crystal plasticity finite element method gap analysis": 0.365841
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_1211.2353v1",
-    "url": "https://arxiv.org/pdf/1211.2353v1.pdf",
-    "retrieved_at": "2026-10-03T18:13:02.132253+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Convergence analysis of a discontinuous Galerkin/Strang splitting approximation for the Vlasov--Poisson equations",
-    "authors": [
-      "Lukas Einkemmer",
-      "Alexander Ostermann"
-    ],
-    "metadata": {
-      "abstract": "A rigorous convergence analysis of the Strang splitting algorithm with a discontinuous Galerkin approximation in space for the Vlasov--Poisson equations is provided. It is shown that under suitable assumptions the error is of order $\\mathcal{O}(τ^2+h^q +h^q / τ)$, where $τ$ is the size of a time step, $h$ is the cell size, and $q$ the order of the discontinuous Galerkin approximation. In order to investigate the recurrence phenomena for approximations of higher order as well as to compare the algorithm with numerical results already available in the literature a number of numerical simulations are performed.",
-      "published": "2012-11-10T21:33:50Z",
-      "page_count": 20,
-      "word_count": 7913
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1211.2353v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "Discontinuous Galerkin methods gap analysis",
-    "query_contexts": [
-      "Discontinuous Galerkin methods gap analysis"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.580519,
-      "lexical": 0.503667,
-      "source_quality": 0.85,
-      "section_relevance": 0.406355,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Discontinuous Galerkin methods gap analysis",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.335173,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "CutFEM gap analysis": 0.416955,
-        "Discontinuous Galerkin methods gap analysis": 0.580519,
-        "Crystal plasticity finite element method gap analysis": 0.365841
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2304.12030v2",
-    "url": "https://arxiv.org/pdf/2304.12030v2.pdf",
-    "retrieved_at": "2026-10-03T18:07:19.999048+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Strategy flexibility in university mathematics",
-    "authors": [
-      "Peter Hästö",
-      "Jon R. Star"
-    ],
-    "metadata": {
-      "abstract": "We present results and ideas on flexibility and its teaching for university mathematicians based on research and our experience in professional development programs. We believe this could provide food for thought for instructors of calculus courses and beyond.",
-      "published": "2023-04-24T12:06:50Z",
-      "page_count": 8,
-      "word_count": 4695
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2304.12030v2.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "FEM flexibility method",
-    "query_contexts": [
-      "FEM flexibility method"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.519183,
-      "lexical": 0.419722,
-      "source_quality": 0.85,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "FEM flexibility method",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "FEM vs FDM": 0.2125,
-        "FEM flexibility method": 0.519183
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2410.12614v1",
-    "url": "https://arxiv.org/pdf/2410.12614v1.pdf",
-    "retrieved_at": "2026-10-03T18:09:49.885865+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Mixed-precision finite element kernels and assembly: Rounding error analysis and hardware acceleration",
-    "authors": [
-      "M. Croci",
-      "G. N. Wells"
-    ],
-    "metadata": {
-      "abstract": "In this paper we develop the first fine-grained rounding error analysis of finite element (FE) cell kernels and assembly. The theory includes mixed-precision implementations and accounts for hardware-acceleration via matrix multiplication units, thus providing theoretical guidance for designing reduced- and mixed-precision FE algorithms on CPUs and GPUs. Guided by this analysis, we introduce hardware-accelerated mixed-precision implementation strategies which are provably robust to low-precision computations. Indeed, these algorithms are accurate to the lower-precision unit roundoff with an error constant that is independent from: the conditioning of FE basis function evaluations, the ill-posedness of the cell, the polynomial degree, and the number of quadrature nodes. Consequently, we present the first AMX-accelerated FE kernel implementations on Intel Sapphire Rapids CPUs. Numerical experiments demonstrate that the proposed mixed- (single/half-) precision algorithms are up to 60 times faster than their double precision equivalent while being orders of magnitude more accurate than their fully half-precision counterparts.",
-      "published": "2024-10-16T14:32:10Z",
-      "page_count": 37,
-      "word_count": 19806
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2410.12614v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "finite element limit analysis",
-    "query_contexts": [
-      "finite element limit analysis"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.519183,
-      "lexical": 0.419722,
-      "source_quality": 0.85,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element limit analysis",
-      "query_index": 3,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "finite element limit analysis": 0.519183,
-        "loubignac iteration finite element method": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_cs_0609119v2",
-    "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-03T18:09:49.885865+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Verification, Validation and Integrity of Distributed and Interchanged Rule Based Policies and Contracts in the Semantic Web",
-    "authors": [
-      "Adrian Paschke"
-    ],
-    "metadata": {
-      "abstract": "Rule-based policy and contract systems have rarely been studied in terms of their software engineering properties. This is a serious omission, because in rule-based policy or contract representation languages rules are being used as a declarative programming language to formalize real-world decision logic and create IS production systems upon. This paper adopts an SE methodology from extreme programming, namely test driven development, and discusses how it can be adapted to verification, validation and integrity testing (V&V&I) of policy and contract specifications. Since, the test-driven approach focuses on the behavioral aspects and the drawn conclusions instead of the structure of the rule base and the causes of faults, it is independent of the complexity of the rule language and the system under test and thus much easier to use and understand for the rule engineer and the user.",
-      "published": "2006-09-21T11:50:24Z",
-      "page_count": 0,
-      "word_count": 10484
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_cs_0609119v2.txt",
-    "full_text_available": true,
-    "status": "cached_full_text",
-    "query_context": "finite element method verification validation numerical stability",
-    "query_contexts": [
-      "finite element method verification validation numerical stability"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.519183,
-      "lexical": 0.419722,
-      "source_quality": 0.85,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method verification validation numerical stability",
-      "query_index": 2,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.519183,
-        "finite element limit analysis": 0.2125,
-        "loubignac iteration finite element method": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2210.16907v1",
-    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
-    "retrieved_at": "2026-10-03T18:07:19.999048+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
-    "authors": [
-      "Dan Li",
-      "Chunmei Wang",
-      "Junping Wang"
-    ],
-    "metadata": {
-      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
-      "published": "2022-10-30T18:14:18Z",
-      "page_count": 26,
-      "word_count": 9773
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "finite element method mathematical foundation weak form Galerkin method",
-    "query_contexts": [
-      "finite element method mathematical foundation weak form Galerkin method"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.457846,
-      "lexical": 0.335778,
-      "source_quality": 0.85,
-      "section_relevance": 0.270904,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method mathematical foundation weak form Galerkin method",
-      "query_index": 0,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "FEM vs FDM": 0.2125,
-        "FEM flexibility method": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "wiki_flexibility_method",
-    "url": "https://en.wikipedia.org/wiki/Flexibility_method",
-    "retrieved_at": "2026-10-03T18:07:19.999048+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Flexibility method",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "structural engineering, the <span class=\"searchmatch\">flexibility</span> <span class=\"searchmatch\">method</span>, also called the <span class=\"searchmatch\">method</span> of consistent deformations, is the traditional <span class=\"searchmatch\">method</span> for computing member forces",
-      "word_count": 1303
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_flexibility_method.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "FEM flexibility method",
-    "query_contexts": [
-      "FEM flexibility method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.444183,
-      "lexical": 0.419722,
-      "source_quality": 0.55,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "FEM flexibility method",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "FEM vs FDM": 0.1375,
-        "FEM flexibility method": 0.444183
-      }
-    }
-  },
-  {
-    "source_id": "wiki_list_of_numerical_analysis_topics",
-    "url": "https://en.wikipedia.org/wiki/List_of_numerical_analysis_topics",
-    "retrieved_at": "2026-10-03T18:13:02.132253+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "List of numerical analysis topics",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "element <span class=\"searchmatch\">methods</span> <span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> — a finite element <span class=\"searchmatch\">method</span> in which the residual is orthogonal to the finite element space <span class=\"searchmatch\">Discontinuous</span> <span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> — a",
-      "word_count": 8705
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_list_of_numerical_analysis_topics.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "Discontinuous Galerkin methods gap analysis",
-    "query_contexts": [
-      "Discontinuous Galerkin methods gap analysis"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.341955,
-      "lexical": 0.279815,
-      "source_quality": 0.55,
-      "section_relevance": 0.225753,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "CutFEM gap analysis",
-      "query_index": 3,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.290841,
-        "CutFEM gap analysis": 0.341955,
-        "Discontinuous Galerkin methods gap analysis": 0.260173,
-        "Crystal plasticity finite element method gap analysis": 0.290841
+        "Crystal plasticity finite element method": 0.2125,
+        "Applied element method": 0.2125,
+        "Céa's lemma": 0.62141
       }
     }
   }
