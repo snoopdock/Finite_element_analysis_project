@@ -13,8 +13,13 @@ from core.section_identity import normalize_sections
 from core.knowledge_graph import normalize_graph, validate_graph_references
 from core.graph_state import ensure_graph_state, empty_graph
 from core.retrieval_history_state import initialize_retrieval_history
+from core.domain_semantic_model import (
+    empty_domain_semantic_model,
+    normalize_domain_semantic_model,
+    validate_domain_semantic_model,
+)
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 
 def initialize_state(paths: Dict, config: Dict) -> Dict:
@@ -47,6 +52,10 @@ def initialize_state(paths: Dict, config: Dict) -> Dict:
     state["knowledge_graph_violations"] = validate_graph_references(
         state["knowledge_graph"]
     )
+    state["domain_semantic_model"] = normalize_domain_semantic_model(
+        state.get("domain_semantic_model")
+    )
+    validate_domain_semantic_model(state["domain_semantic_model"])
     state.setdefault("retrieval_report", _empty_retrieval_report())
     initialize_retrieval_history(state)
     state["schema_version"] = SCHEMA_VERSION
@@ -75,6 +84,8 @@ def _default_state(config: Dict) -> Dict:
         "knowledge_base": {},
         "knowledge_graph": empty_graph(),
         "knowledge_graph_violations": [],
+        "domain_semantic_model": empty_domain_semantic_model(),
+        "semantic_candidate_document_id": None,
         "sections": [],
         "processed_sources": [],
         "processed_sources_extracted": [],
@@ -97,6 +108,9 @@ def _migrate_state(state: Dict, from_version: int, to_version: int) -> Dict:
         from_version = 4
     if from_version < 5:
         state = _migrate_v4_to_v5(state)
+        from_version = 5
+    if from_version < 6:
+        state = _migrate_v5_to_v6(state)
     state["schema_version"] = to_version
     return state
 
@@ -139,6 +153,12 @@ def _migrate_v4_to_v5(state: Dict) -> Dict:
     graph.setdefault("concept_history", [])
     state["knowledge_graph"] = graph
     state["knowledge_graph_violations"] = []
+    return state
+
+
+def _migrate_v5_to_v6(state: Dict) -> Dict:
+    state.setdefault("domain_semantic_model", empty_domain_semantic_model())
+    state.setdefault("semantic_candidate_document_id", None)
     return state
 
 
@@ -216,6 +236,10 @@ def save_state(paths: Dict, state: Dict):
     state["knowledge_graph_violations"] = validate_graph_references(
         state["knowledge_graph"]
     )
+    state["domain_semantic_model"] = normalize_domain_semantic_model(
+        state.get("domain_semantic_model")
+    )
+    validate_domain_semantic_model(state["domain_semantic_model"])
     state.setdefault("retrieval_report", _empty_retrieval_report())
     initialize_retrieval_history(state)
     state["schema_version"] = SCHEMA_VERSION
