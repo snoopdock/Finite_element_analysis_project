@@ -1,5 +1,61 @@
 [
   {
+    "source_id": "arxiv_2412.17631v1",
+    "url": "https://arxiv.org/pdf/2412.17631v1.pdf",
+    "retrieved_at": "2026-10-03T19:50:12.938861+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "A $C^0$-continuous nonconforming virtual element method for linear strain gradient elasticity",
+    "authors": [
+      "Jianguo Huang",
+      "Yue Yu"
+    ],
+    "metadata": {
+      "abstract": "A robust $C^0$-continuous nonconforming virtual element method (VEM) is developed for a boundary value problem arising from strain gradient elasticity in two dimensions, with the family of polygonal meshes satisfying a very general geometric assumption given in Brezzi et al. (2009) and Chen and Huang (2018). The stability condition of the VEMs is derived by establishing Korn-type inequalities and inverse inequalities. Some crucial commutative relations for locking-free analysis as in elastic problems are derived. The sharp and uniform error estimates with respect to both the microscopic parameter and the Lamé coefficient are achieved in the lowest-order case, which is also verified by numerical results.",
+      "published": "2024-12-23T15:06:54Z",
+      "page_count": 27,
+      "word_count": 11290
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2412.17631v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "virtual element method finite element method",
+    "query_contexts": [
+      "virtual element method finite element method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.825865,
+      "lexical": 0.839445,
+      "source_quality": 0.85,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "virtual element method finite element method",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Cea's lemma finite element method": 0.2125,
+        "matrix form galerkin finite element method": 0.2125,
+        "virtual element method finite element method": 0.825865
+      }
+    }
+  },
+  {
     "source_id": "s2_0fb362f2f8848d66b6db1312e6826c995530007f",
     "url": "https://www.semanticscholar.org/paper/0fb362f2f8848d66b6db1312e6826c995530007f",
     "retrieved_at": "2026-10-03T19:48:54.000407+00:00",
@@ -225,9 +281,127 @@
     }
   },
   {
+    "source_id": "s2_61a7f483342d04391e78e641162e00e1f9512919",
+    "url": "https://www.semanticscholar.org/paper/61a7f483342d04391e78e641162e00e1f9512919",
+    "retrieved_at": "2026-10-03T19:50:12.938861+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "matrix form galerkin finite element method",
+    "source_type": "academic",
+    "content_type": "text/plain",
+    "title": "A Least Square Based Weak Galerkin Finite Element Method for Second Order Elliptic Equations in Non-Divergence Form",
+    "authors": [
+      "P. Zhu",
+      "Xiao-Shen Wang"
+    ],
+    "metadata": {
+      "abstract": "",
+      "year": 2020,
+      "citation_count": 4,
+      "word_count": 0,
+      "page_count": null,
+      "open_access_pdf_available": false,
+      "full_text_available": false,
+      "full_text_status": "abstract_only"
+    },
+    "full_text_path": null,
+    "status": "abstract_only",
+    "query_contexts": [
+      "matrix form galerkin finite element method"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.62141,
+      "lexical": 0.55963,
+      "source_quality": 0.85,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "matrix form galerkin finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.580519,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Cea's lemma finite element method": 0.2125,
+        "matrix form galerkin finite element method": 0.62141,
+        "virtual element method finite element method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "s2_92f32942c159733caebd3e7a815bb4caad963577",
+    "url": "https://www.semanticscholar.org/paper/92f32942c159733caebd3e7a815bb4caad963577",
+    "retrieved_at": "2026-10-03T19:50:12.938861+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "matrix form galerkin finite element method",
+    "source_type": "academic",
+    "content_type": "text/plain",
+    "title": "A Least Square Based Weak Galerkin Finite Element Method for Second Order Elliptic Equations in Non-Divergence Form",
+    "authors": [
+      "P. Zhu",
+      "Xiao-Shen Wang"
+    ],
+    "metadata": {
+      "abstract": "",
+      "year": 2020,
+      "citation_count": 0,
+      "word_count": 0,
+      "page_count": null,
+      "open_access_pdf_available": false,
+      "full_text_available": false,
+      "full_text_status": "abstract_only"
+    },
+    "full_text_path": null,
+    "status": "abstract_only",
+    "query_contexts": [
+      "matrix form galerkin finite element method"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.62141,
+      "lexical": 0.55963,
+      "source_quality": 0.85,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "matrix form galerkin finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.580519,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Cea's lemma finite element method": 0.2125,
+        "matrix form galerkin finite element method": 0.62141,
+        "virtual element method finite element method": 0.2125
+      }
+    }
+  },
+  {
     "source_id": "wiki_c_a_s_lemma",
     "url": "https://en.wikipedia.org/wiki/Céa's_lemma",
-    "retrieved_at": "2026-10-03T19:48:54.000407+00:00",
+    "retrieved_at": "2026-10-03T19:50:12.938861+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Céa's lemma",
@@ -271,8 +445,8 @@
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
         "Cea's lemma finite element method": 0.54641,
-        "Loubignac iteration finite element method": 0.1375,
-        "scaled boundary finite element method": 0.1375
+        "matrix form galerkin finite element method": 0.1375,
+        "virtual element method finite element method": 0.1375
       }
     }
   },
