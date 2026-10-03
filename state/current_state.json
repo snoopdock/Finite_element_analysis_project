@@ -2,10 +2,10 @@
   "schema_version": 6,
   "topic": "Finite Element Method Theory Implementation and Modeling Rules",
   "objective": "Produce a comprehensive technical guideline explaining how the Finite Element Method works\nincluding mathematical foundation, step-by-step procedure, and rules for modeling physical phenomena.\n",
-  "cycle": 3,
-  "iteration": 3,
-  "last_run": "2026-10-03T19:50:43.228971+00:00",
-  "last_run_status": "partial",
+  "cycle": 4,
+  "iteration": 4,
+  "last_run": "2026-10-03T19:52:09.473105+00:00",
+  "last_run_status": "success",
   "knowledge_base": {
     "concepts": [
       {
@@ -43,6 +43,24 @@
           "wiki_loubignac_iteration"
         ],
         "concept_id": "09a11d59-9ec4-4d0e-8887-1b2e3e57cf2e"
+      },
+      {
+        "name": "Weak Formulation",
+        "explanation": "The weak formulation transforms partial differential equations (PDEs) into integral equations by multiplying with test functions and integrating over the domain. This approach reduces the smoothness requirements for solutions, enabling the use of piecewise polynomial basis functions. It forms the foundation for the Galerkin method in finite element analysis. The weak form ensures compatibility with numerical integration and handles complex geometries more effectively.",
+        "mathematical_formulation": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "concept_id": "ebaf7307-0636-438a-8b61-766fc3157f09"
+      },
+      {
+        "name": "High-Degree Polynomial Basis Functions",
+        "explanation": "Finite element methods employ high-degree polynomials as basis functions to achieve higher accuracy. These functions, such as Lagrange polynomials or Chebyshev polynomials, allow for exponential error reduction with increasing polynomial order. They enable efficient representation of solutions with fewer degrees of freedom compared to traditional low-order elements. The choice of basis functions affects the conditioning of the stiffness matrix and the efficiency of numerical integration.",
+        "mathematical_formulation": "u_h(x) = \\sum_{i=1}^{N} N_i(x) u_i",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "concept_id": "556948d2-2e33-4776-9a9e-941da0a820ce"
       }
     ],
     "procedures": [
@@ -83,6 +101,42 @@
           "wiki_c_a_s_lemma"
         ],
         "proposition_id": "e7d000f0-929e-45ec-a2b9-1edda10c82e4"
+      },
+      {
+        "step_number": 1,
+        "title": "Mesh Discretization",
+        "description": "The domain is divided into discrete elements, defining nodes and connectivity. This process creates a computational grid that approximates the geometry. The quality of the mesh influences the accuracy and stability of the solution. For spectral elements, non-uniform node distributions (e.g., Legendre-Gauss-Lobatto points) are used to optimize integration and mass matrix properties.",
+        "equations": [
+          "\\Omega = \\bigcup_{e=1}^{E} \\Omega_e"
+        ],
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "proposition_id": "f971edbb-23e4-4464-8009-15881f8421f2"
+      },
+      {
+        "step_number": 2,
+        "title": "Local Basis Function Construction",
+        "description": "Element-specific basis functions are defined over each subdomain. These functions interpolate solution values at nodal points. For spectral elements, high-order Lagrange polynomials are constructed using orthogonal collocation points. The basis functions ensure continuity across elements while maintaining local support for efficient computation.",
+        "equations": [
+          "N_i(x_j) = \\delta_{ij} \\quad \\text{for } x_j \\in \\Omega_e"
+        ],
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "proposition_id": "aba2a68c-9e0b-4305-bea2-4de873e7f679"
+      },
+      {
+        "step_number": 3,
+        "title": "Stiffness Matrix Assembly",
+        "description": "Element-level integrals are computed and assembled into a global system of equations. The Galerkin method projects the weak form onto the discrete basis space. Numerical integration (e.g., Gauss-Lobatto quadrature) is applied to evaluate stiffness and mass matrices. This step couples degrees of freedom across the domain.",
+        "equations": [
+          "K_{ij} = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\nabla N_i \\cdot \\nabla N_j \\, d\\Omega"
+        ],
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "proposition_id": "3872f657-530f-4f17-8f6d-16a04b792ea4"
       }
     ],
     "equations": [
@@ -130,6 +184,24 @@
           "wiki_c_a_s_lemma"
         ],
         "proposition_id": "5d4217a7-813c-492e-97ee-eb5fd23bb694"
+      },
+      {
+        "name": "Poisson Equation Weak Form",
+        "latex": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma",
+        "explanation": "This equation represents the weak form of the Poisson equation. The left-hand side computes the inner product of gradients for the solution $u$ and test function $v$. The right-hand side includes the source term $f$ and Neumann boundary conditions $g$. Integration over the domain $\\Omega$ and boundary $\\partial\\Omega$ ensures global balance.",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "proposition_id": "b7687293-0721-4e64-9efd-ef6e7e5e73c3"
+      },
+      {
+        "name": "Stiffness Matrix Assembly",
+        "latex": "K_{ij} = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\nabla N_i \\cdot \\nabla N_j \\, d\\Omega",
+        "explanation": "The stiffness matrix $K$ is assembled by summing element contributions. Each entry $K_{ij}$ corresponds to the integral of the product of gradients of basis functions $N_i$ and $N_j$ over element $\\Omega_e$. This matrix encodes the system's physical properties and governs the solution's behavior.",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "proposition_id": "22af8049-7c21-4a7b-9e47-d05c1a8d52ae"
       }
     ],
     "rules": [
@@ -156,6 +228,22 @@
           "wiki_c_a_s_lemma"
         ],
         "proposition_id": "5c4720fc-d543-499d-b3f2-f0d4cc1b3bc9"
+      },
+      {
+        "rule": "Mesh Size and Polynomial Order Trade-off",
+        "explanation": "Higher polynomial orders reduce discretization error more rapidly than mesh refinement. However, very high orders may increase computational costs and numerical instability. The method's robustness to mesh size and polynomial order (up to 32) ensures reliable performance across diverse applications.",
+        "source_ids": [
+          "arxiv_1512.02390v2"
+        ],
+        "proposition_id": "4224c6a9-1fb2-4255-9fce-f0ccc3bdb2b9"
+      },
+      {
+        "rule": "Basis Function Orthogonality",
+        "explanation": "Using orthogonal basis functions (e.g., Chebyshev or Legendre polynomials) minimizes stiffness matrix conditioning issues. This property simplifies numerical integration and improves solution convergence rates, especially for spectral elements.",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "proposition_id": "9a2b5bba-6091-45e6-9451-bd8ec0a397a0"
       }
     ]
   },
@@ -200,6 +288,28 @@
         "type": "concept",
         "source_ids": [
           "wiki_loubignac_iteration"
+        ],
+        "status": "active",
+        "parent_concept_ids": [],
+        "aliases": []
+      },
+      "ebaf7307-0636-438a-8b61-766fc3157f09": {
+        "concept_id": "ebaf7307-0636-438a-8b61-766fc3157f09",
+        "name": "Weak Formulation",
+        "type": "concept",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "status": "active",
+        "parent_concept_ids": [],
+        "aliases": []
+      },
+      "556948d2-2e33-4776-9a9e-941da0a820ce": {
+        "concept_id": "556948d2-2e33-4776-9a9e-941da0a820ce",
+        "name": "High-Degree Polynomial Basis Functions",
+        "type": "concept",
+        "source_ids": [
+          "wiki_spectral_element_method"
         ],
         "status": "active",
         "parent_concept_ids": [],
@@ -385,7 +495,10 @@
         "method": "",
         "approximation": [],
         "scope": "",
-        "scope_notes": ""
+        "scope_notes": "",
+        "candidate_concept_ids": [
+          "ebaf7307-0636-438a-8b61-766fc3157f09"
+        ]
       },
       "3640d967-66d6-41ab-a358-edccb1a11cfb": {
         "proposition_id": "3640d967-66d6-41ab-a358-edccb1a11cfb",
@@ -639,6 +752,258 @@
         "approximation": [],
         "scope": "",
         "scope_notes": ""
+      },
+      "b7687293-0721-4e64-9efd-ef6e7e5e73c3": {
+        "proposition_id": "b7687293-0721-4e64-9efd-ef6e7e5e73c3",
+        "statement": "Poisson Equation Weak Form",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "equation",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "22af8049-7c21-4a7b-9e47-d05c1a8d52ae": {
+        "proposition_id": "22af8049-7c21-4a7b-9e47-d05c1a8d52ae",
+        "statement": "Stiffness Matrix Assembly",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "equation",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "4224c6a9-1fb2-4255-9fce-f0ccc3bdb2b9": {
+        "proposition_id": "4224c6a9-1fb2-4255-9fce-f0ccc3bdb2b9",
+        "statement": "Mesh Size and Polynomial Order Trade-off",
+        "concept_ids": [],
+        "source_ids": [
+          "arxiv_1512.02390v2"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "rule",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "9a2b5bba-6091-45e6-9451-bd8ec0a397a0": {
+        "proposition_id": "9a2b5bba-6091-45e6-9451-bd8ec0a397a0",
+        "statement": "Basis Function Orthogonality",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "rule",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "f971edbb-23e4-4464-8009-15881f8421f2": {
+        "proposition_id": "f971edbb-23e4-4464-8009-15881f8421f2",
+        "statement": "Mesh Discretization",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "procedure",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "aba2a68c-9e0b-4305-bea2-4de873e7f679": {
+        "proposition_id": "aba2a68c-9e0b-4305-bea2-4de873e7f679",
+        "statement": "Local Basis Function Construction",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "procedure",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "3872f657-530f-4f17-8f6d-16a04b792ea4": {
+        "proposition_id": "3872f657-530f-4f17-8f6d-16a04b792ea4",
+        "statement": "Stiffness Matrix Assembly",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "procedure",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
       }
     },
     "relationships": {},
@@ -678,6 +1043,24 @@
         "type": "concept",
         "source_ids": [
           "wiki_loubignac_iteration"
+        ]
+      },
+      {
+        "event": "concept_discovered",
+        "concept_id": "ebaf7307-0636-438a-8b61-766fc3157f09",
+        "name": "Weak Formulation",
+        "type": "concept",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ]
+      },
+      {
+        "event": "concept_discovered",
+        "concept_id": "556948d2-2e33-4776-9a9e-941da0a820ce",
+        "name": "High-Degree Polynomial Basis Functions",
+        "type": "concept",
+        "source_ids": [
+          "wiki_spectral_element_method"
         ]
       }
     ],
@@ -790,6 +1173,69 @@
           "wiki_c_a_s_lemma"
         ],
         "framework": ""
+      },
+      {
+        "proposition_id": "22af8049-7c21-4a7b-9e47-d05c1a8d52ae",
+        "event": "discovered",
+        "fingerprint": "c62e0f5455bbf152",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "3872f657-530f-4f17-8f6d-16a04b792ea4",
+        "event": "discovered",
+        "fingerprint": "c62e0f5455bbf152",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "4224c6a9-1fb2-4255-9fce-f0ccc3bdb2b9",
+        "event": "discovered",
+        "fingerprint": "0bb5d1c461cf3d9b",
+        "source_ids": [
+          "arxiv_1512.02390v2"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "9a2b5bba-6091-45e6-9451-bd8ec0a397a0",
+        "event": "discovered",
+        "fingerprint": "2d5020b0627855a7",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "aba2a68c-9e0b-4305-bea2-4de873e7f679",
+        "event": "discovered",
+        "fingerprint": "3882073ea7af28a4",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "b7687293-0721-4e64-9efd-ef6e7e5e73c3",
+        "event": "discovered",
+        "fingerprint": "7ed7343f34336c10",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "f971edbb-23e4-4464-8009-15881f8421f2",
+        "event": "discovered",
+        "fingerprint": "adee1cad96fa6657",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "framework": ""
       }
     ]
   },
@@ -851,6 +1297,28 @@
           "wiki_c_a_s_lemma"
         ],
         "status": "candidate"
+      },
+      "EQC-b667ad9de6e119baa2ae": {
+        "candidate_id": "EQC-b667ad9de6e119baa2ae",
+        "fingerprint": "b667ad9de6e119baa2aeb8263ece5d56c456a8c338c59ee07640c25ef33aea7b",
+        "name": "Poisson Equation Weak Form",
+        "expression": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma",
+        "meaning": "This equation represents the weak form of the Poisson equation. The left-hand side computes the inner product of gradients for the solution $u$ and test function $v$. The right-hand side includes the source term $f$ and Neumann boundary conditions $g$. Integration over the domain $\\Omega$ and boundary $\\partial\\Omega$ ensures global balance.",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "status": "candidate"
+      },
+      "EQC-635d13bfe891e11d4157": {
+        "candidate_id": "EQC-635d13bfe891e11d4157",
+        "fingerprint": "635d13bfe891e11d41578bba001141caf9125e9b34676e19c1d588a8388b8fd3",
+        "name": "Stiffness Matrix Assembly",
+        "expression": "K_{ij} = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\nabla N_i \\cdot \\nabla N_j \\, d\\Omega",
+        "meaning": "The stiffness matrix $K$ is assembled by summing element contributions. Each entry $K_{ij}$ corresponds to the integral of the product of gradients of basis functions $N_i$ and $N_j$ over element $\\Omega_e$. This matrix encodes the system's physical properties and governs the solution's behavior.",
+        "source_ids": [
+          "wiki_spectral_element_method"
+        ],
+        "status": "candidate"
       }
     },
     "equations": {}
@@ -880,14 +1348,17 @@
     },
     {
       "title": "Rules for Modeling Physical Phenomena with FEM",
-      "content": "The Primal Finite Element Method relies on direct discretization of primary variables without additional fields, resulting in a simpler but less robust approach for certain physical phenomena. This method is termed 'irreducible' and typically uses symmetric positive definite systems, as shown in equation $\\mathbf{K} \\mathbf{u} = \\mathbf{f}$ [wiki_mixed_finite_element_method]. However, primal finite element methods face challenges in problems with constraints or incompressibility, where mixed formulations excel [wiki_mixed_finite_element_method]. As a result, mixed finite elements are preferred for incompressible materials to prevent numerical locking and ensure stability and accuracy [wiki_mixed_finite_element_method].\n\nThe mixed finite element method offers several advantages over the primal finite element method, particularly in problems involving incompressibility or constraints. By introducing additional fields and using Lagrange multipliers to enforce constraints, mixed formulations can efficiently solve numerically ill-posed problems, such as almost incompressible elasticity. This is achieved through a saddle point system, which arises in mixed formulations and consists of a non-definite matrix structure. The mixed finite element method prevents numerical locking in nearly incompressible problems by decoupling stress and strain fields, ensuring stability and accuracy where primal methods fail due to rank deficiency.\n\nCéa's Lemma provides a theoretical foundation for analyzing errors in finite element methods applied to elliptic partial differential equations, establishing that the discrete solution in a finite-dimensional subspace approximates the true solution in a Hilbert space [wiki_c_a_s_lemma]. This concept is critical for proving convergence and stability of finite element approximations. In contrast, Loubignac iteration is an iterative finite element method designed to produce a continuous stress field, particularly useful in problems requiring smooth stress distributions, such as in solid mechanics [wiki_loubignac_iteration]. When dealing with problems involving incompressibility or constraints, the mixed finite element method offers several advantages over the primal finite element method, as it introduces additional fields and uses Lagrange multipliers to enforce constraints, resulting in a saddle point system with non-definite matrices [wiki_mixed_finite_element_method].",
+      "content": "The Primal Finite Element Method relies on direct discretization of primary variables without additional fields, resulting in a simpler but less robust approach for certain physical phenomena. This method is termed 'irreducible' and typically uses symmetric positive definite systems. However, it faces challenges in problems with constraints or incompressibility, where mixed formulations excel. The primal approach is less suitable for problems requiring efficient solutions for numerically ill-posed problems, such as almost incompressible elasticity.\n\nThe assembly of the stiffness matrix $K$ is a critical step in the Finite Element Method (FEM), as it encodes the system's physical properties and governs the solution's behavior. The matrix is assembled by summing element contributions, where each entry $K_{ij}$ corresponds to the integral of the product of gradients of basis functions $N_i$ and $N_j$ over element $\\Omega_e$. This process involves computing element-level integrals and assembling them into a global system of equations, which couples degrees of freedom across the domain [wiki_spectral_element_method]. The choice of basis functions, such as high-degree polynomials, affects the conditioning of the stiffness matrix and the efficiency of numerical integration [wiki_spectral_element_method].\n\nIn contrast to the Primal Finite Element Method, the Mixed Finite Element Method introduces additional fields to solve partial differential equations, constrained using Lagrange multipliers to enable efficient solutions for numerically ill-posed problems like almost incompressible elasticity. This method results in a saddle point system with non-definite matrices, requiring specialized solvers. The mixed formulation prevents numerical locking in nearly incompressible problems by decoupling stress and strain fields, ensuring stability and accuracy where primal methods fail due to rank deficiency [wiki_mixed_finite_element_method].",
       "key_equations": [
-        "\\mathbf{K} \\mathbf{u} = \\mathbf{f}"
+        "K",
+        "K_{ij}",
+        "N_i",
+        "N_j",
+        "\\Omega_e"
       ],
       "citations_used": [
-        "wiki_c_a_s_lemma",
-        "wiki_loubignac_iteration",
-        "wiki_mixed_finite_element_method"
+        "wiki_mixed_finite_element_method",
+        "wiki_spectral_element_method"
       ],
       "section_id": "886e8411-9702-45ed-b8de-f324d1e883c3",
       "parent_section_ids": [],
@@ -896,14 +1367,14 @@
     },
     {
       "title": "Verification, Validation, and Best Practices",
-      "content": "Verification techniques for finite element methods involve ensuring that the numerical solution accurately represents the physical phenomenon being modeled. Céa's Lemma provides a theoretical foundation for analyzing errors in finite element methods applied to elliptic partial differential equations, establishing that the discrete solution in a finite-dimensional subspace approximates the true solution in a Hilbert space. In contrast, validation techniques assess the accuracy and reliability of the numerical solution by comparing it with experimental data or analytical solutions. For example, mixed finite element methods, which introduce additional fields to solve partial differential equations, have been shown to prevent numerical locking in nearly incompressible problems by decoupling stress and strain fields. This is achieved through a saddle point system with non-definite matrices, requiring specialized solvers.\n\nCéa's Lemma provides a theoretical foundation for analyzing errors in finite element methods applied to elliptic partial differential equations. It establishes that the discrete solution in a finite-dimensional subspace approximates the true solution in a Hilbert space, relying on the properties of continuity and coercivity of the bilinear form. This concept is critical for proving convergence and stability of finite element approximations. By leveraging Céa's Lemma, finite element practitioners can optimize their solutions and ensure the accuracy of their numerical simulations. Furthermore, the Loubignac iteration, an iterative finite element method, can be employed to produce a continuous stress field, particularly useful in problems requiring smooth stress distributions. This iterative approach refines solutions to satisfy equilibrium and compatibility conditions, contributing to improving the accuracy of stress approximations in finite element analysis.\n\nThe mixed finite element method offers a robust approach for solving elliptic partial differential equations, particularly in problems involving incompressibility or constraints. This method introduces additional fields to decouple stress and strain fields, preventing numerical locking and ensuring stability and accuracy. In contrast, primal finite element methods rely on direct discretization of primary variables without additional fields, resulting in a simpler but less robust approach. The weak formulation of elliptic PDEs, as represented by the equation $\\int_{\\Omega} \\alpha \\nabla \\Phi \\cdot \\nabla v \\, d\\Omega + \\int_{\\Gamma} \\sigma \\Phi v \\, d\\Gamma = \\int_{\\Omega} f v \\, d\\Omega$ [arxiv_1902.01090v2], forms the basis for assembling the global stiffness matrix. The mixed finite element method results in a saddle point system with non-definite matrices, requiring specialized solvers, as shown by the equation $\\begin{cases} \\mathbf{K} \\mathbf{u} + \\mathbf{B}^T \\boldsymbol{\\lambda} = \\mathbf{f} \\\\ \\mathbf{B} \\mathbf{u} = \\mathbf{0} \\end{cases}$ [wiki_mixed_finite_element_method].",
+      "content": "Verification and validation are crucial steps in the finite element method, ensuring that the numerical solution accurately represents the physical phenomenon being modeled. Céa's Lemma provides a theoretical foundation for analyzing errors in finite element methods, establishing that the discrete solution approximates the true solution in a Hilbert space. However, certain physical phenomena, such as incompressible materials, pose challenges to primal finite element methods, which solve PDEs without additional fields. In these cases, mixed finite element methods, which introduce additional fields constrained using Lagrange multipliers, offer a more robust approach, as evident from the mixed formulation: $\\begin{cases} \\mathbf{K} \\mathbf{u} + \\mathbf{B}^T \\boldsymbol{\\lambda} = \\mathbf{f} \\\\ \\mathbf{B} \\mathbf{u} = \\mathbf{0} \\end{cases}$ [wiki_mixed_finite_element_method].\n\nThe mixed finite element method is a crucial approach for implementing finite element methods, particularly in problems involving incompressible materials. By introducing additional fields to solve partial differential equations, mixed formulations decouple stress and strain fields, preventing numerical locking and ensuring stability and accuracy. This is achieved through the use of Lagrange multipliers, which constrain the additional fields and result in a saddle point system with non-definite matrices. Hybrid methods further refine this by enforcing continuity weakly through boundary Lagrange fields, reducing degrees of freedom and eliminating negative pivots from mixed formulations. As a result, mixed elements are essential for modeling incompressible materials, and hybrid methods provide an efficient and robust approach for solving such problems.\n\nAnalyzing error estimates and convergence rates using Céa's Lemma is crucial for verifying the accuracy of finite element solutions. Céa's Lemma provides a theoretical foundation for establishing the relationship between the discrete solution and the true solution in a Hilbert space, as stated in [wiki_c_a_s_lemma]. By leveraging the properties of continuity and coercivity of the bilinear form, Céa's Lemma ensures the existence and uniqueness of solutions, thereby facilitating the analysis of convergence rates. Furthermore, the choice of basis functions, such as high-degree polynomials, significantly impacts the efficiency of numerical integration and the conditioning of the stiffness matrix, as discussed in [wiki_spectral_element_method]. This is particularly relevant when employing high-degree polynomial basis functions, which enable exponential error reduction with increasing polynomial order, as demonstrated in [arxiv_1512.02390v2].",
       "key_equations": [
-        "\\int_{\\Omega} \\alpha \\nabla \\Phi \\cdot \\nabla v \\, d\\Omega + \\int_{\\Gamma} \\sigma \\Phi v \\, d\\Gamma = \\int_{\\Omega} f v \\, d\\Omega",
         "\\begin{cases} \\mathbf{K} \\mathbf{u} + \\mathbf{B}^T \\boldsymbol{\\lambda} = \\mathbf{f} \\\\ \\mathbf{B} \\mathbf{u} = \\mathbf{0} \\end{cases}"
       ],
       "citations_used": [
-        "arxiv_1902.01090v2",
-        "wiki_mixed_finite_element_method"
+        "wiki_c_a_s_lemma",
+        "wiki_mixed_finite_element_method",
+        "wiki_spectral_element_method"
       ],
       "section_id": "4c334faa-7b66-450d-be76-dd27c05dd1ef",
       "parent_section_ids": [],
@@ -912,16 +1383,11 @@
     },
     {
       "title": "Introduction and Scope of the Finite Element Method",
-      "content": "The Primal Finite Element Method is a foundation for direct discretization, relying on the direct discretization of primary variables without additional fields. This approach is termed 'irreducible' and typically uses symmetric positive definite systems. However, primal finite element methods face challenges in problems with constraints or incompressibility, where mixed formulations excel. The limitations of primal methods are evident in their inability to prevent numerical locking in nearly incompressible problems, as opposed to mixed finite elements which decouple stress and strain fields.\n\nCéa's Lemma provides a theoretical foundation for analyzing errors in finite element methods applied to elliptic partial differential equations. It establishes that the discrete solution in a finite-dimensional subspace approximates the true solution in a Hilbert space, relying on the properties of continuity and coercivity of the bilinear form. This concept is critical for proving convergence and stability of finite element approximations, as demonstrated by the mathematical framework: Let $ V $ be a Hilbert space with norm $ \\|\\cdot\\| $. For a bilinear form $ a: V \\times V \\to \\mathbb{R} $ satisfying $ |a(v, w)| \\leq \\gamma \\|v\\| \\|w\\| $ (continuity) and $ a(v, v) \\geq \\alpha \\|v\\|^2 $ (coercivity), and a bounded linear functional $ L: V \\to \\mathbb{R} $, the solution $ u \\in V $ to $ a(u, v) = L(v) $ for all $ v \\in V $ is approximated by $ u_h \\in V_h $, a subspace of $ V $ [wiki_c_a_s_lemma].\n\nThe mixed finite element method is particularly useful in problems requiring smooth stress distributions, such as in solid mechanics, where it can prevent numerical locking in nearly incompressible problems by decoupling stress and strain fields. This is achieved by introducing additional fields to solve partial differential equations, contrasting with primal methods, and constrained using Lagrange multipliers. The resulting saddle point system, $\\begin{bmatrix} \\mathbf{K} & \\mathbf{B}^T \\\\ \\mathbf{B} & \\mathbf{0} \\end{bmatrix} \\begin{bmatrix} \\mathbf{u} \\\\ \\boldsymbol{\\lambda} \\end{bmatrix} = \\begin{bmatrix} \\mathbf{f} \\\\ \\mathbf{0} \\end{bmatrix}$, arises in mixed formulations and requires specialized solvers. In such cases, Loubignac iteration can be employed to iteratively refine solutions and satisfy equilibrium and compatibility conditions, improving the accuracy of stress approximations in finite element analysis.",
-      "key_equations": [
-        "V",
-        "\\|\\cdot\\|",
-        "a: V \\times V \\to \\mathbb{R}",
-        "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
-        "a(v, v) \\geq \\alpha \\|v\\|^2"
-      ],
+      "content": "The Primal Finite Element Method is a foundation for direct discretization, relying on the direct discretization of primary variables without additional fields. This approach is termed 'irreducible' and typically uses symmetric positive definite systems. The method faces challenges in problems with constraints or incompressibility, where mixed formulations excel. For instance, the mixed finite element method introduces additional fields to solve partial differential equations, contrasting with primal methods, and results in a saddle point system with non-definite matrices. This is particularly useful in problems requiring efficient solutions for numerically ill-posed problems like almost incompressible elasticity, where mixed finite elements prevent numerical locking in nearly incompressible problems by decoupling stress and strain fields.\n\nCéa's Lemma provides a theoretical foundation for analyzing errors in finite element methods applied to elliptic partial differential equations. It establishes that the discrete solution in a finite-dimensional subspace approximates the true solution in a Hilbert space. The lemma relies on the properties of continuity and coercivity of the bilinear form, ensuring the existence and uniqueness of solutions. This concept is critical for proving convergence and stability of finite element approximations. According to Céa's Lemma, the error between the discrete and true solutions is bounded by the difference between the discrete and true solutions, which is a function of the mesh size and the polynomial order. The trade-off between mesh size and polynomial order is a crucial aspect of finite element methods, as higher polynomial orders reduce discretization error more rapidly than mesh refinement, but may increase computational costs and numerical instability [arxiv_1512.02390v2].\n\nThe advanced finite element methods, such as the Mixed Finite Element Method and Loubignac Iteration, offer improved solutions for complex physical phenomena. The Mixed Finite Element Method introduces additional fields to solve partial differential equations, contrasting with primal methods, and results in a saddle point system with non-definite matrices, requiring specialized solvers [wiki_mixed_finite_element_method]. This approach is particularly useful in problems requiring smooth stress distributions, such as in solid mechanics, where Loubignac Iteration can iteratively refine solutions to satisfy equilibrium and compatibility conditions, contributing to improving the accuracy of stress approximations in finite element analysis [wiki_loubignac_iteration]. By decoupling stress and strain fields, mixed finite elements prevent numerical locking in nearly incompressible problems, ensuring stability and accuracy where primal methods fail due to rank deficiency [wiki_mixed_finite_element_method].",
+      "key_equations": [],
       "citations_used": [
-        "wiki_c_a_s_lemma"
+        "wiki_loubignac_iteration",
+        "wiki_mixed_finite_element_method"
       ],
       "section_id": "5b1f82f1-eb16-4194-ac8e-49fc18ff762a",
       "parent_section_ids": [],
@@ -931,24 +1397,32 @@
   ],
   "processed_sources": [
     "arxiv_1509.00440v1",
+    "arxiv_1512.02390v2",
     "arxiv_1902.01090v2",
     "arxiv_2412.17631v1",
+    "arxiv_2511.22320v1",
     "arxiv_astro_ph_0510346v1",
+    "arxiv_cs_0609119v2",
     "s2_0fb362f2f8848d66b6db1312e6826c995530007f",
     "s2_4e7432623a977f5f79172d5eb5d9435ce62007d3",
     "s2_61a7f483342d04391e78e641162e00e1f9512919",
     "s2_92f32942c159733caebd3e7a815bb4caad963577",
     "wiki_c_a_s_lemma",
     "wiki_loubignac_iteration",
-    "wiki_mixed_finite_element_method"
+    "wiki_mixed_finite_element_method",
+    "wiki_spectral_element_method"
   ],
   "processed_sources_extracted": [
     "arxiv_1509.00440v1",
+    "arxiv_1512.02390v2",
     "arxiv_1902.01090v2",
+    "arxiv_2511.22320v1",
     "arxiv_astro_ph_0510346v1",
+    "arxiv_cs_0609119v2",
     "wiki_c_a_s_lemma",
     "wiki_loubignac_iteration",
-    "wiki_mixed_finite_element_method"
+    "wiki_mixed_finite_element_method",
+    "wiki_spectral_element_method"
   ],
   "iteration_history_data": {
     "audits": {
@@ -961,14 +1435,17 @@
       "886e8411-9702-45ed-b8de-f324d1e883c3": [
         true,
         true,
+        true,
         true
       ],
       "4c334faa-7b66-450d-be76-dd27c05dd1ef": [
         true,
         true,
+        true,
         true
       ],
       "5b1f82f1-eb16-4194-ac8e-49fc18ff762a": [
+        true,
         true,
         true
       ],
@@ -979,17 +1456,17 @@
     "anomalies": {
       "transition:e8b76c86-b60e-492e-af9d-cffae6ee7d28:2e9fa249-72f5-481b-90b4-4ea081af256b": 0,
       "transition:2e9fa249-72f5-481b-90b4-4ea081af256b:886e8411-9702-45ed-b8de-f324d1e883c3": 0,
-      "transition:886e8411-9702-45ed-b8de-f324d1e883c3:4c334faa-7b66-450d-be76-dd27c05dd1ef": 1,
-      "transition:47d05e64-0df4-4912-ab1f-f0021d62559f:886e8411-9702-45ed-b8de-f324d1e883c3": 2,
-      "transition:4c334faa-7b66-450d-be76-dd27c05dd1ef:5b1f82f1-eb16-4194-ac8e-49fc18ff762a": 2
+      "transition:886e8411-9702-45ed-b8de-f324d1e883c3:4c334faa-7b66-450d-be76-dd27c05dd1ef": 2,
+      "transition:47d05e64-0df4-4912-ab1f-f0021d62559f:886e8411-9702-45ed-b8de-f324d1e883c3": 3,
+      "transition:4c334faa-7b66-450d-be76-dd27c05dd1ef:5b1f82f1-eb16-4194-ac8e-49fc18ff762a": 3
     },
     "anomaly_counts": {
       "transition:e8b76c86-b60e-492e-af9d-cffae6ee7d28:2e9fa249-72f5-481b-90b4-4ea081af256b": 0,
       "transition:2e9fa249-72f5-481b-90b4-4ea081af256b:886e8411-9702-45ed-b8de-f324d1e883c3": 0,
-      "transition:886e8411-9702-45ed-b8de-f324d1e883c3:4c334faa-7b66-450d-be76-dd27c05dd1ef": 1,
+      "transition:886e8411-9702-45ed-b8de-f324d1e883c3:4c334faa-7b66-450d-be76-dd27c05dd1ef": 2,
       "merge:e8b76c86-b60e-492e-af9d-cffae6ee7d28:2e9fa249-72f5-481b-90b4-4ea081af256b": 0,
-      "transition:47d05e64-0df4-4912-ab1f-f0021d62559f:886e8411-9702-45ed-b8de-f324d1e883c3": 2,
-      "transition:4c334faa-7b66-450d-be76-dd27c05dd1ef:5b1f82f1-eb16-4194-ac8e-49fc18ff762a": 2
+      "transition:47d05e64-0df4-4912-ab1f-f0021d62559f:886e8411-9702-45ed-b8de-f324d1e883c3": 3,
+      "transition:4c334faa-7b66-450d-be76-dd27c05dd1ef:5b1f82f1-eb16-4194-ac8e-49fc18ff762a": 3
     },
     "section_titles": {
       "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method": "e8b76c86-b60e-492e-af9d-cffae6ee7d28",
@@ -1001,25 +1478,26 @@
     }
   },
   "convergence_diagnostics": {
-    "eta_variance": 0.009879999999999993,
+    "eta_variance": 0.01468000000000001,
     "invariant_violations": 0,
     "adjust_actions": 0,
     "consecutive_clean_cycles": 0,
     "incomplete_sections": 0,
-    "unstable_sections": 4,
-    "reading_coverage": 20.0,
-    "citation_coverage": 93.3,
+    "unstable_sections": 2,
+    "reading_coverage": 25.0,
+    "citation_coverage": 41.7,
     "lexical_support_coverage": 0.0,
     "invalid_citation_sections": 0,
     "converged": false,
     "reasons": [
       "all_sections_stable",
-      "sufficient_reading"
+      "sufficient_reading",
+      "sufficient_citations"
     ]
   },
   "retrieval_report": {
     "status": "partial_failure",
-    "retrieved_at": "2026-10-03T19:50:12.938861+00:00",
+    "retrieved_at": "2026-10-03T19:51:37.691139+00:00",
     "query_count": 6,
     "providers": {
       "arxiv": {
@@ -1028,12 +1506,6 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "Cea's lemma finite element method",
-            "provider": "arxiv"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
             "query": "finite element method mathematical foundation weak form Galerkin method",
             "provider": "arxiv"
           },
@@ -1052,13 +1524,19 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "matrix form galerkin finite element method",
+            "query": "galerkin dimension reduction finite element method",
             "provider": "arxiv"
           },
           {
             "status": "success",
             "returned_records": 2,
-            "query": "virtual element method finite element method",
+            "query": "hpk-fem finite element method",
+            "provider": "arxiv"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "spectral element method finite element method",
             "provider": "arxiv"
           }
         ],
@@ -1066,16 +1544,8 @@
         "returned_records": 12
       },
       "semantic_scholar": {
-        "status": "partial_failure",
+        "status": "rate_limited",
         "attempts": [
-          {
-            "status": "rate_limited",
-            "provider": "semantic_scholar",
-            "query": "Cea's lemma finite element method",
-            "requested_results": 2,
-            "http_status": 429,
-            "returned_records": 0
-          },
           {
             "status": "rate_limited",
             "provider": "semantic_scholar",
@@ -1101,25 +1571,32 @@
             "returned_records": 0
           },
           {
-            "status": "success",
+            "status": "rate_limited",
             "provider": "semantic_scholar",
-            "query": "matrix form galerkin finite element method",
+            "query": "galerkin dimension reduction finite element method",
             "requested_results": 2,
-            "returned_records": 2,
-            "records_with_oa_pdf": 0,
-            "records_with_full_text": 0
+            "http_status": 429,
+            "returned_records": 0
           },
           {
             "status": "rate_limited",
             "provider": "semantic_scholar",
-            "query": "virtual element method finite element method",
+            "query": "hpk-fem finite element method",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "spectral element method finite element method",
             "requested_results": 2,
             "http_status": 429,
             "returned_records": 0
           }
         ],
         "queries_attempted": 6,
-        "returned_records": 2
+        "returned_records": 0
       },
       "wikipedia": {
         "status": "success",
@@ -1127,12 +1604,6 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "Cea's lemma finite element method",
-            "provider": "wikipedia"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
             "query": "finite element method mathematical foundation weak form Galerkin method",
             "provider": "wikipedia"
           },
@@ -1151,13 +1622,19 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "matrix form galerkin finite element method",
+            "query": "galerkin dimension reduction finite element method",
             "provider": "wikipedia"
           },
           {
             "status": "success",
             "returned_records": 2,
-            "query": "virtual element method finite element method",
+            "query": "hpk-fem finite element method",
+            "provider": "wikipedia"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "spectral element method finite element method",
             "provider": "wikipedia"
           }
         ],
@@ -1165,7 +1642,7 @@
         "returned_records": 12
       }
     },
-    "returned_records": 16,
+    "returned_records": 15,
     "selected_records": 4
   },
   "retrieval_history": {
@@ -1666,24 +2143,180 @@
           "selected_records": 4
         },
         "schema_version": 1
+      },
+      {
+        "event_id": "retrieval-9ce77e6f-2e7d-4d65-b566-309a6553a19e",
+        "cycle": 3,
+        "retrieved_at": "2026-10-03T19:51:47.754529+00:00",
+        "query_scope": [],
+        "report": {
+          "status": "partial_failure",
+          "retrieved_at": "2026-10-03T19:51:37.691139+00:00",
+          "query_count": 6,
+          "providers": {
+            "arxiv": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "galerkin dimension reduction finite element method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "hpk-fem finite element method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "spectral element method finite element method",
+                  "provider": "arxiv"
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 12
+            },
+            "semantic_scholar": {
+              "status": "rate_limited",
+              "attempts": [
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method practical implementation modeling rules",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method verification validation numerical stability",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "galerkin dimension reduction finite element method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "hpk-fem finite element method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "spectral element method finite element method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 0
+            },
+            "wikipedia": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "galerkin dimension reduction finite element method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "hpk-fem finite element method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "spectral element method finite element method",
+                  "provider": "wikipedia"
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 12
+            }
+          },
+          "returned_records": 15,
+          "selected_records": 4
+        },
+        "acquisition_assessment": {
+          "status": "partial_provider_availability",
+          "operational_status": "partial_failure",
+          "available_provider_count": 2,
+          "unavailable_provider_count": 1,
+          "returned_records": 15,
+          "selected_records": 4
+        },
+        "schema_version": 1
       }
     ]
   },
   "last_budget_check": {
-    "time": "2026-10-03T19:50:09.053865+00:00",
+    "time": "2026-10-03T19:51:33.758262+00:00",
     "type": "local",
     "message": "Local limit: 20 calls"
   },
   "last_writing_decisions": [
-    {
-      "section_id": "47d05e64-0df4-4912-ab1f-f0021d62559f",
-      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method (merged with The Finite Element Procedure)",
-      "eta": 0.8,
-      "priority": 0.8,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
     {
       "section_id": "886e8411-9702-45ed-b8de-f324d1e883c3",
       "title": "Rules for Modeling Physical Phenomena with FEM",
@@ -1725,6 +2358,15 @@
       "title": "The Finite Element Procedure",
       "eta": 0.45999999999999996,
       "priority": 0.45999999999999996,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "section_id": "47d05e64-0df4-4912-ab1f-f0021d62559f",
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method (merged with The Finite Element Procedure)",
+      "eta": 0.4,
+      "priority": 0.4,
       "selected": false,
       "model_index": 2,
       "model": "@cf/meta/llama-3.2-3b-instruct"
@@ -1900,6 +2542,66 @@
       "model_index": 2,
       "model": "@cf/meta/llama-3.2-3b-instruct",
       "fingerprint": "2a01734d5d2dac899ac8d0ccc66fc40eadab2356d2caf7afa133f4c601184ed4"
+    },
+    {
+      "section_id": "886e8411-9702-45ed-b8de-f324d1e883c3",
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.6400000000000001,
+      "priority": 0.6400000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "00c8f1433504707d38dbade0b28e452c904447a548f42706af62a6eb850ed1c7"
+    },
+    {
+      "section_id": "4c334faa-7b66-450d-be76-dd27c05dd1ef",
+      "title": "Verification, Validation, and Best Practices",
+      "eta": 0.6200000000000001,
+      "priority": 0.6200000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "b82217bb6413a6a0673bcf5914cc6a23763dffd2256489bef727ac9b102b7590"
+    },
+    {
+      "section_id": "5b1f82f1-eb16-4194-ac8e-49fc18ff762a",
+      "title": "Introduction and Scope of the Finite Element Method",
+      "eta": 0.6000000000000001,
+      "priority": 0.6000000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "744e7d46236b5409d967fe65c466be262eeeba847a5bfb1cdecebf7749e8b063"
+    },
+    {
+      "section_id": null,
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "eta": 0.5,
+      "priority": 0.5,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "7c29ae7cb7861caa97a065e3c4bf4d577e1231910b4ad9189f54f4bc935e9339"
+    },
+    {
+      "section_id": null,
+      "title": "The Finite Element Procedure",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "3588ccdb0164e028eb2ee8c89149a9f35bfff84b8caea08ea0e83cf4e22a2ea0"
+    },
+    {
+      "section_id": "47d05e64-0df4-4912-ab1f-f0021d62559f",
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method (merged with The Finite Element Procedure)",
+      "eta": 0.4,
+      "priority": 0.4,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "97a070f347d8d8ee3ba6b41834b0d09d59945c827090b38fc68e60a30131b559"
     }
   ],
   "last_semantic_review": {
@@ -1948,15 +2650,27 @@
       },
       {
         "section_id": "886e8411-9702-45ed-b8de-f324d1e883c3",
-        "semantic_marker_count": 6,
+        "semantic_marker_count": 3,
+        "annotated_equation_ids": [],
+        "annotated_source_ids": [
+          "wiki_spectral_element_method",
+          "wiki_spectral_element_method",
+          "wiki_mixed_finite_element_method"
+        ],
+        "inline_math_count": 5,
+        "display_math_count": 0,
+        "equation_occurrence_count": 0,
+        "diagnostics": []
+      },
+      {
+        "section_id": "4c334faa-7b66-450d-be76-dd27c05dd1ef",
+        "semantic_marker_count": 4,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "wiki_mixed_finite_element_method",
-          "wiki_mixed_finite_element_method",
-          "wiki_mixed_finite_element_method",
           "wiki_c_a_s_lemma",
-          "wiki_loubignac_iteration",
-          "wiki_mixed_finite_element_method"
+          "wiki_spectral_element_method",
+          "arxiv_1512.02390v2"
         ],
         "inline_math_count": 1,
         "display_math_count": 0,
@@ -1964,42 +2678,32 @@
         "diagnostics": []
       },
       {
-        "section_id": "4c334faa-7b66-450d-be76-dd27c05dd1ef",
-        "semantic_marker_count": 2,
+        "section_id": "5b1f82f1-eb16-4194-ac8e-49fc18ff762a",
+        "semantic_marker_count": 4,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
-          "arxiv_1902.01090v2",
+          "arxiv_1512.02390v2",
+          "wiki_mixed_finite_element_method",
+          "wiki_loubignac_iteration",
           "wiki_mixed_finite_element_method"
         ],
-        "inline_math_count": 2,
-        "display_math_count": 0,
-        "equation_occurrence_count": 0,
-        "diagnostics": []
-      },
-      {
-        "section_id": "5b1f82f1-eb16-4194-ac8e-49fc18ff762a",
-        "semantic_marker_count": 1,
-        "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "wiki_c_a_s_lemma"
-        ],
-        "inline_math_count": 12,
+        "inline_math_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       }
     ],
-    "semantic_marker_count": 10,
+    "semantic_marker_count": 12,
     "latex_ir_readiness": {
       "ready": true,
       "counts": {
         "sections": 4,
         "paragraphs": 4,
-        "text_nodes": 39,
-        "inline_math": 25,
+        "text_nodes": 32,
+        "inline_math": 16,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 10,
+        "citation_occurrences": 12,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "raw_math_text_nodes": 0
@@ -2025,15 +2729,27 @@
       },
       {
         "section_id": "886e8411-9702-45ed-b8de-f324d1e883c3",
-        "semantic_marker_count": 6,
+        "semantic_marker_count": 3,
+        "annotated_equation_ids": [],
+        "annotated_source_ids": [
+          "wiki_spectral_element_method",
+          "wiki_spectral_element_method",
+          "wiki_mixed_finite_element_method"
+        ],
+        "inline_math_count": 5,
+        "display_math_count": 0,
+        "equation_occurrence_count": 0,
+        "diagnostics": []
+      },
+      {
+        "section_id": "4c334faa-7b66-450d-be76-dd27c05dd1ef",
+        "semantic_marker_count": 4,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "wiki_mixed_finite_element_method",
-          "wiki_mixed_finite_element_method",
-          "wiki_mixed_finite_element_method",
           "wiki_c_a_s_lemma",
-          "wiki_loubignac_iteration",
-          "wiki_mixed_finite_element_method"
+          "wiki_spectral_element_method",
+          "arxiv_1512.02390v2"
         ],
         "inline_math_count": 1,
         "display_math_count": 0,
@@ -2041,42 +2757,32 @@
         "diagnostics": []
       },
       {
-        "section_id": "4c334faa-7b66-450d-be76-dd27c05dd1ef",
-        "semantic_marker_count": 2,
+        "section_id": "5b1f82f1-eb16-4194-ac8e-49fc18ff762a",
+        "semantic_marker_count": 4,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
-          "arxiv_1902.01090v2",
+          "arxiv_1512.02390v2",
+          "wiki_mixed_finite_element_method",
+          "wiki_loubignac_iteration",
           "wiki_mixed_finite_element_method"
         ],
-        "inline_math_count": 2,
-        "display_math_count": 0,
-        "equation_occurrence_count": 0,
-        "diagnostics": []
-      },
-      {
-        "section_id": "5b1f82f1-eb16-4194-ac8e-49fc18ff762a",
-        "semantic_marker_count": 1,
-        "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "wiki_c_a_s_lemma"
-        ],
-        "inline_math_count": 12,
+        "inline_math_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       }
     ],
-    "semantic_marker_count": 10,
+    "semantic_marker_count": 12,
     "latex_ir_readiness": {
       "ready": true,
       "counts": {
         "sections": 4,
         "paragraphs": 4,
-        "text_nodes": 39,
-        "inline_math": 25,
+        "text_nodes": 32,
+        "inline_math": 16,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 10,
+        "citation_occurrences": 12,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "raw_math_text_nodes": 0
@@ -2088,22 +2794,22 @@
     "status": "success",
     "source_document_id": "743c2aa8-790e-5a15-b63b-6758c778b2e0",
     "section_count": 4,
-    "reference_count": 11
+    "reference_count": 15
   },
   "model_usage": {
-    "total_calls": 18,
-    "logical_calls": 18,
-    "successful_calls": 18,
+    "total_calls": 14,
+    "logical_calls": 14,
+    "successful_calls": 14,
     "failed_calls": 0,
-    "http_attempts": 18,
+    "http_attempts": 14,
     "per_model": {
-      "@cf/meta/llama-3.1-8b-instruct-fast": 17,
+      "@cf/meta/llama-3.1-8b-instruct-fast": 13,
       "@cf/qwen/qwen3-30b-a3b-fp8": 1,
       "@cf/meta/llama-3.2-3b-instruct": 0
     },
     "max_logical_calls": 100,
     "extraction_stats": {
-      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 17,
+      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 13,
       "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8:known_patterns": 1
     },
     "learned_paths": {
@@ -2129,6 +2835,6 @@
   },
   "parser_stats": {
     "cloudflare:strict": 2,
-    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 4
+    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 3
   }
 }

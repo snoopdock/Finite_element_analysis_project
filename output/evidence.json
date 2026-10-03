@@ -1,5 +1,60 @@
 [
   {
+    "source_id": "arxiv_1512.02390v2",
+    "url": "https://arxiv.org/pdf/1512.02390v2.pdf",
+    "retrieved_at": "2026-10-03T19:51:37.691139+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Nonuniformly weighted Schwarz smoothers for spectral element multigrid",
+    "authors": [
+      "Joerg Stiller"
+    ],
+    "metadata": {
+      "abstract": "A hybrid Schwarz/multigrid method for spectral element solvers to the Poisson equation in $\\mathbb R^2$ is presented. It extends the additive Schwarz method studied by J. Lottes and P. Fischer (J. Sci. Comput. 24:45--78, 2005) by introducing nonuniform weight distributions based on the smoothed sign function. Using a V-cycle with only one pre-smoothing, the new method attains logarithmic convergence rates in the range from 1.2 to 1.9, which corresponds to residual reductions of almost two orders of magnitude. Compared to the original method, it reduces the iteration count by a factor of 1.5 to 3, leading to runtime savings of about 50 percent. In numerical experiments the method proved robust with respect to the mesh size and polynomial orders up to 32. Used as a preconditioner for the (inexact) CG method it is also suited for anisotropic meshes and easily extended to diffusion problems with variable coefficients.",
+      "published": "2015-12-08T10:21:29Z",
+      "page_count": 19,
+      "word_count": 6942
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1512.02390v2.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "spectral element method finite element method",
+    "query_contexts": [
+      "spectral element method finite element method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.825865,
+      "lexical": 0.839445,
+      "source_quality": 0.85,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "spectral element method finite element method",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "spectral element method finite element method": 0.825865,
+        "galerkin dimension reduction finite element method": 0.2125,
+        "hpk-fem finite element method": 0.2125
+      }
+    }
+  },
+  {
     "source_id": "arxiv_2412.17631v1",
     "url": "https://arxiv.org/pdf/2412.17631v1.pdf",
     "retrieved_at": "2026-10-03T19:50:12.938861+00:00",
@@ -277,6 +332,116 @@
         "Finite Element Method with Energy Minimization": 0.1375,
         "Mixed Finite Element Method": 0.750865,
         "Scaled Boundary Finite Element Method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_spectral_element_method",
+    "url": "https://en.wikipedia.org/wiki/Spectral_element_method",
+    "retrieved_at": "2026-10-03T19:51:37.691139+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Spectral element method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "equations, a topic in mathematics, the <span class=\"searchmatch\">spectral</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (SEM) is a formulation of the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (FEM) that uses high-degree piecewise",
+      "word_count": 1024
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_spectral_element_method.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "spectral element method finite element method",
+    "query_contexts": [
+      "spectral element method finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "spectral element method finite element method",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "spectral element method finite element method": 0.750865,
+        "galerkin dimension reduction finite element method": 0.1375,
+        "hpk-fem finite element method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2511.22320v1",
+    "url": "https://arxiv.org/pdf/2511.22320v1.pdf",
+    "retrieved_at": "2026-10-03T19:51:37.691139+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Dimension reduction for a coupled electro-elastic saddle-point problem at finite strains",
+    "authors": [
+      "Kateryna Buryachenko",
+      "Annegret Glitzky",
+      "Matthias Liero",
+      "Barbara Zwicknagl"
+    ],
+    "metadata": {
+      "abstract": "We study the finite deformation of a thin, elastically heterogeneous sheet subject to electrostatic coupling. The interaction between mechanics and electrostatics is formulated as a saddle-point problem involving the deformation and the electrostatic potential. Starting from a three-dimensional electro-elastic model with prestrain in the elastic energy, we rigorously derive a reduced plate model in the bending regime. To perform the dimension reduction, that is, to derive the energy of a thin object by taking a suitable limit as its thickness tends to zero, we apply $Γ$-convergence-type methods to the underlying saddle-point problem. In the case of bivariate functionals, this convergence is understood in an adapted epi/hypo-convergence sense. In this concept, we demonstrate the convergence of the rescaled electro-elastic problems to an effective two-dimensional bending model coupled to electric effects. We verify that cluster points of saddle points are saddle points for the limit.",
+      "published": "2025-11-27T10:50:00Z",
+      "page_count": 30,
+      "word_count": 14237
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2511.22320v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "galerkin dimension reduction finite element method",
+    "query_contexts": [
+      "galerkin dimension reduction finite element method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.62141,
+      "lexical": 0.55963,
+      "source_quality": 0.85,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "galerkin dimension reduction finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "spectral element method finite element method": 0.2125,
+        "galerkin dimension reduction finite element method": 0.62141,
+        "hpk-fem finite element method": 0.2125
       }
     }
   },
@@ -619,6 +784,61 @@
         "Finite Element Method with Energy Minimization": 0.519183,
         "Mixed Finite Element Method": 0.2125,
         "Scaled Boundary Finite Element Method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_cs_0609119v2",
+    "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
+    "retrieved_at": "2026-10-03T19:51:37.691139+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Verification, Validation and Integrity of Distributed and Interchanged Rule Based Policies and Contracts in the Semantic Web",
+    "authors": [
+      "Adrian Paschke"
+    ],
+    "metadata": {
+      "abstract": "Rule-based policy and contract systems have rarely been studied in terms of their software engineering properties. This is a serious omission, because in rule-based policy or contract representation languages rules are being used as a declarative programming language to formalize real-world decision logic and create IS production systems upon. This paper adopts an SE methodology from extreme programming, namely test driven development, and discusses how it can be adapted to verification, validation and integrity testing (V&V&I) of policy and contract specifications. Since, the test-driven approach focuses on the behavioral aspects and the drawn conclusions instead of the structure of the rule base and the causes of faults, it is independent of the complexity of the rule language and the system under test and thus much easier to use and understand for the rule engineer and the user.",
+      "published": "2006-09-21T11:50:24Z",
+      "page_count": 0,
+      "word_count": 10484
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_cs_0609119v2.txt",
+    "full_text_available": true,
+    "status": "cached_full_text",
+    "query_context": "finite element method verification validation numerical stability",
+    "query_contexts": [
+      "finite element method verification validation numerical stability"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method verification validation numerical stability",
+      "query_index": 2,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.519183,
+        "spectral element method finite element method": 0.2125,
+        "galerkin dimension reduction finite element method": 0.2125,
+        "hpk-fem finite element method": 0.2125
       }
     }
   }

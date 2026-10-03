@@ -24,7 +24,8 @@
       "mathematical_formulation": "Let $ V $ be a Hilbert space with norm $ \\|\\cdot\\| $. For a bilinear form $ a: V \\times V \\to \\mathbb{R} $ satisfying $ |a(v, w)| \\leq \\gamma \\|v\\| \\|w\\| $ (continuity) and $ a(v, v) \\geq \\alpha \\|v\\|^2 $ (coercivity), and a bounded linear functional $ L: V \\to \\mathbb{R} $, the solution $ u \\in V $ to $ a(u, v) = L(v) $ for all $ v \\in V $ is approximated by $ u_h \\in V_h $, a subspace of $ V $.",
       "source_ids": [
         "wiki_c_a_s_lemma"
-      ]
+      ],
+      "concept_id": "05a91b78-f790-46bd-9b0b-c5bb5d8213cd"
     },
     {
       "name": "Loubignac Iteration",
@@ -32,6 +33,23 @@
       "mathematical_formulation": "",
       "source_ids": [
         "wiki_loubignac_iteration"
+      ],
+      "concept_id": "09a11d59-9ec4-4d0e-8887-1b2e3e57cf2e"
+    },
+    {
+      "name": "Weak Formulation",
+      "explanation": "The weak formulation transforms partial differential equations (PDEs) into integral equations by multiplying with test functions and integrating over the domain. This approach reduces the smoothness requirements for solutions, enabling the use of piecewise polynomial basis functions. It forms the foundation for the Galerkin method in finite element analysis. The weak form ensures compatibility with numerical integration and handles complex geometries more effectively.",
+      "mathematical_formulation": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma",
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "name": "High-Degree Polynomial Basis Functions",
+      "explanation": "Finite element methods employ high-degree polynomials as basis functions to achieve higher accuracy. These functions, such as Lagrange polynomials or Chebyshev polynomials, allow for exponential error reduction with increasing polynomial order. They enable efficient representation of solutions with fewer degrees of freedom compared to traditional low-order elements. The choice of basis functions affects the conditioning of the stiffness matrix and the efficiency of numerical integration.",
+      "mathematical_formulation": "u_h(x) = \\sum_{i=1}^{N} N_i(x) u_i",
+      "source_ids": [
+        "wiki_spectral_element_method"
       ]
     }
   ],
@@ -59,7 +77,7 @@
         "arxiv_1902.01090v2",
         "wiki_c_a_s_lemma"
       ],
-      "proposition_id": "3640d967-66d6-41ab-a358-edccb1a11cfb"
+      "proposition_id": "c3b3eea9-002a-4d33-a075-9eb42f62fa72"
     },
     {
       "step_number": 1,
@@ -71,6 +89,40 @@
       ],
       "source_ids": [
         "wiki_c_a_s_lemma"
+      ],
+      "proposition_id": "e7d000f0-929e-45ec-a2b9-1edda10c82e4"
+    },
+    {
+      "step_number": 1,
+      "title": "Mesh Discretization",
+      "description": "The domain is divided into discrete elements, defining nodes and connectivity. This process creates a computational grid that approximates the geometry. The quality of the mesh influences the accuracy and stability of the solution. For spectral elements, non-uniform node distributions (e.g., Legendre-Gauss-Lobatto points) are used to optimize integration and mass matrix properties.",
+      "equations": [
+        "\\Omega = \\bigcup_{e=1}^{E} \\Omega_e"
+      ],
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Local Basis Function Construction",
+      "description": "Element-specific basis functions are defined over each subdomain. These functions interpolate solution values at nodal points. For spectral elements, high-order Lagrange polynomials are constructed using orthogonal collocation points. The basis functions ensure continuity across elements while maintaining local support for efficient computation.",
+      "equations": [
+        "N_i(x_j) = \\delta_{ij} \\quad \\text{for } x_j \\in \\Omega_e"
+      ],
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Stiffness Matrix Assembly",
+      "description": "Element-level integrals are computed and assembled into a global system of equations. The Galerkin method projects the weak form onto the discrete basis space. Numerical integration (e.g., Gauss-Lobatto quadrature) is applied to evaluate stiffness and mass matrices. This step couples degrees of freedom across the domain.",
+      "equations": [
+        "K_{ij} = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\nabla N_i \\cdot \\nabla N_j \\, d\\Omega"
+      ],
+      "source_ids": [
+        "wiki_spectral_element_method"
       ]
     }
   ],
@@ -99,7 +151,8 @@
       "explanation": "This equation ensures the bilinear form $ a $ is bounded, where $ \\gamma $ is a positive constant, and $ \\|\\cdot\\| $ denotes the norm in the Hilbert space $ V $. It guarantees that small changes in $ v $ or $ w $ result in proportionally small changes in $ a(v, w) $.",
       "source_ids": [
         "wiki_c_a_s_lemma"
-      ]
+      ],
+      "proposition_id": "a3c4507f-b540-4ef5-813d-e2185b7a4f66"
     },
     {
       "name": "Coercivity Condition",
@@ -107,7 +160,8 @@
       "explanation": "This inequality ensures the bilinear form $ a $ is uniformly positive definite, with $ \\alpha $ a positive constant. It guarantees the existence and uniqueness of the solution to the variational problem.",
       "source_ids": [
         "wiki_c_a_s_lemma"
-      ]
+      ],
+      "proposition_id": "15006e46-9a5d-4c6b-91be-241495c4ae51"
     },
     {
       "name": "Variational Equation",
@@ -115,6 +169,23 @@
       "explanation": "This equation defines the weak form of the partial differential equation, where $ u $ is the solution in the Hilbert space $ V $, $ v $ is a test function, and $ L(v) $ represents the action of the linear functional. It is the foundation of the finite element method.",
       "source_ids": [
         "wiki_c_a_s_lemma"
+      ],
+      "proposition_id": "5d4217a7-813c-492e-97ee-eb5fd23bb694"
+    },
+    {
+      "name": "Poisson Equation Weak Form",
+      "latex": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma",
+      "explanation": "This equation represents the weak form of the Poisson equation. The left-hand side computes the inner product of gradients for the solution $u$ and test function $v$. The right-hand side includes the source term $f$ and Neumann boundary conditions $g$. Integration over the domain $\\Omega$ and boundary $\\partial\\Omega$ ensures global balance.",
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "name": "Stiffness Matrix Assembly",
+      "latex": "K_{ij} = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\nabla N_i \\cdot \\nabla N_j \\, d\\Omega",
+      "explanation": "The stiffness matrix $K$ is assembled by summing element contributions. Each entry $K_{ij}$ corresponds to the integral of the product of gradients of basis functions $N_i$ and $N_j$ over element $\\Omega_e$. This matrix encodes the system's physical properties and governs the solution's behavior.",
+      "source_ids": [
+        "wiki_spectral_element_method"
       ]
     }
   ],
@@ -140,6 +211,21 @@
       "explanation": "The bilinear form must satisfy both continuity and coercivity to ensure the well-posedness of the variational problem. These conditions guarantee the existence, uniqueness, and stability of the finite element solution, preventing numerical instabilities during computation.",
       "source_ids": [
         "wiki_c_a_s_lemma"
+      ],
+      "proposition_id": "5c4720fc-d543-499d-b3f2-f0d4cc1b3bc9"
+    },
+    {
+      "rule": "Mesh Size and Polynomial Order Trade-off",
+      "explanation": "Higher polynomial orders reduce discretization error more rapidly than mesh refinement. However, very high orders may increase computational costs and numerical instability. The method's robustness to mesh size and polynomial order (up to 32) ensures reliable performance across diverse applications.",
+      "source_ids": [
+        "arxiv_1512.02390v2"
+      ]
+    },
+    {
+      "rule": "Basis Function Orthogonality",
+      "explanation": "Using orthogonal basis functions (e.g., Chebyshev or Legendre polynomials) minimizes stiffness matrix conditioning issues. This property simplifies numerical integration and improves solution convergence rates, especially for spectral elements.",
+      "source_ids": [
+        "wiki_spectral_element_method"
       ]
     }
   ]

@@ -148,5 +148,105 @@
       "procedures": 2,
       "rules": 1
     }
+  },
+  "arxiv_1512.02390v2": {
+    "first_read_at": "2026-10-03T19:51:58.782909+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-10-03T19:51:58.782939+00:00",
+        "extracted": {
+          "concepts": 0,
+          "procedures": 0,
+          "equations": 0,
+          "rules": 1
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 0,
+      "equations": 0,
+      "procedures": 0,
+      "rules": 1
+    }
+  },
+  "wiki_spectral_element_method": {
+    "first_read_at": "2026-10-03T19:51:58.782947+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-10-03T19:51:58.782959+00:00",
+        "extracted": {
+          "concepts": 2,
+          "procedures": 3,
+          "equations": 2,
+          "rules": 1
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 2,
+      "equations": 2,
+      "procedures": 3,
+      "rules": 1
+    }
+  },
+  "arxiv_2511.22320v1": {
+    "first_read_at": "2026-10-03T19:51:58.782965+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-10-03T19:51:58.782976+00:00",
+        "extracted": {
+          "concepts": 0,
+          "equations": 0,
+          "procedures": 0,
+          "rules": 0
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 0,
+      "equations": 0,
+      "procedures": 0,
+      "rules": 0
+    }
+  },
+  "arxiv_cs_0609119v2": {
+    "first_read_at": "2026-10-03T19:51:58.782982+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-10-03T19:51:58.782993+00:00",
+        "extracted": {
+          "concepts": 0,
+          "equations": 0,
+          "procedures": 0,
+          "rules": 0
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 0,
+      "equations": 0,
+      "procedures": 0,
+      "rules": 0
+    }
   }
 }
