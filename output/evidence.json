@@ -168,9 +168,60 @@
     }
   },
   {
+    "source_id": "wiki_meshfree_methods",
+    "url": "https://en.wikipedia.org/wiki/Meshfree_methods",
+    "retrieved_at": "2026-10-04T16:43:52.426980+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Meshfree methods",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "In the field of numerical <span class=\"searchmatch\">analysis</span>, <span class=\"searchmatch\">meshfree</span> <span class=\"searchmatch\">methods</span> are those that do not require connection between nodes of the simulation domain, i.e. a mesh, but",
+      "word_count": 2457
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_meshfree_methods.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Meshfree methods finite element analysis",
+    "query_contexts": [
+      "Meshfree methods finite element analysis"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.54641,
+      "lexical": 0.55963,
+      "source_quality": 0.55,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Meshfree methods finite element analysis",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Meshfree methods finite element analysis": 0.54641,
+        "Gradient discretization method finite element analysis": 0.1375
+      }
+    }
+  },
+  {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-04T16:41:02.886951+00:00",
+    "retrieved_at": "2026-10-04T16:43:52.426980+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -216,16 +267,15 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "A-FEM finite element method": 0.2125,
-        "hpk-FEM finite element method": 0.2125,
-        "mixed finite element method": 0.2125
+        "Meshfree methods finite element analysis": 0.2125,
+        "Gradient discretization method finite element analysis": 0.2125
       }
     }
   },
   {
     "source_id": "arxiv_2210.16907v1",
     "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
-    "retrieved_at": "2026-10-04T16:41:02.886951+00:00",
+    "retrieved_at": "2026-10-04T16:43:52.426980+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -273,9 +323,65 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.457846,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "A-FEM finite element method": 0.2125,
-        "hpk-FEM finite element method": 0.2125,
-        "mixed finite element method": 0.2125
+        "Meshfree methods finite element analysis": 0.416955,
+        "Gradient discretization method finite element analysis": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_1701.08973v1",
+    "url": "https://arxiv.org/pdf/1701.08973v1.pdf",
+    "retrieved_at": "2026-10-04T16:43:52.426980+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "A Flux Conserving Meshfree Method for Conservation Laws",
+    "authors": [
+      "Pratik Suchde",
+      "Joerg Kuhnert",
+      "Simon Schroeder",
+      "Axel Klar"
+    ],
+    "metadata": {
+      "abstract": "Lack of conservation has been the biggest drawback in meshfree generalized finite difference methods (GFDMs). In this paper, we present a novel modification of classical meshfree GFDMs to include local balances which produce an approximate conservation of numerical fluxes. This numerical flux conservation is done within the usual moving least squares framework. Unlike Finite Volume Methods, it is based on locally defined control cells, rather than a globally defined mesh. We present the application of this method to an advection diffusion equation and the incompressible Navier - Stokes equations. Our simulations show that the introduction of flux conservation significantly reduces the errors in conservation in meshfree GFDMs.",
+      "published": "2017-01-31T10:15:51Z",
+      "page_count": 19,
+      "word_count": 8837
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1701.08973v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "Meshfree methods finite element analysis",
+    "query_contexts": [
+      "Meshfree methods finite element analysis"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.416955,
+      "lexical": 0.279815,
+      "source_quality": 0.85,
+      "section_relevance": 0.225753,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Meshfree methods finite element analysis",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Meshfree methods finite element analysis": 0.416955,
+        "Gradient discretization method finite element analysis": 0.2125
       }
     }
   },

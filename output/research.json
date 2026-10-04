@@ -25,7 +25,8 @@
       "mathematical_formulation": "\\begin{cases} K_{uu}u + K_{up}p = f_u \\\\ K_{pu}u + K_{pp}p = f_p \\end{cases}",
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "concept_id": "344c0448-045f-492a-a134-7d78bf65276b"
     },
     {
       "name": "Hybrid Finite Element Method",
@@ -33,6 +34,23 @@
       "mathematical_formulation": "\\int_{\\Omega} \\sigma : \\epsilon(v) d\\Omega - \\int_{\\partial\\Omega} \\lambda \\cdot v d\\Gamma = 0",
       "source_ids": [
         "wiki_mixed_finite_element_method"
+      ],
+      "concept_id": "5b57c163-c93b-4f79-8d87-03cf51d175fb"
+    },
+    {
+      "name": "Mesh-Based Discretization",
+      "explanation": "Finite Element Method (FEM) relies on dividing a complex domain into smaller, simpler parts called elements, connected through nodes. This mesh-based approach defines relationships between nodes to approximate solutions to partial differential equations. Unlike meshfree methods, FEM requires predefined connectivity between nodes, which simplifies the calculation of mathematical operators like derivatives. The mesh allows for systematic analysis of physical properties across discrete elements.",
+      "mathematical_formulation": "\\Omega = \\bigcup_{e=1}^{N} \\Omega_e",
+      "source_ids": [
+        "wiki_meshfree_methods"
+      ]
+    },
+    {
+      "name": "Node-Centric Properties",
+      "explanation": "In FEM, properties such as mass or energy are assigned to nodes rather than elements, enabling localized calculations. This node-centric approach facilitates efficient data management and updates during simulations. The connectivity of the mesh ensures that interactions between neighboring nodes are systematically accounted for. This contrasts with meshfree methods, where properties are distributed across interacting nodes without fixed element boundaries.",
+      "mathematical_formulation": "m_i = \\sum_{e \\in E_i} m_e",
+      "source_ids": [
+        "wiki_meshfree_methods"
       ]
     }
   ],
@@ -72,7 +90,8 @@
       ],
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "proposition_id": "56deaa6d-b90d-4dc3-a371-e284fa773636"
     },
     {
       "step_number": 2,
@@ -83,7 +102,8 @@
       ],
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "proposition_id": "24eb31ed-bb45-408a-a5c7-8268a973f915"
     },
     {
       "step_number": 3,
@@ -94,6 +114,29 @@
       ],
       "source_ids": [
         "wiki_mixed_finite_element_method"
+      ],
+      "proposition_id": "83c08128-8eee-467c-bbdf-1c8538ea9b6f"
+    },
+    {
+      "step_number": 1,
+      "title": "Mesh Generation",
+      "description": "The first step in FEM involves creating a mesh that discretizes the simulation domain into manageable elements. This mesh defines the spatial relationships between nodes, which are critical for subsequent calculations. The quality of the mesh directly impacts the accuracy and stability of the simulation. Poorly constructed meshes can lead to numerical errors, requiring careful refinement and validation.",
+      "equations": [
+        "\\Omega = \\bigcup_{e=1}^{N} \\Omega_e"
+      ],
+      "source_ids": [
+        "wiki_meshfree_methods"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Weak Formulation",
+      "description": "FEM transforms governing partial differential equations into a weak form by multiplying with test functions and integrating over the domain. This process reduces the smoothness requirements for the solution, making it easier to approximate using piecewise functions. The weak form ensures that the solution satisfies the equations in an integral sense rather than pointwise. This step is essential for handling complex boundary conditions and nonlinear problems.",
+      "equations": [
+        "\\int_{\\Omega} \\delta u \\cdot f \\, d\\Omega = 0"
+      ],
+      "source_ids": [
+        "wiki_meshfree_methods"
       ]
     }
   ],
@@ -123,7 +166,8 @@
       "explanation": "K_{uu}: Stiffness matrix for primary variables; K_{up}/K_{pu}: Coupling terms between primary and additional variables; K_{pp}: Matrix for additional variables; u/p: Primary/additional variables; f_u/f_p: Force vectors. This system arises in mixed formulations due to Lagrange multiplier constraints.",
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "proposition_id": "1224aceb-3682-4d00-a7e3-3bdfc86bbbb4"
     },
     {
       "name": "Weak Form with Lagrange Multipliers",
@@ -131,6 +175,23 @@
       "explanation": "\\sigma: Stress tensor; \\epsilon(v): Strain from test function v; \\lambda: Lagrange multiplier; \\partial\\Omega: Boundary of domain. This equation enforces equilibrium weakly while incorporating constraints via the Lagrange multiplier term.",
       "source_ids": [
         "wiki_mixed_finite_element_method"
+      ],
+      "proposition_id": "d0f5b1ba-e437-4c4b-ad77-6860cbf331cb"
+    },
+    {
+      "name": "Domain Discretization",
+      "latex": "\\Omega = \\bigcup_{e=1}^{N} \\Omega_e",
+      "explanation": "This equation represents the decomposition of the computational domain $\\Omega$ into $N$ non-overlapping elements $\\Omega_e$. Each element $\\Omega_e$ is a subdomain where the solution is approximated using basis functions. The union of all elements reconstructs the entire domain, enabling localized calculations.",
+      "source_ids": [
+        "wiki_meshfree_methods"
+      ]
+    },
+    {
+      "name": "Weak Form of PDE",
+      "latex": "\\int_{\\Omega} \\delta u \\cdot f \\, d\\Omega = 0",
+      "explanation": "This equation defines the weak form of a partial differential equation (PDE), where $\\delta u$ is a test function and $f$ represents the residual of the PDE. The integral ensures that the solution satisfies the PDE in an averaged sense over the domain, reducing the need for high-order continuity in the solution.",
+      "source_ids": [
+        "wiki_meshfree_methods"
       ]
     }
   ],
@@ -157,13 +218,29 @@
       "explanation": "Mixed finite element methods prevent numerical locking in nearly incompressible problems by decoupling pressure and displacement fields. This avoids the ill-conditioning associated with standard irreducible formulations. The method ensures accurate stress/strain computation under volume constraints. Failure to use mixed methods may lead to spurious oscillations or non-convergence.",
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "proposition_id": "02fe3ef0-34f5-4af2-8df6-89850eb88ee2"
     },
     {
       "rule": "Employ Hybridization for Reduced DOF",
       "explanation": "Hybrid methods condense internal degrees of freedom via static condensation, improving computational efficiency. By localizing Lagrange multipliers to element boundaries, they eliminate the need for global continuity constraints. This reduces the global system size while maintaining accuracy. Hybridization is critical for large-scale simulations with complex geometries.",
       "source_ids": [
         "wiki_mixed_finite_element_method"
+      ],
+      "proposition_id": "a4a887aa-e360-44d3-ade8-8fcd8a6ab393"
+    },
+    {
+      "rule": "Maintain Mesh Quality",
+      "explanation": "A well-structured mesh is critical for FEM accuracy. Degenerate or highly distorted elements can introduce numerical errors and instability. Proper mesh refinement and validation ensure that the solution remains reliable, especially in regions with high gradients or complex geometries.",
+      "source_ids": [
+        "wiki_meshfree_methods"
+      ]
+    },
+    {
+      "rule": "Ensure Connectivity Consistency",
+      "explanation": "The predefined connectivity between nodes in FEM must remain consistent throughout the simulation. Disruptions in connectivity, such as mesh tangling, can invalidate mathematical operators like derivatives, leading to incorrect results. This is particularly important in dynamic simulations with large deformations.",
+      "source_ids": [
+        "wiki_meshfree_methods"
       ]
     }
   ]
