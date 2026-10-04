@@ -1,257 +1,83 @@
 {
   "concepts": [
     {
-      "name": "Mixed Finite Element Method",
-      "explanation": "The mixed finite element method introduces additional fields to solve partial differential equations, contrasting with primal methods. These extra fields are constrained using Lagrange multipliers, enabling efficient solutions for numerically ill-posed problems like almost incompressible elasticity. The method results in a saddle point system with non-definite matrices, requiring specialized solvers. Hybrid methods further refine this by enforcing continuity weakly through boundary Lagrange fields, reducing degrees of freedom.",
-      "mathematical_formulation": "\\begin{cases} \\mathbf{K} \\mathbf{u} + \\mathbf{B}^T \\boldsymbol{\\lambda} = \\mathbf{f} \\\\ \\mathbf{B} \\mathbf{u} = \\mathbf{0} \\end{cases}",
-      "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "concept_id": "5c917ca4-f7cb-493e-b664-577da184efd9"
-    },
-    {
-      "name": "Primal Finite Element Method",
-      "explanation": "Primal finite element methods solve PDEs without additional fields, relying on direct discretization of primary variables. They are termed 'irreducible' and typically use symmetric positive definite systems. These methods face challenges in problems with constraints or incompressibility, where mixed formulations excel. The primal approach is simpler but less robust for certain physical phenomena.",
-      "mathematical_formulation": "\\mathbf{K} \\mathbf{u} = \\mathbf{f}",
-      "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "concept_id": "8589a043-fc12-4793-bb6b-d3be91ce0fd9"
-    },
-    {
-      "name": "Céa's Lemma",
-      "explanation": "Céa's Lemma provides a theoretical foundation for analyzing errors in finite element methods applied to elliptic partial differential equations. It establishes that the discrete solution in a finite-dimensional subspace approximates the true solution in a Hilbert space. The lemma relies on the properties of continuity and coercivity of the bilinear form, ensuring the existence and uniqueness of solutions. This concept is critical for proving convergence and stability of finite element approximations.",
-      "mathematical_formulation": "Let $ V $ be a Hilbert space with norm $ \\|\\cdot\\| $. For a bilinear form $ a: V \\times V \\to \\mathbb{R} $ satisfying $ |a(v, w)| \\leq \\gamma \\|v\\| \\|w\\| $ (continuity) and $ a(v, v) \\geq \\alpha \\|v\\|^2 $ (coercivity), and a bounded linear functional $ L: V \\to \\mathbb{R} $, the solution $ u \\in V $ to $ a(u, v) = L(v) $ for all $ v \\in V $ is approximated by $ u_h \\in V_h $, a subspace of $ V $.",
-      "source_ids": [
-        "wiki_c_a_s_lemma"
-      ],
-      "concept_id": "05a91b78-f790-46bd-9b0b-c5bb5d8213cd"
-    },
-    {
-      "name": "Loubignac Iteration",
-      "explanation": "Loubignac iteration is an iterative finite element method designed to produce a continuous stress field. It is particularly useful in problems requiring smooth stress distributions, such as in solid mechanics. The method iteratively refines solutions to satisfy equilibrium and compatibility conditions. Named after Gilles Loubignac, it contributes to improving the accuracy of stress approximations in finite element analysis.",
-      "mathematical_formulation": "",
-      "source_ids": [
-        "wiki_loubignac_iteration"
-      ],
-      "concept_id": "09a11d59-9ec4-4d0e-8887-1b2e3e57cf2e"
-    },
-    {
-      "name": "Weak Formulation",
-      "explanation": "The weak formulation transforms partial differential equations (PDEs) into integral equations by multiplying with test functions and integrating over the domain. This approach reduces the smoothness requirements for solutions, enabling the use of piecewise polynomial basis functions. It forms the foundation for the Galerkin method in finite element analysis. The weak form ensures compatibility with numerical integration and handles complex geometries more effectively.",
-      "mathematical_formulation": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma",
-      "source_ids": [
-        "wiki_spectral_element_method"
-      ],
-      "concept_id": "ebaf7307-0636-438a-8b61-766fc3157f09"
-    },
-    {
-      "name": "High-Degree Polynomial Basis Functions",
-      "explanation": "Finite element methods employ high-degree polynomials as basis functions to achieve higher accuracy. These functions, such as Lagrange polynomials or Chebyshev polynomials, allow for exponential error reduction with increasing polynomial order. They enable efficient representation of solutions with fewer degrees of freedom compared to traditional low-order elements. The choice of basis functions affects the conditioning of the stiffness matrix and the efficiency of numerical integration.",
-      "mathematical_formulation": "u_h(x) = \\sum_{i=1}^{N} N_i(x) u_i",
-      "source_ids": [
-        "wiki_spectral_element_method"
-      ],
-      "concept_id": "556948d2-2e33-4776-9a9e-941da0a820ce"
-    },
-    {
       "name": "Galerkin's Method",
-      "explanation": "Galerkin's Method is an approximate technique for solving differential equations, particularly boundary value problems. It forms the mathematical foundation for the Finite Element Method (FEM) by converting strong forms of differential equations into weak forms. The method uses test functions to minimize the residual error over the domain, leading to a system of algebraic equations. This approach enables the discretization of complex physical systems into manageable subdomains for numerical analysis.",
-      "mathematical_formulation": "\\int_{\\Omega} L(u) v \\, d\\Omega = 0",
+      "explanation": "Galerkin's method is a foundational technique in the Finite Element Method (FEM) that transforms partial differential equations into a weak form. It involves approximating the solution using a set of basis functions and minimizing the residual error over the domain. This approach ensures that the solution satisfies the governing equations in an integral sense rather than pointwise. The method is critical for deriving variational formulations and is widely used in structural and electromagnetic simulations.",
+      "mathematical_formulation": "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega \\quad \\forall v \\in V_h",
       "source_ids": [
-        "wiki_boris_galerkin"
+        "wiki_boris_galerkin",
+        "arxiv_1712.01987v1"
+      ]
+    },
+    {
+      "name": "Error Estimation",
+      "explanation": "Error estimation in FEM quantifies the discrepancy between the exact solution and the numerical approximation. It involves analyzing temporal and spatial discretization errors, such as O(\\Delta t) for time steps and O(h^s) for spatial mesh sizes. These estimates guide adaptive mesh refinement and ensure solution accuracy. The a-priori L∞ assumption is often used to establish convergence guarantees.",
+      "mathematical_formulation": "\\text{Error} = O(\\Delta t + h^s)",
+      "source_ids": [
+        "arxiv_1712.01987v1"
       ]
     }
   ],
   "procedures": [
     {
       "step_number": 1,
-      "title": "Weak Formulation",
-      "description": "Convert the governing PDEs into a weak (variational) form by multiplying with test functions and integrating over the domain. This allows handling of irregular geometries and discontinuous coefficients. The weak form ensures compatibility with numerical discretization and enforces boundary conditions weakly. It forms the basis for assembling the global stiffness matrix.",
+      "title": "Discretization of the Domain",
+      "description": "The computational domain is divided into smaller, simpler subdomains called elements. This process, known as mesh generation, defines the geometry and connectivity of elements. The choice of element type (e.g., triangular, quadrilateral) depends on the problem's complexity. A fine mesh improves accuracy but increases computational cost.",
       "equations": [
-        "\\int_{\\Omega} \\alpha \\nabla \\Phi \\cdot \\nabla v \\, d\\Omega + \\int_{\\Gamma} \\sigma \\Phi v \\, d\\Gamma = \\int_{\\Omega} f v \\, d\\Omega"
+        "\\Omega = \\bigcup_{e=1}^{N_e} \\Omega_e"
       ],
       "source_ids": [
-        "arxiv_1902.01090v2"
-      ],
-      "proposition_id": "f2dce875-c517-4608-bbc2-6240325929ba"
+        "arxiv_1712.01987v1",
+        "arxiv_1901.00775v2"
+      ]
     },
     {
       "step_number": 2,
-      "title": "Discretization",
-      "description": "Approximate the weak form using piecewise polynomial basis functions over a mesh. This transforms the infinite-dimensional problem into a finite system of equations. The choice of basis functions (e.g., linear, quadratic) affects accuracy and computational cost. Discretization requires careful handling of boundary conditions and material properties.",
+      "title": "Formulation of Weak Forms",
+      "description": "The governing partial differential equations are converted into a weak (variational) form by multiplying with test functions and integrating over the domain. This step reduces the smoothness requirements for the solution and enables the use of piecewise basis functions. The weak form is essential for applying Galerkin's method and ensuring numerical stability.",
       "equations": [
-        "\\Phi(x) \\approx \\sum_{i=1}^N \\Phi_i \\phi_i(x)"
+        "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega"
       ],
       "source_ids": [
-        "arxiv_1902.01090v2",
-        "wiki_c_a_s_lemma"
-      ],
-      "proposition_id": "c3b3eea9-002a-4d33-a075-9eb42f62fa72"
-    },
-    {
-      "step_number": 1,
-      "title": "Problem Formulation",
-      "description": "Define the Hilbert space $ V $ and the bilinear form $ a: V \\times V \\to \\mathbb{R} $, ensuring it satisfies continuity and coercivity. Introduce a bounded linear functional $ L: V \\to \\mathbb{R} $ to represent the problem's forcing terms. This step establishes the mathematical framework for the finite element method.",
-      "equations": [
-        "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
-        "a(v, v) \\geq \\alpha \\|v\\|^2"
-      ],
-      "source_ids": [
-        "wiki_c_a_s_lemma"
-      ],
-      "proposition_id": "e7d000f0-929e-45ec-a2b9-1edda10c82e4"
-    },
-    {
-      "step_number": 1,
-      "title": "Mesh Discretization",
-      "description": "The domain is divided into discrete elements, defining nodes and connectivity. This process creates a computational grid that approximates the geometry. The quality of the mesh influences the accuracy and stability of the solution. For spectral elements, non-uniform node distributions (e.g., Legendre-Gauss-Lobatto points) are used to optimize integration and mass matrix properties.",
-      "equations": [
-        "\\Omega = \\bigcup_{e=1}^{E} \\Omega_e"
-      ],
-      "source_ids": [
-        "wiki_spectral_element_method"
-      ],
-      "proposition_id": "f971edbb-23e4-4464-8009-15881f8421f2"
-    },
-    {
-      "step_number": 2,
-      "title": "Local Basis Function Construction",
-      "description": "Element-specific basis functions are defined over each subdomain. These functions interpolate solution values at nodal points. For spectral elements, high-order Lagrange polynomials are constructed using orthogonal collocation points. The basis functions ensure continuity across elements while maintaining local support for efficient computation.",
-      "equations": [
-        "N_i(x_j) = \\delta_{ij} \\quad \\text{for } x_j \\in \\Omega_e"
-      ],
-      "source_ids": [
-        "wiki_spectral_element_method"
-      ],
-      "proposition_id": "aba2a68c-9e0b-4305-bea2-4de873e7f679"
-    },
-    {
-      "step_number": 3,
-      "title": "Stiffness Matrix Assembly",
-      "description": "Element-level integrals are computed and assembled into a global system of equations. The Galerkin method projects the weak form onto the discrete basis space. Numerical integration (e.g., Gauss-Lobatto quadrature) is applied to evaluate stiffness and mass matrices. This step couples degrees of freedom across the domain.",
-      "equations": [
-        "K_{ij} = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\nabla N_i \\cdot \\nabla N_j \\, d\\Omega"
-      ],
-      "source_ids": [
-        "wiki_spectral_element_method"
-      ],
-      "proposition_id": "3872f657-530f-4f17-8f6d-16a04b792ea4"
+        "wiki_boris_galerkin",
+        "arxiv_1712.01987v1"
+      ]
     }
   ],
   "equations": [
     {
-      "name": "Elliptic PDE Weak Form",
-      "latex": "\\int_{\\Omega} \\alpha \\nabla \\Phi \\cdot \\nabla v \\, d\\Omega + \\int_{\\Gamma} \\sigma \\Phi v \\, d\\Gamma = \\int_{\\Omega} f v \\, d\\Omega",
-      "explanation": "This equation represents the weak form of an elliptic PDE. $\\alpha$ is the diffusion coefficient, $\\Phi$ is the solution variable, $v$ is the test function, $\\sigma$ enforces boundary conditions, $f$ is the source term, $\\Omega$ is the domain, and $\\Gamma$ is the boundary.",
+      "name": "Convergence Error Bound",
+      "latex": "\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)",
+      "explanation": "This equation represents the a-priori error bound for FEM solutions. $ u $ is the exact solution, $ u_h $ is the numerical solution, $ \\Delta t $ is the time step, $ h $ is the mesh size, $ s $ is the polynomial order, and $ C $ is a constant. It ensures convergence as $ \\Delta t $ and $ h $ approach zero.",
       "source_ids": [
-        "arxiv_1902.01090v2"
-      ],
-      "proposition_id": "93cd3fcb-6663-48e8-864e-fe721d654a19"
+        "arxiv_1712.01987v1"
+      ]
     },
     {
-      "name": "Saddle Point System",
-      "latex": "\\begin{bmatrix} \\mathbf{K} & \\mathbf{B}^T \\\\ \\mathbf{B} & \\mathbf{0} \\end{bmatrix} \\begin{bmatrix} \\mathbf{u} \\\\ \\boldsymbol{\\lambda} \\end{bmatrix} = \\begin{bmatrix} \\mathbf{f} \\\\ \\mathbf{0} \\end{bmatrix}",
-      "explanation": "This system arises in mixed formulations, where $\\mathbf{K}$ is the stiffness matrix, $\\mathbf{B}$ enforces constraints via Lagrange multipliers $\\boldsymbol{\\lambda}$, and $\\mathbf{u}$ represents primary variables. The non-definite structure complicates solution strategies.",
+      "name": "Weak Formulation",
+      "latex": "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega",
+      "explanation": "This equation defines the weak form of a PDE. $ u_h $ is the approximate solution, $ v $ is a test function, $ f $ is a source term, and $ \\Omega $ is the domain. The weak form allows for solutions with lower regularity and is the basis for FEM discretization.",
       "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "proposition_id": "b9d7e143-ffc5-4cec-8286-6f6584d34428"
-    },
-    {
-      "name": "Continuity Condition",
-      "latex": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
-      "explanation": "This equation ensures the bilinear form $ a $ is bounded, where $ \\gamma $ is a positive constant, and $ \\|\\cdot\\| $ denotes the norm in the Hilbert space $ V $. It guarantees that small changes in $ v $ or $ w $ result in proportionally small changes in $ a(v, w) $.",
-      "source_ids": [
-        "wiki_c_a_s_lemma"
-      ],
-      "proposition_id": "a3c4507f-b540-4ef5-813d-e2185b7a4f66"
-    },
-    {
-      "name": "Coercivity Condition",
-      "latex": "a(v, v) \\geq \\alpha \\|v\\|^2",
-      "explanation": "This inequality ensures the bilinear form $ a $ is uniformly positive definite, with $ \\alpha $ a positive constant. It guarantees the existence and uniqueness of the solution to the variational problem.",
-      "source_ids": [
-        "wiki_c_a_s_lemma"
-      ],
-      "proposition_id": "15006e46-9a5d-4c6b-91be-241495c4ae51"
-    },
-    {
-      "name": "Variational Equation",
-      "latex": "a(u, v) = L(v)",
-      "explanation": "This equation defines the weak form of the partial differential equation, where $ u $ is the solution in the Hilbert space $ V $, $ v $ is a test function, and $ L(v) $ represents the action of the linear functional. It is the foundation of the finite element method.",
-      "source_ids": [
-        "wiki_c_a_s_lemma"
-      ],
-      "proposition_id": "5d4217a7-813c-492e-97ee-eb5fd23bb694"
-    },
-    {
-      "name": "Poisson Equation Weak Form",
-      "latex": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\partial\\Omega} g v \\, d\\Gamma",
-      "explanation": "This equation represents the weak form of the Poisson equation. The left-hand side computes the inner product of gradients for the solution $u$ and test function $v$. The right-hand side includes the source term $f$ and Neumann boundary conditions $g$. Integration over the domain $\\Omega$ and boundary $\\partial\\Omega$ ensures global balance.",
-      "source_ids": [
-        "wiki_spectral_element_method"
-      ],
-      "proposition_id": "b7687293-0721-4e64-9efd-ef6e7e5e73c3"
-    },
-    {
-      "name": "Stiffness Matrix Assembly",
-      "latex": "K_{ij} = \\sum_{e=1}^{E} \\int_{\\Omega_e} \\nabla N_i \\cdot \\nabla N_j \\, d\\Omega",
-      "explanation": "The stiffness matrix $K$ is assembled by summing element contributions. Each entry $K_{ij}$ corresponds to the integral of the product of gradients of basis functions $N_i$ and $N_j$ over element $\\Omega_e$. This matrix encodes the system's physical properties and governs the solution's behavior.",
-      "source_ids": [
-        "wiki_spectral_element_method"
-      ],
-      "proposition_id": "22af8049-7c21-4a7b-9e47-d05c1a8d52ae"
-    },
-    {
-      "name": "Galerkin Weak Form",
-      "latex": "\\int_{\\Omega} L(u) v \\, d\\Omega = 0",
-      "explanation": "This equation represents the core of Galerkin's Method, where $ L(u) $ is the differential operator applied to the solution $ u $, $ v $ are test functions, and $ \\Omega $ is the domain. The integral ensures the residual error is orthogonal to the test functions, providing an approximate solution.",
-      "source_ids": [
-        "wiki_boris_galerkin"
+        "wiki_boris_galerkin",
+        "arxiv_1712.01987v1"
       ]
     }
   ],
   "rules": [
     {
-      "rule": "Use Mixed Elements for Incompressible Materials",
-      "explanation": "Mixed finite elements prevent numerical locking in nearly incompressible problems by decoupling stress and strain fields. This ensures stability and accuracy where primal methods fail due to rank deficiency.",
+      "rule": "Mesh Refinement Strategy",
+      "explanation": "Mesh refinement must balance accuracy and computational cost. Local refinement in regions of high gradient or curvature improves solution quality, while coarse meshes in smooth regions reduce resource usage. Adaptive meshing techniques dynamically adjust element size based on error estimates.",
       "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "proposition_id": "37a09435-2e52-46fc-a141-158d47f95738"
+        "arxiv_1712.01987v1"
+      ]
     },
     {
-      "rule": "Enforce Continuity Weakly in Hybrid Methods",
-      "explanation": "Hybrid methods use boundary Lagrange multipliers to weakly enforce inter-element continuity, reducing degrees of freedom and eliminating negative pivots from mixed formulations. This improves solver efficiency and robustness.",
+      "rule": "Element Type Selection",
+      "explanation": "The choice of element type (e.g., Raviart-Thomas-Nédélec for electromagnetic problems) must align with the problem's physical characteristics. Higher-order elements (k ≥ 2) enhance accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. Element selection affects stability and convergence.",
       "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "proposition_id": "ddaf55db-f9ff-4c5f-bb97-5f580ceec51a"
-    },
-    {
-      "rule": "Coercivity and Continuity Requirement",
-      "explanation": "The bilinear form must satisfy both continuity and coercivity to ensure the well-posedness of the variational problem. These conditions guarantee the existence, uniqueness, and stability of the finite element solution, preventing numerical instabilities during computation.",
-      "source_ids": [
-        "wiki_c_a_s_lemma"
-      ],
-      "proposition_id": "5c4720fc-d543-499d-b3f2-f0d4cc1b3bc9"
-    },
-    {
-      "rule": "Mesh Size and Polynomial Order Trade-off",
-      "explanation": "Higher polynomial orders reduce discretization error more rapidly than mesh refinement. However, very high orders may increase computational costs and numerical instability. The method's robustness to mesh size and polynomial order (up to 32) ensures reliable performance across diverse applications.",
-      "source_ids": [
-        "arxiv_1512.02390v2"
-      ],
-      "proposition_id": "4224c6a9-1fb2-4255-9fce-f0ccc3bdb2b9"
-    },
-    {
-      "rule": "Basis Function Orthogonality",
-      "explanation": "Using orthogonal basis functions (e.g., Chebyshev or Legendre polynomials) minimizes stiffness matrix conditioning issues. This property simplifies numerical integration and improves solution convergence rates, especially for spectral elements.",
-      "source_ids": [
-        "wiki_spectral_element_method"
-      ],
-      "proposition_id": "9a2b5bba-6091-45e6-9451-bd8ec0a397a0"
+        "arxiv_1712.01987v1",
+        "arxiv_1901.00775v2"
+      ]
     }
   ]
 }
