@@ -43,7 +43,8 @@
       "mathematical_formulation": "\\Omega = \\bigcup_{e=1}^{N} \\Omega_e",
       "source_ids": [
         "wiki_meshfree_methods"
-      ]
+      ],
+      "concept_id": "e9efa0ee-ced3-414e-bf4d-3899e0c2d7c3"
     },
     {
       "name": "Node-Centric Properties",
@@ -51,6 +52,24 @@
       "mathematical_formulation": "m_i = \\sum_{e \\in E_i} m_e",
       "source_ids": [
         "wiki_meshfree_methods"
+      ],
+      "concept_id": "1c1a11a2-f12b-4b97-bdd0-8c154f383255"
+    },
+    {
+      "name": "Flexibility Matrix",
+      "explanation": "The flexibility matrix characterizes a structural member's susceptibility to deformation under applied forces. It is the inverse of the stiffness matrix, relating member deformations to internal forces. For a spring, flexibility f equals 1/k where k is stiffness. In complex systems, flexibility matrices aggregate member-specific relationships to model global deformation responses. This concept is critical for the flexibility method in structural analysis.",
+      "mathematical_formulation": "q^m = \\mathbf{f}^m Q^m",
+      "source_ids": [
+        "wiki_flexibility_method"
+      ]
+    },
+    {
+      "name": "Discontinuous Galerkin (DG) Methods",
+      "explanation": "DG methods use piecewise discontinuous approximations across element boundaries while maintaining weak continuity through numerical fluxes. They combine the flexibility of discontinuous approximations with the simplicity of conforming methods. These methods enforce boundary conditions strongly and handle complex geometries effectively. DG formulations often require additional terms to ensure stability across element interfaces.",
+      "mathematical_formulation": " \\text{Weak form: } (\\nabla u, \\nabla v) = (f, v) \\text{ for } v \\in H_0^1(\\Omega)",
+      "source_ids": [
+        "arxiv_1904.03331v1",
+        "arxiv_2212.07041v1"
       ]
     }
   ],
@@ -126,7 +145,8 @@
       ],
       "source_ids": [
         "wiki_meshfree_methods"
-      ]
+      ],
+      "proposition_id": "9f31acee-968f-4ac7-a27e-c3c675c49073"
     },
     {
       "step_number": 2,
@@ -136,7 +156,20 @@
         "\\int_{\\Omega} \\delta u \\cdot f \\, d\\Omega = 0"
       ],
       "source_ids": [
+        "arxiv_1904.03331v1",
         "wiki_meshfree_methods"
+      ],
+      "proposition_id": "836a0dc3-5ea8-4690-9fe0-00e78890cbb3"
+    },
+    {
+      "step_number": 2,
+      "title": "Discretization",
+      "description": "Partition the domain into discrete elements and approximate the solution using basis functions. For DG methods, approximations are allowed to be discontinuous across element boundaries. The solution space is constructed using piecewise polynomial functions. This step defines the discrete unknowns and their relationships through element-level equations.",
+      "equations": [
+        "u_h \\in V_h^k, \\quad V_h^k = \\{ v_h \\in L^2(\\Omega) : v_h|_K \\in P_k(K) \\forall K \\in \\mathcal{T}_h \\}"
+      ],
+      "source_ids": [
+        "arxiv_1904.03331v1"
       ]
     }
   ],
@@ -184,7 +217,8 @@
       "explanation": "This equation represents the decomposition of the computational domain $\\Omega$ into $N$ non-overlapping elements $\\Omega_e$. Each element $\\Omega_e$ is a subdomain where the solution is approximated using basis functions. The union of all elements reconstructs the entire domain, enabling localized calculations.",
       "source_ids": [
         "wiki_meshfree_methods"
-      ]
+      ],
+      "proposition_id": "88ed6d7f-8d08-4f85-9b8d-0fa7e7e53947"
     },
     {
       "name": "Weak Form of PDE",
@@ -192,6 +226,23 @@
       "explanation": "This equation defines the weak form of a partial differential equation (PDE), where $\\delta u$ is a test function and $f$ represents the residual of the PDE. The integral ensures that the solution satisfies the PDE in an averaged sense over the domain, reducing the need for high-order continuity in the solution.",
       "source_ids": [
         "wiki_meshfree_methods"
+      ],
+      "proposition_id": "a6fca88b-6c27-4898-879a-63e55060e1e7"
+    },
+    {
+      "name": "Flexibility Relation",
+      "latex": "q^m = \\mathbf{f}^m Q^m",
+      "explanation": "q^m: Member deformation vector; \\mathbf{f}^m: Member flexibility matrix; Q^m: Member internal force vector. This equation defines the linear relationship between forces and deformations for a structural member.",
+      "source_ids": [
+        "wiki_flexibility_method"
+      ]
+    },
+    {
+      "name": "Poisson Equation Weak Form",
+      "latex": "(\\nabla u, \\nabla v) = (f, v) \\quad \\forall v \\in H_0^1(\\Omega)",
+      "explanation": "u: Solution function; v: Test function; f: Source term; \\Omega: Domain. This integral equation represents the variational formulation of Poisson's equation with Dirichlet boundary conditions.",
+      "source_ids": [
+        "arxiv_1904.03331v1"
       ]
     }
   ],
@@ -234,13 +285,29 @@
       "explanation": "A well-structured mesh is critical for FEM accuracy. Degenerate or highly distorted elements can introduce numerical errors and instability. Proper mesh refinement and validation ensure that the solution remains reliable, especially in regions with high gradients or complex geometries.",
       "source_ids": [
         "wiki_meshfree_methods"
-      ]
+      ],
+      "proposition_id": "b6a4fa1e-e73d-4eff-96c6-4c990a116148"
     },
     {
       "rule": "Ensure Connectivity Consistency",
       "explanation": "The predefined connectivity between nodes in FEM must remain consistent throughout the simulation. Disruptions in connectivity, such as mesh tangling, can invalidate mathematical operators like derivatives, leading to incorrect results. This is particularly important in dynamic simulations with large deformations.",
       "source_ids": [
         "wiki_meshfree_methods"
+      ],
+      "proposition_id": "5a595ac1-bd3e-48f9-8512-ab8cccb76365"
+    },
+    {
+      "rule": "Flexibility Matrix Integration",
+      "explanation": "Flexibility matrices must account for external effects (e.g., temperature, loads) applied to isolated members. This ensures accurate deformation calculations when assembling global system equations. Neglecting external effects leads to incorrect displacement predictions.",
+      "source_ids": [
+        "wiki_flexibility_method"
+      ]
+    },
+    {
+      "rule": "Boundary Condition Enforcement",
+      "explanation": "Conforming DG methods require strong enforcement of Dirichlet boundary conditions. This ensures solution accuracy at domain boundaries. Weak enforcement may lead to numerical instabilities or reduced convergence rates.",
+      "source_ids": [
+        "arxiv_1904.03331v1"
       ]
     }
   ]
