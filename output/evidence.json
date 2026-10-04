@@ -333,63 +333,6 @@
     }
   },
   {
-    "source_id": "arxiv_2210.16907v1",
-    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
-    "retrieved_at": "2026-10-04T17:07:18.712991+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
-    "authors": [
-      "Dan Li",
-      "Chunmei Wang",
-      "Junping Wang"
-    ],
-    "metadata": {
-      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
-      "published": "2022-10-30T18:14:18Z",
-      "page_count": 0,
-      "word_count": 9773
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
-    "full_text_available": true,
-    "status": "cached_full_text",
-    "query_context": "finite element method mathematical foundation weak form Galerkin method",
-    "query_contexts": [
-      "finite element method mathematical foundation weak form Galerkin method"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.62141,
-      "lexical": 0.55963,
-      "source_quality": 0.85,
-      "section_relevance": 0.451506,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "discontinuous galerkin methods finite element",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "finite element plastic analysis approach": 0.2125,
-        "discontinuous galerkin methods finite element": 0.62141,
-        "finite element flexibility method": 0.2125
-      }
-    }
-  },
-  {
     "source_id": "wiki_meshfree_methods",
     "url": "https://en.wikipedia.org/wiki/Meshfree_methods",
     "retrieved_at": "2026-10-04T16:43:52.426980+00:00",
@@ -443,7 +386,7 @@
   {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-04T16:43:52.426980+00:00",
+    "retrieved_at": "2026-10-04T17:09:51.266277+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -489,8 +432,64 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "Meshfree methods finite element analysis": 0.2125,
-        "Gradient discretization method finite element analysis": 0.2125
+        "finite element method symmetry of the matrix": 0.2125,
+        "finite element method choosing a basis": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2210.16907v1",
+    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
+    "retrieved_at": "2026-10-04T17:09:51.266277+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
+    "authors": [
+      "Dan Li",
+      "Chunmei Wang",
+      "Junping Wang"
+    ],
+    "metadata": {
+      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
+      "published": "2022-10-30T18:14:18Z",
+      "page_count": 0,
+      "word_count": 9773
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
+    "full_text_available": true,
+    "status": "cached_full_text",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.457846,
+      "lexical": 0.335778,
+      "source_quality": 0.85,
+      "section_relevance": 0.270904,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method mathematical foundation weak form Galerkin method",
+      "query_index": 0,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "finite element method symmetry of the matrix": 0.2125,
+        "finite element method choosing a basis": 0.2125
       }
     }
   },
@@ -552,9 +551,68 @@
     }
   },
   {
+    "source_id": "s2_7a650b892903d6812eec0a7bd3a32928bfa27267",
+    "url": "https://link.springer.com/content/pdf/10.1007/s00466-024-02451-x.pdf",
+    "retrieved_at": "2026-10-04T17:09:51.266277+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "finite element method choosing a basis",
+    "source_type": "academic",
+    "content_type": "application/pdf",
+    "title": "Plane crack problems within strain gradient elasticity and mixed finite element implementation",
+    "authors": [
+      "A. Chirkov",
+      "L. Nazarenko",
+      "H. Altenbach"
+    ],
+    "metadata": {
+      "abstract": "An alternative approach is proposed and applied to solve boundary value problems within the strain gradient elasticity theory. A mixed variation formulation of the finite element method (FEM) based on the concept of the Galerkin method is used. To construct finite-dimensional subspaces separate approximations of displacements, deformations, stresses, and their gradients are implemented by choosing the different sets of piecewise polynomial basis functions, interrelated by the stability condition of the mixed FEM approximation. This significantly simplifies the pre-requirement for approximating functions to belong to class C1 and allows one to use the simplest triangular finite elements with a linear approximation of displacements under uniform or near-uniform triangulation conditions. Global unknowns in a discrete problem are nodal displacements, while the strains and stresses and their gradients are treated as local unknowns. The conditions of existence, uniqueness, and continuous dependence of the solution on the problem’s initial data are formulated for discrete equations of mixed FEM. These are solved by a modified iteration procedure, where the global stiffness matrix for classical elasticity problems is treated as a preconditioning matrix with fictitious elastic moduli. This avoids the need to form a global stiffness matrix for the problem of strain gradient elasticity since it is enough to calculate only the residual vector in the current approximation. A set of modeling plane crack problems is solved. The obtained solutions agree with the results available in the relevant literature. Good convergence is achieved by refining the mesh for all scale parameters. All three problems under study exhibit specific qualitative features characterizing strain gradient solutions namely crack stiffness increase with length scale parameter and cusp-like closure effect.",
+      "year": 2024,
+      "citation_count": 17,
+      "word_count": 270,
+      "page_count": 1,
+      "open_access_pdf_available": true,
+      "full_text_available": false,
+      "full_text_status": "scanned_or_empty"
+    },
+    "full_text_path": null,
+    "status": "scanned_or_empty",
+    "query_contexts": [
+      "finite element method choosing a basis"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.365841,
+      "lexical": 0.209861,
+      "source_quality": 0.85,
+      "section_relevance": 0.169315,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method practical implementation modeling rules",
+      "query_index": 1,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.365841,
+        "finite element method verification validation numerical stability": 0.2125,
+        "finite element method symmetry of the matrix": 0.2125,
+        "finite element method choosing a basis": 0.2125
+      }
+    }
+  },
+  {
     "source_id": "wiki_boris_galerkin",
     "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
-    "retrieved_at": "2026-10-04T16:41:02.886951+00:00",
+    "retrieved_at": "2026-10-04T17:09:51.266277+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Boris Galerkin",
@@ -597,9 +655,8 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.260173,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "A-FEM finite element method": 0.1375,
-        "hpk-FEM finite element method": 0.1375,
-        "mixed finite element method": 0.1375
+        "finite element method symmetry of the matrix": 0.1375,
+        "finite element method choosing a basis": 0.1375
       }
     }
   }

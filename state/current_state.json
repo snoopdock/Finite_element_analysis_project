@@ -2,10 +2,10 @@
   "schema_version": 6,
   "topic": "Finite Element Method Theory Implementation and Modeling Rules",
   "objective": "Produce a comprehensive technical guideline explaining how the Finite Element Method works\nincluding mathematical foundation, step-by-step procedure, and rules for modeling physical phenomena.\n",
-  "cycle": 4,
-  "iteration": 4,
-  "last_run": "2026-10-04T17:08:22.937475+00:00",
-  "last_run_status": "success",
+  "cycle": 5,
+  "iteration": 5,
+  "last_run": "2026-10-04T17:10:53.789317+00:00",
+  "last_run_status": "partial",
   "knowledge_base": {
     "concepts": [
       {
@@ -1741,19 +1741,11 @@
   "sections": [
     {
       "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
-      "content": "Galerkin's method is a foundational technique in the Finite Element Method (FEM) that transforms partial differential equations into a weak form. This is achieved by formulating the weak form of the governing equations, which involves multiplying the PDE by a test function and integrating over the domain. The weak form is essential for applying Galerkin's method and ensuring numerical stability. The weak form of a PDE is defined as $\\int_{\\Omega} \\delta u \\cdot f \\, d\\Omega = 0$, where $\\delta u$ is a test function and $f$ represents the residual of the PDE. This approach ensures that the solution satisfies the governing equations in an integral sense rather than pointwise. The method is critical for deriving variational formulations and is widely used in structural and electromagnetic simulations.\n\nThe formulation of weak equations is a crucial step in transforming partial differential equations (PDEs) into a weak form, which is essential for applying Galerkin's method and ensuring numerical stability. This process involves multiplying the governing PDEs by test functions and integrating over the domain, reducing the smoothness requirements for the solution and enabling the use of piecewise basis functions. For mixed methods, additional variables such as pressure or flux are introduced into the weak form. The weak form is then assembled into a global system of equations, which reflects the discretized weak form and incorporates Lagrange multiplier constraints to enforce continuity or physical laws. This approach ensures that the solution satisfies the governing equations in an integral sense rather than pointwise, as demonstrated by the Poisson equation weak form: $ (\\nabla u, \\nabla v) = (f, v) \\quad \\forall v \\in H_0^1(\\Omega)$ [arxiv_1904.03331v1].\n\nThe weak form of a partial differential equation is a crucial concept in the Finite Element Method (FEM). It is formulated by multiplying the governing equation with a test function and integrating over the domain. This process reduces the smoothness requirements for the solution, making it easier to approximate using piecewise functions. The weak form ensures that the solution satisfies the equations in an integral sense rather than pointwise. For example, the weak form of the Poisson equation is given by $ (\\nabla u, \\nabla v) = (f, v) \\quad \\forall v \\in H_0^1(\\Omega) $, where $u$ is the solution function, $v$ is the test function, $f$ is the source term, and $\\Omega$ is the domain. This formulation is essential for applying Galerkin's method and ensuring numerical stability, as stated in [arxiv_1712.01987v1] and [wiki_boris_galerkin].",
+      "content": "Galerkin's method is a foundational technique in the Finite Element Method (FEM) that transforms partial differential equations into a weak form by converting the governing partial differential equations into a weak (variational) form. This is achieved by multiplying the PDE by a test function and integrating over the domain, which reduces the smoothness requirements for the solution and enables the use of piecewise basis functions. The weak form, as represented by the equation $\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega$, ensures that the solution satisfies the governing equations in an integral sense rather than pointwise, making it a critical step for handling complex boundary conditions and nonlinear problems.\n\nConverting the strong form of partial differential equations (PDEs) into a weak form using test functions is a crucial step in the Finite Element Method (FEM). This process involves multiplying the PDE by a test function and integrating over the domain, which accommodates discontinuous fields and natural boundary conditions. For mixed methods, additional variables such as pressure or flux are introduced into the weak form. The weak form is essential for applying Galerkin's method and ensuring numerical stability, as it reduces the smoothness requirements for the solution, making it easier to approximate using piecewise functions.",
       "key_equations": [
-        "\\int_{\\Omega} \\delta u \\cdot f \\, d\\Omega = 0",
-        "\\delta u",
-        "f",
-        "(\\nabla u, \\nabla v) = (f, v) \\quad \\forall v \\in H_0^1(\\Omega)",
-        "u"
+        "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega"
       ],
-      "citations_used": [
-        "arxiv_1712.01987v1",
-        "arxiv_1904.03331v1",
-        "wiki_boris_galerkin"
-      ],
+      "citations_used": [],
       "section_id": "49477b52-afde-48e5-a277-065c31facd86",
       "parent_section_ids": [],
       "generated_from": "writer",
@@ -1761,13 +1753,13 @@
     },
     {
       "title": "The Finite Element Procedure",
-      "content": "The formulation of weak forms is a critical step in transforming partial differential equations (PDEs) into a weak form, which is essential for applying Galerkin's method and ensuring numerical stability. According to the procedure for formulating weak forms, the governing PDEs are converted into a weak (variational) form by multiplying with test functions and integrating over the domain. This step reduces the smoothness requirements for the solution and enables the use of piecewise basis functions. The weak form is defined as $\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega$ for all test functions $v$ in the domain $\\Omega$ [wiki_boris_galerkin, arxiv_1712.01987v1]. This weak form is a crucial component of Galerkin's method, which is a foundational technique in the Finite Element Method (FEM) that transforms PDEs into a weak form.\n\nError estimation techniques play a crucial role in improving finite element solutions by quantifying the discrepancy between the exact solution and the numerical approximation. This involves analyzing temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes. The a-priori error bound for FEM solutions is given by $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant. This equation ensures convergence as $\\Delta t$ and $h$ approach zero. By using error estimates, adaptive mesh refinement can be employed to improve solution accuracy and reliability. According to the mesh refinement strategy, mesh refinement must balance accuracy and computational cost, with local refinement in regions of high gradient or curvature improving solution quality.\n\nThe mesh-based discretization strategy in the Finite Element Method (FEM) relies on dividing a complex domain into smaller, simpler parts called elements, connected through nodes. This approach defines relationships between nodes to approximate solutions to partial differential equations. The mesh allows for systematic analysis of physical properties across discrete elements, with properties such as mass or energy assigned to nodes rather than elements. This node-centric approach facilitates efficient data management and updates during simulations, contrasting with meshfree methods where properties are distributed across interacting nodes without fixed element boundaries. The domain is discretized into $N$ non-overlapping elements $\\Omega_e$, each approximated using basis functions, with the union of all elements reconstructing the entire domain.",
+      "content": "Error estimation in the Finite Element Method (FEM) is a critical component that quantifies the discrepancy between the exact solution and the numerical approximation. By analyzing temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes, error estimation guides adaptive mesh refinement and ensures solution accuracy. The a-priori L∞ assumption is often used to establish convergence guarantees, as demonstrated by the convergence error bound equation: $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant. This approach ensures that the solution converges as $\\Delta t$ and $h$ approach zero, as shown in [arxiv_1712.01987v1].\n\nThe Finite Element Method relies on mesh-based discretization to approximate solutions to partial differential equations. This approach involves dividing a complex domain into smaller, simpler parts called elements, connected through nodes. The mesh allows for systematic analysis of physical properties across discrete elements. The computational domain is represented as the union of all elements, denoted by $\\Omega = \\bigcup_{e=1}^{N} \\Omega_e$. This discretization enables localized calculations and facilitates the application of basis functions to approximate the solution. The choice of element type and mesh refinement strategy are critical in ensuring solution accuracy and reliability, as demonstrated by the use of a-priori error bounds and adaptive mesh refinement techniques [arxiv_1712.01987v1]. The mesh-based approach simplifies the calculation of mathematical operators like derivatives, making it a fundamental component of the Finite Element Method.\n\nGalerkin's method is a foundational technique in the Finite Element Method (FEM) that transforms partial differential equations into a weak form. This is achieved by formulating the weak form of the governing equations, which involves multiplying the PDE with a test function and integrating over the domain. The weak form is essential for applying Galerkin's method and ensuring numerical stability. As shown in the weak formulation, $ \\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega $, the weak form allows for solutions with lower regularity and is the basis for FEM discretization [wiki_boris_galerkin, arxiv_1712.01987v1]. By using test functions, the weak form accommodates discontinuous fields and natural boundary conditions, making it a critical component of the FEM procedure.",
       "key_equations": [
-        "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega",
-        "v",
-        "\\Omega",
         "O(\\Delta t)",
-        "O(h^s)"
+        "O(h^s)",
+        "\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)",
+        "u",
+        "u_h"
       ],
       "citations_used": [
         "arxiv_1712.01987v1",
@@ -1780,16 +1772,14 @@
     },
     {
       "title": "Rules for Modeling Physical Phenomena with FEM: Element Type Selection and Stability",
-      "content": "The choice of element type is a critical aspect of modeling physical phenomena with the Finite Element Method (FEM). According to the RULE: Element Type Selection, the element type must align with the problem's physical characteristics. Higher-order elements (k ≥ 2) enhance accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. Element selection affects stability and convergence, as demonstrated in [arxiv_1712.01987v1] and [arxiv_1901.00775v2]. For instance, the Raviart-Thomas-Nédélec element is often used for electromagnetic problems due to its ability to accurately capture the behavior of electromagnetic fields.\n\nError estimation in the Finite Element Method (FEM) plays a crucial role in quantifying the discrepancy between the exact solution and the numerical approximation. By analyzing temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes, these estimates guide adaptive mesh refinement and ensure solution accuracy. The a-priori $L^\\infty$ assumption is often used to establish convergence guarantees, as shown in the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$ [arxiv_1712.01987v1]. A well-designed mesh is essential for accurate FEM simulations, and mesh generation techniques must balance accuracy and computational cost. The mesh-based discretization approach of FEM relies on dividing a complex domain into smaller elements, connected through nodes, which defines relationships between nodes to approximate solutions to partial differential equations.\n\nWhen choosing between Galerkin's method and the mixed finite element method for complex problems, it is essential to consider the problem's physical characteristics. According to the RULE: Element Type Selection, the choice of element type must align with the problem's physical characteristics, as stated in [arxiv_1712.01987v1]. For instance, higher-order elements (k ≥ 2) enhance accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. The mixed finite element method introduces additional fields to solve partial differential equations, differing from traditional irreducible methods, as described in [wiki_mixed_finite_element_method]. This approach is particularly effective for problems like almost incompressible elasticity, where standard methods may fail. However, the mixed finite element method results in a saddle-point system with non-definite matrices, complicating solution strategies. Therefore, the choice between Galerkin's method and the mixed finite element method depends on the specific problem characteristics and the desired level of accuracy, as discussed in [arxiv_1901.00775v2].",
+      "content": "The choice of element type is a critical aspect of modeling physical phenomena with the Finite Element Method (FEM). According to the RULE: Element Type Selection, the element type must align with the problem's physical characteristics. Higher-order elements (k ≥ 2) enhance accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. Element selection affects stability and convergence, as demonstrated in [arxiv_1712.01987v1] and [arxiv_1901.00775v2]. The computational domain is divided into smaller, simpler subdomains called elements, which are connected through nodes. The quality of the mesh directly impacts the accuracy and stability of the simulation, and poorly constructed meshes can lead to numerical errors, requiring careful refinement and validation, as discussed in [wiki_meshfree_methods].\n\nEnsuring the stability of the finite element model is crucial for maintaining numerical accuracy and reliability. Mesh generation plays a pivotal role in this process, as it defines the spatial relationships between nodes that are critical for subsequent calculations. A well-constructed mesh directly impacts the accuracy and stability of the simulation, whereas poorly constructed meshes can lead to numerical errors. The choice of element type, guided by the RULE: Element Type Selection, must also align with the problem's physical characteristics. Higher-order elements enhance accuracy for smooth solutions, while lower-order elements are suitable for nonlinear or discontinuous problems. By analyzing temporal and spatial discretization errors, such as $O(\\Delta t + h^s)$, error estimation in FEM quantifies the discrepancy between the exact solution and the numerical approximation, guiding adaptive mesh refinement and ensuring solution accuracy.\n\nApplying advanced finite element methods, such as the mixed finite element method, to solve complex physical phenomena involves the use of Lagrange multipliers and additional fields. The mixed finite element method introduces additional fields to solve partial differential equations, differing from traditional irreducible methods [wiki_mixed_finite_element_method]. These extra fields are often constrained using Lagrange multipliers to enforce continuity or physical constraints. This approach is particularly effective for problems like almost incompressible elasticity, where standard methods may fail. The method results in a saddle-point system with non-definite matrices, complicating solution strategies. By combining element-level contributions into a global system of equations, the assembled system reflects the discretized weak form, incorporating Lagrange multiplier constraints to enforce continuity or physical laws [wiki_mixed_finite_element_method].",
       "key_equations": [
-        "O(\\Delta t)",
-        "O(h^s)",
-        "L^\\infty",
-        "\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)"
+        "O(\\Delta t + h^s)"
       ],
       "citations_used": [
         "arxiv_1712.01987v1",
         "arxiv_1901.00775v2",
+        "wiki_meshfree_methods",
         "wiki_mixed_finite_element_method"
       ],
       "section_id": "b755be15-8c1d-44de-a849-e1b0d1debbac",
@@ -1850,17 +1840,15 @@
     },
     {
       "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: Convergence Guarantees and Adaptive Mesh Refinement",
-      "content": "Error estimation in the Finite Element Method (FEM) is a crucial aspect of ensuring solution accuracy and reliability. By analyzing temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes, error estimation guides adaptive mesh refinement and guarantees solution convergence. The a-priori L∞ assumption is often used to establish convergence guarantees, as demonstrated by the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$ [arxiv_1712.01987v1]. This equation represents the a-priori error bound for FEM solutions, ensuring convergence as $\\Delta t$ and $h$ approach zero.\n\nMaintaining mesh quality is a crucial aspect of Finite Element Modeling, as it directly impacts the accuracy and stability of the simulation. According to the RULE: Maintain Mesh Quality, a well-structured mesh is essential for FEM accuracy, as degenerate or highly distorted elements can introduce numerical errors and instability. The mesh-based discretization approach of FEM relies on dividing a complex domain into smaller, simpler parts called elements, connected through nodes, which defines relationships between nodes to approximate solutions to partial differential equations. As per the EQUATION: Convergence Error Bound, $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, the error between the exact solution $u$ and the numerical solution $u_h$ is bounded by the sum of the time step $\\Delta t$ and the mesh size $h^s$. This highlights the importance of adaptive meshing techniques that dynamically adjust element size based on error estimates, as per the RULE: Mesh Refinement Strategy, to balance accuracy and computational cost.",
+      "content": "Convergence guarantees in the Finite Element Method (FEM) are crucial for ensuring the accuracy and reliability of numerical approximations. The a-priori L∞ assumption is often used to establish convergence guarantees, which are represented by the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant. This equation ensures convergence as $\\Delta t$ and $h$ approach zero. To achieve this convergence, mesh refinement is necessary, which involves balancing accuracy and computational cost. Local refinement in regions of high gradient or curvature improves solution quality, while coarse meshes in smooth regions reduce resource usage.\n\nError estimation in the Finite Element Method (FEM) quantifies the discrepancy between the exact solution and the numerical approximation. It involves analyzing temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes. These estimates guide adaptive mesh refinement and ensure solution accuracy. The a-priori L∞ assumption is often used to establish convergence guarantees, represented by the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant.",
       "key_equations": [
-        "O(\\Delta t)",
-        "O(h^s)",
         "\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)",
+        "u",
+        "u_h",
         "\\Delta t",
         "h"
       ],
-      "citations_used": [
-        "arxiv_1712.01987v1"
-      ],
+      "citations_used": [],
       "section_id": "1e773c54-5884-40b4-8119-3edaf43d1cd2",
       "parent_section_ids": [
         "9a36dd9b-44e7-4e9c-9e58-967c3bbe3672"
@@ -1894,13 +1882,13 @@
     },
     {
       "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: A-priori Error Bounds for FEM Solutions",
-      "content": "The Finite Element Method (FEM) employs Galerkin's method to transform partial differential equations into a weak form, ensuring numerical stability and accuracy. This is achieved by approximating the solution using a set of basis functions and minimizing the residual error over the domain, as expressed by the weak form equation $\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega$ for all test functions $v \\in V_h$. The choice of element type, such as Raviart-Thomas-Nédélec for electromagnetic problems, must align with the problem's physical characteristics, with higher-order elements enhancing accuracy for smooth solutions. The a-priori error bound for FEM solutions, represented by the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, ensures convergence as time steps and mesh sizes approach zero, guiding adaptive mesh refinement and ensuring solution accuracy.\n\nMesh-based discretization is a fundamental aspect of the Finite Element Method (FEM), where the computational domain is divided into smaller, simpler subdomains called elements. This process, known as mesh generation, defines the geometry and connectivity of elements, allowing for systematic analysis of physical properties across discrete elements. The choice of element type, such as triangular or quadrilateral, depends on the problem's complexity, and a fine mesh improves accuracy but increases computational cost. By utilizing mesh-based discretization, FEM can effectively approximate solutions to partial differential equations, enabling the establishment of convergence guarantees through a-priori error bounds, such as $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant.\n\nThe Convergence Error Bound for FEM solutions using weak formulation is a crucial concept in establishing convergence guarantees. According to the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, the error between the exact solution $u$ and the numerical solution $u_h$ can be bounded by a constant $C$, the time step $\\Delta t$, the spatial mesh size $h$, and the polynomial order $s$. This equation ensures convergence as $\\Delta t$ and $h$ approach zero, providing a rigorous framework for error estimation and adaptive mesh refinement in the Finite Element Method.",
+      "content": "Galerkin's method is a foundational technique in the Finite Element Method (FEM) that transforms partial differential equations into a weak form by converting the governing partial differential equation into an integral equation, $\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega \\quad \\forall v \\in V_h$. This approach ensures that the solution satisfies the governing equations in an integral sense rather than pointwise. The a-priori error bound for FEM solutions is given by $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant. This error bound is established under the a-priori L∞ assumption, which is often used to derive convergence guarantees for FEM solutions.\n\nMesh-based discretization is a crucial aspect of the Finite Element Method (FEM) that enables the approximation of solutions to partial differential equations (PDEs) by dividing a complex domain into smaller, simpler parts called elements. According to the a-priori L∞ assumption, the error estimation in FEM quantifies the discrepancy between the exact solution and the numerical approximation, which is represented by the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant. The choice of element type, such as Raviart-Thomas-Nédélec for electromagnetic problems, must align with the problem's physical characteristics, and higher-order elements (k ≥ 2) enhance accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems.\n\nThe convergence error bound for weak formulation in FEM is given by $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant. This equation ensures convergence as $\\Delta t$ and $h$ approach zero, providing a reliable estimate of the error between the exact and numerical solutions. The weak form, defined as $\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega$, allows for solutions with lower regularity and is the basis for FEM discretization. By analyzing temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes, error estimation in FEM quantifies the discrepancy between the exact solution and the numerical approximation, guiding adaptive mesh refinement and ensuring solution accuracy.",
       "key_equations": [
-        "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega",
-        "v \\in V_h",
+        "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega \\quad \\forall v \\in V_h",
         "\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)",
         "u",
-        "u_h"
+        "u_h",
+        "\\Delta t"
       ],
       "citations_used": [],
       "section_id": "41d96f05-275a-4132-abdf-b78584fbb169",
@@ -1914,18 +1902,18 @@
     },
     {
       "title": "Rules for Modeling Physical Phenomena with FEM: Evaluating FEM Solution Accuracy",
-      "content": "Error estimation in the Finite Element Method (FEM) plays a crucial role in quantifying the discrepancy between the exact solution and the numerical approximation. By analyzing temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes, error estimation guides adaptive mesh refinement and ensures solution accuracy. The a-priori $L^\\infty$ assumption is often used to establish convergence guarantees, as demonstrated by the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant [arxiv_1712.01987v1]. This concept is fundamental to ensuring the accuracy and reliability of FEM solutions.\n\nMaintaining mesh quality is a crucial factor in FEM solution accuracy. A well-structured mesh is critical for FEM accuracy, as degenerate or highly distorted elements can introduce numerical errors and instability. According to the RULE: Maintain Mesh Quality, proper mesh refinement and validation ensure that the solution remains reliable, especially in regions with high gradients or complex geometries. The quality of the mesh directly impacts the accuracy and stability of the simulation, and its impact is quantified by error estimation in FEM, which involves analyzing temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes.\n\nThe discretization method employed in the Finite Element Method (FEM) significantly impacts the solution accuracy. According to the concept of mesh-based discretization, FEM relies on dividing a complex domain into smaller, simpler parts called elements, connected through nodes [wiki_meshfree_methods]. This approach defines relationships between nodes to approximate solutions to partial differential equations. The choice of discretization method, such as the mixed finite element method, can introduce additional fields to solve PDEs, differing from traditional irreducible methods [wiki_mixed_finite_element_method]. The mixed finite element method results in a saddle-point system with non-definite matrices, complicating solution strategies. The accuracy of the FEM solution is also influenced by the error estimation, which quantifies the discrepancy between the exact solution and the numerical approximation [arxiv_1712.01987v1]. The a-priori L∞ assumption is often used to establish convergence guarantees. The weak formulation of the PDE, as defined by the equation $\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega$, is the basis for FEM discretization [wiki_boris_galerkin, arxiv_1712.01987v1].",
+      "content": "Evaluating the effectiveness of error estimation techniques in FEM solution accuracy is crucial to ensure the reliability of numerical approximations. By analyzing temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes, error estimation guides adaptive mesh refinement and ensures solution accuracy. The a-priori L∞ assumption is often used to establish convergence guarantees, as demonstrated by the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$ [arxiv_1712.01987v1]. This equation represents the a-priori error bound for FEM solutions, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant. As $\\Delta t$ and $h$ approach zero, the solution converges to the exact solution, ensuring the accuracy of the numerical approximation.\n\nMaintaining mesh quality is crucial for FEM solution accuracy, as a well-structured mesh directly impacts the accuracy and stability of the simulation. Poorly constructed meshes can lead to numerical errors, requiring careful refinement and validation. The quality of the mesh is critical, especially in regions with high gradients or complex geometries, as degenerate or highly distorted elements can introduce numerical errors and instability. According to the RULE: Maintain Mesh Quality, a well-structured mesh is essential for FEM accuracy. The a-priori L∞ assumption is often used to establish convergence guarantees, ensuring that the solution remains reliable. This is represented by the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant.\n\nThe weak formulation plays a pivotal role in ensuring FEM solution accuracy by transforming governing partial differential equations into a weak form through multiplication with test functions and integration over the domain. This process reduces the smoothness requirements for the solution, making it easier to approximate using piecewise functions. The weak form ensures that the solution satisfies the equations in an integral sense rather than pointwise, as demonstrated by the Poisson equation weak form: $(\\nabla u, \\nabla v) = (f, v) \\quad \\forall v \\in H_0^1(\\Omega)$ [arxiv_1904.03331v1]. By employing Galerkin's method, the weak form is discretized, enabling the use of piecewise basis functions and minimizing the residual error over the domain [wiki_boris_galerkin, arxiv_1712.01987v1]. This approach is critical for deriving variational formulations and is widely used in structural and electromagnetic simulations.",
       "key_equations": [
         "O(\\Delta t)",
         "O(h^s)",
-        "L^\\infty",
         "\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)",
-        "u"
+        "u",
+        "u_h"
       ],
       "citations_used": [
         "arxiv_1712.01987v1",
-        "wiki_boris_galerkin",
-        "wiki_meshfree_methods"
+        "arxiv_1904.03331v1",
+        "wiki_boris_galerkin"
       ],
       "section_id": "374cc813-9727-410a-9647-5130916e5ae4",
       "parent_section_ids": [
@@ -1938,14 +1926,9 @@
     },
     {
       "title": "Verification, Validation, and Best Practices",
-      "content": "Verification and validation techniques are essential in ensuring the accuracy and reliability of Finite Element Method (FEM) solutions. According to the RULE: Mesh Refinement Strategy, mesh refinement must balance accuracy and computational cost, with local refinement in regions of high gradient or curvature improving solution quality, while coarse meshes in smooth regions reduce resource usage. Adaptive meshing techniques dynamically adjust element size based on error estimates. Furthermore, the RULE: Maintain Mesh Quality emphasizes the importance of a well-structured mesh, as degenerate or highly distorted elements can introduce numerical errors and instability. This highlights the significance of proper mesh refinement and validation in ensuring that the solution remains reliable, especially in regions with high gradients or complex geometries.\n\nMaintaining mesh quality is crucial for accurate results in Finite Element Method (FEM) simulations. A well-structured mesh is critical for FEM accuracy, as degenerate or highly distorted elements can introduce numerical errors and instability [wiki_meshfree_methods]. Proper mesh refinement and validation ensure that the solution remains reliable, especially in regions with high gradients or complex geometries [wiki_meshfree_methods]. According to the RULE: Mesh Refinement Strategy, mesh refinement must balance accuracy and computational cost, with local refinement in regions of high gradient or curvature improving solution quality [arxiv_1712.01987v1]. The predefined connectivity between nodes in FEM must also remain consistent throughout the simulation, as disruptions in connectivity can invalidate mathematical operators like derivatives, leading to incorrect results [wiki_meshfree_methods]. By analyzing temporal and spatial discretization errors, such as $O(\\Delta t + h^s)$, error estimation in FEM quantifies the discrepancy between the exact solution and the numerical approximation, guiding adaptive mesh refinement and ensuring solution accuracy [arxiv_1712.01987v1].\n\nWhen implementing hybrid finite element methods, it is essential to follow best practices to ensure accurate and efficient solutions. One such practice is to employ hybridization for reduced degrees of freedom, as stated in the RULE: Employ Hybridization for Reduced DOF [wiki_mixed_finite_element_method]. This approach condenses internal degrees of freedom via static condensation, improving computational efficiency. Additionally, hybrid methods use Lagrange multipliers on element boundaries to weakly enforce continuity, eliminating the need for shared degrees of freedom between elements. This is achieved through the weak form: $\\int_{\\Omega} \\sigma : \\epsilon(v) d\\Omega - \\int_{\\partial\\Omega} \\lambda \\cdot v d\\Gamma = 0$ [wiki_mixed_finite_element_method]. By localizing Lagrange multipliers to element boundaries, hybridization can mitigate negative eigenvalues and pivots inherent in mixed methods.",
-      "key_equations": [
-        "O(\\Delta t + h^s)",
-        "\\int_{\\Omega} \\sigma : \\epsilon(v) d\\Omega - \\int_{\\partial\\Omega} \\lambda \\cdot v d\\Gamma = 0"
-      ],
+      "content": "Verification and validation techniques are essential in ensuring the accuracy and reliability of Finite Element Method (FEM) solutions. According to the RULE: Mesh Refinement Strategy, mesh refinement must balance accuracy and computational cost, with local refinement in regions of high gradient or curvature improving solution quality, while coarse meshes in smooth regions reduce resource usage. Adaptive meshing techniques dynamically adjust element size based on error estimates. Furthermore, maintaining mesh quality is critical for FEM accuracy, with degenerate or highly distorted elements introducing numerical errors and instability. The quality of the mesh directly impacts the accuracy and stability of the simulation, with a well-structured mesh ensuring that the solution remains reliable, especially in regions with high gradients or complex geometries.\n\nWhen implementing hybrid finite element methods, it is essential to adhere to best practices that ensure accuracy and computational efficiency. According to the RULE: Employ Hybridization for Reduced DOF, hybrid methods condense internal degrees of freedom via static condensation, improving computational efficiency by localizing Lagrange multipliers to element boundaries [wiki_mixed_finite_element_method]. This approach eliminates the need for global continuity constraints, reducing the global system size while maintaining accuracy. Hybridization is particularly beneficial for large-scale simulations with complex geometries. Furthermore, hybrid methods use Lagrange multipliers on element boundaries to weakly enforce continuity, eliminating the need for shared degrees of freedom between elements [wiki_mixed_finite_element_method]. This allows for a more flexible and efficient discretization of the domain, making hybrid methods a suitable choice for various applications.",
+      "key_equations": [],
       "citations_used": [
-        "arxiv_1712.01987v1",
-        "wiki_meshfree_methods",
         "wiki_mixed_finite_element_method"
       ],
       "section_id": "149ca538-453b-4a31-9d8e-f132921833ec",
@@ -1955,17 +1938,14 @@
     },
     {
       "title": "Introduction and Scope of the Finite Element Method",
-      "content": "The Finite Element Method (FEM) is a numerical technique used to solve partial differential equations (PDEs) by discretizing the domain into smaller elements. Galerkin's method is a foundational technique in FEM that transforms PDEs into a weak form, which is essential for applying Galerkin's method and ensuring numerical stability [wiki_boris_galerkin]. This is achieved by formulating the weak form of the governing equations, which involves approximating the solution using a set of basis functions and minimizing the residual error over the domain. The weak form is given by $\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega \\quad \\forall v \\in V_h$ [arxiv_1712.01987v1]. By analyzing temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes, error estimation in FEM quantifies the discrepancy between the exact solution and the numerical approximation [arxiv_1712.01987v1].\n\nGalerkin's method is a foundational technique in the Finite Element Method (FEM) that transforms partial differential equations into a weak form. This is achieved by formulating the weak form of the governing equations, which involves multiplying the equations with test functions and integrating over the domain. The weak form is essential for applying Galerkin's method and ensuring numerical stability. As a result, the solution satisfies the governing equations in an integral sense rather than pointwise. Error estimation in FEM quantifies the discrepancy between the exact solution and the numerical approximation, guiding adaptive mesh refinement and ensuring solution accuracy. The a-priori L∞ assumption is often used to establish convergence guarantees, as represented by the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant.\n\nThe advanced finite element methods, including mixed and hybrid approaches, offer a robust framework for solving complex partial differential equations (PDEs). Mixed methods, as exemplified by the formulation of weak equations, introduce additional fields to solve PDEs, constrained using Lagrange multipliers to enforce continuity or physical constraints. This approach is particularly effective for problems like almost incompressible elasticity, where standard methods may fail. Hybrid methods, on the other hand, use Lagrange multipliers on element boundaries to weakly enforce continuity, eliminating the need for shared degrees of freedom between elements. This allows static condensation of internal fields, reducing computational degrees of freedom. According to the RULE: Use Mixed Methods for Incompressible Materials, mixed finite element methods prevent numerical locking in nearly incompressible problems by decoupling pressure and displacement fields. The hybrid approach, as stated in the RULE: Employ Hybridization for Reduced DOF, condenses internal degrees of freedom via static condensation, improving computational efficiency.",
+      "content": "The Finite Element Method (FEM) is a numerical technique used to solve partial differential equations (PDEs) by discretizing the domain into smaller elements. Galerkin's method, a foundational technique in FEM, transforms PDEs into a weak form by approximating the solution using a set of basis functions and minimizing the residual error over the domain [wiki_boris_galerkin]. This approach ensures that the solution satisfies the governing equations in an integral sense rather than pointwise. The FEM relies on dividing a complex domain into smaller, simpler parts called elements, connected through nodes, which defines relationships between nodes to approximate solutions to PDEs [wiki_meshfree_methods]. The mesh-based approach facilitates systematic analysis of physical properties across discrete elements.\n\nThe Finite Element Method (FEM) relies on dividing a complex domain into smaller, simpler parts called elements, connected through nodes. This mesh-based approach defines relationships between nodes to approximate solutions to partial differential equations. According to the RULE: Mesh Refinement Strategy, mesh refinement must balance accuracy and computational cost, with local refinement in regions of high gradient or curvature improving solution quality, while coarse meshes in smooth regions reduce resource usage. Adaptive meshing techniques dynamically adjust element size based on error estimates, as shown in [arxiv_1712.01987v1]. This approach ensures that the solution satisfies the governing equations in an integral sense rather than pointwise, as demonstrated by Galerkin's method, which approximates the solution using a set of basis functions and minimizing the residual error over the domain. The error estimation in FEM quantifies the discrepancy between the exact solution and the numerical approximation, involving analyzing temporal and spatial discretization errors, such as $O(\\Delta t + h^s)$, as shown in [arxiv_1712.01987v1].\n\nThe Finite Element Method (FEM) faces several challenges and limitations, primarily stemming from its reliance on Galerkin's method and mesh-based discretization. Galerkin's method, a foundational technique in FEM, transforms partial differential equations into a weak form by approximating the solution using a set of basis functions and minimizing the residual error over the domain [wiki_boris_galerkin]. However, this approach can lead to errors in the numerical approximation, necessitating error estimation techniques to quantify the discrepancy between the exact solution and the numerical approximation [arxiv_1712.01987v1]. The mesh-based discretization approach, while facilitating systematic analysis of physical properties across discrete elements, can also introduce errors due to the predefined connectivity between nodes, which may not accurately capture complex physical phenomena.",
       "key_equations": [
-        "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega \\quad \\forall v \\in V_h",
-        "O(\\Delta t)",
-        "O(h^s)",
-        "\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)",
-        "u"
+        "O(\\Delta t + h^s)"
       ],
       "citations_used": [
         "arxiv_1712.01987v1",
-        "wiki_boris_galerkin"
+        "wiki_boris_galerkin",
+        "wiki_meshfree_methods"
       ],
       "section_id": "fc7fdaeb-5ac6-42fa-887f-b810f706d6ca",
       "parent_section_ids": [],
@@ -1981,6 +1961,7 @@
     "arxiv_2210.16907v1",
     "arxiv_2212.07041v1",
     "arxiv_cs_0609119v2",
+    "s2_7a650b892903d6812eec0a7bd3a32928bfa27267",
     "wiki_boris_galerkin",
     "wiki_flexibility_method",
     "wiki_meshfree_methods",
@@ -2004,9 +1985,11 @@
       "49477b52-afde-48e5-a277-065c31facd86": [
         true,
         true,
+        true,
         true
       ],
       "29cfa5f4-6e4e-447f-83db-7391d2c212e8": [
+        true,
         true,
         true,
         true,
@@ -2017,9 +2000,11 @@
       ],
       "149ca538-453b-4a31-9d8e-f132921833ec": [
         true,
+        true,
         true
       ],
       "b755be15-8c1d-44de-a849-e1b0d1debbac": [
+        true,
         true,
         true,
         true
@@ -2028,6 +2013,7 @@
         true
       ],
       "374cc813-9727-410a-9647-5130916e5ae4": [
+        true,
         true,
         true,
         true
@@ -2039,13 +2025,16 @@
       ],
       "fc7fdaeb-5ac6-42fa-887f-b810f706d6ca": [
         true,
+        true,
         true
       ],
       "41d96f05-275a-4132-abdf-b78584fbb169": [
         true,
+        true,
         true
       ],
       "1e773c54-5884-40b4-8119-3edaf43d1cd2": [
+        true,
         true
       ],
       "20c93daa-7290-4859-9113-df3dea6b09b9": [
@@ -2059,25 +2048,31 @@
       "transition:29cfa5f4-6e4e-447f-83db-7391d2c212e8:dc5df119-c9b2-48bb-a324-b0ca484bd0dc": 0,
       "transition:dc5df119-c9b2-48bb-a324-b0ca484bd0dc:149ca538-453b-4a31-9d8e-f132921833ec": 0,
       "transition:49477b52-afde-48e5-a277-065c31facd86:29cfa5f4-6e4e-447f-83db-7391d2c212e8": 0,
-      "transition:29cfa5f4-6e4e-447f-83db-7391d2c212e8:b755be15-8c1d-44de-a849-e1b0d1debbac": 1,
-      "transition:b755be15-8c1d-44de-a849-e1b0d1debbac:592504c3-788b-41d4-acac-320db4a37295": 0,
+      "transition:29cfa5f4-6e4e-447f-83db-7391d2c212e8:b755be15-8c1d-44de-a849-e1b0d1debbac": 2,
+      "transition:b755be15-8c1d-44de-a849-e1b0d1debbac:592504c3-788b-41d4-acac-320db4a37295": 1,
       "transition:592504c3-788b-41d4-acac-320db4a37295:9a36dd9b-44e7-4e9c-9e58-967c3bbe3672": 0,
       "transition:9a36dd9b-44e7-4e9c-9e58-967c3bbe3672:374cc813-9727-410a-9647-5130916e5ae4": 0,
-      "transition:149ca538-453b-4a31-9d8e-f132921833ec:fc7fdaeb-5ac6-42fa-887f-b810f706d6ca": 3,
-      "transition:374cc813-9727-410a-9647-5130916e5ae4:149ca538-453b-4a31-9d8e-f132921833ec": 2
+      "transition:149ca538-453b-4a31-9d8e-f132921833ec:fc7fdaeb-5ac6-42fa-887f-b810f706d6ca": 4,
+      "transition:374cc813-9727-410a-9647-5130916e5ae4:149ca538-453b-4a31-9d8e-f132921833ec": 3,
+      "transition:20c93daa-7290-4859-9113-df3dea6b09b9:1e773c54-5884-40b4-8119-3edaf43d1cd2": 1,
+      "transition:1e773c54-5884-40b4-8119-3edaf43d1cd2:50cd7b23-a711-4576-b9cc-278353fe3d38": 1,
+      "transition:50cd7b23-a711-4576-b9cc-278353fe3d38:41d96f05-275a-4132-abdf-b78584fbb169": 1
     },
     "anomaly_counts": {
       "transition:29cfa5f4-6e4e-447f-83db-7391d2c212e8:dc5df119-c9b2-48bb-a324-b0ca484bd0dc": 0,
       "transition:dc5df119-c9b2-48bb-a324-b0ca484bd0dc:149ca538-453b-4a31-9d8e-f132921833ec": 0,
       "too_simple:dc5df119-c9b2-48bb-a324-b0ca484bd0dc": 0,
       "transition:49477b52-afde-48e5-a277-065c31facd86:29cfa5f4-6e4e-447f-83db-7391d2c212e8": 0,
-      "transition:29cfa5f4-6e4e-447f-83db-7391d2c212e8:b755be15-8c1d-44de-a849-e1b0d1debbac": 1,
-      "transition:b755be15-8c1d-44de-a849-e1b0d1debbac:592504c3-788b-41d4-acac-320db4a37295": 0,
+      "transition:29cfa5f4-6e4e-447f-83db-7391d2c212e8:b755be15-8c1d-44de-a849-e1b0d1debbac": 2,
+      "transition:b755be15-8c1d-44de-a849-e1b0d1debbac:592504c3-788b-41d4-acac-320db4a37295": 1,
       "transition:592504c3-788b-41d4-acac-320db4a37295:9a36dd9b-44e7-4e9c-9e58-967c3bbe3672": 0,
       "transition:9a36dd9b-44e7-4e9c-9e58-967c3bbe3672:374cc813-9727-410a-9647-5130916e5ae4": 0,
-      "transition:149ca538-453b-4a31-9d8e-f132921833ec:fc7fdaeb-5ac6-42fa-887f-b810f706d6ca": 3,
+      "transition:149ca538-453b-4a31-9d8e-f132921833ec:fc7fdaeb-5ac6-42fa-887f-b810f706d6ca": 4,
       "too_simple:9a36dd9b-44e7-4e9c-9e58-967c3bbe3672": 0,
-      "transition:374cc813-9727-410a-9647-5130916e5ae4:149ca538-453b-4a31-9d8e-f132921833ec": 2
+      "transition:374cc813-9727-410a-9647-5130916e5ae4:149ca538-453b-4a31-9d8e-f132921833ec": 3,
+      "transition:20c93daa-7290-4859-9113-df3dea6b09b9:1e773c54-5884-40b4-8119-3edaf43d1cd2": 1,
+      "transition:1e773c54-5884-40b4-8119-3edaf43d1cd2:50cd7b23-a711-4576-b9cc-278353fe3d38": 1,
+      "transition:50cd7b23-a711-4576-b9cc-278353fe3d38:41d96f05-275a-4132-abdf-b78584fbb169": 1
     },
     "section_titles": {
       "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method": "49477b52-afde-48e5-a277-065c31facd86",
@@ -2096,15 +2091,15 @@
     }
   },
   "convergence_diagnostics": {
-    "eta_variance": 0.009426373626373627,
+    "eta_variance": 0.009690109890109893,
     "invariant_violations": 0,
     "adjust_actions": 0,
     "consecutive_clean_cycles": 0,
     "incomplete_sections": 0,
-    "unstable_sections": 10,
-    "reading_coverage": 42.9,
-    "citation_coverage": 58.1,
-    "lexical_support_coverage": 5.6,
+    "unstable_sections": 6,
+    "reading_coverage": 57.1,
+    "citation_coverage": 50.0,
+    "lexical_support_coverage": 6.2,
     "invalid_citation_sections": 0,
     "converged": false,
     "reasons": [
@@ -2115,8 +2110,8 @@
   },
   "retrieval_report": {
     "status": "partial_failure",
-    "retrieved_at": "2026-10-04T17:07:18.712991+00:00",
-    "query_count": 6,
+    "retrieved_at": "2026-10-04T17:09:51.266277+00:00",
+    "query_count": 5,
     "providers": {
       "arxiv": {
         "status": "success",
@@ -2124,13 +2119,7 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "discontinuous galerkin methods finite element",
-            "provider": "arxiv"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "finite element flexibility method",
+            "query": "finite element method choosing a basis",
             "provider": "arxiv"
           },
           {
@@ -2148,37 +2137,30 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "finite element method verification validation numerical stability",
+            "query": "finite element method symmetry of the matrix",
             "provider": "arxiv"
           },
           {
             "status": "success",
             "returned_records": 2,
-            "query": "finite element plastic analysis approach",
+            "query": "finite element method verification validation numerical stability",
             "provider": "arxiv"
           }
         ],
-        "queries_attempted": 6,
-        "returned_records": 12
+        "queries_attempted": 5,
+        "returned_records": 10
       },
       "semantic_scholar": {
         "status": "partial_failure",
         "attempts": [
           {
-            "status": "rate_limited",
+            "status": "success",
             "provider": "semantic_scholar",
-            "query": "discontinuous galerkin methods finite element",
+            "query": "finite element method choosing a basis",
             "requested_results": 2,
-            "http_status": 429,
-            "returned_records": 0
-          },
-          {
-            "status": "rate_limited",
-            "provider": "semantic_scholar",
-            "query": "finite element flexibility method",
-            "requested_results": 2,
-            "http_status": 429,
-            "returned_records": 0
+            "returned_records": 2,
+            "records_with_oa_pdf": 2,
+            "records_with_full_text": 1
           },
           {
             "status": "rate_limited",
@@ -2197,24 +2179,23 @@
             "returned_records": 0
           },
           {
-            "status": "success",
+            "status": "rate_limited",
             "provider": "semantic_scholar",
-            "query": "finite element method verification validation numerical stability",
+            "query": "finite element method symmetry of the matrix",
             "requested_results": 2,
-            "returned_records": 2,
-            "records_with_oa_pdf": 0,
-            "records_with_full_text": 0
+            "http_status": 429,
+            "returned_records": 0
           },
           {
             "status": "rate_limited",
             "provider": "semantic_scholar",
-            "query": "finite element plastic analysis approach",
+            "query": "finite element method verification validation numerical stability",
             "requested_results": 2,
             "http_status": 429,
             "returned_records": 0
           }
         ],
-        "queries_attempted": 6,
+        "queries_attempted": 5,
         "returned_records": 2
       },
       "wikipedia": {
@@ -2223,13 +2204,7 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "discontinuous galerkin methods finite element",
-            "provider": "wikipedia"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "finite element flexibility method",
+            "query": "finite element method choosing a basis",
             "provider": "wikipedia"
           },
           {
@@ -2247,21 +2222,21 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "finite element method verification validation numerical stability",
+            "query": "finite element method symmetry of the matrix",
             "provider": "wikipedia"
           },
           {
             "status": "success",
             "returned_records": 2,
-            "query": "finite element plastic analysis approach",
+            "query": "finite element method verification validation numerical stability",
             "provider": "wikipedia"
           }
         ],
-        "queries_attempted": 6,
-        "returned_records": 12
+        "queries_attempted": 5,
+        "returned_records": 10
       }
     },
-    "returned_records": 19,
+    "returned_records": 16,
     "selected_records": 4
   },
   "retrieval_history": {
@@ -2906,24 +2881,161 @@
           "selected_records": 4
         },
         "schema_version": 1
+      },
+      {
+        "event_id": "retrieval-1b763934-78c9-42b7-b540-e4947f828e62",
+        "cycle": 4,
+        "retrieved_at": "2026-10-04T17:10:10.211072+00:00",
+        "query_scope": [],
+        "report": {
+          "status": "partial_failure",
+          "retrieved_at": "2026-10-04T17:09:51.266277+00:00",
+          "query_count": 5,
+          "providers": {
+            "arxiv": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method choosing a basis",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method symmetry of the matrix",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "arxiv"
+                }
+              ],
+              "queries_attempted": 5,
+              "returned_records": 10
+            },
+            "semantic_scholar": {
+              "status": "partial_failure",
+              "attempts": [
+                {
+                  "status": "success",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method choosing a basis",
+                  "requested_results": 2,
+                  "returned_records": 2,
+                  "records_with_oa_pdf": 2,
+                  "records_with_full_text": 1
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method practical implementation modeling rules",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method symmetry of the matrix",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method verification validation numerical stability",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                }
+              ],
+              "queries_attempted": 5,
+              "returned_records": 2
+            },
+            "wikipedia": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method choosing a basis",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method symmetry of the matrix",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "wikipedia"
+                }
+              ],
+              "queries_attempted": 5,
+              "returned_records": 10
+            }
+          },
+          "returned_records": 16,
+          "selected_records": 4
+        },
+        "acquisition_assessment": {
+          "status": "partial_provider_availability",
+          "operational_status": "partial_failure",
+          "available_provider_count": 2,
+          "unavailable_provider_count": 1,
+          "returned_records": 16,
+          "selected_records": 4
+        },
+        "schema_version": 1
       }
     ]
   },
   "last_budget_check": {
-    "time": "2026-10-04T17:07:14.741725+00:00",
+    "time": "2026-10-04T17:09:46.704884+00:00",
     "type": "local",
     "message": "Local limit: 20 calls"
   },
   "last_writing_decisions": [
-    {
-      "section_id": "49477b52-afde-48e5-a277-065c31facd86",
-      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
-      "eta": 0.7,
-      "priority": 0.7,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
     {
       "section_id": "29cfa5f4-6e4e-447f-83db-7391d2c212e8",
       "title": "The Finite Element Procedure",
@@ -2952,15 +3064,6 @@
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
     },
     {
-      "section_id": "592504c3-788b-41d4-acac-320db4a37295",
-      "title": "Rules for Modeling Physical Phenomena with FEM: Mesh Generation and Discretization",
-      "eta": 0.6400000000000001,
-      "priority": 0.6400000000000001,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
-    {
       "section_id": "149ca538-453b-4a31-9d8e-f132921833ec",
       "title": "Verification, Validation, and Best Practices",
       "eta": 0.6200000000000001,
@@ -2977,6 +3080,15 @@
       "selected": true,
       "model_index": 0,
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": "49477b52-afde-48e5-a277-065c31facd86",
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "eta": 0.5,
+      "priority": 0.5,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
     },
     {
       "section_id": null,
@@ -3001,7 +3113,7 @@
       "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: Convergence Guarantees and Adaptive Mesh Refinement",
       "eta": 0.44000000000000006,
       "priority": 0.44000000000000006,
-      "selected": false,
+      "selected": true,
       "model_index": 2,
       "model": "@cf/meta/llama-3.2-3b-instruct"
     },
@@ -3017,6 +3129,15 @@
     {
       "section_id": "50cd7b23-a711-4576-b9cc-278353fe3d38",
       "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: Optimizing Element Type Selection for FEM Simulations",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "section_id": "592504c3-788b-41d4-acac-320db4a37295",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Mesh Generation and Discretization",
       "eta": 0.44000000000000006,
       "priority": 0.44000000000000006,
       "selected": false,
@@ -3404,6 +3525,126 @@
       "model_index": 2,
       "model": "@cf/meta/llama-3.2-3b-instruct",
       "fingerprint": "e9cf9c2f416d49fff08e4cf1da7ac9cbede1d4983d7d8547740afeff0c4c7fbe"
+    },
+    {
+      "section_id": "29cfa5f4-6e4e-447f-83db-7391d2c212e8",
+      "title": "The Finite Element Procedure",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "a62e9ac04b0a140b3118aeeef7b3dc35644021841c5ccb42af57e838a845bb32"
+    },
+    {
+      "section_id": "b755be15-8c1d-44de-a849-e1b0d1debbac",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Element Type Selection and Stability",
+      "eta": 0.6400000000000001,
+      "priority": 0.6400000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "2e7b898f5a0b76462a37cba3b9a8eec13d57980c80d1819b63989a3f9cf34db8"
+    },
+    {
+      "section_id": "374cc813-9727-410a-9647-5130916e5ae4",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Evaluating FEM Solution Accuracy",
+      "eta": 0.6400000000000001,
+      "priority": 0.6400000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "917921983c1906d360890b5d80929c7c446950e36ee81b22230d30d9e5ff511a"
+    },
+    {
+      "section_id": "149ca538-453b-4a31-9d8e-f132921833ec",
+      "title": "Verification, Validation, and Best Practices",
+      "eta": 0.6200000000000001,
+      "priority": 0.6200000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "424b9e5cf52827e1df3b4a29d4f199849983bbb866954a5ad791d2f3850d45d1"
+    },
+    {
+      "section_id": "fc7fdaeb-5ac6-42fa-887f-b810f706d6ca",
+      "title": "Introduction and Scope of the Finite Element Method",
+      "eta": 0.6000000000000001,
+      "priority": 0.6000000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "39f67a1a817c61411d5673b347ac20618206089a67cd55f66f2bec9e8da659e4"
+    },
+    {
+      "section_id": "49477b52-afde-48e5-a277-065c31facd86",
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "eta": 0.5,
+      "priority": 0.5,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "b0cb4ab016fe3a224b33404f2b7627fcb58b2b8a2092e4c96c3147face116711"
+    },
+    {
+      "section_id": null,
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "69e8e710d1bbbf3829ed64c878b51c4929f3b77281da5c351acae6b6f827ab36"
+    },
+    {
+      "section_id": "41d96f05-275a-4132-abdf-b78584fbb169",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: A-priori Error Bounds for FEM Solutions",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "e15547ad9b728fdfd7fd6c34f7553b434bf4c867afc3a7fcb5b0b52b65a27f6a"
+    },
+    {
+      "section_id": "1e773c54-5884-40b4-8119-3edaf43d1cd2",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: Convergence Guarantees and Adaptive Mesh Refinement",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "1733c050b8d19b2dda3b518d8a26ac270cd936b8f32e8c3d4f6f241ae55e2cad"
+    },
+    {
+      "section_id": "20c93daa-7290-4859-9113-df3dea6b09b9",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: Error Estimation in FEM",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "2df9ed8bbbad463739331764ab59b285fab455de1cfdd833650129877fb9e748"
+    },
+    {
+      "section_id": "50cd7b23-a711-4576-b9cc-278353fe3d38",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: Optimizing Element Type Selection for FEM Simulations",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "e9cf9c2f416d49fff08e4cf1da7ac9cbede1d4983d7d8547740afeff0c4c7fbe"
+    },
+    {
+      "section_id": "592504c3-788b-41d4-acac-320db4a37295",
+      "title": "Rules for Modeling Physical Phenomena with FEM: Mesh Generation and Discretization",
+      "eta": 0.44000000000000006,
+      "priority": 0.44000000000000006,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "66587f362d0ee433859c2b8f2827cbd8097d745dbc8dcc03f052baeff6aa2cc7"
     }
   ],
   "last_semantic_review": {
@@ -3440,24 +3681,23 @@
     "sections": [
       {
         "section_id": "49477b52-afde-48e5-a277-065c31facd86",
-        "semantic_marker_count": 3,
+        "semantic_marker_count": 0,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "arxiv_1904.03331v1",
-          "arxiv_1712.01987v1",
-          "wiki_boris_galerkin"
-        ],
-        "inline_math_count": 9,
+        "annotated_source_ids": [],
+        "inline_math_count": 1,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       },
       {
         "section_id": "29cfa5f4-6e4e-447f-83db-7391d2c212e8",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 2,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
-        "inline_math_count": 16,
+        "annotated_source_ids": [
+          "arxiv_1712.01987v1",
+          "arxiv_1712.01987v1"
+        ],
+        "inline_math_count": 13,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": [
@@ -3466,17 +3706,16 @@
       },
       {
         "section_id": "b755be15-8c1d-44de-a849-e1b0d1debbac",
-        "semantic_marker_count": 6,
+        "semantic_marker_count": 5,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "arxiv_1712.01987v1",
           "arxiv_1901.00775v2",
-          "arxiv_1712.01987v1",
-          "arxiv_1712.01987v1",
+          "wiki_meshfree_methods",
           "wiki_mixed_finite_element_method",
-          "arxiv_1901.00775v2"
+          "wiki_mixed_finite_element_method"
         ],
-        "inline_math_count": 4,
+        "inline_math_count": 1,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
@@ -3513,12 +3752,10 @@
       },
       {
         "section_id": "1e773c54-5884-40b4-8119-3edaf43d1cd2",
-        "semantic_marker_count": 1,
+        "semantic_marker_count": 0,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "arxiv_1712.01987v1"
-        ],
-        "inline_math_count": 10,
+        "annotated_source_ids": [],
+        "inline_math_count": 18,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
@@ -3540,22 +3777,20 @@
         "semantic_marker_count": 0,
         "annotated_equation_ids": [],
         "annotated_source_ids": [],
-        "inline_math_count": 19,
+        "inline_math_count": 27,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       },
       {
         "section_id": "374cc813-9727-410a-9647-5130916e5ae4",
-        "semantic_marker_count": 4,
+        "semantic_marker_count": 2,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "arxiv_1712.01987v1",
-          "wiki_meshfree_methods",
-          "wiki_mixed_finite_element_method",
-          "arxiv_1712.01987v1"
+          "arxiv_1904.03331v1"
         ],
-        "inline_math_count": 13,
+        "inline_math_count": 19,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": [
@@ -3564,48 +3799,46 @@
       },
       {
         "section_id": "149ca538-453b-4a31-9d8e-f132921833ec",
-        "semantic_marker_count": 7,
+        "semantic_marker_count": 2,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
-          "wiki_meshfree_methods",
-          "wiki_meshfree_methods",
-          "arxiv_1712.01987v1",
-          "wiki_meshfree_methods",
-          "arxiv_1712.01987v1",
           "wiki_mixed_finite_element_method",
           "wiki_mixed_finite_element_method"
         ],
-        "inline_math_count": 2,
+        "inline_math_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       },
       {
         "section_id": "fc7fdaeb-5ac6-42fa-887f-b810f706d6ca",
-        "semantic_marker_count": 3,
+        "semantic_marker_count": 6,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "wiki_boris_galerkin",
+          "wiki_meshfree_methods",
           "arxiv_1712.01987v1",
+          "arxiv_1712.01987v1",
+          "wiki_boris_galerkin",
           "arxiv_1712.01987v1"
         ],
-        "inline_math_count": 10,
+        "inline_math_count": 1,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       }
     ],
-    "semantic_marker_count": 31,
+    "semantic_marker_count": 24,
     "latex_ir_readiness": {
       "ready": true,
       "counts": {
         "sections": 11,
         "paragraphs": 11,
-        "text_nodes": 166,
-        "inline_math": 124,
+        "text_nodes": 156,
+        "inline_math": 121,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 31,
+        "citation_occurrences": 24,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "raw_math_text_nodes": 0
@@ -3619,24 +3852,23 @@
     "sections": [
       {
         "section_id": "49477b52-afde-48e5-a277-065c31facd86",
-        "semantic_marker_count": 3,
+        "semantic_marker_count": 0,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "arxiv_1904.03331v1",
-          "arxiv_1712.01987v1",
-          "wiki_boris_galerkin"
-        ],
-        "inline_math_count": 9,
+        "annotated_source_ids": [],
+        "inline_math_count": 1,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       },
       {
         "section_id": "29cfa5f4-6e4e-447f-83db-7391d2c212e8",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 2,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
-        "inline_math_count": 16,
+        "annotated_source_ids": [
+          "arxiv_1712.01987v1",
+          "arxiv_1712.01987v1"
+        ],
+        "inline_math_count": 13,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": [
@@ -3645,17 +3877,16 @@
       },
       {
         "section_id": "b755be15-8c1d-44de-a849-e1b0d1debbac",
-        "semantic_marker_count": 6,
+        "semantic_marker_count": 5,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "arxiv_1712.01987v1",
           "arxiv_1901.00775v2",
-          "arxiv_1712.01987v1",
-          "arxiv_1712.01987v1",
+          "wiki_meshfree_methods",
           "wiki_mixed_finite_element_method",
-          "arxiv_1901.00775v2"
+          "wiki_mixed_finite_element_method"
         ],
-        "inline_math_count": 4,
+        "inline_math_count": 1,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
@@ -3692,12 +3923,10 @@
       },
       {
         "section_id": "1e773c54-5884-40b4-8119-3edaf43d1cd2",
-        "semantic_marker_count": 1,
+        "semantic_marker_count": 0,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "arxiv_1712.01987v1"
-        ],
-        "inline_math_count": 10,
+        "annotated_source_ids": [],
+        "inline_math_count": 18,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
@@ -3719,22 +3948,20 @@
         "semantic_marker_count": 0,
         "annotated_equation_ids": [],
         "annotated_source_ids": [],
-        "inline_math_count": 19,
+        "inline_math_count": 27,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       },
       {
         "section_id": "374cc813-9727-410a-9647-5130916e5ae4",
-        "semantic_marker_count": 4,
+        "semantic_marker_count": 2,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "arxiv_1712.01987v1",
-          "wiki_meshfree_methods",
-          "wiki_mixed_finite_element_method",
-          "arxiv_1712.01987v1"
+          "arxiv_1904.03331v1"
         ],
-        "inline_math_count": 13,
+        "inline_math_count": 19,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": [
@@ -3743,48 +3970,46 @@
       },
       {
         "section_id": "149ca538-453b-4a31-9d8e-f132921833ec",
-        "semantic_marker_count": 7,
+        "semantic_marker_count": 2,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
-          "wiki_meshfree_methods",
-          "wiki_meshfree_methods",
-          "arxiv_1712.01987v1",
-          "wiki_meshfree_methods",
-          "arxiv_1712.01987v1",
           "wiki_mixed_finite_element_method",
           "wiki_mixed_finite_element_method"
         ],
-        "inline_math_count": 2,
+        "inline_math_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       },
       {
         "section_id": "fc7fdaeb-5ac6-42fa-887f-b810f706d6ca",
-        "semantic_marker_count": 3,
+        "semantic_marker_count": 6,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "wiki_boris_galerkin",
+          "wiki_meshfree_methods",
           "arxiv_1712.01987v1",
+          "arxiv_1712.01987v1",
+          "wiki_boris_galerkin",
           "arxiv_1712.01987v1"
         ],
-        "inline_math_count": 10,
+        "inline_math_count": 1,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       }
     ],
-    "semantic_marker_count": 31,
+    "semantic_marker_count": 24,
     "latex_ir_readiness": {
       "ready": true,
       "counts": {
         "sections": 11,
         "paragraphs": 11,
-        "text_nodes": 166,
-        "inline_math": 124,
+        "text_nodes": 156,
+        "inline_math": 121,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 31,
+        "citation_occurrences": 24,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "raw_math_text_nodes": 0
@@ -3796,36 +4021,26 @@
     "status": "success",
     "source_document_id": "743c2aa8-790e-5a15-b63b-6758c778b2e0",
     "section_count": 11,
-    "reference_count": 11
+    "reference_count": 12
   },
   "model_usage": {
-    "total_calls": 34,
-    "logical_calls": 34,
-    "successful_calls": 34,
+    "total_calls": 37,
+    "logical_calls": 37,
+    "successful_calls": 37,
     "failed_calls": 0,
-    "http_attempts": 34,
+    "http_attempts": 37,
     "per_model": {
-      "@cf/meta/llama-3.1-8b-instruct-fast": 29,
-      "@cf/qwen/qwen3-30b-a3b-fp8": 1,
-      "@cf/meta/llama-3.2-3b-instruct": 4
+      "@cf/meta/llama-3.1-8b-instruct-fast": 23,
+      "@cf/qwen/qwen3-30b-a3b-fp8": 0,
+      "@cf/meta/llama-3.2-3b-instruct": 14
     },
     "max_logical_calls": 100,
     "extraction_stats": {
-      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 29,
-      "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8:known_patterns": 1,
-      "cloudflare:@cf/meta/llama-3.2-3b-instruct:known_patterns": 4
+      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 23,
+      "cloudflare:@cf/meta/llama-3.2-3b-instruct:known_patterns": 14
     },
     "learned_paths": {
       "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast": [
-        [
-          "result",
-          "choices",
-          0,
-          "message",
-          "content"
-        ]
-      ],
-      "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8": [
         [
           "result",
           "choices",
@@ -3846,8 +4061,8 @@
     }
   },
   "parser_stats": {
-    "cloudflare:strict": 2,
-    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 7,
-    "@cf/meta/llama-3.2-3b-instruct:strict": 1
+    "cloudflare:strict": 1,
+    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 5,
+    "@cf/meta/llama-3.2-3b-instruct:strict": 3
   }
 }
