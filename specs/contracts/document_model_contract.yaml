@@ -69,6 +69,9 @@ entities:
     optional_fields:
       - label
       - caption
+    label_rule: >-
+      label is legacy presentation metadata only. Canonical LaTeX projection
+      generates labels from occurrence_id and rejects manually supplied labels.
     reference_fields:
       equation_id:
         target: domain_equation
@@ -204,6 +207,7 @@ invariants:
   - referenced_equation_ids_must_resolve_when_document_is_renderable
   - referenced_source_ids_must_resolve_when_document_is_renderable
   - cross_reference_targets_must_resolve_when_document_is_renderable
+  - cross_reference_target_ids_are_document_object_identity_not_latex_labels
   - document_objects_must_not_redefine_domain_object_identity
   - occurrence_identity_must_not_be_used_as_domain_object_identity
   - occurrence_identity_must_be_stable_for_same_document_location

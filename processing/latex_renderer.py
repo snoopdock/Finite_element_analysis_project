@@ -14,6 +14,7 @@ from processing.latex_ir import (
     DocumentModelError,
     EquationBlock,
     IRCitationSpan,
+    IRCrossReferenceSpan,
     IRMathSpan,
     IRTextSpan,
     LegacyLatexBlock,
@@ -49,7 +50,7 @@ def _render_label(label: str) -> str:
     """Return an explicit LaTeX label only when it is already label-safe."""
     if not re.fullmatch(r"[A-Za-z0-9:._/-]+", label):
         raise DocumentModelError(
-            f"equation label contains unsupported LaTeX label characters: {label!r}"
+            f"label contains unsupported LaTeX label characters: {label!r}"
         )
     return label
 
@@ -62,6 +63,8 @@ def render_inline(inline, reference_numbers: dict[str, str] | None = None) -> st
         return f"\\({expression}\\)" if expression else ""
     if isinstance(inline, IRCitationSpan):
         return _citation_latex(inline.source_ids, reference_numbers)
+    if isinstance(inline, IRCrossReferenceSpan):
+        return r"\ref{" + _render_label(inline.label) + "}"
     raise TypeError(f"Unsupported paragraph inline item: {type(inline).__name__}")
 
 
@@ -104,12 +107,17 @@ def render_block(block, reference_numbers: dict[str, str] | None = None) -> str:
 
 
 def render_section(section, reference_numbers: dict[str, str] | None = None) -> str:
-    """Render a semantic section, omitting empty blocks."""
+    """Render a semantic section and its generated identity anchor."""
     rendered = [render_block(block, reference_numbers) for block in section.blocks]
     content = "\n\n".join(part for part in rendered if part.strip())
-    if not content:
+    if not content and not section.label:
         return ""
-    return f"\\section{{{escape_text(section.title)}}}\n\n{content}"
+    parts = [f"\\section{{{escape_text(section.title)}}}"]
+    if section.label:
+        parts.append(r"\label{" + _render_label(section.label) + "}")
+    if content:
+        parts.extend(["", content])
+    return "\n".join(parts)
 
 
 def render_body(document: DocumentModel) -> str:

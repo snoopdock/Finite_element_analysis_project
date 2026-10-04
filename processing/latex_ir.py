@@ -14,6 +14,7 @@ only for traceability and rendering; it never invents or redefines them.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import re
 from typing import Any, Mapping, Sequence
 
 
@@ -77,7 +78,17 @@ class IRCitationSpan:
     occurrence_id: str = ""
 
 
-ParagraphInline = IRTextSpan | IRMathSpan | IRCitationSpan
+@dataclass(frozen=True)
+class IRCrossReferenceSpan:
+    """Resolved internal reference to a labeled semantic document target."""
+
+    target_id: str
+    target_type: str
+    label: str
+    occurrence_id: str = ""
+
+
+ParagraphInline = IRTextSpan | IRMathSpan | IRCitationSpan | IRCrossReferenceSpan
 
 
 @dataclass(frozen=True)
@@ -118,6 +129,7 @@ class SectionModel:
     title: str
     blocks: tuple[DocumentBlock, ...] = field(default_factory=tuple)
     section_id: str = ""
+    label: str | None = None
 
 
 @dataclass(frozen=True)
@@ -205,6 +217,34 @@ def _normalize_inline_content(
                     f"{item_context}.source_ids must not contain duplicates"
                 )
             result.append(IRCitationSpan(source_ids, occurrence_id=occurrence_id))
+        elif kind == "cross_reference":
+            _require_keys(
+                raw,
+                {"type", "target_id", "target_type", "label", "occurrence_id"},
+                item_context,
+            )
+            target_id = _as_text(
+                raw.get("target_id"), f"{item_context}.target_id"
+            ).strip()
+            target_type = _as_text(
+                raw.get("target_type"), f"{item_context}.target_type"
+            ).strip()
+            label = _as_text(raw.get("label"), f"{item_context}.label").strip()
+            occurrence_id = _as_text(
+                raw.get("occurrence_id"), f"{item_context}.occurrence_id"
+            ).strip()
+            if not target_id or not target_type or not label or not occurrence_id:
+                raise DocumentModelError(
+                    f"{item_context} requires target_id, target_type, label, and occurrence_id"
+                )
+            result.append(
+                IRCrossReferenceSpan(
+                    target_id=target_id,
+                    target_type=target_type,
+                    label=label,
+                    occurrence_id=occurrence_id,
+                )
+            )
         else:
             raise DocumentModelError(
                 f"unsupported paragraph inline type {kind!r} in {item_context}"
@@ -224,7 +264,7 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
     for index, section in enumerate(sections):
         if not isinstance(section, Mapping):
             raise DocumentModelError(f"section {index} must be a mapping")
-        _require_keys(section, {"title", "blocks", "section_id"}, f"section {index}")
+        _require_keys(section, {"title", "blocks", "section_id", "label"}, f"section {index}")
         title = (
             _as_text(
                 section.get("title"),
@@ -236,6 +276,9 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
         section_id = _as_text(
             section.get("section_id"), f"section {index}.section_id"
         ).strip()
+        label = section.get("label")
+        if label is not None and not isinstance(label, str):
+            raise DocumentModelError(f"section {index}.label must be a string or null")
         if "blocks" not in section:
             raise DocumentModelError(f"section {index}.blocks is required")
         raw_blocks = section["blocks"]
@@ -345,7 +388,12 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
                     f"unsupported block type {kind!r} in {context}"
                 )
         normalized.append(
-            SectionModel(title=title, blocks=tuple(parsed), section_id=section_id)
+            SectionModel(
+                title=title,
+                blocks=tuple(parsed),
+                section_id=section_id,
+                label=label,
+            )
         )
     return tuple(normalized)
 
@@ -415,8 +463,20 @@ def _validate_source_ids(
         )
 
 
+_LATEX_LABEL_RE = re.compile(r"[A-Za-z0-9:._/-]+")
+
+
+def _validate_ir_label(label: str, *, context: str) -> None:
+    if not isinstance(label, str) or not label.strip():
+        raise DocumentModelError(f"{context} must be a non-empty string")
+    if not _LATEX_LABEL_RE.fullmatch(label):
+        raise DocumentModelError(
+            f"{context} contains unsupported LaTeX label characters: {label!r}"
+        )
+
+
 def validate_document_model(document: DocumentModel) -> None:
-    """Validate structure, field types, and cross-reference integrity."""
+    """Validate structure, field types, labels, and cross-reference integrity."""
 
     if not isinstance(document, DocumentModel):
         raise DocumentModelError("document must be a DocumentModel")
@@ -461,6 +521,46 @@ def validate_document_model(document: DocumentModel) -> None:
             )
         citation_keys.add(reference.citation_key)
 
+    # Build the emitted-anchor index before validating inline references so
+    # forward references are valid and every reference can be checked against
+    # the exact target identity carried by the IR.
+    anchor_by_label: dict[str, tuple[str, str]] = {}
+    seen_section_ids: set[str] = set()
+    for section_index, section in enumerate(document.sections):
+        if not isinstance(section, SectionModel):
+            continue
+        if section.section_id:
+            if section.section_id in seen_section_ids:
+                raise DocumentModelError(
+                    f"duplicate section_id in LaTeX IR: {section.section_id!r}"
+                )
+            seen_section_ids.add(section.section_id)
+        if section.label is not None:
+            _validate_ir_label(section.label, context=f"section {section_index}.label")
+            if not section.section_id.strip():
+                raise DocumentModelError(
+                    f"section {section_index} cannot carry a label without section_id"
+                )
+            if section.label in anchor_by_label:
+                raise DocumentModelError(
+                    f"duplicate LaTeX anchor label: {section.label!r}"
+                )
+            anchor_by_label[section.label] = ("section", section.section_id)
+        for block_index, block in enumerate(section.blocks):
+            if isinstance(block, EquationBlock) and block.label is not None:
+                _validate_ir_label(
+                    block.label,
+                    context=f"section {section_index}.blocks[{block_index}].label",
+                )
+                if block.label in anchor_by_label:
+                    raise DocumentModelError(
+                        f"duplicate LaTeX anchor label: {block.label!r}"
+                    )
+                anchor_by_label[block.label] = (
+                    "equation_occurrence",
+                    block.occurrence_id,
+                )
+
     for section_index, section in enumerate(document.sections):
         if not isinstance(section, SectionModel):
             raise DocumentModelError(f"section {section_index} must be a SectionModel")
@@ -474,6 +574,8 @@ def validate_document_model(document: DocumentModel) -> None:
             raise DocumentModelError(
                 f"section {section_index}.section_id must be a string"
             )
+        if section.label is not None:
+            _validate_ir_label(section.label, context=f"section {section_index}.label")
         if not isinstance(section.blocks, tuple):
             raise DocumentModelError(f"section {section_index}.blocks must be a tuple")
         for block_index, block in enumerate(section.blocks):
@@ -541,6 +643,43 @@ def validate_document_model(document: DocumentModel) -> None:
                             context=inline_context,
                             reference_ids=reference_ids,
                         )
+                    elif isinstance(inline, IRCrossReferenceSpan):
+                        for field_name in (
+                            "target_id",
+                            "target_type",
+                            "label",
+                            "occurrence_id",
+                        ):
+                            value = getattr(inline, field_name)
+                            if not isinstance(value, str) or not value.strip():
+                                raise DocumentModelError(
+                                    f"{inline_context}.{field_name} must be a non-empty string"
+                                )
+                        _validate_ir_label(
+                            inline.label, context=f"{inline_context}.label"
+                        )
+                        if inline.target_type not in {
+                            "section",
+                            "equation_occurrence",
+                            "figure",
+                            "table",
+                        }:
+                            raise DocumentModelError(
+                                f"{inline_context}.target_type is unsupported: "
+                                f"{inline.target_type!r}"
+                            )
+                        anchor = anchor_by_label.get(inline.label)
+                        if anchor is None:
+                            raise DocumentModelError(
+                                f"{inline_context} references unresolved label "
+                                f"{inline.label!r}"
+                            )
+                        if anchor != (inline.target_type, inline.target_id):
+                            raise DocumentModelError(
+                                f"{inline_context} label/target mismatch: "
+                                f"label {inline.label!r} resolves to {anchor!r}, not "
+                                f"{(inline.target_type, inline.target_id)!r}"
+                            )
                     else:
                         raise DocumentModelError(
                             f"{inline_context} has an invalid inline type"

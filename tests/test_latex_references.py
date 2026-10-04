@@ -66,7 +66,7 @@ def test_provenance_preserves_full_source_title_and_makes_long_ids_breakable():
 
 
 def test_provenance_table_has_explicit_empty_source_fallback():
-    assert format_provenance_table([]) == "No sources."
+    assert format_provenance_table([]) == r"\multicolumn{5}{l}{No sources.} \\"
 
 
 def test_provenance_table_preserves_reference_order():

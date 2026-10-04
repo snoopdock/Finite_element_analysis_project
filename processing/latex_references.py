@@ -133,4 +133,4 @@ def format_provenance_row(index, reference):
 def format_provenance_table(references):
     """Format all normalized references as provenance rows."""
     rows = [format_provenance_row(index, reference) for index, reference in enumerate(references)]
-    return "\n".join(rows) if rows else "No sources."
+    return "\n".join(rows) if rows else r"\multicolumn{5}{l}{No sources.} \\"

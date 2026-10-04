@@ -132,7 +132,7 @@ def test_authoritative_equation_occurrence_resolves_expression_by_equation_id():
     assert r"K u = f" in render_body(ir)
 
 
-def test_cross_reference_projection_fails_closed_until_label_registry_exists():
+def test_cross_reference_projection_resolves_through_generated_label_registry():
     document = Document(
         children=[
             Section(
@@ -153,13 +153,17 @@ def test_cross_reference_projection_fails_closed_until_label_registry_exists():
         ]
     )
 
-    with pytest.raises(Exception, match="cross-reference|CrossReference|target_id"):
-        project_document_to_latex_ir(
-            document,
-            state={"topic": "FEM", "objective": "Guide"},
-            evidence=[],
-            domain_model=empty_domain_semantic_model(),
-        )
+    ir = project_document_to_latex_ir(
+        document,
+        state={"topic": "FEM", "objective": "Guide"},
+        evidence=[],
+        domain_model=empty_domain_semantic_model(),
+    )
+
+    rendered = render_body(ir)
+    assert ir.sections[0].label == f"sec:{SECTION_ID}"
+    assert rf"\label{{sec:{SECTION_ID}}}" in rendered
+    assert rf"\ref{{sec:{SECTION_ID}}}" in rendered
 
 
 def test_semantic_render_document_promotes_ready_candidate_only_for_rendering():

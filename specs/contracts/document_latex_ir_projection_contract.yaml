@@ -1,13 +1,15 @@
-version: 1
+version: 2
 purpose: >-
   Define the deterministic projection from the semantic publication Document
   into renderer-neutral LaTeX IR without reconstructing or changing scientific
-  authority.
+  or document identity authority.
 
 authority:
   source_document: semantic_document_model
   scientific_equations: domain_semantic_model
   citations: evidence_model
+  internal_targets: semantic_document_model
+  generated_labels: label_registry
   target_ir: latex_ir
   rule: >-
     Projection may copy rendering payloads from authoritative registries, but
@@ -21,6 +23,9 @@ mapping:
       - section_id
       - title
       - order
+    generated:
+      - label
+    label_source: label_registry(section_id)
   paragraph:
     output: ParagraphBlock
     preserve_inline_order: true
@@ -36,6 +41,17 @@ mapping:
       - occurrence_id
       - source_id
     source_resolution: evidence_model
+  cross_reference_occurrence:
+    output: IRCrossReferenceSpan
+    preserve:
+      - occurrence_id
+      - target_id
+    resolve_through:
+      - label_registry
+      - reference_resolver
+    generated:
+      - target_type
+      - label
   display_math:
     output: MathBlock
     authoritative_equation: false
@@ -44,12 +60,12 @@ mapping:
     preserve:
       - occurrence_id
       - equation_id
-      - label
       - caption
     expression_resolution: domain_semantic_model
+    generated_label_source: label_registry(occurrence_id)
+    manual_semantic_label: reject
 
 unsupported_until_dedicated_projection_contract:
-  cross_reference_occurrence: reject
   figure: reject
   table: reject
   equation_proposal_reference: reject
@@ -59,22 +75,30 @@ rendering:
   inline_math: typed_math_only
   display_math: typed_math_only
   citations: source_id_to_reference_key
+  internal_references: generated_label_only
   legacy_math_scanning: forbidden
 
 failure_policy:
   unresolved_equation_id: reject
   unresolved_source_id: reject
+  unresolved_cross_reference_target: reject
+  duplicate_document_target_id: reject
+  label_target_mismatch: reject
   unresolved_equation_proposal: reject
   unsupported_semantic_object: reject
   silent_fallback_to_legacy_section_adapter: forbidden
   silent_semantic_flattening: forbidden
+  title_or_text_based_reference_resolution: forbidden
 
 invariants:
   - document_order_is_preserved
   - paragraph_inline_order_is_preserved
   - citation_occurrence_identity_is_preserved
+  - cross_reference_occurrence_identity_is_preserved
+  - cross_reference_target_identity_is_preserved
   - equation_occurrence_identity_is_preserved
   - equation_expression_is_resolved_by_equation_id
+  - latex_labels_are_generated_from_document_object_identity
   - legacy_key_equations_do_not_drive_projection
   - legacy_citations_used_do_not_drive_projection
   - prose_is_never_scanned_for_latex_during_projection

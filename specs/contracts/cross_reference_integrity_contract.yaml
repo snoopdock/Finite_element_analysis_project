@@ -1,0 +1,111 @@
+version: 1
+purpose: >-
+  Implement the accepted L17-L object-based internal-reference architecture by
+  mapping semantic document target identity to deterministic LaTeX labels and
+  resolving cross-reference occurrences only through that registry.
+
+authority:
+  document_targets: semantic_document_model
+  latex_labels: generated_publication_representation
+  rule: >-
+    target_id is semantic document identity. A LaTeX label is generated from
+    that identity and must never become an independent source of document
+    meaning or be supplied by textual matching.
+
+supported_targets:
+  section:
+    semantic_identity: section_id
+    label_prefix: sec
+    render_anchor: section
+  equation_occurrence:
+    semantic_identity: occurrence_id
+    label_prefix: eq
+    render_anchor: equation
+    note: >-
+      equation_id remains domain-equation identity and is not used as the
+      document-placement reference target.
+  figure:
+    semantic_identity: figure_id
+    label_prefix: fig
+    projection_status: registered_but_rendering_fail_closed
+  table:
+    semantic_identity: table_id
+    label_prefix: tab
+    projection_status: registered_but_rendering_fail_closed
+
+label_generation:
+  deterministic: true
+  depends_on:
+    - target_type
+    - target_id
+  forbidden_inputs:
+    - object_title
+    - document_order
+    - surrounding_text
+    - manually_authored_latex_label
+  safe_identity_rule: >-
+    Label-safe bounded identifiers may be represented directly after a
+    type-specific prefix. Unsafe identifiers must be converted to a
+    deterministic SHA-256 token before entering LaTeX.
+
+registry:
+  global_target_id_uniqueness: required
+  generated_label_uniqueness: required
+  duplicate_target_id: reject
+  duplicate_label: reject
+  orphan_generated_label: impossible_by_construction
+
+reference_resolution:
+  input: cross_reference_occurrence.target_id
+  output:
+    - target_id
+    - target_type
+    - generated_latex_label
+    - occurrence_id
+  unresolved_target: reject
+  title_matching: forbidden
+  text_replacement: forbidden
+  fallback_guessing: forbidden
+
+latex_ir:
+  cross_reference_output: IRCrossReferenceSpan
+  required_fields:
+    - target_id
+    - target_type
+    - label
+    - occurrence_id
+  section_anchor: SectionModel.label
+  equation_anchor: EquationBlock.label
+  validation:
+    - every_reference_label_must_exist
+    - label_target_identity_must_match
+    - duplicate_anchor_labels_forbidden
+
+renderer:
+  section_anchor: "\\label{generated_label}"
+  equation_anchor: "\\label{generated_label}"
+  cross_reference: "\\ref{generated_label}"
+  raw_target_id_as_latex_command: forbidden
+
+manual_labels:
+  canonical_equation_projection: reject
+  rationale: >-
+    Canonical labels are generated representations of occurrence identity.
+    Accepting manually supplied labels would create a second identity system.
+
+failure_policy:
+  duplicate_identity: reject
+  unresolved_reference: reject
+  unsafe_label: reject
+  label_target_mismatch: reject
+  unsupported_target_projection: reject
+  silent_repair: forbidden
+
+invariants:
+  - internal_links_originate_from_document_object_identity
+  - label_generation_is_deterministic
+  - title_changes_do_not_change_labels
+  - document_reordering_does_not_change_labels
+  - equation_domain_identity_is_distinct_from_equation_placement_identity
+  - forward_references_are_valid_when_target_identity_exists
+  - renderer_does_not_resolve_or_guess_target_identity

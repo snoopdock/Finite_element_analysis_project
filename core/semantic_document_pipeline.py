@@ -119,6 +119,16 @@ def build_semantic_candidate_document(
         for item in evidence
         if isinstance(item, Mapping) and item.get("source_id")
     }
+    # Cross-reference markers address semantic document objects. Section IDs
+    # are known before assembly and can therefore be resolved deterministically
+    # in the active legacy-to-semantic migration path. Additional target kinds
+    # (equation occurrences, figures, tables) are registered once those objects
+    # already exist in a semantic Document.
+    target_ids = {
+        str(section.get("section_id"))
+        for section in sections
+        if isinstance(section, Mapping) and section.get("section_id")
+    }
 
     semantic_sections = []
     section_reports = []
@@ -138,7 +148,7 @@ def build_semantic_candidate_document(
             shadow_section,
             equation_ids=equation_ids,
             source_ids=source_ids,
-            target_ids=set(),
+            target_ids=target_ids,
             proposal_ids=set(),
             parse_inline_math=True,
         )

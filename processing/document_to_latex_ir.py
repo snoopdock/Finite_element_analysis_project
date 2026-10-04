@@ -34,10 +34,13 @@ from core.domain_semantic_model import (
     resolve_equation,
 )
 from processing.evidence_adapter import adapt_evidence_to_references
+from processing.label_registry import build_label_registry
+from processing.reference_resolver import ReferenceResolver, ReferenceResolutionError
 from processing.latex_ir import (
     DocumentModel,
     EquationBlock,
     IRCitationSpan,
+    IRCrossReferenceSpan,
     IRMathSpan,
     IRTextSpan,
     MathBlock,
@@ -61,7 +64,9 @@ def _state_text(state: Mapping[str, Any], key: str, default: str = "") -> str:
     return value
 
 
-def _project_paragraph(paragraph: Paragraph) -> ParagraphBlock | None:
+def _project_paragraph(
+    paragraph: Paragraph, resolver: ReferenceResolver
+) -> ParagraphBlock | None:
     inline = []
     for node in paragraph.inline_content:
         if isinstance(node, Text):
@@ -77,12 +82,17 @@ def _project_paragraph(paragraph: Paragraph) -> ParagraphBlock | None:
                 )
             )
         elif isinstance(node, CrossReferenceOccurrence):
-            # Cross-reference semantics require a document-wide label registry.
-            # Until that boundary is implemented, rejecting is safer than
-            # inventing a LaTeX label convention here.
-            raise DocumentToLatexIRError(
-                "CrossReferenceOccurrence projection requires the label registry "
-                f"boundary; unsupported target_id={node.target_id!r}."
+            try:
+                resolved = resolver.resolve(node)
+            except ReferenceResolutionError as exc:
+                raise DocumentToLatexIRError(str(exc)) from exc
+            inline.append(
+                IRCrossReferenceSpan(
+                    target_id=resolved.target_id,
+                    target_type=resolved.target_type,
+                    label=resolved.latex_label,
+                    occurrence_id=resolved.occurrence_id,
+                )
             )
         else:
             raise DocumentToLatexIRError(
@@ -99,12 +109,7 @@ def _reject_unsupported_semantics(document: Document) -> None:
     for section in document.children:
         for child in section.children:
             if isinstance(child, Paragraph):
-                for node in child.inline_content:
-                    if isinstance(node, CrossReferenceOccurrence):
-                        raise DocumentToLatexIRError(
-                            "CrossReferenceOccurrence projection requires the label registry "
-                            f"boundary; unsupported target_id={node.target_id!r}."
-                        )
+                continue
             elif isinstance(child, EquationProposalReference):
                 raise DocumentToLatexIRError(
                     "Unresolved equation proposals cannot enter LaTeX IR: "
@@ -145,20 +150,19 @@ def project_document_to_latex_ir(
 
     document.validate()
     _reject_unsupported_semantics(document)
+    label_registry = build_label_registry(document)
+    reference_resolver = ReferenceResolver(label_registry)
 
     normalized_evidence = adapt_evidence_to_references(list(evidence))
     references = normalize_references(normalized_evidence)
     source_ids = {reference.source_id for reference in references}
     equation_ids = get_authorized_equation_ids(domain_model)
 
-    # The current production document has no cross references. Passing an empty
-    # target registry makes any future REF occurrence fail closed until the
-    # dedicated label registry is implemented.
     assert_renderable(
         document,
         equation_ids=equation_ids,
         source_ids=source_ids,
-        target_ids=set(),
+        target_ids=set(label_registry.target_ids),
         proposal_ids=set(),
     )
 
@@ -167,19 +171,25 @@ def project_document_to_latex_ir(
         blocks = []
         for child in section.children:
             if isinstance(child, Paragraph):
-                paragraph = _project_paragraph(child)
+                paragraph = _project_paragraph(child, reference_resolver)
                 if paragraph is not None:
                     blocks.append(paragraph)
             elif isinstance(child, DisplayMath):
                 blocks.append(MathBlock(child.expression))
             elif isinstance(child, EquationOccurrence):
+                if child.label is not None:
+                    raise DocumentToLatexIRError(
+                        "manual/semantic equation labels are not accepted by the canonical "
+                        "projection; labels are generated from occurrence identity"
+                    )
                 equation = resolve_equation(domain_model, child.equation_id)
+                equation_label = label_registry.resolve(child.occurrence_id).latex_label
                 blocks.append(
                     EquationBlock(
                         equation_id=child.equation_id,
                         expression=str(equation["expression"]),
                         occurrence_id=child.occurrence_id,
-                        label=child.label,
+                        label=equation_label,
                         caption=child.caption,
                     )
                 )
@@ -203,11 +213,13 @@ def project_document_to_latex_ir(
                     f"Unsupported section child: {type(child).__name__}."
                 )
 
+        section_id = section.section_id or ""
         projected_sections.append(
             SectionModel(
                 title=section.title,
                 blocks=tuple(blocks),
-                section_id=section.section_id or "",
+                section_id=section_id,
+                label=label_registry.resolve(section_id).latex_label,
             )
         )
 
