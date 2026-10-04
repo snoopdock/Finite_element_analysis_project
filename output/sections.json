@@ -15,81 +15,152 @@
     ],
     "section_id": "49477b52-afde-48e5-a277-065c31facd86",
     "generated_from": "writer",
-    "status": "complete"
+    "status": "complete",
+    "parent_section_ids": []
   },
   {
     "title": "The Finite Element Procedure",
-    "content": "The discretization of the domain is a crucial step in the Finite Element Procedure, where the computational domain is divided into smaller, simpler subdomains called elements through mesh generation. The choice of element type, such as triangular or quadrilateral, depends on the problem's complexity, and a fine mesh improves accuracy but increases computational cost. This process is essential for applying Galerkin's method, which transforms partial differential equations into a weak form, as shown in the weak formulation equation: $ \\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega $ . The resulting weak form allows for solutions with lower regularity, making it a critical step in the Finite Element Method.\n\nError estimation in the Finite Element Method (FEM) is crucial for quantifying the discrepancy between the exact solution and the numerical approximation. It involves analyzing temporal and spatial discretization errors, such as O($\\Delta t$) for time steps and O($h^s$) for spatial mesh sizes. The a-priori L∞ assumption is often used to establish convergence guarantees, as evidenced by the convergence error bound equation: $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$ [arxiv_1712.01987v1]. This bound ensures convergence as $\\Delta t$ and $h$ approach zero, guiding adaptive mesh refinement and ensuring solution accuracy.\n\nThe formulation of weak forms is a crucial step in the Finite Element Procedure, where the governing partial differential equations are converted into a weak (variational) form by multiplying with test functions and integrating over the domain. This step reduces the smoothness requirements for the solution and enables the use of piecewise basis functions. The weak form is essential for applying Galerkin's method and ensuring numerical stability. Galerkin's method is a foundational technique in the Finite Element Method (FEM) that transforms partial differential equations into a weak form, involving approximating the solution using a set of basis functions and minimizing the residual error over the domain. The weak form of a PDE is defined by the equation $\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega$ [wiki_boris_galerkin], [arxiv_1712.01987v1], where $u_h$ is the approximate solution, $v$ is a test function, $f$ is a source term, and $\\Omega$ is the domain.",
+    "content": "The formulation of weak forms is a crucial step in the Finite Element Procedure, where the governing partial differential equations are converted into a weak (variational) form by multiplying with test functions and integrating over the domain. This step reduces the smoothness requirements for the solution and enables the use of piecewise basis functions. The weak form is essential for applying Galerkin's method and ensuring numerical stability. As stated in [wiki_boris_galerkin], the weak form is defined as $ \\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega $, where $ u_h $ is the approximate solution, $ v $ is a test function, $ f $ is a source term, and $ \\Omega $ is the domain. This process accommodates discontinuous fields and natural boundary conditions, making it a fundamental concept in the Finite Element Method.\n\nError estimation in FEM quantifies the discrepancy between the exact solution and the numerical approximation. It involves analyzing temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes. These estimates guide adaptive mesh refinement and ensure solution accuracy. The a-priori L∞ assumption is often used to establish convergence guarantees, as represented by the equation $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, where $u$ is the exact solution, $u_h$ is the numerical solution, $\\Delta t$ is the time step, $h$ is the mesh size, $s$ is the polynomial order, and $C$ is a constant.",
     "key_equations": [
       "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega",
-      "\\Delta t",
-      "h^s",
-      "\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)",
-      "h"
+      "u_h",
+      "v",
+      "f",
+      "\\Omega"
     ],
     "citations_used": [
-      "arxiv_1712.01987v1",
       "wiki_boris_galerkin"
     ],
     "section_id": "29cfa5f4-6e4e-447f-83db-7391d2c212e8",
+    "parent_section_ids": [],
     "generated_from": "writer",
     "status": "complete"
   },
   {
-    "section_id": "b755be15-8c1d-44de-a849-e1b0d1debbac",
     "title": "Rules for Modeling Physical Phenomena with FEM: Element Type Selection and Stability",
-    "content": "",
+    "content": "The choice of element type is a critical aspect of modeling physical phenomena with the Finite Element Method (FEM). According to the RULE: Element Type Selection, the element type must align with the problem's physical characteristics, with higher-order elements (k ≥ 2) enhancing accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. As stated in [arxiv_1712.01987v1], element selection affects stability and convergence, and thus, it is essential to select the appropriate element type for the specific problem being modeled.\n\nTo ensure stability in finite element models, error estimation and convergence analysis are crucial steps. According to the RULE: Element Type Selection, the choice of element type affects stability and convergence, with higher-order elements enhancing accuracy for smooth solutions and lower-order elements being suitable for nonlinear or discontinuous problems. Error estimation in FEM quantifies the discrepancy between the exact solution and the numerical approximation, involving analysis of temporal and spatial discretization errors, such as $O(\\Delta t + h^s)$ [arxiv_1712.01987v1]. This estimate guides adaptive mesh refinement and ensures solution accuracy. The a-priori L∞ assumption is often used to establish convergence guarantees. The convergence error bound equation, $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, ensures convergence as $\\Delta t$ and $h$ approach zero [arxiv_1712.01987v1].\n\nThe formulation of weak equations is a crucial step in transforming partial differential equations (PDEs) into a weak form, which is essential for applying Galerkin's method and ensuring numerical stability. For mixed finite element methods, this involves introducing additional fields to solve PDEs, differing from traditional irreducible methods, and incorporating Lagrange multiplier constraints to enforce continuity or physical constraints. The resulting weak form is then used to assemble the global system of equations, resulting in a block matrix structure with coupling between primary and additional variables. This process is particularly effective for problems like almost incompressible elasticity, where standard methods may fail. The assembled system reflects the discretized weak form, which is a saddle-point system with non-definite matrices, complicating solution strategies.",
+    "key_equations": [
+      "O(\\Delta t + h^s)",
+      "\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)",
+      "\\Delta t",
+      "h"
+    ],
+    "citations_used": [
+      "arxiv_1712.01987v1"
+    ],
+    "section_id": "b755be15-8c1d-44de-a849-e1b0d1debbac",
     "parent_section_ids": [
       "dc5df119-c9b2-48bb-a324-b0ca484bd0dc"
     ],
     "generated_from": "split",
-    "status": "needs_generation",
+    "subsection_index": 0,
     "parent_content_reference": "The choice of element type is a crucial aspect of modeling physical phenomena with the Finite Element Method (FEM). According to the RULE: Element Type Selection, the element type must align with the problem's physical characteristics, with higher-order elements (k ≥ 2) enhancing accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. This selection affects stability and convergence, as demonstrated in [arxiv_1712.01987v1] and [arxi...",
+    "status": "complete"
+  },
+  {
+    "title": "Rules for Modeling Physical Phenomena with FEM: Mesh Generation and Discretization",
+    "content": "The discretization of the domain is a crucial step in the Finite Element Procedure, where the computational domain is divided into smaller, simpler subdomains called elements through mesh generation. The choice of element type (e.g., triangular, quadrilateral) depends on the problem's complexity, and a fine mesh improves accuracy but increases computational cost. As the domain is discretized, the weak form of the partial differential equation is applied, which defines the weak form of the equation as $\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega$ [wiki_boris_galerkin]. This weak form is the basis for FEM discretization and allows for solutions with lower regularity. The discretization of the domain also enables error estimation, which quantifies the discrepancy between the exact solution and the numerical approximation as $\\text{Error} = O(\\Delta t + h^s)$ [arxiv_1712.01987v1].\n\nError estimation in the Finite Element Method (FEM) is a crucial step in ensuring the accuracy of numerical solutions. It involves analyzing the discrepancy between the exact solution and the numerical approximation, which can be quantified as $ \\text{Error} = O(\\Delta t + h^s) $, where $ \\Delta t $ is the time step, $ h $ is the mesh size, and $ s $ is the polynomial order [arxiv_1712.01987v1]. The a-priori L∞ assumption is often used to establish convergence guarantees. This is achieved through the convergence error bound equation, $ \\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s) $, where $ u $ is the exact solution, $ u_h $ is the numerical solution, and $ C $ is a constant [arxiv_1712.01987v1]. The choice of element type and mesh refinement strategy are also critical in ensuring the accuracy of FEM solutions, as they directly impact the error estimates and convergence rates.\n\nThe formulation of weak forms is a crucial step in the Finite Element Method (FEM), enabling the use of piecewise basis functions and reducing the smoothness requirements for the solution. According to the procedure for formulation of weak forms, the governing partial differential equations are converted into a weak (variational) form by multiplying with test functions and integrating over the domain [wiki_boris_galerkin, arxiv_1712.01987v1]. This weak form is then discretized by dividing the computational domain into smaller, simpler subdomains called elements through mesh generation [arxiv_1712.01987v1, arxiv_1901.00775v2]. The weak form is essential for applying Galerkin's method and ensuring numerical stability, as it allows for solutions with lower regularity [wiki_boris_galerkin, arxiv_1712.01987v1]. The resulting weak form is then assembled into a global system of equations, incorporating Lagrange multiplier constraints to enforce continuity or physical laws [wiki_mixed_finite_element_method].",
+    "key_equations": [
+      "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega",
+      "\\text{Error} = O(\\Delta t + h^s)",
+      "\\Delta t",
+      "h",
+      "s"
+    ],
+    "citations_used": [
+      "arxiv_1712.01987v1",
+      "arxiv_1901.00775v2",
+      "wiki_boris_galerkin",
+      "wiki_mixed_finite_element_method"
+    ],
+    "section_id": "592504c3-788b-41d4-acac-320db4a37295",
+    "parent_section_ids": [
+      "dc5df119-c9b2-48bb-a324-b0ca484bd0dc"
+    ],
+    "generated_from": "split",
+    "subsection_index": 1,
+    "parent_content_reference": "The choice of element type is a crucial aspect of modeling physical phenomena with the Finite Element Method (FEM). According to the RULE: Element Type Selection, the element type must align with the problem's physical characteristics, with higher-order elements (k ≥ 2) enhancing accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. This selection affects stability and convergence, as demonstrated in [arxiv_1712.01987v1] and [arxi...",
+    "status": "complete"
+  },
+  {
+    "section_id": "20c93daa-7290-4859-9113-df3dea6b09b9",
+    "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: Error Estimation in FEM",
+    "content": "",
+    "parent_section_ids": [
+      "9a36dd9b-44e7-4e9c-9e58-967c3bbe3672"
+    ],
+    "generated_from": "split",
+    "status": "needs_generation",
+    "parent_content_reference": "Error estimation in the Finite Element Method (FEM) is a crucial step in ensuring the accuracy of numerical solutions. It involves analyzing the discrepancy between the exact solution and the numerical approximation, which is quantified as $ \\text{Error} = O(\\Delta t + h^s) $, where $ \\Delta t $ is the time step, $ h $ is the mesh size, and $ s $ is the polynomial order [arxiv_1712.01987v1]. This estimate guides adaptive mesh refinement, ensuring that the solution converges to the exact solution...",
     "subsection_index": 0,
     "key_equations": [],
     "citations_used": []
   },
   {
-    "section_id": "592504c3-788b-41d4-acac-320db4a37295",
-    "title": "Rules for Modeling Physical Phenomena with FEM: Mesh Generation and Discretization",
+    "section_id": "1e773c54-5884-40b4-8119-3edaf43d1cd2",
+    "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: Convergence Guarantees and Adaptive Mesh Refinement",
     "content": "",
     "parent_section_ids": [
-      "dc5df119-c9b2-48bb-a324-b0ca484bd0dc"
+      "9a36dd9b-44e7-4e9c-9e58-967c3bbe3672"
     ],
     "generated_from": "split",
     "status": "needs_generation",
-    "parent_content_reference": "The choice of element type is a crucial aspect of modeling physical phenomena with the Finite Element Method (FEM). According to the RULE: Element Type Selection, the element type must align with the problem's physical characteristics, with higher-order elements (k ≥ 2) enhancing accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. This selection affects stability and convergence, as demonstrated in [arxiv_1712.01987v1] and [arxi...",
+    "parent_content_reference": "Error estimation in the Finite Element Method (FEM) is a crucial step in ensuring the accuracy of numerical solutions. It involves analyzing the discrepancy between the exact solution and the numerical approximation, which is quantified as $ \\text{Error} = O(\\Delta t + h^s) $, where $ \\Delta t $ is the time step, $ h $ is the mesh size, and $ s $ is the polynomial order [arxiv_1712.01987v1]. This estimate guides adaptive mesh refinement, ensuring that the solution converges to the exact solution...",
     "subsection_index": 1,
     "key_equations": [],
     "citations_used": []
   },
   {
-    "section_id": "9a36dd9b-44e7-4e9c-9e58-967c3bbe3672",
-    "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees",
+    "section_id": "50cd7b23-a711-4576-b9cc-278353fe3d38",
+    "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: Optimizing Element Type Selection for FEM Simulations",
     "content": "",
     "parent_section_ids": [
-      "dc5df119-c9b2-48bb-a324-b0ca484bd0dc"
+      "9a36dd9b-44e7-4e9c-9e58-967c3bbe3672"
     ],
     "generated_from": "split",
     "status": "needs_generation",
-    "parent_content_reference": "The choice of element type is a crucial aspect of modeling physical phenomena with the Finite Element Method (FEM). According to the RULE: Element Type Selection, the element type must align with the problem's physical characteristics, with higher-order elements (k ≥ 2) enhancing accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. This selection affects stability and convergence, as demonstrated in [arxiv_1712.01987v1] and [arxi...",
+    "parent_content_reference": "Error estimation in the Finite Element Method (FEM) is a crucial step in ensuring the accuracy of numerical solutions. It involves analyzing the discrepancy between the exact solution and the numerical approximation, which is quantified as $ \\text{Error} = O(\\Delta t + h^s) $, where $ \\Delta t $ is the time step, $ h $ is the mesh size, and $ s $ is the polynomial order [arxiv_1712.01987v1]. This estimate guides adaptive mesh refinement, ensuring that the solution converges to the exact solution...",
     "subsection_index": 2,
     "key_equations": [],
     "citations_used": []
   },
   {
-    "section_id": "374cc813-9727-410a-9647-5130916e5ae4",
-    "title": "Rules for Modeling Physical Phenomena with FEM: Evaluating FEM Solution Accuracy",
+    "section_id": "41d96f05-275a-4132-abdf-b78584fbb169",
+    "title": "Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees: A-priori Error Bounds for FEM Solutions",
     "content": "",
+    "parent_section_ids": [
+      "9a36dd9b-44e7-4e9c-9e58-967c3bbe3672"
+    ],
+    "generated_from": "split",
+    "status": "needs_generation",
+    "parent_content_reference": "Error estimation in the Finite Element Method (FEM) is a crucial step in ensuring the accuracy of numerical solutions. It involves analyzing the discrepancy between the exact solution and the numerical approximation, which is quantified as $ \\text{Error} = O(\\Delta t + h^s) $, where $ \\Delta t $ is the time step, $ h $ is the mesh size, and $ s $ is the polynomial order [arxiv_1712.01987v1]. This estimate guides adaptive mesh refinement, ensuring that the solution converges to the exact solution...",
+    "subsection_index": 3,
+    "key_equations": [],
+    "citations_used": []
+  },
+  {
+    "title": "Rules for Modeling Physical Phenomena with FEM: Evaluating FEM Solution Accuracy",
+    "content": "Galerkin's method plays a pivotal role in ensuring the accuracy of Finite Element Method (FEM) solutions by transforming partial differential equations into a weak form, which is essential for deriving variational formulations. This approach involves approximating the solution using a set of basis functions and minimizing the residual error over the domain, as evident from the weak form formulation: $\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega \\quad \\forall v \\in V_h$ [wiki_boris_galerkin]. The accuracy of FEM solutions can be evaluated using error estimation techniques, which quantify the discrepancy between the exact solution and the numerical approximation, as given by the error bound equation: $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$ [arxiv_1712.01987v1].\n\nError estimation in the Finite Element Method (FEM) is a crucial step in ensuring the accuracy of numerical solutions. It involves analyzing the discrepancy between the exact solution and the numerical approximation, quantifying temporal and spatial discretization errors, such as $O(\\Delta t)$ for time steps and $O(h^s)$ for spatial mesh sizes. These estimates guide adaptive mesh refinement and ensure solution accuracy. The a-priori L∞ assumption is often used to establish convergence guarantees. According to the RULE: Mesh Refinement Strategy, mesh refinement must balance accuracy and computational cost, with local refinement in regions of high gradient or curvature improving solution quality, while coarse meshes in smooth regions reduce resource usage. The convergence error bound, $\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)$, ensures convergence as $\\Delta t$ and $h$ approach zero.\n\nApplying the Mixed Finite Element Method can significantly improve the accuracy of Finite Element Method (FEM) solutions in complex phenomena. This approach introduces additional fields to solve partial differential equations, differing from traditional irreducible methods, and is particularly effective for problems like almost incompressible elasticity, where standard methods may fail. The mixed finite element method results in a saddle-point system with non-definite matrices, complicating solution strategies, but can be formulated as \\begin{cases} $K_{uu}u + K_{up}p = f_u$ \\\\ $K_{pu}u + K_{pp}p = f_p$ \\end{cases} as described in [wiki_mixed_finite_element_method]. By using the mixed finite element method, FEM solutions can be improved, especially in cases where standard methods are not sufficient.",
+    "key_equations": [
+      "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega \\quad \\forall v \\in V_h",
+      "\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)",
+      "O(\\Delta t)",
+      "O(h^s)",
+      "\\Delta t"
+    ],
+    "citations_used": [
+      "arxiv_1712.01987v1",
+      "wiki_boris_galerkin",
+      "wiki_mixed_finite_element_method"
+    ],
+    "section_id": "374cc813-9727-410a-9647-5130916e5ae4",
     "parent_section_ids": [
       "dc5df119-c9b2-48bb-a324-b0ca484bd0dc"
     ],
     "generated_from": "split",
-    "status": "needs_generation",
-    "parent_content_reference": "The choice of element type is a crucial aspect of modeling physical phenomena with the Finite Element Method (FEM). According to the RULE: Element Type Selection, the element type must align with the problem's physical characteristics, with higher-order elements (k ≥ 2) enhancing accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. This selection affects stability and convergence, as demonstrated in [arxiv_1712.01987v1] and [arxi...",
     "subsection_index": 3,
-    "key_equations": [],
-    "citations_used": []
+    "parent_content_reference": "The choice of element type is a crucial aspect of modeling physical phenomena with the Finite Element Method (FEM). According to the RULE: Element Type Selection, the element type must align with the problem's physical characteristics, with higher-order elements (k ≥ 2) enhancing accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. This selection affects stability and convergence, as demonstrated in [arxiv_1712.01987v1] and [arxi...",
+    "status": "complete"
   },
   {
     "title": "Verification, Validation, and Best Practices",
@@ -106,6 +177,25 @@
       "wiki_boris_galerkin"
     ],
     "section_id": "149ca538-453b-4a31-9d8e-f132921833ec",
+    "generated_from": "writer",
+    "status": "complete",
+    "parent_section_ids": []
+  },
+  {
+    "title": "Introduction and Scope of the Finite Element Method",
+    "content": "Galerkin's method is a foundational technique in the Finite Element Method (FEM) that transforms partial differential equations into a weak form. This is achieved by formulating the weak form of the governing equations, which involves multiplying the partial differential equation with test functions and integrating over the domain. The weak form is essential for applying Galerkin's method and ensuring numerical stability, as it reduces the smoothness requirements for the solution and enables the use of piecewise basis functions. The method is critical for deriving variational formulations and is widely used in structural and electromagnetic simulations. According to the formulation of weak forms, the weak form of the partial differential equation is given by $ \\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega \\quad \\forall v \\in V_h $, where $ u_h $ is the numerical solution, $ v $ is the test function, and $ f $ is the source term. This approach ensures that the solution satisfies the governing equations in an integral sense rather than pointwise.\n\nError estimation in the Finite Element Method (FEM) is a crucial step in ensuring the accuracy of numerical solutions. It involves analyzing the discrepancy between the exact solution and the numerical approximation, which can be quantified as $ \\text{Error} = O(\\Delta t + h^s) $, where $ \\Delta t $ is the time step and $ h $ is the mesh size. The a-priori L∞ assumption is often used to establish convergence guarantees, as shown in the equation $ \\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s) $ [arxiv_1712.01987v1]. This error estimation guides adaptive mesh refinement, ensuring that the solution quality is improved in regions of high gradient or curvature, while coarse meshes in smooth regions reduce resource usage, as per the RULE: Mesh Refinement Strategy [arxiv_1712.01987v1].\n\nThe formulation of weak forms is a crucial step in transforming partial differential equations into a weak form, which is essential for applying Galerkin's method and ensuring numerical stability. This process involves multiplying the governing equations with test functions and integrating over the domain, reducing the smoothness requirements for the solution and enabling the use of piecewise basis functions. The weak form is defined by the equation $ \\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega $, where $ u_h $ is the approximate solution, $ v $ is a test function, $ f $ is a source term, and $ \\Omega $ is the domain [wiki_boris_galerkin, arxiv_1712.01987v1]. Following the formulation of weak forms, the computational domain is divided into smaller, simpler subdomains called elements through mesh generation, a process known as discretization of the domain [arxiv_1712.01987v1, arxiv_1901.00775v2]. This discretization is critical for applying the Finite Element Method and ensuring numerical stability.",
+    "key_equations": [
+      "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega \\quad \\forall v \\in V_h",
+      "u_h",
+      "v",
+      "f",
+      "\\text{Error} = O(\\Delta t + h^s)"
+    ],
+    "citations_used": [
+      "arxiv_1712.01987v1",
+      "wiki_boris_galerkin"
+    ],
+    "section_id": "fc7fdaeb-5ac6-42fa-887f-b810f706d6ca",
     "generated_from": "writer",
     "status": "complete"
   }

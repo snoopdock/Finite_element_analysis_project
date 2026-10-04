@@ -98,5 +98,55 @@
       "procedures": 1,
       "rules": 0
     }
+  },
+  "wiki_mixed_finite_element_method": {
+    "first_read_at": "2026-10-04T16:41:22.331168+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-10-04T16:41:22.331196+00:00",
+        "extracted": {
+          "concepts": 2,
+          "procedures": 3,
+          "equations": 2,
+          "rules": 2
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 2,
+      "equations": 2,
+      "procedures": 3,
+      "rules": 2
+    }
+  },
+  "arxiv_2210.16907v1": {
+    "first_read_at": "2026-10-04T16:41:22.331202+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-10-04T16:41:22.331223+00:00",
+        "extracted": {
+          "concepts": 0,
+          "equations": 0,
+          "procedures": 0,
+          "rules": 0
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 0,
+      "equations": 0,
+      "procedures": 0,
+      "rules": 0
+    }
   }
 }

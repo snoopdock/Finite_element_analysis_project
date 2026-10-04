@@ -59,6 +59,58 @@
     }
   },
   {
+    "source_id": "wiki_mixed_finite_element_method",
+    "url": "https://en.wikipedia.org/wiki/Mixed_finite_element_method",
+    "retrieved_at": "2026-10-04T16:41:02.886951+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Mixed finite element method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "In numerical analysis, a <span class=\"searchmatch\">mixed</span> <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span>, is a variant of the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> in which extra fields to be solved are introduced during",
+      "word_count": 389
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_mixed_finite_element_method.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "mixed finite element method",
+    "query_contexts": [
+      "mixed finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "mixed finite element method",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "A-FEM finite element method": 0.1375,
+        "hpk-FEM finite element method": 0.1375,
+        "mixed finite element method": 0.750865
+      }
+    }
+  },
+  {
     "source_id": "arxiv_1901.00775v2",
     "url": "https://arxiv.org/pdf/1901.00775v2.pdf",
     "retrieved_at": "2026-10-04T16:31:28.220760+00:00",
@@ -118,7 +170,7 @@
   {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-04T16:31:28.220760+00:00",
+    "retrieved_at": "2026-10-04T16:41:02.886951+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -130,12 +182,12 @@
     "metadata": {
       "abstract": "Rule-based policy and contract systems have rarely been studied in terms of their software engineering properties. This is a serious omission, because in rule-based policy or contract representation languages rules are being used as a declarative programming language to formalize real-world decision logic and create IS production systems upon. This paper adopts an SE methodology from extreme programming, namely test driven development, and discusses how it can be adapted to verification, validation and integrity testing (V&V&I) of policy and contract specifications. Since, the test-driven approach focuses on the behavioral aspects and the drawn conclusions instead of the structure of the rule base and the causes of faults, it is independent of the complexity of the rule language and the system under test and thus much easier to use and understand for the rule engineer and the user.",
       "published": "2006-09-21T11:50:24Z",
-      "page_count": 19,
+      "page_count": 0,
       "word_count": 10484
     },
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_cs_0609119v2.txt",
     "full_text_available": true,
-    "status": "parsed_full_text",
+    "status": "cached_full_text",
     "query_context": "finite element method verification validation numerical stability",
     "query_contexts": [
       "finite element method verification validation numerical stability"
@@ -164,16 +216,73 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "derivation of galerkin's equation finite element method": 0.2125,
-        "nonlinear finite element analysis techniques": 0.2125,
-        "finite element method for nonlinear materials": 0.2125
+        "A-FEM finite element method": 0.2125,
+        "hpk-FEM finite element method": 0.2125,
+        "mixed finite element method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2210.16907v1",
+    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
+    "retrieved_at": "2026-10-04T16:41:02.886951+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
+    "authors": [
+      "Dan Li",
+      "Chunmei Wang",
+      "Junping Wang"
+    ],
+    "metadata": {
+      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
+      "published": "2022-10-30T18:14:18Z",
+      "page_count": 0,
+      "word_count": 9773
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
+    "full_text_available": true,
+    "status": "cached_full_text",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.457846,
+      "lexical": 0.335778,
+      "source_quality": 0.85,
+      "section_relevance": 0.270904,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method mathematical foundation weak form Galerkin method",
+      "query_index": 0,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "A-FEM finite element method": 0.2125,
+        "hpk-FEM finite element method": 0.2125,
+        "mixed finite element method": 0.2125
       }
     }
   },
   {
     "source_id": "wiki_boris_galerkin",
     "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
-    "retrieved_at": "2026-10-04T16:31:28.220760+00:00",
+    "retrieved_at": "2026-10-04T16:41:02.886951+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Boris Galerkin",
@@ -185,7 +294,7 @@
       "word_count": 1835
     },
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_boris_galerkin.txt",
-    "status": "parsed_full_text",
+    "status": "cached_full_text",
     "provider": "wikipedia",
     "source_type": "wikipedia",
     "query_context": "finite element method mathematical foundation weak form Galerkin method",
@@ -199,10 +308,10 @@
       "wikipedia"
     ],
     "ranking": {
-      "score": 0.290841,
-      "lexical": 0.209861,
+      "score": 0.260173,
+      "lexical": 0.167889,
       "source_quality": 0.55,
-      "section_relevance": 0.169315,
+      "section_relevance": 0.135452,
       "citation_support": 0.0,
       "weights": {
         "lexical": 0.65,
@@ -210,15 +319,15 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "derivation of galerkin's equation finite element method",
-      "query_index": 3,
+      "best_query": "finite element method mathematical foundation weak form Galerkin method",
+      "query_index": 0,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.260173,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "derivation of galerkin's equation finite element method": 0.290841,
-        "nonlinear finite element analysis techniques": 0.1375,
-        "finite element method for nonlinear materials": 0.1375
+        "A-FEM finite element method": 0.1375,
+        "hpk-FEM finite element method": 0.1375,
+        "mixed finite element method": 0.1375
       }
     }
   }

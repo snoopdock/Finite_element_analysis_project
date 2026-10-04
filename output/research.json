@@ -7,7 +7,8 @@
       "source_ids": [
         "wiki_boris_galerkin",
         "arxiv_1712.01987v1"
-      ]
+      ],
+      "concept_id": "3d0ccbb0-c7e3-417d-bedd-5d6be7b40ce3"
     },
     {
       "name": "Error Estimation",
@@ -15,6 +16,23 @@
       "mathematical_formulation": "\\text{Error} = O(\\Delta t + h^s)",
       "source_ids": [
         "arxiv_1712.01987v1"
+      ],
+      "concept_id": "ff7ec7d9-6977-4d55-9a93-fd129a2c1c89"
+    },
+    {
+      "name": "Mixed Finite Element Method",
+      "explanation": "The mixed finite element method introduces additional fields to solve partial differential equations, differing from traditional irreducible methods. These extra fields are often constrained using Lagrange multipliers to enforce continuity or physical constraints. This approach is particularly effective for problems like almost incompressible elasticity, where standard methods may fail. The method results in a saddle-point system with non-definite matrices, complicating solution strategies.",
+      "mathematical_formulation": "\\begin{cases} K_{uu}u + K_{up}p = f_u \\\\ K_{pu}u + K_{pp}p = f_p \\end{cases}",
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
+      ]
+    },
+    {
+      "name": "Hybrid Finite Element Method",
+      "explanation": "Hybrid methods use Lagrange multipliers on element boundaries to weakly enforce continuity, eliminating the need for shared degrees of freedom between elements. This allows static condensation of internal fields, reducing computational degrees of freedom. The weak enforcement relies on integral conditions rather than strong continuity constraints. Hybridization can mitigate negative eigenvalues and pivots inherent in mixed methods.",
+      "mathematical_formulation": "\\int_{\\Omega} \\sigma : \\epsilon(v) d\\Omega - \\int_{\\partial\\Omega} \\lambda \\cdot v d\\Gamma = 0",
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
       ]
     }
   ],
@@ -29,7 +47,8 @@
       "source_ids": [
         "arxiv_1712.01987v1",
         "arxiv_1901.00775v2"
-      ]
+      ],
+      "proposition_id": "c6359533-bd99-4f25-ad3e-0398f55e9fbc"
     },
     {
       "step_number": 2,
@@ -41,6 +60,40 @@
       "source_ids": [
         "wiki_boris_galerkin",
         "arxiv_1712.01987v1"
+      ],
+      "proposition_id": "a70c8841-4f9e-476e-b741-2dd2d46a6b2d"
+    },
+    {
+      "step_number": 1,
+      "title": "Discretize the Domain",
+      "description": "Divide the computational domain into discrete elements, defining nodes and connectivity. For curved elements, use higher-order mappings to approximate geometry. This step establishes the mesh structure for local basis functions. Element types (e.g., triangles, quadrilaterals) depend on the problem's dimensionality and complexity.",
+      "equations": [
+        "\\Omega = \\bigcup_{e=1}^{N_e} \\Omega_e"
+      ],
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Formulate Weak Equations",
+      "description": "Convert the strong form of PDEs into a weak form using test functions. Multiply the PDE by a test function and integrate over the domain. This process accommodates discontinuous fields and natural boundary conditions. For mixed methods, introduce additional variables (e.g., pressure, flux) into the weak form.",
+      "equations": [
+        "\\int_{\\Omega} \\nabla u \\cdot \\nabla v d\\Omega = \\int_{\\Omega} f v d\\Omega"
+      ],
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Assemble Global System",
+      "description": "Combine element-level contributions into a global system of equations. For mixed methods, this results in a block matrix structure with coupling between primary and additional variables. Incorporate Lagrange multiplier constraints to enforce continuity or physical laws. The assembled system reflects the discretized weak form.",
+      "equations": [
+        "K = \\sum_{e=1}^{N_e} K_e, \\quad F = \\sum_{e=1}^{N_e} F_e"
+      ],
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
       ]
     }
   ],
@@ -51,7 +104,8 @@
       "explanation": "This equation represents the a-priori error bound for FEM solutions. $ u $ is the exact solution, $ u_h $ is the numerical solution, $ \\Delta t $ is the time step, $ h $ is the mesh size, $ s $ is the polynomial order, and $ C $ is a constant. It ensures convergence as $ \\Delta t $ and $ h $ approach zero.",
       "source_ids": [
         "arxiv_1712.01987v1"
-      ]
+      ],
+      "proposition_id": "b76e02c5-4be4-45f5-be33-12a25cd9f602"
     },
     {
       "name": "Weak Formulation",
@@ -60,6 +114,23 @@
       "source_ids": [
         "wiki_boris_galerkin",
         "arxiv_1712.01987v1"
+      ],
+      "proposition_id": "6f0ea598-b981-4b3e-8d99-21c1d0f867c2"
+    },
+    {
+      "name": "Saddle-Point System",
+      "latex": "\\begin{bmatrix} K_{uu} & K_{up} \\\\ K_{pu} & K_{pp} \\end{bmatrix} \\begin{bmatrix} u \\\\ p \\end{bmatrix} = \\begin{bmatrix} f_u \\\\ f_p \\end{bmatrix}",
+      "explanation": "K_{uu}: Stiffness matrix for primary variables; K_{up}/K_{pu}: Coupling terms between primary and additional variables; K_{pp}: Matrix for additional variables; u/p: Primary/additional variables; f_u/f_p: Force vectors. This system arises in mixed formulations due to Lagrange multiplier constraints.",
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
+      ]
+    },
+    {
+      "name": "Weak Form with Lagrange Multipliers",
+      "latex": "\\int_{\\Omega} \\sigma : \\epsilon(v) d\\Omega - \\int_{\\partial\\Omega} \\lambda \\cdot v d\\Gamma = 0",
+      "explanation": "\\sigma: Stress tensor; \\epsilon(v): Strain from test function v; \\lambda: Lagrange multiplier; \\partial\\Omega: Boundary of domain. This equation enforces equilibrium weakly while incorporating constraints via the Lagrange multiplier term.",
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
       ]
     }
   ],
@@ -69,7 +140,8 @@
       "explanation": "Mesh refinement must balance accuracy and computational cost. Local refinement in regions of high gradient or curvature improves solution quality, while coarse meshes in smooth regions reduce resource usage. Adaptive meshing techniques dynamically adjust element size based on error estimates.",
       "source_ids": [
         "arxiv_1712.01987v1"
-      ]
+      ],
+      "proposition_id": "950e9439-dff0-4381-9ab1-b15ff4b45a56"
     },
     {
       "rule": "Element Type Selection",
@@ -77,6 +149,21 @@
       "source_ids": [
         "arxiv_1712.01987v1",
         "arxiv_1901.00775v2"
+      ],
+      "proposition_id": "9e7b1719-f337-4c45-808f-e6f765594326"
+    },
+    {
+      "rule": "Use Mixed Methods for Incompressible Materials",
+      "explanation": "Mixed finite element methods prevent numerical locking in nearly incompressible problems by decoupling pressure and displacement fields. This avoids the ill-conditioning associated with standard irreducible formulations. The method ensures accurate stress/strain computation under volume constraints. Failure to use mixed methods may lead to spurious oscillations or non-convergence.",
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
+      ]
+    },
+    {
+      "rule": "Employ Hybridization for Reduced DOF",
+      "explanation": "Hybrid methods condense internal degrees of freedom via static condensation, improving computational efficiency. By localizing Lagrange multipliers to element boundaries, they eliminate the need for global continuity constraints. This reduces the global system size while maintaining accuracy. Hybridization is critical for large-scale simulations with complex geometries.",
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
       ]
     }
   ]

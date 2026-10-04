@@ -1,18 +1,18 @@
 # FEA Pipeline - Cycle Report
 
-**Time:** 2026-10-04T16:32:19.644709+00:00
-**Cycle:** 1
-**Total Iterations:** 1
+**Time:** 2026-10-04T16:41:59.352070+00:00
+**Cycle:** 2
+**Total Iterations:** 2
 **Converged:** False
 
 ## Convergence Diagnostics
 
-- Eta variance: 0.0014799999999999987
+- Eta variance: 0.013390909090909097
 - Invariant violations: 0
 - Adjust actions: 0
-- Incomplete sections: 0
-- Unstable sections: 0
-- Reading coverage: 30.80%
+- Incomplete sections: 4
+- Unstable sections: 7
+- Reading coverage: 57.10%
 
 ## This Cycle
 
@@ -24,4 +24,7 @@
 - Write phase skipped: False
 - LaTeX assembled: True
 
-## Status: SUCCESS
+## Errors
+
+- Section 'Rules for Modeling Physical Phenomena with FEM: Error Estimation and Convergence Guarantees': paragraph 2 failed after 2 attempts
+- Section 'The Finite Element Procedure': paragraph 3 failed after 2 attempts
