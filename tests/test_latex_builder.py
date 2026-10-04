@@ -43,3 +43,21 @@ def test_builder_uses_ragged_right_provenance_columns():
 
     assert r">{\raggedright\arraybackslash}p{3.1cm}" in tex
     assert r">{\raggedright\arraybackslash}p{5.7cm}" in tex
+
+
+def test_builder_uses_ragged_right_bibliography_for_long_urls():
+    tex = build_latex_document(
+        {"topic": "Builder Test", "objective": "Bibliography layout", "knowledge_graph": {}},
+        [{"title": "Text", "blocks": [{"type": "text", "text": "Body"}]}],
+        [{
+            "source_id": "s2_0fb362f2f8848d66b6db1312e6826c995530007f",
+            "title": "A $C^0$-continuous method",
+            "url": "https://www.semanticscholar.org/paper/0fb362f2f8848d66b6db1312e6826c995530007f",
+            "retriever_module": "research.semantic_scholar",
+            "retrieved_at": "2026-10-03T19:48:00Z",
+        }],
+    )
+
+    assert r"\begin{thebibliography}{99}" + "\n" + r"\raggedright" in tex
+    assert r"\(C^0\)" in tex
+    assert r"0fb362f2\allowbreak{}f8848d66" in tex

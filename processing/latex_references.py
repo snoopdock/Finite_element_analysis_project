@@ -5,8 +5,9 @@ instances. Citation identity remains authoritative in ReferenceModel.
 """
 
 from datetime import datetime
+import re
 
-from utils.latex import escape_latex
+from utils.latex import escape_latex, escape_text
 
 
 def format_retrieval_timestamp(retrieved_at):
@@ -26,9 +27,38 @@ def format_source_type(source_type):
     return escape_latex(display)
 
 
+_SAFE_TITLE_MATH_RE = re.compile(r"^[A-Za-z0-9 +\-*/=<>^_().,]+$")
+_TITLE_MATH_FRAGMENT_RE = re.compile(r"\$([^$]+)\$")
+
+
+def format_reference_title(title):
+    """Escape external title metadata while preserving a tiny safe math subset.
+
+    Source titles are untrusted metadata, so arbitrary LaTeX is never passed
+    through.  Only simple dollar-delimited ASCII math fragments without
+    commands (for example ``$C^0$`` or ``$H^1$``) are promoted to inline
+    math.  Everything else remains escaped plain text.
+    """
+    if not title:
+        return ""
+
+    rendered = []
+    cursor = 0
+    for match in _TITLE_MATH_FRAGMENT_RE.finditer(title):
+        rendered.append(escape_text(title[cursor:match.start()]))
+        fragment = match.group(1).strip()
+        if fragment and _SAFE_TITLE_MATH_RE.fullmatch(fragment):
+            rendered.append(r"\(" + fragment + r"\)")
+        else:
+            rendered.append(escape_text(match.group(0)))
+        cursor = match.end()
+    rendered.append(escape_text(title[cursor:]))
+    return "".join(rendered)
+
+
 def format_bibliography_reference(reference):
     """Format one normalized reference as a LaTeX bibliography item."""
-    title = escape_latex(reference.title)
+    title = format_reference_title(reference.title)
     url = (
         reference.url.replace("%", r"\%")
         .replace("&", r"\&")
@@ -47,18 +77,52 @@ def format_bibliography(references):
     return "\n".join(items) if items else "  \\bibitem{none} No sources retrieved."
 
 
-def _format_breakable_source_id(source_id):
-    """Format a source identifier with URL-style discretionary line breaks."""
-    # ``\nolinkurl`` is presentation-only and handles underscores/long tokens
-    # without creating a clickable link. Source IDs are pipeline-controlled
-    # identifiers rather than arbitrary authorial LaTeX.
-    return rf"\nolinkurl{{{source_id}}}"
+def _format_breakable_source_id(source_id, *, chunk_size=8, long_run_threshold=16):
+    """Format a source ID with safe discretionary break points when required.
+
+    Normal identifiers keep the established ``\nolinkurl`` representation.
+    If an identifier contains a long uninterrupted alphanumeric run (as in
+    Semantic Scholar hashes), it is rendered as escaped monospace text with
+    zero-width ``\allowbreak`` opportunities every ``chunk_size`` characters.
+    No identifier content is interpreted as LaTeX.
+    """
+    source_id = str(source_id or "")
+    if not source_id:
+        return r"\texttt{N/A}"
+
+    runs = re.findall(r"[A-Za-z0-9]+", source_id)
+    if not any(len(run) > long_run_threshold for run in runs):
+        return rf"\nolinkurl{{{source_id}}}"
+
+    pieces = []
+    run = []
+
+    def flush_run():
+        if not run:
+            return
+        text = "".join(run)
+        for start in range(0, len(text), chunk_size):
+            if start:
+                pieces.append(r"\allowbreak{}")
+            pieces.append(escape_text(text[start:start + chunk_size]))
+        run.clear()
+
+    for char in source_id:
+        if char.isalnum():
+            run.append(char)
+            continue
+        flush_run()
+        pieces.append(escape_text(char))
+        pieces.append(r"\allowbreak{}")
+    flush_run()
+
+    return r"\texttt{" + "".join(pieces) + "}"
 
 
 def format_provenance_row(index, reference):
     """Format one provenance row without truncating source metadata."""
     source_id = _format_breakable_source_id(reference.source_id)
-    title = escape_latex(reference.title)
+    title = format_reference_title(reference.title)
     retrieved = escape_latex(format_retrieval_timestamp(reference.retrieved_at))
     return (
         f"  {index + 1} & {source_id} & {title} & "

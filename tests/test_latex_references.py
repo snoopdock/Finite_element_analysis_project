@@ -6,6 +6,7 @@ from processing.latex_references import (
     format_bibliography_reference,
     format_provenance_row,
     format_provenance_table,
+    format_reference_title,
     format_retrieval_timestamp,
     format_source_type,
 )
@@ -79,3 +80,25 @@ def test_provenance_table_preserves_reference_order():
     assert rendered.index("First") < rendered.index("Second")
     assert "source-1" in rendered
     assert "source-2" in rendered
+
+
+def test_long_semantic_scholar_source_id_has_breaks_inside_hex_tail():
+    rendered = format_provenance_row(
+        0,
+        _reference(source_id="s2_0fb362f2f8848d66b6db1312e6826c995530007f"),
+    )
+
+    assert r"s2\_\allowbreak{}0fb362f2\allowbreak{}f8848d66" in rendered
+    assert r"\allowbreak{}b6db1312\allowbreak{}e6826c99" in rendered
+
+
+def test_reference_title_preserves_only_safe_simple_inline_math():
+    assert format_reference_title("A $C^0$-continuous method") == r"A \(C^0\)-continuous method"
+    assert format_reference_title("Norms $H^1$ and $L^2$") == r"Norms \(H^1\) and \(L^2\)"
+
+
+def test_reference_title_does_not_pass_arbitrary_latex_through():
+    rendered = format_reference_title(r"Unsafe $\input{secret}$ title")
+
+    assert r"\input{secret}" not in rendered
+    assert r"\textbackslash{}input\{secret\}" in rendered

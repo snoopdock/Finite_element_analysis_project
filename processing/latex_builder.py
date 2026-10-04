@@ -126,6 +126,7 @@ def build_latex_document_from_model(state, document: DocumentModel):
 
     doc_lines.extend([
         r"\begin{thebibliography}{99}",
+        r"\raggedright",
         refs_text,
         r"\end{thebibliography}",
         "",
