@@ -165,7 +165,7 @@
   {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-05T18:34:17.347102+00:00",
+    "retrieved_at": "2026-10-05T19:14:45.484553+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -177,12 +177,12 @@
     "metadata": {
       "abstract": "Rule-based policy and contract systems have rarely been studied in terms of their software engineering properties. This is a serious omission, because in rule-based policy or contract representation languages rules are being used as a declarative programming language to formalize real-world decision logic and create IS production systems upon. This paper adopts an SE methodology from extreme programming, namely test driven development, and discusses how it can be adapted to verification, validation and integrity testing (V&V&I) of policy and contract specifications. Since, the test-driven approach focuses on the behavioral aspects and the drawn conclusions instead of the structure of the rule base and the causes of faults, it is independent of the complexity of the rule language and the system under test and thus much easier to use and understand for the rule engineer and the user.",
       "published": "2006-09-21T11:50:24Z",
-      "page_count": 19,
+      "page_count": 0,
       "word_count": 10484
     },
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_cs_0609119v2.txt",
     "full_text_available": true,
-    "status": "parsed_full_text",
+    "status": "cached_full_text",
     "query_context": "finite element method verification validation numerical stability",
     "query_contexts": [
       "finite element method verification validation numerical stability"
@@ -211,8 +211,171 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "finite element limit analysis": 0.2125,
-        "variable polynomial finite element method": 0.2125
+        "Galerkin's best approximation property in the energy norm FEM": 0.2125,
+        "Galerkin method for stepped Structures FEM": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2210.16907v1",
+    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
+    "retrieved_at": "2026-10-05T19:14:45.484553+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
+    "authors": [
+      "Dan Li",
+      "Chunmei Wang",
+      "Junping Wang"
+    ],
+    "metadata": {
+      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
+      "published": "2022-10-30T18:14:18Z",
+      "page_count": 0,
+      "word_count": 9773
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
+    "full_text_available": true,
+    "status": "cached_full_text",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.457846,
+      "lexical": 0.335778,
+      "source_quality": 0.85,
+      "section_relevance": 0.270904,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method mathematical foundation weak form Galerkin method",
+      "query_index": 0,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Galerkin's best approximation property in the energy norm FEM": 0.289171,
+        "Galerkin method for stepped Structures FEM": 0.365841
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_1011.3634v2",
+    "url": "https://arxiv.org/pdf/1011.3634v2.pdf",
+    "retrieved_at": "2026-10-05T19:14:45.484553+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Generalised Weyl theorems and spectral pollution in the Galerkin method",
+    "authors": [
+      "Lyonell Boulton",
+      "Nabile Boussaid",
+      "Mathieu Lewin"
+    ],
+    "metadata": {
+      "abstract": "We consider a general framework for investigating spectral pollution in the Galerkin method. We show how this phenomenon is characterised via the existence of particular Weyl sequences which are singular in a suitable sense. For a semi-bounded selfadjoint operator A we identify relative compactness conditions on a selfadjoint perturbation B ensuring that the limiting set of spectral pollution of A and B coincide. Our results show that, under perturbation, this limiting set behaves in a similar fashion as the essential spectrum.",
+      "published": "2010-11-16T10:08:21Z",
+      "page_count": 20,
+      "word_count": 9260
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1011.3634v2.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "Galerkin method for stepped Structures FEM",
+    "query_contexts": [
+      "Galerkin method for stepped Structures FEM"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.365841,
+      "lexical": 0.209861,
+      "source_quality": 0.85,
+      "section_relevance": 0.169315,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Galerkin method for stepped Structures FEM",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.335173,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Galerkin's best approximation property in the energy norm FEM": 0.289171,
+        "Galerkin method for stepped Structures FEM": 0.365841
+      }
+    }
+  },
+  {
+    "source_id": "wiki_boris_galerkin",
+    "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
+    "retrieved_at": "2026-10-05T19:14:45.484553+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Boris Galerkin",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "problem in <span class=\"searchmatch\">weak</span> <span class=\"searchmatch\">form</span>. Most well-known in the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> The Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> The streamline upwind Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> (SUPG) The",
+      "word_count": 1835
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_boris_galerkin.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.290841,
+      "lexical": 0.209861,
+      "source_quality": 0.55,
+      "section_relevance": 0.169315,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Galerkin method for stepped Structures FEM",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Galerkin's best approximation property in the energy norm FEM": 0.214171,
+        "Galerkin method for stepped Structures FEM": 0.290841
       }
     }
   }
