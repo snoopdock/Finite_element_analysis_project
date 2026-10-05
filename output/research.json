@@ -70,6 +70,7 @@
       "explanation": "The weak formulation is a mathematical framework used in FEM to convert partial differential equations into integral equations. It reduces the smoothness requirements of the solution by integrating the equations against test functions, allowing for piecewise continuous approximations. This approach is essential for handling complex geometries and boundary conditions. The weak form ensures that the solution satisfies the problem's constraints in an averaged sense over the domain.",
       "mathematical_formulation": "\\int_{\\Omega} v (\\nabla^2 u + f) \\, d\\Omega = 0",
       "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem",
         "wiki_boris_galerkin"
       ],
       "concept_id": "d6b95fd5-8a49-4f98-a37c-cb20f3f361db"
@@ -80,7 +81,8 @@
       "mathematical_formulation": "u_h(x) = \\sum_{i \\in I} N_i(x) u_i + \\sum_{j \\in J} H(x) N_j(x) a_j",
       "source_ids": [
         "wiki_extended_finite_element_method"
-      ]
+      ],
+      "concept_id": "0f595c45-57ae-47be-a6dd-7ac0a4ada105"
     },
     {
       "name": "Mesh Independence for Discontinuities",
@@ -88,6 +90,16 @@
       "mathematical_formulation": "",
       "source_ids": [
         "wiki_extended_finite_element_method"
+      ],
+      "concept_id": "62141754-c8a4-47c1-a948-b2f28ddf15a0"
+    },
+    {
+      "name": "Bilinear Form Coercivity",
+      "explanation": "Coercivity ensures that the bilinear form $ B(u, u) $ is bounded below by a positive constant times the norm of $ u $. This property is critical for guaranteeing the uniqueness and stability of the weak solution. Without coercivity, the system may be ill-posed, leading to non-unique or unstable solutions. The Lax-Milgram theorem relies on coercivity to establish existence and uniqueness.",
+      "mathematical_formulation": "|B(u, u)| \\geq c \\|u\\|^2 \\quad \\text{for some } c > 0 \\text{ and all } u \\in U",
+      "source_ids": [
+        "arxiv_1607.03618v2",
+        "wiki_babu_ka_lax_milgram_theorem"
       ]
     }
   ],
@@ -104,7 +116,7 @@
         "wiki_extended_finite_element_method",
         "wiki_finite_element_limit_analysis"
       ],
-      "proposition_id": "5e6afc47-3d8c-4e36-acb4-26625199f2ac"
+      "proposition_id": "820d59fb-39a0-42d4-85ee-40424bb1195b"
     },
     {
       "step_number": 2,
@@ -158,6 +170,29 @@
       ],
       "source_ids": [
         "wiki_extended_finite_element_method"
+      ],
+      "proposition_id": "5c386557-8c54-4c65-b604-f3ad9929b380"
+    },
+    {
+      "step_number": 1,
+      "title": "Weak Formulation Derivation",
+      "description": "Convert the original differential equation into its weak form by multiplying with a test function and integrating over the domain. This step involves defining appropriate function spaces for the solution and test functions. The weak form ensures compatibility with the finite element discretization. It also allows for the incorporation of boundary conditions through the bilinear form.",
+      "equations": [
+        "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V"
+      ],
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Discretization",
+      "description": "Approximate the infinite-dimensional function space with a finite-dimensional subspace using basis functions. This involves partitioning the domain into elements and defining piecewise polynomial basis functions. The discretization transforms the weak form into a system of linear equations. The accuracy of the solution depends on the choice of basis functions and mesh refinement.",
+      "equations": [
+        "\\sum_{i=1}^n u_i B(\\phi_i, \\phi_j) = \\langle f, \\phi_j \\rangle \\quad \\text{for } j = 1, \\dots, n"
+      ],
+      "source_ids": [
+        "arxiv_1607.03618v2"
       ]
     }
   ],
@@ -197,7 +232,8 @@
       "explanation": "This equation represents the variational form of a partial differential equation. The left side computes the stiffness matrix by integrating the product of gradients of the trial and test functions. The right side computes the load vector by integrating the source term multiplied by the test function. The solution $ u_h $ is approximated using enriched basis functions to capture discontinuities.",
       "source_ids": [
         "wiki_extended_finite_element_method"
-      ]
+      ],
+      "proposition_id": "db0d9a88-0148-463b-b10a-76d772c5cab9"
     },
     {
       "name": "Enriched Approximation",
@@ -205,6 +241,24 @@
       "explanation": "This equation defines the enriched finite element approximation. $ N_i(x) $ are standard polynomial basis functions, $ u_i $ are nodal values, $ H(x) $ is an enrichment function (e.g., Heaviside step function), and $ a_j $ are additional coefficients. The second term captures discontinuities, allowing the solution to represent cracks or material interfaces without mesh modification.",
       "source_ids": [
         "wiki_extended_finite_element_method"
+      ],
+      "proposition_id": "0bce3b76-b503-4749-b7a0-648067875b8b"
+    },
+    {
+      "name": "Lax-Milgram Coercivity Condition",
+      "latex": "|B(u, u)| \\geq c \\|u\\|^2 \\quad \\text{for some } c > 0 \\text{ and all } u \\in U",
+      "explanation": "This inequality ensures that the bilinear form $ B $ is bounded below by a positive constant $ c $, guaranteeing the uniqueness and stability of the weak solution. $ u $ represents the solution in the function space $ U $, and $ \\|u\\| $ is the norm in $ U $.",
+      "source_ids": [
+        "arxiv_1607.03618v2",
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "name": "Weak Form Equation",
+      "latex": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
+      "explanation": "This equation defines the weak solution $ u $ in the space $ U $, where $ B $ is a bilinear form encoding the differential operator, $ f $ is a linear functional representing the source term, and $ v $ is a test function in the space $ V $.",
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
       ]
     }
   ],
@@ -256,13 +310,30 @@
       "explanation": "The choice of enrichment functions must align with the physical discontinuity type (e.g., cracks, material interfaces). Incorrect enrichment leads to poor convergence or inaccurate results. This rule ensures the method's effectiveness by matching basis functions to problem-specific features.",
       "source_ids": [
         "wiki_extended_finite_element_method"
-      ]
+      ],
+      "proposition_id": "1f42c362-0e04-479a-895d-1df831ca31d2"
     },
     {
       "rule": "Mesh Compatibility",
       "explanation": "Discontinuities must be aligned with mesh edges to avoid projection errors. This rule ensures that enrichment functions are applied consistently across elements, maintaining numerical stability and accuracy.",
       "source_ids": [
         "wiki_extended_finite_element_method"
+      ],
+      "proposition_id": "73c6a11f-d28d-4715-b384-ead76aea4e61"
+    },
+    {
+      "rule": "Coercivity and Continuity Requirement",
+      "explanation": "The bilinear form must satisfy both coercivity and continuity to ensure the existence and uniqueness of the weak solution. Coercivity guarantees stability, while continuity ensures the problem is well-posed. Violating these conditions may lead to non-unique or unstable solutions.",
+      "source_ids": [
+        "arxiv_1607.03618v2",
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "rule": "Function Space Compatibility",
+      "explanation": "The solution space $ U $ and test function space $ V $ must be chosen such that the bilinear form $ B $ is well-defined. Incompatible spaces may result in ill-posed problems or numerical instabilities. Typically, $ U = V $ is chosen for symmetric problems.",
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
       ]
     }
   ]

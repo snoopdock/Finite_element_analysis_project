@@ -1,5 +1,61 @@
 [
   {
+    "source_id": "arxiv_1607.03618v2",
+    "url": "https://arxiv.org/pdf/1607.03618v2.pdf",
+    "retrieved_at": "2026-10-05T16:31:39.956090+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "The Lax-Milgram Theorem. A detailed proof to be formalized in Coq",
+    "authors": [
+      "François Clément",
+      "Vincent Martin"
+    ],
+    "metadata": {
+      "abstract": "To obtain the highest confidence on the correction of numerical simulation programs implementing the finite element method, one has to formalize the mathematical notions and results that allow to establish the soundness of the method. The Lax-Milgram theorem may be seen as one of those theoretical cornerstones: under some completeness and coercivity assumptions, it states existence and uniqueness of the solution to the weak formulation of some boundary value problems. The purpose of this document is to provide the formal proof community with a very detailed pen-and-paper proof of the Lax-Milgram theorem.",
+      "published": "2016-07-13T07:43:54Z",
+      "page_count": 104,
+      "word_count": 49415
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1607.03618v2.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "Lax-Milgram theorem finite element method",
+    "query_contexts": [
+      "Lax-Milgram theorem finite element method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.825865,
+      "lexical": 0.839445,
+      "source_quality": 0.85,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Lax-Milgram theorem finite element method",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Lax-Milgram theorem finite element method": 0.825865,
+        "Galerkin dimension reduction finite element method": 0.2125,
+        "hpk-FEM finite element method": 0.2125
+      }
+    }
+  },
+  {
     "source_id": "wiki_crystal_plasticity",
     "url": "https://en.wikipedia.org/wiki/Crystal_plasticity",
     "retrieved_at": "2026-10-05T14:43:07.767557+00:00",
@@ -257,6 +313,64 @@
         "finite element limit analysis": 0.1375,
         "loubignac iteration": 0.1375,
         "mixed finite element method": 0.750865
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2511.22320v1",
+    "url": "https://arxiv.org/pdf/2511.22320v1.pdf",
+    "retrieved_at": "2026-10-05T16:31:39.956090+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Dimension reduction for a coupled electro-elastic saddle-point problem at finite strains",
+    "authors": [
+      "Kateryna Buryachenko",
+      "Annegret Glitzky",
+      "Matthias Liero",
+      "Barbara Zwicknagl"
+    ],
+    "metadata": {
+      "abstract": "We study the finite deformation of a thin, elastically heterogeneous sheet subject to electrostatic coupling. The interaction between mechanics and electrostatics is formulated as a saddle-point problem involving the deformation and the electrostatic potential. Starting from a three-dimensional electro-elastic model with prestrain in the elastic energy, we rigorously derive a reduced plate model in the bending regime. To perform the dimension reduction, that is, to derive the energy of a thin object by taking a suitable limit as its thickness tends to zero, we apply $Γ$-convergence-type methods to the underlying saddle-point problem. In the case of bivariate functionals, this convergence is understood in an adapted epi/hypo-convergence sense. In this concept, we demonstrate the convergence of the rescaled electro-elastic problems to an effective two-dimensional bending model coupled to electric effects. We verify that cluster points of saddle points are saddle points for the limit.",
+      "published": "2025-11-27T10:50:00Z",
+      "page_count": 30,
+      "word_count": 14237
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2511.22320v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "Galerkin dimension reduction finite element method",
+    "query_contexts": [
+      "Galerkin dimension reduction finite element method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.62141,
+      "lexical": 0.55963,
+      "source_quality": 0.85,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Galerkin dimension reduction finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Lax-Milgram theorem finite element method": 0.2125,
+        "Galerkin dimension reduction finite element method": 0.62141,
+        "hpk-FEM finite element method": 0.2125
       }
     }
   },
@@ -609,7 +723,7 @@
   {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-05T15:59:44.277696+00:00",
+    "retrieved_at": "2026-10-05T16:31:39.956090+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -655,9 +769,9 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "Extended Finite Element Method": 0.2125,
-        "Cut Finite Element Method": 0.2125,
-        "Generalized Finite Element Method": 0.2125
+        "Lax-Milgram theorem finite element method": 0.2125,
+        "Galerkin dimension reduction finite element method": 0.2125,
+        "hpk-FEM finite element method": 0.2125
       }
     }
   },
@@ -715,6 +829,58 @@
         "Extended Finite Element Method": 0.2125,
         "Cut Finite Element Method": 0.2125,
         "Generalized Finite Element Method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "wiki_babu_ka_lax_milgram_theorem",
+    "url": "https://en.wikipedia.org/wiki/Babuška–Lax–Milgram_theorem",
+    "retrieved_at": "2026-10-05T16:31:39.956090+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Babuška–Lax–Milgram theorem",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "In mathematics, the Babuška–<span class=\"searchmatch\">Lax</span>–<span class=\"searchmatch\">Milgram</span> <span class=\"searchmatch\">theorem</span> is a generalization of the famous <span class=\"searchmatch\">Lax</span>–<span class=\"searchmatch\">Milgram</span> <span class=\"searchmatch\">theorem</span>, which gives conditions under which a bilinear form",
+      "word_count": 890
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_babu_ka_lax_milgram_theorem.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Lax-Milgram theorem finite element method",
+    "query_contexts": [
+      "Lax-Milgram theorem finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.444183,
+      "lexical": 0.419722,
+      "source_quality": 0.55,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Lax-Milgram theorem finite element method",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Lax-Milgram theorem finite element method": 0.444183,
+        "Galerkin dimension reduction finite element method": 0.1375,
+        "hpk-FEM finite element method": 0.1375
       }
     }
   },
