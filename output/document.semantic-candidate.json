@@ -5,7 +5,7 @@
   "children": [
     {
       "type": "section",
-      "section_id": "7990454e-9eb1-4fcb-a324-80667fcf2812",
+      "section_id": "97669979-9e98-4faf-afe6-3cec20d0698b",
       "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
       "children": [
         {
@@ -13,101 +13,11 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The Galerkin method is a fundamental numerical technique for approximating solutions to partial differential equations (PDEs). It involves projecting the problem onto a finite-dimensional space using basis functions, ensuring the residual is orthogonal to the test space. This approach forms the foundation of the Finite Element Method (FEM), enabling the conversion of PDEs into a system of algebraic equations. The method is particularly effective for problems with complex geometries and varying material properties, as it allows for the accurate modeling of irregular domains. According to the Galerkin method, the weak form of the PDE is given by "
+              "text": "The Weak Formulation is a crucial step in the Finite Element Method (FEM), where the governing partial differential equation is transformed into a weak form by multiplying with a test function and integrating over the domain. This reduces the smoothness requirements for the solution and facilitates the use of piecewise functions. The weak form is essential for deriving the discrete equations in FEM, ensuring compatibility with numerical methods. The Weak Form of Poisson's Equation, for instance, is represented as "
             },
             {
               "type": "inline_math",
-              "expression": " \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx \\quad \\forall v \\in V_h "
-            },
-            {
-              "type": "text",
-              "text": ", as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "9f5b9e59-0ece-5bcc-81e9-691545e1fc9c",
-              "source_id": "arxiv_1508.01165v2"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe weak formulation is a crucial concept in the mathematical foundation of the Finite Element Method. By transforming the partial differential equation (PDE) into a weak form through multiplication with a test function and integration over the domain, the differentiability requirements for the solution are reduced. This ensures compatibility with the finite-dimensional space of basis functions, as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "5506b83f-2f65-55ae-ad07-0c748ef16f4c",
-              "source_id": "arxiv_1508.01165v2"
-            },
-            {
-              "type": "text",
-              "text": ". The weak form is particularly effective for problems with complex geometries and varying material properties, where curved elements in Weak Galerkin Finite Element Methods (WG-FEM) enable accurate modeling by approximating curved boundaries, as shown in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "15d1a343-3310-5076-9eef-6bed690a1db3",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ". This flexibility is essential for applications requiring high-fidelity geometric representation.\n\nThe accuracy of finite element limit analysis (FELA) results is crucial for ensuring the reliability of computed collapse loads. According to the optimization-based solution procedure, the problem is formulated by minimizing or maximizing a suitable objective function, subject to constraints that enforce the satisfaction of equilibrium and plasticity conditions. This approach is particularly effective for problems with complex geometries and varying material properties, where the use of curved elements in weak Galerkin finite element methods (WG-FEM) is essential for high-fidelity geometric representation, as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "175ba4c9-864a-51fe-9a92-f2190ab19a74",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ". The use of FELA in conjunction with curved elements enables the accurate modeling of complex mechanical systems, thereby providing reliable estimates of plastic collapse loads."
-            }
-          ]
-        }
-      ],
-      "parent_section_ids": [],
-      "status": "complete",
-      "generated_from": "writer"
-    },
-    {
-      "type": "section",
-      "section_id": "29a56191-5fe3-41cd-afa7-05ea5af855d6",
-      "title": "The Finite Element Procedure: Problem Formulation and Discretization",
-      "children": [
-        {
-          "type": "paragraph",
-          "inline_content": [
-            {
-              "type": "text",
-              "text": "Problem formulation and discretization techniques in finite element analysis are crucial for accurately modeling complex physical problems. According to the procedure for problem formulation, the physical problem is defined by specifying geometry, material properties, boundary conditions, and loading scenarios. The weak formulation is employed to transform the partial differential equation (PDE) into a form that is compatible with the finite-dimensional space of basis functions, thereby reducing the differentiability requirements for the solution "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "7cc16730-5b3b-5799-876f-145dd2a5c933",
-              "source_id": "arxiv_1508.01165v2"
-            },
-            {
-              "type": "text",
-              "text": ". Discretization of the domain into finite elements is then performed, ensuring appropriate mesh density for accuracy. For Finite Element Limit Analysis (FELA), the problem is formulated as an optimization task to directly compute collapse loads, which can be achieved through kinematic or equilibrium formulations "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "e385e82b-3e60-55e0-971b-db1f763abc0b",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe optimization methods for solving finite element problems can be efficiently addressed through a weak formulation approach. By transforming the partial differential equation (PDE) into a weak form through multiplication with a test function and integration over the domain, the differentiability requirements for the solution are reduced, ensuring compatibility with the finite-dimensional space of basis functions "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "ab125f5c-97c6-57d2-ad0d-5ae5b40cda25",
-              "source_id": "arxiv_1508.01165v2"
-            },
-            {
-              "type": "text",
-              "text": ". This weak form is particularly beneficial for parabolic problems, where the time derivative is handled via temporal discretization techniques like Discontinuous Galerkin (DG) methods, as seen in the equation "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\sum_{K} \\int_K \\partial_t u v \\, dx - \\sum_{K} \\int_K \\nabla u \\cdot \\nabla v \\, dx + \\sum_{\\partial K} \\int_{\\partial K} \\hat{u} v \\, ds = \\sum_{K} \\int_K f v \\, dx"
+              "expression": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\Gamma} g v \\, d\\Gamma"
             },
             {
               "type": "text",
@@ -115,251 +25,136 @@
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "ebb9bfc7-7a3d-58d0-a9a5-00d6d63fe340",
-              "source_id": "arxiv_1508.01165v2"
+              "occurrence_id": "15ba17df-963f-57e5-a6b1-5e154ed5e153",
+              "source_id": "wiki_crystal_plasticity"
             },
             {
               "type": "text",
-              "text": ". Furthermore, the optimization-based solution procedure for Finite Element Limit Analysis (FELA) can be formulated as an optimization task to directly compute collapse loads, employing solvers like second-order cone programming for nonlinear optimization "
+              "text": ", "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "2209933f-e4f3-55e0-9865-bdd38f26597e",
+              "occurrence_id": "861b82cc-282e-5909-bcc2-4cf869637a92",
               "source_id": "wiki_finite_element_limit_analysis"
             },
             {
               "type": "text",
-              "text": ".\n\nDomain discretization strategies are essential for obtaining accurate finite element solutions. The Galerkin method, a fundamental numerical technique, involves projecting the problem onto a finite-dimensional space using basis functions, ensuring the residual is orthogonal to the test space. This approach forms the foundation of the Finite Element Method (FEM), enabling the conversion of partial differential equations (PDEs) into a system of algebraic equations. For parabolic problems, the time derivative is handled via temporal discretization techniques like Discontinuous Galerkin (DG) methods, which combine features of finite element and finite volume methods. The use of curved elements in Weak Galerkin Finite Element Methods (WG-FEM) also enhances the flexibility of the method for problems with irregular domains, while maintaining mathematical consistency and improving computational efficiency."
+              "text": ". This formulation is the basis for FEM discretization, enabling the modeling of complex geometries and physical phenomena.\n\nDiscretization is a crucial step in mathematical modeling, as it enables the transformation of a continuous domain into a discrete representation. By dividing the domain into finite elements, the physical problem can be approximated using piecewise functions, facilitating the handling of complex geometries and boundary conditions. The accuracy of Finite Element Method (FEM) results depends heavily on the quality and density of the mesh, which is determined by the discretization process. As evident from the weak form of Poisson's equation, "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\Gamma} g v \\, d\\Gamma "
+            },
+            {
+              "type": "text",
+              "text": ", discretization is essential for deriving the discrete equations in FEM, ensuring compatibility with numerical methods "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "eb6192ac-ed55-5ead-8e38-967067e1c562",
+              "source_id": "wiki_crystal_plasticity"
+            },
+            {
+              "type": "text",
+              "text": ", "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "ff1f74a9-70c9-5c94-99df-d0c02b5a5a63",
+              "source_id": "wiki_finite_element_limit_analysis"
+            },
+            {
+              "type": "text",
+              "text": ".\n\nThe weak form of Poisson's equation, represented by "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\Gamma} g v \\, d\\Gamma"
+            },
+            {
+              "type": "text",
+              "text": " [wiki_crystal_plasticity, wiki_finite_element_limit_analysis], forms the basis for Finite Element Method (FEM) discretization. This equation is analogous to the Schmid tensor, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "M_{ij} = b_i n_j"
+            },
+            {
+              "type": "text",
+              "text": ", which describes the relationship between applied stress and slip in crystalline materials "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "6d3e5428-239c-5170-aec7-822ffa3ca54f",
+              "source_id": "wiki_crystal_plasticity"
+            },
+            {
+              "type": "text",
+              "text": ". The Schmid tensor captures the orientation-dependent slip activity, enabling the transformation of macroscopic stress into microscopic slip contributions. The weak form of Poisson's equation, when combined with the FEM, facilitates the approximation of complex physical problems using piecewise functions, thereby linking continuum mechanics to crystallographic behavior."
             }
           ]
         }
       ],
-      "parent_section_ids": [
-        "682a088d-9383-4458-b3d1-97d0f7e16a16"
-      ],
+      "parent_section_ids": [],
       "status": "complete",
-      "generated_from": "split",
-      "subsection_index": 0
+      "generated_from": "writer"
     },
     {
       "type": "section",
-      "section_id": "8c05b7b5-51f4-4eca-bfac-16dd7f82ff95",
-      "title": "The Finite Element Procedure: Optimization in Finite Element Limit Analysis",
+      "section_id": "a4b564da-7564-46bb-8701-55078bd44cec",
+      "title": "The Finite Element Procedure",
       "children": [
         {
           "type": "paragraph",
           "inline_content": [
             {
               "type": "text",
-              "text": "In the optimization-based solution procedure for Finite Element Limit Analysis (FELA), the problem is formulated as an optimization task to directly compute collapse loads. This approach avoids time-consuming incremental analysis and ensures bounds on the true collapse load through upper/lower bound theorems, as stated in "
+              "text": "The Finite Element Method (FEM) relies on the discretization of a domain into smaller, simpler parts called finite elements. This process, denoted as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\Omega \\approx \\bigcup_{e=1}^{N} \\Omega_e"
+            },
+            {
+              "type": "text",
+              "text": ", involves defining nodes, elements, and interpolation functions to approximate the solution. Discretization facilitates the handling of complex geometries and boundary conditions by breaking them into manageable parts, enabling the modeling of intricate physical phenomena. By dividing the domain into finite elements, FEM approximates solutions using piecewise functions, which is essential for solving partial differential equations.\n\nThe Weak Form of Poisson's Equation plays a pivotal role in transforming the governing partial differential equation into a weak form, thereby facilitating the use of piecewise functions in the Finite Element Method (FEM). This transformation is achieved by multiplying the governing equation with a test function and integrating over the domain, as expressed by the equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\Gamma} g v \\, d\\Gamma"
+            },
+            {
+              "type": "text",
+              "text": " "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "14e0a558-27b4-5df3-a438-71ffc6216e78",
+              "occurrence_id": "da9cd7ae-0b29-5abc-a116-4333a209d31e",
+              "source_id": "wiki_crystal_plasticity"
+            },
+            {
+              "type": "text",
+              "text": ", "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "502050cb-6c54-548e-939f-26593e4eaac2",
               "source_id": "wiki_finite_element_limit_analysis"
             },
             {
               "type": "text",
-              "text": ". The optimization problem is typically solved using solvers like second-order cone programming for nonlinear optimization, as represented by the equation "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}"
-            },
-            {
-              "type": "text",
-              "text": ", where "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\mathbf{x}"
-            },
-            {
-              "type": "text",
-              "text": " is the vector of variables, "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\mathbf{c}"
-            },
-            {
-              "type": "text",
-              "text": " is the cost coefficient, "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\mathbf{A}"
-            },
-            {
-              "type": "text",
-              "text": " and "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\mathbf{b}"
-            },
-            {
-              "type": "text",
-              "text": " define equality constraints, and "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\mathcal{K}"
-            },
-            {
-              "type": "text",
-              "text": " denotes the second-order cone "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "c01f2f22-1530-5d5c-8f63-ff0c17e31129",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ". This optimization-based solution procedure is critical for accurately determining collapse loads in FELA.\n\nIn the context of Weak Galerkin Finite Element Methods (WG-FEM), curved elements play a crucial role in accurately modeling complex geometries by approximating curved boundaries. This enables the method to maintain its mathematical consistency while improving computational efficiency. According to "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "0dd18cc5-c449-5c47-85fb-e16caca3eacc",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ", curved elements enhance the flexibility of WG-FEM for problems with irregular domains. Furthermore, the use of curved elements is essential for maintaining solution fidelity in problems with irregular boundaries or nonlinear deformations, as stated in the rule for geometry accuracy "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "2a99534a-53a8-569b-9708-12b73350bf7f",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ". This is particularly important in Finite Element Limit Analysis (FELA), which employs optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems, as described in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "68e0465e-24da-55f3-aa46-c31f1e7a05fd",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nIn the optimization-based solution procedure for Finite Element Limit Analysis (FELA), the problem is solved using optimization algorithms tailored to the formulation. For kinematic FELA, the dissipated energy is minimized subject to kinematic constraints, while for equilibrium FELA, the load factor is maximized while satisfying stress equilibrium. Employing solvers like second-order cone programming for nonlinear optimization, the solution is iterated until convergence criteria are met. This approach ensures the solution adheres to plasticity and stability conditions, as represented by the second-order cone programming formulation: "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}"
-            },
-            {
-              "type": "text",
-              "text": ", as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "75039895-af4e-5d5f-b3c6-15e9be81f68a",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": "."
+              "text": ". The resulting weak form reduces the smoothness requirements for the solution, enabling the use of numerical methods to approximate the solution. This process is essential for deriving the discrete equations in FEM, ensuring compatibility with numerical methods.\n\nThe process of Domain Discretization is a foundational step in the Finite Element Method (FEM), where the physical domain is divided into a mesh of finite elements. This involves selecting appropriate element types (e.g., triangles, quadrilaterals) and ensuring sufficient refinement in regions of interest, as the mesh must conform to the geometry and capture relevant features. Discretization is essential, as it determines the approximation space for the solution, allowing numerical solutions to be computed by defining nodes, elements, and interpolation functions to approximate the solution. The accuracy of FEM results depends heavily on the quality and density of the mesh, which is a critical aspect of the discretization process."
             }
           ]
         }
       ],
-      "parent_section_ids": [
-        "682a088d-9383-4458-b3d1-97d0f7e16a16"
-      ],
+      "parent_section_ids": [],
       "status": "complete",
-      "generated_from": "split",
-      "subsection_index": 1
+      "generated_from": "writer"
     },
     {
       "type": "section",
-      "section_id": "7116cc5b-80f0-4540-b9d6-fb743c9ed90e",
-      "title": "The Finite Element Procedure: Curved Elements for Complex Geometry Representation",
-      "children": [
-        {
-          "type": "paragraph",
-          "inline_content": [
-            {
-              "type": "text",
-              "text": "In the context of Weak Galerkin Finite Element Methods (WG-FEM), curved elements play a crucial role in accurately modeling complex geometries by approximating curved boundaries. This enables the method to maintain its mathematical consistency while improving computational efficiency, particularly for problems with irregular domains. According to "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "fb6ab6a3-9f3b-5eed-8ffa-71b2e76c8b09",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ", the use of curved elements in WG-FEM enhances the flexibility of the method for problems with complex geometries, thereby reducing discretization errors and improving solution fidelity. This is essential for maintaining the accuracy of computed collapse loads in finite element limit analysis, as highlighted in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "2d55f846-b50b-583a-a072-d1801c5bb841",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nCurved elements in Weak Galerkin Finite Element Methods (WG-FEM) are essential for accurately modeling complex geometries by approximating curved boundaries. According to the rule that curved elements should be employed to accurately represent complex geometries, reducing discretization errors, these elements enhance the flexibility of WG-FEM for problems with irregular domains. The Galerkin method, a fundamental numerical technique for approximating solutions to partial differential equations (PDEs), forms the foundation of the Finite Element Method (FEM), enabling the conversion of PDEs into a system of algebraic equations. This approach is particularly effective for problems with complex geometries and varying material properties, as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "b3b36889-5671-51db-9eb8-ccb0db157abd",
-              "source_id": "arxiv_1508.01165v2"
-            },
-            {
-              "type": "text",
-              "text": ". The use of curved elements in WG-FEM maintains the mathematical consistency of the method while improving computational efficiency, as demonstrated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "17b4c03e-0c16-590f-aee4-837331a486c5",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe Galerkin method, a fundamental numerical technique for approximating solutions to partial differential equations (PDEs), involves projecting the problem onto a finite-dimensional space using basis functions, ensuring the residual is orthogonal to the test space. This approach forms the foundation of the Finite Element Method (FEM), enabling the conversion of PDEs into a system of algebraic equations. The method's effectiveness in problems with complex geometries and varying material properties is exemplified by its application in Weak Galerkin Finite Element Methods (WG-FEM), where curved elements are employed to accurately model complex geometries by approximating curved boundaries, as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "8ae5d9ca-3ca9-5914-ac28-872fb8566b35",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ". The Galerkin method's ability to handle complex geometries is demonstrated by the equation "
-            },
-            {
-              "type": "inline_math",
-              "expression": " \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx \\quad \\forall v \\in V_h "
-            },
-            {
-              "type": "text",
-              "text": ", as shown in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "033e0193-377d-53be-ae53-ab66bb9c9b47",
-              "source_id": "arxiv_1508.01165v2"
-            },
-            {
-              "type": "text",
-              "text": "."
-            }
-          ]
-        }
-      ],
-      "parent_section_ids": [
-        "682a088d-9383-4458-b3d1-97d0f7e16a16"
-      ],
-      "status": "complete",
-      "generated_from": "split",
-      "subsection_index": 2
-    },
-    {
-      "type": "section",
-      "section_id": "e077b634-7f84-4009-8b8c-870c7f93cf1d",
+      "section_id": "c03700af-e145-49dd-85cd-44fe19b37446",
       "title": "Rules for Modeling Physical Phenomena with FEM",
       "children": [
         {
@@ -367,52 +162,99 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Problem formulation and domain discretization are crucial steps in finite element analysis for accurately modeling complex physical problems. According to the procedure for problem formulation, the physical problem is defined by specifying geometry, material properties, boundary conditions, and loading scenarios "
+              "text": "Applying boundary conditions correctly is crucial in the Finite Element Method (FEM) to ensure physical consistency. Dirichlet and Neumann conditions must be applied accurately to reflect the problem's constraints, as inaccuracies can lead to incorrect numerical solutions. The weak form of a partial differential equation, such as Poisson's equation, provides a basis for FEM discretization, where the solution "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u"
+            },
+            {
+              "type": "text",
+              "text": " is approximated using a test function "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v"
+            },
+            {
+              "type": "text",
+              "text": ", a source term "
+            },
+            {
+              "type": "inline_math",
+              "expression": "f"
+            },
+            {
+              "type": "text",
+              "text": ", and a boundary condition "
+            },
+            {
+              "type": "inline_math",
+              "expression": "g"
+            },
+            {
+              "type": "text",
+              "text": ". The weak form is given by "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\Gamma} g v \\, d\\Gamma"
+            },
+            {
+              "type": "text",
+              "text": " "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "34752645-e388-59da-8035-cab6aef3c4f6",
+              "occurrence_id": "6cb77423-36c1-5483-a918-185a91ba5df7",
+              "source_id": "wiki_crystal_plasticity"
+            },
+            {
+              "type": "text",
+              "text": ", "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "2279b95b-a4c0-59fc-b95d-bfd763a7b6ba",
               "source_id": "wiki_finite_element_limit_analysis"
             },
             {
               "type": "text",
-              "text": ". The domain is then discretized into finite elements, ensuring appropriate mesh density for accuracy, which is critical for parabolic problems that require spatial and temporal resolution "
+              "text": ".\n\nEnsuring mesh convergence is crucial in the Finite Element Method (FEM) to guarantee accurate results. The mesh must be sufficiently refined to ensure numerical solutions converge to the true solution, as insufficient refinement leads to inaccurate results, while excessive refinement increases computational cost. This is evident from the mathematical formulation of the weak form, where the integral equation is given by "
             },
             {
-              "type": "citation_occurrence",
-              "occurrence_id": "7441f90d-9c10-56b7-829b-a147c4698ed2",
-              "source_id": "arxiv_1508.01165v2"
-            },
-            {
-              "type": "text",
-              "text": ". For Finite Element Limit Analysis (FELA), the choice between kinematic (velocity-based) or equilibrium (stress-based) formulations is also essential.\n\nFinite Element Limit Analysis (FELA) employs optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems. This method directly determines collapse loads without time-stepping, unlike conventional nonlinear finite element methods. The Galerkin method, a fundamental numerical technique for approximating solutions to partial differential equations (PDEs), is used in FELA to project the problem onto a finite-dimensional space using basis functions. According to the optimization-based solution procedure for FELA, the problem is formulated as an optimization task to directly compute collapse loads, avoiding time-consuming incremental analysis. This approach ensures bounds on the true collapse load through upper/lower bound theorems. The use of optimization techniques in FELA allows for efficient computation of collapse loads, making it a valuable tool in geotechnical engineering for problems like slope stability and bearing capacity analysis.\n\nCurved elements in Weak Galerkin Finite Element Methods (WG-FEM) play a crucial role in accurately modeling complex geometries by approximating curved boundaries. This concept is critical for applications requiring high-fidelity geometric representation, as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "4a099ac4-88e4-52c1-938a-74ba1d8e4a0c",
-              "source_id": "arxiv_2210.16907v1"
+              "type": "inline_math",
+              "expression": " \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\Gamma} g v \\, d\\Gamma "
             },
             {
               "type": "text",
-              "text": ". Furthermore, Discontinuous Galerkin methods combine features of finite element and finite volume methods, allowing solutions to be discontinuous across element boundaries and providing flexibility for adaptive meshing and high-order accuracy. These methods are particularly suited for hyperbolic and parabolic PDEs, offering stability through carefully designed numerical fluxes, as demonstrated in "
+              "text": " "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "e0e45393-2e1f-54f0-b915-3b17a51686dd",
-              "source_id": "arxiv_1508.01165v2"
+              "occurrence_id": "ee4e9f31-2905-570b-996d-cf45af58538b",
+              "source_id": "wiki_finite_element_limit_analysis"
             },
             {
               "type": "text",
-              "text": ". The Galerkin method, a fundamental numerical technique for approximating solutions to PDEs, involves projecting the problem onto a finite-dimensional space using basis functions, ensuring the residual is orthogonal to the test space, as shown in "
+              "text": ". Therefore, mesh convergence studies are essential for validating FEM simulations, as they help to establish the reliability of the numerical solutions "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "aaa8209e-4f04-51e0-b972-222a876393d6",
-              "source_id": "arxiv_1508.01165v2"
+              "occurrence_id": "9402a1b3-0349-5004-9b51-64f3e093258a",
+              "source_id": "wiki_crystal_plasticity"
             },
             {
               "type": "text",
-              "text": "."
+              "text": ".\n\nDiscretizing the domain is a crucial step in the Finite Element Method (FEM), as it enables the modeling of complex geometries and physical phenomena. The physical domain is divided into a mesh of finite elements, involving the selection of appropriate element types and ensuring sufficient refinement in regions of interest. This discretization process, denoted as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\Omega \\approx \\bigcup_{e=1}^{N} \\Omega_e"
+            },
+            {
+              "type": "text",
+              "text": ", facilitates the handling of complex geometries and boundary conditions by breaking them into manageable parts. The accuracy of FEM results heavily depends on the quality and density of the mesh, emphasizing the importance of careful discretization."
             }
           ]
         }
@@ -423,7 +265,7 @@
     },
     {
       "type": "section",
-      "section_id": "9cd7e681-e4df-4650-8e24-87718abcaddc",
+      "section_id": "e0ff457e-6770-4d1d-87cd-c59771e09f9e",
       "title": "Verification, Validation, and Best Practices",
       "children": [
         {
@@ -431,191 +273,56 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Verification and Validation Techniques for Finite Element Limit Analysis involve ensuring the accuracy of computed collapse loads. According to the optimization-based solution procedure, the problem is formulated as an optimization task to directly compute collapse loads, avoiding time-consuming incremental analysis "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "6f53bcd6-fa37-5475-8dda-db45ff442ced",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ". This approach is based on the weak formulation of the problem, where the PDE is transformed into a weak form by multiplying with a test function and integrating over the domain "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "f05e6798-806b-50b0-b1ab-72fc16eca521",
-              "source_id": "arxiv_1508.01165v2"
-            },
-            {
-              "type": "text",
-              "text": ". The Galerkin method, a fundamental numerical technique for approximating solutions to PDEs, forms the foundation of the Finite Element Method (FEM) and is particularly effective for problems with complex geometries and varying material properties "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "87988fe0-f0a5-5cda-a87b-8373a8be037f",
-              "source_id": "arxiv_1508.01165v2"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nImplementing best practices for Discontinuous Galerkin Methods involves leveraging their inherent flexibility for adaptive meshing and high-order accuracy. The use of numerical fluxes in DG Methods provides stability for hyperbolic and parabolic PDEs, as demonstrated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "75271127-d5e0-5537-88c7-03e529a94978",
-              "source_id": "arxiv_1508.01165v2"
-            },
-            {
-              "type": "text",
-              "text": ". Furthermore, the incorporation of curved elements in Weak Galerkin Finite Element Methods (WG-FEM) enables accurate modeling of complex geometries by approximating curved boundaries, as shown in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "97ebdace-9034-56a0-b27e-884ef4062b3f",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ". By combining these features, DG Methods can effectively capture sharp gradients or singularities, allowing for targeted mesh refinement and improving computational efficiency. This localized error behavior is a critical aspect of implementing best practices for DG Methods, as it enables the identification of regions requiring refinement without over-refining the entire domain.\n\nOptimization strategies for Galerkin method formulations in Finite Element Limit Analysis (FELA) involve leveraging the method's inherent flexibility for adaptive meshing and high-order accuracy. The use of curved elements in Weak Galerkin Finite Element Methods (WG-FEM) enables accurate modeling of complex geometries by approximating curved boundaries, as demonstrated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "b0e4f016-a9fd-5c64-8bb5-2461da92b6a2",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ". This approach maintains the mathematical consistency of the method while improving computational efficiency, making it critical for applications requiring high-fidelity geometric representation. By employing optimization algorithms tailored to the formulation, such as second-order cone programming, the discretized problem can be solved efficiently, as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "ec3c52e5-bd3f-57a0-be31-43eba96f0437",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": "."
-            }
-          ]
-        }
-      ],
-      "parent_section_ids": [],
-      "status": "complete",
-      "generated_from": "writer"
-    },
-    {
-      "type": "section",
-      "section_id": "5170efbd-be9b-4059-baf1-d0c1f9c7de3e",
-      "title": "Introduction and Scope of the Finite Element Method",
-      "children": [
-        {
-          "type": "paragraph",
-          "inline_content": [
-            {
-              "type": "text",
-              "text": "The problem formulation process in the Finite Element Method is a critical step in defining the physical problem. According to the procedure for problem formulation, the physical problem is defined by specifying geometry, material properties, boundary conditions, and loading scenarios. Discretization of the domain into finite elements, ensuring appropriate mesh density for accuracy, is also essential. For Finite Element Limit Analysis (FELA), the choice between kinematic (velocity-based) or equilibrium (stress-based) formulations is crucial. The optimization-based solution procedure involves solving the discretized problem using optimization algorithms tailored to the formulation, such as second-order cone programming for nonlinear optimization. This approach ensures bounds on the true collapse load through upper/lower bound theorems, as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "6cb95273-f129-5f14-a316-de6afd2a37c8",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe optimization-based solution in the Finite Element Method involves solving the discretized problem using tailored optimization algorithms. For kinematic Finite Element Limit Analysis (FELA), the dissipated energy is minimized subject to kinematic constraints, whereas for equilibrium FELA, the load factor is maximized while satisfying stress equilibrium. This process is achieved through solvers like second-order cone programming for nonlinear optimization, as stated in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "ee17b3c7-a3a8-5e19-873e-cff252b3e51e",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ". The optimization problem is formulated as a second-order cone programming (SOCP) problem, where "
+              "text": "Verification and validation are crucial steps in the Finite Element Method (FEM) to ensure the accuracy and reliability of numerical solutions. The weak form of a partial differential equation, such as the weak form of Poisson's equation, "
             },
             {
               "type": "inline_math",
-              "expression": "\\mathbf{x}"
+              "expression": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\Gamma} g v \\, d\\Gamma"
             },
             {
               "type": "text",
-              "text": " is the vector of variables, "
+              "text": ", forms the basis for FEM discretization. Discretization, which divides a continuous domain into discrete elements, "
             },
             {
               "type": "inline_math",
-              "expression": "\\mathbf{c}"
+              "expression": "\\Omega \\approx \\bigcup_{e=1}^{N} \\Omega_e"
             },
             {
               "type": "text",
-              "text": " is the cost coefficient, "
+              "text": ", allows numerical solutions to be computed. However, the accuracy of FEM results depends heavily on the quality and density of the mesh, necessitating mesh convergence studies to validate FEM simulations.\n\nThe Schmid tensor plays a pivotal role in crystal plasticity models by describing the relationship between applied stress and slip in crystalline materials. It is defined as the tensor product of the Burgers vector and the slip plane normal, capturing the orientation-dependent slip activity. This tensor enables the transformation of macroscopic stress into microscopic slip contributions, linking continuum mechanics to crystallographic behavior. The Schmid tensor is mathematically represented as "
             },
             {
               "type": "inline_math",
-              "expression": "\\mathbf{A}"
+              "expression": "M_{ij} = b_i n_j"
             },
             {
               "type": "text",
-              "text": " and "
+              "text": ", where "
             },
             {
               "type": "inline_math",
-              "expression": "\\mathbf{b}"
+              "expression": "b_i"
             },
             {
               "type": "text",
-              "text": " define equality constraints, and "
+              "text": " represents the Burgers vector component and "
             },
             {
               "type": "inline_math",
-              "expression": "\\mathcal{K}"
+              "expression": "n_j"
             },
             {
               "type": "text",
-              "text": " denotes the second-order cone, as represented by the equation: "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}"
-            },
-            {
-              "type": "text",
-              "text": ", as shown in "
+              "text": " is the slip plane normal component. The accurate application of the Schmid tensor in crystal plasticity models relies on a thorough understanding of its mathematical formulation and its implementation within the Finite Element Method (FEM). "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "3d3dd351-5457-5ca8-b386-43fa21d8bc81",
-              "source_id": "wiki_finite_element_limit_analysis"
+              "occurrence_id": "4e311a84-9a11-5fab-b54f-cfb56213e8db",
+              "source_id": "wiki_crystal_plasticity"
             },
             {
               "type": "text",
-              "text": ".\n\nThe use of curved elements is essential for accurately modeling complex geometries in the Finite Element Method, reducing discretization errors that can arise from approximating irregular boundaries or nonlinear deformations. According to the procedure for problem formulation, the physical problem is defined by specifying geometry, material properties, boundary conditions, and loading scenarios, and discretized into finite elements with appropriate mesh density for accuracy "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "da96b9e8-532c-52eb-af92-503eb976b321",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ". Curved elements in Weak Galerkin Finite Element Methods (WG-FEM) enable accurate modeling of complex geometries by approximating curved boundaries, enhancing the flexibility of WG-FEM for problems with irregular domains and maintaining mathematical consistency while improving computational efficiency "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "52b7525c-fda5-5794-9fee-42b8b8a0a100",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ". This concept is critical for applications requiring high-fidelity geometric representation, such as Finite Element Limit Analysis (FELA), which uses optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "f0365f3b-29da-534a-a2e6-15853c3ff240",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": "."
+              "text": "\n\nDomain discretization is a crucial step in the Finite Element Method (FEM), as it determines the approximation space for the solution. The physical domain is divided into a mesh of finite elements, involving the selection of appropriate element types and sufficient refinement in regions of interest. Discretization must conform to the geometry and capture relevant features, as the accuracy of FEM results heavily depends on the quality and density of the mesh. The weak formulation of partial differential equations, which involves multiplying the governing equation with a test function and integrating over the domain, facilitates the use of piecewise functions and reduces the smoothness requirements for the solution. This process is essential for deriving the discrete equations in FEM, ensuring compatibility with numerical methods."
             }
           ]
         }
@@ -633,47 +340,45 @@
       "authoritative_for_rendering": false,
       "sections": [
         {
-          "section_id": "7990454e-9eb1-4fcb-a324-80667fcf2812",
-          "semantic_marker_count": 4,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "arxiv_1508.01165v2",
-            "arxiv_1508.01165v2",
-            "arxiv_2210.16907v1",
-            "arxiv_2210.16907v1"
-          ],
-          "inline_math_count": 1,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": []
-        },
-        {
-          "section_id": "29a56191-5fe3-41cd-afa7-05ea5af855d6",
+          "section_id": "97669979-9e98-4faf-afe6-3cec20d0698b",
           "semantic_marker_count": 5,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
-            "arxiv_1508.01165v2",
+            "wiki_crystal_plasticity",
             "wiki_finite_element_limit_analysis",
-            "arxiv_1508.01165v2",
-            "arxiv_1508.01165v2",
+            "wiki_crystal_plasticity",
+            "wiki_finite_element_limit_analysis",
+            "wiki_crystal_plasticity"
+          ],
+          "inline_math_count": 4,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
+          "diagnostics": [
+            "grouped_citation_not_annotated:wiki_crystal_plasticity, wiki_finite_element_limit_analysis"
+          ]
+        },
+        {
+          "section_id": "a4b564da-7564-46bb-8701-55078bd44cec",
+          "semantic_marker_count": 2,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [
+            "wiki_crystal_plasticity",
             "wiki_finite_element_limit_analysis"
           ],
-          "inline_math_count": 1,
+          "inline_math_count": 2,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
-          "section_id": "8c05b7b5-51f4-4eca-bfac-16dd7f82ff95",
-          "semantic_marker_count": 6,
+          "section_id": "c03700af-e145-49dd-85cd-44fe19b37446",
+          "semantic_marker_count": 4,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
+            "wiki_crystal_plasticity",
             "wiki_finite_element_limit_analysis",
             "wiki_finite_element_limit_analysis",
-            "arxiv_2210.16907v1",
-            "arxiv_2210.16907v1",
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis"
+            "wiki_crystal_plasticity"
           ],
           "inline_math_count": 7,
           "display_math_count": 0,
@@ -681,85 +386,29 @@
           "diagnostics": []
         },
         {
-          "section_id": "7116cc5b-80f0-4540-b9d6-fb743c9ed90e",
-          "semantic_marker_count": 6,
+          "section_id": "e0ff457e-6770-4d1d-87cd-c59771e09f9e",
+          "semantic_marker_count": 1,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
-            "arxiv_2210.16907v1",
-            "wiki_finite_element_limit_analysis",
-            "arxiv_1508.01165v2",
-            "arxiv_2210.16907v1",
-            "arxiv_2210.16907v1",
-            "arxiv_1508.01165v2"
+            "wiki_crystal_plasticity"
           ],
-          "inline_math_count": 1,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": []
-        },
-        {
-          "section_id": "e077b634-7f84-4009-8b8c-870c7f93cf1d",
-          "semantic_marker_count": 5,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "wiki_finite_element_limit_analysis",
-            "arxiv_1508.01165v2",
-            "arxiv_2210.16907v1",
-            "arxiv_1508.01165v2",
-            "arxiv_1508.01165v2"
-          ],
-          "inline_math_count": 0,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": []
-        },
-        {
-          "section_id": "9cd7e681-e4df-4650-8e24-87718abcaddc",
-          "semantic_marker_count": 7,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "wiki_finite_element_limit_analysis",
-            "arxiv_1508.01165v2",
-            "arxiv_1508.01165v2",
-            "arxiv_1508.01165v2",
-            "arxiv_2210.16907v1",
-            "arxiv_2210.16907v1",
-            "wiki_finite_element_limit_analysis"
-          ],
-          "inline_math_count": 0,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": []
-        },
-        {
-          "section_id": "5170efbd-be9b-4059-baf1-d0c1f9c7de3e",
-          "semantic_marker_count": 6,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis",
-            "arxiv_2210.16907v1",
-            "wiki_finite_element_limit_analysis"
-          ],
-          "inline_math_count": 6,
+          "inline_math_count": 5,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         }
       ],
-      "semantic_marker_count": 39,
+      "semantic_marker_count": 12,
       "latex_ir_readiness": {
         "ready": true,
         "counts": {
-          "sections": 7,
-          "paragraphs": 7,
-          "text_nodes": 62,
-          "inline_math": 16,
+          "sections": 4,
+          "paragraphs": 4,
+          "text_nodes": 34,
+          "inline_math": 18,
           "display_math": 0,
           "equation_occurrences": 0,
-          "citation_occurrences": 39,
+          "citation_occurrences": 12,
           "cross_reference_occurrences": 0,
           "equation_proposal_references": 0,
           "figures": 0,
@@ -772,13 +421,13 @@
     "latex_ir_readiness": {
       "ready": true,
       "counts": {
-        "sections": 7,
-        "paragraphs": 7,
-        "text_nodes": 62,
-        "inline_math": 16,
+        "sections": 4,
+        "paragraphs": 4,
+        "text_nodes": 34,
+        "inline_math": 18,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 39,
+        "citation_occurrences": 12,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "figures": 0,
@@ -790,13 +439,10 @@
   },
   "source_snapshot": {
     "legacy_section_ids": [
-      "7990454e-9eb1-4fcb-a324-80667fcf2812",
-      "29a56191-5fe3-41cd-afa7-05ea5af855d6",
-      "8c05b7b5-51f4-4eca-bfac-16dd7f82ff95",
-      "7116cc5b-80f0-4540-b9d6-fb743c9ed90e",
-      "e077b634-7f84-4009-8b8c-870c7f93cf1d",
-      "9cd7e681-e4df-4650-8e24-87718abcaddc",
-      "5170efbd-be9b-4059-baf1-d0c1f9c7de3e"
+      "97669979-9e98-4faf-afe6-3cec20d0698b",
+      "a4b564da-7564-46bb-8701-55078bd44cec",
+      "c03700af-e145-49dd-85cd-44fe19b37446",
+      "e0ff457e-6770-4d1d-87cd-c59771e09f9e"
     ]
   }
 }

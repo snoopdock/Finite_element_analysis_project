@@ -1,0 +1,37 @@
+{
+  "compilation": {
+    "engine": "pdflatex",
+    "final_log_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/guideline.log",
+    "passes": 2,
+    "pdf_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/guideline.pdf",
+    "warnings": []
+  },
+  "generated_at_utc": "2026-10-05T14:44:12.677152+00:00",
+  "latex_ir_contract_version": "4",
+  "pdf": {
+    "path": "output/guideline.pdf",
+    "sha256": "591c7d6ced6b87d5ea50ec70eb63c10789ea381ea1ace46a60f2d7ec954e4354",
+    "size_bytes": 241506
+  },
+  "pipeline": {
+    "cycle": 1,
+    "iteration": 1,
+    "state_schema_version": 6
+  },
+  "schema_version": 1,
+  "semantic_document": {
+    "document_id": "743c2aa8-790e-5a15-b63b-6758c778b2e0",
+    "version": 2
+  },
+  "source_commit": "8baf96db3bfc23cdfc043392d965a2516b0d33ed",
+  "static_audit": {
+    "issues": [],
+    "ok": true
+  },
+  "status": "validated",
+  "tex": {
+    "path": "output/guideline.tex",
+    "sha256": "a1b829fd79c6d8cc1c346fc136cba669ac87ce2775a7d204f117607a3f159c4c",
+    "size_bytes": 13898
+  }
+}
