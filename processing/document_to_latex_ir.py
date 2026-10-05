@@ -17,6 +17,7 @@ from typing import Any, Mapping, Sequence
 
 from core.document_model import (
     CitationOccurrence,
+    CitationClusterOccurrence,
     CrossReferenceOccurrence,
     DisplayMath,
     Document,
@@ -81,6 +82,13 @@ def _project_paragraph(
             inline.append(
                 IRCitationSpan(
                     (node.source_id,),
+                    occurrence_id=node.occurrence_id,
+                )
+            )
+        elif isinstance(node, CitationClusterOccurrence):
+            inline.append(
+                IRCitationSpan(
+                    tuple(node.source_ids),
                     occurrence_id=node.occurrence_id,
                 )
             )

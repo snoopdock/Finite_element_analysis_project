@@ -1,4 +1,4 @@
-version: 4
+version: 5
 purpose: >-
   Define the deterministic projection from the semantic publication Document
   into renderer-neutral LaTeX IR without reconstructing or changing scientific
@@ -41,6 +41,14 @@ mapping:
       - occurrence_id
       - source_id
     source_resolution: evidence_model
+  citation_cluster_occurrence:
+    output: IRCitationSpan
+    preserve:
+      - occurrence_id
+      - source_ids
+      - source_order
+    source_resolution: evidence_model
+    rendering: one_multi_key_citation_command
   cross_reference_occurrence:
     output: IRCrossReferenceSpan
     preserve:
@@ -131,6 +139,8 @@ invariants:
   - document_order_is_preserved
   - paragraph_inline_order_is_preserved
   - citation_occurrence_identity_is_preserved
+  - citation_cluster_occurrence_identity_is_preserved
+  - citation_cluster_source_order_is_preserved
   - citation_keys_do_not_depend_on_evidence_order
   - citation_keys_are_projection_metadata_not_source_identity
   - cross_reference_occurrence_identity_is_preserved

@@ -2,11 +2,44 @@
 """LaTeX document building utilities with provenance tracking."""
 
 from processing.latex_graph import render_concept_graph, render_perspective_table
-from processing.latex_ir import DocumentModel, build_document_model, validate_document_model
+from processing.latex_ir import (
+    CitationBlock,
+    DocumentModel,
+    FigureBlock,
+    IRCitationSpan,
+    ParagraphBlock,
+    TableBlock,
+    build_document_model,
+    validate_document_model,
+)
 from processing.latex_references import format_bibliography, format_provenance_table
 from processing.latex_renderer import render_body
 from processing.publication_integrity import assert_publication_integrity
 from utils.latex import escape_text
+
+
+def _cited_source_ids(document: DocumentModel) -> tuple[str, ...]:
+    """Return source identities in first semantic citation-occurrence order."""
+    ordered: list[str] = []
+    seen: set[str] = set()
+
+    def add(source_ids) -> None:
+        for source_id in source_ids:
+            if source_id not in seen:
+                seen.add(source_id)
+                ordered.append(source_id)
+
+    for section in document.sections:
+        for block in section.blocks:
+            if isinstance(block, ParagraphBlock):
+                for inline in block.content:
+                    if isinstance(inline, IRCitationSpan):
+                        add(inline.source_ids)
+            elif isinstance(block, CitationBlock):
+                add(block.source_ids)
+            elif isinstance(block, (FigureBlock, TableBlock)):
+                add(block.source_ids)
+    return tuple(ordered)
 
 
 def build_latex_document(state, sections, evidence):
@@ -22,9 +55,13 @@ def build_latex_document_from_model(state, document: DocumentModel):
     objective = document.objective
     graph = state.get("knowledge_graph", {})
 
-    # Bibliography and provenance are presentation projections of the same
-    # normalized references used by the body renderer.
-    refs_text = format_bibliography(document.references)
+    # Bibliography is a projection of semantic citation occurrences only.
+    # Provenance remains the complete retrieval receipt.
+    reference_by_id = {reference.source_id: reference for reference in document.references}
+    cited_references = tuple(
+        reference_by_id[source_id] for source_id in _cited_source_ids(document)
+    )
+    refs_text = format_bibliography(cited_references)
     provenance_table = format_provenance_table(document.references)
 
     body = render_body(document)
@@ -62,7 +99,7 @@ def build_latex_document_from_model(state, document: DocumentModel):
         "",
         r"\title{\textbf{" + escape_text(topic) + r"}}",
         r"\author{Automated Scientific Pipeline}",
-        r"\date{\today}",
+        r"\date{}",
         "",
         r"\begin{document}",
         "",
@@ -96,12 +133,16 @@ def build_latex_document_from_model(state, document: DocumentModel):
             "",
         ])
 
+    if refs_text:
+        doc_lines.extend([
+            r"\begin{thebibliography}{99}",
+            r"\raggedright",
+            refs_text,
+            r"\end{thebibliography}",
+            "",
+        ])
+
     doc_lines.extend([
-        r"\begin{thebibliography}{99}",
-        r"\raggedright",
-        refs_text,
-        r"\end{thebibliography}",
-        "",
         r"\newpage",
         r"\section*{Appendix: Source Provenance}",
         r"\addcontentsline{toc}{section}{Appendix: Source Provenance}",

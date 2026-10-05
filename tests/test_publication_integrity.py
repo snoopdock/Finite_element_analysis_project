@@ -208,3 +208,46 @@ def test_publication_manifest_records_state_identity_contract_and_hashes(tmp_pat
     assert manifest["latex_ir_contract_version"] == "4"
     assert manifest["tex"]["sha256"] == hashlib.sha256(tex_path.read_bytes()).hexdigest()
     assert manifest["pdf"]["sha256"] == hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+
+
+def test_static_gate_rejects_grouped_raw_source_ids_in_plain_and_escaped_tex():
+    plain = _minimal_document("[wiki_crystal_plasticity, wiki_finite_element_limit_analysis]")
+    escaped = _minimal_document(r"[wiki\_crystal\_plasticity, wiki\_finite\_element\_limit\_analysis]")
+    assert "RAW_CITATION_MARKER_IN_TEX" in {issue.code for issue in audit_latex_source(plain)}
+    assert "RAW_CITATION_MARKER_IN_TEX" in {issue.code for issue in audit_latex_source(escaped)}
+
+
+def test_static_gate_rejects_uncited_bibliography_entries():
+    tex = _minimal_document(
+        r"\cite{src:used}"
+        r"\begin{thebibliography}{9}"
+        r"\bibitem{src:used} Used"
+        r"\bibitem{src:unused} Unused"
+        r"\end{thebibliography}"
+    )
+    codes = {issue.code for issue in audit_latex_source(tex)}
+    assert "UNCITED_BIBLIOGRAPHY_KEY" in codes
+
+
+def test_builder_output_is_reproducible_and_does_not_depend_on_wall_clock_date():
+    state = {"topic": "FEM", "objective": "Guide", "knowledge_graph": {}}
+    sections = [{"title": "Evidence", "blocks": [
+        {"type": "text", "text": "Supported."},
+        {"type": "citation", "source_ids": ["paper_1"]},
+    ]}]
+    evidence = [{"source_id": "paper_1", "title": "Paper", "retriever_module": "research.article"}]
+    first = build_latex_document(state, sections, evidence)
+    second = build_latex_document(state, sections, evidence)
+    assert first == second
+    assert r"\date{}" in first
+    assert r"\today" not in first
+
+
+def test_document_gate_uses_reference_registry_not_source_name_shape_for_grouped_markers():
+    model = build_document_model(
+        {"topic": "FEM", "objective": "Guide"},
+        [{"title": "Bad", "blocks": [{"type": "text", "text": "Claim [s1, missing]."}]}],
+        [{"source_id": "s1", "title": "Known"}],
+    )
+    codes = {issue.code for issue in audit_document_model(model)}
+    assert "RAW_CITATION_MARKER" in codes

@@ -12,7 +12,7 @@ import re
 from typing import List, Union
 
 
-SUPPORTED_MARKERS = {"EQ", "CITE", "REF", "NEW_EQ"}
+SUPPORTED_MARKERS = {"EQ", "CITE", "CITES", "REF", "NEW_EQ"}
 _MARKER_RE = re.compile(
     r"\[\[(?P<kind>[A-Za-z][A-Za-z0-9_]*):(?P<identifier>[^\[\]\s]+)\]\]"
 )

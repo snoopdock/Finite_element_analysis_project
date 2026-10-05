@@ -50,7 +50,10 @@ def test_builder_uses_ragged_right_provenance_columns():
 def test_builder_uses_ragged_right_bibliography_for_long_urls():
     tex = build_latex_document(
         {"topic": "Builder Test", "objective": "Bibliography layout", "knowledge_graph": {}},
-        [{"title": "Text", "blocks": [{"type": "text", "text": "Body"}]}],
+        [{"title": "Text", "blocks": [
+            {"type": "text", "text": "Body"},
+            {"type": "citation", "source_ids": ["s2_0fb362f2f8848d66b6db1312e6826c995530007f"]},
+        ]}],
         [{
             "source_id": "s2_0fb362f2f8848d66b6db1312e6826c995530007f",
             "title": "A $C^0$-continuous method",
@@ -63,3 +66,39 @@ def test_builder_uses_ragged_right_bibliography_for_long_urls():
     assert r"\begin{thebibliography}{99}" + "\n" + r"\raggedright" in tex
     assert r"\(C^0\)" in tex
     assert r"0fb362f2\allowbreak{}f8848d66" in tex
+
+
+def test_builder_bibliography_contains_only_semantically_cited_sources_but_provenance_keeps_all():
+    tex = build_latex_document(
+        {"topic": "FEM", "objective": "Citation projection", "knowledge_graph": {}},
+        [{"title": "Evidence", "blocks": [
+            {"type": "text", "text": "Supported."},
+            {"type": "citation", "source_ids": ["used_source"]},
+        ]}],
+        [
+            {"source_id": "unused_source", "title": "Unused", "retriever_module": "research.article"},
+            {"source_id": "used_source", "title": "Used", "retriever_module": "research.article"},
+        ],
+    )
+
+    assert "\\bibitem{src:used_source-" in tex
+    assert "\\bibitem{src:unused_source-" not in tex
+    assert r"\nolinkurl{used_source}" in tex
+    assert r"\nolinkurl{unused_source}" in tex
+    assert r"\date{}" in tex
+    assert r"\date{\today}" not in tex
+
+
+def test_bibliography_order_follows_first_semantic_citation_not_evidence_order():
+    state = {"topic": "FEM", "objective": "Citation ordering", "knowledge_graph": {}}
+    sections = [{"title": "Evidence", "blocks": [
+        {"type": "citation", "source_ids": ["second_source"]},
+        {"type": "text", "text": " then "},
+        {"type": "citation", "source_ids": ["first_source"]},
+    ]}]
+    evidence = [
+        {"source_id": "first_source", "title": "First", "retriever_module": "research.article"},
+        {"source_id": "second_source", "title": "Second", "retriever_module": "research.article"},
+    ]
+    tex = build_latex_document(state, sections, evidence)
+    assert tex.index("\\bibitem{src:second_source-") < tex.index("\\bibitem{src:first_source-")

@@ -2,6 +2,7 @@ import json
 
 from core.document_model import (
     CitationOccurrence,
+    CitationClusterOccurrence,
     EquationOccurrence,
     InlineMath,
     Paragraph,
@@ -151,3 +152,27 @@ def test_candidate_document_is_structurally_ready_for_latex_ir_without_raw_math_
     assert readiness["counts"]["raw_math_text_nodes"] == 0
     assert report["latex_ir_readiness"] == readiness
     assert document.metadata["latex_ir_readiness"] == readiness
+
+
+def test_semantic_candidate_promotes_legacy_grouped_citation_to_cluster_occurrence():
+    state = {
+        "topic": "FEM",
+        "objective": "Guide",
+        "domain_semantic_model": empty_domain_semantic_model(),
+        "sections": [{
+            "section_id": SECTION_ID,
+            "title": "Evidence",
+            "content": "Supported [s1, s2].",
+            "parent_section_ids": [],
+        }],
+    }
+    document, report = build_semantic_candidate_document(
+        state, evidence=[{"source_id": "s1"}, {"source_id": "s2"}]
+    )
+
+    cluster = document.children[0].children[0].inline_content[1]
+    assert isinstance(cluster, CitationClusterOccurrence)
+    assert cluster.source_ids == ("s1", "s2")
+    readiness = report["latex_ir_readiness"]
+    assert readiness["counts"]["citation_cluster_occurrences"] == 1
+    assert report["sections"][0]["citation_cluster_count"] == 1

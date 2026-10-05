@@ -1,0 +1,79 @@
+version: 1
+purpose: >-
+  Define citation identity, grouping, validation, and publication projection
+  without allowing source identifiers or citation grouping syntax to leak into
+  free-form document text.
+
+authority:
+  source_identity: evidence_model.source_id
+  occurrence_identity: semantic_document_model.occurrence_id
+  publication_key: deterministic_projection_only
+  rule: >-
+    Evidence source identity and citation occurrence identity are distinct.
+    Grouping multiple sources in one citation is document semantics, not a
+    LaTeX or plain-text formatting convention.
+
+semantic_objects:
+  citation_occurrence:
+    identity: occurrence_id
+    source_cardinality: 1
+  citation_cluster_occurrence:
+    identity: occurrence_id
+    source_cardinality: at_least_2
+    source_ids_unique: true
+    source_order_semantically_significant: true
+    occurrence_id_generation: deterministic_uuid_for_same_document_location
+
+authoring_protocol:
+  single: '[[CITE:<source_id>]]'
+  grouped: '[[CITES:<source_id_1>,<source_id_2>,...]]'
+  grouped_marker_whitespace: forbidden_inside_identifier_list
+  resolution: every_source_id_must_exist_before_assembly
+  unknown_source: reject
+  duplicate_source_in_cluster: reject
+
+legacy_migration:
+  accepted_single_form: '[source_id]'
+  accepted_group_form: '[source_id_1, source_id_2]'
+  rule: >-
+    Migration may annotate only exact source identifiers from the evidence
+    registry and must preserve exact legacy text under deterministic round-trip.
+  ambiguous_or_unknown_group: leave_unannotated_then_fail_publication_integrity
+
+projection:
+  single:
+    semantic: CitationOccurrence
+    ir: IRCitationSpan
+    latex: one_key_cite
+  grouped:
+    semantic: CitationClusterOccurrence
+    ir: IRCitationSpan
+    latex: multi_key_cite
+  source_order: preserve
+  source_identity_mutation: forbidden
+
+bibliography:
+  membership: sources_reached_by_semantic_citation_occurrences
+  ordering: first_semantic_citation_occurrence
+  uncited_retrieval_sources: provenance_only
+  fake_empty_entry: forbidden
+
+provenance:
+  complete_retrieval_registry_preserved: true
+  bibliography_and_provenance_are_distinct_views: true
+
+failure_policy:
+  raw_single_source_marker_in_text: reject
+  raw_grouped_source_marker_in_text: reject
+  raw_escaped_grouped_source_marker_in_latex: reject
+  unresolved_source_id: reject
+  duplicate_source_id_in_cluster: reject
+  uncited_bibliography_item: reject
+
+invariants:
+  - source_uuid_or_source_id_remains_authoritative
+  - occurrence_uuid_never_replaces_source_identity
+  - grouped_citation_is_never_plain_text
+  - grouped_citation_occurrence_identity_is_stable
+  - bibliography_is_derived_from_semantic_occurrences
+  - provenance_preserves_complete_retrieval_receipt

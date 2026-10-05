@@ -8,6 +8,7 @@ import uuid
 
 from core.document_model import (
     CitationOccurrence,
+    CitationClusterOccurrence,
     CrossReferenceOccurrence,
     DisplayMath,
     EquationOccurrence,
@@ -92,6 +93,17 @@ def _stable_occurrence_id(
     return str(uuid.uuid5(_OCCURRENCE_NAMESPACE, key))
 
 
+def _citation_cluster_source_ids(identifier: str) -> tuple[str, ...]:
+    source_ids = tuple(part.strip() for part in str(identifier).split(","))
+    if len(source_ids) < 2 or any(not source_id for source_id in source_ids):
+        raise DocumentAssemblyError(
+            "CITES marker must contain at least two comma-separated source IDs."
+        )
+    if len(set(source_ids)) != len(source_ids):
+        raise DocumentAssemblyError("CITES marker must not contain duplicate source IDs.")
+    return source_ids
+
+
 def _validate_marker_references(
     segments: List[object],
     *,
@@ -117,6 +129,12 @@ def _validate_marker_references(
                 raise DocumentAssemblyError(
                     f"Unknown citation source_id: {identifier}."
                 )
+        elif marker_type == "CITES":
+            for citation_source_id in _citation_cluster_source_ids(identifier):
+                if citation_source_id not in source_ids:
+                    raise DocumentAssemblyError(
+                        f"Unknown citation source_id: {citation_source_id}."
+                    )
         elif marker_type == "REF":
             if identifier not in target_ids:
                 raise DocumentAssemblyError(
@@ -258,6 +276,14 @@ def assemble_section(
             inline_nodes.append(
                 CitationOccurrence(
                     source_id=identifier,
+                    occurrence_id=occurrence_id,
+                )
+            )
+
+        elif marker_type == "CITES":
+            inline_nodes.append(
+                CitationClusterOccurrence(
+                    source_ids=_citation_cluster_source_ids(identifier),
                     occurrence_id=occurrence_id,
                 )
             )

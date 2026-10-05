@@ -34,8 +34,8 @@ def test_bibliography_uses_normalized_citation_key_and_escaped_metadata():
     assert r"https://example.com/a\&b\#section" in rendered
 
 
-def test_bibliography_has_explicit_empty_source_fallback():
-    assert format_bibliography([]) == r"  \bibitem{none} No sources retrieved."
+def test_empty_cited_reference_set_emits_no_fake_bibliography_item():
+    assert format_bibliography([]) == ""
 
 
 def test_source_type_removes_internal_research_prefix_only_for_display():

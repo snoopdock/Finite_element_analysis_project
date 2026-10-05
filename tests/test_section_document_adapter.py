@@ -2,6 +2,7 @@ import pytest
 
 from core.document_model import (
     CitationOccurrence,
+    CitationClusterOccurrence,
     DisplayMath,
     EquationOccurrence,
     InlineMath,
@@ -136,3 +137,22 @@ def test_migration_adapter_structures_math_and_projects_it_back_without_authorit
     projected = document_section_to_legacy(section, include_derived_metadata=False)
     assert "$u_h$" in projected["content"]
     assert "$a(u,v)=L(v)$" in projected["content"]
+
+
+def test_grouped_citation_round_trips_through_semantic_section_adapter():
+    section = legacy_section_to_document_section(
+        {
+            "section_id": SECTION_ID,
+            "title": "Evidence",
+            "content": "Supported [[CITES:s1,s2]].",
+        },
+        source_ids={"s1", "s2"},
+        target_ids=set(),
+    )
+
+    cluster = section.children[0].inline_content[1]
+    assert isinstance(cluster, CitationClusterOccurrence)
+    assert cluster.source_ids == ("s1", "s2")
+    projected = document_section_to_legacy(section)
+    assert projected["content"] == "Supported [[CITES:s1,s2]]."
+    assert projected["citations_used"] == ["s1", "s2"]

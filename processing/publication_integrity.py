@@ -107,12 +107,42 @@ _RAW_MATH_COMMAND_RE = re.compile(
     r"le|ge|neq|approx|equiv|infty|forall|exists|subset|supset"
     r")\b"
 )
-_RAW_SOURCE_MARKER_RE = re.compile(
-    r"\[(?P<token>(?:arxiv|wiki|wikipedia|s2|doi|pmid|book|source)(?:_|:)[A-Za-z0-9_.:/-]+|"
-    r"[A-Za-z][A-Za-z0-9.:-]*_[A-Za-z0-9_.:/-]+)\]",
+_SOURCE_TOKEN_RE = re.compile(
+    r"(?:arxiv|wiki|wikipedia|s2|doi|pmid|book|source)(?:_|:)[A-Za-z0-9_.:/-]+|"
+    r"[A-Za-z][A-Za-z0-9.:-]*_[A-Za-z0-9_.:/-]+",
     flags=re.IGNORECASE,
 )
-_RAW_SEMANTIC_MARKER_RE = re.compile(r"\[\[(?:CITE|REF|EQ|NEW_EQ):[^\]]+\]\]")
+_BRACKET_GROUP_RE = re.compile(r"\[(?P<body>[^\[\]]+)\]")
+
+
+def _raw_source_marker_groups(
+    text: str,
+    *,
+    latex_escaped: bool = False,
+    known_source_ids: set[str] | None = None,
+):
+    """Yield source-ID bracket groups that escaped semantic citation nodes.
+
+    At the semantic/IR gate, exact evidence-registry membership is sufficient
+    to identify a leaked citation even when source IDs use short/custom names.
+    At the standalone LaTeX gate, conservative source-shaped token recognition
+    provides the final defense without inventing an external registry.
+    """
+    known_source_ids = known_source_ids or set()
+    for match in _BRACKET_GROUP_RE.finditer(text):
+        body = match.group("body")
+        if latex_escaped:
+            body = body.replace(r"\_", "_")
+        tokens = tuple(part.strip() for part in body.split(","))
+        if not tokens or any(not token for token in tokens):
+            continue
+        source_shaped = all(_SOURCE_TOKEN_RE.fullmatch(token) for token in tokens)
+        registry_related = any(token in known_source_ids for token in tokens)
+        if source_shaped or registry_related:
+            yield match.group(0), tokens
+
+
+_RAW_SEMANTIC_MARKER_RE = re.compile(r"\[\[(?:CITE|CITES|REF|EQ|NEW_EQ):[^\]]+\]\]")
 _ESCAPED_RAW_MATH_RE = re.compile(
     r"\\textbackslash\{\}(?:in|nabla|partial|int|sum|prod|mathbf|frac|sqrt|infty)\b"
 )
@@ -181,14 +211,14 @@ def audit_document_model(document: DocumentModel) -> PublicationIntegrityReport:
                     context,
                 )
             )
-        for marker in _RAW_SOURCE_MARKER_RE.finditer(text):
-            token = marker.group("token")
-            relation = "known" if token in reference_ids else "unresolved"
+        for raw_group, tokens in _raw_source_marker_groups(text, known_source_ids=reference_ids):
+            known = [token for token in tokens if token in reference_ids]
+            relation = "known" if len(known) == len(tokens) else "partially/unresolved"
             issues.append(
                 PublicationIntegrityIssue(
                     "error",
                     "RAW_CITATION_MARKER",
-                    f"{relation} source token [{token}] survived as plain text instead of CitationOccurrence",
+                    f"{relation} source token group {raw_group} survived as plain text instead of semantic citation occurrence(s)",
                     context,
                 )
             )
@@ -227,10 +257,12 @@ def audit_latex_source(tex: str) -> PublicationIntegrityReport:
                 "error", "RAW_SEMANTIC_MARKER", "semantic authoring marker remains in generated LaTeX"
             )
         )
-    for marker in _RAW_SOURCE_MARKER_RE.finditer(tex):
+    for raw_group, tokens in _raw_source_marker_groups(tex, latex_escaped=True):
         issues.append(
             PublicationIntegrityIssue(
-                "error", "RAW_CITATION_MARKER_IN_TEX", f"source token [{marker.group('token')}] remains in generated LaTeX"
+                "error",
+                "RAW_CITATION_MARKER_IN_TEX",
+                f"source token group {raw_group} remains in generated LaTeX instead of \\cite projection",
             )
         )
 
@@ -288,6 +320,16 @@ def audit_latex_source(tex: str) -> PublicationIntegrityReport:
                 "error",
                 "DUPLICATE_BIBLIOGRAPHY_KEY",
                 "duplicate bibliography key(s): " + ", ".join(duplicate_bib),
+            )
+        )
+    uncited_bibliography = sorted(bib_set - set(citation_keys))
+    if uncited_bibliography:
+        issues.append(
+            PublicationIntegrityIssue(
+                "error",
+                "UNCITED_BIBLIOGRAPHY_KEY",
+                "bibliography key(s) have no semantic citation occurrence: "
+                + ", ".join(uncited_bibliography),
             )
         )
 

@@ -44,13 +44,27 @@ def test_inline_equation_is_not_misrepresented_as_block_occurrence():
     assert any(item.startswith("inline_equation_not_annotated") for item in result.diagnostics)
 
 
-def test_grouped_citation_remains_legacy_text_in_package_one():
+def test_grouped_citation_becomes_semantic_cluster_and_round_trips_exactly():
     model, _ = _authorized_model()
+    content = "Supported by [s1, s2]."
     result = annotate_legacy_authoring(
-        "Supported by [s1, s2].",
+        content,
         domain_model=model,
         source_ids={"s1", "s2"},
     )
 
-    assert result.authoring_text == "Supported by [s1, s2]."
-    assert result.annotated_source_ids == ()
+    assert result.authoring_text == "Supported by [[CITES:s1,s2]]."
+    assert result.annotated_source_ids == ("s1", "s2")
+    assert project_shadow_to_legacy(result.authoring_text, domain_model=model) == content
+
+
+def test_grouped_citation_fails_closed_when_any_source_is_unknown():
+    model, _ = _authorized_model()
+    result = annotate_legacy_authoring(
+        "Supported by [s1, missing].",
+        domain_model=model,
+        source_ids={"s1"},
+    )
+
+    assert result.authoring_text == "Supported by [s1, missing]."
+    assert any(item.startswith("grouped_citation_not_annotated") for item in result.diagnostics)

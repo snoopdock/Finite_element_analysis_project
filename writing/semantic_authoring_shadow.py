@@ -22,7 +22,7 @@ _TOKEN_RE = re.compile(
     r"\$(?P<math>.*?)\$|(?<!\[)\[(?P<cite>[^\[\]]+)\](?!\])",
     flags=re.DOTALL,
 )
-_MARKER_RE = re.compile(r"\[\[(?P<kind>EQ|CITE):(?P<identifier>[^\]]+)\]\]")
+_MARKER_RE = re.compile(r"\[\[(?P<kind>EQ|CITE|CITES):(?P<identifier>[^\]]+)\]\]")
 
 
 @dataclass(frozen=True)
@@ -99,10 +99,20 @@ def annotate_legacy_authoring(
 
         else:
             raw_citation = str(match.group("cite") or "").strip()
-            # Grouped citations are left untouched in Package 1 because the
-            # current marker model has occurrence semantics for one source.
             if "," in raw_citation:
-                diagnostics.append(f"grouped_citation_not_annotated:{raw_citation}")
+                cluster = tuple(part.strip() for part in raw_citation.split(","))
+                canonical = ", ".join(cluster)
+                if (
+                    len(cluster) >= 2
+                    and all(cluster)
+                    and len(set(cluster)) == len(cluster)
+                    and all(source_id in valid_sources for source_id in cluster)
+                    and raw_citation == canonical
+                ):
+                    replacement = f"[[CITES:{','.join(cluster)}]]"
+                    annotated_sources.extend(cluster)
+                else:
+                    diagnostics.append(f"grouped_citation_not_annotated:{raw_citation}")
             elif raw_citation in valid_sources:
                 replacement = f"[[CITE:{raw_citation}]]"
                 annotated_sources.append(raw_citation)
@@ -142,6 +152,9 @@ def project_shadow_to_legacy(
         identifier = match.group("identifier").strip()
         if kind == "CITE":
             return f"[{identifier}]"
+        if kind == "CITES":
+            source_ids = tuple(part.strip() for part in identifier.split(","))
+            return "[" + ", ".join(source_ids) + "]"
         equation = resolve_equation(domain_model, identifier)
         return f"${equation['expression']}$"
 

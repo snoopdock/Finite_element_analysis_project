@@ -120,6 +120,9 @@ def document_section_to_legacy(
                 elif node.type == "citation_occurrence":
                     parts.append(f"[[CITE:{node.source_id}]]")
                     citation_ids.append(node.source_id)
+                elif node.type == "citation_cluster_occurrence":
+                    parts.append(f"[[CITES:{','.join(node.source_ids)}]]")
+                    citation_ids.extend(node.source_ids)
                 elif node.type == "cross_reference_occurrence":
                     parts.append(f"[[REF:{node.target_id}]]")
             paragraphs.append("".join(parts))

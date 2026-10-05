@@ -1,4 +1,4 @@
-version: 2
+version: 3
 purpose: >-
   Define the persisted semantic document representation used to organize
   scientific material for publication without duplicating scientific authority.
@@ -114,6 +114,21 @@ entities:
       source_id:
         target: evidence_source
 
+  citation_cluster_occurrence:
+    identity: occurrence_id
+    required_fields:
+      - occurrence_id
+      - source_ids
+    structural_rules:
+      source_ids: at_least_two_unique_evidence_source_ids
+    reference_fields:
+      source_ids:
+        target: evidence_source
+    rule: >-
+      A grouped citation is a first-class semantic publication occurrence.
+      Grouping must not be represented as bracketed source-ID prose, and the
+      occurrence UUID remains distinct from every evidence source identity.
+
   cross_reference_occurrence:
     identity: occurrence_id
     required_fields:
@@ -177,6 +192,7 @@ structure:
       - text
       - inline_math
       - citation_occurrence
+      - citation_cluster_occurrence
       - cross_reference_occurrence
 
 ordering:
@@ -218,6 +234,8 @@ invariants:
   - inline_order_is_preserved
   - referenced_equation_ids_must_resolve_when_document_is_renderable
   - referenced_source_ids_must_resolve_when_document_is_renderable
+  - grouped_citation_source_ids_must_resolve_when_document_is_renderable
+  - grouped_citations_are_semantic_occurrences_not_plain_text
   - cross_reference_targets_must_resolve_when_document_is_renderable
   - cross_reference_target_ids_are_document_object_identity_not_latex_labels
   - document_objects_must_not_redefine_domain_object_identity

@@ -18,7 +18,7 @@ from core.section_identity import (
 )
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 def _new_id() -> str:
@@ -94,6 +94,41 @@ class CitationOccurrence:
 
 
 @dataclass
+class CitationClusterOccurrence:
+    """Inline citation occurrence that intentionally groups multiple sources.
+
+    The cluster is a semantic publication object: source identities remain
+    authoritative in the evidence registry, while ``occurrence_id`` identifies
+    this specific grouped placement in the document.
+    """
+
+    source_ids: Tuple[str, ...]
+    occurrence_id: str = field(default_factory=_new_id)
+
+    type: str = field(init=False, default="citation_cluster_occurrence")
+
+    def validate(self) -> None:
+        if not isinstance(self.occurrence_id, str) or not self.occurrence_id.strip():
+            raise DocumentModelError("Citation cluster occurrence_id must be non-empty.")
+        if not isinstance(self.source_ids, tuple):
+            raise DocumentModelError("Citation cluster source_ids must be a tuple.")
+        if len(self.source_ids) < 2:
+            raise DocumentModelError("Citation cluster must contain at least two source_ids.")
+        if any(not isinstance(source_id, str) or not source_id.strip() for source_id in self.source_ids):
+            raise DocumentModelError("Citation cluster source_ids must contain non-empty strings.")
+        if len(set(self.source_ids)) != len(self.source_ids):
+            raise DocumentModelError("Citation cluster source_ids must not contain duplicates.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        self.validate()
+        return {
+            "type": self.type,
+            "occurrence_id": self.occurrence_id,
+            "source_ids": list(self.source_ids),
+        }
+
+
+@dataclass
 class CrossReferenceOccurrence:
     """Inline reference to another document object."""
 
@@ -117,7 +152,7 @@ class CrossReferenceOccurrence:
         }
 
 
-InlineNode = Union[Text, InlineMath, CitationOccurrence, CrossReferenceOccurrence]
+InlineNode = Union[Text, InlineMath, CitationOccurrence, CitationClusterOccurrence, CrossReferenceOccurrence]
 
 
 @dataclass
@@ -134,7 +169,7 @@ class Paragraph:
         for node in self.inline_content:
             if not isinstance(
                 node,
-                (Text, InlineMath, CitationOccurrence, CrossReferenceOccurrence),
+                (Text, InlineMath, CitationOccurrence, CitationClusterOccurrence, CrossReferenceOccurrence),
             ):
                 raise DocumentModelError(
                     f"Unsupported paragraph inline node: {type(node).__name__}."
@@ -597,6 +632,13 @@ def validate_document_references(
                             errors.append(
                                 f"Section {section.section_id}: unknown citation source_id {node.source_id}."
                             )
+                    elif isinstance(node, CitationClusterOccurrence):
+                        if source_ids is not None:
+                            for citation_source_id in node.source_ids:
+                                if citation_source_id not in source_ids:
+                                    errors.append(
+                                        f"Section {section.section_id}: unknown citation source_id {citation_source_id}."
+                                    )
                     elif isinstance(node, CrossReferenceOccurrence):
                         if target_ids is not None and node.target_id not in target_ids:
                             errors.append(

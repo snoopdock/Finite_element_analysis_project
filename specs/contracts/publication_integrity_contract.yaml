@@ -1,4 +1,4 @@
-version: 1
+version: 2
 purpose: >-
   Close the publication boundary after semantic Document -> LaTeX IR projection
   by requiring the exact generated LaTeX source and final PDF artifact to pass
@@ -18,6 +18,7 @@ static_document_gate:
     - raw_mathematical_latex_commands
     - semantic_authoring_markers
     - source_id_bracket_markers
+    - grouped_source_id_bracket_markers
   typed_math_required_for_mathematical_commands: true
 
 latex_source_gate:
@@ -28,6 +29,7 @@ latex_source_gate:
     - global_sloppy
   required_resolution:
     citations: every_cite_key_has_exactly_one_bibitem
+    bibliography: every_bibitem_has_at_least_one_citation_occurrence
     references: every_ref_label_has_exactly_one_label
   duplicates:
     bibliography_keys: reject
@@ -36,6 +38,17 @@ latex_source_gate:
   raw_source_markers: reject
   raw_math_unicode_after_projection: reject
   literalized_math_commands: reject
+
+bibliography:
+  membership: semantically_cited_sources_only
+  order: first_semantic_citation_occurrence
+  provenance_registry: complete_retrieval_receipt_remains_separate
+  fake_empty_bibitem: forbidden
+
+reproducibility:
+  wall_clock_date_in_document: forbidden
+  default_visible_date: empty_until_explicit_semantic_revision_date_exists
+  generation_timestamp_location: publication_manifest
 
 citation_keys:
   authority: source_id

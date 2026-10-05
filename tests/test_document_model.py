@@ -2,6 +2,7 @@ import pytest
 
 from core.document_model import (
     CitationOccurrence,
+    CitationClusterOccurrence,
     DisplayMath,
     Document,
     DocumentModelError,
@@ -34,7 +35,7 @@ def test_math_nodes_are_renderer_neutral_and_distinct_from_equation_identity():
 
     serialized = document.to_dict()
 
-    assert serialized["version"] == 2
+    assert serialized["version"] == 3
     assert serialized["children"][0]["children"][0]["inline_content"][1] == {
         "type": "inline_math",
         "expression": "u_h \\in V_h",
@@ -174,3 +175,31 @@ def test_renderable_document_requires_resolved_references():
         source_ids={"source-1"},
         target_ids=set(),
     )
+
+
+def test_citation_cluster_is_first_class_semantic_occurrence_with_multiple_source_ids():
+    cluster = CitationClusterOccurrence(
+        source_ids=("source-1", "source-2"),
+        occurrence_id="550e8400-e29b-41d4-a716-446655440099",
+    )
+    paragraph = Paragraph(inline_content=[Text("Supported "), cluster])
+    document = Document(children=[Section(title="Evidence", children=[paragraph])])
+
+    payload = document.to_dict()
+    inline = payload["children"][0]["children"][0]["inline_content"][1]
+    assert payload["version"] == 3
+    assert inline == {
+        "type": "citation_cluster_occurrence",
+        "occurrence_id": "550e8400-e29b-41d4-a716-446655440099",
+        "source_ids": ["source-1", "source-2"],
+    }
+    assert validate_document_references(
+        document, source_ids={"source-1", "source-2"}
+    ) == []
+
+
+def test_citation_cluster_rejects_single_or_duplicate_sources():
+    with pytest.raises(DocumentModelError, match="at least two"):
+        CitationClusterOccurrence(source_ids=("source-1",)).validate()
+    with pytest.raises(DocumentModelError, match="must not contain duplicates"):
+        CitationClusterOccurrence(source_ids=("source-1", "source-1")).validate()

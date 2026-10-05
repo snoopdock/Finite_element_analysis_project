@@ -7,6 +7,7 @@ from core.document_assembler import (
 )
 from core.document_model import (
     CitationOccurrence,
+    CitationClusterOccurrence,
     DisplayMath,
     EquationOccurrence,
     EquationProposalReference,
@@ -247,6 +248,53 @@ def test_validate_authoring_text_propagates_syntax_errors():
     with pytest.raises(SemanticMarkerError):
         validate_authoring_text(
             "Broken [[CITE:source-1",
+            equation_ids=set(),
+            source_ids={"source-1"},
+            target_ids=set(),
+        )
+
+
+def test_assemble_grouped_citation_as_semantic_cluster_with_stable_occurrence_identity():
+    section_a = assemble_section(
+        section_id=SECTION_ID,
+        title="Evidence",
+        authoring_text="Supported [[CITES:source-1,source-2]].",
+        equation_ids=set(),
+        source_ids={"source-1", "source-2"},
+        target_ids=set(),
+    )
+    section_b = assemble_section(
+        section_id=SECTION_ID,
+        title="Evidence",
+        authoring_text="Supported [[CITES:source-1,source-2]].",
+        equation_ids=set(),
+        source_ids={"source-1", "source-2"},
+        target_ids=set(),
+    )
+
+    cluster_a = section_a.children[0].inline_content[1]
+    cluster_b = section_b.children[0].inline_content[1]
+    assert isinstance(cluster_a, CitationClusterOccurrence)
+    assert cluster_a.source_ids == ("source-1", "source-2")
+    assert cluster_a.occurrence_id == cluster_b.occurrence_id
+    from uuid import UUID
+    assert str(UUID(cluster_a.occurrence_id)) == cluster_a.occurrence_id
+
+
+def test_validate_authoring_text_rejects_unknown_source_inside_grouped_citation():
+    with pytest.raises(DocumentAssemblyError, match="Unknown citation source_id: missing"):
+        validate_authoring_text(
+            "Supported [[CITES:source-1,missing]].",
+            equation_ids=set(),
+            source_ids={"source-1"},
+            target_ids=set(),
+        )
+
+
+def test_validate_authoring_text_rejects_duplicate_ids_inside_grouped_citation():
+    with pytest.raises(DocumentAssemblyError, match="must not contain duplicate"):
+        validate_authoring_text(
+            "Supported [[CITES:source-1,source-1]].",
             equation_ids=set(),
             source_ids={"source-1"},
             target_ids=set(),

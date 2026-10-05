@@ -4,6 +4,7 @@ import pytest
 
 from core.document_model import (
     CitationOccurrence,
+    CitationClusterOccurrence,
     CrossReferenceOccurrence,
     Document,
     EquationOccurrence,
@@ -229,3 +230,41 @@ def test_active_phase_assemble_uses_semantic_ir_and_does_not_escape_or_duplicate
     assert tex.count(rf"\cite{{{key}}}") == 1
     assert state["latex_ir_projection_status"]["status"] == "success"
     assert state["latex_ir_projection_status"]["section_count"] == 1
+
+
+def test_citation_cluster_projects_as_one_ir_occurrence_with_multiple_source_ids():
+    document = Document(
+        children=[
+            Section(
+                section_id=SECTION_ID,
+                title="Evidence",
+                children=[Paragraph(inline_content=[
+                    Text("Supported "),
+                    CitationClusterOccurrence(
+                        source_ids=("s1", "s2"),
+                        occurrence_id="cluster-occ-1",
+                    ),
+                ])],
+            )
+        ]
+    )
+    evidence = _evidence() + [{
+        "source_id": "s2",
+        "title": "Source Two",
+        "url": "https://example.com/s2",
+        "retriever_module": "test",
+        "retrieved_at": "2026-10-03T00:00:00Z",
+    }]
+
+    ir = project_document_to_latex_ir(
+        document,
+        state={"topic": "FEM", "objective": "Guide"},
+        evidence=evidence,
+        domain_model=empty_domain_semantic_model(),
+    )
+    span = ir.sections[0].blocks[0].content[1]
+    assert isinstance(span, IRCitationSpan)
+    assert span.source_ids == ("s1", "s2")
+    assert span.occurrence_id == "cluster-occ-1"
+    rendered = render_body(ir)
+    assert rf"\cite{{{citation_key_for_source_id('s1')},{citation_key_for_source_id('s2')}}}" in rendered

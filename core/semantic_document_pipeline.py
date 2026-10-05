@@ -11,6 +11,7 @@ import uuid
 
 from core.document_model import (
     CitationOccurrence,
+    CitationClusterOccurrence,
     CrossReferenceOccurrence,
     DisplayMath,
     Document,
@@ -48,6 +49,7 @@ def analyze_latex_ir_readiness(document: Document) -> Dict[str, Any]:
         "display_math": 0,
         "equation_occurrences": 0,
         "citation_occurrences": 0,
+        "citation_cluster_occurrences": 0,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "figures": 0,
@@ -73,6 +75,8 @@ def analyze_latex_ir_readiness(document: Document) -> Dict[str, Any]:
                         counts["inline_math"] += 1
                     elif isinstance(node, CitationOccurrence):
                         counts["citation_occurrences"] += 1
+                    elif isinstance(node, CitationClusterOccurrence):
+                        counts["citation_cluster_occurrences"] += 1
                     elif isinstance(node, CrossReferenceOccurrence):
                         counts["cross_reference_occurrences"] += 1
             elif isinstance(child, DisplayMath):
@@ -163,12 +167,17 @@ def build_semantic_candidate_document(
         semantic_sections.append(semantic_section)
 
         inline_math_count = 0
+        citation_cluster_count = 0
         display_math_count = 0
         equation_occurrence_count = 0
         for child in semantic_section.children:
             if isinstance(child, Paragraph):
                 inline_math_count += sum(
                     isinstance(node, InlineMath)
+                    for node in child.inline_content
+                )
+                citation_cluster_count += sum(
+                    isinstance(node, CitationClusterOccurrence)
                     for node in child.inline_content
                 )
             elif isinstance(child, DisplayMath):
@@ -186,6 +195,7 @@ def build_semantic_candidate_document(
                 "annotated_equation_ids": list(shadow.annotated_equation_ids),
                 "annotated_source_ids": list(shadow.annotated_source_ids),
                 "inline_math_count": inline_math_count,
+                "citation_cluster_count": citation_cluster_count,
                 "display_math_count": display_math_count,
                 "equation_occurrence_count": equation_occurrence_count,
                 "diagnostics": list(shadow.diagnostics),

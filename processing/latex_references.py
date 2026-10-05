@@ -72,9 +72,9 @@ def format_bibliography_reference(reference):
 
 
 def format_bibliography(references):
-    """Format all normalized references, including the empty-source fallback."""
+    """Format cited normalized references; empty input emits no bibliography item."""
     items = [format_bibliography_reference(reference) for reference in references]
-    return "\n".join(items) if items else "  \\bibitem{none} No sources retrieved."
+    return "\n".join(items)
 
 
 def _format_breakable_source_id(source_id, *, chunk_size=8, long_run_threshold=12):
