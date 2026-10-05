@@ -1,4 +1,4 @@
-version: 1
+version: 2
 purpose: >-
   Define the LLM-facing authoring contract for generating free-form academic
   prose with explicit references to pre-authorized semantic objects.
@@ -74,7 +74,16 @@ prose_policy:
   markdown_document_structure: forbidden
   bibliography_entries: forbidden
   equation_reproduction_for_existing_equations: discouraged
-  inline_math_without_semantic_identity: permitted
+  inline_math_without_semantic_identity: permitted_only_inside_explicit_math_delimiters
+  raw_math_commands_in_plain_text: forbidden
+  authoring_math_delimiters:
+    - single_dollar_inline_math
+    - latex_parenthesized_inline_math
+    - latex_bracketed_display_math
+  violation_policy:
+    writer_draft: reject_before_persistence_and_retry
+    correction_rewrite: reject_before_acceptance
+    persisted_section_preflight: hard_error
 
 proposal_policy:
   new_equation:
@@ -89,4 +98,6 @@ invariants:
   - existing_semantic_objects_are_referenced_by_identity_not_redefined
   - new_equation_proposals_are_non_authoritative
   - ordinary_prose_survives_without_structural_parsing
+  - raw_math_commands_never_enter_semantic_plain_text
+  - writer_math_integrity_is_enforced_before_persistence
   - document_structure_is_not_encoded_as_raw_latex

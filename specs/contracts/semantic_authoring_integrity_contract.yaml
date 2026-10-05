@@ -1,0 +1,61 @@
+version: 1
+purpose: >-
+  Define the semantic authoring boundary that prevents stochastic writer output
+  from placing mathematical LaTeX commands into plain text before semantic
+  document assembly or persistence.
+
+authority:
+  owner: semantic_authoring_layer
+  downstream_defense: publication_integrity_gate
+  rule: >-
+    Mathematical notation must be structurally identifiable before LaTeX
+    projection. The publication renderer may detect violations but must never
+    repair or infer missing mathematical boundaries.
+
+plain_text_math:
+  raw_latex_math_commands: forbidden
+  explicit_math_regions:
+    - single_dollar_inline_math
+    - latex_parenthesized_inline_math
+    - latex_bracketed_display_math
+  migration_rule: >-
+    Explicit legacy math regions may be migrated deterministically to
+    InlineMath or DisplayMath. Commands outside those regions remain invalid.
+
+writer_boundary:
+  validate_each_generated_paragraph: true
+  invalid_paragraph_action: reject_before_persistence
+  retry_using_existing_writer_retry_budget: true
+  semantic_guessing: forbidden
+  auto_wrap_raw_math: forbidden
+  observable_rejection_state: last_authoring_integrity_rejections
+
+correction_boundary:
+  validate_rewrite_before_reverification: true
+  invalid_rewrite_action: reject
+
+persistence_boundary:
+  validate_all_section_records_before_save: true
+  invalid_section_action: hard_error
+  purpose: >-
+    No writer, correction, or compatibility path may persist section content
+    containing raw mathematical LaTeX commands in plain authoring text.
+
+publication_boundary:
+  repeated_validation: defense_in_depth
+  repair: forbidden
+
+identity:
+  rule: >-
+    This contract changes no semantic object identity. Section IDs, occurrence
+    UUIDs, source IDs, equation IDs, figure IDs, and table IDs remain governed
+    by their existing authoritative registries and UUID-based identity rules.
+
+invariants:
+  - raw_math_is_rejected_before_semantic_plain_text_persistence
+  - explicit_math_regions_remain_migratable_to_typed_math_nodes
+  - stochastic_writer_formatting_errors_trigger_retry_not_renderer_repair
+  - correction_rewrites_cannot_bypass_authoring_math_integrity
+  - persisted_section_state_is_semantically_math_clean
+  - publication_integrity_remains_a_final_defense_not_the_primary_repair_layer
+  - uuid_identity_rules_are_unchanged

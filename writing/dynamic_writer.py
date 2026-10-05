@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from analysis.writing_indicator import WritingIndicator
 from core.section_identity import ensure_section_id
+from core.authoring_integrity import audit_authoring_math_integrity
 from research.ranking import rank_knowledge_items
 from utils.text import kb_to_prompt_text
 
@@ -100,6 +101,7 @@ class DynamicWriter:
         self.parser = parser
         self.config = config
         self.history = iteration_history
+        self.authoring_integrity_rejections: List[Dict] = []
 
         writing_config = config.get("writing", {})
         budget_config = config.get("budget", {})
@@ -612,6 +614,7 @@ CRITICAL RULES:
 5. Write only the paragraph text.
 6. No JSON, no markdown, and no title.
 7. Use $math$ for inline equations.
+8. Every LaTeX mathematical command (for example \\Gamma, \\nabla, \\int, \\frac) MUST be inside an explicit $...$ math region; never emit a raw math command in prose.
 '''
 
         messages = [
@@ -684,6 +687,23 @@ CRITICAL RULES:
             " ",
             text,
         ).strip()
+
+        math_issues = audit_authoring_math_integrity(text)
+        if math_issues:
+            rejection = {
+                "section": section_topic,
+                "paragraph_topic": para_topic,
+                "paragraph_index": para_index,
+                "codes": [issue.code for issue in math_issues],
+                "issues": [issue.format() for issue in math_issues],
+            }
+            self.authoring_integrity_rejections.append(rejection)
+            print(
+                "    [DynamicWriter] Rejected paragraph before persistence: "
+                + "; ".join(issue.format() for issue in math_issues),
+                file=sys.stderr,
+            )
+            return None
 
         return (
             text

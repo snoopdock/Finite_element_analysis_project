@@ -20,6 +20,7 @@ from core.document_model import (
     DocumentModelError,
 )
 from core.semantic_markers import SemanticMarker, TextSegment, parse_authoring_text
+from core.authoring_integrity import audit_authoring_math_integrity
 
 
 _OCCURRENCE_NAMESPACE = uuid.UUID("8e5e8d8d-84f0-4d1d-8d3f-2ce2d6ad6b25")
@@ -80,6 +81,15 @@ def _legacy_math_is_standalone(text: str, start: int, end: int) -> bool:
 
 class DocumentAssemblyError(DocumentModelError):
     """Raised when authoring output cannot be assembled safely."""
+
+
+def _assert_authoring_math_integrity(authoring_text: str) -> None:
+    math_issues = audit_authoring_math_integrity(authoring_text)
+    if math_issues:
+        raise DocumentAssemblyError(
+            "Authoring text violates semantic math integrity: "
+            + "; ".join(issue.format() for issue in math_issues)
+        )
 
 
 def _stable_occurrence_id(
@@ -175,6 +185,8 @@ def validate_authoring_text(
     target_ids = set(target_ids or set())
     proposal_ids = set(proposal_ids or set())
 
+    _assert_authoring_math_integrity(authoring_text)
+
     segments = parse_authoring_text(authoring_text)
     _validate_marker_references(
         segments,
@@ -216,6 +228,8 @@ def assemble_section(
     source_ids = set(source_ids or set())
     target_ids = set(target_ids or set())
     proposal_ids = set(proposal_ids or set())
+
+    _assert_authoring_math_integrity(authoring_text)
 
     segments = parse_authoring_text(authoring_text)
     _validate_marker_references(

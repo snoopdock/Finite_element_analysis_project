@@ -16,6 +16,10 @@ from analysis.semantic_feedback import attach_feedback
 from analysis.correction_planner import plan_corrections
 from analysis.perspective_registry import record_perspective_jobs
 from core.decision_state import append_decision_history
+from core.authoring_integrity import (
+    assert_section_records_math_integrity,
+    audit_authoring_math_integrity,
+)
 
 
 def _citation_ids(text: str) -> List[str]:
@@ -77,6 +81,9 @@ def phase_write_policy_aware(
     )
 
     state["last_writing_decisions"] = list(writer.last_decisions)
+    state["last_authoring_integrity_rejections"] = list(
+        writer.authoring_integrity_rejections
+    )
     writing_config = config.get("writing", {})
     append_decision_history(
         state,
@@ -200,6 +207,15 @@ def phase_write_policy_aware(
 
             paragraph_index = int(job.get("paragraph_index", -1))
             replacement = str(result.get("text", "")).strip()
+            authoring_issues = audit_authoring_math_integrity(replacement)
+            if authoring_issues:
+                correction_results.append({
+                    "section_id": section_id,
+                    "action": "rewrite_rejected",
+                    "error": "Semantic authoring math integrity violation: "
+                    + "; ".join(issue.format() for issue in authoring_issues),
+                })
+                continue
             candidate = _replace_paragraph(all_sections[target_index], paragraph_index, replacement)
             if candidate is None:
                 correction_results.append({"section_id": section_id, "action": "rewrite_rejected", "error": "Invalid paragraph index."})
@@ -275,6 +291,10 @@ def phase_write_policy_aware(
     else:
         state.pop("pending_adjustment", None)
         state["last_adjustment_decision"] = None
+
+    # Corrections and policy-aware writer output must satisfy semantic authoring
+    # invariants before they are allowed into persisted section state.
+    assert_section_records_math_integrity(all_sections)
 
     state["sections"] = all_sections
     save_json(paths["sections"], all_sections)

@@ -5,6 +5,7 @@ import sys
 import time
 
 from processing.llm_parser import LLMJSONParseError
+from core.authoring_integrity import assert_section_records_math_integrity
 from core.domain_semantic_model import ingest_equation_candidates
 
 from research.evidence import (
@@ -933,6 +934,9 @@ def phase_write(
         existing_sections,
         errors,
     )
+    state["last_authoring_integrity_rejections"] = list(
+        writer.authoring_integrity_rejections
+    )
 
     adjustment = oaa_loop.run(
         all_sections,
@@ -952,6 +956,9 @@ def phase_write(
             "pending_adjustment",
             None,
         )
+
+    # Semantic authoring must be clean before any legacy section state is persisted.
+    assert_section_records_math_integrity(all_sections)
 
     state["sections"] = all_sections
 

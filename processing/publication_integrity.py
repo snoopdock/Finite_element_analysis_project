@@ -30,6 +30,7 @@ from processing.latex_ir import (
     TextBlock,
 )
 from utils.latex import PLAIN_TEXT_UNICODE_MATH_MAP
+from core.authoring_integrity import RAW_MATH_COMMAND_RE
 
 
 @dataclass(frozen=True)
@@ -98,15 +99,7 @@ class PublicationCompilationResult:
         return asdict(self)
 
 
-_RAW_MATH_COMMAND_RE = re.compile(
-    r"\\(?:"
-    r"in|notin|nabla|delta|partial|int|iint|iiint|oint|sum|prod|"
-    r"alpha|beta|gamma|sigma|epsilon|varepsilon|omega|theta|lambda|mu|"
-    r"phi|psi|rho|tau|Omega|Gamma|Delta|Sigma|Phi|Psi|"
-    r"mathbf|mathrm|mathbb|mathcal|frac|sqrt|cdot|times|pm|mp|"
-    r"le|ge|neq|approx|equiv|infty|forall|exists|subset|supset"
-    r")\b"
-)
+_RAW_MATH_COMMAND_RE = RAW_MATH_COMMAND_RE
 _SOURCE_TOKEN_RE = re.compile(
     r"(?:arxiv|wiki|wikipedia|s2|doi|pmid|book|source)(?:_|:)[A-Za-z0-9_.:/-]+|"
     r"[A-Za-z][A-Za-z0-9.:-]*_[A-Za-z0-9_.:/-]+",
