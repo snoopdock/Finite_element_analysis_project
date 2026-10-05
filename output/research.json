@@ -35,7 +35,8 @@
       "mathematical_formulation": "",
       "source_ids": [
         "wiki_loubignac_iteration"
-      ]
+      ],
+      "concept_id": "0892c2cc-8a77-405c-b437-e8e0c4f7cdc5"
     },
     {
       "name": "Mixed Finite Element Method",
@@ -43,7 +44,8 @@
       "mathematical_formulation": "",
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "concept_id": "c76c6e98-ac11-40a5-9736-7ed99c2ab75b"
     },
     {
       "name": "Primal Finite Element Method",
@@ -51,6 +53,23 @@
       "mathematical_formulation": "",
       "source_ids": [
         "wiki_mixed_finite_element_method"
+      ],
+      "concept_id": "46347f10-a5a3-406e-a639-707e655d7c1b"
+    },
+    {
+      "name": "Galerkin Method",
+      "explanation": "The Galerkin method is a foundational approach in the Finite Element Method (FEM) for solving differential equations. It involves approximating the solution of a boundary value problem by projecting the residual onto a finite-dimensional space of test functions. This method ensures that the solution satisfies the governing equations in a weighted integral sense, leading to a system of algebraic equations. The Galerkin method is critical for transforming continuous problems into discrete forms suitable for numerical computation.",
+      "mathematical_formulation": "\\int_{\\Omega} \\nabla v \\cdot \\nabla u \\, d\\Omega = \\int_{\\Omega} v f \\, d\\Omega",
+      "source_ids": [
+        "wiki_boris_galerkin"
+      ]
+    },
+    {
+      "name": "Weak Formulation",
+      "explanation": "The weak formulation is a mathematical framework used in FEM to convert partial differential equations into integral equations. It reduces the smoothness requirements of the solution by integrating the equations against test functions, allowing for piecewise continuous approximations. This approach is essential for handling complex geometries and boundary conditions. The weak form ensures that the solution satisfies the problem's constraints in an averaged sense over the domain.",
+      "mathematical_formulation": "\\int_{\\Omega} v (\\nabla^2 u + f) \\, d\\Omega = 0",
+      "source_ids": [
+        "wiki_boris_galerkin"
       ]
     }
   ],
@@ -88,7 +107,8 @@
       "equations": [],
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "proposition_id": "193d642b-15c1-4fed-a068-c94de21078a6"
     },
     {
       "step_number": 2,
@@ -97,7 +117,8 @@
       "equations": [],
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "proposition_id": "dd27ebd7-c965-4343-b848-df7624a20e16"
     },
     {
       "step_number": 3,
@@ -106,7 +127,8 @@
       "equations": [],
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "proposition_id": "407a1196-1003-43b0-9986-a07ce515faae"
     }
   ],
   "equations": [
@@ -122,8 +144,9 @@
     {
       "name": "Weak Form of Poisson's Equation",
       "latex": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\Gamma} g v \\, d\\Gamma",
-      "explanation": "This equation represents the weak form of a PDE, where $ u $ is the solution, $ v $ is the test function, $ f $ is a source term, and $ g $ is a boundary condition. It forms the basis for FEM discretization.",
+      "explanation": "This equation represents the weak form of Poisson's equation, where $ u $ is the solution, $ v $ is a test function, $ f $ is a source term, $ \\Omega $ is the domain, and $ \\nabla $ denotes the gradient. The left-hand side integrates the product of the gradients of the test function and solution, while the right-hand side integrates the product of the test function and source term.",
       "source_ids": [
+        "wiki_boris_galerkin",
         "wiki_crystal_plasticity",
         "wiki_finite_element_limit_analysis"
       ],
@@ -135,7 +158,8 @@
       "explanation": "K represents the stiffness matrix, B enforces constraints via Lagrange multipliers (λ), u is the primary variable vector, and f is the load vector. The zero block corresponds to the constraint equation. This system arises in mixed methods due to the coupling of variables and constraints.",
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "proposition_id": "404db82c-dee1-4367-bb24-1545313e2b6c"
     }
   ],
   "rules": [
@@ -162,13 +186,22 @@
       "explanation": "Mixed finite element methods are essential for almost incompressible elasticity to avoid numerical locking. Primal methods fail to accurately capture stress and strain fields in such cases. The introduction of additional variables provides better stability and accuracy.",
       "source_ids": [
         "wiki_mixed_finite_element_method"
-      ]
+      ],
+      "proposition_id": "b0a0a000-78b7-414d-bced-bb0093429aea"
     },
     {
       "rule": "Special Solvers for Saddle-Point Systems",
       "explanation": "Mixed methods produce non-definite matrices requiring GMRES over MINRES. This is critical for iterative solvers to handle negative pivots and eigenvalues. Direct solvers need pivoting, leading to increased memory usage. Proper solver selection ensures computational feasibility.",
       "source_ids": [
         "wiki_mixed_finite_element_method"
+      ],
+      "proposition_id": "9eeb719b-c890-4b3b-9d01-633678c32f96"
+    },
+    {
+      "rule": "Use of Approximate Solutions",
+      "explanation": "FEM relies on approximate solutions to complex problems, which are constructed using basis functions. This rule ensures that the numerical solution adheres to the problem's physical and mathematical constraints. Approximate solutions are essential for handling non-linearities, irregular geometries, and heterogeneous material properties.",
+      "source_ids": [
+        "wiki_boris_galerkin"
       ]
     }
   ]

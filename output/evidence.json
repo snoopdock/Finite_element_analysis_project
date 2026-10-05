@@ -320,6 +320,184 @@
     }
   },
   {
+    "source_id": "arxiv_1906.09965v2",
+    "url": "https://arxiv.org/pdf/1906.09965v2.pdf",
+    "retrieved_at": "2026-10-05T14:54:21.827690+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "A numerical study of the dispersion and dissipation properties of virtual element methods for the Helmholtz problem",
+    "authors": [
+      "Ilaria Perugia",
+      "Alexander Pichler"
+    ],
+    "metadata": {
+      "abstract": "We study numerically the dispersion and dissipation properties of the plane wave virtual element method and the nonconforming Trefftz virtual element method for the Helmholtz problem. Whereas the former method is based on a conforming virtual partition of unity approach in the sense that the local (implicitly defined) basis functions are given as modulations of lowest order harmonic virtual element functions with plane waves, the latter one represents a pure Trefftz method with local edge-related basis functions that are eventually glued together in a nonconforming fashion. We will see that the qualitative and quantitative behavior of dissipation and dispersion of the method hinges upon the level of conformity and the use of Trefftz basis functions. To this purpose, we also compare the results to those obtained in [15] for the plane wave discontinuous Galerkin method, and to those for the standard polynomial based finite element method.",
+      "published": "2019-06-24T13:58:08Z",
+      "page_count": 27,
+      "word_count": 146
+    },
+    "full_text_path": null,
+    "full_text_available": false,
+    "status": "metadata_only",
+    "query_context": "Virtual Element Method FEM",
+    "query_contexts": [
+      "Virtual Element Method FEM"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Virtual Element Method FEM",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.365841,
+        "Virtual Element Method FEM": 0.519183,
+        "CutFEM FEM": 0.2125,
+        "Galerkin Dimension Reduction FEM": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2002.07642v4",
+    "url": "https://arxiv.org/pdf/2002.07642v4.pdf",
+    "retrieved_at": "2026-10-05T14:54:21.827690+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Representations of Motion Groups of Links via Dimension Reduction of TQFTs",
+    "authors": [
+      "Yang Qiu",
+      "Zhenghan Wang"
+    ],
+    "metadata": {
+      "abstract": "Motion groups of links in the three sphere $\\mathbb{S}^3$ are generalizations of the braid groups, which are motion groups of points in the disk $\\mathbb{D}^2$. Representations of motion groups can be used to model statistics of extended objects such as closed strings in physics. Each $1$-extended $(3+1)$-topological quantum field theory (TQFT) will provide representations of motion groups, but it is difficult to compute such representations explicitly in general. In this paper, we compute representations of the motion groups of links in $\\mathbb{S}^3$ with generalized axes from Dijkgraaf-Witten (DW) TQFTs inspired by dimension reduction. A succinct way to state our result is as a step toward a twisted generalization (Conjecture \\ref{mainconjecture}) of a conjecture for DW theories of dimension reduction from $(3+1)$ to $(2+1)$: $\\textrm{DW}^{3+1}_G \\cong \\oplus_{[g]\\in [G]} \\textrm{DW}^{2+1}_{C(g)}$, where the sum runs over all conjugacy classes $[g]\\in [G]$ of $G$ and $C(g)$ the centralizer of any element $g\\in [g]$. We prove a version of Conjecture \\ref{mainconjecture} for the mapping class groups of closed manifolds and the case of torus links labeled by pure fluxes.",
+      "published": "2020-02-18T15:27:46Z",
+      "page_count": 37,
+      "word_count": 13963
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2002.07642v4.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "Galerkin Dimension Reduction FEM",
+    "query_contexts": [
+      "Galerkin Dimension Reduction FEM"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Galerkin Dimension Reduction FEM",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Virtual Element Method FEM": 0.2125,
+        "CutFEM FEM": 0.2125,
+        "Galerkin Dimension Reduction FEM": 0.519183
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2211.17093v1",
+    "url": "https://arxiv.org/pdf/2211.17093v1.pdf",
+    "retrieved_at": "2026-10-05T14:54:21.827690+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "CutFEM forward modeling for EEG source analysis",
+    "authors": [
+      "Tim Erdbrügger",
+      "Andreas Westhoff",
+      "Malte Hoeltershinken",
+      "Jan-Ole Radecke",
+      "Yvonne Buschermoehle",
+      "Alena Buyx",
+      "Fabrice Wallois",
+      "Sampsa Pursiainen",
+      "Joachim Gross",
+      "Rebekka Lencer",
+      "Christian Engwer",
+      "Carsten Wolters"
+    ],
+    "metadata": {
+      "abstract": "Source analysis of Electroencephalography (EEG) data requires the computation of the scalp potential induced by current sources in the brain. This so-called EEG forward problem is based on an accurate estimation of the volume conduction effects in the human head, represented by a partial differential equation which can be solved using the finite element method (FEM). FEM offers flexibility when modeling anisotropic tissue conductivities but requires a volumetric discretization, a mesh, of the head domain. Structured hexahedral meshes are easy to create in an automatic fashion, while tetrahedral meshes are better suited to model curved geometries. Tetrahedral meshes thus offer better accuracy, but are more difficult to create. Methods: We introduce CutFEM for EEG forward simulations to integrate the strengths of hexahedra and tetrahedra. It belongs to the family of unfitted finite element methods, decoupling mesh and geometry representation. Following a description of the method, we will employ CutFEM in both controlled spherical scenarios and the reconstruction of somatosensory evoked potentials. Results: CutFEM outperforms competing FEM approaches with regard to numerical accuracy, memory consumption and computational speed while being able to mesh arbitrarily touching compartments. Conclusion: CutFEM balances numerical accuracy, computational efficiency and a smooth approximation of complex geometries that has previously not been available in FEM-based EEG forward modeling.",
+      "published": "2022-11-30T15:48:23Z",
+      "page_count": 9,
+      "word_count": 6809
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2211.17093v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "CutFEM FEM",
+    "query_contexts": [
+      "CutFEM FEM"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "CutFEM FEM",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.365841,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Virtual Element Method FEM": 0.2125,
+        "CutFEM FEM": 0.519183,
+        "Galerkin Dimension Reduction FEM": 0.2125
+      }
+    }
+  },
+  {
     "source_id": "arxiv_2410.12614v1",
     "url": "https://arxiv.org/pdf/2410.12614v1.pdf",
     "retrieved_at": "2026-10-05T14:43:07.767557+00:00",
@@ -372,6 +550,58 @@
         "finite element method vs finite difference method": 0.2125,
         "crystal plasticity finite element method": 0.2125,
         "finite element limit analysis": 0.519183
+      }
+    }
+  },
+  {
+    "source_id": "wiki_boris_galerkin",
+    "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
+    "retrieved_at": "2026-10-05T14:54:21.827690+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Boris Galerkin",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "problem in <span class=\"searchmatch\">weak</span> <span class=\"searchmatch\">form</span>. Most well-known in the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> The Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> The streamline upwind Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> (SUPG) The",
+      "word_count": 1835
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_boris_galerkin.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.290841,
+      "lexical": 0.209861,
+      "source_quality": 0.55,
+      "section_relevance": 0.169315,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Galerkin Dimension Reduction FEM",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Virtual Element Method FEM": 0.1375,
+        "CutFEM FEM": 0.1375,
+        "Galerkin Dimension Reduction FEM": 0.290841
       }
     }
   }

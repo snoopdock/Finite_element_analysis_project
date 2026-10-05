@@ -13,33 +13,7 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The Weak Formulation is a crucial step in the Finite Element Method (FEM), where the governing partial differential equation is transformed into a weak form by multiplying with a test function and integrating over the domain. This reduces the smoothness requirements for the solution and facilitates the use of piecewise functions. The weak form of Poisson's equation, represented by "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\Gamma} g v \\, d\\Gamma"
-            },
-            {
-              "type": "text",
-              "text": ", forms the basis for FEM discretization "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "15ba17df-963f-57e5-a6b1-5e154ed5e153",
-              "source_id": "wiki_crystal_plasticity"
-            },
-            {
-              "type": "text",
-              "text": ", "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "861b82cc-282e-5909-bcc2-4cf869637a92",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ". This process is essential for deriving the discrete equations in FEM, ensuring compatibility with numerical methods.\n\nThe Primal Finite Element Method is a direct approach that focuses on approximating primary variables, such as displacement, without introducing additional fields. This method relies on strong enforcement of continuity conditions through shared degrees of freedom between elements, making it simpler but less suitable for certain ill-posed problems. In the context of problem discretization, the primal finite element method is often used in conjunction with domain discretization, where the physical domain is divided into a mesh of finite elements. The choice of elements and basis functions critically affects accuracy and stability, and the discretization process must ensure sufficient refinement in regions of interest. This is essential for deriving the discrete equations in FEM, ensuring compatibility with numerical methods, as described by the weak form of a partial differential equation, such as the weak form of Poisson's equation: "
+              "text": "The weak formulation is a mathematical framework used in FEM to convert partial differential equations into integral equations. It reduces the smoothness requirements of the solution by integrating the equations against test functions, allowing for piecewise continuous approximations. This approach is essential for handling complex geometries and boundary conditions. The weak form ensures that the solution satisfies the problem's constraints in an averaged sense over the domain. The weak form of Poisson's equation is given by "
             },
             {
               "type": "inline_math",
@@ -47,11 +21,60 @@
             },
             {
               "type": "text",
-              "text": " "
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": " u "
+            },
+            {
+              "type": "text",
+              "text": " is the solution, "
+            },
+            {
+              "type": "inline_math",
+              "expression": " v "
+            },
+            {
+              "type": "text",
+              "text": " is a test function, "
+            },
+            {
+              "type": "inline_math",
+              "expression": " f "
+            },
+            {
+              "type": "text",
+              "text": " is a source term, "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\Omega "
+            },
+            {
+              "type": "text",
+              "text": " is the domain, and "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\nabla "
+            },
+            {
+              "type": "text",
+              "text": " denotes the gradient. This formulation is a crucial step in the Finite Element Method (FEM), where the governing partial differential equation is transformed into a weak form by multiplying with a test function and integrating over the domain "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "eb6192ac-ed55-5ead-8e38-967067e1c562",
+              "occurrence_id": "ef009185-f4d8-5184-9997-4ee701cc40ab",
+              "source_id": "wiki_boris_galerkin"
+            },
+            {
+              "type": "text",
+              "text": ", "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "fa6f1d39-c27c-598b-96cc-dabca4943625",
               "source_id": "wiki_crystal_plasticity"
             },
             {
@@ -60,30 +83,12 @@
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "ff1f74a9-70c9-5c94-99df-d0c02b5a5a63",
+              "occurrence_id": "21aae870-2636-5830-842c-5c90a4ebb11f",
               "source_id": "wiki_finite_element_limit_analysis"
             },
             {
               "type": "text",
-              "text": ".\n\nConstraint enforcement and hybridization are essential techniques in the Finite Element Method (FEM) for ensuring physical consistency and computational efficiency. By introducing Lagrange multipliers to enforce constraints between fields, a saddle-point system is created, requiring careful handling during solution "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "1ca8cd1b-6baa-53f8-97d1-0bea8fe87206",
-              "source_id": "wiki_mixed_finite_element_method"
-            },
-            {
-              "type": "text",
-              "text": ". Hybridization, on the other hand, involves replacing internal constraints with boundary-based Lagrange multipliers, allowing for weak enforcement of continuity and reducing degrees of freedom through static condensation "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "5f6c96ae-a84e-582c-9361-60944f202a35",
-              "source_id": "wiki_mixed_finite_element_method"
-            },
-            {
-              "type": "text",
-              "text": ". This approach enables the use of piecewise functions and facilitates the derivation of discrete equations in FEM, ensuring compatibility with numerical methods [wiki_crystal_plasticity, wiki_finite_element_limit_analysis]."
+              "text": ".\n\nThe Galerkin method plays a pivotal role in the Finite Element Method (FEM) as it enables the derivation of discrete equations from the weak form of a partial differential equation. By multiplying the weak form with a test function and integrating over the domain, the Galerkin method reduces the smoothness requirements for the solution, facilitating the use of piecewise functions. This approach is essential for handling complex geometries and boundary conditions, as it ensures that the solution satisfies the problem's constraints in an averaged sense over the domain. The Galerkin method is a cornerstone of the FEM, allowing for the development of efficient and accurate numerical solutions to a wide range of engineering problems.\n\nProblem discretization is a crucial step in the Finite Element Method (FEM), where a continuous domain is divided into discrete elements, allowing numerical solutions to be computed. This process involves defining nodes, elements, and interpolation functions to approximate the solution. The accuracy of FEM results depends heavily on the quality and density of the mesh. Discretization also facilitates the handling of complex geometries and boundary conditions by breaking them into manageable parts, as evident in the procedure of dividing the domain into finite elements and defining approximation spaces for primary and additional variables. This step establishes the framework for weak formulations and ensures compatibility between variables, which is essential for deriving discrete equations in FEM."
             }
           ]
         }
@@ -128,7 +133,25 @@
             },
             {
               "type": "text",
-              "text": ".\n\nThe theoretical foundations of the Finite Element Method (FEM) are rooted in the concept of discretization, which enables the approximation of complex physical phenomena through the division of a continuous domain into discrete elements. The Schmid tensor, a critical component in crystal plasticity models, describes the relationship between applied stress and slip in crystalline materials by capturing the orientation-dependent slip activity through the tensor product of the Burgers vector and the slip plane normal, "
+              "text": ". Discretization is foundational, as it determines the approximation space for the solution, and is a fundamental concept in the Finite Element Method (FEM) "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "78b79ce2-6550-5a30-a7ed-8af039ad23ca",
+              "source_id": "wiki_crystal_plasticity"
+            },
+            {
+              "type": "text",
+              "text": ", "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "d538768c-375b-537a-b13b-1088cb2f2dab",
+              "source_id": "wiki_finite_element_limit_analysis"
+            },
+            {
+              "type": "text",
+              "text": ".\n\nThe mixed finite element method is a crucial extension of the primal finite element method, particularly for problems involving incompressible materials. Unlike primal methods, which focus on directly approximating primary variables like displacement, mixed methods introduce additional fields to independently approximate variables like stress and strain. This approach is essential for almost incompressible elasticity, as it avoids numerical locking and provides better stability and accuracy. The mixed method formulation results in a saddle-point system, which requires specialized solvers due to non-definite matrices. The choice of elements and basis functions critically affects accuracy and stability, making problem discretization a critical step in the mixed finite element method.\n\nThe Loubignac iteration is an iterative approach to generating continuous stress fields, distinct from standard finite element methods that prioritize displacement continuity over stress continuity. Introduced by Gilles Loubignac in 1977, this method addresses numerical challenges in stress computation by iteratively refining solutions. It is particularly designed for problems requiring smooth stress distributions, such as those encountered in crystal plasticity models where the Schmid tensor plays a crucial role in describing the relationship between applied stress and slip in crystalline materials, defined as the tensor product of the Burgers vector and the slip plane normal, "
             },
             {
               "type": "inline_math",
@@ -140,51 +163,16 @@
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "78b79ce2-6550-5a30-a7ed-8af039ad23ca",
+              "occurrence_id": "3914525e-9590-5b71-929b-e6b1a295e31e",
               "source_id": "wiki_crystal_plasticity"
             },
             {
               "type": "text",
-              "text": ". This tensor is essential for determining the resolved shear stress on slip systems, linking continuum mechanics to crystallographic behavior. The primal finite element method, which focuses on directly approximating primary variables like displacement, relies on strong enforcement of continuity conditions through shared degrees of freedom between elements, making it simpler but less suitable for certain ill-posed problems "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "4e21e872-bfd4-542d-aa11-795968c0637c",
-              "source_id": "wiki_mixed_finite_element_method"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nAdvanced finite element methods, such as the Loubignac iteration and mixed finite element method, are essential for addressing numerical challenges in stress computation and almost incompressible elasticity. The Loubignac iteration, introduced by Gilles Loubignac in 1977, generates a continuous stress field by iteratively refining solutions, making it distinct from standard finite element approaches that prioritize displacement continuity over stress continuity "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "087c11cb-efb4-567d-8d18-815b1e455120",
-              "source_id": "wiki_loubignac_iteration"
-            },
-            {
-              "type": "text",
-              "text": ". In contrast, the mixed finite element method introduces additional fields into the formulation of partial differential equations, allowing for independent approximation of variables like stress and strain, and is particularly effective for problems where traditional methods fail, such as almost incompressible elasticity "
+              "text": ". In contrast, traditional finite element methods may fail to accurately capture stress and strain fields in such cases, necessitating the use of mixed finite element methods, which introduce additional fields into the formulation of partial differential equations, allowing for independent approximation of variables like stress and strain, and are particularly effective for problems where traditional methods fail, such as almost incompressible elasticity "
             },
             {
               "type": "citation_occurrence",
               "occurrence_id": "5507a227-5a1a-5464-bdc7-31e6d1b385b4",
-              "source_id": "wiki_mixed_finite_element_method"
-            },
-            {
-              "type": "text",
-              "text": ". This approach creates a saddle-point system, requiring specialized solvers due to non-definite matrices, which can be represented as "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\begin{bmatrix} K & B \\\\ B^T & 0 \\end{bmatrix} \\begin{bmatrix} u \\\\ \\lambda \\end{bmatrix} = \\begin{bmatrix} f \\\\ 0 \\end{bmatrix}"
-            },
-            {
-              "type": "text",
-              "text": ", where K represents the stiffness matrix, B enforces constraints via Lagrange multipliers, u is the primary variable vector, and f is the load vector "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "9acc0fe3-d31a-5043-9108-7b18b558fd20",
               "source_id": "wiki_mixed_finite_element_method"
             },
             {
@@ -208,55 +196,33 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The discretization of a domain is a fundamental concept in the Finite Element Method (FEM), where a continuous domain is divided into discrete elements, allowing numerical solutions to be computed. This process, denoted as "
+              "text": "Accurate imposition of boundary conditions is critical for physical consistency in the Finite Element Method (FEM). Dirichlet and Neumann conditions must be applied correctly to reflect the problem's constraints, ensuring the numerical solution aligns with the actual physical behavior. This is achieved by applying the boundary conditions to the weak formulation of the partial differential equation, which reduces the smoothness requirements of the solution by integrating the equations against test functions. The weak form ensures that the solution satisfies the problem's constraints in an averaged sense over the domain, as demonstrated by the equation "
             },
             {
               "type": "inline_math",
-              "expression": "\\Omega \\approx \\bigcup_{e=1}^{N} \\Omega_e"
+              "expression": "\\int_{\\Omega} v (\\nabla^2 u + f) \\, d\\Omega = 0"
             },
             {
               "type": "text",
-              "text": ", involves defining nodes, elements, and interpolation functions to approximate the solution. The accuracy of FEM results depends heavily on the quality and density of the mesh, making discretization a critical step in the FEM procedure. By breaking down complex geometries and boundary conditions into manageable parts, discretization facilitates the handling of intricate physical phenomena, enabling the modeling of complex systems in various fields of engineering and physics.\n\nApplying boundary conditions correctly is crucial in the Finite Element Method (FEM) to ensure physical consistency. Dirichlet and Neumann conditions must be applied accurately to reflect the problem's constraints, ensuring the numerical solution aligns with the actual physical behavior. The weak form of a partial differential equation, such as the Poisson's equation, is used to derive the boundary conditions. For instance, the weak form of the Poisson's equation is given by "
+              "text": " "
             },
             {
-              "type": "inline_math",
-              "expression": " \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\Gamma} g v \\, d\\Gamma "
-            },
-            {
-              "type": "text",
-              "text": ", where "
-            },
-            {
-              "type": "inline_math",
-              "expression": " u "
+              "type": "citation_occurrence",
+              "occurrence_id": "44aff744-dd9f-5ad9-8ef8-2913a6f3eeee",
+              "source_id": "wiki_boris_galerkin"
             },
             {
               "type": "text",
-              "text": " is the solution, "
+              "text": ".\n\nThe choice of discretization strategy significantly impacts the accuracy of FEM models. To ensure accurate modeling of physical phenomena, it is essential to select an appropriate discretization method that captures the problem's essential features. A common approach is to use a mixed finite element method, where the domain is divided into finite elements and approximation spaces are defined for primary and additional variables. The choice of elements and basis functions critically affects accuracy and stability, and should be carefully selected to ensure compatibility between variables. For instance, in the context of crystal plasticity, the use of a suitable discretization method can help capture the complex behavior of materials under different loading conditions "
             },
             {
-              "type": "inline_math",
-              "expression": " v "
-            },
-            {
-              "type": "text",
-              "text": " is the test function, "
-            },
-            {
-              "type": "inline_math",
-              "expression": " f "
+              "type": "citation_occurrence",
+              "occurrence_id": "e71d58b4-82c6-5c1c-a763-97ffe95abf59",
+              "source_id": "wiki_crystal_plasticity"
             },
             {
               "type": "text",
-              "text": " is a source term, and "
-            },
-            {
-              "type": "inline_math",
-              "expression": " g "
-            },
-            {
-              "type": "text",
-              "text": " is a boundary condition. This equation forms the basis for FEM discretization and boundary condition application.\n\nThe weak form of partial differential equations is derived by multiplying the governing equation with a test function and integrating over the domain. This process, as shown in the weak form of Poisson's equation, reduces the smoothness requirements for the solution and facilitates the use of piecewise functions. The weak form is essential for deriving the discrete equations in FEM, ensuring compatibility with numerical methods. By applying the weak form, the governing partial differential equation is transformed into a weak form, which is a crucial step in the Finite Element Method (FEM). This transformation enables the use of variational principles or weighted residual methods, allowing for the modeling of complex geometries and physical phenomena."
+              "text": ".\n\nThe weak formulation plays a pivotal role in the Finite Element Method (FEM) by transforming the governing partial differential equation into a weak form through multiplication with a test function and integration over the domain. This reduces the smoothness requirements for the solution, enabling the use of piecewise functions to approximate the solution. As a result, the weak form facilitates the derivation of discrete equations in FEM, ensuring compatibility with numerical methods. The use of approximate solutions, constructed using basis functions, is essential in FEM for handling non-linearities, irregular geometries, and heterogeneous material properties. By employing the weak formulation and approximate solutions, FEM can effectively model complex physical phenomena and provide accurate numerical solutions."
             }
           ]
         }
@@ -275,56 +241,15 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Verification and validation are crucial steps in the Finite Element Method (FEM) to ensure the accuracy and reliability of numerical solutions. The weak form of a partial differential equation, such as the weak form of Poisson's equation, "
+              "text": "The Finite Element Method (FEM) can be verified using the Schmid tensor, which describes the relationship between applied stress and slip in crystalline materials. The Schmid tensor is defined as the tensor product of the Burgers vector and the slip plane normal, capturing the orientation-dependent slip activity. This enables the transformation of macroscopic stress into microscopic slip contributions, linking continuum mechanics to crystallographic behavior. By using the Schmid tensor, FEM solutions can be verified for accuracy in modeling plastic deformation in crystalline materials, ensuring that the numerical solution adheres to the problem's physical and mathematical constraints.\n\nDiscretization is a pivotal step in the Finite Element Method (FEM), where a continuous domain is divided into discrete elements, allowing numerical solutions to be computed. This process, denoted as domain discretization, involves selecting appropriate element types and ensuring sufficient refinement in regions of interest, thereby facilitating the handling of complex geometries and boundary conditions. The accuracy of FEM results depends heavily on the quality and density of the mesh, as the choice of elements and basis functions critically affects accuracy and stability. By discretizing the domain, FEM approximates solutions using piecewise functions over these elements, enabling the modeling of complex phenomena and providing a robust numerical framework for solving partial differential equations.\n\nEnforcing constraints and validation are crucial aspects of the Finite Element Method (FEM), particularly when employing the Loubignac Iteration and Mixed Finite Element Method. The Loubignac Iteration, introduced by Gilles Loubignac in 1977, generates a continuous stress field by iteratively refining solutions, addressing numerical challenges in stress computation. In contrast, the Mixed Finite Element Method introduces additional fields, often constrained by Lagrange multipliers, to allow for independent approximation of variables like stress and strain. This approach creates a saddle-point system, as represented by the equation "
             },
             {
               "type": "inline_math",
-              "expression": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega + \\int_{\\Gamma} g v \\, d\\Gamma"
+              "expression": "\\begin{bmatrix} K & B \\\\ B^T & 0 \\end{bmatrix} \\begin{bmatrix} u \\\\ \\lambda \\end{bmatrix} = \\begin{bmatrix} f \\\\ 0 \\end{bmatrix}"
             },
             {
               "type": "text",
-              "text": ", forms the basis for FEM discretization. Discretization, which divides a continuous domain into discrete elements, "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\Omega \\approx \\bigcup_{e=1}^{N} \\Omega_e"
-            },
-            {
-              "type": "text",
-              "text": ", allows numerical solutions to be computed. However, the accuracy of FEM results depends heavily on the quality and density of the mesh, necessitating mesh convergence studies to validate FEM simulations.\n\nThe Schmid tensor plays a pivotal role in crystal plasticity models by describing the relationship between applied stress and slip in crystalline materials. It is defined as the tensor product of the Burgers vector and the slip plane normal, capturing the orientation-dependent slip activity. This tensor enables the transformation of macroscopic stress into microscopic slip contributions, linking continuum mechanics to crystallographic behavior. The Schmid tensor is mathematically represented as "
-            },
-            {
-              "type": "inline_math",
-              "expression": "M_{ij} = b_i n_j"
-            },
-            {
-              "type": "text",
-              "text": ", where "
-            },
-            {
-              "type": "inline_math",
-              "expression": "b_i"
-            },
-            {
-              "type": "text",
-              "text": " represents the Burgers vector component and "
-            },
-            {
-              "type": "inline_math",
-              "expression": "n_j"
-            },
-            {
-              "type": "text",
-              "text": " is the slip plane normal component. The accurate application of the Schmid tensor in crystal plasticity models relies on a thorough understanding of its mathematical formulation and its implementation within the Finite Element Method (FEM). "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "4e311a84-9a11-5fab-b54f-cfb56213e8db",
-              "source_id": "wiki_crystal_plasticity"
-            },
-            {
-              "type": "text",
-              "text": "\n\nDomain discretization is a crucial step in the Finite Element Method (FEM), as it determines the approximation space for the solution. The physical domain is divided into a mesh of finite elements, involving the selection of appropriate element types and sufficient refinement in regions of interest. Discretization must conform to the geometry and capture relevant features, as the accuracy of FEM results heavily depends on the quality and density of the mesh. The weak formulation of partial differential equations, which involves multiplying the governing equation with a test function and integrating over the domain, facilitates the use of piecewise functions and reduces the smoothness requirements for the solution. This process is essential for deriving the discrete equations in FEM, ensuring compatibility with numerical methods."
+              "text": ", requiring careful handling during solution. By enforcing constraints and validating the results against physical and mathematical requirements, the FEM can ensure accurate numerical solutions for complex problems."
             }
           ]
         }
@@ -421,6 +346,20 @@
       "sections": [
         {
           "section_id": "97669979-9e98-4faf-afe6-3cec20d0698b",
+          "semantic_marker_count": 3,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [
+            "wiki_boris_galerkin",
+            "wiki_crystal_plasticity",
+            "wiki_finite_element_limit_analysis"
+          ],
+          "inline_math_count": 6,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
+          "diagnostics": []
+        },
+        {
+          "section_id": "a4b564da-7564-46bb-8701-55078bd44cec",
           "semantic_marker_count": 6,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
@@ -428,52 +367,33 @@
             "wiki_finite_element_limit_analysis",
             "wiki_crystal_plasticity",
             "wiki_finite_element_limit_analysis",
-            "wiki_mixed_finite_element_method",
+            "wiki_crystal_plasticity",
             "wiki_mixed_finite_element_method"
           ],
           "inline_math_count": 2,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": [
-            "grouped_citation_not_annotated:wiki_crystal_plasticity, wiki_finite_element_limit_analysis"
-          ]
-        },
-        {
-          "section_id": "a4b564da-7564-46bb-8701-55078bd44cec",
-          "semantic_marker_count": 7,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "wiki_crystal_plasticity",
-            "wiki_finite_element_limit_analysis",
-            "wiki_crystal_plasticity",
-            "wiki_mixed_finite_element_method",
-            "wiki_loubignac_iteration",
-            "wiki_mixed_finite_element_method",
-            "wiki_mixed_finite_element_method"
-          ],
-          "inline_math_count": 3,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
           "section_id": "c03700af-e145-49dd-85cd-44fe19b37446",
-          "semantic_marker_count": 0,
+          "semantic_marker_count": 2,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 6,
+          "annotated_source_ids": [
+            "wiki_boris_galerkin",
+            "wiki_crystal_plasticity"
+          ],
+          "inline_math_count": 1,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
           "section_id": "e0ff457e-6770-4d1d-87cd-c59771e09f9e",
-          "semantic_marker_count": 1,
+          "semantic_marker_count": 0,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "wiki_crystal_plasticity"
-          ],
-          "inline_math_count": 5,
+          "annotated_source_ids": [],
+          "inline_math_count": 1,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
@@ -495,17 +415,17 @@
           ]
         }
       ],
-      "semantic_marker_count": 17,
+      "semantic_marker_count": 14,
       "latex_ir_readiness": {
         "ready": true,
         "counts": {
           "sections": 5,
           "paragraphs": 5,
-          "text_nodes": 42,
-          "inline_math": 20,
+          "text_nodes": 33,
+          "inline_math": 14,
           "display_math": 0,
           "equation_occurrences": 0,
-          "citation_occurrences": 17,
+          "citation_occurrences": 14,
           "cross_reference_occurrences": 0,
           "equation_proposal_references": 0,
           "figures": 0,
@@ -520,11 +440,11 @@
       "counts": {
         "sections": 5,
         "paragraphs": 5,
-        "text_nodes": 42,
-        "inline_math": 20,
+        "text_nodes": 33,
+        "inline_math": 14,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 17,
+        "citation_occurrences": 14,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "figures": 0,
