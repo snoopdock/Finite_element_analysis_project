@@ -117,6 +117,18 @@ jobs:
           echo "Runtime reset complete."
           git status --short
 
+      - name: Clear current-run publication artifacts
+        run: |
+          # These files are validation outputs of the *current* run. Removing
+          # prior copies prevents a failed run from uploading stale success
+          # manifests/logs or leaving an old TeX artifact in the workspace.
+          rm -f \
+            output/guideline.tex \
+            output/guideline.pdf \
+            output/guideline.log \
+            output/publication_manifest.json \
+            output/error.txt
+
       - name: Run FEA Pipeline
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -222,6 +234,8 @@ jobs:
           path: |
             output/error.txt
             output/validation_report.md
+            output/sections.json
+            output/document.semantic-candidate.json
             output/publication_manifest.json
             output/guideline.log
           if-no-files-found: warn
