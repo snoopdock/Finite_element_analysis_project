@@ -6,24 +6,24 @@
     "pdf_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/guideline.pdf",
     "warnings": []
   },
-  "generated_at_utc": "2026-10-05T16:32:38.971564+00:00",
-  "latex_ir_contract_version": "4",
+  "generated_at_utc": "2026-10-05T18:35:15.033270+00:00",
+  "latex_ir_contract_version": "5",
   "pdf": {
     "path": "output/guideline.pdf",
-    "sha256": "9199251c71501ef60f52a13562056b243e7627b9d19005472d19d6af44d9e30a",
-    "size_bytes": 269493
+    "sha256": "e680d3b8d99938b09c7d04a8bfb952e3acea4585759fac8f23ce00355dfa9a13",
+    "size_bytes": 181794
   },
   "pipeline": {
-    "cycle": 5,
-    "iteration": 5,
+    "cycle": 1,
+    "iteration": 1,
     "state_schema_version": 6
   },
   "schema_version": 1,
   "semantic_document": {
     "document_id": "743c2aa8-790e-5a15-b63b-6758c778b2e0",
-    "version": 2
+    "version": 3
   },
-  "source_commit": "d3be5f2c3fcb1fe78837d0a021bd4532f1dc8374",
+  "source_commit": "22178ab9aa8132337b95bb5eab26efe49c43d29e",
   "static_audit": {
     "issues": [],
     "ok": true
@@ -31,7 +31,7 @@
   "status": "validated",
   "tex": {
     "path": "output/guideline.tex",
-    "sha256": "39d0e95789ebd819d2c8ea073c79cefe7874318c4eb9dde4a1c30596f6845587",
-    "size_bytes": 22459
+    "sha256": "1a9f293cbcbac202fecbbfd4d401c254233c09c60e9423132c09928ebbfc5eb7",
+    "size_bytes": 10198
   }
 }

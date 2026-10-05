@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.10.5)  5 OCT 2026 16:32
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.10.5)  5 OCT 2026 18:35
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -787,7 +787,7 @@ File: l3backend-pdftex.def 2024-01-04 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count328
 \l__pdf_internal_box=\box76
 )
-(/tmp/fea-publication-mub2wami/guideline.aux)
+(/tmp/fea-publication-ni3pn3pq/guideline.aux)
 \openout1 = `guideline.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 30.
@@ -865,8 +865,8 @@ File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman
 )
 Package hyperref Info: Link coloring ON on input line 30.
 
-(/tmp/fea-publication-mub2wami/guideline.out)
-(/tmp/fea-publication-mub2wami/guideline.out)
+(/tmp/fea-publication-ni3pn3pq/guideline.out)
+(/tmp/fea-publication-ni3pn3pq/guideline.out)
 \@outlinefile=\write4
 \openout4 = `guideline.out'.
 
@@ -941,7 +941,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
-(/tmp/fea-publication-mub2wami/guideline.toc)
+(/tmp/fea-publication-ni3pn3pq/guideline.toc)
 \tf@toc=\write5
 \openout5 = `guideline.toc'.
 
@@ -950,17 +950,16 @@ File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/enc/
 dvips/lm/lm-ec.enc}]
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 65.
+(Font)              <12> on input line 44.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 65.
+(Font)              <8> on input line 44.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 65.
- [2]
-[3{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}{/usr/share/texmf/fonts/en
-c/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/s
-hare/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}] [4] [5]
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 1
-07.
+(Font)              <6> on input line 44.
+ [2{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/texmf/fonts/e
+nc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}] [3] 
+[4]
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 9
+6.
 
 (/usr/share/texmf/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
@@ -969,45 +968,41 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
- [6] [7]
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 145.
- [8]
+(Font)              <10.95> on input line 96.
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 1
-68.
+06.
 
 (/usr/share/texmf/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-) [9{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}] (/tmp/fea-publication-mub
-2wami/guideline.aux)
+) [5{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}] (/tmp/fea-publication-ni3
+pn3pq/guideline.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
 Package rerunfilecheck Info: File `guideline.out' has not changed.
-(rerunfilecheck)             Checksum: D6781F2273588FBC05B1F00BA6D2AD3E;1873.
+(rerunfilecheck)             Checksum: 1B54B3F946734530527E5A1585BB93F4;2699.
  ) 
 Here is how much of TeX's memory you used:
- 25066 strings out of 476182
- 460764 string characters out of 5795595
- 1947975 words of memory out of 5000000
- 46417 multiletter control sequences out of 15000+600000
- 652575 words of font info for 192 fonts, out of 8000000 for 9000
+ 24881 strings out of 476182
+ 456081 string characters out of 5795595
+ 1934975 words of memory out of 5000000
+ 46277 multiletter control sequences out of 15000+600000
+ 647011 words of font info for 180 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 84i,8n,93p,1417b,692s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,8n,93p,1095b,450s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmex10.pfb></u
 sr/share/texmf/fonts/type1/public/lm/lmmi12.pfb></usr/share/texmf/fonts/type1/p
-ublic/lm/lmmi8.pfb></usr/share/texmf/fonts/type1/public/lm/lmr10.pfb></usr/shar
-e/texmf/fonts/type1/public/lm/lmr12.pfb></usr/share/texmf/fonts/type1/public/lm
-/lmr8.pfb></usr/share/texmf/fonts/type1/public/lm/lmri12.pfb></usr/share/texmf/
-fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10
-.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt12.pfb>
-Output written on /tmp/fea-publication-mub2wami/guideline.pdf (9 pages, 269493 
+ublic/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr12.pfb></usr/shar
+e/texmf/fonts/type1/public/lm/lmr8.pfb></usr/share/texmf/fonts/type1/public/lm/
+lmtt10.pfb>
+Output written on /tmp/fea-publication-ni3pn3pq/guideline.pdf (5 pages, 181794 
 bytes).
 PDF statistics:
- 236 PDF objects out of 1000 (max. 8388607)
- 197 compressed objects within 2 object streams
- 38 named destinations out of 1000 (max. 500000)
- 52301 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 134 PDF objects out of 1000 (max. 8388607)
+ 107 compressed objects within 2 object streams
+ 16 named destinations out of 1000 (max. 500000)
+ 49741 words of extra memory for PDF output out of 51595 (max. 10000000)
 

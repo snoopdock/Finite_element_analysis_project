@@ -1,29 +1,29 @@
 # FEA Pipeline - Cycle Report
 
-**Time:** 2026-10-05T16:32:37.655218+00:00
-**Cycle:** 5
-**Total Iterations:** 5
+**Time:** 2026-10-05T18:35:14.288895+00:00
+**Cycle:** 1
+**Total Iterations:** 1
 **Converged:** False
 
 ## Convergence Diagnostics
 
-- Eta variance: 0.0014799999999999946
+- Eta variance: 0.0014799999999999987
 - Invariant violations: 0
 - Adjust actions: 0
 - Incomplete sections: 0
-- Unstable sections: 1
-- Reading coverage: 28.60%
+- Unstable sections: 0
+- Reading coverage: 0.00%
 
 ## This Cycle
 
 - Correction queries used: 0
 - New sources found: True
-- Extracted: True
+- Extracted: False
 - Sections written: True
-- Adjustment executed: none
+- Adjustment executed: split_section
 - Write phase skipped: False
 - LaTeX assembled: True
 
 ## Errors
 
-- Section 'Verification, Validation, and Best Practices': paragraph 2 failed after 2 attempts
+- Extract validation failed: Extraction contained no valid source-supported items.

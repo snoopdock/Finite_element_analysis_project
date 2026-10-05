@@ -1,169 +1,8 @@
 [
   {
-    "source_id": "arxiv_1607.03618v2",
-    "url": "https://arxiv.org/pdf/1607.03618v2.pdf",
-    "retrieved_at": "2026-10-05T16:31:39.956090+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "The Lax-Milgram Theorem. A detailed proof to be formalized in Coq",
-    "authors": [
-      "François Clément",
-      "Vincent Martin"
-    ],
-    "metadata": {
-      "abstract": "To obtain the highest confidence on the correction of numerical simulation programs implementing the finite element method, one has to formalize the mathematical notions and results that allow to establish the soundness of the method. The Lax-Milgram theorem may be seen as one of those theoretical cornerstones: under some completeness and coercivity assumptions, it states existence and uniqueness of the solution to the weak formulation of some boundary value problems. The purpose of this document is to provide the formal proof community with a very detailed pen-and-paper proof of the Lax-Milgram theorem.",
-      "published": "2016-07-13T07:43:54Z",
-      "page_count": 104,
-      "word_count": 49415
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1607.03618v2.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "Lax-Milgram theorem finite element method",
-    "query_contexts": [
-      "Lax-Milgram theorem finite element method"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.825865,
-      "lexical": 0.839445,
-      "source_quality": 0.85,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Lax-Milgram theorem finite element method",
-      "query_index": 3,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "Lax-Milgram theorem finite element method": 0.825865,
-        "Galerkin dimension reduction finite element method": 0.2125,
-        "hpk-FEM finite element method": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "wiki_crystal_plasticity",
-    "url": "https://en.wikipedia.org/wiki/Crystal_plasticity",
-    "retrieved_at": "2026-10-05T14:43:07.767557+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Crystal plasticity",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "formulations of <span class=\"searchmatch\">crystal</span> <span class=\"searchmatch\">plasticity</span> are the one based on the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> known as <span class=\"searchmatch\">Crystal</span> <span class=\"searchmatch\">Plasticity</span> <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">Element</span> <span class=\"searchmatch\">Method</span> (CPFEM), which is",
-      "word_count": 437
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_crystal_plasticity.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "crystal plasticity finite element method",
-    "query_contexts": [
-      "crystal plasticity finite element method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.750865,
-      "lexical": 0.839445,
-      "source_quality": 0.55,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "crystal plasticity finite element method",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "finite element method vs finite difference method": 0.1375,
-        "crystal plasticity finite element method": 0.750865,
-        "finite element limit analysis": 0.1375
-      }
-    }
-  },
-  {
-    "source_id": "wiki_extended_finite_element_method",
-    "url": "https://en.wikipedia.org/wiki/Extended_finite_element_method",
-    "retrieved_at": "2026-10-05T15:59:44.277696+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Extended finite element method",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "The <span class=\"searchmatch\">extended</span> <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (XFEM), is a numerical technique based on the generalized <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> (GFEM) and the partition of unity method",
-      "word_count": 418
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_extended_finite_element_method.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "Extended Finite Element Method",
-    "query_contexts": [
-      "Extended Finite Element Method",
-      "Generalized Finite Element Method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.750865,
-      "lexical": 0.839445,
-      "source_quality": 0.55,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Extended Finite Element Method",
-      "query_index": 3,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "Extended Finite Element Method": 0.750865,
-        "Cut Finite Element Method": 0.1375,
-        "Generalized Finite Element Method": 0.1375
-      }
-    }
-  },
-  {
     "source_id": "wiki_finite_element_limit_analysis",
     "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
-    "retrieved_at": "2026-10-05T14:50:00.945533+00:00",
+    "retrieved_at": "2026-10-05T18:34:17.347102+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Finite element limit analysis",
@@ -207,199 +46,37 @@
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
         "finite element limit analysis": 0.750865,
-        "loubignac iteration": 0.1375,
-        "mixed finite element method": 0.1375
+        "variable polynomial finite element method": 0.1375
       }
     }
   },
   {
-    "source_id": "wiki_loubignac_iteration",
-    "url": "https://en.wikipedia.org/wiki/Loubignac_iteration",
-    "retrieved_at": "2026-10-05T14:50:00.945533+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Loubignac iteration",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "mathematics, <span class=\"searchmatch\">Loubignac</span> <span class=\"searchmatch\">iteration</span> is an <span class=\"searchmatch\">iterative</span> method in finite element methods. It gives continuous stress field. It is named after Gilles <span class=\"searchmatch\">Loubignac</span>, who published",
-      "word_count": 35
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_loubignac_iteration.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "loubignac iteration",
-    "query_contexts": [
-      "loubignac iteration"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.750865,
-      "lexical": 0.839445,
-      "source_quality": 0.55,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "loubignac iteration",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "finite element limit analysis": 0.1375,
-        "loubignac iteration": 0.750865,
-        "mixed finite element method": 0.1375
-      }
-    }
-  },
-  {
-    "source_id": "wiki_mixed_finite_element_method",
-    "url": "https://en.wikipedia.org/wiki/Mixed_finite_element_method",
-    "retrieved_at": "2026-10-05T14:50:00.945533+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Mixed finite element method",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "In numerical analysis, a <span class=\"searchmatch\">mixed</span> <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span>, is a variant of the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> in which extra fields to be solved are introduced during",
-      "word_count": 389
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_mixed_finite_element_method.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "mixed finite element method",
-    "query_contexts": [
-      "mixed finite element method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.750865,
-      "lexical": 0.839445,
-      "source_quality": 0.55,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "mixed finite element method",
-      "query_index": 5,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "finite element limit analysis": 0.1375,
-        "loubignac iteration": 0.1375,
-        "mixed finite element method": 0.750865
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2511.22320v1",
-    "url": "https://arxiv.org/pdf/2511.22320v1.pdf",
-    "retrieved_at": "2026-10-05T16:31:39.956090+00:00",
+    "source_id": "arxiv_1601.00037v2",
+    "url": "https://arxiv.org/pdf/1601.00037v2.pdf",
+    "retrieved_at": "2026-10-05T18:34:17.347102+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
     "content_type": "application/pdf",
-    "title": "Dimension reduction for a coupled electro-elastic saddle-point problem at finite strains",
+    "title": "A finite element method for nematic liquid crystals with variable degree of orientation",
     "authors": [
-      "Kateryna Buryachenko",
-      "Annegret Glitzky",
-      "Matthias Liero",
-      "Barbara Zwicknagl"
+      "Ricardo H. Nochetto",
+      "Shawn W. Walker",
+      "Wujun Zhang"
     ],
     "metadata": {
-      "abstract": "We study the finite deformation of a thin, elastically heterogeneous sheet subject to electrostatic coupling. The interaction between mechanics and electrostatics is formulated as a saddle-point problem involving the deformation and the electrostatic potential. Starting from a three-dimensional electro-elastic model with prestrain in the elastic energy, we rigorously derive a reduced plate model in the bending regime. To perform the dimension reduction, that is, to derive the energy of a thin object by taking a suitable limit as its thickness tends to zero, we apply $Γ$-convergence-type methods to the underlying saddle-point problem. In the case of bivariate functionals, this convergence is understood in an adapted epi/hypo-convergence sense. In this concept, we demonstrate the convergence of the rescaled electro-elastic problems to an effective two-dimensional bending model coupled to electric effects. We verify that cluster points of saddle points are saddle points for the limit.",
-      "published": "2025-11-27T10:50:00Z",
-      "page_count": 30,
-      "word_count": 14237
+      "abstract": "We consider the simplest one-constant model, put forward by J. Ericksen, for nematic liquid crystals with variable degree of orientation. The equilibrium state is described by a director field $\\mathbf{n}$ and its degree of orientation $s$, where the pair $(s, \\mathbf{n})$ minimizes a sum of Frank-like energies and a double well potential. In particular, the Euler-Lagrange equations for the minimizer contain a degenerate elliptic equation for $\\mathbf{n}$, which allows for line and plane defects to have finite energy. We present a structure preserving discretization of the liquid crystal energy with piecewise linear finite elements that can handle the degenerate elliptic part without regularization, and show that it is consistent and stable. We prove $Γ$-convergence of discrete global minimizers to continuous ones as the mesh size goes to zero. We develop a quasi-gradient flow scheme for computing discrete equilibrium solutions and prove it has a strictly monotone energy decreasing property. We present simulations in two and three dimensions to illustrate the method's ability to handle non-trivial defects. A music video summary of the paper is available on YouTube: \"Mathematical Modeling and Simulation of Nematic Liquid Crystals (A Montage),\" http://www.youtube.com/watch?v=pWWw7\\_6cQ-U",
+      "published": "2016-01-01T01:56:47Z",
+      "page_count": 31,
+      "word_count": 13327
     },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2511.22320v1.txt",
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1601.00037v2.txt",
     "full_text_available": true,
     "status": "parsed_full_text",
-    "query_context": "Galerkin dimension reduction finite element method",
+    "query_context": "finite element method practical implementation modeling rules",
     "query_contexts": [
-      "Galerkin dimension reduction finite element method"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.62141,
-      "lexical": 0.55963,
-      "source_quality": 0.85,
-      "section_relevance": 0.451506,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Galerkin dimension reduction finite element method",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "Lax-Milgram theorem finite element method": 0.2125,
-        "Galerkin dimension reduction finite element method": 0.62141,
-        "hpk-FEM finite element method": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_1407.0781v1",
-    "url": "https://arxiv.org/pdf/1407.0781v1.pdf",
-    "retrieved_at": "2026-10-05T14:43:07.767557+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Numerical Solution of the Two-Phase Obstacle Problem by Finite Difference Method",
-    "authors": [
-      "Avetik Arakelyan",
-      "Rafayel Barkhudaryan",
-      "Michael Poghosyan"
-    ],
-    "metadata": {
-      "abstract": "In this paper we consider the numerical approximation of the two-phase membrane (obstacle) problem by finite difference method. First, we introduce the notion of viscosity solution for the problem and construct certain discrete nonlinear approximation system. The existence and uniqueness of the solution of the discrete nonlinear system is proved. Based on that scheme, we propose projected Gauss-Seidel algorithm and prove its convergence. At the end of the paper we present some numerical simulations.",
-      "published": "2014-07-03T04:45:24Z",
-      "page_count": 15,
-      "word_count": 5731
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1407.0781v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "finite element method vs finite difference method",
-    "query_contexts": [
-      "finite element method vs finite difference method"
+      "finite element method practical implementation modeling rules",
+      "variable polynomial finite element method"
     ],
     "provider_names": [
       "arxiv"
@@ -419,255 +96,21 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "finite element method vs finite difference method",
-      "query_index": 3,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.365841,
-        "finite element method vs finite difference method": 0.519183,
-        "crystal plasticity finite element method": 0.2125,
-        "finite element limit analysis": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_1712.01407v2",
-    "url": "https://arxiv.org/pdf/1712.01407v2.pdf",
-    "retrieved_at": "2026-10-05T14:50:00.945533+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Iteration entropy",
-    "authors": [
-      "Joachim von zur Gathen"
-    ],
-    "metadata": {
-      "abstract": "We apply a common measure of randomness, the entropy, in the context of iterated functions on a finite set with n elements. For a permutation, it turns out that this entropy is asymptotically (for a growing number of iterations) close to \\log_2(n) minus the entropy of the vector of its cycle lengths. For general functions, a similar approximation holds.",
-      "published": "2017-12-04T23:07:16Z",
-      "page_count": 19,
-      "word_count": 5252
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1712.01407v2.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "loubignac iteration",
-    "query_contexts": [
-      "loubignac iteration"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.519183,
-      "lexical": 0.419722,
-      "source_quality": 0.85,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "loubignac iteration",
+      "best_query": "variable polynomial finite element method",
       "query_index": 4,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
         "finite element limit analysis": 0.2125,
-        "loubignac iteration": 0.519183,
-        "mixed finite element method": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_1906.09965v2",
-    "url": "https://arxiv.org/pdf/1906.09965v2.pdf",
-    "retrieved_at": "2026-10-05T14:54:21.827690+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "A numerical study of the dispersion and dissipation properties of virtual element methods for the Helmholtz problem",
-    "authors": [
-      "Ilaria Perugia",
-      "Alexander Pichler"
-    ],
-    "metadata": {
-      "abstract": "We study numerically the dispersion and dissipation properties of the plane wave virtual element method and the nonconforming Trefftz virtual element method for the Helmholtz problem. Whereas the former method is based on a conforming virtual partition of unity approach in the sense that the local (implicitly defined) basis functions are given as modulations of lowest order harmonic virtual element functions with plane waves, the latter one represents a pure Trefftz method with local edge-related basis functions that are eventually glued together in a nonconforming fashion. We will see that the qualitative and quantitative behavior of dissipation and dispersion of the method hinges upon the level of conformity and the use of Trefftz basis functions. To this purpose, we also compare the results to those obtained in [15] for the plane wave discontinuous Galerkin method, and to those for the standard polynomial based finite element method.",
-      "published": "2019-06-24T13:58:08Z",
-      "page_count": 27,
-      "word_count": 146
-    },
-    "full_text_path": null,
-    "full_text_available": false,
-    "status": "metadata_only",
-    "query_context": "Virtual Element Method FEM",
-    "query_contexts": [
-      "Virtual Element Method FEM"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.519183,
-      "lexical": 0.419722,
-      "source_quality": 0.85,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Virtual Element Method FEM",
-      "query_index": 3,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.365841,
-        "Virtual Element Method FEM": 0.519183,
-        "CutFEM FEM": 0.2125,
-        "Galerkin Dimension Reduction FEM": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2002.07642v4",
-    "url": "https://arxiv.org/pdf/2002.07642v4.pdf",
-    "retrieved_at": "2026-10-05T14:54:21.827690+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Representations of Motion Groups of Links via Dimension Reduction of TQFTs",
-    "authors": [
-      "Yang Qiu",
-      "Zhenghan Wang"
-    ],
-    "metadata": {
-      "abstract": "Motion groups of links in the three sphere $\\mathbb{S}^3$ are generalizations of the braid groups, which are motion groups of points in the disk $\\mathbb{D}^2$. Representations of motion groups can be used to model statistics of extended objects such as closed strings in physics. Each $1$-extended $(3+1)$-topological quantum field theory (TQFT) will provide representations of motion groups, but it is difficult to compute such representations explicitly in general. In this paper, we compute representations of the motion groups of links in $\\mathbb{S}^3$ with generalized axes from Dijkgraaf-Witten (DW) TQFTs inspired by dimension reduction. A succinct way to state our result is as a step toward a twisted generalization (Conjecture \\ref{mainconjecture}) of a conjecture for DW theories of dimension reduction from $(3+1)$ to $(2+1)$: $\\textrm{DW}^{3+1}_G \\cong \\oplus_{[g]\\in [G]} \\textrm{DW}^{2+1}_{C(g)}$, where the sum runs over all conjugacy classes $[g]\\in [G]$ of $G$ and $C(g)$ the centralizer of any element $g\\in [g]$. We prove a version of Conjecture \\ref{mainconjecture} for the mapping class groups of closed manifolds and the case of torus links labeled by pure fluxes.",
-      "published": "2020-02-18T15:27:46Z",
-      "page_count": 37,
-      "word_count": 13963
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2002.07642v4.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "Galerkin Dimension Reduction FEM",
-    "query_contexts": [
-      "Galerkin Dimension Reduction FEM"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.519183,
-      "lexical": 0.419722,
-      "source_quality": 0.85,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Galerkin Dimension Reduction FEM",
-      "query_index": 5,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "Virtual Element Method FEM": 0.2125,
-        "CutFEM FEM": 0.2125,
-        "Galerkin Dimension Reduction FEM": 0.519183
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2211.17093v1",
-    "url": "https://arxiv.org/pdf/2211.17093v1.pdf",
-    "retrieved_at": "2026-10-05T14:54:21.827690+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "CutFEM forward modeling for EEG source analysis",
-    "authors": [
-      "Tim Erdbrügger",
-      "Andreas Westhoff",
-      "Malte Hoeltershinken",
-      "Jan-Ole Radecke",
-      "Yvonne Buschermoehle",
-      "Alena Buyx",
-      "Fabrice Wallois",
-      "Sampsa Pursiainen",
-      "Joachim Gross",
-      "Rebekka Lencer",
-      "Christian Engwer",
-      "Carsten Wolters"
-    ],
-    "metadata": {
-      "abstract": "Source analysis of Electroencephalography (EEG) data requires the computation of the scalp potential induced by current sources in the brain. This so-called EEG forward problem is based on an accurate estimation of the volume conduction effects in the human head, represented by a partial differential equation which can be solved using the finite element method (FEM). FEM offers flexibility when modeling anisotropic tissue conductivities but requires a volumetric discretization, a mesh, of the head domain. Structured hexahedral meshes are easy to create in an automatic fashion, while tetrahedral meshes are better suited to model curved geometries. Tetrahedral meshes thus offer better accuracy, but are more difficult to create. Methods: We introduce CutFEM for EEG forward simulations to integrate the strengths of hexahedra and tetrahedra. It belongs to the family of unfitted finite element methods, decoupling mesh and geometry representation. Following a description of the method, we will employ CutFEM in both controlled spherical scenarios and the reconstruction of somatosensory evoked potentials. Results: CutFEM outperforms competing FEM approaches with regard to numerical accuracy, memory consumption and computational speed while being able to mesh arbitrarily touching compartments. Conclusion: CutFEM balances numerical accuracy, computational efficiency and a smooth approximation of complex geometries that has previously not been available in FEM-based EEG forward modeling.",
-      "published": "2022-11-30T15:48:23Z",
-      "page_count": 9,
-      "word_count": 6809
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2211.17093v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "CutFEM FEM",
-    "query_contexts": [
-      "CutFEM FEM"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.519183,
-      "lexical": 0.419722,
-      "source_quality": 0.85,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "CutFEM FEM",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.365841,
-        "finite element method verification validation numerical stability": 0.2125,
-        "Virtual Element Method FEM": 0.2125,
-        "CutFEM FEM": 0.519183,
-        "Galerkin Dimension Reduction FEM": 0.2125
+        "variable polynomial finite element method": 0.519183
       }
     }
   },
   {
     "source_id": "arxiv_2410.12614v1",
     "url": "https://arxiv.org/pdf/2410.12614v1.pdf",
-    "retrieved_at": "2026-10-05T14:43:07.767557+00:00",
+    "retrieved_at": "2026-10-05T18:34:17.347102+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -709,21 +152,20 @@
         "citation_support": 0.0
       },
       "best_query": "finite element limit analysis",
-      "query_index": 5,
+      "query_index": 3,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "finite element method vs finite difference method": 0.2125,
-        "crystal plasticity finite element method": 0.2125,
-        "finite element limit analysis": 0.519183
+        "finite element limit analysis": 0.519183,
+        "variable polynomial finite element method": 0.2125
       }
     }
   },
   {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-05T16:31:39.956090+00:00",
+    "retrieved_at": "2026-10-05T18:34:17.347102+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -735,12 +177,12 @@
     "metadata": {
       "abstract": "Rule-based policy and contract systems have rarely been studied in terms of their software engineering properties. This is a serious omission, because in rule-based policy or contract representation languages rules are being used as a declarative programming language to formalize real-world decision logic and create IS production systems upon. This paper adopts an SE methodology from extreme programming, namely test driven development, and discusses how it can be adapted to verification, validation and integrity testing (V&V&I) of policy and contract specifications. Since, the test-driven approach focuses on the behavioral aspects and the drawn conclusions instead of the structure of the rule base and the causes of faults, it is independent of the complexity of the rule language and the system under test and thus much easier to use and understand for the rule engineer and the user.",
       "published": "2006-09-21T11:50:24Z",
-      "page_count": 0,
+      "page_count": 19,
       "word_count": 10484
     },
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_cs_0609119v2.txt",
     "full_text_available": true,
-    "status": "cached_full_text",
+    "status": "parsed_full_text",
     "query_context": "finite element method verification validation numerical stability",
     "query_contexts": [
       "finite element method verification validation numerical stability"
@@ -769,170 +211,8 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "Lax-Milgram theorem finite element method": 0.2125,
-        "Galerkin dimension reduction finite element method": 0.2125,
-        "hpk-FEM finite element method": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2210.16907v1",
-    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
-    "retrieved_at": "2026-10-05T15:59:44.277696+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
-    "authors": [
-      "Dan Li",
-      "Chunmei Wang",
-      "Junping Wang"
-    ],
-    "metadata": {
-      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
-      "published": "2022-10-30T18:14:18Z",
-      "page_count": 0,
-      "word_count": 9773
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
-    "full_text_available": true,
-    "status": "cached_full_text",
-    "query_context": "finite element method mathematical foundation weak form Galerkin method",
-    "query_contexts": [
-      "finite element method mathematical foundation weak form Galerkin method"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.457846,
-      "lexical": 0.335778,
-      "source_quality": 0.85,
-      "section_relevance": 0.270904,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method mathematical foundation weak form Galerkin method",
-      "query_index": 0,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "Extended Finite Element Method": 0.2125,
-        "Cut Finite Element Method": 0.2125,
-        "Generalized Finite Element Method": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "wiki_babu_ka_lax_milgram_theorem",
-    "url": "https://en.wikipedia.org/wiki/Babuška–Lax–Milgram_theorem",
-    "retrieved_at": "2026-10-05T16:31:39.956090+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Babuška–Lax–Milgram theorem",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "In mathematics, the Babuška–<span class=\"searchmatch\">Lax</span>–<span class=\"searchmatch\">Milgram</span> <span class=\"searchmatch\">theorem</span> is a generalization of the famous <span class=\"searchmatch\">Lax</span>–<span class=\"searchmatch\">Milgram</span> <span class=\"searchmatch\">theorem</span>, which gives conditions under which a bilinear form",
-      "word_count": 890
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_babu_ka_lax_milgram_theorem.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "Lax-Milgram theorem finite element method",
-    "query_contexts": [
-      "Lax-Milgram theorem finite element method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.444183,
-      "lexical": 0.419722,
-      "source_quality": 0.55,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Lax-Milgram theorem finite element method",
-      "query_index": 3,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "Lax-Milgram theorem finite element method": 0.444183,
-        "Galerkin dimension reduction finite element method": 0.1375,
-        "hpk-FEM finite element method": 0.1375
-      }
-    }
-  },
-  {
-    "source_id": "wiki_boris_galerkin",
-    "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
-    "retrieved_at": "2026-10-05T15:59:44.277696+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Boris Galerkin",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "problem in <span class=\"searchmatch\">weak</span> <span class=\"searchmatch\">form</span>. Most well-known in the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> The Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> The streamline upwind Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> (SUPG) The",
-      "word_count": 1835
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_boris_galerkin.txt",
-    "status": "cached_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "finite element method mathematical foundation weak form Galerkin method",
-    "query_contexts": [
-      "finite element method mathematical foundation weak form Galerkin method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.260173,
-      "lexical": 0.167889,
-      "source_quality": 0.55,
-      "section_relevance": 0.135452,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method mathematical foundation weak form Galerkin method",
-      "query_index": 0,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "Extended Finite Element Method": 0.1375,
-        "Cut Finite Element Method": 0.1375,
-        "Generalized Finite Element Method": 0.1375
+        "finite element limit analysis": 0.2125,
+        "variable polynomial finite element method": 0.2125
       }
     }
   }

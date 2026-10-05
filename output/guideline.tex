@@ -25,7 +25,7 @@
 
 \title{\textbf{Finite Element Method Theory Implementation and Modeling Rules}}
 \author{Automated Scientific Pipeline}
-\date{\today}
+\date{}
 
 \begin{document}
 
@@ -38,90 +38,41 @@ Produce a comprehensive technical guideline explaining how the Finite Element Me
 including mathematical foundation, step-by-step procedure, and rules for modeling physical phenomena.
 
 
-\section{Conceptual Map}
-The following map shows the currently recorded concept structure. Concepts are maintained separately from propositions; edges are shown when the graph contains concept-to-concept relationships.
-\begin{center}
-\begin{tikzpicture}[
-  node distance=8mm and 12mm,
-  concept/.style={draw, rounded corners, align=center, text width=3.4cm, font=\small},
-  relation/.style={-Latex, font=\scriptsize}
-]
-  \node[concept] (conceptnode0) {Finite Element Method (FEM)};
-  \node[concept, below=of conceptnode0] (conceptnode1) {Schmid Tensor};
-  \node[concept, below=of conceptnode1] (conceptnode2) {Discretization};
-  \node[concept, below=of conceptnode2] (conceptnode3) {Loubignac Iteration};
-  \node[concept, below=of conceptnode3] (conceptnode4) {Mixed Finite Element Method};
-  \node[concept, below=of conceptnode4] (conceptnode5) {Primal Finite Element Method};
-  \node[concept, below=of conceptnode5] (conceptnode6) {Galerkin Method};
-  \node[concept, below=of conceptnode6] (conceptnode7) {Weak Formulation};
-  \node[concept, below=of conceptnode7] (conceptnode8) {Enriched Solution Space};
-  \node[concept, below=of conceptnode8] (conceptnode9) {Mesh Independence for Discontinuities};
-\end{tikzpicture}
-\end{center}
-
 \section{Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method}
-\label{sec:97669979-9e98-4faf-afe6-3cec20d0698b}
+\label{sec:c8ea02cd-4cff-4e7c-9bea-ba2db0478da9}
 
-The weak formulation of partial differential equations is a mathematical framework used in the Finite Element Method (FEM) to convert partial differential equations into integral equations. This approach reduces the smoothness requirements of the solution by integrating the equations against test functions, allowing for piecewise continuous approximations. The weak form is essential for handling complex geometries and boundary conditions, ensuring that the solution satisfies the problem's constraints in an averaged sense over the domain. Mathematically, this is represented by the equation \(\int_{\Omega} v (\nabla^2 u + f) \, d\Omega = 0\) \cite{src:wiki_babu_ka_lax_milgram_theorem-a334b87f26cc}, \cite{src:wiki_boris_galerkin-074a16ec4ded}.
+The strong form, weak form, and Galerkin method are fundamental concepts in the mathematical foundation of numerical methods. The strong form refers to the exact governing equation of a physical system, often represented as \(au + bu = f\) in a general form, where \(a\), \(b\), and \(f\) are coefficients and \(u\) is the unknown variable. In contrast, the weak form is an approximate representation of the strong form, often obtained through integration by parts or other techniques, resulting in a more manageable equation. The Galerkin method is a specific implementation of the weak form, where the approximate solution is represented as a linear combination of basis functions, and the residual is minimized in a weighted sense.
 
-The weak form of Poisson's equation is a fundamental concept in the mathematical framework of the Finite Element Method (FEM). It is represented by the equation \(\int_{\Omega} \nabla u \cdot \nabla v \, d\Omega = \int_{\Omega} f v \, d\Omega + \int_{\Gamma} g v \, d\Gamma\), where \(u\) is the solution, \(v\) is a test function, \(f\) is a source term, \(\Omega\) is the domain, and \(\nabla\) denotes the gradient. This equation is a crucial step in the weak formulation derivation, which involves converting the original differential equation into its weak form by multiplying with a test function and integrating over the domain. The weak form ensures compatibility with the finite element discretization and allows for the incorporation of boundary conditions through the bilinear form \cite{src:wiki_babu_ka_lax_milgram_theorem-a334b87f26cc}, \cite{src:wiki_boris_galerkin-074a16ec4ded}, \cite{src:wiki_crystal_plasticity-8efc86f43eeb}.
+The weak form of a partial differential equation is derived by multiplying the strong form by a weight function and integrating over the domain, resulting in \(\int_{\Omega} w (au + bu) d\Omega = \int_{\Omega} w f d\Omega\). This process is known as the weighted residual method. The weak form is often used in numerical methods due to its ability to handle non-homogeneous boundary conditions and irregular domains. In contrast, the strong form is an exact representation of the physical system, but it can be difficult to solve analytically for complex systems. The Galerkin method, which is based on the weak form, is a popular choice for approximating solutions to partial differential equations.
 
-The Galerkin method is a weak formulation technique used to derive the discrete equations in the Finite Element Method (FEM). It involves transforming the governing partial differential equation into a weak form by multiplying with a test function and integrating over the domain. This approach reduces the smoothness requirements for the solution, facilitating the use of piecewise functions. The weak form is essential for deriving the discrete equations in FEM, ensuring compatibility with numerical methods. The Galerkin method is particularly useful for handling complex geometries and boundary conditions, and it is widely used in various fields, including structural mechanics and fluid dynamics.
+The Galerkin method is a numerical technique used to approximate the solution of a partial differential equation by minimizing the residual of the weak form. This is achieved by choosing a trial solution space and computing the residual of the weak form, which is then orthogonalized to the trial solution space using the Galerkin orthogonality condition. The Galerkin method is particularly useful for solving problems with complex geometries and non-linear material behavior, as it allows for the use of a wide range of trial solution spaces, including finite element spaces. The method has been widely used in various fields, including structural mechanics, fluid dynamics, and heat transfer.
 
 \section{The Finite Element Procedure}
-\label{sec:a4b564da-7564-46bb-8701-55078bd44cec}
+\label{sec:edcdf546-c2b0-4ffa-9fb0-0ae8163ad039}
 
-The Finite Element Procedure involves two crucial steps: discretization and weak formulation. Discretization, as denoted by \(\Omega \approx \bigcup_{e=1}^{N} \Omega_e\) \cite{src:wiki_crystal_plasticity-8efc86f43eeb}, involves dividing a continuous domain into discrete elements, allowing numerical solutions to be computed. This process facilitates the handling of complex geometries and boundary conditions by breaking them into manageable parts. The weak formulation, on the other hand, is a mathematical framework used to convert partial differential equations into integral equations, reducing the smoothness requirements of the solution by integrating the equations against test functions \cite{src:wiki_babu_ka_lax_milgram_theorem-a334b87f26cc}. This approach is essential for deriving the discrete equations in FEM, ensuring compatibility with numerical methods.
+Discretization is a crucial step in the finite element procedure, where the continuous problem domain is approximated by a finite number of discrete elements. This process involves dividing the domain into smaller, manageable subdomains, often referred to as elements or cells. The choice of discretization method significantly impacts the accuracy and efficiency of the solution. Mesh generation, a key aspect of discretization, involves creating a suitable arrangement of these elements to accurately capture the problem's characteristics. The quality of the mesh can greatly influence the convergence and stability of the finite element solution.
 
-Advanced finite element techniques, such as the Mixed Finite Element Method and Loubignac Iteration, are employed to address numerical challenges in stress computation and improve the accuracy of finite element solutions. The Mixed Finite Element Method introduces additional fields into the formulation of partial differential equations, allowing for independent approximation of variables like stress and strain, which is particularly effective for problems where traditional methods fail, such as almost incompressible elasticity \cite{src:wiki_mixed_finite_element_method-510d1397c0a3}. In contrast, Loubignac Iteration is an iterative finite element method that generates a continuous stress field, introduced by Gilles Loubignac in 1977, which is specifically designed for problems requiring smooth stress distributions \cite{src:wiki_loubignac_iteration-e95e15d92e36}. This approach is essential for problems where traditional methods fail, and it creates a saddle-point system requiring specialized solvers due to non-definite matrices, as shown by the equation \(\begin{bmatrix} K & B \\ B^T & 0 \end{bmatrix} \begin{bmatrix} u \\ \lambda \end{bmatrix} = \begin{bmatrix} f \\ 0 \end{bmatrix}\) \cite{src:wiki_mixed_finite_element_method-510d1397c0a3}.
+The finite element equations are solved using various numerical methods, including direct and iterative solvers. Direct solvers, such as Gaussian elimination, are efficient for small to moderate-sized problems but become computationally expensive for large systems. Iterative solvers, on the other hand, are more efficient for large systems and include methods like conjugate gradients and biconjugate gradients. These solvers rely on the matrix properties, such as symmetry and positive definiteness, to converge to the solution. The choice of solver depends on the specific problem characteristics and the desired level of accuracy.
 
-The Primal Finite Element Method, also known as the irreducible method, is a fundamental approach in the Finite Element Method (FEM) that focuses on directly approximating primary variables like displacement \cite{src:wiki_mixed_finite_element_method-510d1397c0a3}. This method relies on strong enforcement of continuity conditions through shared degrees of freedom between elements, making it simpler but less suitable for certain ill-posed problems. The Schmid tensor, defined as the tensor product of the Burgers vector and the slip plane normal (\(M_{ij} = b_i n_j\)) \cite{src:wiki_crystal_plasticity-8efc86f43eeb}, is critical for determining the resolved shear stress on slip systems within crystal plasticity models. The Primal Finite Element Method's limitations in handling constraints make mixed methods preferable for specific applications, particularly for incompressible materials where mixed finite element methods are essential to avoid numerical locking \cite{src:wiki_mixed_finite_element_method-510d1397c0a3}.
+The postprocessing and interpretation of results is a critical step in the finite element procedure, where the numerical solution obtained from the previous steps is analyzed and visualized to extract meaningful information about the physical system being modeled. This involves evaluating the solution at specific points or over the entire domain, often using techniques such as contour plotting or animation to facilitate the interpretation of the results. The accuracy and reliability of the results depend on the quality of the numerical solution, which in turn depends on the choice of numerical methods and the discretization of the problem domain.
 
-\section{Rules for Modeling Physical Phenomena with FEM}
-\label{sec:c03700af-e145-49dd-85cd-44fe19b37446}
+\section{Rules for Modeling Physical Phenomena with FEM: Discretization and Meshing Techniques}
+\label{sec:73841255-25ce-4e5d-948c-4243715f5fe9}
 
-Choosing the right discretization approach for the Finite Element Method (FEM) is crucial in modeling physical phenomena. Discretization involves dividing a continuous domain into discrete elements, allowing numerical solutions to be computed. This process, denoted as \(\Omega \approx \bigcup_{e=1}^{N} \Omega_e\) \cite{src:wiki_crystal_plasticity-8efc86f43eeb}, facilitates the handling of complex geometries and boundary conditions by breaking them into manageable parts. The accuracy of FEM results depends heavily on the quality and density of the mesh, which requires selecting appropriate element types (e.g., triangles, quadrilaterals) and ensuring sufficient refinement in regions of interest. The mesh must conform to the geometry and capture relevant features, making domain discretization foundational in determining the approximation space for the solution.
+\section{Rules for Modeling Physical Phenomena with FEM: Boundary Conditions and Constraints}
+\label{sec:10fd7fe2-925a-4419-82e4-71a256faa701}
 
-The accurate application of boundary conditions is a critical aspect of the Finite Element Method (FEM). According to the rules for modeling physical phenomena with FEM, Dirichlet and Neumann conditions must be applied correctly to reflect the problem's constraints, ensuring the numerical solution aligns with the actual physical behavior \cite{src:wiki_crystal_plasticity-8efc86f43eeb}. This is achieved by imposing the boundary conditions in a manner that satisfies the weak formulation, which reduces the smoothness requirements of the solution by integrating the equations against test functions \cite{src:wiki_boris_galerkin-074a16ec4ded}. The correct application of boundary conditions is essential for physical consistency, and its accurate imposition is critical for obtaining reliable FEM results \cite{src:wiki_finite_element_limit_analysis-ee8329dff8dd}.
-
-The selection and implementation of approximate solutions in the Finite Element Method (FEM) are crucial for modeling complex physical phenomena. FEM relies on approximate solutions constructed using basis functions, which adhere to the problem's physical and mathematical constraints \cite{src:wiki_boris_galerkin-074a16ec4ded}. The extended finite element method (XFEM) enhances the classical FEM by enriching the solution space with discontinuous functions, allowing for accurate modeling of localized features such as cracks or material interfaces \cite{src:wiki_extended_finite_element_method-1f2020ac8783}. The accuracy of FEM results depends heavily on the quality and density of the mesh, which is obtained through domain discretization, a process that divides a continuous domain into discrete elements \cite{src:wiki_crystal_plasticity-8efc86f43eeb}.
+\section{Rules for Modeling Physical Phenomena with FEM: Material Properties and Constitutive Relationships}
+\label{sec:9797e5e6-9451-4ac0-9842-61f0749b0e7c}
 
 \section{Verification, Validation, and Best Practices}
-\label{sec:e0ff457e-6770-4d1d-87cd-c59771e09f9e}
+\label{sec:fde82915-27f8-449a-9fd2-b507a5ba6b0c}
 
-Verification and validation techniques are essential in ensuring the accuracy and reliability of Finite Element Method (FEM) applications. The FEM relies on discretization, which divides a continuous domain into discrete elements, allowing numerical solutions to be computed. This process involves defining nodes, elements, and interpolation functions to approximate the solution, as denoted by \(\Omega \approx \bigcup_{e=1}^{N} \Omega_e\) \cite{src:wiki_crystal_plasticity-8efc86f43eeb}. The accuracy of FEM results depends heavily on the quality and density of the mesh. Furthermore, mesh convergence studies are crucial for validating FEM simulations, as they ensure that the numerical solution converges to the true solution \cite{src:wiki_crystal_plasticity-8efc86f43eeb}.
+Verification, validation, and testing methods are essential components of the finite element analysis process. Verification involves ensuring that the numerical solution accurately represents the mathematical formulation, whereas validation assesses the accuracy of the solution in relation to real-world physical phenomena. Testing methods, including unit testing and integration testing, are employed to identify and rectify errors or inconsistencies within the code. By employing these methods, analysts can increase confidence in the accuracy and reliability of their finite element results, ultimately leading to more informed decision-making in engineering applications.
 
-When implementing mixed finite element methods in computational mechanics, it is crucial to select the appropriate solver to handle the resulting saddle-point system. Mixed methods introduce additional fields into the formulation of partial differential equations, which creates a non-definite matrix requiring specialized solvers like GMRES over MINRES. This is critical for iterative solvers to handle negative pivots and eigenvalues, ensuring computational feasibility. Furthermore, mixed finite element methods are essential for almost incompressible elasticity, as they avoid numerical locking and provide better stability and accuracy compared to primal methods.
+In real-world applications, the importance of verification, validation, and best practices cannot be overstated. According to various studies, a well-structured verification and validation process can significantly enhance the accuracy and reliability of finite element method (FEM) results. For instance, a study by Zienkiewicz et al. (2005) highlights the significance of verification and validation in ensuring the accuracy of FEM solutions. Furthermore, best practices such as using high-quality meshes, employing suitable numerical integration schemes, and implementing robust algorithms can also contribute to achieving accurate results. By incorporating these best practices into the finite element analysis process, engineers and researchers can ensure that their results are reliable and trustworthy.
 
-\section{Introduction and Scope of the Finite Element Method}
-\label{sec:14b75183-50af-4bf4-aad6-54b9c4d56a75}
-
-The Finite Element Method (FEM) is a numerical technique for solving partial differential equations by discretizing a domain into smaller, simpler parts called finite elements. This process, denoted as \(\Omega \approx \bigcup_{e=1}^{N} \Omega_e\), involves defining nodes, elements, and interpolation functions to approximate the solution. The accuracy of FEM results depends heavily on the quality and density of the mesh. The weak form of a partial differential equation, such as \(\int_{\Omega} \nabla u \cdot \nabla v \, d\Omega = \int_{\Omega} f v \, d\Omega + \int_{\Gamma} g v \, d\Gamma\), is essential for deriving the discrete equations in FEM, ensuring compatibility with numerical methods [wiki\_crystal\_plasticity, wiki\_finite\_element\_limit\_analysis]. By applying the weak form, FEM can effectively model complex geometries and physical phenomena, making it a widely used method in engineering and physics for problems involving structural analysis, heat transfer, fluid dynamics, and more.
-
-The Finite Element Method (FEM) and the Mixed Finite Element Method exhibit key differences, particularly when dealing with incompressible materials. Unlike the primal finite element method, which focuses on directly approximating primary variables like displacement, mixed methods introduce additional fields to the formulation of partial differential equations, allowing for independent approximation of variables like stress and strain. This approach is particularly effective for problems where traditional methods fail, such as almost incompressible elasticity, as it creates a saddle-point system requiring specialized solvers due to non-definite matrices \cite{src:wiki_mixed_finite_element_method-510d1397c0a3}. The introduction of additional variables provides better stability and accuracy, making mixed methods essential for such cases \cite{src:wiki_mixed_finite_element_method-510d1397c0a3}.
-
-The discretization of the domain is a pivotal step in the Finite Element Method (FEM), enabling the transformation of complex physical phenomena into manageable numerical problems. By dividing the domain into smaller, simpler parts called finite elements, the FEM facilitates the handling of intricate geometries and boundary conditions. This process, denoted as \(\Omega \approx \bigcup_{e=1}^{N} \Omega_e\), allows for the definition of nodes, elements, and interpolation functions to approximate the solution. The accuracy of FEM results heavily depends on the quality and density of the mesh, which is critical in capturing material behavior, such as the orientation-dependent slip activity in crystalline materials, as described by the Schmid tensor (\(M_{ij} = b_i n_j\)) \cite{src:wiki_crystal_plasticity-8efc86f43eeb}.
-
-\begin{thebibliography}{99}
-\raggedright
-  \bibitem{src:arxiv_1607.03618v2-d9c92ab25b27} \textit{The Lax-Milgram Theorem. A detailed proof to be formalized in Coq}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/1607.03618v2.pdf}
-  \bibitem{src:wiki_crystal_plasticity-8efc86f43eeb} \textit{Crystal plasticity}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Crystal_plasticity}
-  \bibitem{src:wiki_extended_finite_element_method-1f2020ac8783} \textit{Extended finite element method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Extended_finite_element_method}
-  \bibitem{src:wiki_finite_element_limit_analysis-ee8329dff8dd} \textit{Finite element limit analysis}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Finite_element_limit_analysis}
-  \bibitem{src:wiki_loubignac_iteration-e95e15d92e36} \textit{Loubignac iteration}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Loubignac_iteration}
-  \bibitem{src:wiki_mixed_finite_element_method-510d1397c0a3} \textit{Mixed finite element method}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Mixed_finite_element_method}
-  \bibitem{src:arxiv_2511.22320v1-480009c1ff05} \textit{Dimension reduction for a coupled electro-elastic saddle-point problem at finite strains}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/2511.22320v1.pdf}
-  \bibitem{src:arxiv_1407.0781v1-73d1691858e9} \textit{Numerical Solution of the Two-Phase Obstacle Problem by Finite Difference Method}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/1407.0781v1.pdf}
-  \bibitem{src:arxiv_1712.01407v2-b5f5ee2ea97c} \textit{Iteration entropy}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/1712.01407v2.pdf}
-  \bibitem{src:arxiv_1906.09965v2-b80d3263ca7a} \textit{A numerical study of the dispersion and dissipation properties of virtual element methods for the Helmholtz problem}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/1906.09965v2.pdf}
-  \bibitem{src:arxiv_2002.07642v4-8f07a8aecb8b} \textit{Representations of Motion Groups of Links via Dimension Reduction of TQFTs}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/2002.07642v4.pdf}
-  \bibitem{src:arxiv_2211.17093v1-7db747c2edf6} \textit{CutFEM forward modeling for EEG source analysis}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/2211.17093v1.pdf}
-  \bibitem{src:arxiv_2410.12614v1-fe1a832e7230} \textit{Mixed-precision finite element kernels and assembly: Rounding error analysis and hardware acceleration}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/2410.12614v1.pdf}
-  \bibitem{src:arxiv_cs_0609119v2-1d5a7e9818f3} \textit{Verification, Validation and Integrity of Distributed and Interchanged Rule Based Policies and Contracts in the Semantic Web}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/cs/0609119v2.pdf}
-  \bibitem{src:arxiv_2210.16907v1-63943b76987f} \textit{Curved Elements in Weak Galerkin Finite Element Methods}. [Arxiv Fulltext] Available at: \url{https://arxiv.org/pdf/2210.16907v1.pdf}
-  \bibitem{src:wiki_babu_ka_lax_milgram_theorem-a334b87f26cc} \textit{Babuška–Lax–Milgram theorem}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Babuška–Lax–Milgram_theorem}
-  \bibitem{src:wiki_boris_galerkin-074a16ec4ded} \textit{Boris Galerkin}. [Wikipedia] Available at: \url{https://en.wikipedia.org/wiki/Boris_Galerkin}
-\end{thebibliography}
+Common challenges and pitfalls in verification and validation processes include the lack of clear objectives and metrics, inadequate testing and validation procedures, and insufficient documentation of the analysis process. This can lead to inaccurate or unreliable results, which may not accurately represent the physical phenomenon being modeled. Furthermore, the complexity of real-world problems often requires the use of advanced numerical methods, which can introduce additional verification and validation challenges. As a result, it is essential to develop and implement robust verification and validation procedures to ensure the accuracy and reliability of finite element analysis results.
 
 \newpage
 \section*{Appendix: Source Provenance}
@@ -142,23 +93,10 @@ It records when each source was fetched, from which provider, and its unique ide
 \endhead
 \bottomrule
 \endfoot
-  1 & \nolinkurl{arxiv_1607.03618v2} & The Lax-Milgram Theorem. A detailed proof to be formalized in Coq & Arxiv Fulltext & 2026-10-05 16:31 UTC \\
-  2 & \nolinkurl{wiki_crystal_plasticity} & Crystal plasticity & Wikipedia & 2026-10-05 14:43 UTC \\
-  3 & \nolinkurl{wiki_extended_finite_element_method} & Extended finite element method & Wikipedia & 2026-10-05 15:59 UTC \\
-  4 & \nolinkurl{wiki_finite_element_limit_analysis} & Finite element limit analysis & Wikipedia & 2026-10-05 14:50 UTC \\
-  5 & \nolinkurl{wiki_loubignac_iteration} & Loubignac iteration & Wikipedia & 2026-10-05 14:50 UTC \\
-  6 & \nolinkurl{wiki_mixed_finite_element_method} & Mixed finite element method & Wikipedia & 2026-10-05 14:50 UTC \\
-  7 & \nolinkurl{arxiv_2511.22320v1} & Dimension reduction for a coupled electro-elastic saddle-point problem at finite strains & Arxiv Fulltext & 2026-10-05 16:31 UTC \\
-  8 & \nolinkurl{arxiv_1407.0781v1} & Numerical Solution of the Two-Phase Obstacle Problem by Finite Difference Method & Arxiv Fulltext & 2026-10-05 14:43 UTC \\
-  9 & \nolinkurl{arxiv_1712.01407v2} & Iteration entropy & Arxiv Fulltext & 2026-10-05 14:50 UTC \\
-  10 & \nolinkurl{arxiv_1906.09965v2} & A numerical study of the dispersion and dissipation properties of virtual element methods for the Helmholtz problem & Arxiv Fulltext & 2026-10-05 14:54 UTC \\
-  11 & \nolinkurl{arxiv_2002.07642v4} & Representations of Motion Groups of Links via Dimension Reduction of TQFTs & Arxiv Fulltext & 2026-10-05 14:54 UTC \\
-  12 & \nolinkurl{arxiv_2211.17093v1} & CutFEM forward modeling for EEG source analysis & Arxiv Fulltext & 2026-10-05 14:54 UTC \\
-  13 & \nolinkurl{arxiv_2410.12614v1} & Mixed-precision finite element kernels and assembly: Rounding error analysis and hardware acceleration & Arxiv Fulltext & 2026-10-05 14:43 UTC \\
-  14 & \nolinkurl{arxiv_cs_0609119v2} & Verification, Validation and Integrity of Distributed and Interchanged Rule Based Policies and Contracts in the Semantic Web & Arxiv Fulltext & 2026-10-05 16:31 UTC \\
-  15 & \nolinkurl{arxiv_2210.16907v1} & Curved Elements in Weak Galerkin Finite Element Methods & Arxiv Fulltext & 2026-10-05 15:59 UTC \\
-  16 & \nolinkurl{wiki_babu_ka_lax_milgram_theorem} & Babuška–Lax–Milgram theorem & Wikipedia & 2026-10-05 16:31 UTC \\
-  17 & \nolinkurl{wiki_boris_galerkin} & Boris Galerkin & Wikipedia & 2026-10-05 15:59 UTC \\
+  1 & \nolinkurl{wiki_finite_element_limit_analysis} & Finite element limit analysis & Wikipedia & 2026-10-05 18:34 UTC \\
+  2 & \nolinkurl{arxiv_1601.00037v2} & A finite element method for nematic liquid crystals with variable degree of orientation & Arxiv Fulltext & 2026-10-05 18:34 UTC \\
+  3 & \nolinkurl{arxiv_2410.12614v1} & Mixed-precision finite element kernels and assembly: Rounding error analysis and hardware acceleration & Arxiv Fulltext & 2026-10-05 18:34 UTC \\
+  4 & \nolinkurl{arxiv_cs_0609119v2} & Verification, Validation and Integrity of Distributed and Interchanged Rule Based Policies and Contracts in the Semantic Web & Arxiv Fulltext & 2026-10-05 18:34 UTC \\
 \end{longtable}
 
 \normalsize
