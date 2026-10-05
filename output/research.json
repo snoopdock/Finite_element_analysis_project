@@ -6,7 +6,8 @@
       "mathematical_formulation": "",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "concept_id": "9e1f5714-c4cb-4af3-9568-237f0f1e5165"
     },
     {
       "name": "Curved Elements in Weak Galerkin Methods",
@@ -14,6 +15,23 @@
       "mathematical_formulation": "",
       "source_ids": [
         "arxiv_2210.16907v1"
+      ],
+      "concept_id": "86978995-0891-4cf6-8b73-2758bed4e832"
+    },
+    {
+      "name": "Galerkin Method",
+      "explanation": "The Galerkin method is a numerical technique for approximating solutions to partial differential equations (PDEs). It involves projecting the problem onto a finite-dimensional space using basis functions, ensuring the residual is orthogonal to the test space. This approach forms the foundation of the Finite Element Method (FEM), enabling the conversion of PDEs into a system of algebraic equations. The method is particularly effective for problems with complex geometries and varying material properties.",
+      "mathematical_formulation": "\\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx \\quad \\forall v \\in V_h",
+      "source_ids": [
+        "arxiv_1508.01165v2"
+      ]
+    },
+    {
+      "name": "Discontinuous Galerkin (DG) Methods",
+      "explanation": "Discontinuous Galerkin methods combine features of finite element and finite volume methods. They allow solutions to be discontinuous across element boundaries, providing flexibility for adaptive meshing and high-order accuracy. These methods are particularly suited for hyperbolic and parabolic PDEs, offering stability through carefully designed numerical fluxes. The paper highlights their use in time discretization for parabolic problems.",
+      "mathematical_formulation": "\\sum_{K} \\int_K \\partial_t u v \\, dx - \\sum_{K} \\int_K \\nabla u \\cdot \\nabla v \\, dx + \\sum_{\\partial K} \\int_{\\partial K} \\hat{u} v \\, ds = \\sum_{K} \\int_K f v \\, dx",
+      "source_ids": [
+        "arxiv_1508.01165v2"
       ]
     }
   ],
@@ -25,7 +43,8 @@
       "equations": [],
       "source_ids": [
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "proposition_id": "9438addf-1e0b-49bb-b2df-48e22e8dab3b"
     },
     {
       "step_number": 2,
@@ -34,6 +53,29 @@
       "equations": [],
       "source_ids": [
         "wiki_finite_element_limit_analysis"
+      ],
+      "proposition_id": "0be7475a-0874-4570-9c2f-bef3d314635a"
+    },
+    {
+      "step_number": 1,
+      "title": "Domain Discretization",
+      "description": "The computational domain is divided into non-overlapping subdomains (elements) with a mesh. This discretization allows the approximation of the solution using piecewise polynomial basis functions. The mesh quality and element type (e.g., triangles, quadrilaterals) significantly affect accuracy and stability. For parabolic problems, the mesh must resolve spatial variations while adhering to time-step constraints.",
+      "equations": [
+        "\\Omega = \\bigcup_{K \\in \\mathcal{T}_h} K"
+      ],
+      "source_ids": [
+        "arxiv_1508.01165v2"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Weak Formulation",
+      "description": "The PDE is transformed into a weak form by multiplying with a test function and integrating over the domain. This reduces the differentiability requirements for the solution. The weak form ensures compatibility with the finite-dimensional space of basis functions. For parabolic problems, the time derivative is handled via temporal discretization techniques like DG.",
+      "equations": [
+        "\\int_{\\Omega} \\partial_t u v \\, dx + \\int_{\\Omega} \\nabla u \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx"
+      ],
+      "source_ids": [
+        "arxiv_1508.01165v2"
       ]
     }
   ],
@@ -44,6 +86,23 @@
       "explanation": "This equation represents the optimization problem in FELA, where $\\mathbf{x}$ is the vector of variables, $\\mathbf{c}$ is the cost coefficient, $\\mathbf{A}$ and $\\mathbf{b}$ define equality constraints, and $\\mathcal{K}$ denotes the second-order cone. It ensures the solution adheres to plasticity and stability conditions.",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
+      ],
+      "proposition_id": "d6df51a2-3ecb-4720-b384-805f02f88c6b"
+    },
+    {
+      "name": "Parabolic PDE",
+      "latex": "\\partial_t u(t, x) - \\Delta u(t, x) = f(t, x) \\quad (t, x) \\in I \\times \\Omega",
+      "explanation": "This equation describes a second-order parabolic problem. $ u(t, x) $ is the solution, $ \\partial_t $ denotes the time derivative, $ \\Delta $ is the Laplacian, and $ f(t, x) $ is the source term. Boundary conditions enforce $ u = 0 $ on $ I \\times \\partial\\Omega $, and $ u(0, x) = u_0(x) $ initializes the solution.",
+      "source_ids": [
+        "arxiv_1508.01165v2"
+      ]
+    },
+    {
+      "name": "Error Estimate",
+      "latex": "\\|u - u_{kh}\\|_{L^\\infty(I \\times \\Omega)} \\leq C |\\ln h| \\ln T \\cdot \\|u - \\chi\\|_{L^\\infty(I \\times \\Omega)}",
+      "explanation": "This inequality bounds the error between the exact solution $ u $ and the fully discrete Galerkin solution $ u_{kh} $. $ h $ is the spatial mesh size, $ k $ is the time step, and $ \\chi $ is an arbitrary finite-dimensional approximation. The constant $ C $ depends on problem data and regularity.",
+      "source_ids": [
+        "arxiv_1508.01165v2"
       ]
     }
   ],
@@ -53,13 +112,29 @@
       "explanation": "Curved elements should be employed to accurately represent complex geometries, reducing discretization errors. This is essential for maintaining solution fidelity in problems with irregular boundaries or nonlinear deformations.",
       "source_ids": [
         "arxiv_2210.16907v1"
-      ]
+      ],
+      "proposition_id": "9eebfcf3-6df1-4452-a20b-8f110aab1207"
     },
     {
       "rule": "Optimization for Collapse Load Determination",
       "explanation": "FELA requires formulating the problem as an optimization task to directly compute collapse loads. This avoids time-consuming incremental analysis and ensures bounds on the true collapse load through upper/lower bound theorems.",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
+      ],
+      "proposition_id": "20141a6e-5c35-4c3d-912e-1cdabe0e4e6b"
+    },
+    {
+      "rule": "No Mesh-Time Step Coupling",
+      "explanation": "The method does not require a strict relationship between spatial mesh size $ h $ and time step $ k $, enabling independent refinement for accuracy. This flexibility is critical for problems with varying temporal and spatial scales, reducing computational constraints.",
+      "source_ids": [
+        "arxiv_1508.01165v2"
+      ]
+    },
+    {
+      "rule": "Local Error Behavior",
+      "explanation": "Interior best approximation properties reveal localized error behavior, allowing targeted mesh refinement. This is essential for capturing sharp gradients or singularities without over-refining the entire domain, improving computational efficiency.",
+      "source_ids": [
+        "arxiv_1508.01165v2"
       ]
     }
   ]
