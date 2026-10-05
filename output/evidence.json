@@ -1,250 +1,83 @@
 [
   {
-    "source_id": "arxiv_1712.01987v1",
-    "url": "https://arxiv.org/pdf/1712.01987v1.pdf",
-    "retrieved_at": "2026-10-04T16:31:28.220760+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Finite Element Methods For Wave Propagation With Debye Polarization In Nonlinear Dielectric Materials",
-    "authors": [
-      "Qiumei Huang",
-      "Shanghui Jia",
-      "Fei Xu",
-      "Zhongwen Xu",
-      "Changhui Yao"
-    ],
-    "metadata": {
-      "abstract": "In this paper, we consider the wave propagation with Debye polarization in nonlinear dielectric materials. For this model, the Rother's method is employed to derive the well-posedness of the electric fields and the existence of the polarized fields by monotonicity theorem as well as the boundedness of the two fields are established. Then, the time errors are derived for the semi-discrete solutions by the order $O(Δt)$. Subsequently, decoupled the full-discrete scheme of the Euler in time and Raviart-Thomas-N$\\acute{e}$d$\\acute{e}$lec element $k\\geq 2$ in spatial is established. Based on the truncated error, we present the convergent analysis with the order $O(Δt+h^s) $ under the technique of a-prior $L^\\infty$ assumption. For the $k=1$, we employ the superconvergence technique to ensure the a-prior $L^\\infty$ assumption. In the end, we give some numerical examples to demonstrate our theories.",
-      "published": "2017-12-06T01:02:07Z",
-      "page_count": 39,
-      "word_count": 12666
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1712.01987v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "finite element method for nonlinear materials",
-    "query_contexts": [
-      "finite element method for nonlinear materials"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.825865,
-      "lexical": 0.839445,
-      "source_quality": 0.85,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method for nonlinear materials",
-      "query_index": 5,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "derivation of galerkin's equation finite element method": 0.2125,
-        "nonlinear finite element analysis techniques": 0.416955,
-        "finite element method for nonlinear materials": 0.825865
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2212.07041v1",
-    "url": "https://arxiv.org/pdf/2212.07041v1.pdf",
-    "retrieved_at": "2026-10-04T17:07:18.712991+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Port-Hamiltonian Discontinuous Galerkin Finite Element Methods",
-    "authors": [
-      "N. Kumar",
-      "J. J. W. van der Vegt",
-      "H. J. Zwart"
-    ],
-    "metadata": {
-      "abstract": "A port-Hamiltonian (pH) system formulation is a geometrical notion used to formulate conservation laws for various physical systems. The distributed parameter port-Hamiltonian formulation models infinite dimensional Hamiltonian dynamical systems that have a non-zero energy flow through the boundaries. In this paper we propose a novel framework for discontinuous Galerkin (DG) discretizations of pH-systems. Linking DG methods with pH-systems gives rise to compatible structure preserving finite element discretizations along with flexibility in terms of geometry and function spaces of the variables involved. Moreover, the port-Hamiltonian formulation makes boundary ports explicit, which makes the choice of structure and power preserving numerical fluxes easier. We state the Discontinuous Finite Element Stokes-Dirac structure with a power preserving coupling between elements, which provides the mathematical framework for a large class of pH discontinuous Galerkin discretizations. We also provide an a priori error analysis for the port-Hamiltonian discontinuous Galerkin Finite Element Method (pH-DGFEM). The port-Hamiltonian discontinuous Galerkin finite element method is demonstrated for the scalar wave equation showing optimal rates of convergence.",
-      "published": "2022-12-14T05:20:02Z",
-      "page_count": 55,
-      "word_count": 18269
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2212.07041v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "discontinuous galerkin methods finite element",
-    "query_contexts": [
-      "discontinuous galerkin methods finite element"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.825865,
-      "lexical": 0.839445,
-      "source_quality": 0.85,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "discontinuous galerkin methods finite element",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.335173,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "finite element plastic analysis approach": 0.2125,
-        "discontinuous galerkin methods finite element": 0.825865,
-        "finite element flexibility method": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "wiki_flexibility_method",
-    "url": "https://en.wikipedia.org/wiki/Flexibility_method",
-    "retrieved_at": "2026-10-04T17:07:18.712991+00:00",
+    "source_id": "wiki_finite_element_limit_analysis",
+    "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
+    "retrieved_at": "2026-10-05T12:18:44.244021+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
-    "title": "Flexibility method",
+    "title": "Finite element limit analysis",
     "authors": [
       "Wikipedia Contributors"
     ],
     "metadata": {
-      "abstract": "the <span class=\"searchmatch\">flexibility</span> <span class=\"searchmatch\">method</span> is indisputable. <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> in structural mechanics Structural analysis Stiffness <span class=\"searchmatch\">method</span> &quot;Matrix Force <span class=\"searchmatch\">method</span>&quot; (PDF)",
-      "word_count": 1303
+      "abstract": "A <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">limit</span> <span class=\"searchmatch\">analysis</span> (FELA) uses optimisation techniques to directly compute the upper or lower bound plastic collapse load (or <span class=\"searchmatch\">limit</span> load)",
+      "word_count": 301
     },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_flexibility_method.txt",
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_finite_element_limit_analysis.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element limit analysis",
+    "query_contexts": [
+      "finite element limit analysis"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element limit analysis",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "stiffness methods in finite element analysis": 0.341955,
+        "flexibility method finite element analysis": 0.444183,
+        "finite element limit analysis": 0.750865
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2410.12614v1",
+    "url": "https://arxiv.org/pdf/2410.12614v1.pdf",
+    "retrieved_at": "2026-10-05T12:18:44.244021+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Mixed-precision finite element kernels and assembly: Rounding error analysis and hardware acceleration",
+    "authors": [
+      "M. Croci",
+      "G. N. Wells"
+    ],
+    "metadata": {
+      "abstract": "In this paper we develop the first fine-grained rounding error analysis of finite element (FE) cell kernels and assembly. The theory includes mixed-precision implementations and accounts for hardware-acceleration via matrix multiplication units, thus providing theoretical guidance for designing reduced- and mixed-precision FE algorithms on CPUs and GPUs. Guided by this analysis, we introduce hardware-accelerated mixed-precision implementation strategies which are provably robust to low-precision computations. Indeed, these algorithms are accurate to the lower-precision unit roundoff with an error constant that is independent from: the conditioning of FE basis function evaluations, the ill-posedness of the cell, the polynomial degree, and the number of quadrature nodes. Consequently, we present the first AMX-accelerated FE kernel implementations on Intel Sapphire Rapids CPUs. Numerical experiments demonstrate that the proposed mixed- (single/half-) precision algorithms are up to 60 times faster than their double precision equivalent while being orders of magnitude more accurate than their fully half-precision counterparts.",
+      "published": "2024-10-16T14:32:10Z",
+      "page_count": 0,
+      "word_count": 19806
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2410.12614v1.txt",
+    "full_text_available": true,
     "status": "cached_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "finite element flexibility method",
+    "query_context": "flexibility method finite element analysis",
     "query_contexts": [
-      "finite element flexibility method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.750865,
-      "lexical": 0.839445,
-      "source_quality": 0.55,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element flexibility method",
-      "query_index": 5,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "finite element plastic analysis approach": 0.1375,
-        "discontinuous galerkin methods finite element": 0.1375,
-        "finite element flexibility method": 0.750865
-      }
-    }
-  },
-  {
-    "source_id": "wiki_mixed_finite_element_method",
-    "url": "https://en.wikipedia.org/wiki/Mixed_finite_element_method",
-    "retrieved_at": "2026-10-04T16:41:02.886951+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Mixed finite element method",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "In numerical analysis, a <span class=\"searchmatch\">mixed</span> <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span>, is a variant of the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> in which extra fields to be solved are introduced during",
-      "word_count": 389
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_mixed_finite_element_method.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "mixed finite element method",
-    "query_contexts": [
-      "mixed finite element method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.750865,
-      "lexical": 0.839445,
-      "source_quality": 0.55,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "mixed finite element method",
-      "query_index": 5,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "A-FEM finite element method": 0.1375,
-        "hpk-FEM finite element method": 0.1375,
-        "mixed finite element method": 0.750865
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_1901.00775v2",
-    "url": "https://arxiv.org/pdf/1901.00775v2.pdf",
-    "retrieved_at": "2026-10-04T16:31:28.220760+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Nonlinear finite element analysis of lattice core sandwich beams",
-    "authors": [
-      "Praneeth Nampally",
-      "Anssi T. Karttunen",
-      "JN Reddy"
-    ],
-    "metadata": {
-      "abstract": "A geometrically nonlinear finite element model is developed for the bending analysis of micropolar Timoshenko beams using the principle of virtual displacements and linear Lagrange interpolation functions. The nonlinearity enters the model via a nonlinear von Kármán strain term that allows the micropolar beam to undergo moderate rotations. The nonlinear micropolar Timoshenko beam is used as an equivalent single layer model to study four different lattice core sandwich beams. A two-scale energy method is used to derive the micropolar constitutive equations for web, hexagonal, Y-frame and corrugated core topologies. Various bending cases are studied numerically using the developed 1-D finite element model. Reduced integration techniques are used to overcome the shear and membrane locking. The present 1-D results are in good agreement with the corresponding 2-D finite element beam frame results for global bending.",
-      "published": "2019-01-02T06:36:47Z",
-      "page_count": 19,
-      "word_count": 8536
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1901.00775v2.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "nonlinear finite element analysis techniques",
-    "query_contexts": [
-      "nonlinear finite element analysis techniques"
+      "finite element limit analysis",
+      "flexibility method finite element analysis",
+      "stiffness methods in finite element analysis"
     ],
     "provider_names": [
       "arxiv"
@@ -253,10 +86,10 @@
       "preprint"
     ],
     "ranking": {
-      "score": 0.62141,
-      "lexical": 0.55963,
+      "score": 0.519183,
+      "lexical": 0.419722,
       "source_quality": 0.85,
-      "section_relevance": 0.451506,
+      "section_relevance": 0.338629,
       "citation_support": 0.0,
       "weights": {
         "lexical": 0.65,
@@ -264,129 +97,22 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "nonlinear finite element analysis techniques",
-      "query_index": 4,
+      "best_query": "finite element limit analysis",
+      "query_index": 5,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "derivation of galerkin's equation finite element method": 0.2125,
-        "nonlinear finite element analysis techniques": 0.62141,
-        "finite element method for nonlinear materials": 0.519183
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_1904.03331v1",
-    "url": "https://arxiv.org/pdf/1904.03331v1.pdf",
-    "retrieved_at": "2026-10-04T17:07:18.712991+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "A conforming discontinuous Galerkin finite element method",
-    "authors": [
-      "Xiu Ye",
-      "Shangyou Zhang"
-    ],
-    "metadata": {
-      "abstract": "A new finite element method with discontinuous approximation is introduced for solving second order elliptic problem. Since this method combines the features of both conforming finite element method and discontinuous Galerkin (DG) method, we call it conforming DG method. While using DG finite element space, this conforming DG method maintains the features of the conforming finite element method such as simple formulation and strong enforcement of boundary condition. Therefore, this finite element method has the flexibility of using discontinuous approximation and simplicity in formulation of the conforming finite element method. Error estimates of optimal order are established for the corresponding discontinuous finite element approximation in both a discrete $H^1$ norm and the $L^2$ norm. Numerical results are presented to confirm the theory.",
-      "published": "2019-04-06T01:29:37Z",
-      "page_count": 11,
-      "word_count": 2941
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1904.03331v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "discontinuous galerkin methods finite element",
-    "query_contexts": [
-      "discontinuous galerkin methods finite element"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.62141,
-      "lexical": 0.55963,
-      "source_quality": 0.85,
-      "section_relevance": 0.451506,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "discontinuous galerkin methods finite element",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.335173,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "finite element plastic analysis approach": 0.2125,
-        "discontinuous galerkin methods finite element": 0.62141,
-        "finite element flexibility method": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "wiki_meshfree_methods",
-    "url": "https://en.wikipedia.org/wiki/Meshfree_methods",
-    "retrieved_at": "2026-10-04T16:43:52.426980+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Meshfree methods",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "In the field of numerical <span class=\"searchmatch\">analysis</span>, <span class=\"searchmatch\">meshfree</span> <span class=\"searchmatch\">methods</span> are those that do not require connection between nodes of the simulation domain, i.e. a mesh, but",
-      "word_count": 2457
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_meshfree_methods.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "Meshfree methods finite element analysis",
-    "query_contexts": [
-      "Meshfree methods finite element analysis"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.54641,
-      "lexical": 0.55963,
-      "source_quality": 0.55,
-      "section_relevance": 0.451506,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Meshfree methods finite element analysis",
-      "query_index": 3,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "Meshfree methods finite element analysis": 0.54641,
-        "Gradient discretization method finite element analysis": 0.1375
+        "stiffness methods in finite element analysis": 0.416955,
+        "flexibility method finite element analysis": 0.519183,
+        "finite element limit analysis": 0.519183
       }
     }
   },
   {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-04T17:09:51.266277+00:00",
+    "retrieved_at": "2026-10-05T12:18:44.244021+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -398,12 +124,12 @@
     "metadata": {
       "abstract": "Rule-based policy and contract systems have rarely been studied in terms of their software engineering properties. This is a serious omission, because in rule-based policy or contract representation languages rules are being used as a declarative programming language to formalize real-world decision logic and create IS production systems upon. This paper adopts an SE methodology from extreme programming, namely test driven development, and discusses how it can be adapted to verification, validation and integrity testing (V&V&I) of policy and contract specifications. Since, the test-driven approach focuses on the behavioral aspects and the drawn conclusions instead of the structure of the rule base and the causes of faults, it is independent of the complexity of the rule language and the system under test and thus much easier to use and understand for the rule engineer and the user.",
       "published": "2006-09-21T11:50:24Z",
-      "page_count": 0,
+      "page_count": 19,
       "word_count": 10484
     },
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_cs_0609119v2.txt",
     "full_text_available": true,
-    "status": "cached_full_text",
+    "status": "parsed_full_text",
     "query_context": "finite element method verification validation numerical stability",
     "query_contexts": [
       "finite element method verification validation numerical stability"
@@ -432,15 +158,16 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "finite element method symmetry of the matrix": 0.2125,
-        "finite element method choosing a basis": 0.2125
+        "stiffness methods in finite element analysis": 0.2125,
+        "flexibility method finite element analysis": 0.2125,
+        "finite element limit analysis": 0.2125
       }
     }
   },
   {
     "source_id": "arxiv_2210.16907v1",
     "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
-    "retrieved_at": "2026-10-04T17:09:51.266277+00:00",
+    "retrieved_at": "2026-10-05T12:18:44.244021+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -454,12 +181,12 @@
     "metadata": {
       "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
       "published": "2022-10-30T18:14:18Z",
-      "page_count": 0,
+      "page_count": 26,
       "word_count": 9773
     },
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
     "full_text_available": true,
-    "status": "cached_full_text",
+    "status": "parsed_full_text",
     "query_context": "finite element method mathematical foundation weak form Galerkin method",
     "query_contexts": [
       "finite element method mathematical foundation weak form Galerkin method"
@@ -488,175 +215,9 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.457846,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "finite element method symmetry of the matrix": 0.2125,
-        "finite element method choosing a basis": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_1701.08973v1",
-    "url": "https://arxiv.org/pdf/1701.08973v1.pdf",
-    "retrieved_at": "2026-10-04T16:43:52.426980+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "A Flux Conserving Meshfree Method for Conservation Laws",
-    "authors": [
-      "Pratik Suchde",
-      "Joerg Kuhnert",
-      "Simon Schroeder",
-      "Axel Klar"
-    ],
-    "metadata": {
-      "abstract": "Lack of conservation has been the biggest drawback in meshfree generalized finite difference methods (GFDMs). In this paper, we present a novel modification of classical meshfree GFDMs to include local balances which produce an approximate conservation of numerical fluxes. This numerical flux conservation is done within the usual moving least squares framework. Unlike Finite Volume Methods, it is based on locally defined control cells, rather than a globally defined mesh. We present the application of this method to an advection diffusion equation and the incompressible Navier - Stokes equations. Our simulations show that the introduction of flux conservation significantly reduces the errors in conservation in meshfree GFDMs.",
-      "published": "2017-01-31T10:15:51Z",
-      "page_count": 19,
-      "word_count": 8837
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1701.08973v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "Meshfree methods finite element analysis",
-    "query_contexts": [
-      "Meshfree methods finite element analysis"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.416955,
-      "lexical": 0.279815,
-      "source_quality": 0.85,
-      "section_relevance": 0.225753,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Meshfree methods finite element analysis",
-      "query_index": 3,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "Meshfree methods finite element analysis": 0.416955,
-        "Gradient discretization method finite element analysis": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "s2_7a650b892903d6812eec0a7bd3a32928bfa27267",
-    "url": "https://link.springer.com/content/pdf/10.1007/s00466-024-02451-x.pdf",
-    "retrieved_at": "2026-10-04T17:09:51.266277+00:00",
-    "retriever_module": "research.semantic_scholar",
-    "provider": "semantic_scholar",
-    "query_context": "finite element method choosing a basis",
-    "source_type": "academic",
-    "content_type": "application/pdf",
-    "title": "Plane crack problems within strain gradient elasticity and mixed finite element implementation",
-    "authors": [
-      "A. Chirkov",
-      "L. Nazarenko",
-      "H. Altenbach"
-    ],
-    "metadata": {
-      "abstract": "An alternative approach is proposed and applied to solve boundary value problems within the strain gradient elasticity theory. A mixed variation formulation of the finite element method (FEM) based on the concept of the Galerkin method is used. To construct finite-dimensional subspaces separate approximations of displacements, deformations, stresses, and their gradients are implemented by choosing the different sets of piecewise polynomial basis functions, interrelated by the stability condition of the mixed FEM approximation. This significantly simplifies the pre-requirement for approximating functions to belong to class C1 and allows one to use the simplest triangular finite elements with a linear approximation of displacements under uniform or near-uniform triangulation conditions. Global unknowns in a discrete problem are nodal displacements, while the strains and stresses and their gradients are treated as local unknowns. The conditions of existence, uniqueness, and continuous dependence of the solution on the problem’s initial data are formulated for discrete equations of mixed FEM. These are solved by a modified iteration procedure, where the global stiffness matrix for classical elasticity problems is treated as a preconditioning matrix with fictitious elastic moduli. This avoids the need to form a global stiffness matrix for the problem of strain gradient elasticity since it is enough to calculate only the residual vector in the current approximation. A set of modeling plane crack problems is solved. The obtained solutions agree with the results available in the relevant literature. Good convergence is achieved by refining the mesh for all scale parameters. All three problems under study exhibit specific qualitative features characterizing strain gradient solutions namely crack stiffness increase with length scale parameter and cusp-like closure effect.",
-      "year": 2024,
-      "citation_count": 17,
-      "word_count": 270,
-      "page_count": 1,
-      "open_access_pdf_available": true,
-      "full_text_available": false,
-      "full_text_status": "scanned_or_empty"
-    },
-    "full_text_path": null,
-    "status": "scanned_or_empty",
-    "query_contexts": [
-      "finite element method choosing a basis"
-    ],
-    "provider_names": [
-      "semantic_scholar"
-    ],
-    "source_types": [
-      "academic"
-    ],
-    "ranking": {
-      "score": 0.365841,
-      "lexical": 0.209861,
-      "source_quality": 0.85,
-      "section_relevance": 0.169315,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method practical implementation modeling rules",
-      "query_index": 1,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
-        "finite element method practical implementation modeling rules": 0.365841,
-        "finite element method verification validation numerical stability": 0.2125,
-        "finite element method symmetry of the matrix": 0.2125,
-        "finite element method choosing a basis": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "wiki_boris_galerkin",
-    "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
-    "retrieved_at": "2026-10-04T17:09:51.266277+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Boris Galerkin",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "problem in <span class=\"searchmatch\">weak</span> <span class=\"searchmatch\">form</span>. Most well-known in the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> The Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> The streamline upwind Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> (SUPG) The",
-      "word_count": 1835
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_boris_galerkin.txt",
-    "status": "cached_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "finite element method mathematical foundation weak form Galerkin method",
-    "query_contexts": [
-      "finite element method mathematical foundation weak form Galerkin method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.260173,
-      "lexical": 0.167889,
-      "source_quality": 0.55,
-      "section_relevance": 0.135452,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method mathematical foundation weak form Galerkin method",
-      "query_index": 0,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "finite element method symmetry of the matrix": 0.1375,
-        "finite element method choosing a basis": 0.1375
+        "stiffness methods in finite element analysis": 0.416955,
+        "flexibility method finite element analysis": 0.2125,
+        "finite element limit analysis": 0.2125
       }
     }
   }

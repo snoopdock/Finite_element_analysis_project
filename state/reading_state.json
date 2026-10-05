@@ -1,6 +1,6 @@
 {
-  "arxiv_1712.01987v1": {
-    "first_read_at": "2026-10-04T16:32:00.783551+00:00",
+  "wiki_finite_element_limit_analysis": {
+    "first_read_at": "2026-10-05T12:19:18.186491+00:00",
     "read_sections": [
       "preamble_0"
     ],
@@ -8,24 +8,24 @@
       {
         "section_type": "preamble",
         "char_start": 0,
-        "read_at": "2026-10-04T16:32:00.783580+00:00",
+        "read_at": "2026-10-05T12:19:18.186524+00:00",
         "extracted": {
-          "concepts": 2,
+          "concepts": 1,
           "procedures": 2,
-          "equations": 2,
-          "rules": 2
+          "equations": 1,
+          "rules": 1
         }
       }
     ],
     "total_extractions": {
-      "concepts": 2,
-      "equations": 2,
+      "concepts": 1,
+      "equations": 1,
       "procedures": 2,
-      "rules": 2
+      "rules": 1
     }
   },
-  "arxiv_1901.00775v2": {
-    "first_read_at": "2026-10-04T16:32:00.783585+00:00",
+  "arxiv_2410.12614v1": {
+    "first_read_at": "2026-10-05T12:19:18.186532+00:00",
     "read_sections": [
       "preamble_0"
     ],
@@ -33,24 +33,24 @@
       {
         "section_type": "preamble",
         "char_start": 0,
-        "read_at": "2026-10-04T16:32:00.783594+00:00",
+        "read_at": "2026-10-05T12:19:18.186545+00:00",
         "extracted": {
           "concepts": 0,
-          "procedures": 1,
           "equations": 0,
-          "rules": 1
+          "procedures": 0,
+          "rules": 0
         }
       }
     ],
     "total_extractions": {
       "concepts": 0,
       "equations": 0,
-      "procedures": 1,
-      "rules": 1
+      "procedures": 0,
+      "rules": 0
     }
   },
   "arxiv_cs_0609119v2": {
-    "first_read_at": "2026-10-04T16:32:00.783598+00:00",
+    "first_read_at": "2026-10-05T12:19:18.186551+00:00",
     "read_sections": [
       "preamble_0"
     ],
@@ -58,7 +58,7 @@
       {
         "section_type": "preamble",
         "char_start": 0,
-        "read_at": "2026-10-04T16:32:00.783605+00:00",
+        "read_at": "2026-10-05T12:19:18.186563+00:00",
         "extracted": {
           "concepts": 0,
           "equations": 0,
@@ -72,60 +72,10 @@
       "equations": 0,
       "procedures": 0,
       "rules": 0
-    }
-  },
-  "wiki_boris_galerkin": {
-    "first_read_at": "2026-10-04T16:32:00.783609+00:00",
-    "read_sections": [
-      "preamble_0"
-    ],
-    "section_details": [
-      {
-        "section_type": "preamble",
-        "char_start": 0,
-        "read_at": "2026-10-04T16:32:00.783615+00:00",
-        "extracted": {
-          "concepts": 1,
-          "procedures": 1,
-          "equations": 1,
-          "rules": 0
-        }
-      }
-    ],
-    "total_extractions": {
-      "concepts": 1,
-      "equations": 1,
-      "procedures": 1,
-      "rules": 0
-    }
-  },
-  "wiki_mixed_finite_element_method": {
-    "first_read_at": "2026-10-04T16:41:22.331168+00:00",
-    "read_sections": [
-      "preamble_0"
-    ],
-    "section_details": [
-      {
-        "section_type": "preamble",
-        "char_start": 0,
-        "read_at": "2026-10-04T16:41:22.331196+00:00",
-        "extracted": {
-          "concepts": 2,
-          "procedures": 3,
-          "equations": 2,
-          "rules": 2
-        }
-      }
-    ],
-    "total_extractions": {
-      "concepts": 2,
-      "equations": 2,
-      "procedures": 3,
-      "rules": 2
     }
   },
   "arxiv_2210.16907v1": {
-    "first_read_at": "2026-10-04T16:41:22.331202+00:00",
+    "first_read_at": "2026-10-05T12:19:18.186569+00:00",
     "read_sections": [
       "preamble_0"
     ],
@@ -133,144 +83,19 @@
       {
         "section_type": "preamble",
         "char_start": 0,
-        "read_at": "2026-10-04T16:41:22.331223+00:00",
-        "extracted": {
-          "concepts": 0,
-          "equations": 0,
-          "procedures": 0,
-          "rules": 0
-        }
-      }
-    ],
-    "total_extractions": {
-      "concepts": 0,
-      "equations": 0,
-      "procedures": 0,
-      "rules": 0
-    }
-  },
-  "wiki_meshfree_methods": {
-    "first_read_at": "2026-10-04T16:44:15.672568+00:00",
-    "read_sections": [
-      "preamble_0"
-    ],
-    "section_details": [
-      {
-        "section_type": "preamble",
-        "char_start": 0,
-        "read_at": "2026-10-04T16:44:15.672593+00:00",
-        "extracted": {
-          "concepts": 2,
-          "procedures": 2,
-          "equations": 2,
-          "rules": 2
-        }
-      }
-    ],
-    "total_extractions": {
-      "concepts": 2,
-      "equations": 2,
-      "procedures": 2,
-      "rules": 2
-    }
-  },
-  "arxiv_1701.08973v1": {
-    "first_read_at": "2026-10-04T16:44:15.672599+00:00",
-    "read_sections": [
-      "preamble_0"
-    ],
-    "section_details": [
-      {
-        "section_type": "preamble",
-        "char_start": 0,
-        "read_at": "2026-10-04T16:44:15.672606+00:00",
-        "extracted": {
-          "concepts": 0,
-          "equations": 0,
-          "procedures": 0,
-          "rules": 0
-        }
-      }
-    ],
-    "total_extractions": {
-      "concepts": 0,
-      "equations": 0,
-      "procedures": 0,
-      "rules": 0
-    }
-  },
-  "arxiv_2212.07041v1": {
-    "first_read_at": "2026-10-04T17:07:43.573414+00:00",
-    "read_sections": [
-      "preamble_0"
-    ],
-    "section_details": [
-      {
-        "section_type": "preamble",
-        "char_start": 0,
-        "read_at": "2026-10-04T17:07:43.573445+00:00",
+        "read_at": "2026-10-05T12:19:18.186579+00:00",
         "extracted": {
           "concepts": 1,
           "procedures": 0,
           "equations": 0,
-          "rules": 0
-        }
-      }
-    ],
-    "total_extractions": {
-      "concepts": 1,
-      "equations": 0,
-      "procedures": 0,
-      "rules": 0
-    }
-  },
-  "wiki_flexibility_method": {
-    "first_read_at": "2026-10-04T17:07:43.573452+00:00",
-    "read_sections": [
-      "preamble_0"
-    ],
-    "section_details": [
-      {
-        "section_type": "preamble",
-        "char_start": 0,
-        "read_at": "2026-10-04T17:07:43.573463+00:00",
-        "extracted": {
-          "concepts": 1,
-          "procedures": 0,
-          "equations": 1,
           "rules": 1
         }
       }
     ],
     "total_extractions": {
       "concepts": 1,
-      "equations": 1,
+      "equations": 0,
       "procedures": 0,
-      "rules": 1
-    }
-  },
-  "arxiv_1904.03331v1": {
-    "first_read_at": "2026-10-04T17:07:43.573469+00:00",
-    "read_sections": [
-      "preamble_0"
-    ],
-    "section_details": [
-      {
-        "section_type": "preamble",
-        "char_start": 0,
-        "read_at": "2026-10-04T17:07:43.573480+00:00",
-        "extracted": {
-          "concepts": 1,
-          "procedures": 2,
-          "equations": 1,
-          "rules": 1
-        }
-      }
-    ],
-    "total_extractions": {
-      "concepts": 1,
-      "equations": 1,
-      "procedures": 2,
       "rules": 1
     }
   }

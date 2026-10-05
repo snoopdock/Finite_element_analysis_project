@@ -1,313 +1,65 @@
 {
   "concepts": [
     {
-      "name": "Galerkin's Method",
-      "explanation": "Galerkin's method is a foundational technique in the Finite Element Method (FEM) that transforms partial differential equations into a weak form. It involves approximating the solution using a set of basis functions and minimizing the residual error over the domain. This approach ensures that the solution satisfies the governing equations in an integral sense rather than pointwise. The method is critical for deriving variational formulations and is widely used in structural and electromagnetic simulations.",
-      "mathematical_formulation": "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega \\quad \\forall v \\in V_h",
+      "name": "Finite Element Limit Analysis",
+      "explanation": "Finite Element Limit Analysis (FELA) is a method that uses optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems. Unlike conventional nonlinear finite element methods, FELA directly determines collapse loads without time-stepping. It can be formulated in kinematic or equilibrium forms, focusing on plasticity and stability. This approach is widely applied in geotechnical engineering for problems like slope stability and bearing capacity analysis.",
+      "mathematical_formulation": "",
       "source_ids": [
-        "wiki_boris_galerkin",
-        "arxiv_1712.01987v1"
-      ],
-      "concept_id": "3d0ccbb0-c7e3-417d-bedd-5d6be7b40ce3"
-    },
-    {
-      "name": "Error Estimation",
-      "explanation": "Error estimation in FEM quantifies the discrepancy between the exact solution and the numerical approximation. It involves analyzing temporal and spatial discretization errors, such as O(\\Delta t) for time steps and O(h^s) for spatial mesh sizes. These estimates guide adaptive mesh refinement and ensure solution accuracy. The a-priori L∞ assumption is often used to establish convergence guarantees.",
-      "mathematical_formulation": "\\text{Error} = O(\\Delta t + h^s)",
-      "source_ids": [
-        "arxiv_1712.01987v1"
-      ],
-      "concept_id": "ff7ec7d9-6977-4d55-9a93-fd129a2c1c89"
-    },
-    {
-      "name": "Mixed Finite Element Method",
-      "explanation": "The mixed finite element method introduces additional fields to solve partial differential equations, differing from traditional irreducible methods. These extra fields are often constrained using Lagrange multipliers to enforce continuity or physical constraints. This approach is particularly effective for problems like almost incompressible elasticity, where standard methods may fail. The method results in a saddle-point system with non-definite matrices, complicating solution strategies.",
-      "mathematical_formulation": "\\begin{cases} K_{uu}u + K_{up}p = f_u \\\\ K_{pu}u + K_{pp}p = f_p \\end{cases}",
-      "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "concept_id": "344c0448-045f-492a-a134-7d78bf65276b"
-    },
-    {
-      "name": "Hybrid Finite Element Method",
-      "explanation": "Hybrid methods use Lagrange multipliers on element boundaries to weakly enforce continuity, eliminating the need for shared degrees of freedom between elements. This allows static condensation of internal fields, reducing computational degrees of freedom. The weak enforcement relies on integral conditions rather than strong continuity constraints. Hybridization can mitigate negative eigenvalues and pivots inherent in mixed methods.",
-      "mathematical_formulation": "\\int_{\\Omega} \\sigma : \\epsilon(v) d\\Omega - \\int_{\\partial\\Omega} \\lambda \\cdot v d\\Gamma = 0",
-      "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "concept_id": "5b57c163-c93b-4f79-8d87-03cf51d175fb"
-    },
-    {
-      "name": "Mesh-Based Discretization",
-      "explanation": "Finite Element Method (FEM) relies on dividing a complex domain into smaller, simpler parts called elements, connected through nodes. This mesh-based approach defines relationships between nodes to approximate solutions to partial differential equations. Unlike meshfree methods, FEM requires predefined connectivity between nodes, which simplifies the calculation of mathematical operators like derivatives. The mesh allows for systematic analysis of physical properties across discrete elements.",
-      "mathematical_formulation": "\\Omega = \\bigcup_{e=1}^{N} \\Omega_e",
-      "source_ids": [
-        "wiki_meshfree_methods"
-      ],
-      "concept_id": "e9efa0ee-ced3-414e-bf4d-3899e0c2d7c3"
-    },
-    {
-      "name": "Node-Centric Properties",
-      "explanation": "In FEM, properties such as mass or energy are assigned to nodes rather than elements, enabling localized calculations. This node-centric approach facilitates efficient data management and updates during simulations. The connectivity of the mesh ensures that interactions between neighboring nodes are systematically accounted for. This contrasts with meshfree methods, where properties are distributed across interacting nodes without fixed element boundaries.",
-      "mathematical_formulation": "m_i = \\sum_{e \\in E_i} m_e",
-      "source_ids": [
-        "wiki_meshfree_methods"
-      ],
-      "concept_id": "1c1a11a2-f12b-4b97-bdd0-8c154f383255"
-    },
-    {
-      "name": "Flexibility Matrix",
-      "explanation": "The flexibility matrix characterizes a structural member's susceptibility to deformation under applied forces. It is the inverse of the stiffness matrix, relating member deformations to internal forces. For a spring, flexibility f equals 1/k where k is stiffness. In complex systems, flexibility matrices aggregate member-specific relationships to model global deformation responses. This concept is critical for the flexibility method in structural analysis.",
-      "mathematical_formulation": "q^m = \\mathbf{f}^m Q^m",
-      "source_ids": [
-        "wiki_flexibility_method"
+        "wiki_finite_element_limit_analysis"
       ]
     },
     {
-      "name": "Discontinuous Galerkin (DG) Methods",
-      "explanation": "DG methods use piecewise discontinuous approximations across element boundaries while maintaining weak continuity through numerical fluxes. They combine the flexibility of discontinuous approximations with the simplicity of conforming methods. These methods enforce boundary conditions strongly and handle complex geometries effectively. DG formulations often require additional terms to ensure stability across element interfaces.",
-      "mathematical_formulation": " \\text{Weak form: } (\\nabla u, \\nabla v) = (f, v) \\text{ for } v \\in H_0^1(\\Omega)",
+      "name": "Curved Elements in Weak Galerkin Methods",
+      "explanation": "Curved elements in Weak Galerkin Finite Element Methods (WG-FEM) enable accurate modeling of complex geometries by approximating curved boundaries. These elements enhance the flexibility of WG-FEM for problems with irregular domains. They maintain the mathematical consistency of the method while improving computational efficiency. This concept is critical for applications requiring high-fidelity geometric representation.",
+      "mathematical_formulation": "",
       "source_ids": [
-        "arxiv_1904.03331v1",
-        "arxiv_2212.07041v1"
+        "arxiv_2210.16907v1"
       ]
     }
   ],
   "procedures": [
     {
       "step_number": 1,
-      "title": "Discretization of the Domain",
-      "description": "The computational domain is divided into smaller, simpler subdomains called elements. This process, known as mesh generation, defines the geometry and connectivity of elements. The choice of element type (e.g., triangular, quadrilateral) depends on the problem's complexity. A fine mesh improves accuracy but increases computational cost.",
-      "equations": [
-        "\\Omega = \\bigcup_{e=1}^{N_e} \\Omega_e"
-      ],
+      "title": "Problem Formulation",
+      "description": "Define the physical problem by specifying geometry, material properties, boundary conditions, and loading scenarios. Discretize the domain into finite elements, ensuring appropriate mesh density for accuracy. For FELA, choose between kinematic (velocity-based) or equilibrium (stress-based) formulations. Validate the model against known analytical solutions or experimental data.",
+      "equations": [],
       "source_ids": [
-        "arxiv_1712.01987v1",
-        "arxiv_1901.00775v2"
-      ],
-      "proposition_id": "c6359533-bd99-4f25-ad3e-0398f55e9fbc"
+        "wiki_finite_element_limit_analysis"
+      ]
     },
     {
       "step_number": 2,
-      "title": "Formulation of Weak Forms",
-      "description": "The governing partial differential equations are converted into a weak (variational) form by multiplying with test functions and integrating over the domain. This step reduces the smoothness requirements for the solution and enables the use of piecewise basis functions. The weak form is essential for applying Galerkin's method and ensuring numerical stability.",
-      "equations": [
-        "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega"
-      ],
+      "title": "Optimization-Based Solution",
+      "description": "Solve the discretized problem using optimization algorithms tailored to the formulation. For kinematic FELA, minimize the dissipated energy subject to kinematic constraints. For equilibrium FELA, maximize the load factor while satisfying stress equilibrium. Employ solvers like second-order cone programming for nonlinear optimization. Iterate until convergence criteria are met.",
+      "equations": [],
       "source_ids": [
-        "wiki_boris_galerkin",
-        "arxiv_1712.01987v1"
-      ],
-      "proposition_id": "a70c8841-4f9e-476e-b741-2dd2d46a6b2d"
-    },
-    {
-      "step_number": 1,
-      "title": "Discretize the Domain",
-      "description": "Divide the computational domain into discrete elements, defining nodes and connectivity. For curved elements, use higher-order mappings to approximate geometry. This step establishes the mesh structure for local basis functions. Element types (e.g., triangles, quadrilaterals) depend on the problem's dimensionality and complexity.",
-      "equations": [
-        "\\Omega = \\bigcup_{e=1}^{N_e} \\Omega_e"
-      ],
-      "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "proposition_id": "56deaa6d-b90d-4dc3-a371-e284fa773636"
-    },
-    {
-      "step_number": 2,
-      "title": "Formulate Weak Equations",
-      "description": "Convert the strong form of PDEs into a weak form using test functions. Multiply the PDE by a test function and integrate over the domain. This process accommodates discontinuous fields and natural boundary conditions. For mixed methods, introduce additional variables (e.g., pressure, flux) into the weak form.",
-      "equations": [
-        "\\int_{\\Omega} \\nabla u \\cdot \\nabla v d\\Omega = \\int_{\\Omega} f v d\\Omega"
-      ],
-      "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "proposition_id": "24eb31ed-bb45-408a-a5c7-8268a973f915"
-    },
-    {
-      "step_number": 3,
-      "title": "Assemble Global System",
-      "description": "Combine element-level contributions into a global system of equations. For mixed methods, this results in a block matrix structure with coupling between primary and additional variables. Incorporate Lagrange multiplier constraints to enforce continuity or physical laws. The assembled system reflects the discretized weak form.",
-      "equations": [
-        "K = \\sum_{e=1}^{N_e} K_e, \\quad F = \\sum_{e=1}^{N_e} F_e"
-      ],
-      "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "proposition_id": "83c08128-8eee-467c-bbdf-1c8538ea9b6f"
-    },
-    {
-      "step_number": 1,
-      "title": "Mesh Generation",
-      "description": "The first step in FEM involves creating a mesh that discretizes the simulation domain into manageable elements. This mesh defines the spatial relationships between nodes, which are critical for subsequent calculations. The quality of the mesh directly impacts the accuracy and stability of the simulation. Poorly constructed meshes can lead to numerical errors, requiring careful refinement and validation.",
-      "equations": [
-        "\\Omega = \\bigcup_{e=1}^{N} \\Omega_e"
-      ],
-      "source_ids": [
-        "wiki_meshfree_methods"
-      ],
-      "proposition_id": "9f31acee-968f-4ac7-a27e-c3c675c49073"
-    },
-    {
-      "step_number": 2,
-      "title": "Weak Formulation",
-      "description": "FEM transforms governing partial differential equations into a weak form by multiplying with test functions and integrating over the domain. This process reduces the smoothness requirements for the solution, making it easier to approximate using piecewise functions. The weak form ensures that the solution satisfies the equations in an integral sense rather than pointwise. This step is essential for handling complex boundary conditions and nonlinear problems.",
-      "equations": [
-        "\\int_{\\Omega} \\delta u \\cdot f \\, d\\Omega = 0"
-      ],
-      "source_ids": [
-        "arxiv_1904.03331v1",
-        "wiki_meshfree_methods"
-      ],
-      "proposition_id": "836a0dc3-5ea8-4690-9fe0-00e78890cbb3"
-    },
-    {
-      "step_number": 2,
-      "title": "Discretization",
-      "description": "Partition the domain into discrete elements and approximate the solution using basis functions. For DG methods, approximations are allowed to be discontinuous across element boundaries. The solution space is constructed using piecewise polynomial functions. This step defines the discrete unknowns and their relationships through element-level equations.",
-      "equations": [
-        "u_h \\in V_h^k, \\quad V_h^k = \\{ v_h \\in L^2(\\Omega) : v_h|_K \\in P_k(K) \\forall K \\in \\mathcal{T}_h \\}"
-      ],
-      "source_ids": [
-        "arxiv_1904.03331v1"
+        "wiki_finite_element_limit_analysis"
       ]
     }
   ],
   "equations": [
     {
-      "name": "Convergence Error Bound",
-      "latex": "\\|u - u_h\\|_{L^\\infty} \\leq C(\\Delta t + h^s)",
-      "explanation": "This equation represents the a-priori error bound for FEM solutions. $ u $ is the exact solution, $ u_h $ is the numerical solution, $ \\Delta t $ is the time step, $ h $ is the mesh size, $ s $ is the polynomial order, and $ C $ is a constant. It ensures convergence as $ \\Delta t $ and $ h $ approach zero.",
+      "name": "Second-Order Cone Programming (SOCP) Formulation",
+      "latex": "\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}",
+      "explanation": "This equation represents the optimization problem in FELA, where $\\mathbf{x}$ is the vector of variables, $\\mathbf{c}$ is the cost coefficient, $\\mathbf{A}$ and $\\mathbf{b}$ define equality constraints, and $\\mathcal{K}$ denotes the second-order cone. It ensures the solution adheres to plasticity and stability conditions.",
       "source_ids": [
-        "arxiv_1712.01987v1"
-      ],
-      "proposition_id": "b76e02c5-4be4-45f5-be33-12a25cd9f602"
-    },
-    {
-      "name": "Weak Formulation",
-      "latex": "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega",
-      "explanation": "This equation defines the weak form of a PDE. $ u_h $ is the approximate solution, $ v $ is a test function, $ f $ is a source term, and $ \\Omega $ is the domain. The weak form allows for solutions with lower regularity and is the basis for FEM discretization.",
-      "source_ids": [
-        "wiki_boris_galerkin",
-        "arxiv_1712.01987v1"
-      ],
-      "proposition_id": "6f0ea598-b981-4b3e-8d99-21c1d0f867c2"
-    },
-    {
-      "name": "Saddle-Point System",
-      "latex": "\\begin{bmatrix} K_{uu} & K_{up} \\\\ K_{pu} & K_{pp} \\end{bmatrix} \\begin{bmatrix} u \\\\ p \\end{bmatrix} = \\begin{bmatrix} f_u \\\\ f_p \\end{bmatrix}",
-      "explanation": "K_{uu}: Stiffness matrix for primary variables; K_{up}/K_{pu}: Coupling terms between primary and additional variables; K_{pp}: Matrix for additional variables; u/p: Primary/additional variables; f_u/f_p: Force vectors. This system arises in mixed formulations due to Lagrange multiplier constraints.",
-      "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "proposition_id": "1224aceb-3682-4d00-a7e3-3bdfc86bbbb4"
-    },
-    {
-      "name": "Weak Form with Lagrange Multipliers",
-      "latex": "\\int_{\\Omega} \\sigma : \\epsilon(v) d\\Omega - \\int_{\\partial\\Omega} \\lambda \\cdot v d\\Gamma = 0",
-      "explanation": "\\sigma: Stress tensor; \\epsilon(v): Strain from test function v; \\lambda: Lagrange multiplier; \\partial\\Omega: Boundary of domain. This equation enforces equilibrium weakly while incorporating constraints via the Lagrange multiplier term.",
-      "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "proposition_id": "d0f5b1ba-e437-4c4b-ad77-6860cbf331cb"
-    },
-    {
-      "name": "Domain Discretization",
-      "latex": "\\Omega = \\bigcup_{e=1}^{N} \\Omega_e",
-      "explanation": "This equation represents the decomposition of the computational domain $\\Omega$ into $N$ non-overlapping elements $\\Omega_e$. Each element $\\Omega_e$ is a subdomain where the solution is approximated using basis functions. The union of all elements reconstructs the entire domain, enabling localized calculations.",
-      "source_ids": [
-        "wiki_meshfree_methods"
-      ],
-      "proposition_id": "88ed6d7f-8d08-4f85-9b8d-0fa7e7e53947"
-    },
-    {
-      "name": "Weak Form of PDE",
-      "latex": "\\int_{\\Omega} \\delta u \\cdot f \\, d\\Omega = 0",
-      "explanation": "This equation defines the weak form of a partial differential equation (PDE), where $\\delta u$ is a test function and $f$ represents the residual of the PDE. The integral ensures that the solution satisfies the PDE in an averaged sense over the domain, reducing the need for high-order continuity in the solution.",
-      "source_ids": [
-        "wiki_meshfree_methods"
-      ],
-      "proposition_id": "a6fca88b-6c27-4898-879a-63e55060e1e7"
-    },
-    {
-      "name": "Flexibility Relation",
-      "latex": "q^m = \\mathbf{f}^m Q^m",
-      "explanation": "q^m: Member deformation vector; \\mathbf{f}^m: Member flexibility matrix; Q^m: Member internal force vector. This equation defines the linear relationship between forces and deformations for a structural member.",
-      "source_ids": [
-        "wiki_flexibility_method"
-      ]
-    },
-    {
-      "name": "Poisson Equation Weak Form",
-      "latex": "(\\nabla u, \\nabla v) = (f, v) \\quad \\forall v \\in H_0^1(\\Omega)",
-      "explanation": "u: Solution function; v: Test function; f: Source term; \\Omega: Domain. This integral equation represents the variational formulation of Poisson's equation with Dirichlet boundary conditions.",
-      "source_ids": [
-        "arxiv_1904.03331v1"
+        "wiki_finite_element_limit_analysis"
       ]
     }
   ],
   "rules": [
     {
-      "rule": "Mesh Refinement Strategy",
-      "explanation": "Mesh refinement must balance accuracy and computational cost. Local refinement in regions of high gradient or curvature improves solution quality, while coarse meshes in smooth regions reduce resource usage. Adaptive meshing techniques dynamically adjust element size based on error estimates.",
+      "rule": "Use of Curved Elements for Geometry Accuracy",
+      "explanation": "Curved elements should be employed to accurately represent complex geometries, reducing discretization errors. This is essential for maintaining solution fidelity in problems with irregular boundaries or nonlinear deformations.",
       "source_ids": [
-        "arxiv_1712.01987v1"
-      ],
-      "proposition_id": "950e9439-dff0-4381-9ab1-b15ff4b45a56"
-    },
-    {
-      "rule": "Element Type Selection",
-      "explanation": "The choice of element type (e.g., Raviart-Thomas-Nédélec for electromagnetic problems) must align with the problem's physical characteristics. Higher-order elements (k ≥ 2) enhance accuracy for smooth solutions, while lower-order elements (k = 1) are suitable for nonlinear or discontinuous problems. Element selection affects stability and convergence.",
-      "source_ids": [
-        "arxiv_1712.01987v1",
-        "arxiv_1901.00775v2"
-      ],
-      "proposition_id": "9e7b1719-f337-4c45-808f-e6f765594326"
-    },
-    {
-      "rule": "Use Mixed Methods for Incompressible Materials",
-      "explanation": "Mixed finite element methods prevent numerical locking in nearly incompressible problems by decoupling pressure and displacement fields. This avoids the ill-conditioning associated with standard irreducible formulations. The method ensures accurate stress/strain computation under volume constraints. Failure to use mixed methods may lead to spurious oscillations or non-convergence.",
-      "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "proposition_id": "02fe3ef0-34f5-4af2-8df6-89850eb88ee2"
-    },
-    {
-      "rule": "Employ Hybridization for Reduced DOF",
-      "explanation": "Hybrid methods condense internal degrees of freedom via static condensation, improving computational efficiency. By localizing Lagrange multipliers to element boundaries, they eliminate the need for global continuity constraints. This reduces the global system size while maintaining accuracy. Hybridization is critical for large-scale simulations with complex geometries.",
-      "source_ids": [
-        "wiki_mixed_finite_element_method"
-      ],
-      "proposition_id": "a4a887aa-e360-44d3-ade8-8fcd8a6ab393"
-    },
-    {
-      "rule": "Maintain Mesh Quality",
-      "explanation": "A well-structured mesh is critical for FEM accuracy. Degenerate or highly distorted elements can introduce numerical errors and instability. Proper mesh refinement and validation ensure that the solution remains reliable, especially in regions with high gradients or complex geometries.",
-      "source_ids": [
-        "wiki_meshfree_methods"
-      ],
-      "proposition_id": "b6a4fa1e-e73d-4eff-96c6-4c990a116148"
-    },
-    {
-      "rule": "Ensure Connectivity Consistency",
-      "explanation": "The predefined connectivity between nodes in FEM must remain consistent throughout the simulation. Disruptions in connectivity, such as mesh tangling, can invalidate mathematical operators like derivatives, leading to incorrect results. This is particularly important in dynamic simulations with large deformations.",
-      "source_ids": [
-        "wiki_meshfree_methods"
-      ],
-      "proposition_id": "5a595ac1-bd3e-48f9-8512-ab8cccb76365"
-    },
-    {
-      "rule": "Flexibility Matrix Integration",
-      "explanation": "Flexibility matrices must account for external effects (e.g., temperature, loads) applied to isolated members. This ensures accurate deformation calculations when assembling global system equations. Neglecting external effects leads to incorrect displacement predictions.",
-      "source_ids": [
-        "wiki_flexibility_method"
+        "arxiv_2210.16907v1"
       ]
     },
     {
-      "rule": "Boundary Condition Enforcement",
-      "explanation": "Conforming DG methods require strong enforcement of Dirichlet boundary conditions. This ensures solution accuracy at domain boundaries. Weak enforcement may lead to numerical instabilities or reduced convergence rates.",
+      "rule": "Optimization for Collapse Load Determination",
+      "explanation": "FELA requires formulating the problem as an optimization task to directly compute collapse loads. This avoids time-consuming incremental analysis and ensures bounds on the true collapse load through upper/lower bound theorems.",
       "source_ids": [
-        "arxiv_1904.03331v1"
+        "wiki_finite_element_limit_analysis"
       ]
     }
   ]
