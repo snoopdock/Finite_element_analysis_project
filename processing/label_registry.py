@@ -122,9 +122,9 @@ def build_label_registry(document: Document) -> LabelRegistry:
 
     Target IDs are required to be globally unambiguous because
     ``CrossReferenceOccurrence`` intentionally carries only ``target_id``.
-    Figure/table identities are registered now even though their LaTeX object
-    projection remains fail-closed elsewhere; this keeps object identity and
-    reference integrity independent from rendering support.
+    Figure/table identities use the same registry as sections and equation
+    occurrences. Their publication projections consume these generated labels
+    without introducing a second identity system.
     """
     if not isinstance(document, Document):
         raise LabelRegistryError("document must be a semantic Document")

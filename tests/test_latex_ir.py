@@ -53,7 +53,7 @@ def test_structured_blocks_preserve_semantic_kinds():
 def test_unknown_block_types_fail_at_the_boundary():
     with pytest.raises(DocumentModelError, match="unsupported block type"):
         normalize_sections(
-            [{"title": "Invalid", "blocks": [{"type": "table", "rows": []}]}]
+            [{"title": "Invalid", "blocks": [{"type": "unsupported_object"}]}]
         )
 
 

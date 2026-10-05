@@ -16,8 +16,10 @@ from core.document_model import (
     Document,
     EquationOccurrence,
     EquationProposalReference,
+    Figure,
     InlineMath,
     Paragraph,
+    Table,
     Text,
 )
 from core.document_persistence import save_document
@@ -48,6 +50,8 @@ def analyze_latex_ir_readiness(document: Document) -> Dict[str, Any]:
         "citation_occurrences": 0,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
+        "figures": 0,
+        "tables": 0,
         "raw_math_text_nodes": 0,
     }
     diagnostics: list[str] = []
@@ -80,6 +84,10 @@ def analyze_latex_ir_readiness(document: Document) -> Dict[str, Any]:
                 diagnostics.append(
                     f"unresolved_equation_proposal:{section.section_id}:{child.proposal_id}"
                 )
+            elif isinstance(child, Figure):
+                counts["figures"] += 1
+            elif isinstance(child, Table):
+                counts["tables"] += 1
 
     ready = (
         counts["raw_math_text_nodes"] == 0

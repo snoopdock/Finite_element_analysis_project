@@ -1,0 +1,94 @@
+version: 1
+purpose: >-
+  Define lossless publication projection for semantic Figure and Table objects
+  while preserving document identity, order, provenance, and reference integrity.
+
+authority:
+  object_identity: semantic_document_model
+  provenance_identity: evidence_model
+  latex_labels: label_registry
+  rendering_payload: latex_ir
+  rule: >-
+    Figure/Table projection may format authorized payloads but may not infer
+    object identity, provenance, labels, or table structure from prose or LaTeX.
+
+figure:
+  semantic_identity: figure_id
+  ir_output: FigureBlock
+  required_for_numbered_rendering:
+    - non_empty_caption
+    - safe_asset_path
+  asset_policy:
+    path_kind: repository_relative_posix
+    allowed_extensions:
+      - .pdf
+      - .png
+      - .jpg
+      - .jpeg
+    forbidden:
+      - absolute_paths
+      - parent_traversal
+      - urls
+      - backslashes
+      - whitespace_or_latex_control_characters
+  label_source: label_registry(figure_id)
+  manual_label: reject
+  source_ids:
+    optional: true
+    when_present: must_resolve_to_evidence
+
+table:
+  semantic_identity: table_id
+  ir_output: TableBlock
+  required_for_numbered_rendering:
+    - non_empty_caption
+    - non_empty_columns
+    - non_empty_rows
+  shape:
+    columns: non_empty_strings
+    row_width: exactly_column_count
+    cells: strings
+  label_source: label_registry(table_id)
+  manual_label: reject
+  source_ids:
+    optional: true
+    when_present: must_resolve_to_evidence
+
+ordering:
+  rule: >-
+    Figure and Table are semantic section children. Rendering must preserve their
+    order relative to paragraphs, equations, and each other. The LaTeX renderer
+    therefore uses fixed [H] placement rather than unconstrained floating.
+
+renderer:
+  figure_environment: figure_H
+  table_environment: table_H
+  table_layout: tabularx_textwidth
+  captions: escaped_plain_text
+  table_headers_and_cells: escaped_plain_text
+  provenance: citation_commands_from_resolved_source_ids
+  raw_latex_from_payload: forbidden
+
+cross_references:
+  figure_target: figure_id
+  table_target: table_id
+  label_resolution: label_registry_then_reference_resolver
+  label_after_caption: required_for_correct_numbering
+
+failure_policy:
+  missing_caption: reject
+  unsafe_asset_path: reject
+  malformed_table_shape: reject
+  unresolved_source_id: reject
+  manual_label: reject
+  raw_payload_latex: escape_not_execute
+  silent_repair: forbidden
+
+invariants:
+  - semantic_object_order_is_preserved
+  - figure_id_and_table_id_remain_semantic_identity
+  - latex_labels_are_generated_representations_only
+  - provenance_ids_are_not_rewritten
+  - cross_references_resolve_to_emitted_anchors
+  - table_shape_is_validated_before_rendering
+  - figure_asset_path_is_revalidated_at_ir_boundary

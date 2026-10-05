@@ -279,12 +279,20 @@ class Figure:
     type: str = field(init=False, default="figure")
 
     def validate(self) -> None:
-        if not self.figure_id.strip():
+        if not isinstance(self.figure_id, str) or not self.figure_id.strip():
             raise DocumentModelError("Figure figure_id must be non-empty.")
-        if not self.asset.strip():
+        if not isinstance(self.asset, str) or not self.asset.strip():
             raise DocumentModelError("Figure asset must be non-empty.")
+        if self.caption is not None and not isinstance(self.caption, str):
+            raise DocumentModelError("Figure caption must be a string or None.")
+        if self.label is not None and not isinstance(self.label, str):
+            raise DocumentModelError("Figure label must be a string or None.")
         if not isinstance(self.source_ids, list):
             raise DocumentModelError("Figure source_ids must be a list.")
+        if any(not isinstance(source_id, str) or not source_id.strip() for source_id in self.source_ids):
+            raise DocumentModelError("Figure source_ids must contain non-empty strings.")
+        if len(set(self.source_ids)) != len(self.source_ids):
+            raise DocumentModelError("Figure source_ids must not contain duplicates.")
 
     def to_dict(self) -> Dict[str, Any]:
         self.validate()
@@ -315,14 +323,34 @@ class Table:
     type: str = field(init=False, default="table")
 
     def validate(self) -> None:
-        if not self.table_id.strip():
+        if not isinstance(self.table_id, str) or not self.table_id.strip():
             raise DocumentModelError("Table table_id must be non-empty.")
-        if not isinstance(self.columns, list):
-            raise DocumentModelError("Table columns must be a list.")
-        if not isinstance(self.rows, list) or any(not isinstance(row, list) for row in self.rows):
-            raise DocumentModelError("Table rows must be a list of lists.")
+        if not isinstance(self.columns, list) or not self.columns:
+            raise DocumentModelError("Table columns must be a non-empty list.")
+        if any(not isinstance(column, str) or not column.strip() for column in self.columns):
+            raise DocumentModelError("Table columns must contain non-empty strings.")
+        if not isinstance(self.rows, list) or not self.rows or any(not isinstance(row, list) for row in self.rows):
+            raise DocumentModelError("Table rows must be a non-empty list of lists.")
+        expected = len(self.columns)
+        for row_index, row in enumerate(self.rows):
+            if len(row) != expected:
+                raise DocumentModelError(
+                    f"Table row {row_index} has {len(row)} cells; expected {expected}."
+                )
+            if any(not isinstance(cell, str) for cell in row):
+                raise DocumentModelError(
+                    f"Table row {row_index} cells must all be strings."
+                )
+        if self.caption is not None and not isinstance(self.caption, str):
+            raise DocumentModelError("Table caption must be a string or None.")
+        if self.label is not None and not isinstance(self.label, str):
+            raise DocumentModelError("Table label must be a string or None.")
         if not isinstance(self.source_ids, list):
             raise DocumentModelError("Table source_ids must be a list.")
+        if any(not isinstance(source_id, str) or not source_id.strip() for source_id in self.source_ids):
+            raise DocumentModelError("Table source_ids must contain non-empty strings.")
+        if len(set(self.source_ids)) != len(self.source_ids):
+            raise DocumentModelError("Table source_ids must not contain duplicates.")
 
     def to_dict(self) -> Dict[str, Any]:
         self.validate()

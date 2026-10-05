@@ -27,11 +27,13 @@ supported_targets:
   figure:
     semantic_identity: figure_id
     label_prefix: fig
-    projection_status: registered_but_rendering_fail_closed
+    projection_status: supported
+    render_anchor: figure_caption
   table:
     semantic_identity: table_id
     label_prefix: tab
-    projection_status: registered_but_rendering_fail_closed
+    projection_status: supported
+    render_anchor: table_caption
 
 label_generation:
   deterministic: true
@@ -76,6 +78,8 @@ latex_ir:
     - occurrence_id
   section_anchor: SectionModel.label
   equation_anchor: EquationBlock.label
+  figure_anchor: FigureBlock.label
+  table_anchor: TableBlock.label
   validation:
     - every_reference_label_must_exist
     - label_target_identity_must_match
@@ -84,6 +88,8 @@ latex_ir:
 renderer:
   section_anchor: "\\label{generated_label}"
   equation_anchor: "\\label{generated_label}"
+  figure_anchor: "\\caption{...} then \\label{generated_label}"
+  table_anchor: "\\caption{...} then \\label{generated_label}"
   cross_reference: "\\ref{generated_label}"
   raw_target_id_as_latex_command: forbidden
 

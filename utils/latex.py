@@ -30,6 +30,19 @@ UNICODE_MATH_MAP = {
 }
 
 
+def normalize_math_expression(text: str) -> str:
+    """Replace supported Unicode math glyphs with LaTeX commands without adding prose spacing.
+
+    This is for already-typed math nodes only. Plain text remains plain text and
+    is protected separately by the document preamble's Unicode safety mappings.
+    """
+    if not text:
+        return text
+    for uni, latex in UNICODE_MATH_MAP.items():
+        text = text.replace(uni, latex)
+    return text
+
+
 def fix_latex_math(text: str) -> str:
     if not text:
         return text

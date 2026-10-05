@@ -17,6 +17,8 @@ from dataclasses import dataclass, field
 import re
 from typing import Any, Mapping, Sequence
 
+from processing.asset_policy import AssetPathError, validate_figure_asset_path
+
 
 class DocumentModelError(ValueError):
     """Raised when input cannot satisfy the document-model contract."""
@@ -114,6 +116,29 @@ class EquationBlock:
     caption: str | None = None
 
 
+@dataclass(frozen=True)
+class FigureBlock:
+    """Renderable placement of a semantic figure object."""
+
+    figure_id: str
+    asset: str
+    caption: str
+    label: str
+    source_ids: tuple[str, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class TableBlock:
+    """Renderable placement of a semantic table object."""
+
+    table_id: str
+    columns: tuple[str, ...]
+    rows: tuple[tuple[str, ...], ...]
+    caption: str
+    label: str
+    source_ids: tuple[str, ...] = field(default_factory=tuple)
+
+
 DocumentBlock = (
     TextBlock
     | MathBlock
@@ -121,6 +146,8 @@ DocumentBlock = (
     | LegacyLatexBlock
     | ParagraphBlock
     | EquationBlock
+    | FigureBlock
+    | TableBlock
 )
 
 
@@ -377,6 +404,66 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
                         caption=caption,
                     )
                 )
+            elif kind == "figure":
+                _require_keys(
+                    block,
+                    {"type", "figure_id", "asset", "caption", "label", "source_ids"},
+                    context,
+                )
+                raw_ids = block.get("source_ids", ())
+                if not isinstance(raw_ids, Sequence) or isinstance(raw_ids, (str, bytes)):
+                    raise DocumentModelError(f"{context}.source_ids must be a sequence")
+                parsed.append(
+                    FigureBlock(
+                        figure_id=_as_text(block.get("figure_id"), f"{context}.figure_id").strip(),
+                        asset=_as_text(block.get("asset"), f"{context}.asset").strip(),
+                        caption=_as_text(block.get("caption"), f"{context}.caption").strip(),
+                        label=_as_text(block.get("label"), f"{context}.label").strip(),
+                        source_ids=tuple(
+                            _as_text(source_id, f"{context}.source_ids[{i}]").strip()
+                            for i, source_id in enumerate(raw_ids)
+                        ),
+                    )
+                )
+            elif kind == "table":
+                _require_keys(
+                    block,
+                    {"type", "table_id", "columns", "rows", "caption", "label", "source_ids"},
+                    context,
+                )
+                raw_columns = block.get("columns")
+                raw_rows = block.get("rows")
+                raw_ids = block.get("source_ids", ())
+                if not isinstance(raw_columns, Sequence) or isinstance(raw_columns, (str, bytes)):
+                    raise DocumentModelError(f"{context}.columns must be a sequence")
+                if not isinstance(raw_rows, Sequence) or isinstance(raw_rows, (str, bytes)):
+                    raise DocumentModelError(f"{context}.rows must be a sequence")
+                if not isinstance(raw_ids, Sequence) or isinstance(raw_ids, (str, bytes)):
+                    raise DocumentModelError(f"{context}.source_ids must be a sequence")
+                rows = []
+                for row_index, raw_row in enumerate(raw_rows):
+                    if not isinstance(raw_row, Sequence) or isinstance(raw_row, (str, bytes)):
+                        raise DocumentModelError(f"{context}.rows[{row_index}] must be a sequence")
+                    rows.append(tuple(
+                        _as_text(cell, f"{context}.rows[{row_index}][{cell_index}]")
+                        for cell_index, cell in enumerate(raw_row)
+                    ))
+                parsed.append(
+                    TableBlock(
+                        table_id=_as_text(block.get("table_id"), f"{context}.table_id").strip(),
+                        columns=tuple(
+                            _as_text(column, f"{context}.columns[{i}]").strip()
+                            for i, column in enumerate(raw_columns)
+                        ),
+                        rows=tuple(rows),
+                        caption=_as_text(block.get("caption"), f"{context}.caption").strip(),
+                        label=_as_text(block.get("label"), f"{context}.label").strip(),
+                        source_ids=tuple(
+                            _as_text(source_id, f"{context}.source_ids[{i}]").strip()
+                            for i, source_id in enumerate(raw_ids)
+                        ),
+                    )
+                )
             elif kind == "legacy_latex":
                 _require_keys(block, {"type", "source"}, context)
                 source = _as_text(block.get("source"), f"{context}.source")
@@ -560,6 +647,20 @@ def validate_document_model(document: DocumentModel) -> None:
                     "equation_occurrence",
                     block.occurrence_id,
                 )
+            elif isinstance(block, FigureBlock):
+                _validate_ir_label(
+                    block.label, context=f"section {section_index}.blocks[{block_index}].label"
+                )
+                if block.label in anchor_by_label:
+                    raise DocumentModelError(f"duplicate LaTeX anchor label: {block.label!r}")
+                anchor_by_label[block.label] = ("figure", block.figure_id)
+            elif isinstance(block, TableBlock):
+                _validate_ir_label(
+                    block.label, context=f"section {section_index}.blocks[{block_index}].label"
+                )
+                if block.label in anchor_by_label:
+                    raise DocumentModelError(f"duplicate LaTeX anchor label: {block.label!r}")
+                anchor_by_label[block.label] = ("table", block.table_id)
 
     for section_index, section in enumerate(document.sections):
         if not isinstance(section, SectionModel):
@@ -589,6 +690,8 @@ def validate_document_model(document: DocumentModel) -> None:
                     LegacyLatexBlock,
                     ParagraphBlock,
                     EquationBlock,
+                    FigureBlock,
+                    TableBlock,
                 ),
             ):
                 raise DocumentModelError(f"{context} has an invalid block type")
@@ -708,6 +811,47 @@ def validate_document_model(document: DocumentModel) -> None:
                     raise DocumentModelError(
                         f"{context}.caption must be a string or None"
                     )
+            elif isinstance(block, FigureBlock):
+                for field_name in ("figure_id", "asset", "caption", "label"):
+                    value = getattr(block, field_name)
+                    if not isinstance(value, str) or not value.strip():
+                        raise DocumentModelError(f"{context}.{field_name} must be non-empty")
+                _validate_ir_label(block.label, context=f"{context}.label")
+                if not isinstance(block.source_ids, tuple):
+                    raise DocumentModelError(f"{context}.source_ids must be a tuple")
+                if block.source_ids:
+                    _validate_source_ids(
+                        block.source_ids, context=context, reference_ids=reference_ids
+                    )
+                try:
+                    validate_figure_asset_path(block.asset)
+                except AssetPathError as exc:
+                    raise DocumentModelError(f"{context}.asset is unsafe: {exc}") from exc
+            elif isinstance(block, TableBlock):
+                for field_name in ("table_id", "caption", "label"):
+                    value = getattr(block, field_name)
+                    if not isinstance(value, str) or not value.strip():
+                        raise DocumentModelError(f"{context}.{field_name} must be non-empty")
+                _validate_ir_label(block.label, context=f"{context}.label")
+                if not isinstance(block.source_ids, tuple):
+                    raise DocumentModelError(f"{context}.source_ids must be a tuple")
+                if block.source_ids:
+                    _validate_source_ids(
+                        block.source_ids, context=context, reference_ids=reference_ids
+                    )
+                if not isinstance(block.columns, tuple) or not block.columns:
+                    raise DocumentModelError(f"{context}.columns must be a non-empty tuple")
+                if any(not isinstance(column, str) or not column.strip() for column in block.columns):
+                    raise DocumentModelError(f"{context}.columns must contain non-empty strings")
+                if not isinstance(block.rows, tuple) or not block.rows:
+                    raise DocumentModelError(f"{context}.rows must be a non-empty tuple")
+                for row_index, row in enumerate(block.rows):
+                    if not isinstance(row, tuple) or len(row) != len(block.columns):
+                        raise DocumentModelError(
+                            f"{context}.rows[{row_index}] must match column count {len(block.columns)}"
+                        )
+                    if any(not isinstance(cell, str) for cell in row):
+                        raise DocumentModelError(f"{context}.rows[{row_index}] cells must be strings")
 
 
 def build_document_model(

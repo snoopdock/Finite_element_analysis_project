@@ -33,12 +33,14 @@ from core.domain_semantic_model import (
     get_authorized_equation_ids,
     resolve_equation,
 )
+from processing.asset_policy import AssetPathError, validate_figure_asset_path
 from processing.evidence_adapter import adapt_evidence_to_references
 from processing.label_registry import build_label_registry
 from processing.reference_resolver import ReferenceResolver, ReferenceResolutionError
 from processing.latex_ir import (
     DocumentModel,
     EquationBlock,
+    FigureBlock,
     IRCitationSpan,
     IRCrossReferenceSpan,
     IRMathSpan,
@@ -46,6 +48,7 @@ from processing.latex_ir import (
     MathBlock,
     ParagraphBlock,
     SectionModel,
+    TableBlock,
     normalize_references,
     validate_document_model,
 )
@@ -114,14 +117,6 @@ def _reject_unsupported_semantics(document: Document) -> None:
                 raise DocumentToLatexIRError(
                     "Unresolved equation proposals cannot enter LaTeX IR: "
                     f"{child.proposal_id}."
-                )
-            elif isinstance(child, Figure):
-                raise DocumentToLatexIRError(
-                    "Figure projection is not implemented at the LaTeX IR boundary."
-                )
-            elif isinstance(child, Table):
-                raise DocumentToLatexIRError(
-                    "Table projection is not implemented at the LaTeX IR boundary."
                 )
 
 
@@ -201,12 +196,49 @@ def project_document_to_latex_ir(
                     f"{child.proposal_id}."
                 )
             elif isinstance(child, Figure):
-                raise DocumentToLatexIRError(
-                    "Figure projection is not implemented at the LaTeX IR boundary."
+                if child.label is not None:
+                    raise DocumentToLatexIRError(
+                        "manual/semantic figure labels are not accepted by the canonical "
+                        "projection; labels are generated from figure identity"
+                    )
+                if child.caption is None or not child.caption.strip():
+                    raise DocumentToLatexIRError(
+                        f"Figure {child.figure_id!r} requires a non-empty caption for numbered rendering."
+                    )
+                try:
+                    asset = validate_figure_asset_path(child.asset)
+                except AssetPathError as exc:
+                    raise DocumentToLatexIRError(
+                        f"Figure {child.figure_id!r} has an unsafe asset path: {exc}"
+                    ) from exc
+                blocks.append(
+                    FigureBlock(
+                        figure_id=child.figure_id,
+                        asset=asset,
+                        caption=child.caption,
+                        label=label_registry.resolve(child.figure_id).latex_label,
+                        source_ids=tuple(child.source_ids),
+                    )
                 )
             elif isinstance(child, Table):
-                raise DocumentToLatexIRError(
-                    "Table projection is not implemented at the LaTeX IR boundary."
+                if child.label is not None:
+                    raise DocumentToLatexIRError(
+                        "manual/semantic table labels are not accepted by the canonical "
+                        "projection; labels are generated from table identity"
+                    )
+                if child.caption is None or not child.caption.strip():
+                    raise DocumentToLatexIRError(
+                        f"Table {child.table_id!r} requires a non-empty caption for numbered rendering."
+                    )
+                blocks.append(
+                    TableBlock(
+                        table_id=child.table_id,
+                        columns=tuple(child.columns),
+                        rows=tuple(tuple(row) for row in child.rows),
+                        caption=child.caption,
+                        label=label_registry.resolve(child.table_id).latex_label,
+                        source_ids=tuple(child.source_ids),
+                    )
                 )
             else:
                 raise DocumentToLatexIRError(

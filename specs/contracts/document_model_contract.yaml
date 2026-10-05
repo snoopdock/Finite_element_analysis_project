@@ -136,6 +136,11 @@ entities:
       - caption
       - label
       - source_ids
+    projection_rules:
+      caption_for_numbered_rendering: required
+      manual_latex_label: reject_at_canonical_projection
+      source_ids: optional_unique_evidence_ids
+      asset: portable_repository_relative_graphics_path
 
   table:
     identity: table_id
@@ -147,6 +152,13 @@ entities:
       - caption
       - label
       - source_ids
+    structural_rules:
+      columns: non_empty_strings
+      rows: non_empty_equal_width_string_matrix
+    projection_rules:
+      caption_for_numbered_rendering: required
+      manual_latex_label: reject_at_canonical_projection
+      source_ids: optional_unique_evidence_ids
 
 structure:
   document_children:

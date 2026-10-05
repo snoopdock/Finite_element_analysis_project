@@ -13,6 +13,7 @@ from processing.latex_ir import (
     DocumentModel,
     DocumentModelError,
     EquationBlock,
+    FigureBlock,
     IRCitationSpan,
     IRCrossReferenceSpan,
     IRMathSpan,
@@ -20,10 +21,11 @@ from processing.latex_ir import (
     LegacyLatexBlock,
     MathBlock,
     ParagraphBlock,
+    TableBlock,
     TextBlock,
     validate_document_model,
 )
-from utils.latex import escape_text, sanitize_latex_content
+from utils.latex import escape_text, normalize_math_expression, sanitize_latex_content
 
 
 def _citation_latex(
@@ -59,7 +61,7 @@ def render_inline(inline, reference_numbers: dict[str, str] | None = None) -> st
     if isinstance(inline, IRTextSpan):
         return escape_text(inline.text)
     if isinstance(inline, IRMathSpan):
-        expression = inline.expression.strip()
+        expression = normalize_math_expression(inline.expression.strip())
         return f"\\({expression}\\)" if expression else ""
     if isinstance(inline, IRCitationSpan):
         return _citation_latex(inline.source_ids, reference_numbers)
@@ -77,12 +79,12 @@ def render_block(block, reference_numbers: dict[str, str] | None = None) -> str:
             render_inline(inline, reference_numbers) for inline in block.content
         )
     if isinstance(block, MathBlock):
-        expression = block.expression.strip()
+        expression = normalize_math_expression(block.expression.strip())
         if not expression:
             return ""
         return f"\\[{expression}\\]"
     if isinstance(block, EquationBlock):
-        expression = block.expression.strip()
+        expression = normalize_math_expression(block.expression.strip())
         if not expression:
             return ""
         parts = [r"\begin{equation}"]
@@ -98,6 +100,52 @@ def render_block(block, reference_numbers: dict[str, str] | None = None) -> str:
                     r"\end{center}",
                 ]
             )
+        return "\n".join(parts)
+    if isinstance(block, FigureBlock):
+        source = (
+            r"\par\small\textit{Source:} "
+            + _citation_latex(block.source_ids, reference_numbers)
+            if block.source_ids
+            else ""
+        )
+        parts = [
+            r"\begin{figure}[H]",
+            r"\centering",
+            r"\includegraphics[width=0.9\linewidth]{" + block.asset + "}",
+            r"\caption{" + escape_text(block.caption) + "}",
+            r"\label{" + _render_label(block.label) + "}",
+        ]
+        if source:
+            parts.append(source)
+        parts.append(r"\end{figure}")
+        return "\n".join(parts)
+    if isinstance(block, TableBlock):
+        column_count = len(block.columns)
+        spec = r"@{}*{" + str(column_count) + r"}{>{\raggedright\arraybackslash}X}@{}"
+        header = " & ".join(r"\textbf{" + escape_text(column) + "}" for column in block.columns) + r" \\"
+        rows = [
+            " & ".join(escape_text(cell) for cell in row) + r" \\"
+            for row in block.rows
+        ]
+        parts = [
+            r"\begin{table}[H]",
+            r"\centering",
+            r"\caption{" + escape_text(block.caption) + "}",
+            r"\label{" + _render_label(block.label) + "}",
+            r"\begin{tabularx}{\textwidth}{" + spec + "}",
+            r"\toprule",
+            header,
+            r"\midrule",
+            *rows,
+            r"\bottomrule",
+            r"\end{tabularx}",
+        ]
+        if block.source_ids:
+            parts.append(
+                r"\par\small\textit{Source:} "
+                + _citation_latex(block.source_ids, reference_numbers)
+            )
+        parts.append(r"\end{table}")
         return "\n".join(parts)
     if isinstance(block, CitationBlock):
         return _citation_latex(block.source_ids, reference_numbers)

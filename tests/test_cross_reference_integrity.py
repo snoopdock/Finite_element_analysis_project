@@ -309,14 +309,18 @@ def test_ir_validation_rejects_reference_label_target_mismatch():
         validate_document_model(ir)
 
 
-def test_figure_reference_path_remains_fail_closed_until_figure_projection_exists():
+def test_figure_reference_path_resolves_after_figure_projection_is_available():
     document = Document(
         children=[
             Section(
                 section_id=SECTION_A,
                 title="Figure",
                 children=[
-                    Figure(asset="figure.png", figure_id="figure-1"),
+                    Figure(
+                        asset="figure.png",
+                        figure_id="figure-1",
+                        caption="Finite element mesh",
+                    ),
                     Paragraph(
                         inline_content=[
                             CrossReferenceOccurrence(
@@ -330,13 +334,16 @@ def test_figure_reference_path_remains_fail_closed_until_figure_projection_exist
         ]
     )
 
-    with pytest.raises(DocumentToLatexIRError, match="Figure projection"):
-        project_document_to_latex_ir(
-            document,
-            state=_state(),
-            evidence=[],
-            domain_model=empty_domain_semantic_model(),
-        )
+    projected = project_document_to_latex_ir(
+        document,
+        state=_state(),
+        evidence=[],
+        domain_model=empty_domain_semantic_model(),
+    )
+    figure_block, paragraph = projected.sections[0].blocks
+    assert figure_block.label == "fig:figure-1"
+    assert paragraph.content[0].target_type == "figure"
+    assert paragraph.content[0].label == "fig:figure-1"
 
 
 def test_active_pipeline_resolves_explicit_section_ref_marker(tmp_path):

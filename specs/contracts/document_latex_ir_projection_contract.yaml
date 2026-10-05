@@ -1,4 +1,4 @@
-version: 2
+version: 3
 purpose: >-
   Define the deterministic projection from the semantic publication Document
   into renderer-neutral LaTeX IR without reconstructing or changing scientific
@@ -64,10 +64,33 @@ mapping:
     expression_resolution: domain_semantic_model
     generated_label_source: label_registry(occurrence_id)
     manual_semantic_label: reject
+  figure:
+    output: FigureBlock
+    preserve:
+      - figure_id
+      - asset
+      - caption
+      - source_ids
+      - order
+    generated_label_source: label_registry(figure_id)
+    manual_semantic_label: reject
+    asset_policy: safe_repository_relative_graphics_path
+    provenance_resolution: evidence_model
+  table:
+    output: TableBlock
+    preserve:
+      - table_id
+      - columns
+      - rows
+      - caption
+      - source_ids
+      - order
+    generated_label_source: label_registry(table_id)
+    manual_semantic_label: reject
+    cell_rendering: escaped_plain_text
+    provenance_resolution: evidence_model
 
 unsupported_until_dedicated_projection_contract:
-  figure: reject
-  table: reject
   equation_proposal_reference: reject
 
 rendering:
@@ -76,6 +99,11 @@ rendering:
   display_math: typed_math_only
   citations: source_id_to_reference_key
   internal_references: generated_label_only
+  figure_placement: fixed_order_non_floating_H
+  table_placement: fixed_order_non_floating_H
+  figure_assets: validated_path_only
+  figure_table_text_payloads: escaped_plain_text
+  unicode_math: normalize_typed_math_and_keep_plain_text_preamble_safety_net
   legacy_math_scanning: forbidden
 
 failure_policy:
@@ -85,6 +113,9 @@ failure_policy:
   duplicate_document_target_id: reject
   label_target_mismatch: reject
   unresolved_equation_proposal: reject
+  unsafe_figure_asset: reject
+  malformed_table_shape: reject
+  manual_figure_or_table_label: reject
   unsupported_semantic_object: reject
   silent_fallback_to_legacy_section_adapter: forbidden
   silent_semantic_flattening: forbidden
@@ -98,6 +129,9 @@ invariants:
   - cross_reference_target_identity_is_preserved
   - equation_occurrence_identity_is_preserved
   - equation_expression_is_resolved_by_equation_id
+  - figure_identity_and_order_are_preserved
+  - table_identity_shape_and_order_are_preserved
+  - figure_and_table_provenance_ids_resolve_through_evidence
   - latex_labels_are_generated_from_document_object_identity
   - legacy_key_equations_do_not_drive_projection
   - legacy_citations_used_do_not_drive_projection
