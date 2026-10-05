@@ -111,6 +111,59 @@
     }
   },
   {
+    "source_id": "wiki_finite_element_limit_analysis",
+    "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
+    "retrieved_at": "2026-10-05T19:30:00.019074+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Finite element limit analysis",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "A <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">limit</span> <span class=\"searchmatch\">analysis</span> (FELA) uses optimisation techniques to directly compute the upper or lower bound plastic collapse load (or <span class=\"searchmatch\">limit</span> load)",
+      "word_count": 301
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_finite_element_limit_analysis.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element limit analysis",
+    "query_contexts": [
+      "finite element limit analysis",
+      "finite element method plastic analysis"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element limit analysis",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "finite element limit analysis": 0.750865,
+        "scaled boundary finite element method": 0.1375,
+        "hpk finite element method": 0.1375
+      }
+    }
+  },
+  {
     "source_id": "wiki_spectral_element_method",
     "url": "https://en.wikipedia.org/wiki/Spectral_element_method",
     "retrieved_at": "2026-10-05T19:24:45.580486+00:00",
@@ -159,6 +212,178 @@
         "Spectral Element Method finite element method": 0.750865,
         "Virtual Element Method finite element method": 0.1375,
         "Generalized Finite Element Method finite element method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_1509.00440v1",
+    "url": "https://arxiv.org/pdf/1509.00440v1.pdf",
+    "retrieved_at": "2026-10-05T19:30:00.019074+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "A non-symmetric coupling of the finite volume method and the boundary element method",
+    "authors": [
+      "Christoph Erath",
+      "Günther Of",
+      "Francisco-Javier Sayas"
+    ],
+    "metadata": {
+      "abstract": "As model problem we consider the prototype for flow and transport of a concentration in porous media in an interior domain and couple it with a diffusion process in the corresponding unbounded exterior domain. To solve the problem we develop a new non-symmetric coupling between the vertex-centered finite volume and boundary element method. This discretization provides naturally conservation of local fluxes and with an upwind option also stability in the convection dominated case. We aim to provide a first rigorous analysis of the system for different model parameters; stability, convergence, and a~priori estimates. This includes the use of an implicit stabilization, known from the finite element and boundary element method coupling. Some numerical experiments conclude the work and confirm the theoretical results.",
+      "published": "2015-09-01T18:59:36Z",
+      "page_count": 0,
+      "word_count": 9985
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1509.00440v1.txt",
+    "full_text_available": true,
+    "status": "cached_full_text",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method",
+      "finite element method practical implementation modeling rules",
+      "finite element method verification validation numerical stability",
+      "hpk finite element method",
+      "scaled boundary finite element method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "scaled boundary finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "finite element limit analysis": 0.2125,
+        "scaled boundary finite element method": 0.519183,
+        "hpk finite element method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_1902.01090v2",
+    "url": "https://arxiv.org/pdf/1902.01090v2.pdf",
+    "retrieved_at": "2026-10-05T19:30:00.019074+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Finite element analysis for identifying the reaction coefficient in PDE from boundary observations",
+    "authors": [
+      "Tran Nhan Tam Quyen"
+    ],
+    "metadata": {
+      "abstract": "This work is devoted to the nonlinear inverse problem of identifying the reaction coefficient in an elliptic boundary value problem from single Cauchy data on a part of the boundary. We then examine simultaneously two elliptic boundary value problems generated from the available Cauchy data. The output least squares method with the Tikhonov regularization is applied to find approximations of the sought coefficient. We discretize the PDEs with piecewise linear finite elements. The stability and convergence of this technique are then established. A numerical experiment is presented to illustrate our theoretical findings.",
+      "published": "2019-02-04T09:06:35Z",
+      "page_count": 23,
+      "word_count": 9039
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1902.01090v2.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "scaled boundary finite element method",
+    "query_contexts": [
+      "scaled boundary finite element method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element limit analysis",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "finite element limit analysis": 0.519183,
+        "scaled boundary finite element method": 0.519183,
+        "hpk finite element method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2410.12614v1",
+    "url": "https://arxiv.org/pdf/2410.12614v1.pdf",
+    "retrieved_at": "2026-10-05T19:30:00.019074+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Mixed-precision finite element kernels and assembly: Rounding error analysis and hardware acceleration",
+    "authors": [
+      "M. Croci",
+      "G. N. Wells"
+    ],
+    "metadata": {
+      "abstract": "In this paper we develop the first fine-grained rounding error analysis of finite element (FE) cell kernels and assembly. The theory includes mixed-precision implementations and accounts for hardware-acceleration via matrix multiplication units, thus providing theoretical guidance for designing reduced- and mixed-precision FE algorithms on CPUs and GPUs. Guided by this analysis, we introduce hardware-accelerated mixed-precision implementation strategies which are provably robust to low-precision computations. Indeed, these algorithms are accurate to the lower-precision unit roundoff with an error constant that is independent from: the conditioning of FE basis function evaluations, the ill-posedness of the cell, the polynomial degree, and the number of quadrature nodes. Consequently, we present the first AMX-accelerated FE kernel implementations on Intel Sapphire Rapids CPUs. Numerical experiments demonstrate that the proposed mixed- (single/half-) precision algorithms are up to 60 times faster than their double precision equivalent while being orders of magnitude more accurate than their fully half-precision counterparts.",
+      "published": "2024-10-16T14:32:10Z",
+      "page_count": 37,
+      "word_count": 19806
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2410.12614v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "finite element limit analysis",
+    "query_contexts": [
+      "finite element limit analysis"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element limit analysis",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "finite element limit analysis": 0.519183,
+        "scaled boundary finite element method": 0.2125,
+        "hpk finite element method": 0.2125
       }
     }
   },
@@ -271,58 +496,6 @@
         "finite element method flexibility": 0.2125,
         "finite element method plastic analysis": 0.2125,
         "finite element method meshfree": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "wiki_finite_element_limit_analysis",
-    "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
-    "retrieved_at": "2026-10-05T19:19:26.052321+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Finite element limit analysis",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "A <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> limit <span class=\"searchmatch\">analysis</span> (FELA) uses optimisation techniques to directly compute the upper or lower bound <span class=\"searchmatch\">plastic</span> collapse load (or limit load)",
-      "word_count": 301
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_finite_element_limit_analysis.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "finite element method plastic analysis",
-    "query_contexts": [
-      "finite element method plastic analysis"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.444183,
-      "lexical": 0.419722,
-      "source_quality": 0.55,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method plastic analysis",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "finite element method flexibility": 0.1375,
-        "finite element method plastic analysis": 0.444183,
-        "finite element method meshfree": 0.1375
       }
     }
   },

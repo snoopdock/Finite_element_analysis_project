@@ -13,63 +13,57 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The Galerkin method is a foundational approach in the Finite Element Method (FEM) for solving differential equations, introduced by Boris Galerkin. This technique involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions. The method ensures that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. Mathematically, this is represented by the weak form equation "
+              "text": "The formulation of the weak form is a crucial step in the Galerkin method, where the strong form of the governing differential equation is converted into a weak form by multiplying with a test function and integrating over the domain. This process ensures that the solution satisfies the equation in an integral sense, reducing the smoothness requirements for the approximate solution. The weak form is represented by the equation "
             },
             {
               "type": "inline_math",
-              "expression": "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0"
+              "expression": "a(u, v) = \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V"
             },
             {
               "type": "text",
-              "text": ", for all "
+              "text": ", where "
             },
             {
               "type": "inline_math",
-              "expression": "w(x) \\in V"
+              "expression": "a(u, v)"
             },
             {
               "type": "text",
-              "text": ". This formulation reduces the smoothness requirements for the approximate solution, making the Galerkin method a powerful tool for solving partial differential equations.\n\nThe core of the Finite Element Method lies in the weak formulation and assembly of the problem. The weak form is obtained by multiplying the strong form of the governing differential equation with a test function and integrating over the domain, ensuring that the solution satisfies the equation in an integral sense. This step reduces the smoothness requirements for the approximate solution, making it more tractable for numerical simulations. The Galerkin method is then applied by projecting the solution onto a finite-dimensional space of basis functions, resulting in a system of algebraic equations. The assembly of local stiffness and mass matrices into global system matrices is crucial to ensure the problem is mathematically well-posed and numerically stable.\n\nThe use of curved elements in the Finite Element Method (FEM) significantly enhances accuracy in complex geometries by allowing for more precise modeling of domains with curved boundaries. This is achieved through the use of higher-order polynomial shapes, which reduce discretization errors compared to straight-edged elements. The incorporation of curved elements is particularly critical in weak Galerkin methods, where they enhance the flexibility of the solution space, thereby improving the overall accuracy of the numerical solution. By mapping local coordinates "
+              "text": " is the bilinear form capturing the PDE's differential operator, "
             },
             {
               "type": "inline_math",
-              "expression": "(\\xi, \\eta)"
+              "expression": "f"
             },
             {
               "type": "text",
-              "text": " to global coordinates "
+              "text": " is the source term, and "
             },
             {
               "type": "inline_math",
-              "expression": "x"
+              "expression": "v"
             },
             {
               "type": "text",
-              "text": " using shape functions "
+              "text": " is a test function. This equation is a fundamental concept in the Galerkin method, introduced by Boris Galerkin "
             },
             {
-              "type": "inline_math",
-              "expression": "N_i"
-            },
-            {
-              "type": "text",
-              "text": " and control points "
-            },
-            {
-              "type": "inline_math",
-              "expression": "X_i"
+              "type": "citation_occurrence",
+              "occurrence_id": "05a3f3e5-5d2d-50e5-837e-85af264a6552",
+              "source_id": "wiki_boris_galerkin"
             },
             {
               "type": "text",
-              "text": ", curved elements enable accurate modeling of complex geometries, as demonstrated by the equation "
+              "text": ". The weak form is used to select the test functions as the same as the basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations "
             },
             {
-              "type": "inline_math",
-              "expression": "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i"
+              "type": "citation_occurrence",
+              "occurrence_id": "53574d1d-f1ad-56d5-bff0-9ea478529863",
+              "source_id": "wiki_boris_galerkin"
             },
             {
               "type": "text",
-              "text": "."
+              "text": ".\n\nThe Galerkin method's application of boundary conditions is critical in ensuring the problem's physical constraints are satisfied. Incorrect implementation can lead to non-physical solutions or solver failures. Essential and natural boundary conditions are treated differently in the weak form. In the weak formulation and assembly procedure, the PDE is converted into a weak form using test functions, and the Galerkin method is applied by projecting the solution onto a finite-dimensional space. This process involves integrating the weak form over elements, using Gauss-Lobatto quadrature for efficiency, and assembling local stiffness and mass matrices into global system matrices. Furthermore, the use of curved elements is particularly critical in weak Galerkin methods, where they enhance the flexibility of the solution space by allowing for more accurate modeling of domains with curved boundaries."
             }
           ]
         }
@@ -88,51 +82,20 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The Galerkin method serves as a foundational approach in the Finite Element Method (FEM) for solving differential equations. By projecting the solution onto a finite-dimensional space of basis functions, this technique ensures that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. This process, as demonstrated by Boris Galerkin, forms the theoretical basis for modern FEM formulations. The Galerkin weak form, represented by the equation "
+              "text": "The Galerkin method is a foundational approach in the Finite Element Method (FEM) for solving differential equations. It involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. This method forms the theoretical basis for modern FEM formulations, as introduced by Boris Galerkin "
             },
             {
-              "type": "inline_math",
-              "expression": "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V"
-            },
-            {
-              "type": "text",
-              "text": ", captures the PDE's differential operator, source term, and test function, reducing regularity requirements and ensuring the solution satisfies the PDE in an integral sense.\n\nCurved elements are specialized finite elements used to better approximate complex geometries in the Finite Element Method. They allow for more accurate modeling of domains with curved boundaries by using higher-order polynomial shapes. This approach reduces discretization errors compared to straight-edged elements. The use of curved elements is particularly critical in weak Galerkin methods, where they enhance the flexibility of the solution space. By mapping local coordinates "
-            },
-            {
-              "type": "inline_math",
-              "expression": "(\\xi, \\eta)"
+              "type": "citation_occurrence",
+              "occurrence_id": "2c408981-22b6-5664-9a67-a40d27d7dff2",
+              "source_id": "wiki_boris_galerkin"
             },
             {
               "type": "text",
-              "text": " to global coordinates "
+              "text": ". The Galerkin weak form, which is a crucial step in the method, is given by "
             },
             {
               "type": "inline_math",
-              "expression": "x"
-            },
-            {
-              "type": "text",
-              "text": " using shape functions "
-            },
-            {
-              "type": "inline_math",
-              "expression": "N_i"
-            },
-            {
-              "type": "text",
-              "text": " and control points "
-            },
-            {
-              "type": "inline_math",
-              "expression": "X_i"
-            },
-            {
-              "type": "text",
-              "text": ", curved elements can accurately model complex geometries. The choice of element type, including curved elements, depends on the problem's geometry and required accuracy, with higher-order elements reducing discretization errors in smooth solutions.\n\nThe Finite Element Procedure for Limit Analysis involves assembling local element equations into a global system of algebraic equations, which is then solved using numerical methods such as direct solvers or iterative techniques. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly. This optimization problem is formulated as "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K"
+              "expression": " \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V "
             },
             {
               "type": "text",
@@ -140,27 +103,83 @@
             },
             {
               "type": "inline_math",
-              "expression": "\\mathbf{\\sigma}"
+              "expression": " a(u, v) "
             },
             {
               "type": "text",
-              "text": " represents the stress tensor, "
+              "text": " represents the bilinear form capturing the PDE's differential operator, "
             },
             {
               "type": "inline_math",
-              "expression": "\\mathbf{\\varepsilon}"
+              "expression": " f "
             },
             {
               "type": "text",
-              "text": " represents the strain tensor, and the integral is over the domain "
+              "text": " is the source term, and "
             },
             {
               "type": "inline_math",
-              "expression": "\\Omega"
+              "expression": " v "
             },
             {
               "type": "text",
-              "text": ". The Galerkin method serves as a foundational approach in the Finite Element Method (FEM) for solving differential equations, including those used in limit analysis, by projecting the solution onto a finite-dimensional space of basis functions."
+              "text": " is a test function.\n\nThe Finite Element Method (FEM) can be enhanced by incorporating advanced techniques, such as curved elements and the Spectral Element Method (SEM). Curved elements, as described by the equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i"
+            },
+            {
+              "type": "text",
+              "text": ", allow for more accurate modeling of complex geometries by using higher-order polynomial shapes "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "e6100d72-735c-529f-9053-319af27132a6",
+              "source_id": "arxiv_2210.16907v1"
+            },
+            {
+              "type": "text",
+              "text": ". This approach reduces discretization errors compared to straight-edged elements, particularly in weak Galerkin methods. On the other hand, SEM uses high-degree piecewise polynomials as basis functions, achieving high-order accuracy through exponential error reduction with increasing polynomial order "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "fefc5104-15d8-5d7b-9360-4282fb5b0732",
+              "source_id": "wiki_spectral_element_method"
+            },
+            {
+              "type": "text",
+              "text": ". The choice of element type depends on the problem's geometry and required accuracy, with curved elements improving accuracy for complex domains and higher-order elements reducing discretization errors in smooth solutions "
+            },
+            {
+              "type": "citation_cluster_occurrence",
+              "occurrence_id": "90a165f0-b708-50af-8b6d-08875b224545",
+              "source_ids": [
+                "arxiv_2210.16907v1",
+                "wiki_finite_element_limit_analysis"
+              ]
+            },
+            {
+              "type": "text",
+              "text": ".\n\nThe Finite Element Method (FEM) can be enhanced by incorporating advanced techniques to improve computational efficiency and accuracy. Two such techniques are the Additive Schwarz Method and Mass Lumping. The Additive Schwarz Method is a domain decomposition technique that divides the computational domain into subdomains and combines solutions from overlapping subdomains using weighted sums, improving convergence for elliptic problems. This method is particularly effective for Poisson equations and can be integrated with multigrid strategies for faster convergence, as shown in "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "085896ce-1231-57ab-bde7-630a049a1575",
+              "source_id": "arxiv_1512.02390v2"
+            },
+            {
+              "type": "text",
+              "text": ". On the other hand, Mass Lumping is a technique to simplify the mass matrix in FEM by approximating it as diagonal, reducing computational costs. This is achieved by placing nodes at Legendre-Gauss-Lobatto (LGL) points and using Gauss-Lobatto quadrature, enabling efficient time integration with methods like the central difference method (CDM), as described in "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "437f2cca-5812-5f87-80a9-4372fc3607ce",
+              "source_id": "wiki_spectral_element_method"
+            },
+            {
+              "type": "text",
+              "text": "."
             }
           ]
         }
@@ -198,73 +217,7 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Verification of Finite Element Models using the Galerkin Method and Limit Analysis is crucial to ensure the accuracy and reliability of numerical simulations. The Galerkin method, a foundational approach in the Finite Element Method (FEM), involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions. This is achieved through the weak form, as represented by the equation "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V"
-            },
-            {
-              "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "f7035671-2924-579b-9cc0-bf9d5fbec967",
-              "source_id": "wiki_boris_galerkin"
-            },
-            {
-              "type": "text",
-              "text": ". In contrast, Limit Analysis, a technique used to compute the upper or lower bound plastic collapse load of a mechanical system, employs optimization algorithms to minimize the work done by stresses "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\mathbf{\\sigma}"
-            },
-            {
-              "type": "text",
-              "text": " under yield conditions "
-            },
-            {
-              "type": "inline_math",
-              "expression": "K"
-            },
-            {
-              "type": "text",
-              "text": ", as given by the optimization problem "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K"
-            },
-            {
-              "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "c3507fe0-f378-50b3-97f2-62b086efb588",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe implementation of curved elements in finite element analysis poses unique challenges, particularly in the context of weak Galerkin methods. To address these challenges, it is essential to select the appropriate element type based on the problem's geometry and required accuracy. Curved elements, for instance, are particularly effective in modeling complex geometries by using higher-order polynomial shapes, thereby reducing discretization errors compared to straight-edged elements. This is achieved through the use of shape functions "
-            },
-            {
-              "type": "inline_math",
-              "expression": "N_i"
-            },
-            {
-              "type": "text",
-              "text": " and control points "
-            },
-            {
-              "type": "inline_math",
-              "expression": "X_i"
-            },
-            {
-              "type": "text",
-              "text": ", as expressed by the equation "
+              "text": "Verification of Finite Element Models involves ensuring that the numerical solution accurately represents the physical phenomenon being modeled. A crucial aspect of verification is the solution of the resulting linear system, which can be achieved using iterative or direct solvers. For large-scale problems, preconditioned conjugate gradient (PCG) methods are preferred, as they accelerate convergence. Additionally, the use of curved elements can enhance the flexibility of the solution space, particularly in weak Galerkin methods, by allowing for more accurate modeling of complex geometries. This is achieved through the use of higher-order polynomial shapes, as shown in "
             },
             {
               "type": "inline_math",
@@ -272,42 +225,77 @@
             },
             {
               "type": "text",
-              "text": " "
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "X_i"
+            },
+            {
+              "type": "text",
+              "text": " are control points "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "65c632d4-3d29-5008-adca-6d3172bcd6a3",
+              "occurrence_id": "c033fade-7da9-59b2-af46-80400443f8c6",
               "source_id": "arxiv_2210.16907v1"
             },
             {
               "type": "text",
-              "text": ". By carefully choosing the element type and implementing curved elements, finite element analysts can improve the accuracy of their simulations and better capture the complex behavior of real-world systems.\n\nTo ensure the accuracy and reliability of numerical simulations in finite element limit analysis, it is essential to follow best practices during the assembly and solution stage. The local element equations must be assembled into a global system of algebraic equations, which involves summing contributions from all elements and applying boundary conditions. This system is then solved using numerical methods such as direct solvers or iterative techniques. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly, as shown in the optimization problem "
+              "text": ".\n\nOptimization and convergence enhancement strategies play a crucial role in the Finite Element Method (FEM) for solving partial differential equations (PDEs). The Additive Schwarz Method, a domain decomposition technique, is particularly effective for elliptic problems, such as Poisson equations, by combining solutions from overlapping subdomains using weighted sums. This method enhances performance for spectral element solvers, especially when integrated with multigrid strategies for faster convergence. The Residual Reduction Formula, "
             },
             {
               "type": "inline_math",
-              "expression": " \\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K "
+              "expression": " \\frac{\\|r_{k+1}\\|}{\\|r_k\\|} \\leq C \\cdot \\exp(-\\gamma \\sqrt{\\frac{N}{\\log N}}) "
             },
             {
               "type": "text",
-              "text": " "
+              "text": ", quantifies the exponential convergence of SEM with increasing polynomial order, highlighting the efficiency of high-order methods in reducing errors rapidly "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "62b6d0fc-916a-524a-abdf-13c92d2ee2ff",
+              "occurrence_id": "46014222-db6e-56f4-b0f0-2f4ebea8b27c",
+              "source_id": "arxiv_1512.02390v2"
+            },
+            {
+              "type": "text",
+              "text": ". Additionally, Limit Analysis, a technique to compute the upper or lower bound plastic collapse load of a mechanical system, uses optimization algorithms instead of time-stepping, making it efficient for geotechnical problems "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "f6c54c0d-36f6-5f38-8524-404b08930209",
               "source_id": "wiki_finite_element_limit_analysis"
             },
             {
               "type": "text",
-              "text": ". Furthermore, it is crucial to ensure mesh convergence by refining the mesh to guarantee numerical results converge to the true solution, particularly near stress concentrations or curved boundaries "
+              "text": ".\n\nTo ensure the accuracy and reliability of numerical simulations in the Finite Element Method (FEM), it is essential to implement advanced finite element methods with best practices. One such practice is the use of curved elements, which are specialized finite elements that allow for more accurate modeling of domains with curved boundaries by using higher-order polynomial shapes "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "93bb331d-98e4-5da6-bfab-999200686ebb",
-              "source_id": "wiki_finite_element_limit_analysis"
+              "occurrence_id": "83129ee8-08e5-523c-b57d-90c53b75b2b7",
+              "source_id": "arxiv_2210.16907v1"
             },
             {
               "type": "text",
-              "text": "."
+              "text": ". This approach reduces discretization errors compared to straight-edged elements. Additionally, mass lumping can be employed to simplify the mass matrix in FEM, enabling efficient time integration with methods like the central difference method (CDM) "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "83183dfd-90a6-5ba4-9659-b4f2ecc5f1dc",
+              "source_id": "wiki_spectral_element_method"
+            },
+            {
+              "type": "text",
+              "text": ". Furthermore, the residual reduction formula provides a bound on the residual reduction per iteration, highlighting the efficiency of high-order methods in reducing errors rapidly "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "5ea01fac-b6eb-5431-9e1c-9033784b3372",
+              "source_id": "arxiv_1512.02390v2"
+            },
+            {
+              "type": "text",
+              "text": ". By incorporating these techniques, FEM practitioners can achieve more accurate and reliable results."
             }
           ]
         }
@@ -326,7 +314,7 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The Finite Element Method (FEM) is a powerful numerical technique for solving partial differential equations (PDEs). A foundational approach in FEM is the Galerkin method, introduced by Boris Galerkin, which involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions "
+              "text": "The Finite Element Method (FEM) is a powerful numerical technique for solving partial differential equations (PDEs). A foundational approach in FEM is the Galerkin method, introduced by Boris Galerkin "
             },
             {
               "type": "citation_occurrence",
@@ -335,7 +323,7 @@
             },
             {
               "type": "text",
-              "text": ". This method forms the theoretical basis for modern FEM formulations. Furthermore, FEM can be applied to complex geometries using curved elements, which allow for more accurate modeling of domains with curved boundaries by using higher-order polynomial shapes "
+              "text": ", which involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions. This method ensures that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. FEM can be applied to various domains, including complex geometries, where curved elements "
             },
             {
               "type": "citation_occurrence",
@@ -344,15 +332,7 @@
             },
             {
               "type": "text",
-              "text": ".\n\nThe assembly and solution of the finite element equations are crucial steps in the Finite Element Method. The local element equations are assembled into a global system of algebraic equations, which is then solved using numerical methods such as direct solvers or iterative techniques. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly, as shown in the optimization problem "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K"
-            },
-            {
-              "type": "text",
-              "text": " "
+              "text": " are used to better approximate the domain's shape. Furthermore, FEM can be used to compute the upper or lower bound plastic collapse load of a mechanical system through Finite Element Limit Analysis (FELA) "
             },
             {
               "type": "citation_occurrence",
@@ -361,24 +341,24 @@
             },
             {
               "type": "text",
-              "text": ". The choice of solver depends on problem size, sparsity, and desired accuracy, with iterative methods favored for their memory efficiency "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "725d77b2-e660-58b2-86b9-3afeb88fafcc",
-              "source_id": "arxiv_1512.02390v2"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe Finite Element Method (FEM) has been extended to incorporate high-order and domain decomposition techniques to improve its accuracy and efficiency. High-order basis functions, such as those used in the Spectral Element Method (SEM), enable exponential error decay, reducing the number of degrees of freedom required for smooth solutions. This is particularly beneficial for high-frequency wave simulations. Furthermore, domain decomposition methods, such as the Additive Schwarz Method, allow for the division of the computational domain into subdomains, improving convergence for elliptic problems. The method's nonuniform weighting, based on smoothed sign functions, enhances performance for spectral element solvers. The residual reduction formula, "
+              "text": ".\n\nThe assembly and solution of the finite element equations are critical steps in the Finite Element Method (FEM). The local element equations are assembled into a global system of algebraic equations, which involves summing contributions from all elements and applying boundary conditions. This resulting system is solved using numerical methods such as direct solvers or iterative techniques, with preconditioned conjugate gradient (PCG) methods being preferred for large-scale problems. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly, as seen in the optimization problem "
             },
             {
               "type": "inline_math",
-              "expression": "\\frac{\\|r_{k+1}\\|}{\\|r_k\\|} \\leq C \\cdot \\exp(-\\gamma \\sqrt{\\frac{N}{\\log N}})"
+              "expression": " \\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K "
             },
             {
               "type": "text",
-              "text": ", quantifies the exponential convergence of SEM with increasing polynomial order "
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "fa5720c7-fb16-543d-a40e-a2791c14b403",
+              "source_id": "wiki_finite_element_limit_analysis"
+            },
+            {
+              "type": "text",
+              "text": ". The choice of solver depends on problem size, sparsity, and desired accuracy, with iterative methods favored for their memory efficiency "
             },
             {
               "type": "citation_occurrence",
@@ -387,7 +367,34 @@
             },
             {
               "type": "text",
-              "text": "."
+              "text": ".\n\nAdvanced Finite Element Methods for Complex Problems are essential for tackling intricate problems in various fields. The use of curved elements is particularly critical in weak Galerkin methods, where they enhance the flexibility of the solution space by allowing for more accurate modeling of domains with curved boundaries "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "62bb49a1-61c3-589e-b879-bd9a2913e63b",
+              "source_id": "arxiv_2210.16907v1"
+            },
+            {
+              "type": "text",
+              "text": ". Furthermore, the Spectral Element Method (SEM) is a FEM variant using high-degree piecewise polynomials as basis functions, achieving high-order accuracy and leveraging orthogonal polynomials like Chebyshev or Lagrange polynomials over non-uniform nodes "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "1de0097a-00e1-55ac-8573-cdf1946ce103",
+              "source_id": "wiki_spectral_element_method"
+            },
+            {
+              "type": "text",
+              "text": ". Additionally, the Additive Schwarz Method is a domain decomposition technique for solving PDEs by dividing the computational domain into subdomains, combining solutions from overlapping subdomains using weighted sums, and improving convergence for elliptic problems "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "763e03ed-595c-52dc-95d1-9357e5c8e0c2",
+              "source_id": "arxiv_1512.02390v2"
+            },
+            {
+              "type": "text",
+              "text": ". These advanced methods are crucial for large-scale simulations beyond single-processor capabilities and enable the solution of complex problems with high accuracy."
             }
           ]
         }
@@ -406,10 +413,13 @@
       "sections": [
         {
           "section_id": "b4de2d7e-2034-4c5c-b382-06f2fd93965e",
-          "semantic_marker_count": 0,
+          "semantic_marker_count": 2,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 7,
+          "annotated_source_ids": [
+            "wiki_boris_galerkin",
+            "wiki_boris_galerkin"
+          ],
+          "inline_math_count": 4,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
@@ -417,11 +427,19 @@
         },
         {
           "section_id": "34f33cbc-265c-4b09-abfd-23f12859ee6f",
-          "semantic_marker_count": 0,
+          "semantic_marker_count": 7,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 9,
-          "citation_cluster_count": 0,
+          "annotated_source_ids": [
+            "wiki_boris_galerkin",
+            "arxiv_2210.16907v1",
+            "wiki_spectral_element_method",
+            "arxiv_2210.16907v1",
+            "wiki_finite_element_limit_analysis",
+            "arxiv_1512.02390v2",
+            "wiki_spectral_element_method"
+          ],
+          "inline_math_count": 5,
+          "citation_cluster_count": 1,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
@@ -439,16 +457,17 @@
         },
         {
           "section_id": "66f3eaaf-46cb-4660-a1e8-941233c20fb8",
-          "semantic_marker_count": 5,
+          "semantic_marker_count": 6,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
-            "wiki_boris_galerkin",
+            "arxiv_2210.16907v1",
+            "arxiv_1512.02390v2",
             "wiki_finite_element_limit_analysis",
             "arxiv_2210.16907v1",
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis"
+            "wiki_spectral_element_method",
+            "arxiv_1512.02390v2"
           ],
-          "inline_math_count": 8,
+          "inline_math_count": 3,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
@@ -456,34 +475,37 @@
         },
         {
           "section_id": "437252bc-b540-4157-9bd6-86f677222428",
-          "semantic_marker_count": 5,
+          "semantic_marker_count": 8,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
             "wiki_boris_galerkin",
             "arxiv_2210.16907v1",
             "wiki_finite_element_limit_analysis",
+            "wiki_finite_element_limit_analysis",
             "arxiv_1512.02390v2",
+            "arxiv_2210.16907v1",
+            "wiki_spectral_element_method",
             "arxiv_1512.02390v2"
           ],
-          "inline_math_count": 2,
+          "inline_math_count": 1,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         }
       ],
-      "semantic_marker_count": 10,
+      "semantic_marker_count": 23,
       "latex_ir_readiness": {
         "ready": true,
         "counts": {
           "sections": 5,
           "paragraphs": 5,
-          "text_nodes": 41,
-          "inline_math": 26,
+          "text_nodes": 40,
+          "inline_math": 13,
           "display_math": 0,
           "equation_occurrences": 0,
-          "citation_occurrences": 10,
-          "citation_cluster_occurrences": 0,
+          "citation_occurrences": 21,
+          "citation_cluster_occurrences": 1,
           "cross_reference_occurrences": 0,
           "equation_proposal_references": 0,
           "figures": 0,
@@ -498,12 +520,12 @@
       "counts": {
         "sections": 5,
         "paragraphs": 5,
-        "text_nodes": 41,
-        "inline_math": 26,
+        "text_nodes": 40,
+        "inline_math": 13,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 10,
-        "citation_cluster_occurrences": 0,
+        "citation_occurrences": 21,
+        "citation_cluster_occurrences": 1,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "figures": 0,
