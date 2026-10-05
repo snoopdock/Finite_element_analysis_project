@@ -6,7 +6,8 @@
       "mathematical_formulation": "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V",
       "source_ids": [
         "wiki_boris_galerkin"
-      ]
+      ],
+      "concept_id": "8783afcb-3109-49a5-841d-e7e9870b743c"
     },
     {
       "name": "Curved Elements",
@@ -14,7 +15,8 @@
       "mathematical_formulation": "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i, \\quad \\text{where } X_i \\text{ are control points}",
       "source_ids": [
         "arxiv_2210.16907v1"
-      ]
+      ],
+      "concept_id": "b909d69a-96c0-4083-9bae-fd189dc54e9a"
     },
     {
       "name": "Limit Analysis",
@@ -22,6 +24,31 @@
       "mathematical_formulation": "\\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
+      ],
+      "concept_id": "8f3f8463-e667-49bd-820f-84a623e98e02"
+    },
+    {
+      "name": "Spectral Element Method (SEM)",
+      "explanation": "SEM is a FEM variant using high-degree piecewise polynomials as basis functions, achieving high-order accuracy. It leverages orthogonal polynomials like Chebyshev or Lagrange polynomials over non-uniform nodes, enabling exponential error reduction with increasing polynomial order. SEM places nodal points at Legendre-Gauss-Lobatto (LGL) points, facilitating mass lumping and collocation procedures. This method excels in computational fluid dynamics and seismic wave modeling but struggles with complex geometries compared to traditional FEM.",
+      "mathematical_formulation": "u_N \\in V_N: a(u_N, v_N) = \\langle f, v_N \\rangle \\quad \\forall v_N \\in V_N",
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "name": "Additive Schwarz Method",
+      "explanation": "A domain decomposition technique for solving PDEs by dividing the computational domain into subdomains. It combines solutions from overlapping subdomains using weighted sums, improving convergence for elliptic problems. The method's nonuniform weighting, based on smoothed sign functions, enhances performance for spectral element solvers. It is particularly effective for Poisson equations and can be integrated with multigrid strategies for faster convergence.",
+      "mathematical_formulation": "\\mathcal{A} = \\sum_{i=1}^N R_i^T \\mathcal{A}_i R_i",
+      "source_ids": [
+        "arxiv_1512.02390v2"
+      ]
+    },
+    {
+      "name": "Mass Lumping",
+      "explanation": "A technique to simplify the mass matrix in FEM by approximating it as diagonal, reducing computational costs. In SEM, this is achieved by placing nodes at LGL points and using Gauss-Lobatto quadrature. Mass lumping enables efficient time integration with methods like the central difference method (CDM). It is critical for real-time simulations but may sacrifice some accuracy compared to consistent mass matrices.",
+      "mathematical_formulation": "M_{ij} \\approx \\delta_{ij} \\int_{\\Omega} N_i N_j d\\Omega",
+      "source_ids": [
+        "wiki_spectral_element_method"
       ]
     }
   ],
@@ -36,7 +63,8 @@
       "source_ids": [
         "arxiv_2210.16907v1",
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "proposition_id": "d5030947-8060-4f58-89f4-a33b48fdb5d4"
     },
     {
       "step_number": 2,
@@ -48,7 +76,8 @@
       "source_ids": [
         "wiki_boris_galerkin",
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "proposition_id": "9884d10b-c244-4707-b11d-dac2e9ca7a68"
     },
     {
       "step_number": 3,
@@ -59,6 +88,42 @@
       ],
       "source_ids": [
         "wiki_finite_element_limit_analysis"
+      ],
+      "proposition_id": "6f4dfa50-db70-4843-a614-963dc4e43a60"
+    },
+    {
+      "step_number": 1,
+      "title": "Discretization of Domain",
+      "description": "Divide the computational domain into non-overlapping elements. For SEM, elements are defined with high-degree polynomial basis functions. Nodes are placed at LGL points to enable mass lumping. This step ensures the geometry is approximated while maintaining flexibility for complex shapes. The choice of polynomial order directly impacts accuracy and computational cost.",
+      "equations": [
+        "\\Omega = \\bigcup_{e=1}^E \\Omega_e"
+      ],
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Weak Formulation and Assembly",
+      "description": "Convert the PDE into a weak form using test functions. Apply the Galerkin method by projecting the solution onto a finite-dimensional space. Integrate the weak form over elements, using Gauss-Lobatto quadrature for efficiency. Assemble local stiffness and mass matrices into global system matrices. This step ensures the problem is mathematically well-posed and numerically stable.",
+      "equations": [
+        "a(u, v) = \\int_\\Omega \\nabla u \\cdot \\nabla v d\\Omega",
+        "K_{ij} = \\int_\\Omega N_i \\Delta N_j d\\Omega"
+      ],
+      "source_ids": [
+        "wiki_spectral_element_method",
+        "arxiv_1512.02390v2"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Solution of Linear System",
+      "description": "Solve the resulting linear system using iterative or direct solvers. For large-scale problems, preconditioned conjugate gradient (PCG) methods are preferred. Multigrid techniques, like V-cycles with Schwarz smoothers, accelerate convergence. The choice of solver depends on problem size, sparsity, and desired accuracy. Iterative methods are favored for their memory efficiency.",
+      "equations": [
+        "K\\mathbf{u} = \\mathbf{f}"
+      ],
+      "source_ids": [
+        "arxiv_1512.02390v2"
       ]
     }
   ],
@@ -66,10 +131,12 @@
     {
       "name": "Galerkin Weak Form",
       "latex": "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V",
-      "explanation": "This equation represents the Galerkin method's weak form. $ w(x) $ is a test function, $ u(x) $ is the approximate solution, $ f(x) $ is a source term, and $ V $ is the space of admissible test functions. The integral ensures the residual is orthogonal to the test space.",
+      "explanation": "a(u, v) represents the bilinear form capturing the PDE's differential operator, f is the source term, and v is a test function. This equation ensures the solution satisfies the PDE in an integral sense, reducing regularity requirements. The space V is a finite-dimensional subspace of the Sobolev space H^1(Ω).",
       "source_ids": [
-        "wiki_boris_galerkin"
-      ]
+        "wiki_boris_galerkin",
+        "wiki_spectral_element_method"
+      ],
+      "proposition_id": "0a62c778-a397-4a2d-b2fe-cc79b4642940"
     },
     {
       "name": "Curved Element Mapping",
@@ -77,7 +144,8 @@
       "explanation": "This equation maps local coordinates $ (\\xi, \\eta) $ to global coordinates $ x $ using shape functions $ N_i $ and control points $ X_i $. It enables curved elements to model complex geometries accurately.",
       "source_ids": [
         "arxiv_2210.16907v1"
-      ]
+      ],
+      "proposition_id": "88f044e6-b8e2-47ba-b4e7-696069088885"
     },
     {
       "name": "Limit Analysis Optimization",
@@ -85,6 +153,23 @@
       "explanation": "This optimization problem computes the collapse load by minimizing the work done by stresses $ \\mathbf{\\sigma} $ under yield conditions $ K $. $ \\mathbf{\\varepsilon} $ represents the strain tensor, and the integral is over the domain $ \\Omega $.",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
+      ],
+      "proposition_id": "185f4fb9-0e1e-4159-a0d6-4dcbe9d6e636"
+    },
+    {
+      "name": "Residual Reduction Formula",
+      "latex": "\\frac{\\|r_{k+1}\\|}{\\|r_k\\|} \\leq C \\cdot \\exp(-\\gamma \\sqrt{\\frac{N}{\\log N}})",
+      "explanation": "This bounds the residual reduction per iteration, where C and γ are constants, N is the degrees of freedom. It quantifies the exponential convergence of SEM with increasing polynomial order. The formula highlights the efficiency of high-order methods in reducing errors rapidly.",
+      "source_ids": [
+        "arxiv_1512.02390v2"
+      ]
+    },
+    {
+      "name": "Mass Lumping Approximation",
+      "latex": "M_{ij} \\approx \\delta_{ij} \\sum_{q=1}^{n_g} w_q N_i(x_q) N_j(x_q)",
+      "explanation": "M_{ij} is the mass matrix entry, δ_{ij} is the Kronecker delta, w_q are quadrature weights, and x_q are LGL nodes. This approximation diagonalizes the mass matrix, enabling explicit time integration. It relies on the orthogonality of basis functions at quadrature points.",
+      "source_ids": [
+        "wiki_spectral_element_method"
       ]
     }
   ],
@@ -94,7 +179,8 @@
       "explanation": "The mesh must be sufficiently refined to ensure numerical results converge to the true solution. Coarse meshes may lead to inaccurate predictions, especially near stress concentrations or curved boundaries. Adaptive meshing techniques are often used to refine regions of interest.",
       "source_ids": [
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "proposition_id": "ebac9e74-bf62-422f-8a85-93c0889a9faa"
     },
     {
       "rule": "Element Type Selection",
@@ -102,13 +188,36 @@
       "source_ids": [
         "arxiv_2210.16907v1",
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "proposition_id": "f23bfda2-f909-48ef-84c0-2386a283119b"
     },
     {
       "rule": "Boundary Condition Application",
       "explanation": "Boundary conditions must be correctly applied to ensure the problem's physical constraints are satisfied. Incorrect implementation can lead to non-physical solutions or solver failures. Essential and natural boundary conditions are treated differently in the weak form.",
       "source_ids": [
         "wiki_boris_galerkin"
+      ],
+      "proposition_id": "efe4eed7-ad22-4775-b65f-7dc16415dcb5"
+    },
+    {
+      "rule": "High-Order Basis Functions for Accuracy",
+      "explanation": "Use high-degree polynomials (e.g., SEM) to achieve exponential error decay. This reduces the number of degrees of freedom compared to low-order FEM, especially for smooth solutions. High-order methods are critical for high-frequency wave simulations but require careful meshing.",
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "rule": "Nonuniform Node Placement for Efficiency",
+      "explanation": "Place nodes at LGL points to enable mass lumping and collocation. This reduces computational costs and improves time integration stability. Nonuniform spacing also enhances accuracy for problems with localized features.",
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "rule": "Domain Decomposition for Scalability",
+      "explanation": "Apply Schwarz methods to decompose problems into subdomains, enabling parallel computation. Nonuniform weighting improves convergence for heterogeneous problems. This is essential for large-scale simulations beyond single-processor capabilities.",
+      "source_ids": [
+        "arxiv_1512.02390v2"
       ]
     }
   ]

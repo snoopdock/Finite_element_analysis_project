@@ -13,95 +13,59 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The formulation of the weak form is a crucial step in converting the strong form of the governing differential equation into a more tractable form. This is achieved by multiplying the strong form with a test function and integrating over the domain, ensuring that the solution satisfies the equation in an integral sense. The Galerkin method is often employed to select the test functions as the same as the basis functions, thereby reducing the smoothness requirements for the approximate solution. The Galerkin weak form is represented by the equation "
+              "text": "The Galerkin method is a foundational approach in the Finite Element Method (FEM) for solving differential equations, introduced by Boris Galerkin. This technique involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions. The method ensures that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. Mathematically, this is represented by the weak form equation "
             },
             {
               "type": "inline_math",
-              "expression": " \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V "
+              "expression": "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0"
             },
             {
               "type": "text",
-              "text": ", where "
+              "text": ", for all "
             },
             {
               "type": "inline_math",
-              "expression": " w(x) "
+              "expression": "w(x) \\in V"
             },
             {
               "type": "text",
-              "text": " is a test function, "
+              "text": ". This formulation reduces the smoothness requirements for the approximate solution, making the Galerkin method a powerful tool for solving partial differential equations.\n\nThe core of the Finite Element Method lies in the weak formulation and assembly of the problem. The weak form is obtained by multiplying the strong form of the governing differential equation with a test function and integrating over the domain, ensuring that the solution satisfies the equation in an integral sense. This step reduces the smoothness requirements for the approximate solution, making it more tractable for numerical simulations. The Galerkin method is then applied by projecting the solution onto a finite-dimensional space of basis functions, resulting in a system of algebraic equations. The assembly of local stiffness and mass matrices into global system matrices is crucial to ensure the problem is mathematically well-posed and numerically stable.\n\nThe use of curved elements in the Finite Element Method (FEM) significantly enhances accuracy in complex geometries by allowing for more precise modeling of domains with curved boundaries. This is achieved through the use of higher-order polynomial shapes, which reduce discretization errors compared to straight-edged elements. The incorporation of curved elements is particularly critical in weak Galerkin methods, where they enhance the flexibility of the solution space, thereby improving the overall accuracy of the numerical solution. By mapping local coordinates "
             },
             {
               "type": "inline_math",
-              "expression": " u(x) "
+              "expression": "(\\xi, \\eta)"
             },
             {
               "type": "text",
-              "text": " is the approximate solution, "
+              "text": " to global coordinates "
             },
             {
               "type": "inline_math",
-              "expression": " f(x) "
+              "expression": "x"
             },
             {
               "type": "text",
-              "text": " is a source term, and "
+              "text": " using shape functions "
             },
             {
               "type": "inline_math",
-              "expression": " V "
+              "expression": "N_i"
             },
             {
               "type": "text",
-              "text": " is the space of admissible test functions.\n\nThe Galerkin method is a foundational approach in the Finite Element Method (FEM) for solving differential equations. It involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions. This is achieved by using the Galerkin weak form, which is represented by the equation "
+              "text": " and control points "
             },
             {
               "type": "inline_math",
-              "expression": " \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V "
+              "expression": "X_i"
             },
             {
               "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "05a3f3e5-5d2d-50e5-837e-85af264a6552",
-              "source_id": "wiki_boris_galerkin"
-            },
-            {
-              "type": "text",
-              "text": ". The Galerkin method is often used to select the test functions as the same as the basis functions, allowing for a more tractable form of the governing differential equation.\n\nThe application of boundary conditions is a critical aspect of ensuring accurate modeling of domains with curved boundaries. In the weak form of the Galerkin method, boundary conditions are treated differently, with essential and natural conditions being applied accordingly. The use of curved elements, as described in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "134929b0-9349-5e93-83e1-b718d0cdb520",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ", enhances the flexibility of the solution space, particularly in weak Galerkin methods. The correct implementation of boundary conditions is essential to prevent non-physical solutions or solver failures, as outlined in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "40d4946c-a2be-51f6-b4b8-ff8e0119e28f",
-              "source_id": "wiki_boris_galerkin"
-            },
-            {
-              "type": "text",
-              "text": ". The Galerkin weak form, given by "
+              "text": ", curved elements enable accurate modeling of complex geometries, as demonstrated by the equation "
             },
             {
               "type": "inline_math",
-              "expression": " \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V "
-            },
-            {
-              "type": "text",
-              "text": ", serves as a foundation for the assembly and solution process, which involves summing local element contributions and applying boundary conditions, as discussed in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "5beb5fef-2b48-5c5f-92a7-0cf8b8dc3c63",
-              "source_id": "wiki_finite_element_limit_analysis"
+              "expression": "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i"
             },
             {
               "type": "text",
@@ -124,24 +88,39 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The discretization of the domain is a crucial step in the Finite Element Procedure, where the physical domain is divided into smaller, simpler subdomains called elements. This process, known as meshing, allows the problem to be approximated using piecewise functions. The choice of element type depends on the geometry and required accuracy, with curved elements improving approximation for complex domains by using higher-order polynomial shapes, as described in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "4ca8f9d6-6263-5c70-83d6-9ac8c27b6fb1",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ". The use of curved elements is particularly beneficial in weak Galerkin methods, where they enhance the flexibility of the solution space, as demonstrated by the equation "
+              "text": "The Galerkin method serves as a foundational approach in the Finite Element Method (FEM) for solving differential equations. By projecting the solution onto a finite-dimensional space of basis functions, this technique ensures that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. This process, as demonstrated by Boris Galerkin, forms the theoretical basis for modern FEM formulations. The Galerkin weak form, represented by the equation "
             },
             {
               "type": "inline_math",
-              "expression": "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i"
+              "expression": "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V"
             },
             {
               "type": "text",
-              "text": ", where "
+              "text": ", captures the PDE's differential operator, source term, and test function, reducing regularity requirements and ensuring the solution satisfies the PDE in an integral sense.\n\nCurved elements are specialized finite elements used to better approximate complex geometries in the Finite Element Method. They allow for more accurate modeling of domains with curved boundaries by using higher-order polynomial shapes. This approach reduces discretization errors compared to straight-edged elements. The use of curved elements is particularly critical in weak Galerkin methods, where they enhance the flexibility of the solution space. By mapping local coordinates "
+            },
+            {
+              "type": "inline_math",
+              "expression": "(\\xi, \\eta)"
+            },
+            {
+              "type": "text",
+              "text": " to global coordinates "
+            },
+            {
+              "type": "inline_math",
+              "expression": "x"
+            },
+            {
+              "type": "text",
+              "text": " using shape functions "
+            },
+            {
+              "type": "inline_math",
+              "expression": "N_i"
+            },
+            {
+              "type": "text",
+              "text": " and control points "
             },
             {
               "type": "inline_math",
@@ -149,33 +128,39 @@
             },
             {
               "type": "text",
-              "text": " are control points "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "e6100d72-735c-529f-9053-319af27132a6",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe formulation of the weak form is a crucial step in the Finite Element Procedure, where the strong form of the governing differential equation is converted into a more tractable form. This is achieved by multiplying the strong form with a test function and integrating over the domain, ensuring that the solution satisfies the equation in an integral sense, reducing the smoothness requirements for the approximate solution. The Galerkin method is often used to select the test functions as the same as the basis functions, resulting in the Galerkin weak form: "
+              "text": ", curved elements can accurately model complex geometries. The choice of element type, including curved elements, depends on the problem's geometry and required accuracy, with higher-order elements reducing discretization errors in smooth solutions.\n\nThe Finite Element Procedure for Limit Analysis involves assembling local element equations into a global system of algebraic equations, which is then solved using numerical methods such as direct solvers or iterative techniques. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly. This optimization problem is formulated as "
             },
             {
               "type": "inline_math",
-              "expression": " \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V "
+              "expression": "\\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K"
             },
             {
               "type": "text",
-              "text": ", as introduced by Boris Galerkin "
+              "text": ", where "
             },
             {
-              "type": "citation_occurrence",
-              "occurrence_id": "f9d6ee4b-6aae-5e01-8a93-9d96339599e8",
-              "source_id": "wiki_boris_galerkin"
+              "type": "inline_math",
+              "expression": "\\mathbf{\\sigma}"
             },
             {
               "type": "text",
-              "text": ".\n\nThe assembly and solution stage of the Finite Element Procedure involves the local element equations being assembled into a global system of algebraic equations, which is then solved using numerical methods such as direct solvers or iterative techniques. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly. This process ensures that the solution satisfies the equation in an integral sense, reducing the smoothness requirements for the approximate solution. The Galerkin method, which forms the theoretical basis for modern FEM formulations, is often used to select the test functions as the same as the basis functions."
+              "text": " represents the stress tensor, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\mathbf{\\varepsilon}"
+            },
+            {
+              "type": "text",
+              "text": " represents the strain tensor, and the integral is over the domain "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\Omega"
+            },
+            {
+              "type": "text",
+              "text": ". The Galerkin method serves as a foundational approach in the Finite Element Method (FEM) for solving differential equations, including those used in limit analysis, by projecting the solution onto a finite-dimensional space of basis functions."
             }
           ]
         }
@@ -194,51 +179,7 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The discretization of the domain is a crucial step in the Finite Element Procedure, where the physical domain is divided into smaller, simpler subdomains called elements. This process, known as meshing, allows the problem to be approximated using piecewise functions. The choice of element type (e.g., triangular, quadrilateral) depends on the geometry and required accuracy, with curved elements improving accuracy for complex domains and higher-order elements reducing discretization errors in smooth solutions, as shown in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "f4b1eae7-63c3-5203-8a64-5446dc1d8ed1",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": " and "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "ee3b4df8-6a3c-5853-9bf8-95cb0d18305a",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nApplying boundary conditions is a crucial step in the Finite Element Method (FEM), as it ensures that the problem's physical constraints are satisfied. Incorrect implementation can lead to non-physical solutions or solver failures. Essential and natural boundary conditions are treated differently in the weak form, as described by the Galerkin method, which involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions. The correct application of boundary conditions is essential for obtaining realistic simulations, and it is typically done after the local element equations are assembled into a global system of algebraic equations, as per the procedure of assembly and solution.\n\nThe formulation of the weak form is a crucial step in the Galerkin method, where the strong form of the governing differential equation is converted into a weak form by multiplying with a test function and integrating over the domain. This step ensures that the solution satisfies the equation in an integral sense, reducing the smoothness requirements for the approximate solution. The Galerkin method is often used to select the test functions as the same as the basis functions, as represented by the equation "
-            },
-            {
-              "type": "inline_math",
-              "expression": "w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V"
-            },
-            {
-              "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "ad35be4c-3213-5dc6-9a87-45f17a1c2f81",
-              "source_id": "wiki_boris_galerkin"
-            },
-            {
-              "type": "text",
-              "text": ". The use of curved elements is particularly critical in weak Galerkin methods, as they enhance the flexibility of the solution space and allow for more accurate modeling of domains with curved boundaries "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "e317b802-38e4-5896-aa09-f057c5dfd0c9",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": "."
+              "text": "Boundary condition application is a critical aspect of the Finite Element Method (FEM), as it ensures that the problem's physical constraints are satisfied. Incorrect implementation can lead to non-physical solutions or solver failures. Essential and natural boundary conditions are treated differently in the weak form, with essential conditions being directly applied to the solution space, while natural conditions are enforced through the residual. The Galerkin method, a foundational approach in FEM, relies on the correct application of boundary conditions to ensure that the residual is orthogonal to the chosen basis functions, leading to a system of algebraic equations.\n\nThe Spectral Element Method (SEM) and curved elements are two distinct approaches used in the Finite Element Method (FEM) to model complex geometries. SEM utilizes high-degree piecewise polynomials as basis functions, leveraging orthogonal polynomials like Chebyshev or Lagrange polynomials over non-uniform nodes, to achieve high-order accuracy. In contrast, curved elements are specialized finite elements that allow for more accurate modeling of domains with curved boundaries by using higher-order polynomial shapes. This approach reduces discretization errors compared to straight-edged elements. The use of curved elements, particularly in weak Galerkin methods, enhances the flexibility of the solution space, making SEM and curved elements suitable for different types of problems, with SEM exceling in computational fluid dynamics and seismic wave modeling, and curved elements being critical for complex geometries.\n\nThe Galerkin method serves as a foundational approach in the Finite Element Method (FEM) for solving differential equations. By projecting the solution onto a finite-dimensional space of basis functions, the method ensures that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. This technique, introduced by Boris Galerkin, forms the theoretical basis for modern FEM formulations. The use of curved elements, which are specialized finite elements used to better approximate complex geometries, enhances the flexibility of the solution space, particularly in weak Galerkin methods."
             }
           ]
         }
@@ -374,6 +315,86 @@
       "parent_section_ids": [],
       "status": "complete",
       "generated_from": "writer"
+    },
+    {
+      "type": "section",
+      "section_id": "437252bc-b540-4157-9bd6-86f677222428",
+      "title": "Introduction and Scope of the Finite Element Method",
+      "children": [
+        {
+          "type": "paragraph",
+          "inline_content": [
+            {
+              "type": "text",
+              "text": "The Finite Element Method (FEM) is a powerful numerical technique for solving partial differential equations (PDEs). A foundational approach in FEM is the Galerkin method, introduced by Boris Galerkin, which involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "85de6349-52e5-55c4-8f2b-5a00aa98a92c",
+              "source_id": "wiki_boris_galerkin"
+            },
+            {
+              "type": "text",
+              "text": ". This method forms the theoretical basis for modern FEM formulations. Furthermore, FEM can be applied to complex geometries using curved elements, which allow for more accurate modeling of domains with curved boundaries by using higher-order polynomial shapes "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "34b8a06a-f186-5c03-8c1d-89ad1d70be05",
+              "source_id": "arxiv_2210.16907v1"
+            },
+            {
+              "type": "text",
+              "text": ".\n\nThe assembly and solution of the finite element equations are crucial steps in the Finite Element Method. The local element equations are assembled into a global system of algebraic equations, which is then solved using numerical methods such as direct solvers or iterative techniques. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly, as shown in the optimization problem "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "96521db8-1e61-51a9-803a-1a7a41d26acc",
+              "source_id": "wiki_finite_element_limit_analysis"
+            },
+            {
+              "type": "text",
+              "text": ". The choice of solver depends on problem size, sparsity, and desired accuracy, with iterative methods favored for their memory efficiency "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "725d77b2-e660-58b2-86b9-3afeb88fafcc",
+              "source_id": "arxiv_1512.02390v2"
+            },
+            {
+              "type": "text",
+              "text": ".\n\nThe Finite Element Method (FEM) has been extended to incorporate high-order and domain decomposition techniques to improve its accuracy and efficiency. High-order basis functions, such as those used in the Spectral Element Method (SEM), enable exponential error decay, reducing the number of degrees of freedom required for smooth solutions. This is particularly beneficial for high-frequency wave simulations. Furthermore, domain decomposition methods, such as the Additive Schwarz Method, allow for the division of the computational domain into subdomains, improving convergence for elliptic problems. The method's nonuniform weighting, based on smoothed sign functions, enhances performance for spectral element solvers. The residual reduction formula, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\frac{\\|r_{k+1}\\|}{\\|r_k\\|} \\leq C \\cdot \\exp(-\\gamma \\sqrt{\\frac{N}{\\log N}})"
+            },
+            {
+              "type": "text",
+              "text": ", quantifies the exponential convergence of SEM with increasing polynomial order "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "b9435d2f-542e-5887-8826-2396f9405eb2",
+              "source_id": "arxiv_1512.02390v2"
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ]
+        }
+      ],
+      "parent_section_ids": [],
+      "status": "complete",
+      "generated_from": "writer"
     }
   ],
   "metadata": {
@@ -385,14 +406,9 @@
       "sections": [
         {
           "section_id": "b4de2d7e-2034-4c5c-b382-06f2fd93965e",
-          "semantic_marker_count": 4,
+          "semantic_marker_count": 0,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "wiki_boris_galerkin",
-            "arxiv_2210.16907v1",
-            "wiki_boris_galerkin",
-            "wiki_finite_element_limit_analysis"
-          ],
+          "annotated_source_ids": [],
           "inline_math_count": 7,
           "citation_cluster_count": 0,
           "display_math_count": 0,
@@ -401,14 +417,10 @@
         },
         {
           "section_id": "34f33cbc-265c-4b09-abfd-23f12859ee6f",
-          "semantic_marker_count": 3,
+          "semantic_marker_count": 0,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "arxiv_2210.16907v1",
-            "arxiv_2210.16907v1",
-            "wiki_boris_galerkin"
-          ],
-          "inline_math_count": 3,
+          "annotated_source_ids": [],
+          "inline_math_count": 9,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
@@ -416,15 +428,10 @@
         },
         {
           "section_id": "4fd83b90-6bf6-437e-9d7d-e93b694957ba",
-          "semantic_marker_count": 4,
+          "semantic_marker_count": 0,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "arxiv_2210.16907v1",
-            "wiki_finite_element_limit_analysis",
-            "wiki_boris_galerkin",
-            "arxiv_2210.16907v1"
-          ],
-          "inline_math_count": 1,
+          "annotated_source_ids": [],
+          "inline_math_count": 0,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
@@ -446,19 +453,36 @@
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
+        },
+        {
+          "section_id": "437252bc-b540-4157-9bd6-86f677222428",
+          "semantic_marker_count": 5,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [
+            "wiki_boris_galerkin",
+            "arxiv_2210.16907v1",
+            "wiki_finite_element_limit_analysis",
+            "arxiv_1512.02390v2",
+            "arxiv_1512.02390v2"
+          ],
+          "inline_math_count": 2,
+          "citation_cluster_count": 0,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
+          "diagnostics": []
         }
       ],
-      "semantic_marker_count": 16,
+      "semantic_marker_count": 10,
       "latex_ir_readiness": {
         "ready": true,
         "counts": {
-          "sections": 4,
-          "paragraphs": 4,
-          "text_nodes": 39,
-          "inline_math": 19,
+          "sections": 5,
+          "paragraphs": 5,
+          "text_nodes": 41,
+          "inline_math": 26,
           "display_math": 0,
           "equation_occurrences": 0,
-          "citation_occurrences": 16,
+          "citation_occurrences": 10,
           "citation_cluster_occurrences": 0,
           "cross_reference_occurrences": 0,
           "equation_proposal_references": 0,
@@ -472,13 +496,13 @@
     "latex_ir_readiness": {
       "ready": true,
       "counts": {
-        "sections": 4,
-        "paragraphs": 4,
-        "text_nodes": 39,
-        "inline_math": 19,
+        "sections": 5,
+        "paragraphs": 5,
+        "text_nodes": 41,
+        "inline_math": 26,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 16,
+        "citation_occurrences": 10,
         "citation_cluster_occurrences": 0,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
@@ -494,7 +518,8 @@
       "b4de2d7e-2034-4c5c-b382-06f2fd93965e",
       "34f33cbc-265c-4b09-abfd-23f12859ee6f",
       "4fd83b90-6bf6-437e-9d7d-e93b694957ba",
-      "66f3eaaf-46cb-4660-a1e8-941233c20fb8"
+      "66f3eaaf-46cb-4660-a1e8-941233c20fb8",
+      "437252bc-b540-4157-9bd6-86f677222428"
     ]
   }
 }
