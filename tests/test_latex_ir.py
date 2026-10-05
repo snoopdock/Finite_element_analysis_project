@@ -113,8 +113,10 @@ def test_citations_can_resolve_sources_beyond_legacy_25_reference_boundary():
 
     assert len(document.references) == 27
     assert document.references[-1].source_id == "source-27"
-    assert document.references[-1].citation_key == "ref27"
-    assert r"\cite{ref27}" in render_body(document)
+    from processing.latex_ir import citation_key_for_source_id
+    key = citation_key_for_source_id("source-27")
+    assert document.references[-1].citation_key == key
+    assert rf"\cite{{{key}}}" in render_body(document)
 
 def test_citation_blocks_resolve_against_explicit_reference_keys():
     document = build_document_model(
@@ -135,11 +137,10 @@ def test_citation_blocks_resolve_against_explicit_reference_keys():
     )
 
     assert isinstance(document.sections[0].blocks[1], CitationBlock)
-    assert [reference.citation_key for reference in document.references] == [
-        "ref1",
-        "ref2",
-    ]
-    assert r"\cite{ref1,ref2}" in render_body(document)
+    from processing.latex_ir import citation_key_for_source_id
+    keys = [citation_key_for_source_id("one"), citation_key_for_source_id("two")]
+    assert [reference.citation_key for reference in document.references] == keys
+    assert rf"\cite{{{','.join(keys)}}}" in render_body(document)
 
 
 def test_unknown_citation_source_ids_fail_before_rendering():
@@ -231,3 +232,35 @@ def test_empty_sections_are_omitted_from_rendered_output():
     )
 
     assert render_section(section) == ""
+
+
+def test_normalized_citation_keys_are_stable_across_evidence_ordering():
+    from processing.latex_ir import normalize_references
+
+    evidence_a = [
+        {"source_id": "paper_a", "title": "A"},
+        {"source_id": "paper_b", "title": "B"},
+    ]
+    evidence_b = list(reversed(evidence_a))
+
+    keys_a = {reference.source_id: reference.citation_key for reference in normalize_references(evidence_a)}
+    keys_b = {reference.source_id: reference.citation_key for reference in normalize_references(evidence_b)}
+
+    from processing.latex_ir import citation_key_for_source_id
+    assert keys_a == keys_b == {
+        "paper_a": citation_key_for_source_id("paper_a"),
+        "paper_b": citation_key_for_source_id("paper_b"),
+    }
+
+
+def test_unsafe_source_id_uses_deterministic_hashed_citation_key():
+    from processing.latex_ir import citation_key_for_source_id
+
+    first = citation_key_for_source_id("doi:10.1000/example?unsafe=yes")
+    second = citation_key_for_source_id("doi:10.1000/example?unsafe=yes")
+    other = citation_key_for_source_id("doi:10.1000/example?unsafe=no")
+
+    assert first == second
+    assert first.startswith("src:doi-10.1000-example-unsafe-yes-")
+    assert first != other
+    assert "?" not in first

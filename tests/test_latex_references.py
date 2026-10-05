@@ -102,3 +102,14 @@ def test_reference_title_does_not_pass_arbitrary_latex_through():
 
     assert r"\input{secret}" not in rendered
     assert r"\textbackslash{}input\{secret\}" in rendered
+
+
+def test_long_wikipedia_source_id_breaks_uninterrupted_words():
+    rendered = format_provenance_row(
+        0,
+        _reference(source_id="wiki_computational_electromagnetics"),
+    )
+
+    assert r"\texttt{" in rendered
+    assert r"computat\allowbreak{}ional" in rendered
+    assert r"electrom\allowbreak{}agnetics" in rendered

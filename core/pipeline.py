@@ -25,6 +25,7 @@ from research.reading_tracker import (
 
 from processing.document_renderer import render_document_model
 from processing.document_to_latex_ir import project_document_to_latex_ir
+from processing.publication_integrity import assert_publication_integrity
 from core.semantic_document_pipeline import build_semantic_render_document
 
 from utils.text import (
@@ -1018,6 +1019,19 @@ def phase_assemble(state, paths):
         state,
         latex_document,
     )
+    integrity_report = assert_publication_integrity(latex_document, tex_content)
+    state["latex_static_integrity_status"] = {
+        "ok": integrity_report.ok,
+        "issues": [
+            {
+                "severity": issue.severity,
+                "code": issue.code,
+                "message": issue.message,
+                "context": issue.context,
+            }
+            for issue in integrity_report.issues
+        ],
+    }
 
     save_text(
         paths["latex"],

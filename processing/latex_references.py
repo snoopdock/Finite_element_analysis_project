@@ -77,7 +77,7 @@ def format_bibliography(references):
     return "\n".join(items) if items else "  \\bibitem{none} No sources retrieved."
 
 
-def _format_breakable_source_id(source_id, *, chunk_size=8, long_run_threshold=16):
+def _format_breakable_source_id(source_id, *, chunk_size=8, long_run_threshold=12):
     """Format a source ID with safe discretionary break points when required.
 
     Normal identifiers keep the established ``\nolinkurl`` representation.

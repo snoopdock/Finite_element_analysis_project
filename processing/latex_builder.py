@@ -5,6 +5,7 @@ from processing.latex_graph import render_concept_graph, render_perspective_tabl
 from processing.latex_ir import DocumentModel, build_document_model, validate_document_model
 from processing.latex_references import format_bibliography, format_provenance_table
 from processing.latex_renderer import render_body
+from processing.publication_integrity import assert_publication_integrity
 from utils.latex import escape_text
 
 
@@ -48,47 +49,14 @@ def build_latex_document_from_model(state, document: DocumentModel):
         r"\usepackage{float}",
         r"\usepackage{tabularx}",
         r"\usepackage{enumitem}",
-        r"\usepackage{newunicodechar}",
-        r"\usepackage[strings]{underscore}",
         r"\usepackage{cite}",
         r"\usepackage{longtable}",
         r"\usepackage{array}",
         r"\usepackage{tikz}",
         r"\usetikzlibrary{positioning,arrows.meta}",
         "",
-        r"% Fix layout warnings",
+        r"% Conservative line-breaking allowance without global paragraph relaxation",
         r"\setlength{\emergencystretch}{3em}",
-        r"\sloppy",
-        "",
-        r"% Math compatibility layer",
-        r"\makeatletter",
-        r"\newcommand{\@safemath}[1]{%",
-        r"  \expandafter\let\csname orig@#1\expandafter\endcsname\csname #1\endcsname",
-        r"  \expandafter\renewcommand\csname #1\endcsname{\ensuremath{\csname orig@#1\endcsname}}%",
-        r"}",
-        r"\@safemath{in}\@safemath{nabla}\@safemath{delta}\@safemath{partial}",
-        r"\@safemath{int}\@safemath{sum}\@safemath{prod}",
-        r"\@safemath{alpha}\@safemath{beta}\@safemath{gamma}\@safemath{sigma}",
-        r"\@safemath{epsilon}\@safemath{omega}\@safemath{theta}\@safemath{lambda}\@safemath{mu}",
-        r"\let\orig@mathbf\mathbf",
-        r"\renewcommand{\mathbf}[1]{\ensuremath{\orig@mathbf{#1}}}",
-        r"\makeatother",
-        "",
-        r"% Unicode safety net",
-        r"\newunicodechar{∫}{\ensuremath{\int}}",
-        r"\newunicodechar{∑}{\ensuremath{\sum}}",
-        r"\newunicodechar{σ}{\ensuremath{\sigma}}",
-        r"\newunicodechar{ε}{\ensuremath{\varepsilon}}",
-        r"\newunicodechar{γ}{\ensuremath{\gamma}}",
-        r"\newunicodechar{Ω}{\ensuremath{\Omega}}",
-        r"\newunicodechar{∂}{\ensuremath{\partial}}",
-        r"\newunicodechar{∇}{\ensuremath{\nabla}}",
-        r"\newunicodechar{⇒}{\ensuremath{\Rightarrow}}",
-        r"\newunicodechar{≤}{\ensuremath{\le}}",
-        r"\newunicodechar{≥}{\ensuremath{\ge}}",
-        r"\newunicodechar{≠}{\ensuremath{\neq}}",
-        r"\newunicodechar{≈}{\ensuremath{\approx}}",
-        r"\newunicodechar{∞}{\ensuremath{\infty}}",
         "",
         r"\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}",
         "",
@@ -173,4 +141,6 @@ def build_latex_document_from_model(state, document: DocumentModel):
         r"",
         r"\end{document}",
     ])
-    return "\n".join(doc_lines)
+    tex = "\n".join(doc_lines)
+    assert_publication_integrity(document, tex)
+    return tex

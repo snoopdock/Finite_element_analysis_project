@@ -1,6 +1,7 @@
 """Contract tests for the LaTeX document builder boundary."""
 
 from processing.latex_builder import build_latex_document
+from processing.latex_ir import citation_key_for_source_id
 
 
 def test_builder_uses_normalized_reference_identity_for_bibliography_and_citations():
@@ -26,8 +27,9 @@ def test_builder_uses_normalized_reference_identity_for_bibliography_and_citatio
         ],
     )
 
-    assert r"\cite{ref1}" in tex
-    assert r"\bibitem{ref1}" in tex
+    key = citation_key_for_source_id("paper-with-custom-id")
+    assert rf"\cite{{{key}}}" in tex
+    assert rf"\bibitem{{{key}}}" in tex
     assert "paper-with-custom-id" in tex
     assert "Reference \\& Title" in tex
     assert "[Article]" in tex

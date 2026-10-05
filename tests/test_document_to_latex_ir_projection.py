@@ -25,6 +25,7 @@ from processing.document_to_latex_ir import (
 )
 from processing.latex_ir import EquationBlock, IRCitationSpan, IRMathSpan, IRTextSpan, ParagraphBlock
 from processing.latex_renderer import render_body
+from processing.latex_ir import citation_key_for_source_id
 
 
 SECTION_ID = "550e8400-e29b-41d4-a716-446655440000"
@@ -80,9 +81,10 @@ def test_document_projection_preserves_inline_text_math_citation_order():
     assert ir.source_document_id == document.document_id
 
     rendered = render_body(ir)
-    assert r"Find \(u_h \\in V_h\) as shown in \cite{ref1}." in rendered
+    key = citation_key_for_source_id("s1")
+    assert rf"Find \(u_h \\in V_h\) as shown in \cite{{{key}}}." in rendered
     assert r"\$u_h" not in rendered
-    assert rendered.index(r"\(u_h") < rendered.index(r"\cite{ref1}")
+    assert rendered.index(r"\(u_h") < rendered.index(rf"\cite{{{key}}}")
 
 
 def test_authoritative_equation_occurrence_resolves_expression_by_equation_id():
@@ -223,6 +225,7 @@ def test_active_phase_assemble_uses_semantic_ir_and_does_not_escape_or_duplicate
     assert r"\$u_h" not in tex
     assert r"\textbackslash{}in" not in tex
     assert tex.count(r"u_h \\in V_h") == 1
-    assert tex.count(r"\cite{ref1}") == 1
+    key = citation_key_for_source_id("s1")
+    assert tex.count(rf"\cite{{{key}}}") == 1
     assert state["latex_ir_projection_status"]["status"] == "success"
     assert state["latex_ir_projection_status"]["section_count"] == 1

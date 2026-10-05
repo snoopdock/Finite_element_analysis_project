@@ -1,4 +1,4 @@
-version: 3
+version: 4
 purpose: >-
   Define the deterministic projection from the semantic publication Document
   into renderer-neutral LaTeX IR without reconstructing or changing scientific
@@ -97,14 +97,20 @@ rendering:
   plain_text: escaped
   inline_math: typed_math_only
   display_math: typed_math_only
-  citations: source_id_to_reference_key
+  citations: stable_source_id_to_deterministic_reference_key
   internal_references: generated_label_only
   figure_placement: fixed_order_non_floating_H
   table_placement: fixed_order_non_floating_H
   figure_assets: validated_path_only
   figure_table_text_payloads: escaped_plain_text
-  unicode_math: normalize_typed_math_and_keep_plain_text_preamble_safety_net
+  unicode_math: >-
+    normalize typed math at the math-node boundary and render supported Unicode
+    mathematical glyphs in plain text contextually; global Unicode hooks are forbidden
   legacy_math_scanning: forbidden
+  global_math_command_redefinition: forbidden
+  global_unicode_math_hooks: forbidden
+  global_underscore_behavior_override: forbidden
+  global_sloppy_layout: forbidden
 
 failure_policy:
   unresolved_equation_id: reject
@@ -125,6 +131,8 @@ invariants:
   - document_order_is_preserved
   - paragraph_inline_order_is_preserved
   - citation_occurrence_identity_is_preserved
+  - citation_keys_do_not_depend_on_evidence_order
+  - citation_keys_are_projection_metadata_not_source_identity
   - cross_reference_occurrence_identity_is_preserved
   - cross_reference_target_identity_is_preserved
   - equation_occurrence_identity_is_preserved
@@ -137,3 +145,5 @@ invariants:
   - legacy_citations_used_do_not_drive_projection
   - prose_is_never_scanned_for_latex_during_projection
   - renderer_does_not_mutate_semantic_identity
+  - citation_keys_are_stable_projections_of_source_identity
+  - publication_text_contains_no_unprojected_math_unicode

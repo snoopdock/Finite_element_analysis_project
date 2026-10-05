@@ -14,6 +14,7 @@ only for traceability and rendering; it never invents or redefines them.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import hashlib
 import re
 from typing import Any, Mapping, Sequence
 
@@ -485,6 +486,27 @@ def normalize_sections(sections: Sequence[Mapping[str, Any]]) -> tuple[SectionMo
     return tuple(normalized)
 
 
+_CITATION_KEY_STEM_RE = re.compile(r"[^A-Za-z0-9._-]+")
+
+
+def citation_key_for_source_id(source_id: str) -> str:
+    """Project authoritative source identity into a stable LaTeX citation key.
+
+    The key is deterministic but is not itself semantic identity.  A readable
+    stem is retained for diagnostics and a SHA-256 suffix prevents collisions
+    introduced by character normalization or truncation.
+    """
+    if not isinstance(source_id, str) or not source_id.strip():
+        raise DocumentModelError("source_id must be a non-empty string")
+    source_id = source_id.strip()
+    stem = _CITATION_KEY_STEM_RE.sub("-", source_id).strip("-._")
+    if not stem:
+        stem = "source"
+    stem = stem[:48]
+    digest = hashlib.sha256(source_id.encode("utf-8")).hexdigest()[:12]
+    return f"src:{stem}-{digest}"
+
+
 def normalize_references(evidence: Sequence[Mapping[str, Any]]) -> tuple[ReferenceModel, ...]:
     """Convert retrieval receipts into renderer-neutral reference records."""
 
@@ -520,7 +542,7 @@ def normalize_references(evidence: Sequence[Mapping[str, Any]]) -> tuple[Referen
                 retrieved_at=_as_text(
                     source.get("retrieved_at"), "retrieved_at", default="N/A"
                 ),
-                citation_key=f"ref{index + 1}",
+                citation_key=citation_key_for_source_id(source_id),
             )
         )
     return tuple(references)
@@ -551,6 +573,7 @@ def _validate_source_ids(
 
 
 _LATEX_LABEL_RE = re.compile(r"[A-Za-z0-9:._/-]+")
+_LATEX_CITATION_KEY_RE = re.compile(r"[A-Za-z0-9:._-]+")
 
 
 def _validate_ir_label(label: str, *, context: str) -> None:
@@ -605,6 +628,11 @@ def validate_document_model(document: DocumentModel) -> None:
         if not reference.citation_key.strip() or reference.citation_key in citation_keys:
             raise DocumentModelError(
                 f"invalid or duplicate citation_key: {reference.citation_key!r}"
+            )
+        if not _LATEX_CITATION_KEY_RE.fullmatch(reference.citation_key):
+            raise DocumentModelError(
+                "citation_key contains unsupported LaTeX key characters: "
+                f"{reference.citation_key!r}"
             )
         citation_keys.add(reference.citation_key)
 

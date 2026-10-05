@@ -30,6 +30,21 @@ UNICODE_MATH_MAP = {
 }
 
 
+# pdfLaTeX-safe rendering for mathematical Unicode that appears in *plain*
+# semantic text.  This is a compatibility boundary only: typed mathematical
+# content must use ``normalize_math_expression`` instead.
+PLAIN_TEXT_UNICODE_MATH_MAP = {
+    key: value
+    for key, value in UNICODE_MATH_MAP.items()
+    if key not in {'√', '∛', '∜'}
+}
+PLAIN_TEXT_UNICODE_MATH_MAP.update({
+    '√': r'\surd',
+    '∛': r'\sqrt[3]{\,}',
+    '∜': r'\sqrt[4]{\,}',
+})
+
+
 def normalize_math_expression(text: str) -> str:
     """Replace supported Unicode math glyphs with LaTeX commands without adding prose spacing.
 
@@ -55,7 +70,13 @@ def fix_latex_math(text: str) -> str:
 
 
 def escape_text(text: str) -> str:
-    """Escape plain semantic text without interpreting it as LaTeX."""
+    """Escape plain semantic text without interpreting it as LaTeX.
+
+    Supported mathematical Unicode is rendered *locally* through
+    ``\\ensuremath{...}`` so pdfLaTeX does not require global command
+    redefinitions or ``newunicodechar`` mappings.  This is a publication
+    safety net for prose/metadata, not a substitute for typed math nodes.
+    """
     if not text:
         return ""
     replacements = {
@@ -64,7 +85,18 @@ def escape_text(text: str) -> str:
         '_': r'\_', '{': r'\{', '}': r'\}',
         '~': r'\textasciitilde{}', '^': r'\textasciicircum{}',
     }
-    return ''.join(replacements.get(char, char) for char in text)
+    rendered: list[str] = []
+    for char in text:
+        math = PLAIN_TEXT_UNICODE_MATH_MAP.get(char)
+        if math is not None:
+            # Superscript/subscript commands require a base.  Use an empty
+            # group as the base in the compatibility path.
+            if math.startswith(('^', '_')):
+                math = '{}'+math
+            rendered.append(r'\ensuremath{' + math + '}')
+        else:
+            rendered.append(replacements.get(char, char))
+    return ''.join(rendered)
 
 
 def escape_latex(text: str) -> str:

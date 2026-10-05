@@ -32,13 +32,15 @@ def test_typed_math_normalizes_unicode_infinity_to_latex_command():
     assert "∞" not in body
 
 
-def test_preamble_has_plain_text_infinity_safety_mapping_for_pdflatex():
+def test_plain_text_infinity_is_rendered_contextually_without_global_unicode_hook():
     tex = build_latex_document_from_model(
         {"knowledge_graph": {}},
         _document(IRTextSpan("The L∞ estimate is bounded.")),
     )
-    assert r"\newunicodechar{∞}{\ensuremath{\infty}}" in tex
-    assert "The L∞ estimate is bounded." in tex
+    assert r"\newunicodechar" not in tex
+    assert r"\usepackage{newunicodechar}" not in tex
+    assert r"The L\ensuremath{\infty} estimate is bounded." in tex
+    assert "∞" not in tex
 
 
 def test_unicode_math_normalization_does_not_rewrite_plain_ascii_latex():

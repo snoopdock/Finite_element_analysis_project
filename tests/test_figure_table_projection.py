@@ -29,6 +29,7 @@ from processing.latex_ir import (
     validate_document_model,
 )
 from processing.latex_renderer import render_body
+from processing.latex_ir import citation_key_for_source_id
 
 
 SECTION_ID = "11111111-1111-4111-8111-111111111111"
@@ -316,7 +317,8 @@ def test_renderer_escapes_figure_table_text_and_renders_provenance_citations():
     assert r"\begin{table}[H]" in body
     assert r"\textbf{Value\_\%}" in body
     assert r"mesh\_A & 50\%" in body
-    assert body.count(r"\cite{ref1}") == 2
+    key = citation_key_for_source_id("source-1")
+    assert body.count(rf"\cite{{{key}}}") == 2
 
 
 def test_normalize_sections_supports_closed_figure_table_ir_language():

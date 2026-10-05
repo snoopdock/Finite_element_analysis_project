@@ -1,0 +1,97 @@
+version: 1
+purpose: >-
+  Close the publication boundary after semantic Document -> LaTeX IR projection
+  by requiring the exact generated LaTeX source and final PDF artifact to pass
+  deterministic static and compilation validation.
+
+authority:
+  semantic_identity: semantic_document_model
+  citation_identity: evidence_model
+  latex_structure: latex_ir
+  publication_projection: latex_renderer
+  rule: >-
+    Publication validation may reject malformed output but may not repair,
+    reinterpret, or invent scientific/document identity.
+
+static_document_gate:
+  plain_text_must_not_contain:
+    - raw_mathematical_latex_commands
+    - semantic_authoring_markers
+    - source_id_bracket_markers
+  typed_math_required_for_mathematical_commands: true
+
+latex_source_gate:
+  forbidden_global_compatibility_mechanisms:
+    - safemath_core_command_redefinition
+    - newunicodechar_math_safety_layer
+    - underscore_global_behavior_override
+    - global_sloppy
+  required_resolution:
+    citations: every_cite_key_has_exactly_one_bibitem
+    references: every_ref_label_has_exactly_one_label
+  duplicates:
+    bibliography_keys: reject
+    labels: reject
+  raw_semantic_markers: reject
+  raw_source_markers: reject
+  raw_math_unicode_after_projection: reject
+  literalized_math_commands: reject
+
+citation_keys:
+  authority: source_id
+  projection: deterministic_publication_key
+  order_independent: true
+  collision_resistance: sha256_suffix
+  semantic_identity: false
+
+unicode:
+  typed_math: normalize_to_latex_math_commands
+  plain_text: context_local_ensuremath_projection
+  global_preamble_hooks: forbidden
+
+compilation_gate:
+  engine: pdflatex
+  minimum_passes: 2
+  final_pass:
+    fatal_errors: reject
+    undefined_references: reject
+    undefined_citations: reject
+    duplicate_references: reject
+    latex_warnings: reject
+    overfull_boxes: reject
+    underfull_boxes: reject
+  compilation_workspace: isolated_temp_directory
+
+artifact_manifest:
+  required: true
+  fields:
+    - source_commit
+    - pipeline_cycle
+    - pipeline_iteration
+    - state_schema_version
+    - semantic_document_id
+    - semantic_document_version
+    - latex_ir_contract_version
+    - tex_sha256
+    - pdf_sha256
+    - static_audit_status
+    - compilation_receipt
+
+workflow:
+  order:
+    - run_tests
+    - run_pipeline
+    - static_latex_audit
+    - compile_pass_1
+    - compile_pass_2
+    - final_log_audit
+    - write_manifest
+    - upload_validated_artifact
+    - commit_generated_state
+  validated_artifact_only: true
+
+failure_policy:
+  silent_repair: forbidden
+  compile_after_static_error: forbidden
+  publish_after_compile_warning: forbidden
+  commit_manual_dispatch_outputs_after_publication_failure: forbidden
