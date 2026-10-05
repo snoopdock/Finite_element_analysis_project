@@ -62,7 +62,8 @@
       "mathematical_formulation": "\\int_{\\Omega} \\nabla v \\cdot \\nabla u \\, d\\Omega = \\int_{\\Omega} v f \\, d\\Omega",
       "source_ids": [
         "wiki_boris_galerkin"
-      ]
+      ],
+      "concept_id": "18841f59-2936-48a6-a346-1484925f8fa2"
     },
     {
       "name": "Weak Formulation",
@@ -70,6 +71,23 @@
       "mathematical_formulation": "\\int_{\\Omega} v (\\nabla^2 u + f) \\, d\\Omega = 0",
       "source_ids": [
         "wiki_boris_galerkin"
+      ],
+      "concept_id": "d6b95fd5-8a49-4f98-a37c-cb20f3f361db"
+    },
+    {
+      "name": "Enriched Solution Space",
+      "explanation": "The extended finite element method (XFEM) enhances the classical finite element method by enriching the solution space with discontinuous functions. This allows the approximation of solutions to differential equations with localized features such as cracks or material interfaces without requiring mesh refinement. The enrichment incorporates additional basis functions that capture discontinuities, enabling accurate modeling of complex physical phenomena. This approach retains the advantages of meshfree methods while avoiding their computational drawbacks.",
+      "mathematical_formulation": "u_h(x) = \\sum_{i \\in I} N_i(x) u_i + \\sum_{j \\in J} H(x) N_j(x) a_j",
+      "source_ids": [
+        "wiki_extended_finite_element_method"
+      ]
+    },
+    {
+      "name": "Mesh Independence for Discontinuities",
+      "explanation": "XFEM eliminates the need to update the finite element mesh to track discontinuities like cracks. By embedding discontinuous basis functions into the approximation space, the method avoids remeshing as the crack propagates. This reduces computational costs and projection errors associated with traditional finite element methods. The discontinuity is instead described by enrichment functions that align with mesh edges, simplifying the modeling process.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_extended_finite_element_method"
       ]
     }
   ],
@@ -83,6 +101,7 @@
       ],
       "source_ids": [
         "wiki_crystal_plasticity",
+        "wiki_extended_finite_element_method",
         "wiki_finite_element_limit_analysis"
       ],
       "proposition_id": "5e6afc47-3d8c-4e36-acb4-26625199f2ac"
@@ -129,6 +148,17 @@
         "wiki_mixed_finite_element_method"
       ],
       "proposition_id": "407a1196-1003-43b0-9986-a07ce515faae"
+    },
+    {
+      "step_number": 2,
+      "title": "Enrichment Function Selection",
+      "description": "Discontinuities such as cracks or material interfaces are modeled using enrichment functions. These functions, like the Heaviside step function or asymptotic crack-tip functions, are added to the standard polynomial basis. The choice of enrichment depends on the nature of the discontinuity. Nodes intersected by discontinuities are marked for enrichment. This step ensures the solution space captures localized behavior without mesh refinement.",
+      "equations": [
+        "H(x) = \\begin{cases} 1 & x \\in \\text{crack} \\\\ 0 & \\text{otherwise} \\end{cases}"
+      ],
+      "source_ids": [
+        "wiki_extended_finite_element_method"
+      ]
     }
   ],
   "equations": [
@@ -150,7 +180,7 @@
         "wiki_crystal_plasticity",
         "wiki_finite_element_limit_analysis"
       ],
-      "proposition_id": "b136d6ed-3e94-4064-bfbf-edd81312aae9"
+      "proposition_id": "3a0fee20-7790-45ad-8c1f-19749bde4ee3"
     },
     {
       "name": "Saddle-Point System",
@@ -160,6 +190,22 @@
         "wiki_mixed_finite_element_method"
       ],
       "proposition_id": "404db82c-dee1-4367-bb24-1545313e2b6c"
+    },
+    {
+      "name": "Weak Form of PDE",
+      "latex": "\\int_{\\Omega} \\nabla u_h \\cdot \\nabla v \\, dx = \\int_{\\Omega} f v \\, dx",
+      "explanation": "This equation represents the variational form of a partial differential equation. The left side computes the stiffness matrix by integrating the product of gradients of the trial and test functions. The right side computes the load vector by integrating the source term multiplied by the test function. The solution $ u_h $ is approximated using enriched basis functions to capture discontinuities.",
+      "source_ids": [
+        "wiki_extended_finite_element_method"
+      ]
+    },
+    {
+      "name": "Enriched Approximation",
+      "latex": "u_h(x) = \\sum_{i \\in I} N_i(x) u_i + \\sum_{j \\in J} H(x) N_j(x) a_j",
+      "explanation": "This equation defines the enriched finite element approximation. $ N_i(x) $ are standard polynomial basis functions, $ u_i $ are nodal values, $ H(x) $ is an enrichment function (e.g., Heaviside step function), and $ a_j $ are additional coefficients. The second term captures discontinuities, allowing the solution to represent cracks or material interfaces without mesh modification.",
+      "source_ids": [
+        "wiki_extended_finite_element_method"
+      ]
     }
   ],
   "rules": [
@@ -202,6 +248,21 @@
       "explanation": "FEM relies on approximate solutions to complex problems, which are constructed using basis functions. This rule ensures that the numerical solution adheres to the problem's physical and mathematical constraints. Approximate solutions are essential for handling non-linearities, irregular geometries, and heterogeneous material properties.",
       "source_ids": [
         "wiki_boris_galerkin"
+      ],
+      "proposition_id": "c39bc8bb-4093-4f70-bac6-8e21e03f5b87"
+    },
+    {
+      "rule": "Enrichment Strategy Selection",
+      "explanation": "The choice of enrichment functions must align with the physical discontinuity type (e.g., cracks, material interfaces). Incorrect enrichment leads to poor convergence or inaccurate results. This rule ensures the method's effectiveness by matching basis functions to problem-specific features.",
+      "source_ids": [
+        "wiki_extended_finite_element_method"
+      ]
+    },
+    {
+      "rule": "Mesh Compatibility",
+      "explanation": "Discontinuities must be aligned with mesh edges to avoid projection errors. This rule ensures that enrichment functions are applied consistently across elements, maintaining numerical stability and accuracy.",
+      "source_ids": [
+        "wiki_extended_finite_element_method"
       ]
     }
   ]
