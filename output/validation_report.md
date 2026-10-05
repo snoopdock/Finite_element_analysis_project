@@ -1,18 +1,18 @@
 # FEA Pipeline - Cycle Report
 
-**Time:** 2026-10-05T14:44:11.601890+00:00
-**Cycle:** 1
-**Total Iterations:** 1
+**Time:** 2026-10-05T14:50:47.841078+00:00
+**Cycle:** 2
+**Total Iterations:** 2
 **Converged:** False
 
 ## Convergence Diagnostics
 
-- Eta variance: 0.0014799999999999987
+- Eta variance: 0.005079999999999997
 - Invariant violations: 0
 - Adjust actions: 0
 - Incomplete sections: 0
-- Unstable sections: 0
-- Reading coverage: 28.60%
+- Unstable sections: 4
+- Reading coverage: 35.70%
 
 ## This Cycle
 

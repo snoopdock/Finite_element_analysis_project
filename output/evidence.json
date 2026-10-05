@@ -54,7 +54,7 @@
   {
     "source_id": "wiki_finite_element_limit_analysis",
     "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
-    "retrieved_at": "2026-10-05T14:43:07.767557+00:00",
+    "retrieved_at": "2026-10-05T14:50:00.945533+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
     "title": "Finite element limit analysis",
@@ -92,14 +92,118 @@
         "citation_support": 0.0
       },
       "best_query": "finite element limit analysis",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "finite element limit analysis": 0.750865,
+        "loubignac iteration": 0.1375,
+        "mixed finite element method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_loubignac_iteration",
+    "url": "https://en.wikipedia.org/wiki/Loubignac_iteration",
+    "retrieved_at": "2026-10-05T14:50:00.945533+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Loubignac iteration",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "mathematics, <span class=\"searchmatch\">Loubignac</span> <span class=\"searchmatch\">iteration</span> is an <span class=\"searchmatch\">iterative</span> method in finite element methods. It gives continuous stress field. It is named after Gilles <span class=\"searchmatch\">Loubignac</span>, who published",
+      "word_count": 35
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_loubignac_iteration.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "loubignac iteration",
+    "query_contexts": [
+      "loubignac iteration"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "loubignac iteration",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "finite element limit analysis": 0.1375,
+        "loubignac iteration": 0.750865,
+        "mixed finite element method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_mixed_finite_element_method",
+    "url": "https://en.wikipedia.org/wiki/Mixed_finite_element_method",
+    "retrieved_at": "2026-10-05T14:50:00.945533+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Mixed finite element method",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "In numerical analysis, a <span class=\"searchmatch\">mixed</span> <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span>, is a variant of the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> in which extra fields to be solved are introduced during",
+      "word_count": 389
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_mixed_finite_element_method.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "mixed finite element method",
+    "query_contexts": [
+      "mixed finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "mixed finite element method",
       "query_index": 5,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.1375,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "finite element method vs finite difference method": 0.1375,
-        "crystal plasticity finite element method": 0.1375,
-        "finite element limit analysis": 0.750865
+        "finite element limit analysis": 0.1375,
+        "loubignac iteration": 0.1375,
+        "mixed finite element method": 0.750865
       }
     }
   },
@@ -157,6 +261,61 @@
         "finite element method vs finite difference method": 0.519183,
         "crystal plasticity finite element method": 0.2125,
         "finite element limit analysis": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_1712.01407v2",
+    "url": "https://arxiv.org/pdf/1712.01407v2.pdf",
+    "retrieved_at": "2026-10-05T14:50:00.945533+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Iteration entropy",
+    "authors": [
+      "Joachim von zur Gathen"
+    ],
+    "metadata": {
+      "abstract": "We apply a common measure of randomness, the entropy, in the context of iterated functions on a finite set with n elements. For a permutation, it turns out that this entropy is asymptotically (for a growing number of iterations) close to \\log_2(n) minus the entropy of the vector of its cycle lengths. For general functions, a similar approximation holds.",
+      "published": "2017-12-04T23:07:16Z",
+      "page_count": 19,
+      "word_count": 5252
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1712.01407v2.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "loubignac iteration",
+    "query_contexts": [
+      "loubignac iteration"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "loubignac iteration",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "finite element limit analysis": 0.2125,
+        "loubignac iteration": 0.519183,
+        "mixed finite element method": 0.2125
       }
     }
   },

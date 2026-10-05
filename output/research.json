@@ -7,7 +7,8 @@
       "source_ids": [
         "wiki_crystal_plasticity",
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "concept_id": "3de34f0e-f141-40e8-96f0-22cad25b69ba"
     },
     {
       "name": "Schmid Tensor",
@@ -15,7 +16,8 @@
       "mathematical_formulation": "M_{ij} = b_i n_j",
       "source_ids": [
         "wiki_crystal_plasticity"
-      ]
+      ],
+      "concept_id": "2a696143-a8bb-4994-b2ce-1da0ac522aaf"
     },
     {
       "name": "Discretization",
@@ -24,6 +26,31 @@
       "source_ids": [
         "wiki_crystal_plasticity",
         "wiki_finite_element_limit_analysis"
+      ],
+      "concept_id": "1de100f8-e71c-4e79-b09a-99334b0154f5"
+    },
+    {
+      "name": "Loubignac Iteration",
+      "explanation": "Loubignac iteration is an iterative finite element method that generates a continuous stress field. It was introduced by Gilles Loubignac in 1977 and is specifically designed for problems requiring smooth stress distributions. This method addresses numerical challenges in stress computation by iteratively refining solutions. It is distinct from standard finite element approaches that prioritize displacement continuity over stress continuity.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_loubignac_iteration"
+      ]
+    },
+    {
+      "name": "Mixed Finite Element Method",
+      "explanation": "The mixed finite element method introduces additional fields into the formulation of partial differential equations. These extra fields, often constrained by Lagrange multipliers, allow for independent approximation of variables like stress and strain. This approach is particularly effective for problems where traditional methods fail, such as almost incompressible elasticity. It creates a saddle-point system requiring specialized solvers due to non-definite matrices.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
+      ]
+    },
+    {
+      "name": "Primal Finite Element Method",
+      "explanation": "The primal finite element method, also called irreducible, focuses on directly approximating primary variables like displacement. It avoids introducing extra fields, making it simpler but less suitable for certain ill-posed problems. This method relies on strong enforcement of continuity conditions through shared degrees of freedom between elements. Its limitations in handling constraints make mixed methods preferable for specific applications.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
       ]
     }
   ],
@@ -38,7 +65,8 @@
       "source_ids": [
         "wiki_crystal_plasticity",
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "proposition_id": "5e6afc47-3d8c-4e36-acb4-26625199f2ac"
     },
     {
       "step_number": 2,
@@ -50,6 +78,34 @@
       "source_ids": [
         "wiki_crystal_plasticity",
         "wiki_finite_element_limit_analysis"
+      ],
+      "proposition_id": "9a20a1d8-b5a3-4cc0-a264-654fb87536b2"
+    },
+    {
+      "step_number": 1,
+      "title": "Problem Discretization",
+      "description": "Divide the domain into finite elements and define approximation spaces for primary and additional variables. For mixed methods, select appropriate trial and test functions for all fields. This step establishes the framework for weak formulations and ensures compatibility between variables. The choice of elements and basis functions critically affects accuracy and stability.",
+      "equations": [],
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Constraint Enforcement",
+      "description": "Introduce Lagrange multipliers to enforce constraints between fields. This creates a saddle-point system requiring careful handling during solution. The constraints may involve differential equations or inter-element continuity conditions. Proper formulation ensures the resulting system reflects physical and mathematical requirements.",
+      "equations": [],
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Hybridization",
+      "description": "Replace internal constraints with boundary-based Lagrange multipliers to weakly enforce continuity. This reduces degrees of freedom by condensing internal fields. Hybrid methods allow static condensation, improving computational efficiency. The weak enforcement permits discontinuities within elements while maintaining global consistency.",
+      "equations": [],
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
       ]
     }
   ],
@@ -60,7 +116,8 @@
       "explanation": "Here, $ b_i $ represents the Burgers vector component, and $ n_j $ is the slip plane normal component. The tensor maps applied stress to slip systems, determining the resolved shear stress for plastic deformation.",
       "source_ids": [
         "wiki_crystal_plasticity"
-      ]
+      ],
+      "proposition_id": "657c6575-8c5e-4bde-a1a5-78b4d421b1f1"
     },
     {
       "name": "Weak Form of Poisson's Equation",
@@ -69,6 +126,15 @@
       "source_ids": [
         "wiki_crystal_plasticity",
         "wiki_finite_element_limit_analysis"
+      ],
+      "proposition_id": "b136d6ed-3e94-4064-bfbf-edd81312aae9"
+    },
+    {
+      "name": "Saddle-Point System",
+      "latex": "\\begin{bmatrix} K & B \\\\ B^T & 0 \\end{bmatrix} \\begin{bmatrix} u \\\\ \\lambda \\end{bmatrix} = \\begin{bmatrix} f \\\\ 0 \\end{bmatrix}",
+      "explanation": "K represents the stiffness matrix, B enforces constraints via Lagrange multipliers (λ), u is the primary variable vector, and f is the load vector. The zero block corresponds to the constraint equation. This system arises in mixed methods due to the coupling of variables and constraints.",
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
       ]
     }
   ],
@@ -79,7 +145,8 @@
       "source_ids": [
         "wiki_crystal_plasticity",
         "wiki_finite_element_limit_analysis"
-      ]
+      ],
+      "proposition_id": "2b4ea154-336a-4731-932c-c9bae5c118b1"
     },
     {
       "rule": "Boundary Condition Application",
@@ -87,6 +154,21 @@
       "source_ids": [
         "wiki_crystal_plasticity",
         "wiki_finite_element_limit_analysis"
+      ],
+      "proposition_id": "05ae797c-eec0-4e20-8f85-2fc05ce31453"
+    },
+    {
+      "rule": "Use Mixed Methods for Incompressible Materials",
+      "explanation": "Mixed finite element methods are essential for almost incompressible elasticity to avoid numerical locking. Primal methods fail to accurately capture stress and strain fields in such cases. The introduction of additional variables provides better stability and accuracy.",
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
+      ]
+    },
+    {
+      "rule": "Special Solvers for Saddle-Point Systems",
+      "explanation": "Mixed methods produce non-definite matrices requiring GMRES over MINRES. This is critical for iterative solvers to handle negative pivots and eigenvalues. Direct solvers need pivoting, leading to increased memory usage. Proper solver selection ensures computational feasibility.",
+      "source_ids": [
+        "wiki_mixed_finite_element_method"
       ]
     }
   ]
