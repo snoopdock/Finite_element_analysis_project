@@ -41,11 +41,18 @@ jobs:
           echo "Commit:"
           git log -1 --oneline
 
-      - name: Install Tesseract OCR
+      - name: Install system publication dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y tesseract-ocr
+          sudo apt-get install -y \
+            tesseract-ocr \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-pictures \
+            lmodern
           tesseract --version
+          pdflatex --version | head -n 1
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -97,6 +104,9 @@ jobs:
             output/guideline.tex \
             output/validation_report.md \
             output/document.semantic-candidate.json \
+            output/guideline.pdf \
+            output/guideline.log \
+            output/publication_manifest.json \
             output/error.txt
 
           rm -rf output/raw_text
@@ -111,10 +121,33 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          FEA_MAX_LLM_CALLS: 100
+          FEA_MAX_LLM_CALLS: 50
           FEA_CACHE_MAX_SIZE_MB: 500
         run: |
           python main.py --config config.yaml
+
+      - name: Validate and compile publication artifact
+        run: |
+          python -m processing.publication_integrity_cli \
+            --tex output/guideline.tex \
+            --pdf output/guideline.pdf \
+            --manifest output/publication_manifest.json \
+            --semantic-document output/document.semantic-candidate.json \
+            --state state/current_state.json \
+            --ir-contract specs/contracts/document_latex_ir_projection_contract.yaml \
+            --passes 2
+
+      - name: Upload validated publication artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-publication
+          path: |
+            output/guideline.pdf
+            output/guideline.tex
+            output/guideline.log
+            output/publication_manifest.json
+          if-no-files-found: error
 
       - name: Generate Quality Report Artifact
         if: always()
@@ -189,4 +222,6 @@ jobs:
           path: |
             output/error.txt
             output/validation_report.md
+            output/publication_manifest.json
+            output/guideline.log
           if-no-files-found: warn
