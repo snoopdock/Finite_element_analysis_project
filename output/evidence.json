@@ -1,5 +1,117 @@
 [
   {
+    "source_id": "arxiv_1906.09965v2",
+    "url": "https://arxiv.org/pdf/1906.09965v2.pdf",
+    "retrieved_at": "2026-10-05T12:21:00.146830+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "A numerical study of the dispersion and dissipation properties of virtual element methods for the Helmholtz problem",
+    "authors": [
+      "Ilaria Perugia",
+      "Alexander Pichler"
+    ],
+    "metadata": {
+      "abstract": "We study numerically the dispersion and dissipation properties of the plane wave virtual element method and the nonconforming Trefftz virtual element method for the Helmholtz problem. Whereas the former method is based on a conforming virtual partition of unity approach in the sense that the local (implicitly defined) basis functions are given as modulations of lowest order harmonic virtual element functions with plane waves, the latter one represents a pure Trefftz method with local edge-related basis functions that are eventually glued together in a nonconforming fashion. We will see that the qualitative and quantitative behavior of dissipation and dispersion of the method hinges upon the level of conformity and the use of Trefftz basis functions. To this purpose, we also compare the results to those obtained in [15] for the plane wave discontinuous Galerkin method, and to those for the standard polynomial based finite element method.",
+      "published": "2019-06-24T13:58:08Z",
+      "page_count": 27,
+      "word_count": 146
+    },
+    "full_text_path": null,
+    "full_text_available": false,
+    "status": "metadata_only",
+    "query_context": "virtual element method",
+    "query_contexts": [
+      "virtual element method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.825865,
+      "lexical": 0.839445,
+      "source_quality": 0.85,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "virtual element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.365841,
+        "hpk finite element method": 0.2125,
+        "virtual element method": 0.825865,
+        "galerkin orthogonality finite element method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2412.17631v1",
+    "url": "https://arxiv.org/pdf/2412.17631v1.pdf",
+    "retrieved_at": "2026-10-05T12:21:00.146830+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "A $C^0$-continuous nonconforming virtual element method for linear strain gradient elasticity",
+    "authors": [
+      "Jianguo Huang",
+      "Yue Yu"
+    ],
+    "metadata": {
+      "abstract": "A robust $C^0$-continuous nonconforming virtual element method (VEM) is developed for a boundary value problem arising from strain gradient elasticity in two dimensions, with the family of polygonal meshes satisfying a very general geometric assumption given in Brezzi et al. (2009) and Chen and Huang (2018). The stability condition of the VEMs is derived by establishing Korn-type inequalities and inverse inequalities. Some crucial commutative relations for locking-free analysis as in elastic problems are derived. The sharp and uniform error estimates with respect to both the microscopic parameter and the Lamé coefficient are achieved in the lowest-order case, which is also verified by numerical results.",
+      "published": "2024-12-23T15:06:54Z",
+      "page_count": 27,
+      "word_count": 11290
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2412.17631v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "virtual element method",
+    "query_contexts": [
+      "virtual element method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.825865,
+      "lexical": 0.839445,
+      "source_quality": 0.85,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "virtual element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "hpk finite element method": 0.2125,
+        "virtual element method": 0.825865,
+        "galerkin orthogonality finite element method": 0.2125
+      }
+    }
+  },
+  {
     "source_id": "wiki_finite_element_limit_analysis",
     "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
     "retrieved_at": "2026-10-05T12:18:44.244021+00:00",
@@ -48,6 +160,115 @@
         "stiffness methods in finite element analysis": 0.341955,
         "flexibility method finite element analysis": 0.444183,
         "finite element limit analysis": 0.750865
+      }
+    }
+  },
+  {
+    "source_id": "wiki_virtual_method_table",
+    "url": "https://en.wikipedia.org/wiki/Virtual_method_table",
+    "retrieved_at": "2026-10-05T12:21:00.146830+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Virtual method table",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "In computer programming, a <span class=\"searchmatch\">virtual</span> <span class=\"searchmatch\">method</span> table (VMT), <span class=\"searchmatch\">virtual</span> function table, <span class=\"searchmatch\">virtual</span> call table, dispatch table, vtable, or vftable is a mechanism used",
+      "word_count": 1585
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_virtual_method_table.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "virtual element method",
+    "query_contexts": [
+      "virtual element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "virtual element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "hpk finite element method": 0.1375,
+        "virtual element method": 0.750865,
+        "galerkin orthogonality finite element method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2210.16907v1",
+    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
+    "retrieved_at": "2026-10-05T12:21:00.146830+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
+    "authors": [
+      "Dan Li",
+      "Chunmei Wang",
+      "Junping Wang"
+    ],
+    "metadata": {
+      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
+      "published": "2022-10-30T18:14:18Z",
+      "page_count": 0,
+      "word_count": 9773
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
+    "full_text_available": true,
+    "status": "cached_full_text",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "galerkin orthogonality finite element method",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "hpk finite element method": 0.2125,
+        "virtual element method": 0.2125,
+        "galerkin orthogonality finite element method": 0.519183
       }
     }
   },
@@ -159,63 +380,6 @@
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
         "stiffness methods in finite element analysis": 0.2125,
-        "flexibility method finite element analysis": 0.2125,
-        "finite element limit analysis": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2210.16907v1",
-    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
-    "retrieved_at": "2026-10-05T12:18:44.244021+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
-    "authors": [
-      "Dan Li",
-      "Chunmei Wang",
-      "Junping Wang"
-    ],
-    "metadata": {
-      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
-      "published": "2022-10-30T18:14:18Z",
-      "page_count": 26,
-      "word_count": 9773
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
-    "full_text_available": true,
-    "status": "parsed_full_text",
-    "query_context": "finite element method mathematical foundation weak form Galerkin method",
-    "query_contexts": [
-      "finite element method mathematical foundation weak form Galerkin method"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.457846,
-      "lexical": 0.335778,
-      "source_quality": 0.85,
-      "section_relevance": 0.270904,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method mathematical foundation weak form Galerkin method",
-      "query_index": 0,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "stiffness methods in finite element analysis": 0.416955,
         "flexibility method finite element analysis": 0.2125,
         "finite element limit analysis": 0.2125
       }

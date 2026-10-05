@@ -2,10 +2,10 @@
   "schema_version": 6,
   "topic": "Finite Element Method Theory Implementation and Modeling Rules",
   "objective": "Produce a comprehensive technical guideline explaining how the Finite Element Method works\nincluding mathematical foundation, step-by-step procedure, and rules for modeling physical phenomena.\n",
-  "cycle": 1,
-  "iteration": 1,
-  "last_run": "2026-10-05T12:19:41.286847+00:00",
-  "last_run_status": "success",
+  "cycle": 2,
+  "iteration": 2,
+  "last_run": "2026-10-05T12:21:44.266252+00:00",
+  "last_run_status": "partial",
   "knowledge_base": {
     "concepts": [
       {
@@ -378,7 +378,7 @@
   "sections": [
     {
       "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
-      "content": "The formulation of a problem in the context of finite element limit analysis (FELA) involves defining the physical problem, including geometry, material properties, boundary conditions, and loading scenarios. The domain is then discretized into finite elements, ensuring appropriate mesh density for accuracy. For FELA, the problem is formulated as an optimization task, where the goal is to directly compute collapse loads without time-stepping. This is achieved by solving the optimization problem using algorithms tailored to the formulation, such as second-order cone programming for nonlinear optimization. The optimization problem can be represented by the equation $\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}$, where $\\mathbf{x}$ is the vector of variables, $\\mathbf{c}$ is the cost coefficient, $\\mathbf{A}$ and $\\mathbf{b}$ define equality constraints, and $\\mathcal{K}$ denotes the second-order cone.\n\nThe Galerkin method, a cornerstone of finite element limit analysis (FELA), relies on optimization techniques to determine upper or lower bound plastic collapse loads. In the context of curved elements in Weak Galerkin Finite Element Methods (WG-FEM), the use of these elements enables accurate modeling of complex geometries by approximating curved boundaries, thereby enhancing the flexibility of WG-FEM for problems with irregular domains [arxiv_2210.16907v1]. The optimization problem in FELA is formulated as a second-order cone programming (SOCP) problem, which ensures the solution adheres to plasticity and stability conditions: $\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}$ [wiki_finite_element_limit_analysis].\n\nThe incorporation of curved elements in Weak Galerkin Finite Element Methods (WG-FEM) is crucial for maintaining the accuracy of complex geometries. As stated in [arxiv_2210.16907v1], curved elements enable the approximation of curved boundaries, thereby enhancing the flexibility of WG-FEM for problems with irregular domains. This is particularly important in applications requiring high-fidelity geometric representation. Furthermore, the use of curved elements reduces discretization errors, as emphasized in [arxiv_2210.16907v1], which is essential for maintaining solution fidelity in problems with irregular boundaries or nonlinear deformations. By leveraging curved elements, WG-FEM can provide a more accurate representation of complex geometries, ultimately leading to improved computational efficiency and solution accuracy.",
+      "content": "Finite Element Limit Analysis (FELA) is a method that employs optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems, as stated in [wiki_finite_element_limit_analysis]. The problem formulation process in FELA involves defining the physical problem by specifying geometry, material properties, boundary conditions, and loading scenarios, and discretizing the domain into finite elements, ensuring appropriate mesh density for accuracy. According to the optimization-based solution procedure, the problem is formulated as an optimization task to directly compute collapse loads, avoiding time-consuming incremental analysis and ensuring bounds on the true collapse load through upper/lower bound theorems, as shown in the Second-Order Cone Programming (SOCP) formulation: $\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}$, where $\\mathbf{x}$ is the vector of variables, $\\mathbf{c}$ is the cost coefficient, $\\mathbf{A}$ and $\\mathbf{b}$ define equality constraints, and $\\mathcal{K}$ denotes the second-order cone.\n\nIn the context of Weak Galerkin Methods, leveraging curved elements is crucial for accurately modeling complex geometries. This concept is critical for applications requiring high-fidelity geometric representation. According to [arxiv_2210.16907v1], curved elements in Weak Galerkin Finite Element Methods (WG-FEM) enable accurate modeling of complex geometries by approximating curved boundaries. They maintain the mathematical consistency of the method while improving computational efficiency. In Finite Element Limit Analysis (FELA), optimization techniques are employed to compute upper or lower bound plastic collapse loads for mechanical systems, as stated in [wiki_finite_element_limit_analysis]. The use of curved elements in FELA ensures that the solution accurately represents the complex geometry, reducing discretization errors and maintaining solution fidelity in problems with irregular boundaries or nonlinear deformations.\n\nThe Galerkin method is a crucial component of the Finite Element Limit Analysis (FELA) procedure, enabling the formulation of optimization problems that determine plastic collapse loads for mechanical systems. According to the optimization-based solution procedure, the problem is formulated as a second-order cone programming (SOCP) optimization problem, where the goal is to minimize the dissipated energy subject to kinematic constraints or maximize the load factor while satisfying stress equilibrium. The SOCP formulation is represented by the equation $\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}$, as stated in [wiki_finite_element_limit_analysis]. This formulation ensures that the solution adheres to plasticity and stability conditions, making it a powerful tool for computing collapse loads in FELA.",
       "key_equations": [
         "\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}",
         "\\mathbf{x}",
@@ -391,51 +391,71 @@
         "wiki_finite_element_limit_analysis"
       ],
       "section_id": "7990454e-9eb1-4fcb-a324-80667fcf2812",
+      "parent_section_ids": [],
       "generated_from": "writer",
-      "status": "complete",
-      "parent_section_ids": []
+      "status": "complete"
     },
     {
-      "section_id": "29a56191-5fe3-41cd-afa7-05ea5af855d6",
       "title": "The Finite Element Procedure: Problem Formulation and Discretization",
-      "content": "",
+      "content": "Problem formulation and discretization techniques in finite element analysis are crucial for accurately modeling complex physical problems. According to the procedure for problem formulation, the physical problem is defined by specifying geometry, material properties, boundary conditions, and loading scenarios. Discretization of the domain into finite elements is necessary, ensuring appropriate mesh density for accuracy. For Finite Element Limit Analysis (FELA), the choice between kinematic (velocity-based) or equilibrium (stress-based) formulations is essential. The optimization-based solution procedure involves solving the discretized problem using optimization algorithms tailored to the formulation, such as second-order cone programming for nonlinear optimization. This approach directly computes upper or lower bound plastic collapse loads for mechanical systems, as stated in [wiki_finite_element_limit_analysis].\n\nIn the context of finite element limit analysis, optimization techniques are employed to compute upper or lower bound plastic collapse loads for mechanical systems. According to the optimization-based solution procedure, the problem is formulated as an optimization task to directly compute collapse loads, thereby avoiding time-consuming incremental analysis. This is achieved by minimizing the dissipated energy subject to kinematic constraints for kinematic FELA or maximizing the load factor while satisfying stress equilibrium for equilibrium FELA. The optimization problem can be represented by the second-order cone programming (SOCP) formulation, where $\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}$, ensuring the solution adheres to plasticity and stability conditions [wiki_finite_element_limit_analysis].\n\nCurved elements in Weak Galerkin Finite Element Methods (WG-FEM) are essential for accurately modeling complex geometries by approximating curved boundaries. According to the rule for geometry accuracy, curved elements should be employed to reduce discretization errors and maintain solution fidelity in problems with irregular boundaries or nonlinear deformations, as stated in [arxiv_2210.16907v1]. This concept is critical for applications requiring high-fidelity geometric representation. By employing curved elements, WG-FEM enhances the flexibility of the method for problems with irregular domains while maintaining mathematical consistency.",
+      "key_equations": [
+        "\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}"
+      ],
+      "citations_used": [
+        "arxiv_2210.16907v1",
+        "wiki_finite_element_limit_analysis"
+      ],
+      "section_id": "29a56191-5fe3-41cd-afa7-05ea5af855d6",
       "parent_section_ids": [
         "682a088d-9383-4458-b3d1-97d0f7e16a16"
       ],
       "generated_from": "split",
-      "status": "needs_generation",
-      "parent_content_reference": "The problem formulation in Finite Element Limit Analysis (FELA) is a critical step in defining the physical problem, including geometry, material properties, boundary conditions, and loading scenarios. Discretization of the domain into finite elements is necessary, with appropriate mesh density for accuracy. FELA can be formulated in either kinematic (velocity-based) or equilibrium (stress-based) forms, with the choice between these formulations depending on the specific application. Validation ...",
       "subsection_index": 0,
-      "key_equations": [],
-      "citations_used": []
+      "parent_content_reference": "The problem formulation in Finite Element Limit Analysis (FELA) is a critical step in defining the physical problem, including geometry, material properties, boundary conditions, and loading scenarios. Discretization of the domain into finite elements is necessary, with appropriate mesh density for accuracy. FELA can be formulated in either kinematic (velocity-based) or equilibrium (stress-based) forms, with the choice between these formulations depending on the specific application. Validation ...",
+      "status": "complete"
     },
     {
-      "section_id": "8c05b7b5-51f4-4eca-bfac-16dd7f82ff95",
       "title": "The Finite Element Procedure: Optimization in Finite Element Limit Analysis",
-      "content": "",
+      "content": "Finite Element Limit Analysis (FELA) employs optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems, as stated in [wiki_finite_element_limit_analysis]. The optimization-based solution procedure involves formulating the problem as an optimization task to directly compute collapse loads, thereby avoiding time-consuming incremental analysis [wiki_finite_element_limit_analysis]. This is achieved by solving the discretized problem using optimization algorithms tailored to the formulation, such as second-order cone programming for nonlinear optimization [wiki_finite_element_limit_analysis]. The optimization problem can be represented by the equation $\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}$, where $\\mathbf{x}$ is the vector of variables, $\\mathbf{c}$ is the cost coefficient, $\\mathbf{A}$ and $\\mathbf{b}$ define equality constraints, and $\\mathcal{K}$ denotes the second-order cone [wiki_finite_element_limit_analysis].\n\nTo formulate complex geometries with curved elements in Weak Galerkin Methods, it is essential to employ curved elements that enable accurate modeling of irregular domains. According to [arxiv_2210.16907v1], these elements maintain the mathematical consistency of the method while improving computational efficiency. The use of curved elements is critical for applications requiring high-fidelity geometric representation, as it reduces discretization errors and ensures solution fidelity in problems with irregular boundaries or nonlinear deformations. This is particularly relevant in Finite Element Limit Analysis (FELA), which employs optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems, as stated in [wiki_finite_element_limit_analysis].\n\nThe optimization-based solution strategy in Finite Element Limit Analysis (FELA) involves formulating the problem as a minimization or maximization task to directly compute collapse loads. This approach is based on the second-order cone programming (SOCP) formulation, where $\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}$, as stated in [wiki_finite_element_limit_analysis]. The use of curved elements in Weak Galerkin Methods, as described in [arxiv_2210.16907v1], is essential for accurately modeling complex geometries and reducing discretization errors. By employing curved elements, FELA can maintain solution fidelity in problems with irregular boundaries or nonlinear deformations, ultimately ensuring accurate collapse load determination.",
+      "key_equations": [
+        "\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}",
+        "\\mathbf{x}",
+        "\\mathbf{c}",
+        "\\mathbf{A}",
+        "\\mathbf{b}"
+      ],
+      "citations_used": [
+        "arxiv_2210.16907v1",
+        "wiki_finite_element_limit_analysis"
+      ],
+      "section_id": "8c05b7b5-51f4-4eca-bfac-16dd7f82ff95",
       "parent_section_ids": [
         "682a088d-9383-4458-b3d1-97d0f7e16a16"
       ],
       "generated_from": "split",
-      "status": "needs_generation",
-      "parent_content_reference": "The problem formulation in Finite Element Limit Analysis (FELA) is a critical step in defining the physical problem, including geometry, material properties, boundary conditions, and loading scenarios. Discretization of the domain into finite elements is necessary, with appropriate mesh density for accuracy. FELA can be formulated in either kinematic (velocity-based) or equilibrium (stress-based) forms, with the choice between these formulations depending on the specific application. Validation ...",
       "subsection_index": 1,
-      "key_equations": [],
-      "citations_used": []
+      "parent_content_reference": "The problem formulation in Finite Element Limit Analysis (FELA) is a critical step in defining the physical problem, including geometry, material properties, boundary conditions, and loading scenarios. Discretization of the domain into finite elements is necessary, with appropriate mesh density for accuracy. FELA can be formulated in either kinematic (velocity-based) or equilibrium (stress-based) forms, with the choice between these formulations depending on the specific application. Validation ...",
+      "status": "complete"
     },
     {
-      "section_id": "7116cc5b-80f0-4540-b9d6-fb743c9ed90e",
       "title": "The Finite Element Procedure: Curved Elements for Complex Geometry Representation",
-      "content": "",
+      "content": "Curved elements in Weak Galerkin Finite Element Methods (WG-FEM) are essential for accurately modeling complex geometries by approximating curved boundaries. This concept is critical for applications requiring high-fidelity geometric representation, as stated in [arxiv_2210.16907v1]. In the context of Finite Element Limit Analysis (FELA), the use of curved elements is particularly important for reducing discretization errors and maintaining solution fidelity in problems with irregular boundaries or nonlinear deformations, as per [arxiv_2210.16907v1]. By employing curved elements, FELA can effectively represent complex geometries, thereby ensuring accurate computation of collapse loads.\n\nIn the context of Finite Element Limit Analysis (FELA), the problem formulation is a critical step in defining the physical problem. According to the procedure for problem formulation, the physical problem is defined by specifying geometry, material properties, boundary conditions, and loading scenarios. Discretization of the domain into finite elements is essential, with curved elements employed to accurately represent complex geometries and reduce discretization errors, as stated in [arxiv_2210.16907v1]. The choice between kinematic (velocity-based) or equilibrium (stress-based) formulations is also crucial, with the latter being more suitable for problems involving plasticity and stability. The optimization problem in FELA can be formulated as a second-order cone programming (SOCP) problem, as represented by $\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}$, where $\\mathcal{K}$ denotes the second-order cone [wiki_finite_element_limit_analysis].\n\nThe optimization-based solution procedure in Finite Element Limit Analysis (FELA) involves solving the discretized problem using tailored optimization algorithms. For kinematic FELA, the dissipated energy is minimized subject to kinematic constraints, while for equilibrium FELA, the load factor is maximized while satisfying stress equilibrium. Employing solvers like second-order cone programming for nonlinear optimization, the problem is iteratively solved until convergence criteria are met. This approach ensures the solution adheres to plasticity and stability conditions, as represented by the second-order cone programming formulation: $\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}$ [wiki_finite_element_limit_analysis]. The use of curved elements in Weak Galerkin Finite Element Methods (WG-FEM) is essential for accurately modeling complex geometries, as they enhance the flexibility of WG-FEM for problems with irregular domains [arxiv_2210.16907v1].",
+      "key_equations": [
+        "\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}",
+        "\\mathcal{K}"
+      ],
+      "citations_used": [
+        "arxiv_2210.16907v1",
+        "wiki_finite_element_limit_analysis"
+      ],
+      "section_id": "7116cc5b-80f0-4540-b9d6-fb743c9ed90e",
       "parent_section_ids": [
         "682a088d-9383-4458-b3d1-97d0f7e16a16"
       ],
       "generated_from": "split",
-      "status": "needs_generation",
-      "parent_content_reference": "The problem formulation in Finite Element Limit Analysis (FELA) is a critical step in defining the physical problem, including geometry, material properties, boundary conditions, and loading scenarios. Discretization of the domain into finite elements is necessary, with appropriate mesh density for accuracy. FELA can be formulated in either kinematic (velocity-based) or equilibrium (stress-based) forms, with the choice between these formulations depending on the specific application. Validation ...",
       "subsection_index": 2,
-      "key_equations": [],
-      "citations_used": []
+      "parent_content_reference": "The problem formulation in Finite Element Limit Analysis (FELA) is a critical step in defining the physical problem, including geometry, material properties, boundary conditions, and loading scenarios. Discretization of the domain into finite elements is necessary, with appropriate mesh density for accuracy. FELA can be formulated in either kinematic (velocity-based) or equilibrium (stress-based) forms, with the choice between these formulations depending on the specific application. Validation ...",
+      "status": "complete"
     },
     {
       "title": "Rules for Modeling Physical Phenomena with FEM",
@@ -470,13 +490,35 @@
       "generated_from": "writer",
       "status": "complete",
       "parent_section_ids": []
+    },
+    {
+      "title": "Introduction and Scope of the Finite Element Method",
+      "content": "The problem formulation process in the Finite Element Method is a critical step in defining the physical problem. According to the procedure for problem formulation, the physical problem is defined by specifying geometry, material properties, boundary conditions, and loading scenarios. Discretization of the domain into finite elements, ensuring appropriate mesh density for accuracy, is also essential. For Finite Element Limit Analysis (FELA), the choice between kinematic (velocity-based) or equilibrium (stress-based) formulations is crucial. The optimization-based solution procedure involves solving the discretized problem using optimization algorithms tailored to the formulation, such as second-order cone programming for nonlinear optimization. This approach ensures bounds on the true collapse load through upper/lower bound theorems, as stated in [wiki_finite_element_limit_analysis].\n\nThe optimization-based solution in the Finite Element Method involves solving the discretized problem using tailored optimization algorithms. For kinematic Finite Element Limit Analysis (FELA), the dissipated energy is minimized subject to kinematic constraints, whereas for equilibrium FELA, the load factor is maximized while satisfying stress equilibrium. This process is achieved through solvers like second-order cone programming for nonlinear optimization, as stated in [wiki_finite_element_limit_analysis]. The optimization problem is formulated as a second-order cone programming (SOCP) problem, where $\\mathbf{x}$ is the vector of variables, $\\mathbf{c}$ is the cost coefficient, $\\mathbf{A}$ and $\\mathbf{b}$ define equality constraints, and $\\mathcal{K}$ denotes the second-order cone, as represented by the equation: $\\min_{\\mathbf{x}} \\mathbf{c}^T \\mathbf{x} \\quad \\text{subject to} \\quad \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\quad \\mathbf{x} \\in \\mathcal{K}$, as shown in [wiki_finite_element_limit_analysis].\n\nThe use of curved elements is essential for accurately modeling complex geometries in the Finite Element Method, reducing discretization errors that can arise from approximating irregular boundaries or nonlinear deformations. According to the procedure for problem formulation, the physical problem is defined by specifying geometry, material properties, boundary conditions, and loading scenarios, and discretized into finite elements with appropriate mesh density for accuracy [wiki_finite_element_limit_analysis]. Curved elements in Weak Galerkin Finite Element Methods (WG-FEM) enable accurate modeling of complex geometries by approximating curved boundaries, enhancing the flexibility of WG-FEM for problems with irregular domains and maintaining mathematical consistency while improving computational efficiency [arxiv_2210.16907v1]. This concept is critical for applications requiring high-fidelity geometric representation, such as Finite Element Limit Analysis (FELA), which uses optimization techniques to compute upper or lower bound plastic collapse loads for mechanical systems [wiki_finite_element_limit_analysis].",
+      "key_equations": [
+        "\\mathbf{x}",
+        "\\mathbf{c}",
+        "\\mathbf{A}",
+        "\\mathbf{b}",
+        "\\mathcal{K}"
+      ],
+      "citations_used": [
+        "arxiv_2210.16907v1",
+        "wiki_finite_element_limit_analysis"
+      ],
+      "section_id": "5170efbd-be9b-4059-baf1-d0c1f9c7de3e",
+      "generated_from": "writer",
+      "status": "complete",
+      "parent_section_ids": []
     }
   ],
   "processed_sources": [
+    "arxiv_1906.09965v2",
     "arxiv_2210.16907v1",
     "arxiv_2410.12614v1",
+    "arxiv_2412.17631v1",
     "arxiv_cs_0609119v2",
-    "wiki_finite_element_limit_analysis"
+    "wiki_finite_element_limit_analysis",
+    "wiki_virtual_method_table"
   ],
   "processed_sources_extracted": [
     "arxiv_2210.16907v1",
@@ -487,6 +529,7 @@
   "iteration_history_data": {
     "audits": {
       "7990454e-9eb1-4fcb-a324-80667fcf2812": [
+        true,
         true
       ],
       "682a088d-9383-4458-b3d1-97d0f7e16a16": [
@@ -497,18 +540,38 @@
       ],
       "9cd7e681-e4df-4650-8e24-87718abcaddc": [
         true
+      ],
+      "7116cc5b-80f0-4540-b9d6-fb743c9ed90e": [
+        true
+      ],
+      "8c05b7b5-51f4-4eca-bfac-16dd7f82ff95": [
+        true
+      ],
+      "29a56191-5fe3-41cd-afa7-05ea5af855d6": [
+        true
+      ],
+      "5170efbd-be9b-4059-baf1-d0c1f9c7de3e": [
+        true
       ]
     },
     "anomalies": {
-      "transition:7990454e-9eb1-4fcb-a324-80667fcf2812:682a088d-9383-4458-b3d1-97d0f7e16a16": 1,
-      "transition:682a088d-9383-4458-b3d1-97d0f7e16a16:e077b634-7f84-4009-8b8c-870c7f93cf1d": 1,
-      "transition:e077b634-7f84-4009-8b8c-870c7f93cf1d:9cd7e681-e4df-4650-8e24-87718abcaddc": 1
+      "transition:7990454e-9eb1-4fcb-a324-80667fcf2812:682a088d-9383-4458-b3d1-97d0f7e16a16": 0,
+      "transition:682a088d-9383-4458-b3d1-97d0f7e16a16:e077b634-7f84-4009-8b8c-870c7f93cf1d": 0,
+      "transition:e077b634-7f84-4009-8b8c-870c7f93cf1d:9cd7e681-e4df-4650-8e24-87718abcaddc": 2,
+      "transition:7990454e-9eb1-4fcb-a324-80667fcf2812:29a56191-5fe3-41cd-afa7-05ea5af855d6": 1,
+      "transition:29a56191-5fe3-41cd-afa7-05ea5af855d6:8c05b7b5-51f4-4eca-bfac-16dd7f82ff95": 1,
+      "transition:7116cc5b-80f0-4540-b9d6-fb743c9ed90e:e077b634-7f84-4009-8b8c-870c7f93cf1d": 1,
+      "transition:9cd7e681-e4df-4650-8e24-87718abcaddc:5170efbd-be9b-4059-baf1-d0c1f9c7de3e": 1
     },
     "anomaly_counts": {
-      "transition:7990454e-9eb1-4fcb-a324-80667fcf2812:682a088d-9383-4458-b3d1-97d0f7e16a16": 1,
-      "transition:682a088d-9383-4458-b3d1-97d0f7e16a16:e077b634-7f84-4009-8b8c-870c7f93cf1d": 1,
-      "transition:e077b634-7f84-4009-8b8c-870c7f93cf1d:9cd7e681-e4df-4650-8e24-87718abcaddc": 1,
-      "too_simple:682a088d-9383-4458-b3d1-97d0f7e16a16": 0
+      "transition:7990454e-9eb1-4fcb-a324-80667fcf2812:682a088d-9383-4458-b3d1-97d0f7e16a16": 0,
+      "transition:682a088d-9383-4458-b3d1-97d0f7e16a16:e077b634-7f84-4009-8b8c-870c7f93cf1d": 0,
+      "transition:e077b634-7f84-4009-8b8c-870c7f93cf1d:9cd7e681-e4df-4650-8e24-87718abcaddc": 2,
+      "too_simple:682a088d-9383-4458-b3d1-97d0f7e16a16": 0,
+      "transition:7990454e-9eb1-4fcb-a324-80667fcf2812:29a56191-5fe3-41cd-afa7-05ea5af855d6": 1,
+      "transition:29a56191-5fe3-41cd-afa7-05ea5af855d6:8c05b7b5-51f4-4eca-bfac-16dd7f82ff95": 1,
+      "transition:7116cc5b-80f0-4540-b9d6-fb743c9ed90e:e077b634-7f84-4009-8b8c-870c7f93cf1d": 1,
+      "transition:9cd7e681-e4df-4650-8e24-87718abcaddc:5170efbd-be9b-4059-baf1-d0c1f9c7de3e": 1
     },
     "section_titles": {
       "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method": "7990454e-9eb1-4fcb-a324-80667fcf2812",
@@ -517,40 +580,37 @@
       "Verification, Validation, and Best Practices": "9cd7e681-e4df-4650-8e24-87718abcaddc",
       "The Finite Element Procedure: Problem Formulation and Discretization": "29a56191-5fe3-41cd-afa7-05ea5af855d6",
       "The Finite Element Procedure: Optimization in Finite Element Limit Analysis": "8c05b7b5-51f4-4eca-bfac-16dd7f82ff95",
-      "The Finite Element Procedure: Curved Elements for Complex Geometry Representation": "7116cc5b-80f0-4540-b9d6-fb743c9ed90e"
+      "The Finite Element Procedure: Curved Elements for Complex Geometry Representation": "7116cc5b-80f0-4540-b9d6-fb743c9ed90e",
+      "Introduction and Scope of the Finite Element Method": "5170efbd-be9b-4059-baf1-d0c1f9c7de3e"
     }
   },
   "convergence_diagnostics": {
-    "eta_variance": 0.0014799999999999987,
+    "eta_variance": 0.009884444444444435,
     "invariant_violations": 0,
     "adjust_actions": 0,
     "consecutive_clean_cycles": 0,
-    "incomplete_sections": 0,
-    "unstable_sections": 0,
-    "reading_coverage": 30.8,
-    "citation_coverage": 0.0,
-    "lexical_support_coverage": 0.0,
+    "incomplete_sections": 3,
+    "unstable_sections": 6,
+    "reading_coverage": 18.2,
+    "citation_coverage": 77.8,
+    "lexical_support_coverage": 71.4,
     "invalid_citation_sections": 0,
     "converged": false,
     "reasons": [
-      "citation_evidence_unavailable",
-      "sufficient_reading"
+      "all_sections_stable",
+      "all_sections_complete",
+      "sufficient_reading",
+      "sufficient_citations"
     ]
   },
   "retrieval_report": {
     "status": "partial_failure",
-    "retrieved_at": "2026-10-05T12:18:44.244021+00:00",
+    "retrieved_at": "2026-10-05T12:21:00.146830+00:00",
     "query_count": 6,
     "providers": {
       "arxiv": {
         "status": "success",
         "attempts": [
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "finite element limit analysis",
-            "provider": "arxiv"
-          },
           {
             "status": "success",
             "returned_records": 2,
@@ -572,13 +632,19 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "flexibility method finite element analysis",
+            "query": "galerkin orthogonality finite element method",
             "provider": "arxiv"
           },
           {
             "status": "success",
             "returned_records": 2,
-            "query": "stiffness methods in finite element analysis",
+            "query": "hpk finite element method",
+            "provider": "arxiv"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "virtual element method",
             "provider": "arxiv"
           }
         ],
@@ -591,14 +657,6 @@
           {
             "status": "rate_limited",
             "provider": "semantic_scholar",
-            "query": "finite element limit analysis",
-            "requested_results": 2,
-            "http_status": 429,
-            "returned_records": 0
-          },
-          {
-            "status": "rate_limited",
-            "provider": "semantic_scholar",
             "query": "finite element method mathematical foundation weak form Galerkin method",
             "requested_results": 2,
             "http_status": 429,
@@ -623,7 +681,7 @@
           {
             "status": "rate_limited",
             "provider": "semantic_scholar",
-            "query": "flexibility method finite element analysis",
+            "query": "galerkin orthogonality finite element method",
             "requested_results": 2,
             "http_status": 429,
             "returned_records": 0
@@ -631,7 +689,15 @@
           {
             "status": "rate_limited",
             "provider": "semantic_scholar",
-            "query": "stiffness methods in finite element analysis",
+            "query": "hpk finite element method",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "virtual element method",
             "requested_results": 2,
             "http_status": 429,
             "returned_records": 0
@@ -646,12 +712,6 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "finite element limit analysis",
-            "provider": "wikipedia"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
             "query": "finite element method mathematical foundation weak form Galerkin method",
             "provider": "wikipedia"
           },
@@ -670,13 +730,19 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "flexibility method finite element analysis",
+            "query": "galerkin orthogonality finite element method",
             "provider": "wikipedia"
           },
           {
             "status": "success",
             "returned_records": 2,
-            "query": "stiffness methods in finite element analysis",
+            "query": "hpk finite element method",
+            "provider": "wikipedia"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "virtual element method",
             "provider": "wikipedia"
           }
         ],
@@ -684,7 +750,7 @@
         "returned_records": 12
       }
     },
-    "returned_records": 15,
+    "returned_records": 16,
     "selected_records": 4
   },
   "retrieval_history": {
@@ -853,27 +919,183 @@
           "selected_records": 4
         },
         "schema_version": 1
+      },
+      {
+        "event_id": "retrieval-1f32c2b3-e8d8-4b5b-a9c2-1f37e156c49e",
+        "cycle": 1,
+        "retrieved_at": "2026-10-05T12:21:10.381627+00:00",
+        "query_scope": [],
+        "report": {
+          "status": "partial_failure",
+          "retrieved_at": "2026-10-05T12:21:00.146830+00:00",
+          "query_count": 6,
+          "providers": {
+            "arxiv": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "galerkin orthogonality finite element method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "hpk finite element method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "virtual element method",
+                  "provider": "arxiv"
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 12
+            },
+            "semantic_scholar": {
+              "status": "rate_limited",
+              "attempts": [
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method practical implementation modeling rules",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method verification validation numerical stability",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "galerkin orthogonality finite element method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "hpk finite element method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "virtual element method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 0
+            },
+            "wikipedia": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "galerkin orthogonality finite element method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "hpk finite element method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "virtual element method",
+                  "provider": "wikipedia"
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 12
+            }
+          },
+          "returned_records": 16,
+          "selected_records": 4
+        },
+        "acquisition_assessment": {
+          "status": "partial_provider_availability",
+          "operational_status": "partial_failure",
+          "available_provider_count": 2,
+          "unavailable_provider_count": 1,
+          "returned_records": 16,
+          "selected_records": 4
+        },
+        "schema_version": 1
       }
     ]
   },
   "last_budget_check": {
-    "time": "2026-10-05T12:18:39.579720+00:00",
+    "time": "2026-10-05T12:20:55.494697+00:00",
     "type": "local",
     "message": "Local limit: 20 calls"
   },
   "last_writing_decisions": [
     {
-      "section_id": null,
-      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
-      "eta": 0.9,
-      "priority": 0.9,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
-    {
-      "section_id": null,
-      "title": "The Finite Element Procedure",
+      "section_id": "7116cc5b-80f0-4540-b9d6-fb743c9ed90e",
+      "title": "The Finite Element Procedure: Curved Elements for Complex Geometry Representation",
       "eta": 0.86,
       "priority": 0.86,
       "selected": true,
@@ -881,19 +1103,19 @@
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
     },
     {
-      "section_id": null,
-      "title": "Rules for Modeling Physical Phenomena with FEM",
-      "eta": 0.8400000000000001,
-      "priority": 0.8400000000000001,
+      "section_id": "8c05b7b5-51f4-4eca-bfac-16dd7f82ff95",
+      "title": "The Finite Element Procedure: Optimization in Finite Element Limit Analysis",
+      "eta": 0.86,
+      "priority": 0.86,
       "selected": true,
       "model_index": 0,
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
     },
     {
-      "section_id": null,
-      "title": "Verification, Validation, and Best Practices",
-      "eta": 0.8200000000000001,
-      "priority": 0.8200000000000001,
+      "section_id": "29a56191-5fe3-41cd-afa7-05ea5af855d6",
+      "title": "The Finite Element Procedure: Problem Formulation and Discretization",
+      "eta": 0.86,
+      "priority": 0.86,
       "selected": true,
       "model_index": 0,
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
@@ -903,6 +1125,42 @@
       "title": "Introduction and Scope of the Finite Element Method",
       "eta": 0.8,
       "priority": 0.8,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": "7990454e-9eb1-4fcb-a324-80667fcf2812",
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "eta": 0.7,
+      "priority": 0.7,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": null,
+      "title": "The Finite Element Procedure",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": "e077b634-7f84-4009-8b8c-870c7f93cf1d",
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.6400000000000001,
+      "priority": 0.6400000000000001,
+      "selected": false,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": "9cd7e681-e4df-4650-8e24-87718abcaddc",
+      "title": "Verification, Validation, and Best Practices",
+      "eta": 0.6200000000000001,
+      "priority": 0.6200000000000001,
       "selected": false,
       "model_index": 0,
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
@@ -958,6 +1216,86 @@
       "model_index": 0,
       "model": "@cf/meta/llama-3.1-8b-instruct-fast",
       "fingerprint": "a82d8bb915c02bccef85cc2b18e49e547eec4a874f5e0e124362f6db2aa794d7"
+    },
+    {
+      "section_id": "7116cc5b-80f0-4540-b9d6-fb743c9ed90e",
+      "title": "The Finite Element Procedure: Curved Elements for Complex Geometry Representation",
+      "eta": 0.86,
+      "priority": 0.86,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "80ce3ab2083de49534c4dfc769b985efcc191b96a72c520790d770583f4d7f58"
+    },
+    {
+      "section_id": "8c05b7b5-51f4-4eca-bfac-16dd7f82ff95",
+      "title": "The Finite Element Procedure: Optimization in Finite Element Limit Analysis",
+      "eta": 0.86,
+      "priority": 0.86,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "942939a272b93a6b532a81a4a1041335a84e250cd7c0d8608a759050ccfdcdbf"
+    },
+    {
+      "section_id": "29a56191-5fe3-41cd-afa7-05ea5af855d6",
+      "title": "The Finite Element Procedure: Problem Formulation and Discretization",
+      "eta": 0.86,
+      "priority": 0.86,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "a5d4a0f5706decdc9c5f1c369f051997928df2d12a01ec41d3ebd27b055cb8c9"
+    },
+    {
+      "section_id": null,
+      "title": "Introduction and Scope of the Finite Element Method",
+      "eta": 0.8,
+      "priority": 0.8,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "b3570d5e48c9b034230a8c5db4ef882079a5b276cb66039be228ed07bf555da1"
+    },
+    {
+      "section_id": "7990454e-9eb1-4fcb-a324-80667fcf2812",
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "eta": 0.7,
+      "priority": 0.7,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "00b16e998546122d36082504d727717b977c5f70629d9f2b3bdc68d419d81297"
+    },
+    {
+      "section_id": null,
+      "title": "The Finite Element Procedure",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "c7fa969dc6e5e54eca15bdf91e01c6683f7a7cb081a4b6bb96f31b14f92ba2ed"
+    },
+    {
+      "section_id": "e077b634-7f84-4009-8b8c-870c7f93cf1d",
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.6400000000000001,
+      "priority": 0.6400000000000001,
+      "selected": false,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "3143dc5f428d58e33df9d1c1b0a705bd6580996c084622812101f6f379fb083d"
+    },
+    {
+      "section_id": "9cd7e681-e4df-4650-8e24-87718abcaddc",
+      "title": "Verification, Validation, and Best Practices",
+      "eta": 0.6200000000000001,
+      "priority": 0.6200000000000001,
+      "selected": false,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "261ed34b666794157467267b500d0a7ac4cea5a4be101a3f3a4917f6d18e60ce"
     }
   ],
   "last_semantic_review": {
@@ -987,18 +1325,7 @@
   "last_semantic_feedback": {
     "sections": {}
   },
-  "last_adjustment_decision": {
-    "action": "split_section",
-    "section_id": "682a088d-9383-4458-b3d1-97d0f7e16a16",
-    "section_ids": [],
-    "reason": "Section has 341 words",
-    "adjustment_score": {
-      "severity": 0.95,
-      "persistence": 0.0,
-      "cost": 0.75,
-      "score": 0.5125
-    }
-  },
+  "last_adjustment_decision": null,
   "semantic_candidate_status": {
     "status": "candidate",
     "authoritative_for_rendering": false,
@@ -1008,10 +1335,10 @@
         "semantic_marker_count": 4,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
-          "arxiv_2210.16907v1",
           "wiki_finite_element_limit_analysis",
           "arxiv_2210.16907v1",
-          "arxiv_2210.16907v1"
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis"
         ],
         "inline_math_count": 7,
         "display_math_count": 0,
@@ -1020,30 +1347,50 @@
       },
       {
         "section_id": "29a56191-5fe3-41cd-afa7-05ea5af855d6",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 3,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
-        "inline_math_count": 0,
+        "annotated_source_ids": [
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "arxiv_2210.16907v1"
+        ],
+        "inline_math_count": 1,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       },
       {
         "section_id": "8c05b7b5-51f4-4eca-bfac-16dd7f82ff95",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 8,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
-        "inline_math_count": 0,
+        "annotated_source_ids": [
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "arxiv_2210.16907v1",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "arxiv_2210.16907v1"
+        ],
+        "inline_math_count": 7,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       },
       {
         "section_id": "7116cc5b-80f0-4540-b9d6-fb743c9ed90e",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 6,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
-        "inline_math_count": 0,
+        "annotated_source_ids": [
+          "arxiv_2210.16907v1",
+          "arxiv_2210.16907v1",
+          "arxiv_2210.16907v1",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "arxiv_2210.16907v1"
+        ],
+        "inline_math_count": 3,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
@@ -1079,19 +1426,36 @@
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
+      },
+      {
+        "section_id": "5170efbd-be9b-4059-baf1-d0c1f9c7de3e",
+        "semantic_marker_count": 6,
+        "annotated_equation_ids": [],
+        "annotated_source_ids": [
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "arxiv_2210.16907v1",
+          "wiki_finite_element_limit_analysis"
+        ],
+        "inline_math_count": 6,
+        "display_math_count": 0,
+        "equation_occurrence_count": 0,
+        "diagnostics": []
       }
     ],
-    "semantic_marker_count": 14,
+    "semantic_marker_count": 37,
     "latex_ir_readiness": {
       "ready": true,
       "counts": {
-        "sections": 6,
-        "paragraphs": 3,
-        "text_nodes": 33,
-        "inline_math": 16,
+        "sections": 7,
+        "paragraphs": 7,
+        "text_nodes": 77,
+        "inline_math": 33,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 14,
+        "citation_occurrences": 37,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "figures": 0,
@@ -1110,10 +1474,10 @@
         "semantic_marker_count": 4,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
-          "arxiv_2210.16907v1",
           "wiki_finite_element_limit_analysis",
           "arxiv_2210.16907v1",
-          "arxiv_2210.16907v1"
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis"
         ],
         "inline_math_count": 7,
         "display_math_count": 0,
@@ -1122,30 +1486,50 @@
       },
       {
         "section_id": "29a56191-5fe3-41cd-afa7-05ea5af855d6",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 3,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
-        "inline_math_count": 0,
+        "annotated_source_ids": [
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "arxiv_2210.16907v1"
+        ],
+        "inline_math_count": 1,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       },
       {
         "section_id": "8c05b7b5-51f4-4eca-bfac-16dd7f82ff95",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 8,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
-        "inline_math_count": 0,
+        "annotated_source_ids": [
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "arxiv_2210.16907v1",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "arxiv_2210.16907v1"
+        ],
+        "inline_math_count": 7,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
       },
       {
         "section_id": "7116cc5b-80f0-4540-b9d6-fb743c9ed90e",
-        "semantic_marker_count": 0,
+        "semantic_marker_count": 6,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [],
-        "inline_math_count": 0,
+        "annotated_source_ids": [
+          "arxiv_2210.16907v1",
+          "arxiv_2210.16907v1",
+          "arxiv_2210.16907v1",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "arxiv_2210.16907v1"
+        ],
+        "inline_math_count": 3,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
@@ -1181,19 +1565,36 @@
         "display_math_count": 0,
         "equation_occurrence_count": 0,
         "diagnostics": []
+      },
+      {
+        "section_id": "5170efbd-be9b-4059-baf1-d0c1f9c7de3e",
+        "semantic_marker_count": 6,
+        "annotated_equation_ids": [],
+        "annotated_source_ids": [
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "wiki_finite_element_limit_analysis",
+          "arxiv_2210.16907v1",
+          "wiki_finite_element_limit_analysis"
+        ],
+        "inline_math_count": 6,
+        "display_math_count": 0,
+        "equation_occurrence_count": 0,
+        "diagnostics": []
       }
     ],
-    "semantic_marker_count": 14,
+    "semantic_marker_count": 37,
     "latex_ir_readiness": {
       "ready": true,
       "counts": {
-        "sections": 6,
-        "paragraphs": 3,
-        "text_nodes": 33,
-        "inline_math": 16,
+        "sections": 7,
+        "paragraphs": 7,
+        "text_nodes": 77,
+        "inline_math": 33,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 14,
+        "citation_occurrences": 37,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "figures": 0,
@@ -1206,25 +1607,24 @@
   "latex_ir_projection_status": {
     "status": "success",
     "source_document_id": "743c2aa8-790e-5a15-b63b-6758c778b2e0",
-    "section_count": 6,
-    "reference_count": 4
+    "section_count": 7,
+    "reference_count": 7
   },
   "model_usage": {
-    "total_calls": 19,
-    "logical_calls": 19,
-    "successful_calls": 19,
+    "total_calls": 22,
+    "logical_calls": 22,
+    "successful_calls": 22,
     "failed_calls": 0,
-    "http_attempts": 19,
+    "http_attempts": 22,
     "per_model": {
-      "@cf/meta/llama-3.1-8b-instruct-fast": 17,
+      "@cf/meta/llama-3.1-8b-instruct-fast": 21,
       "@cf/qwen/qwen3-30b-a3b-fp8": 1,
-      "@cf/meta/llama-3.2-3b-instruct": 1
+      "@cf/meta/llama-3.2-3b-instruct": 0
     },
     "max_logical_calls": 100,
     "extraction_stats": {
-      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 17,
-      "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8:known_patterns": 1,
-      "cloudflare:@cf/meta/llama-3.2-3b-instruct:known_patterns": 1
+      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 21,
+      "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8:known_patterns": 1
     },
     "learned_paths": {
       "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast": [
@@ -1244,20 +1644,11 @@
           "message",
           "content"
         ]
-      ],
-      "cloudflare:@cf/meta/llama-3.2-3b-instruct": [
-        [
-          "result",
-          "choices",
-          0,
-          "message",
-          "content"
-        ]
       ]
     }
   },
   "parser_stats": {
-    "cloudflare:strict": 3,
-    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 4
+    "cloudflare:strict": 2,
+    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 5
   }
 }
