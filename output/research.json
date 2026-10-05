@@ -1,0 +1,115 @@
+{
+  "concepts": [
+    {
+      "name": "Galerkin Method",
+      "explanation": "The Galerkin method is a foundational approach in the Finite Element Method (FEM) for solving differential equations. It involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions. This method ensures that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. Boris Galerkin introduced this technique, which forms the theoretical basis for modern FEM formulations.",
+      "mathematical_formulation": "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V",
+      "source_ids": [
+        "wiki_boris_galerkin"
+      ]
+    },
+    {
+      "name": "Curved Elements",
+      "explanation": "Curved elements are specialized finite elements used to better approximate complex geometries in FEM. They allow for more accurate modeling of domains with curved boundaries by using higher-order polynomial shapes. This approach reduces discretization errors compared to straight-edged elements. The use of curved elements is particularly critical in weak Galerkin methods, where they enhance the flexibility of the solution space.",
+      "mathematical_formulation": "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i, \\quad \\text{where } X_i \\text{ are control points}",
+      "source_ids": [
+        "arxiv_2210.16907v1"
+      ]
+    },
+    {
+      "name": "Limit Analysis",
+      "explanation": "Finite Element Limit Analysis (FELA) is a technique to compute the upper or lower bound plastic collapse load of a mechanical system. It uses optimization algorithms instead of time-stepping, making it efficient for geotechnical problems. FELA is applicable to both kinematic and equilibrium formulations, depending on the problem's constraints. This method is widely used in soil mechanics for stability analysis.",
+      "mathematical_formulation": "\\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K",
+      "source_ids": [
+        "wiki_finite_element_limit_analysis"
+      ]
+    }
+  ],
+  "procedures": [
+    {
+      "step_number": 1,
+      "title": "Discretization of the Domain",
+      "description": "The physical domain is divided into smaller, simpler subdomains called elements. This process, known as meshing, allows the problem to be approximated using piecewise functions. The choice of element type (e.g., triangular, quadrilateral) depends on the geometry and required accuracy. Curved elements may be used for complex boundaries to improve approximation.",
+      "equations": [
+        "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i"
+      ],
+      "source_ids": [
+        "arxiv_2210.16907v1",
+        "wiki_finite_element_limit_analysis"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Formulation of Weak Form",
+      "description": "The strong form of the governing differential equation is converted into a weak form by multiplying with a test function and integrating over the domain. This step ensures that the solution satisfies the equation in an integral sense, reducing the smoothness requirements for the approximate solution. The Galerkin method is often used to select the test functions as the same as the basis functions.",
+      "equations": [
+        "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0"
+      ],
+      "source_ids": [
+        "wiki_boris_galerkin",
+        "wiki_finite_element_limit_analysis"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Assembly and Solution",
+      "description": "The local element equations are assembled into a global system of algebraic equations. This involves summing contributions from all elements and applying boundary conditions. The resulting system is solved using numerical methods such as direct solvers or iterative techniques. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly.",
+      "equations": [
+        "\\mathbf{K} \\mathbf{u} = \\mathbf{f}"
+      ],
+      "source_ids": [
+        "wiki_finite_element_limit_analysis"
+      ]
+    }
+  ],
+  "equations": [
+    {
+      "name": "Galerkin Weak Form",
+      "latex": "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V",
+      "explanation": "This equation represents the Galerkin method's weak form. $ w(x) $ is a test function, $ u(x) $ is the approximate solution, $ f(x) $ is a source term, and $ V $ is the space of admissible test functions. The integral ensures the residual is orthogonal to the test space.",
+      "source_ids": [
+        "wiki_boris_galerkin"
+      ]
+    },
+    {
+      "name": "Curved Element Mapping",
+      "latex": "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i",
+      "explanation": "This equation maps local coordinates $ (\\xi, \\eta) $ to global coordinates $ x $ using shape functions $ N_i $ and control points $ X_i $. It enables curved elements to model complex geometries accurately.",
+      "source_ids": [
+        "arxiv_2210.16907v1"
+      ]
+    },
+    {
+      "name": "Limit Analysis Optimization",
+      "latex": "\\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K",
+      "explanation": "This optimization problem computes the collapse load by minimizing the work done by stresses $ \\mathbf{\\sigma} $ under yield conditions $ K $. $ \\mathbf{\\varepsilon} $ represents the strain tensor, and the integral is over the domain $ \\Omega $.",
+      "source_ids": [
+        "wiki_finite_element_limit_analysis"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule": "Mesh Convergence",
+      "explanation": "The mesh must be sufficiently refined to ensure numerical results converge to the true solution. Coarse meshes may lead to inaccurate predictions, especially near stress concentrations or curved boundaries. Adaptive meshing techniques are often used to refine regions of interest.",
+      "source_ids": [
+        "wiki_finite_element_limit_analysis"
+      ]
+    },
+    {
+      "rule": "Element Type Selection",
+      "explanation": "The choice of element type (e.g., linear, quadratic, curved) depends on the problem's geometry and required accuracy. Curved elements improve accuracy for complex domains, while higher-order elements reduce discretization errors in smooth solutions.",
+      "source_ids": [
+        "arxiv_2210.16907v1",
+        "wiki_finite_element_limit_analysis"
+      ]
+    },
+    {
+      "rule": "Boundary Condition Application",
+      "explanation": "Boundary conditions must be correctly applied to ensure the problem's physical constraints are satisfied. Incorrect implementation can lead to non-physical solutions or solver failures. Essential and natural boundary conditions are treated differently in the weak form.",
+      "source_ids": [
+        "wiki_boris_galerkin"
+      ]
+    }
+  ]
+}

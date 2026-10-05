@@ -5,7 +5,7 @@
   "children": [
     {
       "type": "section",
-      "section_id": "c8ea02cd-4cff-4e7c-9bea-ba2db0478da9",
+      "section_id": "b4de2d7e-2034-4c5c-b382-06f2fd93965e",
       "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
       "children": [
         {
@@ -13,7 +13,99 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The strong form, weak form, and Galerkin method are distinct concepts in the mathematical foundation of numerical methods. The strong form refers to the exact governing equation of a physical system, which is typically represented by a partial differential equation. In contrast, the weak form is an equivalent formulation that involves a bilinear form, often obtained through integration by parts. The Galerkin method, on the other hand, is a specific numerical technique used to approximate the solution of the weak form, where the approximate solution is expressed as a linear combination of basis functions. This method is widely used in the finite element method, where the domain is discretized into smaller elements, and the Galerkin method is employed to solve the weak form of the governing equation.\n\nThe Galerkin method is a numerical technique used to approximate the solution of partial differential equations. It is derived from the weak form of the governing equation, which is obtained by multiplying the strong form with a weight function and integrating over the domain. The Galerkin method involves selecting a set of basis functions that satisfy the essential boundary conditions, and then approximating the solution as a linear combination of these basis functions. The coefficients of the linear combination are determined by minimizing the residual of the weak form, which leads to a system of linear equations. This system can be solved using standard numerical methods, resulting in an approximate solution to the original partial differential equation. The Galerkin method has been widely used in various fields, including structural mechanics, fluid dynamics, and heat transfer, due to its simplicity and efficiency.\n\nThe numerical stability and convergence analysis of the weak form and Galerkin method are crucial aspects of the finite element method. The weak form, obtained by multiplying the strong form with a weight function, is used to derive the Galerkin method. However, the stability and convergence of the Galerkin method are influenced by the choice of weight function and the discretization of the domain. A stable and convergent Galerkin method requires that the weight function satisfies the LBB (Ladyzhenskaya-Babuška-Brezzi) condition, which ensures that the method is free from spurious modes and converges to the exact solution as the mesh size is refined."
+              "text": "The formulation of the weak form is a crucial step in converting the strong form of the governing differential equation into a more tractable form. This is achieved by multiplying the strong form with a test function and integrating over the domain, ensuring that the solution satisfies the equation in an integral sense. The Galerkin method is often employed to select the test functions as the same as the basis functions, thereby reducing the smoothness requirements for the approximate solution. The Galerkin weak form is represented by the equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V "
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": " w(x) "
+            },
+            {
+              "type": "text",
+              "text": " is a test function, "
+            },
+            {
+              "type": "inline_math",
+              "expression": " u(x) "
+            },
+            {
+              "type": "text",
+              "text": " is the approximate solution, "
+            },
+            {
+              "type": "inline_math",
+              "expression": " f(x) "
+            },
+            {
+              "type": "text",
+              "text": " is a source term, and "
+            },
+            {
+              "type": "inline_math",
+              "expression": " V "
+            },
+            {
+              "type": "text",
+              "text": " is the space of admissible test functions.\n\nThe Galerkin method is a foundational approach in the Finite Element Method (FEM) for solving differential equations. It involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions. This is achieved by using the Galerkin weak form, which is represented by the equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V "
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "05a3f3e5-5d2d-50e5-837e-85af264a6552",
+              "source_id": "wiki_boris_galerkin"
+            },
+            {
+              "type": "text",
+              "text": ". The Galerkin method is often used to select the test functions as the same as the basis functions, allowing for a more tractable form of the governing differential equation.\n\nThe application of boundary conditions is a critical aspect of ensuring accurate modeling of domains with curved boundaries. In the weak form of the Galerkin method, boundary conditions are treated differently, with essential and natural conditions being applied accordingly. The use of curved elements, as described in "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "134929b0-9349-5e93-83e1-b718d0cdb520",
+              "source_id": "arxiv_2210.16907v1"
+            },
+            {
+              "type": "text",
+              "text": ", enhances the flexibility of the solution space, particularly in weak Galerkin methods. The correct implementation of boundary conditions is essential to prevent non-physical solutions or solver failures, as outlined in "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "40d4946c-a2be-51f6-b4b8-ff8e0119e28f",
+              "source_id": "wiki_boris_galerkin"
+            },
+            {
+              "type": "text",
+              "text": ". The Galerkin weak form, given by "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V "
+            },
+            {
+              "type": "text",
+              "text": ", serves as a foundation for the assembly and solution process, which involves summing local element contributions and applying boundary conditions, as discussed in "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "5beb5fef-2b48-5c5f-92a7-0cf8b8dc3c63",
+              "source_id": "wiki_finite_element_limit_analysis"
+            },
+            {
+              "type": "text",
+              "text": "."
             }
           ]
         }
@@ -24,7 +116,7 @@
     },
     {
       "type": "section",
-      "section_id": "edcdf546-c2b0-4ffa-9fb0-0ae8163ad039",
+      "section_id": "34f33cbc-265c-4b09-abfd-23f12859ee6f",
       "title": "The Finite Element Procedure",
       "children": [
         {
@@ -32,11 +124,20 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Discretization is a crucial step in the finite element procedure, where the continuous problem domain is approximated by a finite number of discrete elements. This process involves dividing the domain into smaller subdomains, or elements, which are connected at nodes. The choice of discretization method and mesh generation technique can significantly impact the accuracy and efficiency of the finite element solution. A common approach is to use a mesh generator to create a mesh that meets the desired criteria, such as mesh size, shape, and quality. The mesh is then used to approximate the solution of the partial differential equation, with the goal of minimizing the error between the approximate and exact solutions.\n\nThe solution of the finite element equations is a critical step in the finite element procedure, where the discrete equations obtained from the weak form are solved to obtain the nodal values of the unknowns. This process involves solving a system of linear equations, typically represented in the form "
+              "text": "The discretization of the domain is a crucial step in the Finite Element Procedure, where the physical domain is divided into smaller, simpler subdomains called elements. This process, known as meshing, allows the problem to be approximated using piecewise functions. The choice of element type depends on the geometry and required accuracy, with curved elements improving approximation for complex domains by using higher-order polynomial shapes, as described in "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "4ca8f9d6-6263-5c70-83d6-9ac8c27b6fb1",
+              "source_id": "arxiv_2210.16907v1"
+            },
+            {
+              "type": "text",
+              "text": ". The use of curved elements is particularly beneficial in weak Galerkin methods, where they enhance the flexibility of the solution space, as demonstrated by the equation "
             },
             {
               "type": "inline_math",
-              "expression": "Au = f"
+              "expression": "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i"
             },
             {
               "type": "text",
@@ -44,27 +145,37 @@
             },
             {
               "type": "inline_math",
-              "expression": "A"
+              "expression": "X_i"
             },
             {
               "type": "text",
-              "text": " is the stiffness matrix, "
+              "text": " are control points "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "e6100d72-735c-529f-9053-319af27132a6",
+              "source_id": "arxiv_2210.16907v1"
+            },
+            {
+              "type": "text",
+              "text": ".\n\nThe formulation of the weak form is a crucial step in the Finite Element Procedure, where the strong form of the governing differential equation is converted into a more tractable form. This is achieved by multiplying the strong form with a test function and integrating over the domain, ensuring that the solution satisfies the equation in an integral sense, reducing the smoothness requirements for the approximate solution. The Galerkin method is often used to select the test functions as the same as the basis functions, resulting in the Galerkin weak form: "
             },
             {
               "type": "inline_math",
-              "expression": "u"
+              "expression": " \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V "
             },
             {
               "type": "text",
-              "text": " is the vector of nodal values, and "
+              "text": ", as introduced by Boris Galerkin "
             },
             {
-              "type": "inline_math",
-              "expression": "f"
+              "type": "citation_occurrence",
+              "occurrence_id": "f9d6ee4b-6aae-5e01-8a93-9d96339599e8",
+              "source_id": "wiki_boris_galerkin"
             },
             {
               "type": "text",
-              "text": " is the load vector. The solution of this system can be obtained using various numerical methods, such as direct methods, such as Gaussian elimination, or iterative methods, such as the conjugate gradient method.\n\nThe post-processing and interpretation of results is a crucial step in the finite element procedure, where the numerical solution obtained from the finite element equations is analyzed and interpreted to extract meaningful information about the physical phenomenon being modeled. This involves evaluating the solution at various points in the domain, computing derived quantities such as stresses and strains, and visualizing the results using various graphical tools. The accuracy of the numerical solution is verified by comparing it with analytical solutions or experimental data, and the results are interpreted in the context of the physical problem being modeled."
+              "text": ".\n\nThe assembly and solution stage of the Finite Element Procedure involves the local element equations being assembled into a global system of algebraic equations, which is then solved using numerical methods such as direct solvers or iterative techniques. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly. This process ensures that the solution satisfies the equation in an integral sense, reducing the smoothness requirements for the approximate solution. The Galerkin method, which forms the theoretical basis for modern FEM formulations, is often used to select the test functions as the same as the basis functions."
             }
           ]
         }
@@ -75,137 +186,70 @@
     },
     {
       "type": "section",
-      "section_id": "73841255-25ce-4e5d-948c-4243715f5fe9",
-      "title": "Rules for Modeling Physical Phenomena with FEM: Discretization and Meshing Techniques",
+      "section_id": "4fd83b90-6bf6-437e-9d7d-e93b694957ba",
+      "title": "Rules for Modeling Physical Phenomena with FEM",
       "children": [
         {
           "type": "paragraph",
           "inline_content": [
             {
               "type": "text",
-              "text": "Discretization methods are a crucial aspect of finite element formulations, allowing for the approximation of complex physical phenomena through a finite number of discrete elements. The finite element procedure involves dividing the problem domain into smaller elements, such as triangles or quadrilaterals, to facilitate numerical analysis. These elements are then connected through nodes, enabling the solution of partial differential equations that govern various physical systems. The choice of discretization method depends on the specific problem being modeled, with some methods, such as the Galerkin method, being more suitable for certain types of problems.\n\nMesh generation techniques play a pivotal role in the finite element method, as they directly impact the accuracy and efficiency of the numerical solution. There are two primary approaches to mesh generation: unstructured and structured meshing. Unstructured meshing involves creating a mesh with irregularly shaped elements, often using techniques such as Delaunay triangulation or advancing front methods. In contrast, structured meshing involves creating a mesh with regularly shaped elements, often using techniques such as block-structured or Cartesian mesh generation. The choice of meshing approach depends on the specific problem being modeled, with unstructured meshing often preferred for complex geometries and structured meshing preferred for problems with simple geometries and high computational efficiency.\n\nMesh quality and optimization are critical components in improving numerical accuracy in finite element methods. A high-quality mesh should have elements with a reasonable aspect ratio, minimal skewness, and a sufficient number of nodes to capture the underlying physics. Optimization strategies, such as mesh refinement, mesh smoothing, and mesh adaptation, can be employed to improve mesh quality and reduce numerical errors. For instance, mesh refinement involves subdividing existing elements to increase the resolution of the mesh, while mesh smoothing techniques, such as Laplace smoothing, aim to reduce element distortion and improve mesh quality. By employing these optimization strategies, analysts can improve the accuracy and reliability of their finite element simulations."
+              "text": "The discretization of the domain is a crucial step in the Finite Element Procedure, where the physical domain is divided into smaller, simpler subdomains called elements. This process, known as meshing, allows the problem to be approximated using piecewise functions. The choice of element type (e.g., triangular, quadrilateral) depends on the geometry and required accuracy, with curved elements improving accuracy for complex domains and higher-order elements reducing discretization errors in smooth solutions, as shown in "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "f4b1eae7-63c3-5203-8a64-5446dc1d8ed1",
+              "source_id": "arxiv_2210.16907v1"
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "ee3b4df8-6a3c-5853-9bf8-95cb0d18305a",
+              "source_id": "wiki_finite_element_limit_analysis"
+            },
+            {
+              "type": "text",
+              "text": ".\n\nApplying boundary conditions is a crucial step in the Finite Element Method (FEM), as it ensures that the problem's physical constraints are satisfied. Incorrect implementation can lead to non-physical solutions or solver failures. Essential and natural boundary conditions are treated differently in the weak form, as described by the Galerkin method, which involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions. The correct application of boundary conditions is essential for obtaining realistic simulations, and it is typically done after the local element equations are assembled into a global system of algebraic equations, as per the procedure of assembly and solution.\n\nThe formulation of the weak form is a crucial step in the Galerkin method, where the strong form of the governing differential equation is converted into a weak form by multiplying with a test function and integrating over the domain. This step ensures that the solution satisfies the equation in an integral sense, reducing the smoothness requirements for the approximate solution. The Galerkin method is often used to select the test functions as the same as the basis functions, as represented by the equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "ad35be4c-3213-5dc6-9a87-45f17a1c2f81",
+              "source_id": "wiki_boris_galerkin"
+            },
+            {
+              "type": "text",
+              "text": ". The use of curved elements is particularly critical in weak Galerkin methods, as they enhance the flexibility of the solution space and allow for more accurate modeling of domains with curved boundaries "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "e317b802-38e4-5896-aa09-f057c5dfd0c9",
+              "source_id": "arxiv_2210.16907v1"
+            },
+            {
+              "type": "text",
+              "text": "."
             }
           ]
         }
       ],
-      "parent_section_ids": [
-        "7c2f47dd-dbd9-49ef-b913-095b27ed872d"
-      ],
+      "parent_section_ids": [],
       "status": "complete",
-      "generated_from": "split",
-      "subsection_index": 0
+      "generated_from": "writer"
     },
     {
       "type": "section",
-      "section_id": "10fd7fe2-925a-4419-82e4-71a256faa701",
-      "title": "Rules for Modeling Physical Phenomena with FEM: Boundary Conditions and Constraints",
-      "children": [
-        {
-          "type": "paragraph",
-          "inline_content": [
-            {
-              "type": "text",
-              "text": "Understanding and applying boundary conditions in FEM modeling is crucial for obtaining accurate results. Boundary conditions are the physical constraints imposed on the problem domain, such as displacement, traction, or temperature, which are essential for solving the governing equations of the physical phenomenon. In FEM, boundary conditions are typically applied through the use of boundary conditions matrices, which are used to enforce the constraints on the finite element solution. The application of boundary conditions involves specifying the type, magnitude, and location of the constraints, which can be done using various techniques, including the use of Dirichlet and Neumann boundary conditions.\n\nIn FEM simulations, constraints are essential for modeling physical phenomena accurately. Constraints are used to enforce specific conditions on the solution, such as fixed displacements, prescribed velocities, or incompressibility. Implementing constraints in FEM simulations involves defining the constraint equations and incorporating them into the weak form of the governing equation. This is typically achieved through the use of Lagrange multipliers or penalty methods, which allow for the enforcement of constraints while maintaining the stability and accuracy of the solution. By carefully defining and implementing constraints, FEM models can accurately capture complex physical behaviors and provide reliable predictions of system response.\n\nThe impact of boundary conditions and constraints on FEM results is a critical aspect of modeling physical phenomena. Incorrectly specified boundary conditions can lead to inaccurate solutions, while constraints can significantly affect the behavior of the system. For instance, in a structural analysis, applying a fixed displacement constraint at a node can alter the stress distribution within the domain. Conversely, omitting essential constraints can result in unrealistic solutions, such as incompressibility in a fluid dynamics simulation. Therefore, it is essential to carefully evaluate and apply boundary conditions and constraints to ensure accurate and reliable FEM results."
-            }
-          ]
-        }
-      ],
-      "parent_section_ids": [
-        "7c2f47dd-dbd9-49ef-b913-095b27ed872d"
-      ],
-      "status": "complete",
-      "generated_from": "split",
-      "subsection_index": 1
-    },
-    {
-      "type": "section",
-      "section_id": "9797e5e6-9451-4ac0-9842-61f0749b0e7c",
-      "title": "Rules for Modeling Physical Phenomena with FEM: Material Properties and Constitutive Relationships",
-      "children": [
-        {
-          "type": "paragraph",
-          "inline_content": [
-            {
-              "type": "text",
-              "text": "Material properties play a vital role in the finite element method (FEM) as they define the constitutive relationships between the stress and strain in a material. The constitutive model, which relates the stress and strain, is a crucial component of the FEM formulation. A correct choice of material properties and constitutive relationships is essential to accurately capture the physical behavior of the material under various loading conditions. For instance, the Hooke's law, which relates stress and strain in an elastic material, is a common constitutive model used in FEM. The selection of appropriate material properties and constitutive relationships is critical to ensure accurate and reliable results in FEM simulations.\n\nThe constitutive relationship is a mathematical formulation that describes the relationship between stress and strain in a material. It is a critical component of the finite element method (FEM), as it enables the simulation of complex physical phenomena. In the context of FEM, the constitutive relationship is often represented by a tensor, which relates the stress tensor to the strain tensor. This relationship can be expressed as "
-            },
-            {
-              "type": "inline_math",
-              "expression": " \\boldsymbol{\\sigma} = \\mathbf{C} : \\boldsymbol{\\epsilon} "
-            },
-            {
-              "type": "text",
-              "text": ", where "
-            },
-            {
-              "type": "inline_math",
-              "expression": " \\boldsymbol{\\sigma} "
-            },
-            {
-              "type": "text",
-              "text": " is the stress tensor, "
-            },
-            {
-              "type": "inline_math",
-              "expression": " \\mathbf{C} "
-            },
-            {
-              "type": "text",
-              "text": " is the material stiffness tensor, and "
-            },
-            {
-              "type": "inline_math",
-              "expression": " \\boldsymbol{\\epsilon} "
-            },
-            {
-              "type": "text",
-              "text": " is the strain tensor. The constitutive relationship is essential for accurately modeling the behavior of materials under various loading conditions, and its formulation has significant implications for the accuracy and reliability of FEM simulations.\n\nImplementing material models and constitutive equations in FEM software requires careful consideration of the mathematical formulation that describes the relationship between stress and strain in a material. The constitutive model, which relates the stress and strain, is a crucial component of the finite element method (FEM). In practice, various constitutive models have been developed to describe the behavior of different materials, including elastic, plastic, and viscoelastic materials. For example, the Hooke's law for elastic materials can be expressed as "
-            },
-            {
-              "type": "inline_math",
-              "expression": " \\sigma = E \\epsilon "
-            },
-            {
-              "type": "text",
-              "text": ", where "
-            },
-            {
-              "type": "inline_math",
-              "expression": " \\sigma "
-            },
-            {
-              "type": "text",
-              "text": " is the stress, "
-            },
-            {
-              "type": "inline_math",
-              "expression": " E "
-            },
-            {
-              "type": "text",
-              "text": " is the modulus of elasticity, and "
-            },
-            {
-              "type": "inline_math",
-              "expression": " \\epsilon "
-            },
-            {
-              "type": "text",
-              "text": " is the strain."
-            }
-          ]
-        }
-      ],
-      "parent_section_ids": [
-        "7c2f47dd-dbd9-49ef-b913-095b27ed872d"
-      ],
-      "status": "complete",
-      "generated_from": "split",
-      "subsection_index": 2
-    },
-    {
-      "type": "section",
-      "section_id": "fde82915-27f8-449a-9fd2-b507a5ba6b0c",
+      "section_id": "66f3eaaf-46cb-4660-a1e8-941233c20fb8",
       "title": "Verification, Validation, and Best Practices",
       "children": [
         {
@@ -213,26 +257,116 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Verification, validation, and testing methods are essential components of the finite element analysis process. Verification involves ensuring that the numerical solution accurately represents the mathematical formulation, whereas validation assesses the accuracy of the solution in relation to real-world physical phenomena. Testing methods, including unit testing and integration testing, are employed to identify and rectify errors or inconsistencies within the code. By employing these methods, analysts can increase confidence in the accuracy and reliability of their finite element results, ultimately leading to more informed decision-making in engineering applications.\n\nIn real-world applications, the importance of verification, validation, and best practices cannot be overstated. According to various studies, a well-structured verification and validation process can significantly enhance the accuracy and reliability of finite element method (FEM) results. For instance, a study by Zienkiewicz et al. (2005) highlights the significance of verification and validation in ensuring the accuracy of FEM solutions. Furthermore, best practices such as using high-quality meshes, employing suitable numerical integration schemes, and implementing robust algorithms can also contribute to achieving accurate results. By incorporating these best practices into the finite element analysis process, engineers and researchers can ensure that their results are reliable and trustworthy.\n\nCommon challenges and pitfalls in verification and validation processes include the lack of clear objectives and metrics, inadequate testing and validation procedures, and insufficient documentation of the analysis process. This can lead to inaccurate or unreliable results, which may not accurately represent the physical phenomenon being modeled. Furthermore, the complexity of real-world problems often requires the use of advanced numerical methods, which can introduce additional verification and validation challenges. As a result, it is essential to develop and implement robust verification and validation procedures to ensure the accuracy and reliability of finite element analysis results."
-            }
-          ]
-        }
-      ],
-      "parent_section_ids": [],
-      "status": "complete",
-      "generated_from": "writer"
-    },
-    {
-      "type": "section",
-      "section_id": "c6a35af9-b526-4f5b-b6f4-5f5514e19c02",
-      "title": "Introduction and Scope of the Finite Element Method",
-      "children": [
-        {
-          "type": "paragraph",
-          "inline_content": [
+              "text": "Verification of Finite Element Models using the Galerkin Method and Limit Analysis is crucial to ensure the accuracy and reliability of numerical simulations. The Galerkin method, a foundational approach in the Finite Element Method (FEM), involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions. This is achieved through the weak form, as represented by the equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V"
+            },
             {
               "type": "text",
-              "text": "The finite element method (FEM) has its roots in the work of Richard Courant, a mathematician who introduced the concept of the finite element method in the 1940s. Courant's work laid the foundation for the development of the FEM, which was later expanded upon by engineers such as Irwin Kraus and John Argyris in the 1950s and 1960s. The early development of the FEM was influenced by the work of mathematicians such as Jacques Hadamard and David Hilbert, who contributed to the understanding of partial differential equations, a key component of the FEM. The first practical applications of the FEM emerged in the 1960s, with the development of finite element codes for structural analysis.\n\nThe fundamental principles and assumptions of the finite element method are rooted in the concept of discretization, where the continuous problem domain is approximated by a finite number of discrete elements. This process involves dividing the domain into smaller subdomains, or elements, which are connected at nodes. The finite element method assumes that the solution can be approximated using a linear combination of basis functions, which are defined over each element. This approach allows for the approximation of complex physical phenomena through a finite number of discrete elements, enabling the solution of partial differential equations that describe the behavior of physical systems.\n\nThe finite element method (FEM) has numerous applications in engineering and science, including structural analysis, heat transfer, and fluid dynamics. It is widely used in the design and analysis of complex systems, such as bridges, buildings, and aircraft. However, the FEM also has limitations, including the need for accurate discretization and meshing techniques, as well as the assumption of linear or nonlinear material behavior. Furthermore, the FEM can be computationally intensive, requiring significant computational resources and expertise to implement and interpret the results."
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "f7035671-2924-579b-9cc0-bf9d5fbec967",
+              "source_id": "wiki_boris_galerkin"
+            },
+            {
+              "type": "text",
+              "text": ". In contrast, Limit Analysis, a technique used to compute the upper or lower bound plastic collapse load of a mechanical system, employs optimization algorithms to minimize the work done by stresses "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\mathbf{\\sigma}"
+            },
+            {
+              "type": "text",
+              "text": " under yield conditions "
+            },
+            {
+              "type": "inline_math",
+              "expression": "K"
+            },
+            {
+              "type": "text",
+              "text": ", as given by the optimization problem "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "c3507fe0-f378-50b3-97f2-62b086efb588",
+              "source_id": "wiki_finite_element_limit_analysis"
+            },
+            {
+              "type": "text",
+              "text": ".\n\nThe implementation of curved elements in finite element analysis poses unique challenges, particularly in the context of weak Galerkin methods. To address these challenges, it is essential to select the appropriate element type based on the problem's geometry and required accuracy. Curved elements, for instance, are particularly effective in modeling complex geometries by using higher-order polynomial shapes, thereby reducing discretization errors compared to straight-edged elements. This is achieved through the use of shape functions "
+            },
+            {
+              "type": "inline_math",
+              "expression": "N_i"
+            },
+            {
+              "type": "text",
+              "text": " and control points "
+            },
+            {
+              "type": "inline_math",
+              "expression": "X_i"
+            },
+            {
+              "type": "text",
+              "text": ", as expressed by the equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "65c632d4-3d29-5008-adca-6d3172bcd6a3",
+              "source_id": "arxiv_2210.16907v1"
+            },
+            {
+              "type": "text",
+              "text": ". By carefully choosing the element type and implementing curved elements, finite element analysts can improve the accuracy of their simulations and better capture the complex behavior of real-world systems.\n\nTo ensure the accuracy and reliability of numerical simulations in finite element limit analysis, it is essential to follow best practices during the assembly and solution stage. The local element equations must be assembled into a global system of algebraic equations, which involves summing contributions from all elements and applying boundary conditions. This system is then solved using numerical methods such as direct solvers or iterative techniques. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly, as shown in the optimization problem "
+            },
+            {
+              "type": "inline_math",
+              "expression": " \\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K "
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "62b6d0fc-916a-524a-abdf-13c92d2ee2ff",
+              "source_id": "wiki_finite_element_limit_analysis"
+            },
+            {
+              "type": "text",
+              "text": ". Furthermore, it is crucial to ensure mesh convergence by refining the mesh to guarantee numerical results converge to the true solution, particularly near stress concentrations or curved boundaries "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "93bb331d-98e4-5da6-bfab-999200686ebb",
+              "source_id": "wiki_finite_element_limit_analysis"
+            },
+            {
+              "type": "text",
+              "text": "."
             }
           ]
         }
@@ -250,94 +384,81 @@
       "authoritative_for_rendering": false,
       "sections": [
         {
-          "section_id": "c8ea02cd-4cff-4e7c-9bea-ba2db0478da9",
-          "semantic_marker_count": 0,
+          "section_id": "b4de2d7e-2034-4c5c-b382-06f2fd93965e",
+          "semantic_marker_count": 4,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 0,
+          "annotated_source_ids": [
+            "wiki_boris_galerkin",
+            "arxiv_2210.16907v1",
+            "wiki_boris_galerkin",
+            "wiki_finite_element_limit_analysis"
+          ],
+          "inline_math_count": 7,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
-          "section_id": "edcdf546-c2b0-4ffa-9fb0-0ae8163ad039",
-          "semantic_marker_count": 0,
+          "section_id": "34f33cbc-265c-4b09-abfd-23f12859ee6f",
+          "semantic_marker_count": 3,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 4,
+          "annotated_source_ids": [
+            "arxiv_2210.16907v1",
+            "arxiv_2210.16907v1",
+            "wiki_boris_galerkin"
+          ],
+          "inline_math_count": 3,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
-          "section_id": "73841255-25ce-4e5d-948c-4243715f5fe9",
-          "semantic_marker_count": 0,
+          "section_id": "4fd83b90-6bf6-437e-9d7d-e93b694957ba",
+          "semantic_marker_count": 4,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 0,
+          "annotated_source_ids": [
+            "arxiv_2210.16907v1",
+            "wiki_finite_element_limit_analysis",
+            "wiki_boris_galerkin",
+            "arxiv_2210.16907v1"
+          ],
+          "inline_math_count": 1,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
-          "section_id": "10fd7fe2-925a-4419-82e4-71a256faa701",
-          "semantic_marker_count": 0,
+          "section_id": "66f3eaaf-46cb-4660-a1e8-941233c20fb8",
+          "semantic_marker_count": 5,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 0,
-          "citation_cluster_count": 0,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": []
-        },
-        {
-          "section_id": "9797e5e6-9451-4ac0-9842-61f0749b0e7c",
-          "semantic_marker_count": 0,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [],
+          "annotated_source_ids": [
+            "wiki_boris_galerkin",
+            "wiki_finite_element_limit_analysis",
+            "arxiv_2210.16907v1",
+            "wiki_finite_element_limit_analysis",
+            "wiki_finite_element_limit_analysis"
+          ],
           "inline_math_count": 8,
-          "citation_cluster_count": 0,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": []
-        },
-        {
-          "section_id": "fde82915-27f8-449a-9fd2-b507a5ba6b0c",
-          "semantic_marker_count": 0,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 0,
-          "citation_cluster_count": 0,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": []
-        },
-        {
-          "section_id": "c6a35af9-b526-4f5b-b6f4-5f5514e19c02",
-          "semantic_marker_count": 0,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 0,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         }
       ],
-      "semantic_marker_count": 0,
+      "semantic_marker_count": 16,
       "latex_ir_readiness": {
         "ready": true,
         "counts": {
-          "sections": 7,
-          "paragraphs": 7,
-          "text_nodes": 19,
-          "inline_math": 12,
+          "sections": 4,
+          "paragraphs": 4,
+          "text_nodes": 39,
+          "inline_math": 19,
           "display_math": 0,
           "equation_occurrences": 0,
-          "citation_occurrences": 0,
+          "citation_occurrences": 16,
           "citation_cluster_occurrences": 0,
           "cross_reference_occurrences": 0,
           "equation_proposal_references": 0,
@@ -351,13 +472,13 @@
     "latex_ir_readiness": {
       "ready": true,
       "counts": {
-        "sections": 7,
-        "paragraphs": 7,
-        "text_nodes": 19,
-        "inline_math": 12,
+        "sections": 4,
+        "paragraphs": 4,
+        "text_nodes": 39,
+        "inline_math": 19,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 0,
+        "citation_occurrences": 16,
         "citation_cluster_occurrences": 0,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
@@ -370,13 +491,10 @@
   },
   "source_snapshot": {
     "legacy_section_ids": [
-      "c8ea02cd-4cff-4e7c-9bea-ba2db0478da9",
-      "edcdf546-c2b0-4ffa-9fb0-0ae8163ad039",
-      "73841255-25ce-4e5d-948c-4243715f5fe9",
-      "10fd7fe2-925a-4419-82e4-71a256faa701",
-      "9797e5e6-9451-4ac0-9842-61f0749b0e7c",
-      "fde82915-27f8-449a-9fd2-b507a5ba6b0c",
-      "c6a35af9-b526-4f5b-b6f4-5f5514e19c02"
+      "b4de2d7e-2034-4c5c-b382-06f2fd93965e",
+      "34f33cbc-265c-4b09-abfd-23f12859ee6f",
+      "4fd83b90-6bf6-437e-9d7d-e93b694957ba",
+      "66f3eaaf-46cb-4660-a1e8-941233c20fb8"
     ]
   }
 }
