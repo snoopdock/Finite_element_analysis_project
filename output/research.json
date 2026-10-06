@@ -6,10 +6,67 @@
       "mathematical_formulation": "Let $ V $ be a Hilbert space with norm $ \\| \\cdot \\| $. For a bilinear form $ a: V \\times V \\rightarrow \\mathbb{R} $ satisfying continuity $ |a(v, w)| \\leq \\gamma \\|v\\| \\|w\\| $ and coercivity $ a(v, v) \\geq \\alpha \\|v\\|^2 $, and a bounded linear functional $ L $, the solution $ u \\in V $ satisfies $ a(u, v) = L(v) $ for all $ v \\in V $. The finite-dimensional approximation $ u_h \\in V_h $ satisfies $ a(u_h, v_h) = L(v_h) $ for all $ v_h \\in V_h $.",
       "source_ids": [
         "wiki_c_a_s_lemma"
+      ],
+      "concept_id": "7fd32d11-b570-4218-bbb3-e86dfb9342cb"
+    },
+    {
+      "name": "Weak Formulation",
+      "explanation": "The weak formulation transforms a partial differential equation into an integral form by multiplying with a test function and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. It is central to the finite element method as it enables the use of variational principles and ensures compatibility with numerical discretization. The weak form is typically expressed as a bilinear equation involving a solution space and a test function space.",
+      "mathematical_formulation": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "name": "Bilinear Form Coercivity",
+      "explanation": "Coercivity of a bilinear form ensures the existence and uniqueness of the weak solution. It guarantees that the form is bounded below by a positive multiple of the norm squared of the input function. This property is critical for the stability of numerical methods and is a key condition in the Babuška–Lax–Milgram theorem. Without coercivity, the system of equations may be ill-posed or numerically unstable.",
+      "mathematical_formulation": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0",
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "name": "Spectral Element Method",
+      "explanation": "The spectral element method combines features of spectral methods and finite elements, using high-degree polynomial basis functions for higher accuracy. It achieves exponential convergence rates with fewer degrees of freedom compared to traditional FEM. This method is particularly effective for problems requiring high precision, such as wave propagation. However, it faces challenges in modeling complex geometries due to its reliance on structured, high-order elements.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_spectral_element_method"
       ]
     }
   ],
-  "procedures": [],
+  "procedures": [
+    {
+      "step_number": 1,
+      "title": "Domain Discretization",
+      "description": "The computational domain is divided into non-overlapping subdomains called elements. This process creates a mesh that approximates the geometry of the problem. The choice of element type (e.g., triangular, quadrilateral) depends on the complexity of the domain. Discretization transforms the continuous problem into a discrete system of equations by defining nodes and connectivity between elements.",
+      "equations": [],
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Weak Formulation and Basis Functions",
+      "description": "The strong form of the PDE is converted into a weak form by multiplying with test functions and integrating over the domain. Basis functions are selected to approximate the solution within each element, often using polynomials. These basis functions must satisfy continuity requirements across element boundaries. The weak form ensures compatibility with numerical integration and allows for the use of variational principles.",
+      "equations": [
+        "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V"
+      ],
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "step_number": 3,
+      "title": "Assembly and Solution",
+      "description": "The local element equations are assembled into a global system of equations by summing contributions from all elements. This involves computing stiffness matrices and load vectors for each element and combining them into a global matrix. The resulting system is solved using direct or iterative methods to obtain the discrete solution. Post-processing steps may follow to compute derived quantities like stresses or fluxes.",
+      "equations": [
+        "Ku = F"
+      ],
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    }
+  ],
   "equations": [
     {
       "name": "Continuity of Bilinear Form",
@@ -17,7 +74,8 @@
       "explanation": "This equation defines the continuity of the bilinear form $ a $, where $ \\gamma $ is a positive constant, and $ \\|v\\|, \\|w\\| $ are norms of $ v $ and $ w $ in the Hilbert space $ V $. It ensures that the bilinear form does not grow unbounded with respect to the input functions.",
       "source_ids": [
         "wiki_c_a_s_lemma"
-      ]
+      ],
+      "proposition_id": "9ca265a4-63af-4f39-b822-9f357d1e5648"
     },
     {
       "name": "Coercivity of Bilinear Form",
@@ -25,7 +83,8 @@
       "explanation": "This equation enforces the coercivity of the bilinear form $ a $, where $ \\alpha $ is a positive constant. It guarantees that the bilinear form is positive definite, ensuring the existence and uniqueness of the solution to the variational problem.",
       "source_ids": [
         "wiki_c_a_s_lemma"
-      ]
+      ],
+      "proposition_id": "cb37bf98-515c-428e-846b-e9ce8fecee02"
     },
     {
       "name": "Variational Equation",
@@ -33,8 +92,40 @@
       "explanation": "This equation represents the weak form of the partial differential equation, where $ u $ is the solution in the Hilbert space $ V $, $ v $ is a test function, and $ L(v) $ is a bounded linear functional. It forms the basis for the finite element discretization.",
       "source_ids": [
         "wiki_c_a_s_lemma"
+      ],
+      "proposition_id": "c8e718e6-6a15-4cc3-9a8d-5905ba43435d"
+    },
+    {
+      "name": "Weak Form Equation",
+      "latex": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
+      "explanation": "Here, $ B(u, v) $ is a bilinear form representing the inner product of the differential operator and test functions $ v $, $ f $ is the source term, and $ V $ is the test function space. This equation encodes the PDE in a form suitable for numerical approximation.",
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
+      ]
+    },
+    {
+      "name": "Coercivity Condition",
+      "latex": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0",
+      "explanation": "This inequality ensures the bilinear form $ B $ is bounded below by a positive constant $ c $ times the norm squared of $ u $. It guarantees the uniqueness and stability of the weak solution, critical for numerical methods.",
+      "source_ids": [
+        "wiki_babu_ka_lax_milgram_theorem"
       ]
     }
   ],
-  "rules": []
+  "rules": [
+    {
+      "rule": "Use of High-Order Basis Functions",
+      "explanation": "High-order polynomials, such as those in spectral element methods, improve accuracy with fewer elements. This reduces computational costs for problems requiring high precision but may complicate mesh generation for complex geometries.",
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    },
+    {
+      "rule": "Mesh Refinement for High-Frequency Waves",
+      "explanation": "For high-frequency wave simulations, fine meshes are required in traditional FEM to resolve rapid variations. Spectral element methods mitigate this by using high-degree polynomials, achieving accuracy with coarser meshes and reducing computational time.",
+      "source_ids": [
+        "wiki_spectral_element_method"
+      ]
+    }
+  ]
 }
