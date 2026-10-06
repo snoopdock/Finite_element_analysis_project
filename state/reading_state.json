@@ -248,5 +248,30 @@
       "procedures": 1,
       "rules": 0
     }
+  },
+  "wiki_loubignac_iteration": {
+    "first_read_at": "2026-10-06T12:18:38.444299+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-10-06T12:18:38.444329+00:00",
+        "extracted": {
+          "concepts": 1,
+          "procedures": 0,
+          "equations": 0,
+          "rules": 0
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 1,
+      "equations": 0,
+      "procedures": 0,
+      "rules": 0
+    }
   }
 }

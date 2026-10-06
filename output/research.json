@@ -42,7 +42,8 @@
       "mathematical_formulation": "Schmid tensor: $ \\mathbf{M} = \\mathbf{b} \\otimes \\mathbf{n} $, where $ \\mathbf{b} $ is the Burgers vector and $ \\mathbf{n} $ is the slip plane normal.",
       "source_ids": [
         "wiki_crystal_plasticity"
-      ]
+      ],
+      "concept_id": "4ffa4b90-c945-46a0-a9b8-c19499f4559d"
     },
     {
       "name": "Mesh Refinement via Stretched Grid Method (SGM)",
@@ -50,6 +51,15 @@
       "mathematical_formulation": "Potential energy: $ \\Pi = D \\sum_{j=1}^{n} R_j^2 $, where $ D $ is a constant, $ R_j $ is the length of segment $ j $, and $ n $ is the total number of segments.",
       "source_ids": [
         "wiki_stretched_grid_method"
+      ],
+      "concept_id": "a54465f1-5859-4e59-9586-587b9f5ed315"
+    },
+    {
+      "name": "Loubignac Iteration",
+      "explanation": "Loubignac iteration is an iterative method used in finite element methods to achieve a continuous stress field. It was introduced by Gilles Loubignac in 1977 and is specifically designed for problems requiring stress continuity. This method improves the accuracy of stress solutions in finite element analysis by iteratively refining the stress field. It is particularly useful in applications where high-quality stress distributions are critical.",
+      "mathematical_formulation": "",
+      "source_ids": [
+        "wiki_loubignac_iteration"
       ]
     }
   ],
@@ -98,7 +108,8 @@
       "source_ids": [
         "wiki_crystal_plasticity",
         "wiki_stretched_grid_method"
-      ]
+      ],
+      "proposition_id": "eea78e16-ffaa-476d-81ab-9e4ff5bb8a1f"
     },
     {
       "step_number": 2,
@@ -109,7 +120,8 @@
       ],
       "source_ids": [
         "arxiv_1509.00440v1"
-      ]
+      ],
+      "proposition_id": "122f58ef-2585-42d9-b410-77b3ab243fa6"
     }
   ],
   "equations": [
@@ -164,7 +176,8 @@
       "explanation": "This equation defines the potential energy of a distorted mesh, where $ D $ is a proportionality constant, $ R_j $ is the length of the $ j $-th segment, and $ n $ is the total number of segments. Minimizing $ \\Pi $ reduces element distortion, producing high-quality meshes for FEM analysis.",
       "source_ids": [
         "wiki_stretched_grid_method"
-      ]
+      ],
+      "proposition_id": "6ae6efad-f093-4939-a91f-e0505e0a6df3"
     },
     {
       "name": "Governing Equation for Coupled FVM-BEM",
@@ -172,7 +185,8 @@
       "explanation": "This equation models flow and transport in a bounded domain $ \\Omega $. $ \\mathbf{A} $ is a symmetric diffusion matrix, $ \\mathbf{b} $ is a velocity field, $ c $ is a reaction term, and $ f $ is a source term. It is coupled with an exterior domain problem via boundary conditions.",
       "source_ids": [
         "arxiv_1509.00440v1"
-      ]
+      ],
+      "proposition_id": "96e4c02b-d036-45e0-8ac5-5af2d20bff74"
     }
   ],
   "rules": [
@@ -197,14 +211,16 @@
       "explanation": "FEM accuracy heavily depends on mesh quality. Distorted elements lead to numerical errors, necessitating techniques like SGM for refinement. Poor mesh quality can cause ill-conditioned stiffness matrices and inaccurate stress-strain predictions.",
       "source_ids": [
         "wiki_stretched_grid_method"
-      ]
+      ],
+      "proposition_id": "d15c07fb-2b09-479f-a873-1d3e02581b8b"
     },
     {
       "rule": "Constitutive Law Consistency",
       "explanation": "Material behavior must align with underlying physical laws (e.g., Schmid's law for slip). Violating these rules leads to unphysical deformation predictions. CPFEM requires consistent tensor transformations between crystal and sample frames to maintain slip system validity.",
       "source_ids": [
         "wiki_crystal_plasticity"
-      ]
+      ],
+      "proposition_id": "f16a8cb4-1c86-4658-aa24-a702e7a396bb"
     }
   ]
 }
