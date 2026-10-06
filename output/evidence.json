@@ -315,6 +315,60 @@
     }
   },
   {
+    "source_id": "arxiv_1403.3149v1",
+    "url": "https://arxiv.org/pdf/1403.3149v1.pdf",
+    "retrieved_at": "2026-10-06T13:00:06.716132+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Existence, Uniqueness of Positive Solution to a Fractional Laplacians with Singular Nonlinearity",
+    "authors": [
+      "Yanqin Fang"
+    ],
+    "metadata": {
+      "abstract": "In this paper we prove the existence and uniqueness of positive classical solution of the fractional Laplacian with singular nonlinearity in a smooth bounded domain with zero Drichlet boundary conditions. By the method of sub-supersolution, we derive the existence of positive classical solution to the approximation problems. In order to obtain the regularity, we first establish the existence of weak solution for the fraction Laplacian. Thanks to \\cite{XY}, the regularity follows from the boundedness of weak solution.",
+      "published": "2014-03-13T02:39:59Z",
+      "page_count": 11,
+      "word_count": 2698
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1403.3149v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "finite element method proof existence uniqueness solution",
+    "query_contexts": [
+      "finite element method proof existence uniqueness solution"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.672524,
+      "lexical": 0.629584,
+      "source_quality": 0.85,
+      "section_relevance": 0.507944,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method proof existence uniqueness solution",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "finite element method proof existence uniqueness solution": 0.672524,
+        "galerkin dimension reduction finite element method": 0.2125
+      }
+    }
+  },
+  {
     "source_id": "arxiv_1809.04871v3",
     "url": "https://arxiv.org/pdf/1809.04871v3.pdf",
     "retrieved_at": "2026-10-06T11:37:56.346425+00:00",
@@ -479,6 +533,63 @@
         "Scaled Boundary Finite Element Method": 0.2125,
         "Galerkin Dimension Reduction": 0.2125,
         "Well-Posedness of the Galerkin Equation": 0.62141
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2511.22320v1",
+    "url": "https://arxiv.org/pdf/2511.22320v1.pdf",
+    "retrieved_at": "2026-10-06T13:00:06.716132+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Dimension reduction for a coupled electro-elastic saddle-point problem at finite strains",
+    "authors": [
+      "Kateryna Buryachenko",
+      "Annegret Glitzky",
+      "Matthias Liero",
+      "Barbara Zwicknagl"
+    ],
+    "metadata": {
+      "abstract": "We study the finite deformation of a thin, elastically heterogeneous sheet subject to electrostatic coupling. The interaction between mechanics and electrostatics is formulated as a saddle-point problem involving the deformation and the electrostatic potential. Starting from a three-dimensional electro-elastic model with prestrain in the elastic energy, we rigorously derive a reduced plate model in the bending regime. To perform the dimension reduction, that is, to derive the energy of a thin object by taking a suitable limit as its thickness tends to zero, we apply $Γ$-convergence-type methods to the underlying saddle-point problem. In the case of bivariate functionals, this convergence is understood in an adapted epi/hypo-convergence sense. In this concept, we demonstrate the convergence of the rescaled electro-elastic problems to an effective two-dimensional bending model coupled to electric effects. We verify that cluster points of saddle points are saddle points for the limit.",
+      "published": "2025-11-27T10:50:00Z",
+      "page_count": 30,
+      "word_count": 14237
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2511.22320v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "galerkin dimension reduction finite element method",
+    "query_contexts": [
+      "galerkin dimension reduction finite element method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.62141,
+      "lexical": 0.55963,
+      "source_quality": 0.85,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "galerkin dimension reduction finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "finite element method proof existence uniqueness solution": 0.2125,
+        "galerkin dimension reduction finite element method": 0.62141
       }
     }
   },
@@ -880,7 +991,7 @@
   {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-06T12:48:56.033485+00:00",
+    "retrieved_at": "2026-10-06T13:00:06.716132+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -926,61 +1037,8 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "finite element method gradient discretization": 0.2125,
-        "finite element method plastic analysis": 0.2125,
-        "finite element method matrix symmetry": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "wiki_boris_galerkin",
-    "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
-    "retrieved_at": "2026-10-06T12:44:06.367120+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Boris Galerkin",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "problem in <span class=\"searchmatch\">weak</span> <span class=\"searchmatch\">form</span>. Most well-known in the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> The Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> The streamline upwind Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> (SUPG) The",
-      "word_count": 1835
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_boris_galerkin.txt",
-    "status": "cached_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "finite element method mathematical foundation weak form Galerkin method",
-    "query_contexts": [
-      "finite element method mathematical foundation weak form Galerkin method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.444183,
-      "lexical": 0.419722,
-      "source_quality": 0.55,
-      "section_relevance": 0.338629,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "galerkin orthogonality finite element method",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "hpk finite element method": 0.1375,
-        "galerkin orthogonality finite element method": 0.444183,
-        "extended finite element method": 0.1375
+        "finite element method proof existence uniqueness solution": 0.2125,
+        "galerkin dimension reduction finite element method": 0.2125
       }
     }
   },
@@ -1141,6 +1199,57 @@
         "Galerkin method stepped structures finite element analysis": 0.2125,
         "hpk-FEM finite element method": 0.2125,
         "crystal plasticity finite element method CPFEM": 0.416955
+      }
+    }
+  },
+  {
+    "source_id": "wiki_boris_galerkin",
+    "url": "https://en.wikipedia.org/wiki/Boris_Galerkin",
+    "retrieved_at": "2026-10-06T13:00:06.716132+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Boris Galerkin",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "problem in <span class=\"searchmatch\">weak</span> <span class=\"searchmatch\">form</span>. Most well-known in the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> The Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> The streamline upwind Petrov–<span class=\"searchmatch\">Galerkin</span> <span class=\"searchmatch\">method</span> (SUPG) The",
+      "word_count": 1835
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_boris_galerkin.txt",
+    "status": "cached_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.341955,
+      "lexical": 0.279815,
+      "source_quality": 0.55,
+      "section_relevance": 0.225753,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "galerkin dimension reduction finite element method",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.260173,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "finite element method proof existence uniqueness solution": 0.1375,
+        "galerkin dimension reduction finite element method": 0.341955
       }
     }
   }
