@@ -92,6 +92,10 @@ class PublicationCompilationResult:
     pdf_path: str
     final_log_path: str
     warnings: tuple[str, ...] = ()
+    minimum_passes: int = 2
+    maximum_passes: int = 5
+    converged: bool = True
+    auxiliary_state_sha256: str = ""
 
     @property
     def ok(self) -> bool:
@@ -411,9 +415,15 @@ def audit_latex_log(log_text: str, *, strict: bool = True) -> PublicationIntegri
                 )
             )
     for line in sorted({line.strip() for line in log_text.splitlines() if "LaTeX Warning:" in line}):
+        rerun_required = (
+            "Label(s) may have changed" in line
+            or "Rerun to get cross-references right" in line
+        )
         issues.append(
             PublicationIntegrityIssue(
-                "error" if strict else "warning", "LATEX_WARNING", line
+                "error" if strict else "warning",
+                "LATEX_RERUN_REQUIRED" if rerun_required else "LATEX_WARNING",
+                line,
             )
         )
     return PublicationIntegrityReport(tuple(issues))
@@ -423,17 +433,58 @@ def _error(code: str, message: str) -> PublicationIntegrityError:
     return PublicationIntegrityError((PublicationIntegrityIssue("error", code, message),))
 
 
+def _auxiliary_state_digest(temp: Path, stem: str) -> str:
+    """Hash the LaTeX state that can affect a subsequent cross-reference pass."""
+    digest = hashlib.sha256()
+    found = False
+    for suffix in (".aux", ".toc", ".out", ".lof", ".lot"):
+        path = temp / f"{stem}{suffix}"
+        if not path.is_file():
+            continue
+        found = True
+        digest.update(suffix.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest() if found else hashlib.sha256(b"").hexdigest()
+
+
+def _only_retryable_convergence_issues(report: PublicationIntegrityReport) -> bool:
+    """Return True when another LaTeX pass can legitimately resolve all errors."""
+    if not report.errors:
+        return True
+    retryable = {
+        "LATEX_RERUN_REQUIRED",
+        "UNDEFINED_REFERENCES",
+        "UNDEFINED_CITATIONS",
+    }
+    return all(issue.code in retryable for issue in report.errors)
+
+
 def compile_latex_pdf(
     tex_path: str | Path,
     output_pdf: str | Path,
     *,
     passes: int = 2,
+    max_passes: int = 5,
     engine: str = "pdflatex",
     timeout_seconds: int = 90,
 ) -> PublicationCompilationResult:
-    """Compile in an isolated directory and require a clean final pass."""
+    """Compile until cross-reference state converges, within a strict bound.
+
+    ``passes`` is the minimum number of LaTeX passes (kept for backward
+    compatibility with the existing CLI/API). After that minimum, compilation
+    continues only while the auxiliary state or retryable cross-reference
+    warnings indicate that another pass is required. Non-retryable warnings or
+    layout failures remain immediate hard failures. The loop is bounded by
+    ``max_passes`` so publication validation can never become an unbounded
+    retry mechanism.
+    """
     if passes < 2:
         raise ValueError("publication compilation requires at least two passes")
+    if max_passes < passes:
+        raise ValueError("max_passes must be greater than or equal to the minimum passes")
+
     tex_path = Path(tex_path).resolve()
     output_pdf = Path(output_pdf).resolve()
     if not tex_path.is_file():
@@ -444,9 +495,16 @@ def compile_latex_pdf(
 
     repo_root = tex_path.parent.parent if tex_path.parent.name == "output" else tex_path.parent
     final_log_copy = output_pdf.with_suffix(".log")
+    actual_passes = 0
+    final_aux_digest = ""
+
     with tempfile.TemporaryDirectory(prefix="fea-publication-") as temp_dir:
         temp = Path(temp_dir)
-        for pass_index in range(1, passes + 1):
+        previous_aux_digest: str | None = None
+        converged = False
+
+        for pass_index in range(1, max_passes + 1):
+            actual_passes = pass_index
             result = subprocess.run(
                 [
                     engine_path,
@@ -463,12 +521,41 @@ def compile_latex_pdf(
                 timeout=timeout_seconds,
                 check=False,
             )
+            log_path = temp / f"{tex_path.stem}.log"
             if result.returncode != 0:
+                if log_path.is_file():
+                    final_log_copy.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(log_path, final_log_copy)
                 tail = "\n".join((result.stdout or "").splitlines()[-80:])
                 raise _error(
                     "LATEX_COMPILE_FAILED",
                     f"{engine} pass {pass_index} failed with exit code {result.returncode}:\n{tail}",
                 )
+
+            if not log_path.is_file():
+                raise _error("LATEX_LOG_MISSING", "LaTeX compilation did not produce a log")
+
+            final_aux_digest = _auxiliary_state_digest(temp, tex_path.stem)
+            if pass_index < passes:
+                previous_aux_digest = final_aux_digest
+                continue
+
+            log_report = audit_latex_log(
+                log_path.read_text(encoding="utf-8", errors="replace"),
+                strict=True,
+            )
+            aux_stable = previous_aux_digest == final_aux_digest
+
+            if log_report.errors and not _only_retryable_convergence_issues(log_report):
+                final_log_copy.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(log_path, final_log_copy)
+                raise PublicationIntegrityError(log_report.errors)
+
+            if not log_report.errors and aux_stable:
+                converged = True
+                break
+
+            previous_aux_digest = final_aux_digest
 
         compiled_pdf = temp / f"{tex_path.stem}.pdf"
         log_path = temp / f"{tex_path.stem}.log"
@@ -476,9 +563,27 @@ def compile_latex_pdf(
             raise _error("PDF_NOT_PRODUCED", "LaTeX compilation did not produce a non-empty PDF")
         if not log_path.is_file():
             raise _error("LATEX_LOG_MISSING", "LaTeX compilation did not produce a final log")
-        log_report = audit_latex_log(log_path.read_text(encoding="utf-8", errors="replace"), strict=True)
-        if log_report.errors:
-            raise PublicationIntegrityError(log_report.errors)
+
+        final_log_text = log_path.read_text(encoding="utf-8", errors="replace")
+        final_report = audit_latex_log(final_log_text, strict=True)
+        if not converged:
+            final_log_copy.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(log_path, final_log_copy)
+            if final_report.errors and not _only_retryable_convergence_issues(final_report):
+                raise PublicationIntegrityError(final_report.errors)
+            detail = "; ".join(issue.format() for issue in final_report.errors)
+            if not detail:
+                detail = "auxiliary LaTeX state was still changing"
+            raise _error(
+                "LATEX_CONVERGENCE_NOT_REACHED",
+                f"{engine} did not converge after {max_passes} passes: {detail}",
+            )
+
+        # Convergence requires a clean final log as well as stable auxiliary state.
+        if final_report.errors:
+            final_log_copy.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(log_path, final_log_copy)
+            raise PublicationIntegrityError(final_report.errors)
 
         output_pdf.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(compiled_pdf, output_pdf)
@@ -486,10 +591,14 @@ def compile_latex_pdf(
 
     return PublicationCompilationResult(
         engine=engine,
-        passes=passes,
+        passes=actual_passes,
         pdf_path=str(output_pdf),
         final_log_path=str(final_log_copy),
         warnings=(),
+        minimum_passes=passes,
+        maximum_passes=max_passes,
+        converged=True,
+        auxiliary_state_sha256=final_aux_digest,
     )
 
 

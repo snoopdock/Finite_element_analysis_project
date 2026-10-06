@@ -1,4 +1,4 @@
-"""Validate generated LaTeX, compile twice, and emit a publication manifest."""
+"""Validate generated LaTeX, compile to bounded convergence, and emit a publication manifest."""
 
 from __future__ import annotations
 
@@ -23,7 +23,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--semantic-document", default="")
     parser.add_argument("--state", default="")
     parser.add_argument("--ir-contract", default="")
-    parser.add_argument("--passes", type=int, default=2)
+    parser.add_argument("--passes", type=int, default=2, help="minimum LaTeX passes")
+    parser.add_argument("--max-passes", type=int, default=5, help="hard upper bound for LaTeX convergence")
     parser.add_argument("--engine", default="pdflatex")
     args = parser.parse_args(argv)
 
@@ -38,6 +39,7 @@ def main(argv: list[str] | None = None) -> int:
             tex_path,
             args.pdf,
             passes=args.passes,
+            max_passes=args.max_passes,
             engine=args.engine,
         )
         manifest = build_publication_manifest(
@@ -52,7 +54,9 @@ def main(argv: list[str] | None = None) -> int:
         manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print(
             "Publication integrity passed: static audit OK; "
-            f"{args.engine} x{args.passes}; PDF={args.pdf}"
+            f"{args.engine} converged in {compilation.passes} pass(es) "
+            f"(minimum={compilation.minimum_passes}, maximum={compilation.maximum_passes}); "
+            f"PDF={args.pdf}"
         )
         return 0
     except (OSError, PublicationIntegrityError, ValueError) as exc:

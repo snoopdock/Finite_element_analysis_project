@@ -1,4 +1,4 @@
-version: 2
+version: 3
 purpose: >-
   Close the publication boundary after semantic Document -> LaTeX IR projection
   by requiring the exact generated LaTeX source and final PDF artifact to pass
@@ -65,6 +65,27 @@ unicode:
 compilation_gate:
   engine: pdflatex
   minimum_passes: 2
+  maximum_passes: 5
+  convergence:
+    bounded: true
+    requires_clean_final_log: true
+    requires_stable_auxiliary_state: true
+    auxiliary_files:
+      - aux
+      - toc
+      - out
+      - lof
+      - lot
+    retryable_conditions:
+      - labels_changed_rerun_required
+      - unresolved_references_pending_resolution
+      - unresolved_citations_pending_resolution
+    non_retryable_conditions:
+      - latex_errors
+      - multiply_defined_references
+      - layout_warnings
+      - arbitrary_latex_warnings
+    failure_if_not_converged_by_maximum: true
   final_pass:
     fatal_errors: reject
     undefined_references: reject
@@ -95,9 +116,10 @@ workflow:
     - run_tests
     - run_pipeline
     - static_latex_audit
-    - compile_pass_1
-    - compile_pass_2
-    - final_log_audit
+    - compile_minimum_pass_1
+    - compile_minimum_pass_2
+    - bounded_convergence_passes_if_required
+    - final_log_and_auxiliary_state_audit
     - write_manifest
     - upload_validated_artifact
     - commit_generated_state

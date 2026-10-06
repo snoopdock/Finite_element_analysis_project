@@ -251,3 +251,61 @@ def test_document_gate_uses_reference_registry_not_source_name_shape_for_grouped
     )
     codes = {issue.code for issue in audit_document_model(model)}
     assert "RAW_CITATION_MARKER" in codes
+
+@pytest.mark.skipif(shutil.which("pdflatex") is None, reason="pdflatex unavailable")
+def test_compiler_adapts_to_three_pass_toc_label_convergence(tmp_path: Path):
+    tex_path = tmp_path / "guideline.tex"
+    pdf_path = tmp_path / "guideline.pdf"
+    lines = [
+        r"\documentclass{article}",
+        r"\usepackage{hyperref}",
+        r"\begin{document}",
+        r"\tableofcontents",
+    ]
+    # A sufficiently long table of contents changes pagination on pass two,
+    # which legitimately requires a third pass for stable labels/page numbers.
+    for index in range(1, 81):
+        lines.append(rf"\section{{Section {index}}}\label{{sec:{index}}} Text.")
+    lines.append(r"\end{document}")
+    tex_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    result = compile_latex_pdf(tex_path, pdf_path, passes=2, max_passes=5)
+
+    assert result.passes == 3
+    assert result.minimum_passes == 2
+    assert result.maximum_passes == 5
+    assert result.converged is True
+    assert result.auxiliary_state_sha256
+    assert pdf_path.is_file()
+
+
+@pytest.mark.skipif(shutil.which("pdflatex") is None, reason="pdflatex unavailable")
+def test_compiler_fails_closed_when_convergence_exceeds_bound(tmp_path: Path):
+    tex_path = tmp_path / "guideline.tex"
+    pdf_path = tmp_path / "guideline.pdf"
+    lines = [
+        r"\documentclass{article}",
+        r"\usepackage{hyperref}",
+        r"\begin{document}",
+        r"\tableofcontents",
+    ]
+    for index in range(1, 81):
+        lines.append(rf"\section{{Section {index}}}\label{{sec:{index}}} Text.")
+    lines.append(r"\end{document}")
+    tex_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    with pytest.raises(PublicationIntegrityError) as exc_info:
+        compile_latex_pdf(tex_path, pdf_path, passes=2, max_passes=2)
+
+    assert any(issue.code == "LATEX_CONVERGENCE_NOT_REACHED" for issue in exc_info.value.issues)
+    # Failure diagnostics must preserve the final LaTeX log for workflow artifacts.
+    assert pdf_path.with_suffix(".log").is_file()
+
+
+def test_compiler_rejects_maximum_passes_below_minimum(tmp_path: Path):
+    tex_path = tmp_path / "guideline.tex"
+    pdf_path = tmp_path / "guideline.pdf"
+    tex_path.write_text(_minimal_document("Clean document."), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="max_passes"):
+        compile_latex_pdf(tex_path, pdf_path, passes=3, max_passes=2)
