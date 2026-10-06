@@ -57,23 +57,15 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The weak formulation of a partial differential equation transforms it into an integral form by multiplying with test functions and integrating over the domain, thereby relaxing the differentiability requirements of the solution. This approach enables the use of variational principles and ensures compatibility with numerical discretization. Basis functions are selected to approximate the solution within each element, often using polynomials. These basis functions must satisfy continuity requirements across element boundaries. The weak form ensures that the bilinear equation "
+              "text": "The weak formulation of a partial differential equation is a crucial step in the finite element method, as it transforms the PDE into an integral form by multiplying with test functions and integrating over the domain. Basis functions are selected to approximate the solution within each element, often using polynomials, and must satisfy continuity requirements across element boundaries. The weak form ensures compatibility with numerical integration and allows for the use of variational principles. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations, and is central to the finite element method as it enables the use of variational principles and ensures compatibility with numerical discretization. The weak form is typically expressed as a bilinear equation involving a bilinear form "
             },
             {
               "type": "inline_math",
-              "expression": "B(u, v) = \\langle f, v \\rangle"
+              "expression": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V"
             },
             {
               "type": "text",
-              "text": " for all "
-            },
-            {
-              "type": "inline_math",
-              "expression": "v \\in V"
-            },
-            {
-              "type": "text",
-              "text": " is well-defined, where "
+              "text": ", where "
             },
             {
               "type": "inline_math",
@@ -105,39 +97,57 @@
             },
             {
               "type": "text",
-              "text": " is the test function space. The coercivity of the bilinear form, as expressed by the condition "
+              "text": " is the test function space.\n\nThe coercivity condition, mathematically expressed as "
             },
             {
               "type": "inline_math",
-              "expression": "|B(u, u)| \\geq c\\|u\\|^2"
+              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
             },
             {
               "type": "text",
-              "text": " for some "
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "781c97f5-e018-5bf6-8c42-318ad3a3221d",
+              "source_id": "wiki_babu_ka_lax_milgram_theorem"
+            },
+            {
+              "type": "text",
+              "text": ", is a critical property that ensures the existence and uniqueness of the weak solution. This condition guarantees that the bilinear form "
             },
             {
               "type": "inline_math",
-              "expression": "c > 0"
+              "expression": "B"
             },
             {
               "type": "text",
-              "text": ", is a critical property that ensures the existence and uniqueness of the weak solution.\n\nThe coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution. It guarantees that the form is bounded below by a positive multiple of the norm squared of the input function, which is mathematically expressed as "
+              "text": " is bounded below by a positive constant "
             },
             {
               "type": "inline_math",
-              "expression": "|B(u, u)| \\geq c\\|u\\|^2"
+              "expression": "c"
             },
             {
               "type": "text",
-              "text": " for some "
+              "text": " times the norm squared of "
             },
             {
               "type": "inline_math",
-              "expression": "c > 0"
+              "expression": "u"
             },
             {
               "type": "text",
-              "text": ". This property is crucial for the stability of numerical methods and is a key condition in the Babuška–Lax–Milgram theorem. Without coercivity, the system of equations may be ill-posed or numerically unstable.\n\nThe Variational Equation is a fundamental concept in the finite element method, representing the weak form of a partial differential equation. It is expressed as "
+              "text": ". In the context of the finite element method, coercivity is essential for the stability of numerical methods, as it prevents the system of equations from being ill-posed or numerically unstable "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "ab5836a2-a3d8-5b49-bd67-bd01288bf831",
+              "source_id": "wiki_babu_ka_lax_milgram_theorem"
+            },
+            {
+              "type": "text",
+              "text": ".\n\nThe variational equation, derived from the weak form of the partial differential equation, is a fundamental concept in the finite element method. It is expressed as "
             },
             {
               "type": "inline_math",
@@ -177,7 +187,57 @@
             },
             {
               "type": "text",
-              "text": " is a bounded linear functional. This equation forms the basis for the finite element discretization and is central to the finite element method as it enables the use of variational principles and ensures compatibility with numerical discretization. The variational equation is derived from the weak formulation, which transforms a partial differential equation into an integral form by multiplying with test functions and integrating over the domain, thereby relaxing the differentiability requirements of the solution."
+              "text": " is a bounded linear functional "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "9d0a14e8-eedf-5529-9e27-c7ebb2ec919f",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ". This equation represents the weak form of the PDE, where the bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(u, v)"
+            },
+            {
+              "type": "text",
+              "text": " encodes the inner product of the differential operator and test functions "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v"
+            },
+            {
+              "type": "text",
+              "text": ". The coercivity of the bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " is a critical property that ensures the existence and uniqueness of the solution to the variational problem, and is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "49970574-d1ca-52ab-af68-25328a2cf946",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ". This property is essential for the finite element method, as it guarantees the stability and convergence of the numerical solution."
             }
           ]
         }
@@ -196,63 +256,7 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Céa's Lemma plays a crucial role in error estimation for the finite element method by providing a framework for proving error estimates. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, it ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form. The weak formulation of the partial differential equation, which transforms it into an integral form by multiplying with test functions and integrating over the domain, is also essential in establishing the convergence of the finite element solution. By combining the weak formulation with Céa's Lemma, researchers can derive error estimates that provide a bound on the difference between the finite element solution and the exact solution.\n\nThe weak form equation is a fundamental concept in the finite element procedure, transforming a partial differential equation into an integral form by multiplying with test functions and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The weak form equation is typically expressed as a bilinear equation involving a symmetric bilinear form "
-            },
-            {
-              "type": "inline_math",
-              "expression": "B(u, v) = \\langle f, v \\rangle"
-            },
-            {
-              "type": "text",
-              "text": " for all "
-            },
-            {
-              "type": "inline_math",
-              "expression": "v \\in V"
-            },
-            {
-              "type": "text",
-              "text": ", where "
-            },
-            {
-              "type": "inline_math",
-              "expression": "f"
-            },
-            {
-              "type": "text",
-              "text": " is the source term and "
-            },
-            {
-              "type": "inline_math",
-              "expression": "V"
-            },
-            {
-              "type": "text",
-              "text": " is the test function space. The coercivity of the bilinear form "
-            },
-            {
-              "type": "inline_math",
-              "expression": "B"
-            },
-            {
-              "type": "text",
-              "text": " is ensured by the equation "
-            },
-            {
-              "type": "inline_math",
-              "expression": "B(u, u) \\geq \\alpha \\|u\\|^2"
-            },
-            {
-              "type": "text",
-              "text": ", where "
-            },
-            {
-              "type": "inline_math",
-              "expression": "\\alpha"
-            },
-            {
-              "type": "text",
-              "text": " is a positive constant, guaranteeing the existence and uniqueness of the solution to the variational problem.\n\nThe continuity and coercivity of the bilinear form are fundamental properties in the finite element method, ensuring the existence and uniqueness of the weak solution. According to Céa's Lemma, the bilinear form must satisfy both continuity and coercivity to guarantee the convergence of the finite element solution to the true solution. Specifically, the coercivity of the bilinear form "
+              "text": "The properties of the variational equation and bilinear form in the finite element procedure are crucial for ensuring the stability and uniqueness of the weak solution. The coercivity of a bilinear form "
             },
             {
               "type": "inline_math",
@@ -260,23 +264,115 @@
             },
             {
               "type": "text",
-              "text": " is expressed as "
+              "text": " is a critical property that ensures the existence and uniqueness of the weak solution, and is mathematically expressed as "
             },
             {
               "type": "inline_math",
-              "expression": "|a(v, v)| \\geq c\\|v\\|^2"
+              "expression": "|a(v, v)| \\geq \\alpha \\|v\\|^2"
             },
             {
               "type": "text",
-              "text": ", where "
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "def08edb-ef21-5cc6-b6e6-f97296e41f57",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ". This property is a fundamental requirement for the finite element method, as it guarantees that the bilinear form is positive definite. Furthermore, the continuity of a bilinear form "
             },
             {
               "type": "inline_math",
-              "expression": "c"
+              "expression": "a"
             },
             {
               "type": "text",
-              "text": " is a positive constant, ensuring that the form is positive definite and the solution is stable. This property is a key condition in the Babuška–Lax–Milgram theorem, which provides a framework for proving error estimates and ensuring the existence and uniqueness of the weak solution."
+              "text": " is also essential, and is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "c239a46b-15fe-5ab1-8d21-14230f76e414",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ". This property ensures that the bilinear form does not grow unbounded with respect to the input functions, which is a critical requirement for the stability of the finite element method.\n\nThe weak formulation is a crucial step in the finite element procedure, transforming the strong form of a partial differential equation into an integral form by multiplying with test functions and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The weak form is typically expressed as a bilinear equation involving a bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "B(u, v)"
+            },
+            {
+              "type": "text",
+              "text": ", a source term "
+            },
+            {
+              "type": "inline_math",
+              "expression": "f"
+            },
+            {
+              "type": "text",
+              "text": ", and a test function space "
+            },
+            {
+              "type": "inline_math",
+              "expression": "V"
+            },
+            {
+              "type": "text",
+              "text": ". The weak form equation is given by "
+            },
+            {
+              "type": "inline_math",
+              "expression": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "1c85121d-ba65-5d64-8206-0661e84bad2d",
+              "source_id": "wiki_babu_ka_lax_milgram_theorem"
+            },
+            {
+              "type": "text",
+              "text": ". The coercivity of the bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " is a critical property that ensures the existence and uniqueness of the weak solution, and is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "12f9c7ff-903f-5dab-b34c-41ec3c4ac2d1",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": "."
             }
           ]
         }
@@ -298,7 +394,7 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Céa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. It ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form. For a bilinear form "
+              "text": "Céa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, Céa's Lemma states that for a bilinear form "
             },
             {
               "type": "inline_math",
@@ -378,39 +474,76 @@
             },
             {
               "type": "text",
-              "text": ".\n\nThe coercivity condition plays a crucial role in ensuring the existence and uniqueness of the weak solution in the finite element method. This condition, mathematically expressed as "
+              "text": " "
             },
             {
-              "type": "inline_math",
-              "expression": "|B(u, u)| \\geq c\\|u\\|^2"
-            },
-            {
-              "type": "text",
-              "text": " for some "
-            },
-            {
-              "type": "inline_math",
-              "expression": "c > 0"
+              "type": "citation_occurrence",
+              "occurrence_id": "d9d81928-a4f0-56cb-bc17-01b99b260d26",
+              "source_id": "wiki_c_a_s_lemma"
             },
             {
               "type": "text",
-              "text": ", guarantees the stability of the numerical method. The Babuška–Lax–Milgram theorem, which relies on the coercivity of the bilinear form, ensures that the system of equations is well-posed and that the solution can be uniquely determined. This property is essential for the convergence of the finite element solution to the true solution under appropriate conditions.\n\nThe Spectral Element Method (SEM) combines the strengths of spectral methods and finite elements to achieve high accuracy with fewer degrees of freedom. This approach relies on the weak formulation of the partial differential equation, which transforms the PDE into an integral form by multiplying with test functions and integrating over the domain. The weak form, "
+              "text": ". This result ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form.\n\nThe convergence of the finite element procedure relies on the coercivity and continuity of the bilinear form. Coercivity, as expressed by the inequality "
             },
             {
               "type": "inline_math",
-              "expression": "B(u, v) = \\langle f, v \\rangle"
+              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
             },
             {
               "type": "text",
-              "text": " for all "
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "d3efa947-2a38-5ee1-a4e3-e8a3210f0cc5",
+              "source_id": "wiki_babu_ka_lax_milgram_theorem"
+            },
+            {
+              "type": "text",
+              "text": ", ensures the existence and uniqueness of the weak solution, a critical property for numerical methods. Continuity, defined by the equation "
             },
             {
               "type": "inline_math",
-              "expression": "v \\in V"
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
             },
             {
               "type": "text",
-              "text": ", is a bilinear equation that encodes the PDE in a form suitable for numerical approximation. By using high-degree polynomial basis functions, the SEM achieves exponential convergence rates, making it particularly effective for problems requiring high precision, such as wave propagation. The SEM's reliance on structured, high-order elements presents challenges in modeling complex geometries, but its advantages in accuracy and efficiency make it a valuable tool in the finite element method."
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "221b6224-0d77-5a92-bfac-35567cf38cd8",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ", guarantees that the bilinear form does not grow unbounded with respect to the input functions. These conditions, combined with the properties of Hilbert spaces and bounded linear operators, enable the application of Céa's Lemma, which provides a framework for proving error estimates and ensuring the convergence of the finite element solution.\n\nThe weak formulation of a partial differential equation is a crucial component of the finite element procedure, as it transforms the PDE into an integral form by multiplying with test functions and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The coercivity of a bilinear form, expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "2f262f4a-0f1c-5a83-9a3a-2e9535231793",
+              "source_id": "wiki_babu_ka_lax_milgram_theorem"
+            },
+            {
+              "type": "text",
+              "text": ", ensures the existence and uniqueness of the weak solution. Céa's Lemma, a fundamental result in the analysis of the finite element method, provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "58f5c172-3896-5b1c-9b6a-965a903360d4",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ". The finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form."
             }
           ]
         }
@@ -449,7 +582,31 @@
             },
             {
               "type": "text",
-              "text": ". Coercivity guarantees that the bilinear form is bounded below by a positive constant times the norm squared of the input function, which is essential for the stability of numerical methods. As a result, coercivity is a key condition in the Babuška–Lax–Milgram theorem, which provides a framework for proving the existence and uniqueness of weak solutions to partial differential equations.\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, it assumes the coercivity of the bilinear form, which is mathematically expressed as "
+              "text": ". The coercivity condition guarantees that the bilinear form is bounded below by a positive constant "
+            },
+            {
+              "type": "inline_math",
+              "expression": "c"
+            },
+            {
+              "type": "text",
+              "text": " times the norm squared of "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u"
+            },
+            {
+              "type": "text",
+              "text": ", ensuring the uniqueness and stability of the weak solution, critical for numerical methods. In the context of finite element analysis, the properties of bilinear forms play a crucial role in ensuring the stability and uniqueness of the weak solution. Specifically, the coercivity of a bilinear form ensures that the solution to the variational problem is unique and stable, which is essential for the accuracy and reliability of numerical methods.\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, Céa's Lemma states that for a bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " satisfying coercivity "
             },
             {
               "type": "inline_math",
@@ -457,106 +614,55 @@
             },
             {
               "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "66775f93-5817-52fd-94c9-b8a426466637",
-              "source_id": "wiki_c_a_s_lemma"
-            },
-            {
-              "type": "text",
-              "text": ". This property ensures the existence and uniqueness of the weak solution, and is a key condition in the Babuška–Lax–Milgram theorem "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "bb1f01e6-d2b5-5fbc-b202-9cac92e221ce",
-              "source_id": "wiki_babu_ka_lax_milgram_theorem"
-            },
-            {
-              "type": "text",
-              "text": ". By leveraging these properties, Céa's Lemma provides a rigorous framework for analyzing the convergence of the finite element method.\n\nThe weak formulation and basis functions play a crucial role in the finite element procedure. By multiplying the strong form of the partial differential equation with test functions and integrating over the domain, the weak formulation transforms the equation into an integral form. Basis functions are then selected to approximate the solution within each element, often using polynomials. These basis functions must satisfy continuity requirements across element boundaries. The weak formulation ensures compatibility with numerical integration and allows for the use of variational principles, thereby enabling the finite element method. The coercivity of the bilinear form, which is a critical property for the stability of numerical methods, is guaranteed by the inequality "
+              "text": " and continuity "
             },
             {
               "type": "inline_math",
-              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
             },
             {
               "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "7c99e677-b1f6-5c48-aa8f-32daea50d2b9",
-              "source_id": "wiki_babu_ka_lax_milgram_theorem"
-            },
-            {
-              "type": "text",
-              "text": ". This property ensures the existence and uniqueness of the weak solution, which is essential for the finite element method to produce accurate results."
-            }
-          ]
-        }
-      ],
-      "parent_section_ids": [
-        "4fd8f0c1-2abd-4412-a41b-4df83c1c081d"
-      ],
-      "status": "complete",
-      "generated_from": "split",
-      "subsection_index": 0
-    },
-    {
-      "type": "section",
-      "section_id": "af7144ac-f35e-4938-a21b-64ec68fba6f8",
-      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Continuity and Stability of the Finite Element Method",
-      "children": [
-        {
-          "type": "paragraph",
-          "inline_content": [
-            {
-              "type": "text",
-              "text": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution. This property is mathematically expressed as "
+              "text": ", and a bounded linear functional "
             },
             {
               "type": "inline_math",
-              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
+              "expression": "L"
             },
             {
               "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "05b77b38-9195-51de-b8f7-be24b1ec107c",
-              "source_id": "wiki_babu_ka_lax_milgram_theorem"
-            },
-            {
-              "type": "text",
-              "text": ". The coercivity condition guarantees that the bilinear form is bounded below by a positive constant times the norm squared of the input function, ensuring the uniqueness and stability of the weak solution. This property is essential for the stability of numerical methods and is a key condition in the Babuška–Lax–Milgram theorem "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "68351ce1-1107-530e-a683-9380f80726b3",
-              "source_id": "wiki_babu_ka_lax_milgram_theorem"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe continuity of the bilinear form is a crucial property that ensures the stability of the finite element method. According to Céa's Lemma, the solution "
+              "text": ", the solution "
             },
             {
               "type": "inline_math",
-              "expression": "u_h"
+              "expression": "u \\in V"
             },
             {
               "type": "text",
-              "text": " in the finite-dimensional space "
+              "text": " satisfies "
             },
             {
               "type": "inline_math",
-              "expression": "V_h"
+              "expression": "a(u, v) = L(v)"
             },
             {
               "type": "text",
-              "text": " satisfies the weak form equation "
+              "text": " for all "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v \\in V"
+            },
+            {
+              "type": "text",
+              "text": ". The finite-dimensional approximation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u_h \\in V_h"
+            },
+            {
+              "type": "text",
+              "text": " satisfies "
             },
             {
               "type": "inline_math",
@@ -572,19 +678,20 @@
             },
             {
               "type": "text",
-              "text": ", where "
+              "text": " "
             },
             {
-              "type": "inline_math",
-              "expression": "a"
+              "type": "citation_occurrence",
+              "occurrence_id": "66775f93-5817-52fd-94c9-b8a426466637",
+              "source_id": "wiki_c_a_s_lemma"
             },
             {
               "type": "text",
-              "text": " is a bilinear form satisfying continuity "
+              "text": ". This result ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form.\n\nThe weak formulation and basis functions play a crucial role in the finite element procedure. By multiplying the strong form of the partial differential equation with test functions and integrating over the domain, the weak form is obtained. Basis functions are then selected to approximate the solution within each element, often using polynomials. These basis functions must satisfy continuity requirements across element boundaries. The coercivity of the bilinear form, expressed as "
             },
             {
               "type": "inline_math",
-              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
             },
             {
               "type": "text",
@@ -592,63 +699,12 @@
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "19125b99-2681-5d7a-b019-baa598b9736a",
-              "source_id": "wiki_c_a_s_lemma"
+              "occurrence_id": "bb1f01e6-d2b5-5fbc-b202-9cac92e221ce",
+              "source_id": "wiki_babu_ka_lax_milgram_theorem"
             },
             {
               "type": "text",
-              "text": ". This property guarantees that the bilinear form does not grow unbounded with respect to the input functions, ensuring the stability of the numerical method. Furthermore, the coercivity of the bilinear form, "
-            },
-            {
-              "type": "inline_math",
-              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
-            },
-            {
-              "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "3c85d58c-65e1-51b9-a1e6-0f72e0092742",
-              "source_id": "wiki_c_a_s_lemma"
-            },
-            {
-              "type": "text",
-              "text": ", ensures the existence and uniqueness of the weak solution, which is critical for the stability of the finite element method.\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, it requires the continuity of the bilinear form, which is mathematically expressed as "
-            },
-            {
-              "type": "inline_math",
-              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
-            },
-            {
-              "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "1173042a-aafc-56f1-90cf-124b3f02f15e",
-              "source_id": "wiki_c_a_s_lemma"
-            },
-            {
-              "type": "text",
-              "text": ", and the coercivity condition, "
-            },
-            {
-              "type": "inline_math",
-              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
-            },
-            {
-              "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "b7046b70-2374-54ed-afc2-b6e1ba7829c3",
-              "source_id": "wiki_c_a_s_lemma"
-            },
-            {
-              "type": "text",
-              "text": ". These properties ensure that the finite element solution converges to the true solution under appropriate conditions, such as continuity and stability of the finite element method."
+              "text": ", ensures the existence and uniqueness of the weak solution. This property is critical for the stability of numerical methods and is a key condition in the Babuška–Lax–Milgram theorem."
             }
           ]
         }
@@ -657,6 +713,18 @@
         "4fd8f0c1-2abd-4412-a41b-4df83c1c081d"
       ],
       "status": "complete",
+      "generated_from": "split",
+      "subsection_index": 0
+    },
+    {
+      "type": "section",
+      "section_id": "af7144ac-f35e-4938-a21b-64ec68fba6f8",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Continuity and Stability of the Finite Element Method",
+      "children": [],
+      "parent_section_ids": [
+        "4fd8f0c1-2abd-4412-a41b-4df83c1c081d"
+      ],
+      "status": "needs_rewrite",
       "generated_from": "split",
       "subsection_index": 1
     },
@@ -678,7 +746,7 @@
             },
             {
               "type": "text",
-              "text": " (wiki_babu_ka_lax_milgram_theorem). The coercivity condition guarantees the uniqueness and stability of the weak solution, which is essential for numerical methods. In the context of the finite element method, Céa's Lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators to ensure the convergence of the finite element solution to the true solution under appropriate conditions (wiki_c_a_s_lemma).\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. It ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity of the bilinear form, which is mathematically expressed as "
+              "text": ". According to the Babuška–Lax–Milgram theorem, coercivity guarantees that the bilinear form is bounded below by a positive constant, ensuring the uniqueness and stability of the weak solution. This is a fundamental condition for the finite element method, as it ensures that the system of equations is well-posed and numerically stable. As a result, the coercivity of the bilinear form is a crucial property that must be satisfied for the finite element method to produce accurate and reliable results.\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, it assumes the continuity of the bilinear form, expressed as "
             },
             {
               "type": "inline_math",
@@ -686,16 +754,7 @@
             },
             {
               "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "a14bfea3-5aed-5fb9-85dc-1f7c289c51f9",
-              "source_id": "wiki_c_a_s_lemma"
-            },
-            {
-              "type": "text",
-              "text": ", and coercivity, which is defined as "
+              "text": ", and coercivity, expressed as "
             },
             {
               "type": "inline_math",
@@ -703,41 +762,7 @@
             },
             {
               "type": "text",
-              "text": " "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "c228f47c-5dd7-5221-b5dd-ef498453f708",
-              "source_id": "wiki_c_a_s_lemma"
-            },
-            {
-              "type": "text",
-              "text": ". This property is critical for the stability of numerical methods and is a key condition in the Babuška–Lax–Milgram theorem "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "6b8bc75f-9f78-5613-9cbd-c889f88404e0",
-              "source_id": "wiki_babu_ka_lax_milgram_theorem"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe continuity of the bilinear form is a crucial property that ensures the stability of the finite element method. According to Céa's Lemma, the continuity of the bilinear form "
-            },
-            {
-              "type": "inline_math",
-              "expression": "a(v, w)"
-            },
-            {
-              "type": "text",
-              "text": " is defined as "
-            },
-            {
-              "type": "inline_math",
-              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
-            },
-            {
-              "type": "text",
-              "text": " for some positive constant "
+              "text": ", where "
             },
             {
               "type": "inline_math",
@@ -745,7 +770,103 @@
             },
             {
               "type": "text",
-              "text": " (wiki_c_a_s_lemma). This property is essential for the finite element method to converge to the true solution under appropriate conditions. The weak formulation of the partial differential equation, which involves a bilinear form, must satisfy the continuity property to ensure the stability of the numerical method. This is a critical requirement for the finite element method to produce accurate results."
+              "text": " and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\alpha"
+            },
+            {
+              "type": "text",
+              "text": " are positive constants. These properties ensure the existence and uniqueness of the weak solution, critical for numerical methods. According to Céa's Lemma, the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form.\n\nThe continuity of a bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " is a critical property that ensures the stability of the finite element method. It is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\gamma"
+            },
+            {
+              "type": "text",
+              "text": " is a positive constant, and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\|v\\|, \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": " are norms of "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v"
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "w"
+            },
+            {
+              "type": "text",
+              "text": " in the Hilbert space "
+            },
+            {
+              "type": "inline_math",
+              "expression": "V"
+            },
+            {
+              "type": "text",
+              "text": ". This property is essential for the convergence of the finite element solution to the true solution under appropriate conditions, such as continuity of the bilinear form and boundedness of the linear functional. According to Céa's Lemma, the finite element solution "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u_h"
+            },
+            {
+              "type": "text",
+              "text": " satisfies "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(u_h, v_h) = L(v_h)"
+            },
+            {
+              "type": "text",
+              "text": " for all "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v_h \\in V_h"
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "L"
+            },
+            {
+              "type": "text",
+              "text": " is a bounded linear functional. The continuity of the bilinear form ensures that the finite element solution converges to the true solution, making it a crucial property in the analysis of the finite element method."
             }
           ]
         }
@@ -761,11 +882,137 @@
       "type": "section",
       "section_id": "68eb34dc-7184-41c6-b8e0-d93b5c39d8f3",
       "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis",
-      "children": [],
+      "children": [
+        {
+          "type": "paragraph",
+          "inline_content": [
+            {
+              "type": "text",
+              "text": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution. This property is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "aafd4399-8e28-5f26-9c7b-82bc05aaf54b",
+              "source_id": "wiki_babu_ka_lax_milgram_theorem"
+            },
+            {
+              "type": "text",
+              "text": ". In the context of finite element analysis, the coercivity of a bilinear form is essential for ensuring the stability and uniqueness of the weak solution. Furthermore, the continuity of a bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " is a critical property that ensures the stability of the finite element method, and is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "f3b82c8a-e37b-5d46-b893-7676839bb1c5",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ". The combination of coercivity and continuity of a bilinear form is crucial for the finite element method to produce accurate solutions.\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, Céa's Lemma states that if a bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " satisfies coercivity "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": " and continuity "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": ", then the finite element solution "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u_h"
+            },
+            {
+              "type": "text",
+              "text": " converges to the true solution "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u"
+            },
+            {
+              "type": "text",
+              "text": " under appropriate conditions, such as continuity and stability of the bilinear form. This is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "2e246d1e-858d-5589-9a54-b88b7406eed1",
+              "source_id": "wiki_babu_ka_lax_milgram_theorem"
+            },
+            {
+              "type": "text",
+              "text": ", ensuring the uniqueness and stability of the weak solution.\n\nThe weak formulation of a partial differential equation transforms it into an integral form by multiplying with test functions and integrating over the domain, thereby relaxing the differentiability requirements of the solution. Basis functions are selected to approximate the solution within each element, often using polynomials, and must satisfy continuity requirements across element boundaries. The weak form ensures compatibility with numerical integration and allows for the use of variational principles. This approach is central to the finite element method, enabling the use of variational principles and ensuring compatibility with numerical discretization. The weak form is typically expressed as a bilinear equation involving a bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "1e7700ec-4197-56b8-8ab0-3e70e46e677c",
+              "source_id": "wiki_babu_ka_lax_milgram_theorem"
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ]
+        }
+      ],
       "parent_section_ids": [
         "7c3c19d6-87d5-4b6b-ac7e-c946839e1167"
       ],
-      "status": "needs_generation",
+      "status": "complete",
       "generated_from": "split",
       "subsection_index": 0
     },
@@ -773,11 +1020,81 @@
       "type": "section",
       "section_id": "e5b16fad-2ea6-439d-aff9-c587265c592c",
       "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Coercivity and Continuity Conditions for Stability",
-      "children": [],
+      "children": [
+        {
+          "type": "paragraph",
+          "inline_content": [
+            {
+              "type": "text",
+              "text": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution. This property is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "a4ae31d6-4610-5e1a-ab89-7e2ccc42490f",
+              "source_id": "wiki_babu_ka_lax_milgram_theorem"
+            },
+            {
+              "type": "text",
+              "text": ". The coercivity condition guarantees the uniqueness and stability of the weak solution, which is essential for numerical methods. In the context of finite element analysis, coercivity is a key condition in the Babuška–Lax–Milgram theorem, which provides a framework for proving the existence and uniqueness of weak solutions.\n\nThe continuity conditions play a crucial role in ensuring the stability and convergence of the finite element method. Céa's Lemma, a fundamental result in the analysis of the finite element method, relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "d6a51be7-8593-5303-b1ea-e827d7e33e0d",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ". The coercivity of a bilinear form, mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "a071c397-d706-54de-ae3b-f04d217e2dfe",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ", is a critical property that ensures the existence and uniqueness of the weak solution. Furthermore, the continuity of the bilinear form, defined as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "a3a0f106-14c2-56c7-9a87-83d2d31f116a",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ", guarantees that the bilinear form does not grow unbounded with respect to the input functions. These conditions, in conjunction with Céa's Lemma, ensure that the finite element solution converges to the true solution under appropriate conditions, such as continuity conditions."
+            }
+          ]
+        }
+      ],
       "parent_section_ids": [
         "7c3c19d6-87d5-4b6b-ac7e-c946839e1167"
       ],
-      "status": "needs_generation",
+      "status": "complete",
       "generated_from": "split",
       "subsection_index": 1
     },
@@ -785,11 +1102,157 @@
       "type": "section",
       "section_id": "b350665b-0de5-496d-acf4-a034a611087b",
       "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Céa's Lemma and Error Estimates in Finite Element Analysis",
-      "children": [],
+      "children": [
+        {
+          "type": "paragraph",
+          "inline_content": [
+            {
+              "type": "text",
+              "text": "The continuity of a bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " is a critical property that ensures the stability of the finite element method. It is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\gamma"
+            },
+            {
+              "type": "text",
+              "text": " is a positive constant and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\|v\\|"
+            },
+            {
+              "type": "text",
+              "text": ", "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": " are norms of "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v"
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "w"
+            },
+            {
+              "type": "text",
+              "text": " in the Hilbert space "
+            },
+            {
+              "type": "inline_math",
+              "expression": "V"
+            },
+            {
+              "type": "text",
+              "text": ". This property is essential for the application of Céa's Lemma, which provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The coercivity of a bilinear form, on the other hand, guarantees the existence and uniqueness of the weak solution, ensuring that the system of equations is well-posed. This is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "B"
+            },
+            {
+              "type": "text",
+              "text": " is the bilinear form and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u"
+            },
+            {
+              "type": "text",
+              "text": " is the weak solution.\n\nCéa's Lemma provides a framework for proving error estimates in finite element analysis by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. It ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form. Specifically, Céa's Lemma states that if the bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " satisfies continuity "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": " and coercivity "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": ", then the finite-dimensional approximation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u_h"
+            },
+            {
+              "type": "text",
+              "text": " satisfies "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(u_h, v_h) = L(v_h)"
+            },
+            {
+              "type": "text",
+              "text": " for all "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v_h \\in V_h"
+            },
+            {
+              "type": "text",
+              "text": ". This result is critical for establishing convergence rates of the finite element method and is a fundamental tool in the analysis of elliptic partial differential equations."
+            }
+          ]
+        }
+      ],
       "parent_section_ids": [
         "7c3c19d6-87d5-4b6b-ac7e-c946839e1167"
       ],
-      "status": "needs_generation",
+      "status": "complete",
       "generated_from": "split",
       "subsection_index": 2
     },
@@ -797,11 +1260,103 @@
       "type": "section",
       "section_id": "6ed05cc6-1b84-456f-a603-6ddc760c0d32",
       "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Implications of Bilinear Form Properties for Finite Element Analysis",
-      "children": [],
+      "children": [
+        {
+          "type": "paragraph",
+          "inline_content": [
+            {
+              "type": "text",
+              "text": "In the context of finite element analysis, the properties of bilinear forms play a crucial role in ensuring the stability and uniqueness of the weak solution. Specifically, the coercivity of a bilinear form is a critical property that guarantees the existence and uniqueness of the weak solution. This property is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
+            },
+            {
+              "type": "text",
+              "text": ". As stated in the Babuška–Lax–Milgram theorem, coercivity of a bilinear form ensures the stability of numerical methods and is a key condition for the existence and uniqueness of the solution to the variational problem "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "2106f085-edbd-5e24-9e6b-aad171293d0d",
+              "source_id": "wiki_babu_ka_lax_milgram_theorem"
+            },
+            {
+              "type": "text",
+              "text": ". Furthermore, Céa's lemma provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation, relying on the properties of Hilbert spaces, bilinear forms, and bounded linear operators "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "fc25891b-be2c-5b9d-a203-6ffb10a34394",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ".\n\nThe weak formulation of a partial differential equation is a critical component of the finite element method, as it transforms the equation into an integral form by multiplying with test functions and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The weak form is typically expressed as a bilinear equation involving a bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V"
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "B"
+            },
+            {
+              "type": "text",
+              "text": " is a bilinear form, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u"
+            },
+            {
+              "type": "text",
+              "text": " is the solution, and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "f"
+            },
+            {
+              "type": "text",
+              "text": " is the source term. The coercivity of the bilinear form, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0"
+            },
+            {
+              "type": "text",
+              "text": ", ensures the existence and uniqueness of the weak solution. This property is critical for the stability of numerical methods and is a key condition in the Babuška–Lax–Milgram theorem.\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, it requires the continuity of the bilinear form, which is mathematically expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": ", and the coercivity of the bilinear form, which is expressed as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": ". These properties ensure that the finite element solution converges to the true solution under appropriate conditions, such as continuity and stability of the bilinear form."
+            }
+          ]
+        }
+      ],
       "parent_section_ids": [
         "7c3c19d6-87d5-4b6b-ac7e-c946839e1167"
       ],
-      "status": "needs_generation",
+      "status": "complete",
       "generated_from": "split",
       "subsection_index": 3
     },
@@ -1226,10 +1781,15 @@
       "sections": [
         {
           "section_id": "cd8ada70-e71a-4090-8980-b998d063463a",
-          "semantic_marker_count": 0,
+          "semantic_marker_count": 4,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 15,
+          "annotated_source_ids": [
+            "wiki_babu_ka_lax_milgram_theorem",
+            "wiki_babu_ka_lax_milgram_theorem",
+            "wiki_c_a_s_lemma",
+            "wiki_c_a_s_lemma"
+          ],
+          "inline_math_count": 18,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
@@ -1237,52 +1797,12 @@
         },
         {
           "section_id": "e2697cfa-e3af-46f2-a1f8-6858982e609c",
-          "semantic_marker_count": 0,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 10,
-          "citation_cluster_count": 0,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": []
-        },
-        {
-          "section_id": "d54cf0e1-7368-4c85-b7d9-4002ce3d80ae",
-          "semantic_marker_count": 0,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 14,
-          "citation_cluster_count": 0,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": []
-        },
-        {
-          "section_id": "04298acb-7e4f-45a2-884d-5a89b3d58f00",
           "semantic_marker_count": 4,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
-            "wiki_babu_ka_lax_milgram_theorem",
-            "wiki_c_a_s_lemma",
-            "wiki_babu_ka_lax_milgram_theorem",
-            "wiki_babu_ka_lax_milgram_theorem"
-          ],
-          "inline_math_count": 3,
-          "citation_cluster_count": 0,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": []
-        },
-        {
-          "section_id": "af7144ac-f35e-4938-a21b-64ec68fba6f8",
-          "semantic_marker_count": 6,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "wiki_babu_ka_lax_milgram_theorem",
-            "wiki_babu_ka_lax_milgram_theorem",
             "wiki_c_a_s_lemma",
             "wiki_c_a_s_lemma",
-            "wiki_c_a_s_lemma",
+            "wiki_babu_ka_lax_milgram_theorem",
             "wiki_c_a_s_lemma"
           ],
           "inline_math_count": 10,
@@ -1292,15 +1812,54 @@
           "diagnostics": []
         },
         {
-          "section_id": "9baf6a07-bf62-4890-a48b-4da300767ddf",
-          "semantic_marker_count": 3,
+          "section_id": "d54cf0e1-7368-4c85-b7d9-4002ce3d80ae",
+          "semantic_marker_count": 5,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
             "wiki_c_a_s_lemma",
+            "wiki_babu_ka_lax_milgram_theorem",
+            "wiki_c_a_s_lemma",
+            "wiki_babu_ka_lax_milgram_theorem",
+            "wiki_c_a_s_lemma"
+          ],
+          "inline_math_count": 13,
+          "citation_cluster_count": 0,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
+          "diagnostics": []
+        },
+        {
+          "section_id": "04298acb-7e4f-45a2-884d-5a89b3d58f00",
+          "semantic_marker_count": 3,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [
+            "wiki_babu_ka_lax_milgram_theorem",
             "wiki_c_a_s_lemma",
             "wiki_babu_ka_lax_milgram_theorem"
           ],
-          "inline_math_count": 6,
+          "inline_math_count": 14,
+          "citation_cluster_count": 0,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
+          "diagnostics": []
+        },
+        {
+          "section_id": "af7144ac-f35e-4938-a21b-64ec68fba6f8",
+          "semantic_marker_count": 0,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [],
+          "inline_math_count": 0,
+          "citation_cluster_count": 0,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
+          "diagnostics": []
+        },
+        {
+          "section_id": "9baf6a07-bf62-4890-a48b-4da300767ddf",
+          "semantic_marker_count": 0,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [],
+          "inline_math_count": 16,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
@@ -1308,10 +1867,15 @@
         },
         {
           "section_id": "68eb34dc-7184-41c6-b8e0-d93b5c39d8f3",
-          "semantic_marker_count": 0,
+          "semantic_marker_count": 4,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 0,
+          "annotated_source_ids": [
+            "wiki_babu_ka_lax_milgram_theorem",
+            "wiki_c_a_s_lemma",
+            "wiki_babu_ka_lax_milgram_theorem",
+            "wiki_babu_ka_lax_milgram_theorem"
+          ],
+          "inline_math_count": 10,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
@@ -1319,10 +1883,15 @@
         },
         {
           "section_id": "e5b16fad-2ea6-439d-aff9-c587265c592c",
-          "semantic_marker_count": 0,
+          "semantic_marker_count": 4,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 0,
+          "annotated_source_ids": [
+            "wiki_babu_ka_lax_milgram_theorem",
+            "wiki_c_a_s_lemma",
+            "wiki_c_a_s_lemma",
+            "wiki_c_a_s_lemma"
+          ],
+          "inline_math_count": 3,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
@@ -1333,7 +1902,7 @@
           "semantic_marker_count": 0,
           "annotated_equation_ids": [],
           "annotated_source_ids": [],
-          "inline_math_count": 0,
+          "inline_math_count": 17,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
@@ -1341,10 +1910,13 @@
         },
         {
           "section_id": "6ed05cc6-1b84-456f-a603-6ddc760c0d32",
-          "semantic_marker_count": 0,
+          "semantic_marker_count": 2,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [],
-          "inline_math_count": 0,
+          "annotated_source_ids": [
+            "wiki_babu_ka_lax_milgram_theorem",
+            "wiki_c_a_s_lemma"
+          ],
+          "inline_math_count": 8,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
@@ -1405,7 +1977,7 @@
           "diagnostics": []
         }
       ],
-      "semantic_marker_count": 31,
+      "semantic_marker_count": 44,
       "publication_views": {
         "concept_graph": {
           "available_concepts": 4,
@@ -1424,12 +1996,12 @@
         "ready": true,
         "counts": {
           "sections": 14,
-          "paragraphs": 9,
-          "text_nodes": 122,
-          "inline_math": 82,
+          "paragraphs": 12,
+          "text_nodes": 189,
+          "inline_math": 133,
           "display_math": 0,
           "equation_occurrences": 0,
-          "citation_occurrences": 31,
+          "citation_occurrences": 44,
           "citation_cluster_occurrences": 0,
           "cross_reference_occurrences": 0,
           "equation_proposal_references": 0,
@@ -1446,12 +2018,12 @@
       "ready": true,
       "counts": {
         "sections": 14,
-        "paragraphs": 9,
-        "text_nodes": 122,
-        "inline_math": 82,
+        "paragraphs": 12,
+        "text_nodes": 189,
+        "inline_math": 133,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 31,
+        "citation_occurrences": 44,
         "citation_cluster_occurrences": 0,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,

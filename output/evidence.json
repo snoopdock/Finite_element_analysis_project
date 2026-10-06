@@ -156,6 +156,174 @@
     }
   },
   {
+    "source_id": "arxiv_1809.04871v3",
+    "url": "https://arxiv.org/pdf/1809.04871v3.pdf",
+    "retrieved_at": "2026-10-06T11:37:56.346425+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "The stochastic viscous Cahn-Hilliard equation: well-posedness, regularity and vanishing viscosity limit",
+    "authors": [
+      "Luca Scarpa"
+    ],
+    "metadata": {
+      "abstract": "Well-posedness is proved for the stochastic viscous Cahn-Hilliard equation with homogeneous Neumann boundary conditions and Wiener multiplicative noise. The double-well potential is allowed to have any growth at infinity (in particular, also super-polynomial) provided that it is everywhere defined on the real line. A vanishing viscosity argument is carried out and the convergence of the solutions to the ones of the pure Cahn-Hilliard equation is shown. Some refined regularity results are also deduced for both the viscous and the non-viscous case.",
+      "published": "2018-09-13T10:17:45Z",
+      "page_count": 41,
+      "word_count": 18240
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_1809.04871v3.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "Well-Posedness of the Galerkin Equation",
+    "query_contexts": [
+      "Well-Posedness of the Galerkin Equation"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.62141,
+      "lexical": 0.55963,
+      "source_quality": 0.85,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Well-Posedness of the Galerkin Equation",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Scaled Boundary Finite Element Method": 0.2125,
+        "Galerkin Dimension Reduction": 0.2125,
+        "Well-Posedness of the Galerkin Equation": 0.62141
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2002.07642v4",
+    "url": "https://arxiv.org/pdf/2002.07642v4.pdf",
+    "retrieved_at": "2026-10-06T11:37:56.346425+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Representations of Motion Groups of Links via Dimension Reduction of TQFTs",
+    "authors": [
+      "Yang Qiu",
+      "Zhenghan Wang"
+    ],
+    "metadata": {
+      "abstract": "Motion groups of links in the three sphere $\\mathbb{S}^3$ are generalizations of the braid groups, which are motion groups of points in the disk $\\mathbb{D}^2$. Representations of motion groups can be used to model statistics of extended objects such as closed strings in physics. Each $1$-extended $(3+1)$-topological quantum field theory (TQFT) will provide representations of motion groups, but it is difficult to compute such representations explicitly in general. In this paper, we compute representations of the motion groups of links in $\\mathbb{S}^3$ with generalized axes from Dijkgraaf-Witten (DW) TQFTs inspired by dimension reduction. A succinct way to state our result is as a step toward a twisted generalization (Conjecture \\ref{mainconjecture}) of a conjecture for DW theories of dimension reduction from $(3+1)$ to $(2+1)$: $\\textrm{DW}^{3+1}_G \\cong \\oplus_{[g]\\in [G]} \\textrm{DW}^{2+1}_{C(g)}$, where the sum runs over all conjugacy classes $[g]\\in [G]$ of $G$ and $C(g)$ the centralizer of any element $g\\in [g]$. We prove a version of Conjecture \\ref{mainconjecture} for the mapping class groups of closed manifolds and the case of torus links labeled by pure fluxes.",
+      "published": "2020-02-18T15:27:46Z",
+      "page_count": 37,
+      "word_count": 13963
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2002.07642v4.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "Galerkin Dimension Reduction",
+    "query_contexts": [
+      "Galerkin Dimension Reduction"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.62141,
+      "lexical": 0.55963,
+      "source_quality": 0.85,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Galerkin Dimension Reduction",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Scaled Boundary Finite Element Method": 0.2125,
+        "Galerkin Dimension Reduction": 0.62141,
+        "Well-Posedness of the Galerkin Equation": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2209.13504v2",
+    "url": "https://arxiv.org/pdf/2209.13504v2.pdf",
+    "retrieved_at": "2026-10-06T11:37:56.346425+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Well-posedness of the three-dimensional NLS equation with sphere-concentrated nonlinearity",
+    "authors": [
+      "Domenico Finco",
+      "Lorenzo Tentarelli",
+      "Alessandro Teta"
+    ],
+    "metadata": {
+      "abstract": "We discuss strong local and global well-posedness for the three-dimensional NLS equation with nonlinearity concentrated on $\\mathbb{S}^2$. Precisely, local well-posedness is proved for any $C^2$ power-nonlinearity, while global well-posedness is obtained either for small data or in the defocusing case under some growth assumptions. With respect to point-concentrated NLS models, widely studied in the literature, here the dimension of the support of the nonlinearity does not allow a direct extension of the known techniques and calls for new ideas.",
+      "published": "2022-09-27T16:19:57Z",
+      "page_count": 40,
+      "word_count": 18797
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2209.13504v2.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "Well-Posedness of the Galerkin Equation",
+    "query_contexts": [
+      "Well-Posedness of the Galerkin Equation"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.62141,
+      "lexical": 0.55963,
+      "source_quality": 0.85,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Well-Posedness of the Galerkin Equation",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Scaled Boundary Finite Element Method": 0.2125,
+        "Galerkin Dimension Reduction": 0.2125,
+        "Well-Posedness of the Galerkin Equation": 0.62141
+      }
+    }
+  },
+  {
     "source_id": "arxiv_2209.03282v5",
     "url": "https://arxiv.org/pdf/2209.03282v5.pdf",
     "retrieved_at": "2026-10-06T06:54:30.680373+00:00",
@@ -207,6 +375,65 @@
         "hp finite element method": 0.2125,
         "gradient discretization method": 0.593699,
         "céa's lemma finite element method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "s2_a058c6945e9195ddb5f0e55ff5c10d7c50d6b71e",
+    "url": "https://www.semanticscholar.org/paper/a058c6945e9195ddb5f0e55ff5c10d7c50d6b71e",
+    "retrieved_at": "2026-10-06T11:37:56.346425+00:00",
+    "retriever_module": "research.semantic_scholar",
+    "provider": "semantic_scholar",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "source_type": "academic",
+    "content_type": "text/plain",
+    "title": "A weak Galerkin least squares finite element method for linear convection equations in non-divergence form",
+    "authors": [
+      "Chun-Mei Wang",
+      "Shang-You Zhang"
+    ],
+    "metadata": {
+      "abstract": "This article develops a weak Galerkin least-squares (WG--LS) finite element method for first-order linear convection equations in non-divergence form. The method is formulated using discontinuous finite element functions and does not require any coercivity assumption on the convection vector or reaction coefficient. The resulting discrete problem leads to a symmetric and positive definite linear system and is applicable to general polygonal and polyhedral meshes. Under minimal regularity assumptions on the coefficients, optimal-order error estimates are established for the WG--LS approximation in a suitable energy norm. Numerical experiments are presented to confirm the theoretical convergence results and to demonstrate the accuracy and efficiency of the proposed method.",
+      "year": 2026,
+      "citation_count": 0,
+      "word_count": 106,
+      "page_count": null,
+      "open_access_pdf_available": false,
+      "full_text_available": false,
+      "full_text_status": "abstract_only"
+    },
+    "full_text_path": null,
+    "status": "abstract_only",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "semantic_scholar"
+    ],
+    "source_types": [
+      "academic"
+    ],
+    "ranking": {
+      "score": 0.580519,
+      "lexical": 0.503667,
+      "source_quality": 0.85,
+      "section_relevance": 0.406355,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method mathematical foundation weak form Galerkin method",
+      "query_index": 0,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.580519,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Scaled Boundary Finite Element Method": 0.2125,
+        "Galerkin Dimension Reduction": 0.416955,
+        "Well-Posedness of the Galerkin Equation": 0.416955
       }
     }
   },
