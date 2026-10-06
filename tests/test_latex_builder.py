@@ -63,7 +63,7 @@ def test_builder_uses_ragged_right_bibliography_for_long_urls():
         }],
     )
 
-    assert r"\begin{thebibliography}{99}" + "\n" + r"\raggedright" in tex
+    assert r"\begin{thebibliography}{9}" + "\n" + r"\raggedright" in tex
     assert r"\(C^0\)" in tex
     assert r"0fb362f2\allowbreak{}f8848d66" in tex
 
@@ -102,3 +102,23 @@ def test_bibliography_order_follows_first_semantic_citation_not_evidence_order()
     ]
     tex = build_latex_document(state, sections, evidence)
     assert tex.index("\\bibitem{src:second_source-") < tex.index("\\bibitem{src:first_source-")
+
+
+def test_builder_uses_dynamic_bibliography_width_and_truthful_provenance_wording():
+    source_ids = [f"s{i}" for i in range(10)]
+    sections = [{"title": "Evidence", "blocks": [
+        {"type": "citation", "source_ids": [source_id]} for source_id in source_ids
+    ]}]
+    evidence = [
+        {"source_id": source_id, "title": f"Source {i}", "retriever_module": "research.article"}
+        for i, source_id in enumerate(source_ids)
+    ]
+    tex = build_latex_document(
+        {"topic": "FEM", "objective": "Guide", "knowledge_graph": {}},
+        sections,
+        evidence,
+    )
+    assert r"\begin{thebibliography}{99}" in tex
+    assert "each source retained in the document evidence registry" in tex
+    assert "each source used in this document" not in tex
+    assert "Information Type Classification" not in tex

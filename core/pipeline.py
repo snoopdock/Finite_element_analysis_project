@@ -1019,6 +1019,8 @@ def phase_assemble(state, paths):
         "status": "success",
         "source_document_id": latex_document.source_document_id,
         "section_count": len(latex_document.sections),
+        "content_section_count": len(sections),
+        "publication_view_section_count": max(0, len(latex_document.sections) - len(sections)),
         "reference_count": len(latex_document.references),
     }
 

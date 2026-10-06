@@ -13,6 +13,8 @@ from core.document_model import (
     CitationOccurrence,
     CitationClusterOccurrence,
     CrossReferenceOccurrence,
+    ConceptGraphView,
+    RelationshipTableView,
     DisplayMath,
     Document,
     EquationOccurrence,
@@ -25,6 +27,7 @@ from core.document_model import (
 )
 from core.document_persistence import save_document
 from core.domain_semantic_model import get_authorized_equation_ids
+from core.publication_semantics import build_publication_graph_sections
 from writing.section_document_adapter import legacy_section_to_document_section
 from writing.semantic_authoring_shadow import annotate_legacy_authoring
 
@@ -54,6 +57,8 @@ def analyze_latex_ir_readiness(document: Document) -> Dict[str, Any]:
         "equation_proposal_references": 0,
         "figures": 0,
         "tables": 0,
+        "concept_graph_views": 0,
+        "relationship_table_views": 0,
         "raw_math_text_nodes": 0,
     }
     diagnostics: list[str] = []
@@ -92,6 +97,10 @@ def analyze_latex_ir_readiness(document: Document) -> Dict[str, Any]:
                 counts["figures"] += 1
             elif isinstance(child, Table):
                 counts["tables"] += 1
+            elif isinstance(child, ConceptGraphView):
+                counts["concept_graph_views"] += 1
+            elif isinstance(child, RelationshipTableView):
+                counts["relationship_table_views"] += 1
 
     ready = (
         counts["raw_math_text_nodes"] == 0
@@ -123,6 +132,12 @@ def build_semantic_candidate_document(
     sections = state.get("sections", [])
     if not isinstance(sections, list):
         sections = []
+
+    document_id = _document_id(state)
+    publication_views = build_publication_graph_sections(
+        state.get("knowledge_graph", {}),
+        document_id=document_id,
+    )
 
     domain_model = state.get("domain_semantic_model", {})
     equation_ids = get_authorized_equation_ids(domain_model)
@@ -202,6 +217,13 @@ def build_semantic_candidate_document(
             }
         )
 
+    ordered_semantic_sections = []
+    if publication_views.conceptual_map is not None:
+        ordered_semantic_sections.append(publication_views.conceptual_map)
+    ordered_semantic_sections.extend(semantic_sections)
+    if publication_views.relationship_table is not None:
+        ordered_semantic_sections.append(publication_views.relationship_table)
+
     report = {
         "status": "candidate",
         "authoritative_for_rendering": False,
@@ -209,10 +231,11 @@ def build_semantic_candidate_document(
         "semantic_marker_count": sum(
             int(item["semantic_marker_count"]) for item in section_reports
         ),
+        "publication_views": deepcopy(publication_views.report),
     }
     document = Document(
-        children=semantic_sections,
-        document_id=_document_id(state),
+        children=ordered_semantic_sections,
+        document_id=document_id,
         metadata={
             "publication_role": "semantic_candidate",
             "authoritative_for_rendering": False,
@@ -222,7 +245,12 @@ def build_semantic_candidate_document(
                 section.get("section_id")
                 for section in sections
                 if isinstance(section, dict) and section.get("section_id")
-            ]
+            ],
+            "publication_view_section_ids": [
+                section.section_id
+                for section in ordered_semantic_sections
+                if section.generated_from == "knowledge_graph"
+            ],
         },
     )
     document.validate()

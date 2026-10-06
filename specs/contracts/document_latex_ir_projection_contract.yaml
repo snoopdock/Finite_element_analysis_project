@@ -1,4 +1,4 @@
-version: 5
+version: 6
 purpose: >-
   Define the deterministic projection from the semantic publication Document
   into renderer-neutral LaTeX IR without reconstructing or changing scientific
@@ -98,6 +98,37 @@ mapping:
     cell_rendering: escaped_plain_text
     provenance_resolution: evidence_model
 
+  concept_graph_view:
+    output: ConceptGraphBlock
+    preserve:
+      - occurrence_id
+      - concept_id
+      - relationship_id
+      - names
+      - relation_types
+      - selection_counts
+      - selection_policy
+    authority: knowledge_graph_ids_only
+    rule: >-
+      Projection renders the already-selected semantic publication view and
+      must not inspect runtime knowledge_graph state or apply additional
+      truncation.
+  relationship_table_view:
+    output: RelationshipTableBlock
+    preserve:
+      - occurrence_id
+      - relationship_id
+      - source_proposition_id
+      - target_proposition_id
+      - statements
+      - relation_type
+      - selection_counts
+      - selection_policy
+    authority: knowledge_graph_ids_only
+    rule: >-
+      Statements are display snapshots; proposition and relationship UUIDs
+      remain authoritative upstream.
+
 unsupported_until_dedicated_projection_contract:
   equation_proposal_reference: reject
 
@@ -109,6 +140,9 @@ rendering:
   internal_references: generated_label_only
   figure_placement: fixed_order_non_floating_H
   table_placement: fixed_order_non_floating_H
+  concept_graph: explicit_ir_view_only
+  relationship_table: explicit_ir_view_only
+  package_loading: derived_from_ir_capabilities
   figure_assets: validated_path_only
   figure_table_text_payloads: escaped_plain_text
   unicode_math: >-

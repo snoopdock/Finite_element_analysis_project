@@ -1,0 +1,92 @@
+version: 1
+purpose: >-
+  Close the semantic publication boundary by ensuring that graph views,
+  renderer capabilities, and publication metadata are explicit projections of
+  semantic/IR objects rather than decisions inferred from runtime application
+  state inside the LaTeX builder.
+
+authority:
+  knowledge_graph:
+    owns:
+      - concept_id
+      - proposition_id
+      - relationship_id
+  semantic_document:
+    owns:
+      - publication_view_occurrence_id
+      - section_order
+      - explicit_publication_selection_metadata
+  latex_ir:
+    owns:
+      - renderer_neutral_graph_blocks
+      - renderer_neutral_relationship_table_blocks
+  latex_renderer:
+    owns:
+      - tikz_syntax
+      - table_syntax
+      - package_selection_from_ir_capabilities
+    forbidden:
+      - runtime_knowledge_graph_reads
+      - scientific_selection
+      - silent_graph_truncation
+      - hardcoded_scientific_classification_meaning
+
+identity:
+  rule: >-
+    UUID identity is preserved end-to-end. Publication views have distinct
+    occurrence UUIDs and may never replace or derive authoritative graph object
+    identity from titles, text, ordering, or LaTeX strings.
+
+graph_publication:
+  selection_owner: semantic_publication_view_builder
+  current_policy:
+    concept_nodes:
+      maximum: 12
+      policy: stable_graph_insertion_order_prefix
+    proposition_relationship_rows:
+      maximum: 20
+      policy: stable_graph_insertion_order_prefix
+  truncation_rule: >-
+    When the authoritative graph exceeds publication bounds, total and selected
+    counts plus the selection policy must be carried in the semantic object and
+    rendered visibly. No renderer may apply another hidden bound.
+  relation_rule: >-
+    ConceptGraphView renders only authoritative concept-to-concept relations
+    whose endpoints occur in the selected view. Proposition relationships use
+    RelationshipTableView and retain full statement text without renderer-side
+    character truncation.
+
+preamble:
+  rule: >-
+    LaTeX packages are a deterministic function of renderer-neutral IR
+    capabilities. Packages for figures, tables, math, citations, and concept
+    graphs must not be loaded when the corresponding feature is absent.
+  ordering:
+    hyperref: after ordinary content packages
+
+escaping:
+  rule: >-
+    All semantic plain text, including concept names and relationship text,
+    uses the central utils.latex.escape_text policy. Publication components may
+    not define competing text-escaping tables.
+
+bibliography:
+  rule: >-
+    Bibliography contains cited references only and computes its label-width
+    hint from the actual citation count rather than a fixed 99 assumption.
+
+provenance:
+  rule: >-
+    Source Provenance describes the complete evidence registry retained for the
+    document, which may include retrieved but uncited sources. Wording must not
+    claim every provenance row is cited.
+
+invariants:
+  - latex_builder_output_is_independent_of_runtime_knowledge_graph_state
+  - concept_and_relationship_uuids_are_preserved
+  - publication_view_occurrence_uuid_is_distinct_from_graph_object_identity
+  - no_silent_graph_truncation_in_renderer
+  - no_hardcoded_information_type_legend_without_semantic_objects
+  - feature_driven_preamble_is_deterministic
+  - graph_text_uses_central_escaping
+  - uncited_retrievals_remain_provenance_not_bibliography

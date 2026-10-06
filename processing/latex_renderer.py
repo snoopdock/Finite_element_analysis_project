@@ -10,6 +10,7 @@ import re
 
 from processing.latex_ir import (
     CitationBlock,
+    ConceptGraphBlock,
     DocumentModel,
     DocumentModelError,
     EquationBlock,
@@ -21,10 +22,12 @@ from processing.latex_ir import (
     LegacyLatexBlock,
     MathBlock,
     ParagraphBlock,
+    RelationshipTableBlock,
     TableBlock,
     TextBlock,
     validate_document_model,
 )
+from processing.latex_graph import render_concept_graph, render_relationship_table
 from utils.latex import escape_text, normalize_math_expression, sanitize_latex_content
 
 
@@ -147,6 +150,10 @@ def render_block(block, reference_numbers: dict[str, str] | None = None) -> str:
             )
         parts.append(r"\end{table}")
         return "\n".join(parts)
+    if isinstance(block, ConceptGraphBlock):
+        return render_concept_graph(block)
+    if isinstance(block, RelationshipTableBlock):
+        return render_relationship_table(block)
     if isinstance(block, CitationBlock):
         return _citation_latex(block.source_ids, reference_numbers)
     if isinstance(block, LegacyLatexBlock):

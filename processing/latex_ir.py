@@ -140,6 +140,53 @@ class TableBlock:
     source_ids: tuple[str, ...] = field(default_factory=tuple)
 
 
+@dataclass(frozen=True)
+class ConceptGraphNodeIR:
+    concept_id: str
+    name: str
+    concept_type: str
+
+
+@dataclass(frozen=True)
+class ConceptGraphRelationIR:
+    relationship_id: str
+    source_concept_id: str
+    target_concept_id: str
+    relation_type: str
+
+
+@dataclass(frozen=True)
+class ConceptGraphBlock:
+    """Explicit publication view of selected knowledge-graph concepts."""
+
+    occurrence_id: str
+    nodes: tuple[ConceptGraphNodeIR, ...]
+    relations: tuple[ConceptGraphRelationIR, ...]
+    total_concepts: int
+    total_concept_relations: int
+    selection_policy: str
+
+
+@dataclass(frozen=True)
+class RelationshipTableRowIR:
+    relationship_id: str
+    source_proposition_id: str
+    target_proposition_id: str
+    source_statement: str
+    relation_type: str
+    target_statement: str
+
+
+@dataclass(frozen=True)
+class RelationshipTableBlock:
+    """Explicit publication view of selected proposition relationships."""
+
+    occurrence_id: str
+    rows: tuple[RelationshipTableRowIR, ...]
+    total_relationships: int
+    selection_policy: str
+
+
 DocumentBlock = (
     TextBlock
     | MathBlock
@@ -149,6 +196,8 @@ DocumentBlock = (
     | EquationBlock
     | FigureBlock
     | TableBlock
+    | ConceptGraphBlock
+    | RelationshipTableBlock
 )
 
 
@@ -720,6 +769,8 @@ def validate_document_model(document: DocumentModel) -> None:
                     EquationBlock,
                     FigureBlock,
                     TableBlock,
+                    ConceptGraphBlock,
+                    RelationshipTableBlock,
                 ),
             ):
                 raise DocumentModelError(f"{context} has an invalid block type")
@@ -880,6 +931,86 @@ def validate_document_model(document: DocumentModel) -> None:
                         )
                     if any(not isinstance(cell, str) for cell in row):
                         raise DocumentModelError(f"{context}.rows[{row_index}] cells must be strings")
+            elif isinstance(block, ConceptGraphBlock):
+                if not isinstance(block.occurrence_id, str) or not block.occurrence_id.strip():
+                    raise DocumentModelError(f"{context}.occurrence_id must be non-empty")
+                if not isinstance(block.nodes, tuple) or not block.nodes:
+                    raise DocumentModelError(f"{context}.nodes must be a non-empty tuple")
+                node_ids: set[str] = set()
+                for node_index, node in enumerate(block.nodes):
+                    if not isinstance(node, ConceptGraphNodeIR):
+                        raise DocumentModelError(f"{context}.nodes[{node_index}] has invalid type")
+                    if not isinstance(node.concept_id, str) or not node.concept_id.strip():
+                        raise DocumentModelError(f"{context}.nodes[{node_index}].concept_id must be non-empty")
+                    if node.concept_id in node_ids:
+                        raise DocumentModelError(f"{context} contains duplicate concept_id {node.concept_id!r}")
+                    node_ids.add(node.concept_id)
+                    if not isinstance(node.name, str) or not node.name.strip():
+                        raise DocumentModelError(f"{context}.nodes[{node_index}].name must be non-empty")
+                    if not isinstance(node.concept_type, str) or not node.concept_type.strip():
+                        raise DocumentModelError(f"{context}.nodes[{node_index}].concept_type must be non-empty")
+                if not isinstance(block.relations, tuple):
+                    raise DocumentModelError(f"{context}.relations must be a tuple")
+                relationship_ids: set[str] = set()
+                for relation_index, relation in enumerate(block.relations):
+                    if not isinstance(relation, ConceptGraphRelationIR):
+                        raise DocumentModelError(f"{context}.relations[{relation_index}] has invalid type")
+                    if relation.relationship_id in relationship_ids:
+                        raise DocumentModelError(
+                            f"{context} contains duplicate relationship_id {relation.relationship_id!r}"
+                        )
+                    relationship_ids.add(relation.relationship_id)
+                    if relation.source_concept_id not in node_ids or relation.target_concept_id not in node_ids:
+                        raise DocumentModelError(
+                            f"{context}.relations[{relation_index}] references concept outside view"
+                        )
+                    if not isinstance(relation.relation_type, str) or not relation.relation_type.strip():
+                        raise DocumentModelError(
+                            f"{context}.relations[{relation_index}].relation_type must be non-empty"
+                        )
+                if not isinstance(block.total_concepts, int) or block.total_concepts < len(block.nodes):
+                    raise DocumentModelError(f"{context}.total_concepts is inconsistent")
+                if (
+                    not isinstance(block.total_concept_relations, int)
+                    or block.total_concept_relations < len(block.relations)
+                ):
+                    raise DocumentModelError(f"{context}.total_concept_relations is inconsistent")
+                if not isinstance(block.selection_policy, str) or not block.selection_policy.strip():
+                    raise DocumentModelError(f"{context}.selection_policy must be non-empty")
+            elif isinstance(block, RelationshipTableBlock):
+                if not isinstance(block.occurrence_id, str) or not block.occurrence_id.strip():
+                    raise DocumentModelError(f"{context}.occurrence_id must be non-empty")
+                if not isinstance(block.rows, tuple) or not block.rows:
+                    raise DocumentModelError(f"{context}.rows must be a non-empty tuple")
+                seen_relationships: set[str] = set()
+                for row_index, row in enumerate(block.rows):
+                    if not isinstance(row, RelationshipTableRowIR):
+                        raise DocumentModelError(f"{context}.rows[{row_index}] has invalid type")
+                    if row.relationship_id in seen_relationships:
+                        raise DocumentModelError(
+                            f"{context} contains duplicate relationship_id {row.relationship_id!r}"
+                        )
+                    seen_relationships.add(row.relationship_id)
+                    for field_name in (
+                        "relationship_id",
+                        "source_proposition_id",
+                        "target_proposition_id",
+                        "source_statement",
+                        "relation_type",
+                        "target_statement",
+                    ):
+                        value = getattr(row, field_name)
+                        if not isinstance(value, str) or not value.strip():
+                            raise DocumentModelError(
+                                f"{context}.rows[{row_index}].{field_name} must be non-empty"
+                            )
+                if (
+                    not isinstance(block.total_relationships, int)
+                    or block.total_relationships < len(block.rows)
+                ):
+                    raise DocumentModelError(f"{context}.total_relationships is inconsistent")
+                if not isinstance(block.selection_policy, str) or not block.selection_policy.strip():
+                    raise DocumentModelError(f"{context}.selection_policy must be non-empty")
 
 
 def build_document_model(

@@ -1,4 +1,4 @@
-version: 3
+version: 4
 purpose: >-
   Define the persisted semantic document representation used to organize
   scientific material for publication without duplicating scientific authority.
@@ -175,6 +175,40 @@ entities:
       manual_latex_label: reject_at_canonical_projection
       source_ids: optional_unique_evidence_ids
 
+  concept_graph_view:
+    identity: occurrence_id
+    authoritative: false
+    required_fields:
+      - occurrence_id
+      - nodes
+      - relations
+      - total_concepts
+      - total_concept_relations
+      - selection_policy
+    identity_rule: >-
+      occurrence_id identifies this publication placement only. Each selected
+      concept_id and relationship_id remains the authoritative UUID owned by
+      the knowledge graph.
+    selection_rule: >-
+      Any bounded publication selection must be explicit semantic metadata. A
+      renderer may not silently truncate nodes or relationships.
+
+  relationship_table_view:
+    identity: occurrence_id
+    authoritative: false
+    required_fields:
+      - occurrence_id
+      - rows
+      - total_relationships
+      - selection_policy
+    identity_rule: >-
+      Each row preserves authoritative relationship_id and proposition UUIDs.
+      Statements are publication snapshots and must not replace proposition
+      authority in the knowledge graph.
+    selection_rule: >-
+      Any bounded publication selection must be explicit semantic metadata and
+      visible to the renderer.
+
 structure:
   document_children:
     allowed_types:
@@ -187,6 +221,8 @@ structure:
       - equation_proposal_reference
       - figure
       - table
+      - concept_graph_view
+      - relationship_table_view
   paragraph_inline_content:
     allowed_types:
       - text
@@ -243,4 +279,7 @@ invariants:
   - occurrence_identity_must_be_stable_for_same_document_location
   - derived_fields_must_not_be_authoritative
   - rendering_must_not_mutate_document_semantics
+  - publication_graph_views_preserve_authoritative_graph_uuids
+  - bounded_graph_selection_is_explicit_not_renderer_side
+  - publication_views_do_not_replace_knowledge_graph_authority
   - unresolved_draft_proposals_must_not_be_renderable

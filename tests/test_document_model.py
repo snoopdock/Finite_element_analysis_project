@@ -35,7 +35,7 @@ def test_math_nodes_are_renderer_neutral_and_distinct_from_equation_identity():
 
     serialized = document.to_dict()
 
-    assert serialized["version"] == 3
+    assert serialized["version"] == 4
     assert serialized["children"][0]["children"][0]["inline_content"][1] == {
         "type": "inline_math",
         "expression": "u_h \\in V_h",
@@ -187,7 +187,7 @@ def test_citation_cluster_is_first_class_semantic_occurrence_with_multiple_sourc
 
     payload = document.to_dict()
     inline = payload["children"][0]["children"][0]["inline_content"][1]
-    assert payload["version"] == 3
+    assert payload["version"] == 4
     assert inline == {
         "type": "citation_cluster_occurrence",
         "occurrence_id": "550e8400-e29b-41d4-a716-446655440099",

@@ -21,11 +21,13 @@ import tempfile
 from typing import Iterable
 
 from processing.latex_ir import (
+    ConceptGraphBlock,
     DocumentModel,
     EquationBlock,
     FigureBlock,
     IRTextSpan,
     ParagraphBlock,
+    RelationshipTableBlock,
     TableBlock,
     TextBlock,
 )
@@ -175,6 +177,17 @@ def _plain_text_payloads(document: DocumentModel):
                 for row_index, row in enumerate(block.rows):
                     for cell_index, cell in enumerate(row):
                         yield f"{base}.rows[{row_index}][{cell_index}]", cell
+            elif isinstance(block, ConceptGraphBlock):
+                for node_index, node in enumerate(block.nodes):
+                    yield f"{base}.nodes[{node_index}].name", node.name
+                    yield f"{base}.nodes[{node_index}].concept_type", node.concept_type
+                for relation_index, relation in enumerate(block.relations):
+                    yield f"{base}.relations[{relation_index}].relation_type", relation.relation_type
+            elif isinstance(block, RelationshipTableBlock):
+                for row_index, row in enumerate(block.rows):
+                    yield f"{base}.rows[{row_index}].source_statement", row.source_statement
+                    yield f"{base}.rows[{row_index}].relation_type", row.relation_type
+                    yield f"{base}.rows[{row_index}].target_statement", row.target_statement
 
 
 def audit_document_model(document: DocumentModel) -> PublicationIntegrityReport:

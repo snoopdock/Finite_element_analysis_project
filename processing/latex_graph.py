@@ -1,108 +1,112 @@
 #!/usr/bin/env python3
-"""Pure LaTeX/TikZ projection of the provenance-aware concept graph."""
+"""LaTeX/TikZ projection for explicit graph publication IR blocks.
+
+This module never reads runtime knowledge-graph state. It renders only the
+bounded semantic publication view already selected upstream and uses the same
+plain-text escaping policy as the rest of the renderer.
+"""
 
 from __future__ import annotations
 
-from typing import Dict
+from processing.latex_ir import ConceptGraphBlock, RelationshipTableBlock
+from utils.latex import escape_text
 
 
-def _escape(text: object) -> str:
-    value = str(text or "")
-    replacements = {
-        "\\": r"\textbackslash{}",
-        "&": r"\&",
-        "%": r"\%",
-        "#": r"\#",
-        "_": r"\_",
-        "{": r"\{",
-        "}": r"\}",
+def _selection_note(selected: int, total: int, policy: str, noun: str) -> str:
+    if selected >= total:
+        return ""
+    return (
+        r"\par\small\textit{Publication view: showing "
+        + str(selected)
+        + " of "
+        + str(total)
+        + " "
+        + escape_text(noun)
+        + "; selection policy: "
+        + escape_text(policy.replace("_", " "))
+        + r".}"
+    )
+
+
+def render_concept_graph(block: ConceptGraphBlock) -> str:
+    """Render one explicit ConceptGraphBlock without applying selection policy."""
+    node_names = {
+        node.concept_id: f"conceptnode{index}" for index, node in enumerate(block.nodes)
     }
-    return "".join(replacements.get(char, char) for char in value)
-
-
-def render_concept_graph(graph: Dict, *, max_nodes: int = 40) -> str:
-    """Render a bounded concept graph with collision-safe node identifiers."""
-    graph = graph if isinstance(graph, dict) else {}
-    concepts = graph.get("concepts", {})
-    relationships = graph.get("relationships", {})
-    if not isinstance(concepts, dict):
-        concepts = {}
-    if not isinstance(relationships, dict):
-        relationships = {}
-
-    ids = list(concepts)[: max(0, int(max_nodes))]
-    node_names = {concept_id: f"conceptnode{index}" for index, concept_id in enumerate(ids)}
-
     lines = [
         r"\begin{center}",
         r"\begin{tikzpicture}[",
-        r"  node distance=8mm and 12mm,",
-        r"  concept/.style={draw, rounded corners, align=center, text width=3.4cm, font=\small},",
+        r"  concept/.style={draw, rounded corners, align=center, text width=3.6cm, font=\small},",
         r"  relation/.style={-Latex, font=\scriptsize}",
         r"]",
     ]
 
-    for index, concept_id in enumerate(ids):
-        concept = concepts.get(concept_id, {})
-        title = _escape(concept.get("name", "Unnamed concept"))
-        node_id = node_names[concept_id]
-        if index == 0:
-            lines.append(f"  \\node[concept] ({node_id}) {{{title}}};")
-        else:
-            previous_id = node_names[ids[index - 1]]
-            lines.append(
-                f"  \\node[concept, below=of {previous_id}] ({node_id}) {{{title}}};"
-            )
-
-    for relationship in relationships.values():
-        if not isinstance(relationship, dict):
-            continue
-        source = relationship.get("source_id")
-        target = relationship.get("target_id")
-        if source not in node_names or target not in node_names:
-            continue
-        label = _escape(relationship.get("type", "related_to"))
+    # A bounded three-column grid avoids the pathological vertical stack used
+    # by the legacy renderer. Selection size is decided upstream.
+    columns = 3
+    x_spacing = 5.0
+    y_spacing = 2.2
+    for index, node in enumerate(block.nodes):
+        row = index // columns
+        column = index % columns
+        x = column * x_spacing
+        y = -row * y_spacing
+        title = escape_text(node.name)
         lines.append(
-            f"  \\draw[relation] ({node_names[source]}) -- node[above] {{{label}}} ({node_names[target]});"
+            f"  \\node[concept] ({node_names[node.concept_id]}) at ({x:.1f},{y:.1f}) {{{title}}};"
         )
 
-    lines.extend([
-        r"\end{tikzpicture}",
-        r"\end{center}",
-    ])
+    for relation in block.relations:
+        label = escape_text(relation.relation_type.replace("_", " "))
+        lines.append(
+            "  \\draw[relation] "
+            f"({node_names[relation.source_concept_id]}) -- "
+            f"node[above] {{{label}}} "
+            f"({node_names[relation.target_concept_id]});"
+        )
+
+    lines.extend([r"\end{tikzpicture}", r"\end{center}"])
+
+    if not block.relations:
+        lines.append(
+            r"\par\small\textit{No concept-to-concept relationships are recorded "
+            r"inside this publication view.}"
+        )
+
+    node_note = _selection_note(
+        len(block.nodes), block.total_concepts, block.selection_policy, "concepts"
+    )
+    if node_note:
+        lines.append(node_note)
+
+    if len(block.relations) < block.total_concept_relations:
+        lines.append(
+            r"\par\small\textit{Only relationships whose endpoints are present in "
+            r"the selected concept view are rendered; authoritative graph identity "
+            r"is retained outside the publication view.}"
+        )
+
     return "\n".join(lines)
 
 
-def render_perspective_table(graph: Dict, *, max_rows: int = 30) -> str:
-    """Render proposition relationships as a compact LaTeX table."""
-    graph = graph if isinstance(graph, dict) else {}
-    propositions = graph.get("propositions", {})
-    relationships = graph.get("relationships", {})
-    if not isinstance(propositions, dict) or not isinstance(relationships, dict):
-        return "No perspective relationships recorded."
-
-    rows = []
-    for relationship in relationships.values():
-        if not isinstance(relationship, dict):
-            continue
-        source = propositions.get(relationship.get("source_id"))
-        target = propositions.get(relationship.get("target_id"))
-        if not isinstance(source, dict) or not isinstance(target, dict):
-            continue
-        source_text = _escape(str(source.get("statement", ""))[:180])
-        target_text = _escape(str(target.get("statement", ""))[:180])
-        relation = _escape(relationship.get("type", "related_to"))
-        rows.append(
-            f"{source_text} & {relation} & {target_text} \\\\"
+def render_relationship_table(block: RelationshipTableBlock) -> str:
+    """Render one explicit proposition-relationship publication view."""
+    rows = [
+        " & ".join(
+            [
+                escape_text(row.source_statement),
+                escape_text(row.relation_type.replace("_", " ")),
+                escape_text(row.target_statement),
+            ]
         )
-        if len(rows) >= max(0, int(max_rows)):
-            break
+        + r" \\"
+        for row in block.rows
+    ]
 
-    if not rows:
-        return "No perspective relationships recorded."
-
-    return "\n".join([
-        r"\begin{longtable}{@{}p{0.37\textwidth}p{0.16\textwidth}p{0.37\textwidth}@{}}",
+    lines = [
+        r"\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.37\textwidth}"
+        r">{\raggedright\arraybackslash}p{0.16\textwidth}"
+        r">{\raggedright\arraybackslash}p{0.37\textwidth}@{}}",
         r"\toprule",
         r"\textbf{Proposition A} & \textbf{Relationship} & \textbf{Proposition B} \\",
         r"\midrule",
@@ -115,4 +119,14 @@ def render_perspective_table(graph: Dict, *, max_rows: int = 30) -> str:
         r"\endfoot",
         *rows,
         r"\end{longtable}",
-    ])
+    ]
+
+    note = _selection_note(
+        len(block.rows),
+        block.total_relationships,
+        block.selection_policy,
+        "relationships",
+    )
+    if note:
+        lines.append(note)
+    return "\n".join(lines)

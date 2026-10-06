@@ -18,7 +18,7 @@ from core.section_identity import (
 )
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 def _new_id() -> str:
@@ -403,6 +403,245 @@ class Table:
         return data
 
 
+@dataclass
+class ConceptGraphNode:
+    """Publication snapshot of one authoritative knowledge-graph concept.
+
+    ``concept_id`` remains the authoritative graph UUID.  This document object
+    only carries the minimal display payload required by publication.
+    """
+
+    concept_id: str
+    name: str
+    concept_type: str = "concept"
+
+    type: str = field(init=False, default="concept_graph_node")
+
+    def validate(self) -> None:
+        try:
+            uuid.UUID(str(self.concept_id))
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise DocumentModelError("ConceptGraphNode concept_id must be a UUID string.") from exc
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise DocumentModelError("ConceptGraphNode name must be non-empty.")
+        if not isinstance(self.concept_type, str) or not self.concept_type.strip():
+            raise DocumentModelError("ConceptGraphNode concept_type must be non-empty.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        self.validate()
+        return {
+            "type": self.type,
+            "concept_id": self.concept_id,
+            "name": self.name,
+            "concept_type": self.concept_type,
+        }
+
+
+@dataclass
+class ConceptGraphRelation:
+    """Publication snapshot of one authoritative concept-to-concept relation."""
+
+    relationship_id: str
+    source_concept_id: str
+    target_concept_id: str
+    relation_type: str
+
+    type: str = field(init=False, default="concept_graph_relation")
+
+    def validate(self) -> None:
+        for field_name, value in (
+            ("relationship_id", self.relationship_id),
+            ("source_concept_id", self.source_concept_id),
+            ("target_concept_id", self.target_concept_id),
+        ):
+            try:
+                uuid.UUID(str(value))
+            except (ValueError, TypeError, AttributeError) as exc:
+                raise DocumentModelError(
+                    f"ConceptGraphRelation {field_name} must be a UUID string."
+                ) from exc
+        if self.source_concept_id == self.target_concept_id:
+            raise DocumentModelError("ConceptGraphRelation cannot self-reference.")
+        if not isinstance(self.relation_type, str) or not self.relation_type.strip():
+            raise DocumentModelError("ConceptGraphRelation relation_type must be non-empty.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        self.validate()
+        return {
+            "type": self.type,
+            "relationship_id": self.relationship_id,
+            "source_concept_id": self.source_concept_id,
+            "target_concept_id": self.target_concept_id,
+            "relation_type": self.relation_type,
+        }
+
+
+@dataclass
+class ConceptGraphView:
+    """Non-authoritative publication view of the semantic knowledge graph.
+
+    The view has its own occurrence UUID while preserving concept and
+    relationship UUIDs from the authoritative graph. Any bounded selection is
+    explicit metadata and must never be performed silently by a renderer.
+    """
+
+    nodes: List[ConceptGraphNode]
+    relations: List[ConceptGraphRelation]
+    occurrence_id: str = field(default_factory=_new_id)
+    total_concepts: int = 0
+    total_concept_relations: int = 0
+    selection_policy: str = "all"
+
+    type: str = field(init=False, default="concept_graph_view")
+
+    def validate(self) -> None:
+        try:
+            uuid.UUID(str(self.occurrence_id))
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise DocumentModelError("ConceptGraphView occurrence_id must be a UUID string.") from exc
+        if not isinstance(self.nodes, list) or not self.nodes:
+            raise DocumentModelError("ConceptGraphView nodes must be a non-empty list.")
+        if not isinstance(self.relations, list):
+            raise DocumentModelError("ConceptGraphView relations must be a list.")
+        node_ids: Set[str] = set()
+        for node in self.nodes:
+            if not isinstance(node, ConceptGraphNode):
+                raise DocumentModelError("ConceptGraphView nodes must be ConceptGraphNode objects.")
+            node.validate()
+            if node.concept_id in node_ids:
+                raise DocumentModelError(f"Duplicate concept_id in ConceptGraphView: {node.concept_id}.")
+            node_ids.add(node.concept_id)
+        relation_ids: Set[str] = set()
+        for relation in self.relations:
+            if not isinstance(relation, ConceptGraphRelation):
+                raise DocumentModelError("ConceptGraphView relations must be ConceptGraphRelation objects.")
+            relation.validate()
+            if relation.relationship_id in relation_ids:
+                raise DocumentModelError(
+                    f"Duplicate relationship_id in ConceptGraphView: {relation.relationship_id}."
+                )
+            relation_ids.add(relation.relationship_id)
+            if relation.source_concept_id not in node_ids or relation.target_concept_id not in node_ids:
+                raise DocumentModelError(
+                    "ConceptGraphView relations must reference concepts included in the view."
+                )
+        if not isinstance(self.total_concepts, int) or self.total_concepts < len(self.nodes):
+            raise DocumentModelError("ConceptGraphView total_concepts must cover all selected nodes.")
+        if (
+            not isinstance(self.total_concept_relations, int)
+            or self.total_concept_relations < len(self.relations)
+        ):
+            raise DocumentModelError(
+                "ConceptGraphView total_concept_relations must cover all selected relations."
+            )
+        if not isinstance(self.selection_policy, str) or not self.selection_policy.strip():
+            raise DocumentModelError("ConceptGraphView selection_policy must be non-empty.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        self.validate()
+        return {
+            "type": self.type,
+            "occurrence_id": self.occurrence_id,
+            "nodes": [node.to_dict() for node in self.nodes],
+            "relations": [relation.to_dict() for relation in self.relations],
+            "total_concepts": self.total_concepts,
+            "total_concept_relations": self.total_concept_relations,
+            "selection_policy": self.selection_policy,
+        }
+
+
+@dataclass
+class RelationshipTableRow:
+    """Publication snapshot of one proposition-to-proposition relationship."""
+
+    relationship_id: str
+    source_proposition_id: str
+    target_proposition_id: str
+    source_statement: str
+    relation_type: str
+    target_statement: str
+
+    type: str = field(init=False, default="relationship_table_row")
+
+    def validate(self) -> None:
+        for field_name, value in (
+            ("relationship_id", self.relationship_id),
+            ("source_proposition_id", self.source_proposition_id),
+            ("target_proposition_id", self.target_proposition_id),
+        ):
+            try:
+                uuid.UUID(str(value))
+            except (ValueError, TypeError, AttributeError) as exc:
+                raise DocumentModelError(
+                    f"RelationshipTableRow {field_name} must be a UUID string."
+                ) from exc
+        for field_name, value in (
+            ("source_statement", self.source_statement),
+            ("relation_type", self.relation_type),
+            ("target_statement", self.target_statement),
+        ):
+            if not isinstance(value, str) or not value.strip():
+                raise DocumentModelError(f"RelationshipTableRow {field_name} must be non-empty.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        self.validate()
+        return {
+            "type": self.type,
+            "relationship_id": self.relationship_id,
+            "source_proposition_id": self.source_proposition_id,
+            "target_proposition_id": self.target_proposition_id,
+            "source_statement": self.source_statement,
+            "relation_type": self.relation_type,
+            "target_statement": self.target_statement,
+        }
+
+
+@dataclass
+class RelationshipTableView:
+    """Non-authoritative publication view of proposition relationships."""
+
+    rows: List[RelationshipTableRow]
+    occurrence_id: str = field(default_factory=_new_id)
+    total_relationships: int = 0
+    selection_policy: str = "all"
+
+    type: str = field(init=False, default="relationship_table_view")
+
+    def validate(self) -> None:
+        try:
+            uuid.UUID(str(self.occurrence_id))
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise DocumentModelError("RelationshipTableView occurrence_id must be a UUID string.") from exc
+        if not isinstance(self.rows, list) or not self.rows:
+            raise DocumentModelError("RelationshipTableView rows must be a non-empty list.")
+        seen: Set[str] = set()
+        for row in self.rows:
+            if not isinstance(row, RelationshipTableRow):
+                raise DocumentModelError("RelationshipTableView rows must be RelationshipTableRow objects.")
+            row.validate()
+            if row.relationship_id in seen:
+                raise DocumentModelError(
+                    f"Duplicate relationship_id in RelationshipTableView: {row.relationship_id}."
+                )
+            seen.add(row.relationship_id)
+        if not isinstance(self.total_relationships, int) or self.total_relationships < len(self.rows):
+            raise DocumentModelError(
+                "RelationshipTableView total_relationships must cover all selected rows."
+            )
+        if not isinstance(self.selection_policy, str) or not self.selection_policy.strip():
+            raise DocumentModelError("RelationshipTableView selection_policy must be non-empty.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        self.validate()
+        return {
+            "type": self.type,
+            "occurrence_id": self.occurrence_id,
+            "rows": [row.to_dict() for row in self.rows],
+            "total_relationships": self.total_relationships,
+            "selection_policy": self.selection_policy,
+        }
+
+
 SectionChild = Union[
     Paragraph,
     DisplayMath,
@@ -410,6 +649,8 @@ SectionChild = Union[
     EquationProposalReference,
     Figure,
     Table,
+    ConceptGraphView,
+    RelationshipTableView,
 ]
 
 
@@ -452,6 +693,8 @@ class Section:
                     EquationProposalReference,
                     Figure,
                     Table,
+                    ConceptGraphView,
+                    RelationshipTableView,
                 ),
             ):
                 raise DocumentModelError(

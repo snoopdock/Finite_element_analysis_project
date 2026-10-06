@@ -172,4 +172,5 @@ def document_to_legacy_sections(
             include_derived_metadata=include_derived_metadata,
         )
         for section in document.children
+        if section.status != "publication_view"
     ]

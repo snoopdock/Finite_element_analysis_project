@@ -19,6 +19,8 @@ from core.document_model import (
     CitationOccurrence,
     CitationClusterOccurrence,
     CrossReferenceOccurrence,
+    ConceptGraphView,
+    RelationshipTableView,
     DisplayMath,
     Document,
     EquationOccurrence,
@@ -39,6 +41,9 @@ from processing.evidence_adapter import adapt_evidence_to_references
 from processing.label_registry import build_label_registry
 from processing.reference_resolver import ReferenceResolver, ReferenceResolutionError
 from processing.latex_ir import (
+    ConceptGraphBlock,
+    ConceptGraphNodeIR,
+    ConceptGraphRelationIR,
     DocumentModel,
     EquationBlock,
     FigureBlock,
@@ -48,6 +53,8 @@ from processing.latex_ir import (
     IRTextSpan,
     MathBlock,
     ParagraphBlock,
+    RelationshipTableBlock,
+    RelationshipTableRowIR,
     SectionModel,
     TableBlock,
     normalize_references,
@@ -246,6 +253,51 @@ def project_document_to_latex_ir(
                         caption=child.caption,
                         label=label_registry.resolve(child.table_id).latex_label,
                         source_ids=tuple(child.source_ids),
+                    )
+                )
+            elif isinstance(child, ConceptGraphView):
+                blocks.append(
+                    ConceptGraphBlock(
+                        occurrence_id=child.occurrence_id,
+                        nodes=tuple(
+                            ConceptGraphNodeIR(
+                                concept_id=node.concept_id,
+                                name=node.name,
+                                concept_type=node.concept_type,
+                            )
+                            for node in child.nodes
+                        ),
+                        relations=tuple(
+                            ConceptGraphRelationIR(
+                                relationship_id=relation.relationship_id,
+                                source_concept_id=relation.source_concept_id,
+                                target_concept_id=relation.target_concept_id,
+                                relation_type=relation.relation_type,
+                            )
+                            for relation in child.relations
+                        ),
+                        total_concepts=child.total_concepts,
+                        total_concept_relations=child.total_concept_relations,
+                        selection_policy=child.selection_policy,
+                    )
+                )
+            elif isinstance(child, RelationshipTableView):
+                blocks.append(
+                    RelationshipTableBlock(
+                        occurrence_id=child.occurrence_id,
+                        rows=tuple(
+                            RelationshipTableRowIR(
+                                relationship_id=row.relationship_id,
+                                source_proposition_id=row.source_proposition_id,
+                                target_proposition_id=row.target_proposition_id,
+                                source_statement=row.source_statement,
+                                relation_type=row.relation_type,
+                                target_statement=row.target_statement,
+                            )
+                            for row in child.rows
+                        ),
+                        total_relationships=child.total_relationships,
+                        selection_policy=child.selection_policy,
                     )
                 )
             else:
