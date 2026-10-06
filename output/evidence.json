@@ -53,58 +53,6 @@
     }
   },
   {
-    "source_id": "wiki_c_a_s_lemma",
-    "url": "https://en.wikipedia.org/wiki/Céa's_lemma",
-    "retrieved_at": "2026-10-06T06:54:30.680373+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Céa's lemma",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "<span class=\"searchmatch\">Céa&#039;s</span> <span class=\"searchmatch\">lemma</span> is a <span class=\"searchmatch\">lemma</span> in mathematics. Introduced by Jean <span class=\"searchmatch\">Céa</span> in his Ph.D. dissertation, it is an important tool for proving error estimates for the finite",
-      "word_count": 2163
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_c_a_s_lemma.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "céa's lemma finite element method",
-    "query_contexts": [
-      "céa's lemma finite element method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.750865,
-      "lexical": 0.839445,
-      "source_quality": 0.55,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "céa's lemma finite element method",
-      "query_index": 5,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "hp finite element method": 0.1375,
-        "gradient discretization method": 0.1375,
-        "céa's lemma finite element method": 0.750865
-      }
-    }
-  },
-  {
     "source_id": "wiki_crystal_plasticity",
     "url": "https://en.wikipedia.org/wiki/Crystal_plasticity",
     "retrieved_at": "2026-10-06T12:08:55.187320+00:00",
@@ -651,7 +599,7 @@
   {
     "source_id": "s2_a058c6945e9195ddb5f0e55ff5c10d7c50d6b71e",
     "url": "https://www.semanticscholar.org/paper/a058c6945e9195ddb5f0e55ff5c10d7c50d6b71e",
-    "retrieved_at": "2026-10-06T11:37:56.346425+00:00",
+    "retrieved_at": "2026-10-06T16:03:11.413831+00:00",
     "retriever_module": "research.semantic_scholar",
     "provider": "semantic_scholar",
     "query_context": "finite element method mathematical foundation weak form Galerkin method",
@@ -701,9 +649,62 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.580519,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "Scaled Boundary Finite Element Method": 0.2125,
-        "Galerkin Dimension Reduction": 0.416955,
-        "Well-Posedness of the Galerkin Equation": 0.416955
+        "Cea's lemma finite element method": 0.2125,
+        "galerkin orthogonality finite element method": 0.519183,
+        "gradient discretization method finite element method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "wiki_c_a_s_lemma",
+    "url": "https://en.wikipedia.org/wiki/Céa's_lemma",
+    "retrieved_at": "2026-10-06T16:03:11.413831+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Céa's lemma",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "<span class=\"searchmatch\">Céa&#039;s</span> <span class=\"searchmatch\">lemma</span> is a <span class=\"searchmatch\">lemma</span> in mathematics. Introduced by Jean <span class=\"searchmatch\">Céa</span> in his Ph.D. dissertation, it is an important tool for proving error estimates for the finite",
+      "word_count": 2163
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_c_a_s_lemma.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "Cea's lemma finite element method",
+    "query_contexts": [
+      "Cea's lemma finite element method",
+      "céa's lemma finite element method"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.54641,
+      "lexical": 0.55963,
+      "source_quality": 0.55,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "Cea's lemma finite element method",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Cea's lemma finite element method": 0.54641,
+        "galerkin orthogonality finite element method": 0.1375,
+        "gradient discretization method finite element method": 0.1375
       }
     }
   },
@@ -821,7 +822,7 @@
   {
     "source_id": "arxiv_2210.16907v1",
     "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
-    "retrieved_at": "2026-10-06T12:44:06.367120+00:00",
+    "retrieved_at": "2026-10-06T16:03:11.413831+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -869,9 +870,9 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.457846,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "hpk finite element method": 0.2125,
+        "Cea's lemma finite element method": 0.2125,
         "galerkin orthogonality finite element method": 0.519183,
-        "extended finite element method": 0.2125
+        "gradient discretization method finite element method": 0.2125
       }
     }
   },
@@ -934,7 +935,7 @@
   {
     "source_id": "arxiv_2412.17631v1",
     "url": "https://arxiv.org/pdf/2412.17631v1.pdf",
-    "retrieved_at": "2026-10-06T12:48:56.033485+00:00",
+    "retrieved_at": "2026-10-06T16:03:11.413831+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -953,10 +954,11 @@
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2412.17631v1.txt",
     "full_text_available": true,
     "status": "parsed_full_text",
-    "query_context": "finite element method gradient discretization",
+    "query_context": "gradient discretization method finite element method",
     "query_contexts": [
       "finite element method gradient discretization",
-      "gradient discretization method"
+      "gradient discretization method",
+      "gradient discretization method finite element method"
     ],
     "provider_names": [
       "arxiv"
@@ -976,15 +978,15 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "finite element method gradient discretization",
-      "query_index": 3,
+      "best_query": "gradient discretization method finite element method",
+      "query_index": 5,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "finite element method gradient discretization": 0.519183,
-        "finite element method plastic analysis": 0.2125,
-        "finite element method matrix symmetry": 0.2125
+        "Cea's lemma finite element method": 0.2125,
+        "galerkin orthogonality finite element method": 0.2125,
+        "gradient discretization method finite element method": 0.519183
       }
     }
   },

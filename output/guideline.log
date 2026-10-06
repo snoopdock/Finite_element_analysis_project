@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.10.6)  6 OCT 2026 13:01
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.10.6)  6 OCT 2026 16:04
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -714,7 +714,7 @@ File: l3backend-pdftex.def 2024-01-04 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count320
 \l__pdf_internal_box=\box72
 )
-(/tmp/fea-publication-lb83sr3g/guideline.aux)
+(/tmp/fea-publication-4g3odl30/guideline.aux)
 \openout1 = `guideline.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 26.
@@ -814,8 +814,8 @@ e
 ))
 Package hyperref Info: Link coloring ON on input line 26.
 
-(/tmp/fea-publication-lb83sr3g/guideline.out)
-(/tmp/fea-publication-lb83sr3g/guideline.out)
+(/tmp/fea-publication-4g3odl30/guideline.out)
+(/tmp/fea-publication-4g3odl30/guideline.out)
 \@outlinefile=\write4
 \openout4 = `guideline.out'.
 
@@ -867,7 +867,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
-(/tmp/fea-publication-lb83sr3g/guideline.toc [1
+(/tmp/fea-publication-4g3odl30/guideline.toc [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/enc/
 dvips/lm/lm-ec.enc}])
@@ -885,18 +885,17 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 [3{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/texmf/fonts/en
 c/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}]
 [4] [5] [6] [7] [8] [9] [10{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}]
-[11]
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 1
 73.
- (/usr/share/texmf/tex/latex/lm/t1lmtt.fd
+(/usr/share/texmf/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
- [12] [13] [14]
-(/tmp/fea-publication-lb83sr3g/guideline.aux)
+ [11] [12] [13] [14]
+(/tmp/fea-publication-4g3odl30/guideline.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -905,13 +904,13 @@ Package rerunfilecheck Info: File `guideline.out' has not changed.
 (rerunfilecheck)             Checksum: 541ED8EB294BC740EE0CC1C8E2D1384B;9904.
  ) 
 Here is how much of TeX's memory you used:
- 23785 strings out of 476182
- 437234 string characters out of 5795595
+ 23820 strings out of 476182
+ 437794 string characters out of 5795595
  1957975 words of memory out of 5000000
- 45163 multiletter control sequences out of 15000+600000
- 625766 words of font info for 170 fonts, out of 8000000 for 9000
+ 45171 multiletter control sequences out of 15000+600000
+ 635564 words of font info for 184 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 102i,6n,107p,1535b,701s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,6n,107p,1391b,701s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmex10.pfb></u
 sr/share/texmf/fonts/type1/public/lm/lmmi10.pfb></usr/share/texmf/fonts/type1/p
@@ -922,11 +921,11 @@ fonts/type1/public/lm/lmr8.pfb></usr/share/texmf/fonts/type1/public/lm/lmri10.p
 fb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf/fonts/t
 ype1/public/lm/lmsy8.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></u
 sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on /tmp/fea-publication-lb83sr3g/guideline.pdf (14 pages, 305193
+Output written on /tmp/fea-publication-4g3odl30/guideline.pdf (14 pages, 308068
  bytes).
 PDF statistics:
- 300 PDF objects out of 1000 (max. 8388607)
- 250 compressed objects within 3 object streams
- 40 named destinations out of 1000 (max. 500000)
- 35469 words of extra memory for PDF output out of 35830 (max. 10000000)
+ 307 PDF objects out of 1000 (max. 8388607)
+ 256 compressed objects within 3 object streams
+ 42 named destinations out of 1000 (max. 500000)
+ 41613 words of extra memory for PDF output out of 42996 (max. 10000000)
 
