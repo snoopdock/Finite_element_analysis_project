@@ -14,9 +14,13 @@ import re
 from typing import Iterable, Iterator
 
 
+# IMPORTANT: this regex is used only when no evidence registry is available
+# (notably at the final generated-LaTeX gate). It therefore must be deliberately
+# conservative. Generic underscore identifiers such as u_h and v_h are normal
+# finite-element notation and must never be inferred to be citations merely
+# because they contain an underscore.
 SOURCE_TOKEN_RE = re.compile(
-    r"(?:arxiv|wiki|wikipedia|s2|doi|pmid|book|source)(?:_|:)[A-Za-z0-9_.:/-]+|"
-    r"[A-Za-z][A-Za-z0-9.:-]*_[A-Za-z0-9_.:/-]+",
+    r"(?:arxiv|wiki|wikipedia|s2|doi|pmid|book|source)(?:_|:)[A-Za-z0-9_.:/-]+",
     flags=re.IGNORECASE,
 )
 _BRACKET_GROUP_RE = re.compile(r"\[(?P<body>[^\[\]]+)\]")
@@ -48,8 +52,9 @@ def iter_raw_citation_groups(
 
     With an evidence registry, any group containing at least one exact known
     source ID is considered registry-related so partially malformed groups fail
-    closed. Without a registry (the final LaTeX-source gate), every token must
-    have a conservative source-ID shape.
+    closed. Without a registry (the final LaTeX-source gate), recognition is
+    intentionally limited to explicit source namespaces (wiki_, doi:, arxiv_,
+    etc.). This avoids false positives on scientific notation such as (u_h,v_h).
     """
     known = {str(source_id) for source_id in (known_source_ids or ()) if source_id}
     for delimiter, pattern in (("bracket", _BRACKET_GROUP_RE), ("parenthesis", _PAREN_GROUP_RE)):
