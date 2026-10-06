@@ -104,58 +104,6 @@
     }
   },
   {
-    "source_id": "wiki_crystal_plasticity",
-    "url": "https://en.wikipedia.org/wiki/Crystal_plasticity",
-    "retrieved_at": "2026-10-06T07:10:39.275698+00:00",
-    "retriever_module": "research.wikipedia",
-    "content_type": "text/html",
-    "title": "Crystal plasticity",
-    "authors": [
-      "Wikipedia Contributors"
-    ],
-    "metadata": {
-      "abstract": "formulations of <span class=\"searchmatch\">crystal</span> <span class=\"searchmatch\">plasticity</span> are the one based on the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> known as <span class=\"searchmatch\">Crystal</span> <span class=\"searchmatch\">Plasticity</span> <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">Element</span> <span class=\"searchmatch\">Method</span> (CPFEM), which is",
-      "word_count": 437
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_crystal_plasticity.txt",
-    "status": "parsed_full_text",
-    "provider": "wikipedia",
-    "source_type": "wikipedia",
-    "query_context": "Crystal Plasticity Finite Element Method",
-    "query_contexts": [
-      "Crystal Plasticity Finite Element Method"
-    ],
-    "provider_names": [
-      "wikipedia"
-    ],
-    "source_types": [
-      "wikipedia"
-    ],
-    "ranking": {
-      "score": 0.750865,
-      "lexical": 0.839445,
-      "source_quality": 0.55,
-      "section_relevance": 0.677259,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "Crystal Plasticity Finite Element Method",
-      "query_index": 4,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
-        "finite element method practical implementation modeling rules": 0.1375,
-        "finite element method verification validation numerical stability": 0.1375,
-        "Scaled Boundary Finite Element Method": 0.1375,
-        "Crystal Plasticity Finite Element Method": 0.750865,
-        "Virtual Element Method": 0.1375
-      }
-    }
-  },
-  {
     "source_id": "wiki_virtual_method_table",
     "url": "https://en.wikipedia.org/wiki/Virtual_method_table",
     "retrieved_at": "2026-10-06T07:10:39.275698+00:00",
@@ -259,6 +207,59 @@
         "hp finite element method": 0.2125,
         "gradient discretization method": 0.593699,
         "céa's lemma finite element method": 0.2125
+      }
+    }
+  },
+  {
+    "source_id": "wiki_crystal_plasticity",
+    "url": "https://en.wikipedia.org/wiki/Crystal_plasticity",
+    "retrieved_at": "2026-10-06T08:08:54.099449+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Crystal plasticity",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "formulations of <span class=\"searchmatch\">crystal</span> <span class=\"searchmatch\">plasticity</span> are the one based on the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> known as <span class=\"searchmatch\">Crystal</span> <span class=\"searchmatch\">Plasticity</span> <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">Element</span> <span class=\"searchmatch\">Method</span> (<span class=\"searchmatch\">CPFEM</span",
+      "word_count": 437
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_crystal_plasticity.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "crystal plasticity finite element method CPFEM",
+    "query_contexts": [
+      "Crystal Plasticity Finite Element Method",
+      "crystal plasticity finite element method CPFEM"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.54641,
+      "lexical": 0.55963,
+      "source_quality": 0.55,
+      "section_relevance": 0.451506,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "crystal plasticity finite element method CPFEM",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "Galerkin method stepped structures finite element analysis": 0.1375,
+        "hpk-FEM finite element method": 0.1375,
+        "crystal plasticity finite element method CPFEM": 0.54641
       }
     }
   },
@@ -380,7 +381,7 @@
   {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-06T07:10:39.275698+00:00",
+    "retrieved_at": "2026-10-06T08:08:54.099449+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -426,16 +427,16 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "Scaled Boundary Finite Element Method": 0.2125,
-        "Crystal Plasticity Finite Element Method": 0.2125,
-        "Virtual Element Method": 0.2125
+        "Galerkin method stepped structures finite element analysis": 0.2125,
+        "hpk-FEM finite element method": 0.2125,
+        "crystal plasticity finite element method CPFEM": 0.2125
       }
     }
   },
   {
     "source_id": "arxiv_2210.16907v1",
     "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
-    "retrieved_at": "2026-10-06T07:06:44.492087+00:00",
+    "retrieved_at": "2026-10-06T08:08:54.099449+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -483,9 +484,9 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.457846,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "finite element method existence uniqueness proof": 0.2125,
-        "spectral element method finite element analysis": 0.2125,
-        "lax milgram theorem finite element method": 0.2125
+        "Galerkin method stepped structures finite element analysis": 0.365841,
+        "hpk-FEM finite element method": 0.2125,
+        "crystal plasticity finite element method CPFEM": 0.2125
       }
     }
   },
@@ -538,6 +539,62 @@
         "finite element method existence uniqueness proof": 0.1375,
         "spectral element method finite element analysis": 0.444183,
         "lax milgram theorem finite element method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "arxiv_2605.19280v1",
+    "url": "https://arxiv.org/pdf/2605.19280v1.pdf",
+    "retrieved_at": "2026-10-06T08:08:54.099449+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Frequency-dependent stress response under thermal cycle: A thermal-crystal plasticity and dynamic mode decomposition study",
+    "authors": [
+      "Haruki Ohashi",
+      "Yoshiteru Aoyagi"
+    ],
+    "metadata": {
+      "abstract": "Thermal cycle environments involving repeated temperature changes are common conditions observed in modern engineering processes. Under such conditions, materials undergo repeated thermal expansion and contraction, forming complex thermal stress fields. Thermal-crystal plasticity simulations that account for stress fields and thermal conduction at the polycrystalline microstructure scale are an effective method for numerically reproducing thermal cycle environments. However, the influence of thermal cycle frequency on the temporal behavior of the stress field and plastic response has not yet been fully understood, partly because a systematic analysis method capable of simultaneously capturing spatial heterogeneity and temporal evolution remains limited. In this study, we predicted the thermal stress field generated under different thermal cycle frequencies using thermal-crystal plasticity simulations and investigated the effect of frequency on the spatiotemporal structure of the stress response. The present framework illustrates that the resulting thermal-mechanical response can be represented as a superposition of multiple effective temporal components, reflecting the increased complexity of the system behavior. By employing dynamic mode decomposition (DMD) as a diagnostic and post-processing technique, we demonstrate that the spatiotemporal structure of the stress field under thermal cycle conditions can be systematically extracted and compactly represented. This approach enables a quantitative characterization of frequency-dependent changes in the thermal stress response beyond conventional averaging or snapshot-based analyses. The results highlight the utility of DMD as a framework for organizing complex simulation data and for interpreting the temporal structure of plastic response under cyclic thermal loading.",
+      "published": "2026-05-19T02:58:27Z",
+      "page_count": 43,
+      "word_count": 19751
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2605.19280v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "crystal plasticity finite element method CPFEM",
+    "query_contexts": [
+      "crystal plasticity finite element method CPFEM"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.416955,
+      "lexical": 0.279815,
+      "source_quality": 0.85,
+      "section_relevance": 0.225753,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "crystal plasticity finite element method CPFEM",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "Galerkin method stepped structures finite element analysis": 0.2125,
+        "hpk-FEM finite element method": 0.2125,
+        "crystal plasticity finite element method CPFEM": 0.416955
       }
     }
   }
