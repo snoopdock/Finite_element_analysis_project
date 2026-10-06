@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.10.6)  6 OCT 2026 07:08
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.10.6)  6 OCT 2026 07:12
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -714,7 +714,7 @@ File: l3backend-pdftex.def 2024-01-04 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count320
 \l__pdf_internal_box=\box72
 )
-(/tmp/fea-publication-bxw1d949/guideline.aux)
+(/tmp/fea-publication-c78yozcc/guideline.aux)
 \openout1 = `guideline.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 26.
@@ -814,8 +814,8 @@ e
 ))
 Package hyperref Info: Link coloring ON on input line 26.
 
-(/tmp/fea-publication-bxw1d949/guideline.out)
-(/tmp/fea-publication-bxw1d949/guideline.out)
+(/tmp/fea-publication-c78yozcc/guideline.out)
+(/tmp/fea-publication-c78yozcc/guideline.out)
 \@outlinefile=\write4
 \openout4 = `guideline.out'.
 
@@ -867,7 +867,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
-(/tmp/fea-publication-bxw1d949/guideline.toc)
+(/tmp/fea-publication-c78yozcc/guideline.toc)
 \tf@toc=\write5
 \openout5 = `guideline.toc'.
 
@@ -876,54 +876,56 @@ File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/enc/
 dvips/lm/lm-ec.enc}]
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 53.
+(Font)              <10.95> on input line 56.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 53.
+(Font)              <8> on input line 56.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 53.
+(Font)              <6> on input line 56.
  [2{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/texmf/fonts/e
-nc/dvips/lm/lm-mathsy.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}{/
-usr/share/texmf/fonts/enc/dvips/lm/lm-rm.enc}] [3] [4]
+nc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}] [3] 
+[4]
+[5]
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 1
-09.
-
-(/usr/share/texmf/tex/latex/lm/t1lmtt.fd
+21.
+ (/usr/share/texmf/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
- [5] [6]
-(/tmp/fea-publication-bxw1d949/guideline.aux)
+ [6] [7]
+(/tmp/fea-publication-c78yozcc/guideline.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
 Package rerunfilecheck Info: File `guideline.out' has not changed.
-(rerunfilecheck)             Checksum: 0CEC0B95A92467D95BD89D0299984154;3149.
+(rerunfilecheck)             Checksum: 6E53C214E880C2D9F47F9E8794B8C6A3;5970.
  ) 
 Here is how much of TeX's memory you used:
- 23673 strings out of 476182
- 434897 string characters out of 5795595
- 1936975 words of memory out of 5000000
- 45089 multiletter control sequences out of 15000+600000
- 624880 words of font info for 160 fonts, out of 8000000 for 9000
+ 23706 strings out of 476182
+ 435673 string characters out of 5795595
+ 1940975 words of memory out of 5000000
+ 45118 multiletter control sequences out of 15000+600000
+ 624894 words of font info for 160 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 102i,6n,107p,1147b,698s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,6n,107p,1362b,701s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
-pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmex10.pfb></u
-sr/share/texmf/fonts/type1/public/lm/lmmi10.pfb></usr/share/texmf/fonts/type1/p
-ublic/lm/lmmi8.pfb></usr/share/texmf/fonts/type1/public/lm/lmr10.pfb></usr/shar
-e/texmf/fonts/type1/public/lm/lmr12.pfb></usr/share/texmf/fonts/type1/public/lm
-/lmr17.pfb></usr/share/texmf/fonts/type1/public/lm/lmr8.pfb></usr/share/texmf/f
-onts/type1/public/lm/lmri10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.
-pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb>
-Output written on /tmp/fea-publication-bxw1d949/guideline.pdf (6 pages, 256647 
+pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi10.pfb></u
+sr/share/texmf/fonts/type1/public/lm/lmmi6.pfb></usr/share/texmf/fonts/type1/pu
+blic/lm/lmmi8.pfb></usr/share/texmf/fonts/type1/public/lm/lmr10.pfb></usr/share
+/texmf/fonts/type1/public/lm/lmr12.pfb></usr/share/texmf/fonts/type1/public/lm/
+lmr17.pfb></usr/share/texmf/fonts/type1/public/lm/lmr8.pfb></usr/share/texmf/fo
+nts/type1/public/lm/lmri10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.p
+fb></usr/share/texmf/fonts/type1/public/lm/lmsy8.pfb></usr/share/texmf/fonts/ty
+pe1/public/lm/lmtt10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsf
+onts/symbols/msbm10.pfb>
+Output written on /tmp/fea-publication-c78yozcc/guideline.pdf (7 pages, 270302 
 bytes).
 PDF statistics:
- 196 PDF objects out of 1000 (max. 8388607)
- 161 compressed objects within 2 object streams
- 22 named destinations out of 1000 (max. 500000)
- 35421 words of extra memory for PDF output out of 35830 (max. 10000000)
+ 239 PDF objects out of 1000 (max. 8388607)
+ 199 compressed objects within 2 object streams
+ 27 named destinations out of 1000 (max. 500000)
+ 35445 words of extra memory for PDF output out of 35830 (max. 10000000)
 
