@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Set, Tuple
 from analysis.writing_indicator import WritingIndicator
 from core.section_identity import ensure_section_id
 from core.authoring_integrity import audit_authoring_math_integrity
+from core.citation_syntax import normalize_parenthesized_known_citations
 from research.ranking import rank_knowledge_items
 from utils.text import kb_to_prompt_text
 
@@ -24,6 +25,13 @@ def calculate_word_overlap(text1: str, text2: str) -> float:
 
 
 def _strip_bad_citations(text: str, allowed_sources: Set[str]) -> str:
+    # Canonicalize only exact evidence-registry citation groups. This closes a
+    # common LLM formatting variant such as ``(wiki_source)`` without guessing
+    # about ordinary parenthetical prose.
+    text, _ = normalize_parenthesized_known_citations(
+        text, known_source_ids=allowed_sources
+    )
+
     def replace(match):
         raw = match.group(1).strip()
         if not re.fullmatch(r"[\w.\-]+(?:,\s*[\w.\-]+)*", raw):

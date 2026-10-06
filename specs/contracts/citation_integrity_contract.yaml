@@ -1,8 +1,8 @@
-version: 1
+version: 2
 purpose: >-
-  Define citation identity, grouping, validation, and publication projection
-  without allowing source identifiers or citation grouping syntax to leak into
-  free-form document text.
+  Define citation identity, grouping, validation, legacy syntax migration, and
+  publication projection without allowing source identifiers or citation
+  grouping syntax to leak into free-form document text.
 
 authority:
   source_identity: evidence_model.source_id
@@ -33,12 +33,20 @@ authoring_protocol:
   duplicate_source_in_cluster: reject
 
 legacy_migration:
-  accepted_single_form: '[source_id]'
-  accepted_group_form: '[source_id_1, source_id_2]'
-  rule: >-
-    Migration may annotate only exact source identifiers from the evidence
-    registry and must preserve exact legacy text under deterministic round-trip.
+  accepted_single_forms:
+    - '[source_id]'
+    - '(source_id)'
+  accepted_group_forms:
+    - '[source_id_1, source_id_2]'
+    - '(source_id_1, source_id_2)'
+  parenthesized_form_policy: >-
+    Exact distinct source IDs that all exist in the evidence registry are
+    canonicalized to the bracket legacy citation form before semantic marker
+    promotion. This is citation-syntax normalization only; scientific prose is
+    not rewritten.
+  exact_registry_match_required: true
   ambiguous_or_unknown_group: leave_unannotated_then_fail_publication_integrity
+  mixed_known_unknown_parenthesized_group: do_not_guess
 
 projection:
   single:
@@ -65,7 +73,8 @@ provenance:
 failure_policy:
   raw_single_source_marker_in_text: reject
   raw_grouped_source_marker_in_text: reject
-  raw_escaped_grouped_source_marker_in_latex: reject
+  raw_parenthesized_source_marker_in_text: reject
+  raw_escaped_source_marker_in_latex: reject
   unresolved_source_id: reject
   duplicate_source_id_in_cluster: reject
   uncited_bibliography_item: reject
@@ -74,6 +83,7 @@ invariants:
   - source_uuid_or_source_id_remains_authoritative
   - occurrence_uuid_never_replaces_source_identity
   - grouped_citation_is_never_plain_text
+  - parenthesized_raw_source_id_is_never_publication_text
   - grouped_citation_occurrence_identity_is_stable
   - bibliography_is_derived_from_semantic_occurrences
   - provenance_preserves_complete_retrieval_receipt

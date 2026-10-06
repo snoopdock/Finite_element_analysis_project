@@ -68,3 +68,38 @@ def test_grouped_citation_fails_closed_when_any_source_is_unknown():
 
     assert result.authoring_text == "Supported by [s1, missing]."
     assert any(item.startswith("grouped_citation_not_annotated") for item in result.diagnostics)
+
+
+def test_parenthesized_single_citation_is_canonicalized_then_promoted_semantically():
+    model, _ = _authorized_model()
+    content = "Supported by (s1)."
+
+    result = annotate_legacy_authoring(content, domain_model=model, source_ids={"s1"})
+
+    assert result.authoring_text == "Supported by [[CITE:s1]]."
+    assert result.annotated_source_ids == ("s1",)
+    assert "parenthesized_citation_normalized:s1" in result.diagnostics
+    # Parentheses are legacy-invalid citation syntax; canonical legacy projection
+    # is deliberately bracketed while scientific prose is unchanged.
+    assert project_shadow_to_legacy(result.authoring_text, domain_model=model) == "Supported by [s1]."
+
+
+def test_parenthesized_grouped_citation_is_canonicalized_then_promoted_semantically():
+    model, _ = _authorized_model()
+    content = "Supported by (s1, s2)."
+
+    result = annotate_legacy_authoring(content, domain_model=model, source_ids={"s1", "s2"})
+
+    assert result.authoring_text == "Supported by [[CITES:s1,s2]]."
+    assert result.annotated_source_ids == ("s1", "s2")
+    assert "parenthesized_citation_normalized:s1,s2" in result.diagnostics
+
+
+def test_parenthesized_mixed_known_unknown_citation_is_not_guessed():
+    model, _ = _authorized_model()
+    content = "Supported by (s1, missing)."
+
+    result = annotate_legacy_authoring(content, domain_model=model, source_ids={"s1"})
+
+    assert result.authoring_text == content
+    assert result.annotated_source_ids == ()

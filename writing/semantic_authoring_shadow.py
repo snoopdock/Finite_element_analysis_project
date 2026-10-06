@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 import re
 from typing import Any, Dict, Mapping, Set
 
+from core.citation_syntax import normalize_parenthesized_known_citations
 from core.domain_semantic_model import (
     get_authorized_equation_ids,
     resolve_equation,
@@ -72,20 +73,23 @@ def annotate_legacy_authoring(
 
     expression_index = _expression_index(domain_model)
     valid_sources = {str(source_id) for source_id in source_ids if source_id}
-    diagnostics: list[str] = []
+    canonical_content, citation_diagnostics = normalize_parenthesized_known_citations(
+        content, known_source_ids=valid_sources
+    )
+    diagnostics: list[str] = list(citation_diagnostics)
     annotated_equations: list[str] = []
     annotated_sources: list[str] = []
     pieces: list[str] = []
     cursor = 0
 
-    for match in _TOKEN_RE.finditer(content):
-        pieces.append(content[cursor:match.start()])
+    for match in _TOKEN_RE.finditer(canonical_content):
+        pieces.append(canonical_content[cursor:match.start()])
         replacement = match.group(0)
 
         if match.group("math") is not None:
             expression = match.group("math")
             matches = expression_index.get(expression, [])
-            if not _is_standalone_math(content, match.start(), match.end()):
+            if not _is_standalone_math(canonical_content, match.start(), match.end()):
                 if matches:
                     diagnostics.append(f"inline_equation_not_annotated:{expression}")
             elif len(matches) == 1:
@@ -120,14 +124,14 @@ def annotate_legacy_authoring(
         pieces.append(replacement)
         cursor = match.end()
 
-    pieces.append(content[cursor:])
+    pieces.append(canonical_content[cursor:])
     authoring_text = "".join(pieces)
 
     projected = project_shadow_to_legacy(
         authoring_text,
         domain_model=domain_model,
     )
-    if projected != content:
+    if projected != canonical_content:
         return SemanticShadowResult(
             authoring_text=content,
             diagnostics=tuple(diagnostics + ["round_trip_mismatch"]),

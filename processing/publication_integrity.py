@@ -33,6 +33,7 @@ from processing.latex_ir import (
 )
 from utils.latex import PLAIN_TEXT_UNICODE_MATH_MAP
 from core.authoring_integrity import RAW_MATH_COMMAND_RE
+from core.citation_syntax import iter_raw_citation_groups
 
 
 @dataclass(frozen=True)
@@ -106,41 +107,6 @@ class PublicationCompilationResult:
 
 
 _RAW_MATH_COMMAND_RE = RAW_MATH_COMMAND_RE
-_SOURCE_TOKEN_RE = re.compile(
-    r"(?:arxiv|wiki|wikipedia|s2|doi|pmid|book|source)(?:_|:)[A-Za-z0-9_.:/-]+|"
-    r"[A-Za-z][A-Za-z0-9.:-]*_[A-Za-z0-9_.:/-]+",
-    flags=re.IGNORECASE,
-)
-_BRACKET_GROUP_RE = re.compile(r"\[(?P<body>[^\[\]]+)\]")
-
-
-def _raw_source_marker_groups(
-    text: str,
-    *,
-    latex_escaped: bool = False,
-    known_source_ids: set[str] | None = None,
-):
-    """Yield source-ID bracket groups that escaped semantic citation nodes.
-
-    At the semantic/IR gate, exact evidence-registry membership is sufficient
-    to identify a leaked citation even when source IDs use short/custom names.
-    At the standalone LaTeX gate, conservative source-shaped token recognition
-    provides the final defense without inventing an external registry.
-    """
-    known_source_ids = known_source_ids or set()
-    for match in _BRACKET_GROUP_RE.finditer(text):
-        body = match.group("body")
-        if latex_escaped:
-            body = body.replace(r"\_", "_")
-        tokens = tuple(part.strip() for part in body.split(","))
-        if not tokens or any(not token for token in tokens):
-            continue
-        source_shaped = all(_SOURCE_TOKEN_RE.fullmatch(token) for token in tokens)
-        registry_related = any(token in known_source_ids for token in tokens)
-        if source_shaped or registry_related:
-            yield match.group(0), tokens
-
-
 _RAW_SEMANTIC_MARKER_RE = re.compile(r"\[\[(?:CITE|CITES|REF|EQ|NEW_EQ):[^\]]+\]\]")
 _ESCAPED_RAW_MATH_RE = re.compile(
     r"\\textbackslash\{\}(?:in|nabla|partial|int|sum|prod|mathbf|frac|sqrt|infty)\b"
@@ -221,14 +187,14 @@ def audit_document_model(document: DocumentModel) -> PublicationIntegrityReport:
                     context,
                 )
             )
-        for raw_group, tokens in _raw_source_marker_groups(text, known_source_ids=reference_ids):
-            known = [token for token in tokens if token in reference_ids]
-            relation = "known" if len(known) == len(tokens) else "partially/unresolved"
+        for raw_group in iter_raw_citation_groups(text, known_source_ids=reference_ids):
+            known = [token for token in raw_group.source_ids if token in reference_ids]
+            relation = "known" if len(known) == len(raw_group.source_ids) else "partially/unresolved"
             issues.append(
                 PublicationIntegrityIssue(
                     "error",
                     "RAW_CITATION_MARKER",
-                    f"{relation} source token group {raw_group} survived as plain text instead of semantic citation occurrence(s)",
+                    f"{relation} source token group {raw_group.raw} survived as plain text instead of semantic citation occurrence(s)",
                     context,
                 )
             )
@@ -267,12 +233,12 @@ def audit_latex_source(tex: str) -> PublicationIntegrityReport:
                 "error", "RAW_SEMANTIC_MARKER", "semantic authoring marker remains in generated LaTeX"
             )
         )
-    for raw_group, tokens in _raw_source_marker_groups(tex, latex_escaped=True):
+    for raw_group in iter_raw_citation_groups(tex, latex_escaped=True):
         issues.append(
             PublicationIntegrityIssue(
                 "error",
                 "RAW_CITATION_MARKER_IN_TEX",
-                f"source token group {raw_group} remains in generated LaTeX instead of \\cite projection",
+                f"source token group {raw_group.raw} remains in generated LaTeX instead of \\cite projection",
             )
         )
 
@@ -449,16 +415,30 @@ def _auxiliary_state_digest(temp: Path, stem: str) -> str:
     return digest.hexdigest() if found else hashlib.sha256(b"").hexdigest()
 
 
-def _only_retryable_convergence_issues(report: PublicationIntegrityReport) -> bool:
-    """Return True when another LaTeX pass can legitimately resolve all errors."""
-    if not report.errors:
-        return True
-    retryable = {
-        "LATEX_RERUN_REQUIRED",
-        "UNDEFINED_REFERENCES",
-        "UNDEFINED_CITATIONS",
-    }
-    return all(issue.code in retryable for issue in report.errors)
+_CONVERGENCE_SIGNAL_CODES = {
+    "LATEX_RERUN_REQUIRED",
+    "UNDEFINED_REFERENCES",
+    "UNDEFINED_CITATIONS",
+}
+
+
+def _fatal_convergence_errors(report: PublicationIntegrityReport) -> tuple[PublicationIntegrityIssue, ...]:
+    """Return errors for which another LaTeX pass cannot be a valid repair.
+
+    Intermediate layout warnings and ordinary LaTeX warnings are deliberately
+    non-decisive: they are judged only once auxiliary state has converged.
+    Undefined references/citations and explicit rerun requests are convergence
+    signals and may justify another bounded pass.
+    """
+    return tuple(
+        issue
+        for issue in report.errors
+        if issue.code not in _CONVERGENCE_SIGNAL_CODES
+    )
+
+
+def _has_convergence_signal(report: PublicationIntegrityReport) -> bool:
+    return any(issue.code in _CONVERGENCE_SIGNAL_CODES for issue in report.issues)
 
 
 def compile_latex_pdf(
@@ -474,11 +454,12 @@ def compile_latex_pdf(
 
     ``passes`` is the minimum number of LaTeX passes (kept for backward
     compatibility with the existing CLI/API). After that minimum, compilation
-    continues only while the auxiliary state or retryable cross-reference
-    warnings indicate that another pass is required. Non-retryable warnings or
-    layout failures remain immediate hard failures. The loop is bounded by
-    ``max_passes`` so publication validation can never become an unbounded
-    retry mechanism.
+    continues only while the auxiliary state or cross-reference state indicates
+    that another pass is required. Intermediate layout/ordinary warnings are
+    observed but are not publication decisions until a stable pass exists.
+    Fatal compiler errors still fail immediately. The final stable pass must
+    satisfy the full strict zero-warning policy. The loop is bounded by
+    ``max_passes`` so publication validation can never become unbounded.
     """
     if passes < 2:
         raise ValueError("publication compilation requires at least two passes")
@@ -540,18 +521,30 @@ def compile_latex_pdf(
                 previous_aux_digest = final_aux_digest
                 continue
 
-            log_report = audit_latex_log(
-                log_path.read_text(encoding="utf-8", errors="replace"),
-                strict=True,
-            )
+            log_text = log_path.read_text(encoding="utf-8", errors="replace")
+            convergence_report = audit_latex_log(log_text, strict=False)
             aux_stable = previous_aux_digest == final_aux_digest
 
-            if log_report.errors and not _only_retryable_convergence_issues(log_report):
+            fatal_errors = _fatal_convergence_errors(convergence_report)
+            if fatal_errors:
                 final_log_copy.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(log_path, final_log_copy)
-                raise PublicationIntegrityError(log_report.errors)
+                raise PublicationIntegrityError(fatal_errors)
 
-            if not log_report.errors and aux_stable:
+            needs_another_pass = (
+                not aux_stable
+                or _has_convergence_signal(convergence_report)
+            )
+
+            if not needs_another_pass:
+                # Only a stable pass is eligible for the strict publication
+                # decision. Layout and ordinary warnings are fatal here even
+                # though they were non-decisive during convergence.
+                final_report = audit_latex_log(log_text, strict=True)
+                if final_report.errors:
+                    final_log_copy.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(log_path, final_log_copy)
+                    raise PublicationIntegrityError(final_report.errors)
                 converged = True
                 break
 
@@ -569,9 +562,7 @@ def compile_latex_pdf(
         if not converged:
             final_log_copy.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(log_path, final_log_copy)
-            if final_report.errors and not _only_retryable_convergence_issues(final_report):
-                raise PublicationIntegrityError(final_report.errors)
-            detail = "; ".join(issue.format() for issue in final_report.errors)
+            detail = "; ".join(issue.format() for issue in final_report.issues)
             if not detail:
                 detail = "auxiliary LaTeX state was still changing"
             raise _error(
@@ -579,7 +570,8 @@ def compile_latex_pdf(
                 f"{engine} did not converge after {max_passes} passes: {detail}",
             )
 
-        # Convergence requires a clean final log as well as stable auxiliary state.
+        # Defense in depth: the stable pass must still satisfy the complete
+        # publication policy before its PDF/log are copied out of isolation.
         if final_report.errors:
             final_log_copy.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(log_path, final_log_copy)

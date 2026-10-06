@@ -309,3 +309,96 @@ def test_compiler_rejects_maximum_passes_below_minimum(tmp_path: Path):
 
     with pytest.raises(ValueError, match="max_passes"):
         compile_latex_pdf(tex_path, pdf_path, passes=3, max_passes=2)
+
+
+def test_static_gates_reject_parenthesized_raw_source_ids_in_document_and_tex():
+    model = build_document_model(
+        {"topic": "FEM", "objective": "Guide"},
+        [{"title": "Bad", "blocks": [{"type": "text", "text": "Claim (wiki_source)."}]}],
+        [{"source_id": "wiki_source", "title": "Known"}],
+    )
+    assert "RAW_CITATION_MARKER" in {issue.code for issue in audit_document_model(model)}
+
+    plain = _minimal_document("Claim (wiki_source).")
+    escaped = _minimal_document(r"Claim (wiki\_source).")
+    assert "RAW_CITATION_MARKER_IN_TEX" in {issue.code for issue in audit_latex_source(plain)}
+    assert "RAW_CITATION_MARKER_IN_TEX" in {issue.code for issue in audit_latex_source(escaped)}
+
+
+def _write_fake_pdflatex(path: Path) -> None:
+    path.write_text(
+        '''#!/usr/bin/env python3
+import pathlib, sys
+
+out = pathlib.Path(next(arg.split("=", 1)[1] for arg in sys.argv if arg.startswith("-output-directory=")))
+tex = pathlib.Path(sys.argv[-1])
+stem = tex.stem
+counter = out / "fake-pass-count"
+pass_no = int(counter.read_text()) + 1 if counter.exists() else 1
+counter.write_text(str(pass_no))
+(out / f"{stem}.pdf").write_bytes(b"%PDF-1.4\\n% fake\\n")
+if pass_no == 1:
+    (out / f"{stem}.aux").write_text("state-a")
+    log = ""
+elif pass_no == 2:
+    (out / f"{stem}.aux").write_text("state-b")
+    log = "Underfull \\\\hbox (badness 10000) in paragraph at lines 1--2\\nLaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.\\n"
+else:
+    (out / f"{stem}.aux").write_text("state-b")
+    log = ""
+(out / f"{stem}.log").write_text(log)
+''',
+        encoding="utf-8",
+    )
+    path.chmod(0o755)
+
+
+def test_compiler_defers_transient_layout_warning_until_stable_pass(tmp_path: Path):
+    tex_path = tmp_path / "guideline.tex"
+    pdf_path = tmp_path / "guideline.pdf"
+    fake_engine = tmp_path / "fake-pdflatex"
+    tex_path.write_text(_minimal_document("Synthetic convergence fixture."), encoding="utf-8")
+    _write_fake_pdflatex(fake_engine)
+
+    result = compile_latex_pdf(
+        tex_path,
+        pdf_path,
+        passes=2,
+        max_passes=5,
+        engine=str(fake_engine),
+    )
+
+    assert result.passes == 3
+    assert result.converged is True
+    assert result.warnings == ()
+    assert pdf_path.is_file()
+
+
+def test_compiler_still_rejects_layout_warning_on_final_stable_pass(tmp_path: Path):
+    tex_path = tmp_path / "guideline.tex"
+    pdf_path = tmp_path / "guideline.pdf"
+    fake_engine = tmp_path / "fake-pdflatex"
+    tex_path.write_text(_minimal_document("Synthetic stable-layout fixture."), encoding="utf-8")
+    fake_engine.write_text(
+        '''#!/usr/bin/env python3
+import pathlib, sys
+out = pathlib.Path(next(arg.split("=", 1)[1] for arg in sys.argv if arg.startswith("-output-directory=")))
+tex = pathlib.Path(sys.argv[-1]); stem = tex.stem
+(out / f"{stem}.pdf").write_bytes(b"%PDF-1.4\\n% fake\\n")
+(out / f"{stem}.aux").write_text("stable")
+(out / f"{stem}.log").write_text("Underfull \\\\hbox (badness 10000) in paragraph at lines 1--2\\n")
+''',
+        encoding="utf-8",
+    )
+    fake_engine.chmod(0o755)
+
+    with pytest.raises(PublicationIntegrityError) as exc_info:
+        compile_latex_pdf(
+            tex_path,
+            pdf_path,
+            passes=2,
+            max_passes=5,
+            engine=str(fake_engine),
+        )
+
+    assert any(issue.code == "LAYOUT_WARNING" for issue in exc_info.value.issues)

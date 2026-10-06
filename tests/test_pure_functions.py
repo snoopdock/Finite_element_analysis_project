@@ -41,3 +41,17 @@ class TestDynamicWriterUtils:
         res = _strip_bad_citations(text, allowed)
         assert "[Smith2020]" not in res
         assert "[arxiv_9999]" not in res
+
+
+def test_strip_bad_citations_canonicalizes_exact_parenthesized_known_source():
+    allowed = {"wiki_c_a_s_lemma"}
+    text = "The estimate follows (wiki_c_a_s_lemma)."
+    res = _strip_bad_citations(text, allowed)
+    assert res == "The estimate follows [wiki_c_a_s_lemma]."
+
+
+def test_strip_bad_citations_canonicalizes_exact_parenthesized_known_group():
+    allowed = {"wiki_a", "wiki_b"}
+    text = "Supported jointly by (wiki_a, wiki_b)."
+    res = _strip_bad_citations(text, allowed)
+    assert res == "Supported jointly by [wiki_a, wiki_b]."
