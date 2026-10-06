@@ -765,9 +765,65 @@
     }
   },
   {
+    "source_id": "arxiv_2410.12614v1",
+    "url": "https://arxiv.org/pdf/2410.12614v1.pdf",
+    "retrieved_at": "2026-10-06T12:48:56.033485+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Mixed-precision finite element kernels and assembly: Rounding error analysis and hardware acceleration",
+    "authors": [
+      "M. Croci",
+      "G. N. Wells"
+    ],
+    "metadata": {
+      "abstract": "In this paper we develop the first fine-grained rounding error analysis of finite element (FE) cell kernels and assembly. The theory includes mixed-precision implementations and accounts for hardware-acceleration via matrix multiplication units, thus providing theoretical guidance for designing reduced- and mixed-precision FE algorithms on CPUs and GPUs. Guided by this analysis, we introduce hardware-accelerated mixed-precision implementation strategies which are provably robust to low-precision computations. Indeed, these algorithms are accurate to the lower-precision unit roundoff with an error constant that is independent from: the conditioning of FE basis function evaluations, the ill-posedness of the cell, the polynomial degree, and the number of quadrature nodes. Consequently, we present the first AMX-accelerated FE kernel implementations on Intel Sapphire Rapids CPUs. Numerical experiments demonstrate that the proposed mixed- (single/half-) precision algorithms are up to 60 times faster than their double precision equivalent while being orders of magnitude more accurate than their fully half-precision counterparts.",
+      "published": "2024-10-16T14:32:10Z",
+      "page_count": 37,
+      "word_count": 19806
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2410.12614v1.txt",
+    "full_text_available": true,
+    "status": "parsed_full_text",
+    "query_context": "finite element method plastic analysis",
+    "query_contexts": [
+      "finite element method plastic analysis"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method plastic analysis",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.2125,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "finite element method gradient discretization": 0.2125,
+        "finite element method plastic analysis": 0.519183,
+        "finite element method matrix symmetry": 0.2125
+      }
+    }
+  },
+  {
     "source_id": "arxiv_2412.17631v1",
     "url": "https://arxiv.org/pdf/2412.17631v1.pdf",
-    "retrieved_at": "2026-10-06T06:54:30.680373+00:00",
+    "retrieved_at": "2026-10-06T12:48:56.033485+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -786,8 +842,9 @@
     "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2412.17631v1.txt",
     "full_text_available": true,
     "status": "parsed_full_text",
-    "query_context": "gradient discretization method",
+    "query_context": "finite element method gradient discretization",
     "query_contexts": [
+      "finite element method gradient discretization",
       "gradient discretization method"
     ],
     "provider_names": [
@@ -808,22 +865,22 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "gradient discretization method",
-      "query_index": 4,
+      "best_query": "finite element method gradient discretization",
+      "query_index": 3,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.2125,
-        "hp finite element method": 0.2125,
-        "gradient discretization method": 0.519183,
-        "céa's lemma finite element method": 0.416955
+        "finite element method gradient discretization": 0.519183,
+        "finite element method plastic analysis": 0.2125,
+        "finite element method matrix symmetry": 0.2125
       }
     }
   },
   {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-06T12:44:06.367120+00:00",
+    "retrieved_at": "2026-10-06T12:48:56.033485+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -869,9 +926,9 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "hpk finite element method": 0.2125,
-        "galerkin orthogonality finite element method": 0.2125,
-        "extended finite element method": 0.2125
+        "finite element method gradient discretization": 0.2125,
+        "finite element method plastic analysis": 0.2125,
+        "finite element method matrix symmetry": 0.2125
       }
     }
   },
@@ -924,6 +981,58 @@
         "hpk finite element method": 0.1375,
         "galerkin orthogonality finite element method": 0.444183,
         "extended finite element method": 0.1375
+      }
+    }
+  },
+  {
+    "source_id": "wiki_finite_element_limit_analysis",
+    "url": "https://en.wikipedia.org/wiki/Finite_element_limit_analysis",
+    "retrieved_at": "2026-10-06T12:48:56.033485+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Finite element limit analysis",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "A <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> limit <span class=\"searchmatch\">analysis</span> (FELA) uses optimisation techniques to directly compute the upper or lower bound <span class=\"searchmatch\">plastic</span> collapse load (or limit load)",
+      "word_count": 301
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_finite_element_limit_analysis.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "finite element method plastic analysis",
+    "query_contexts": [
+      "finite element method plastic analysis"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.444183,
+      "lexical": 0.419722,
+      "source_quality": 0.55,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element method plastic analysis",
+      "query_index": 4,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "finite element method gradient discretization": 0.1375,
+        "finite element method plastic analysis": 0.444183,
+        "finite element method matrix symmetry": 0.1375
       }
     }
   },
