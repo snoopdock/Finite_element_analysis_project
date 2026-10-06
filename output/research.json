@@ -60,6 +60,24 @@
       "mathematical_formulation": "",
       "source_ids": [
         "wiki_loubignac_iteration"
+      ],
+      "concept_id": "bf2cdd72-18de-42e1-a1a8-aef1b2b8f19e"
+    },
+    {
+      "name": "Finite Element Method (FEM)",
+      "explanation": "The Finite Element Method is a numerical technique for solving partial differential equations by discretizing a complex domain into smaller, simpler parts called finite elements. It approximates solutions using piecewise functions defined over these elements, allowing for the modeling of irregular geometries and varying material properties. FEM relies on variational principles, such as the Galerkin method, to formulate weak forms of governing equations. This approach transforms differential equations into a system of algebraic equations that can be solved computationally.",
+      "mathematical_formulation": "\\int_{\\Omega} \\nabla v \\cdot \\nabla u \\, d\\Omega = \\int_{\\Omega} v f \\, d\\Omega + \\int_{\\partial\\Omega} v g \\, d\\Gamma",
+      "source_ids": [
+        "wiki_boris_galerkin",
+        "wiki_extended_finite_element_method"
+      ]
+    },
+    {
+      "name": "Enrichment Functions in XFEM",
+      "explanation": "Enrichment functions extend the solution space of FEM to capture discontinuities like cracks or material interfaces without requiring mesh alignment. These functions are added to standard polynomial basis functions for elements intersected by discontinuities, enabling accurate representation of localized features. XFEM avoids mesh refinement around discontinuities, reducing computational costs. This enrichment allows for modeling complex phenomena such as fracture propagation and multiphase materials.",
+      "mathematical_formulation": "u_h(x) = \\sum_{i=1}^{n} N_i(x) u_i + \\sum_{j=1}^{m} N_j(x) H(x) \\alpha_j + \\sum_{k=1}^{p} N_k(x) F(x) \\beta_k",
+      "source_ids": [
+        "wiki_extended_finite_element_method"
       ]
     }
   ],
@@ -107,6 +125,7 @@
       ],
       "source_ids": [
         "wiki_crystal_plasticity",
+        "wiki_extended_finite_element_method",
         "wiki_stretched_grid_method"
       ],
       "proposition_id": "eea78e16-ffaa-476d-81ab-9e4ff5bb8a1f"
@@ -122,6 +141,19 @@
         "arxiv_1509.00440v1"
       ],
       "proposition_id": "122f58ef-2585-42d9-b410-77b3ab243fa6"
+    },
+    {
+      "step_number": 2,
+      "title": "Formulation of Element Equations",
+      "description": "For each element, local equations are derived using variational principles or weighted residual methods. The Galerkin method is commonly used, where trial and test functions are chosen from the same basis. These equations are expressed in terms of nodal degrees of freedom. The process involves integrating element-level stiffness matrices and force vectors.",
+      "equations": [
+        "K^e = \\int_{\\Omega_e} B^T D B \\, d\\Omega",
+        "F^e = \\int_{\\Omega_e} N^T f \\, d\\Omega + \\int_{\\partial\\Omega_e} N^T t \\, d\\Gamma"
+      ],
+      "source_ids": [
+        "wiki_boris_galerkin",
+        "wiki_extended_finite_element_method"
+      ]
     }
   ],
   "equations": [
@@ -187,6 +219,22 @@
         "arxiv_1509.00440v1"
       ],
       "proposition_id": "96e4c02b-d036-45e0-8ac5-5af2d20bff74"
+    },
+    {
+      "name": "Weak Form of PDE",
+      "latex": "\\int_{\\Omega} v \\cdot (\\nabla \\cdot \\sigma(u) - f) \\, d\\Omega + \\int_{\\partial\\Omega} v \\cdot (\\sigma(u) \\cdot n - t) \\, d\\Gamma = 0",
+      "explanation": "This equation represents the variational formulation of a partial differential equation. $ v $ is a test function, $ \\sigma(u) $ is the stress tensor, $ f $ is a body force, $ t $ is a traction on the boundary, and $ n $ is the outward normal vector. The weak form allows for solutions in function spaces with lower regularity compared to the classical form.",
+      "source_ids": [
+        "wiki_boris_galerkin"
+      ]
+    },
+    {
+      "name": "Stiffness Matrix Assembly",
+      "latex": "K = \\sum_{e=1}^{E} K^e",
+      "explanation": "The global stiffness matrix $ K $ is assembled by summing element stiffness matrices $ K^e $. Each $ K^e $ encodes the mechanical behavior of its corresponding element. Assembly ensures compatibility between elements at shared nodes, forming a system of equations $ KU = F $, where $ U $ is the nodal displacement vector and $ F $ is the external force vector.",
+      "source_ids": [
+        "wiki_extended_finite_element_method"
+      ]
     }
   ],
   "rules": [
@@ -221,6 +269,20 @@
         "wiki_crystal_plasticity"
       ],
       "proposition_id": "f16a8cb4-1c86-4658-aa24-a702e7a396bb"
+    },
+    {
+      "rule": "Mesh Alignment with Discontinuities",
+      "explanation": "In traditional FEM, meshes must align with discontinuities (e.g., cracks) to capture their effects accurately. This often requires remeshing during simulation, increasing computational cost. XFEM circumvents this by enriching the solution space, allowing discontinuities to exist independently of the mesh.",
+      "source_ids": [
+        "wiki_extended_finite_element_method"
+      ]
+    },
+    {
+      "rule": "Use of Enrichment Functions",
+      "explanation": "Enrichment functions must be selected based on the nature of the discontinuity or singularity. For example, Heaviside functions model cracks, while asymptotic crack-tip functions capture stress singularities. Proper enrichment ensures accurate representation of localized phenomena without mesh refinement.",
+      "source_ids": [
+        "wiki_extended_finite_element_method"
+      ]
     }
   ]
 }
