@@ -15,7 +15,8 @@
       "mathematical_formulation": "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
       "source_ids": [
         "wiki_babu_ka_lax_milgram_theorem"
-      ]
+      ],
+      "concept_id": "e1d5d855-15bf-47a8-91ff-38da50e8d8e1"
     },
     {
       "name": "Bilinear Form Coercivity",
@@ -23,7 +24,8 @@
       "mathematical_formulation": "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0",
       "source_ids": [
         "wiki_babu_ka_lax_milgram_theorem"
-      ]
+      ],
+      "concept_id": "115a8e3a-72ef-4d85-881c-40f93250ce80"
     },
     {
       "name": "Spectral Element Method",
@@ -31,6 +33,23 @@
       "mathematical_formulation": "",
       "source_ids": [
         "wiki_spectral_element_method"
+      ],
+      "concept_id": "b2c851e5-29a8-4dc6-871c-06e85c47166e"
+    },
+    {
+      "name": "Crystal Plasticity Finite Element Method (CPFEM)",
+      "explanation": "CPFEM is a mesoscale computational technique that models polycrystalline materials by incorporating crystallographic anisotropy. It accounts for deformation mechanisms like slip, twinning, and phase transformations. The method uses orientation maps (e.g., Bunge Euler angles) to transform tensors between crystal and sample reference frames. Slip systems are defined by Schmid tensors, which relate Burgers vectors and slip plane normals to resolved shear stress calculations.",
+      "mathematical_formulation": "Schmid tensor: $ \\mathbf{M} = \\mathbf{b} \\otimes \\mathbf{n} $, where $ \\mathbf{b} $ is the Burgers vector and $ \\mathbf{n} $ is the slip plane normal.",
+      "source_ids": [
+        "wiki_crystal_plasticity"
+      ]
+    },
+    {
+      "name": "Mesh Refinement via Stretched Grid Method (SGM)",
+      "explanation": "SGM generates pseudo-regular meshes by minimizing potential energy associated with grid segment lengths. It repositions nodes to reduce distortion in arbitrary triangle grids. The method uses a potential energy functional proportional to the sum of squared segment lengths. It is a one-step technique for improving mesh quality in FEM and BEM applications.",
+      "mathematical_formulation": "Potential energy: $ \\Pi = D \\sum_{j=1}^{n} R_j^2 $, where $ D $ is a constant, $ R_j $ is the length of segment $ j $, and $ n $ is the total number of segments.",
+      "source_ids": [
+        "wiki_stretched_grid_method"
       ]
     }
   ],
@@ -42,7 +61,8 @@
       "equations": [],
       "source_ids": [
         "wiki_spectral_element_method"
-      ]
+      ],
+      "proposition_id": "d1860c4d-3713-4a31-8c4b-8949313fbd07"
     },
     {
       "step_number": 2,
@@ -53,7 +73,8 @@
       ],
       "source_ids": [
         "wiki_babu_ka_lax_milgram_theorem"
-      ]
+      ],
+      "proposition_id": "83707554-aaf9-467d-9320-0ada8ad15b6d"
     },
     {
       "step_number": 3,
@@ -64,6 +85,30 @@
       ],
       "source_ids": [
         "wiki_spectral_element_method"
+      ],
+      "proposition_id": "ab4b4be9-c25c-4340-91c7-c93efb89d10b"
+    },
+    {
+      "step_number": 1,
+      "title": "Discretization of the Domain",
+      "description": "The domain is divided into finite elements (e.g., triangles or tetrahedra) to approximate the continuous problem. For CPFEM, grains are represented with orientation maps to capture crystallographic anisotropy. In SGM, an initial distorted mesh is transformed into a pseudo-regular grid by minimizing potential energy. This step ensures compatibility between material microstructure and numerical approximations.",
+      "equations": [
+        "\\Pi = D \\sum_{j=1}^{n} R_j^2"
+      ],
+      "source_ids": [
+        "wiki_crystal_plasticity",
+        "wiki_stretched_grid_method"
+      ]
+    },
+    {
+      "step_number": 2,
+      "title": "Formulation of Weak Forms",
+      "description": "Governing partial differential equations are converted into weak forms by multiplying with test functions and integrating over the domain. For CPFEM, this involves slip system compatibility and stress-strain relationships. In coupled FVM-BEM methods, conservation laws and boundary conditions are enforced through integral equations. This step enables numerical solution via linear algebra techniques.",
+      "equations": [
+        "\\text{Weak form: } \\int_{\\Omega} (\\mathbf{A} \\nabla u \\cdot \\nabla v + \\mathbf{b} \\cdot \\nabla u v + c u v) \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega"
+      ],
+      "source_ids": [
+        "arxiv_1509.00440v1"
       ]
     }
   ],
@@ -101,7 +146,8 @@
       "explanation": "Here, $ B(u, v) $ is a bilinear form representing the inner product of the differential operator and test functions $ v $, $ f $ is the source term, and $ V $ is the test function space. This equation encodes the PDE in a form suitable for numerical approximation.",
       "source_ids": [
         "wiki_babu_ka_lax_milgram_theorem"
-      ]
+      ],
+      "proposition_id": "f4d34c7d-ac5f-48e6-b9dc-b6e48ef6deef"
     },
     {
       "name": "Coercivity Condition",
@@ -109,6 +155,23 @@
       "explanation": "This inequality ensures the bilinear form $ B $ is bounded below by a positive constant $ c $ times the norm squared of $ u $. It guarantees the uniqueness and stability of the weak solution, critical for numerical methods.",
       "source_ids": [
         "wiki_babu_ka_lax_milgram_theorem"
+      ],
+      "proposition_id": "9b1de495-7377-41ed-a0a6-1ad646d30d50"
+    },
+    {
+      "name": "Potential Energy Minimization in SGM",
+      "latex": "\\Pi = D \\sum_{j=1}^{n} R_j^2",
+      "explanation": "This equation defines the potential energy of a distorted mesh, where $ D $ is a proportionality constant, $ R_j $ is the length of the $ j $-th segment, and $ n $ is the total number of segments. Minimizing $ \\Pi $ reduces element distortion, producing high-quality meshes for FEM analysis.",
+      "source_ids": [
+        "wiki_stretched_grid_method"
+      ]
+    },
+    {
+      "name": "Governing Equation for Coupled FVM-BEM",
+      "latex": "\\text{div}(-\\mathbf{A} \\nabla u + \\mathbf{b} u) + c u = f \\quad \\text{in } \\Omega",
+      "explanation": "This equation models flow and transport in a bounded domain $ \\Omega $. $ \\mathbf{A} $ is a symmetric diffusion matrix, $ \\mathbf{b} $ is a velocity field, $ c $ is a reaction term, and $ f $ is a source term. It is coupled with an exterior domain problem via boundary conditions.",
+      "source_ids": [
+        "arxiv_1509.00440v1"
       ]
     }
   ],
@@ -118,13 +181,29 @@
       "explanation": "High-order polynomials, such as those in spectral element methods, improve accuracy with fewer elements. This reduces computational costs for problems requiring high precision but may complicate mesh generation for complex geometries.",
       "source_ids": [
         "wiki_spectral_element_method"
-      ]
+      ],
+      "proposition_id": "c1ef3cb6-609e-4b82-9766-dd04ffbcdc8c"
     },
     {
       "rule": "Mesh Refinement for High-Frequency Waves",
       "explanation": "For high-frequency wave simulations, fine meshes are required in traditional FEM to resolve rapid variations. Spectral element methods mitigate this by using high-degree polynomials, achieving accuracy with coarser meshes and reducing computational time.",
       "source_ids": [
         "wiki_spectral_element_method"
+      ],
+      "proposition_id": "0b17b286-f51f-489c-99da-805ccd88ce10"
+    },
+    {
+      "rule": "Mesh Quality Dependency",
+      "explanation": "FEM accuracy heavily depends on mesh quality. Distorted elements lead to numerical errors, necessitating techniques like SGM for refinement. Poor mesh quality can cause ill-conditioned stiffness matrices and inaccurate stress-strain predictions.",
+      "source_ids": [
+        "wiki_stretched_grid_method"
+      ]
+    },
+    {
+      "rule": "Constitutive Law Consistency",
+      "explanation": "Material behavior must align with underlying physical laws (e.g., Schmid's law for slip). Violating these rules leads to unphysical deformation predictions. CPFEM requires consistent tensor transformations between crystal and sample frames to maintain slip system validity.",
+      "source_ids": [
+        "wiki_crystal_plasticity"
       ]
     }
   ]

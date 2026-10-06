@@ -104,6 +104,60 @@
     }
   },
   {
+    "source_id": "wiki_crystal_plasticity",
+    "url": "https://en.wikipedia.org/wiki/Crystal_plasticity",
+    "retrieved_at": "2026-10-06T12:08:55.187320+00:00",
+    "retriever_module": "research.wikipedia",
+    "content_type": "text/html",
+    "title": "Crystal plasticity",
+    "authors": [
+      "Wikipedia Contributors"
+    ],
+    "metadata": {
+      "abstract": "formulations of <span class=\"searchmatch\">crystal</span> <span class=\"searchmatch\">plasticity</span> are the one based on the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> known as <span class=\"searchmatch\">Crystal</span> <span class=\"searchmatch\">Plasticity</span> <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">Element</span> <span class=\"searchmatch\">Method</span> (CPFEM), which is",
+      "word_count": 437
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_crystal_plasticity.txt",
+    "status": "parsed_full_text",
+    "provider": "wikipedia",
+    "source_type": "wikipedia",
+    "query_context": "crystal plasticity finite element method",
+    "query_contexts": [
+      "Crystal Plasticity Finite Element Method",
+      "crystal plasticity finite element method",
+      "crystal plasticity finite element method CPFEM"
+    ],
+    "provider_names": [
+      "wikipedia"
+    ],
+    "source_types": [
+      "wikipedia"
+    ],
+    "ranking": {
+      "score": 0.750865,
+      "lexical": 0.839445,
+      "source_quality": 0.55,
+      "section_relevance": 0.677259,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "crystal plasticity finite element method",
+      "query_index": 5,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.1375,
+        "finite element method practical implementation modeling rules": 0.1375,
+        "finite element method verification validation numerical stability": 0.1375,
+        "finite element fft methods": 0.1375,
+        "stretched grid method fem": 0.1375,
+        "crystal plasticity finite element method": 0.750865
+      }
+    }
+  },
+  {
     "source_id": "wiki_virtual_method_table",
     "url": "https://en.wikipedia.org/wiki/Virtual_method_table",
     "retrieved_at": "2026-10-06T07:10:39.275698+00:00",
@@ -438,27 +492,26 @@
     }
   },
   {
-    "source_id": "wiki_crystal_plasticity",
-    "url": "https://en.wikipedia.org/wiki/Crystal_plasticity",
-    "retrieved_at": "2026-10-06T08:08:54.099449+00:00",
+    "source_id": "wiki_stretched_grid_method",
+    "url": "https://en.wikipedia.org/wiki/Stretched_grid_method",
+    "retrieved_at": "2026-10-06T12:08:55.187320+00:00",
     "retriever_module": "research.wikipedia",
     "content_type": "text/html",
-    "title": "Crystal plasticity",
+    "title": "Stretched grid method",
     "authors": [
       "Wikipedia Contributors"
     ],
     "metadata": {
-      "abstract": "formulations of <span class=\"searchmatch\">crystal</span> <span class=\"searchmatch\">plasticity</span> are the one based on the <span class=\"searchmatch\">finite</span> <span class=\"searchmatch\">element</span> <span class=\"searchmatch\">method</span> known as <span class=\"searchmatch\">Crystal</span> <span class=\"searchmatch\">Plasticity</span> <span class=\"searchmatch\">Finite</span> <span class=\"searchmatch\">Element</span> <span class=\"searchmatch\">Method</span> (<span class=\"searchmatch\">CPFEM</span",
-      "word_count": 437
+      "abstract": "elastic <span class=\"searchmatch\">grid</span> behavior. In particular, meteorologists use the <span class=\"searchmatch\">stretched</span> <span class=\"searchmatch\">grid</span> <span class=\"searchmatch\">method</span> for weather prediction and engineers use the <span class=\"searchmatch\">stretched</span> <span class=\"searchmatch\">grid</span> <span class=\"searchmatch\">method</span> to design",
+      "word_count": 2817
     },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_crystal_plasticity.txt",
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/wiki_stretched_grid_method.txt",
     "status": "parsed_full_text",
     "provider": "wikipedia",
     "source_type": "wikipedia",
-    "query_context": "crystal plasticity finite element method CPFEM",
+    "query_context": "stretched grid method fem",
     "query_contexts": [
-      "Crystal Plasticity Finite Element Method",
-      "crystal plasticity finite element method CPFEM"
+      "stretched grid method fem"
     ],
     "provider_names": [
       "wikipedia"
@@ -478,15 +531,15 @@
         "section_relevance": 0.1,
         "citation_support": 0.0
       },
-      "best_query": "crystal plasticity finite element method CPFEM",
-      "query_index": 5,
+      "best_query": "stretched grid method fem",
+      "query_index": 4,
       "per_query_scores": {
         "finite element method mathematical foundation weak form Galerkin method": 0.1375,
         "finite element method practical implementation modeling rules": 0.1375,
         "finite element method verification validation numerical stability": 0.1375,
-        "Galerkin method stepped structures finite element analysis": 0.1375,
-        "hpk-FEM finite element method": 0.1375,
-        "crystal plasticity finite element method CPFEM": 0.54641
+        "finite element fft methods": 0.1375,
+        "stretched grid method fem": 0.54641,
+        "crystal plasticity finite element method": 0.1375
       }
     }
   },
@@ -550,6 +603,63 @@
     }
   },
   {
+    "source_id": "arxiv_2210.16907v1",
+    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
+    "retrieved_at": "2026-10-06T12:08:55.187320+00:00",
+    "retriever_module": "research.arxiv_fulltext",
+    "provider": "arxiv",
+    "source_type": "preprint",
+    "content_type": "application/pdf",
+    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
+    "authors": [
+      "Dan Li",
+      "Chunmei Wang",
+      "Junping Wang"
+    ],
+    "metadata": {
+      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
+      "published": "2022-10-30T18:14:18Z",
+      "page_count": 0,
+      "word_count": 9773
+    },
+    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
+    "full_text_available": true,
+    "status": "cached_full_text",
+    "query_context": "finite element method mathematical foundation weak form Galerkin method",
+    "query_contexts": [
+      "finite element method mathematical foundation weak form Galerkin method"
+    ],
+    "provider_names": [
+      "arxiv"
+    ],
+    "source_types": [
+      "preprint"
+    ],
+    "ranking": {
+      "score": 0.519183,
+      "lexical": 0.419722,
+      "source_quality": 0.85,
+      "section_relevance": 0.338629,
+      "citation_support": 0.0,
+      "weights": {
+        "lexical": 0.65,
+        "source_quality": 0.25,
+        "section_relevance": 0.1,
+        "citation_support": 0.0
+      },
+      "best_query": "finite element fft methods",
+      "query_index": 3,
+      "per_query_scores": {
+        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
+        "finite element method practical implementation modeling rules": 0.2125,
+        "finite element method verification validation numerical stability": 0.2125,
+        "finite element fft methods": 0.519183,
+        "stretched grid method fem": 0.2125,
+        "crystal plasticity finite element method": 0.2125
+      }
+    }
+  },
+  {
     "source_id": "arxiv_2412.17631v1",
     "url": "https://arxiv.org/pdf/2412.17631v1.pdf",
     "retrieved_at": "2026-10-06T06:54:30.680373+00:00",
@@ -608,7 +718,7 @@
   {
     "source_id": "arxiv_cs_0609119v2",
     "url": "https://arxiv.org/pdf/cs/0609119v2.pdf",
-    "retrieved_at": "2026-10-06T08:08:54.099449+00:00",
+    "retrieved_at": "2026-10-06T12:08:55.187320+00:00",
     "retriever_module": "research.arxiv_fulltext",
     "provider": "arxiv",
     "source_type": "preprint",
@@ -654,66 +764,9 @@
         "finite element method mathematical foundation weak form Galerkin method": 0.2125,
         "finite element method practical implementation modeling rules": 0.2125,
         "finite element method verification validation numerical stability": 0.519183,
-        "Galerkin method stepped structures finite element analysis": 0.2125,
-        "hpk-FEM finite element method": 0.2125,
-        "crystal plasticity finite element method CPFEM": 0.2125
-      }
-    }
-  },
-  {
-    "source_id": "arxiv_2210.16907v1",
-    "url": "https://arxiv.org/pdf/2210.16907v1.pdf",
-    "retrieved_at": "2026-10-06T08:08:54.099449+00:00",
-    "retriever_module": "research.arxiv_fulltext",
-    "provider": "arxiv",
-    "source_type": "preprint",
-    "content_type": "application/pdf",
-    "title": "Curved Elements in Weak Galerkin Finite Element Methods",
-    "authors": [
-      "Dan Li",
-      "Chunmei Wang",
-      "Junping Wang"
-    ],
-    "metadata": {
-      "abstract": "A mathematical analysis is established for the weak Galerkin finite element methods for the Poisson equation with Dirichlet boundary value when the curved elements are involved on the interior edges of the finite element partition or/and on the boundary of the whole domain in two dimensions. The optimal orders of error estimates for the weak Galerkin approximations in both the $H^1$-norm and the $L^2$-norm are established. Numerical results are reported to demonstrate the performance of the weak Galerkin methods on general curved polygonal partitions.",
-      "published": "2022-10-30T18:14:18Z",
-      "page_count": 0,
-      "word_count": 9773
-    },
-    "full_text_path": "/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/output/raw_text/arxiv_2210.16907v1.txt",
-    "full_text_available": true,
-    "status": "cached_full_text",
-    "query_context": "finite element method mathematical foundation weak form Galerkin method",
-    "query_contexts": [
-      "finite element method mathematical foundation weak form Galerkin method"
-    ],
-    "provider_names": [
-      "arxiv"
-    ],
-    "source_types": [
-      "preprint"
-    ],
-    "ranking": {
-      "score": 0.457846,
-      "lexical": 0.335778,
-      "source_quality": 0.85,
-      "section_relevance": 0.270904,
-      "citation_support": 0.0,
-      "weights": {
-        "lexical": 0.65,
-        "source_quality": 0.25,
-        "section_relevance": 0.1,
-        "citation_support": 0.0
-      },
-      "best_query": "finite element method mathematical foundation weak form Galerkin method",
-      "query_index": 0,
-      "per_query_scores": {
-        "finite element method mathematical foundation weak form Galerkin method": 0.457846,
-        "finite element method practical implementation modeling rules": 0.2125,
-        "finite element method verification validation numerical stability": 0.2125,
-        "Galerkin method stepped structures finite element analysis": 0.365841,
-        "hpk-FEM finite element method": 0.2125,
-        "crystal plasticity finite element method CPFEM": 0.2125
+        "finite element fft methods": 0.2125,
+        "stretched grid method fem": 0.2125,
+        "crystal plasticity finite element method": 0.2125
       }
     }
   },

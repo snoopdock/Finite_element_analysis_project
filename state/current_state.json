@@ -2,9 +2,9 @@
   "schema_version": 6,
   "topic": "Finite Element Method Theory Implementation and Modeling Rules",
   "objective": "Produce a comprehensive technical guideline explaining how the Finite Element Method works\nincluding mathematical foundation, step-by-step procedure, and rules for modeling physical phenomena.\n",
-  "cycle": 5,
-  "iteration": 5,
-  "last_run": "2026-10-06T11:39:29.623670+00:00",
+  "cycle": 6,
+  "iteration": 6,
+  "last_run": "2026-10-06T12:09:53.391692+00:00",
   "last_run_status": "partial",
   "knowledge_base": {
     "concepts": [
@@ -43,6 +43,24 @@
           "wiki_spectral_element_method"
         ],
         "concept_id": "b2c851e5-29a8-4dc6-871c-06e85c47166e"
+      },
+      {
+        "name": "Crystal Plasticity Finite Element Method (CPFEM)",
+        "explanation": "CPFEM is a mesoscale computational technique that models polycrystalline materials by incorporating crystallographic anisotropy. It accounts for deformation mechanisms like slip, twinning, and phase transformations. The method uses orientation maps (e.g., Bunge Euler angles) to transform tensors between crystal and sample reference frames. Slip systems are defined by Schmid tensors, which relate Burgers vectors and slip plane normals to resolved shear stress calculations.",
+        "mathematical_formulation": "Schmid tensor: $ \\mathbf{M} = \\mathbf{b} \\otimes \\mathbf{n} $, where $ \\mathbf{b} $ is the Burgers vector and $ \\mathbf{n} $ is the slip plane normal.",
+        "source_ids": [
+          "wiki_crystal_plasticity"
+        ],
+        "concept_id": "4ffa4b90-c945-46a0-a9b8-c19499f4559d"
+      },
+      {
+        "name": "Mesh Refinement via Stretched Grid Method (SGM)",
+        "explanation": "SGM generates pseudo-regular meshes by minimizing potential energy associated with grid segment lengths. It repositions nodes to reduce distortion in arbitrary triangle grids. The method uses a potential energy functional proportional to the sum of squared segment lengths. It is a one-step technique for improving mesh quality in FEM and BEM applications.",
+        "mathematical_formulation": "Potential energy: $ \\Pi = D \\sum_{j=1}^{n} R_j^2 $, where $ D $ is a constant, $ R_j $ is the length of segment $ j $, and $ n $ is the total number of segments.",
+        "source_ids": [
+          "wiki_stretched_grid_method"
+        ],
+        "concept_id": "a54465f1-5859-4e59-9586-587b9f5ed315"
       }
     ],
     "procedures": [
@@ -79,6 +97,31 @@
           "wiki_spectral_element_method"
         ],
         "proposition_id": "ab4b4be9-c25c-4340-91c7-c93efb89d10b"
+      },
+      {
+        "step_number": 1,
+        "title": "Discretization of the Domain",
+        "description": "The domain is divided into finite elements (e.g., triangles or tetrahedra) to approximate the continuous problem. For CPFEM, grains are represented with orientation maps to capture crystallographic anisotropy. In SGM, an initial distorted mesh is transformed into a pseudo-regular grid by minimizing potential energy. This step ensures compatibility between material microstructure and numerical approximations.",
+        "equations": [
+          "\\Pi = D \\sum_{j=1}^{n} R_j^2"
+        ],
+        "source_ids": [
+          "wiki_crystal_plasticity",
+          "wiki_stretched_grid_method"
+        ],
+        "proposition_id": "eea78e16-ffaa-476d-81ab-9e4ff5bb8a1f"
+      },
+      {
+        "step_number": 2,
+        "title": "Formulation of Weak Forms",
+        "description": "Governing partial differential equations are converted into weak forms by multiplying with test functions and integrating over the domain. For CPFEM, this involves slip system compatibility and stress-strain relationships. In coupled FVM-BEM methods, conservation laws and boundary conditions are enforced through integral equations. This step enables numerical solution via linear algebra techniques.",
+        "equations": [
+          "\\text{Weak form: } \\int_{\\Omega} (\\mathbf{A} \\nabla u \\cdot \\nabla v + \\mathbf{b} \\cdot \\nabla u v + c u v) \\, d\\Omega = \\int_{\\Omega} f v \\, d\\Omega"
+        ],
+        "source_ids": [
+          "arxiv_1509.00440v1"
+        ],
+        "proposition_id": "122f58ef-2585-42d9-b410-77b3ab243fa6"
       }
     ],
     "equations": [
@@ -126,6 +169,24 @@
           "wiki_babu_ka_lax_milgram_theorem"
         ],
         "proposition_id": "9b1de495-7377-41ed-a0a6-1ad646d30d50"
+      },
+      {
+        "name": "Potential Energy Minimization in SGM",
+        "latex": "\\Pi = D \\sum_{j=1}^{n} R_j^2",
+        "explanation": "This equation defines the potential energy of a distorted mesh, where $ D $ is a proportionality constant, $ R_j $ is the length of the $ j $-th segment, and $ n $ is the total number of segments. Minimizing $ \\Pi $ reduces element distortion, producing high-quality meshes for FEM analysis.",
+        "source_ids": [
+          "wiki_stretched_grid_method"
+        ],
+        "proposition_id": "6ae6efad-f093-4939-a91f-e0505e0a6df3"
+      },
+      {
+        "name": "Governing Equation for Coupled FVM-BEM",
+        "latex": "\\text{div}(-\\mathbf{A} \\nabla u + \\mathbf{b} u) + c u = f \\quad \\text{in } \\Omega",
+        "explanation": "This equation models flow and transport in a bounded domain $ \\Omega $. $ \\mathbf{A} $ is a symmetric diffusion matrix, $ \\mathbf{b} $ is a velocity field, $ c $ is a reaction term, and $ f $ is a source term. It is coupled with an exterior domain problem via boundary conditions.",
+        "source_ids": [
+          "arxiv_1509.00440v1"
+        ],
+        "proposition_id": "96e4c02b-d036-45e0-8ac5-5af2d20bff74"
       }
     ],
     "rules": [
@@ -144,6 +205,22 @@
           "wiki_spectral_element_method"
         ],
         "proposition_id": "0b17b286-f51f-489c-99da-805ccd88ce10"
+      },
+      {
+        "rule": "Mesh Quality Dependency",
+        "explanation": "FEM accuracy heavily depends on mesh quality. Distorted elements lead to numerical errors, necessitating techniques like SGM for refinement. Poor mesh quality can cause ill-conditioned stiffness matrices and inaccurate stress-strain predictions.",
+        "source_ids": [
+          "wiki_stretched_grid_method"
+        ],
+        "proposition_id": "d15c07fb-2b09-479f-a873-1d3e02581b8b"
+      },
+      {
+        "rule": "Constitutive Law Consistency",
+        "explanation": "Material behavior must align with underlying physical laws (e.g., Schmid's law for slip). Violating these rules leads to unphysical deformation predictions. CPFEM requires consistent tensor transformations between crystal and sample frames to maintain slip system validity.",
+        "source_ids": [
+          "wiki_crystal_plasticity"
+        ],
+        "proposition_id": "f16a8cb4-1c86-4658-aa24-a702e7a396bb"
       }
     ]
   },
@@ -188,6 +265,28 @@
         "type": "concept",
         "source_ids": [
           "wiki_spectral_element_method"
+        ],
+        "status": "active",
+        "parent_concept_ids": [],
+        "aliases": []
+      },
+      "4ffa4b90-c945-46a0-a9b8-c19499f4559d": {
+        "concept_id": "4ffa4b90-c945-46a0-a9b8-c19499f4559d",
+        "name": "Crystal Plasticity Finite Element Method (CPFEM)",
+        "type": "concept",
+        "source_ids": [
+          "wiki_crystal_plasticity"
+        ],
+        "status": "active",
+        "parent_concept_ids": [],
+        "aliases": []
+      },
+      "a54465f1-5859-4e59-9586-587b9f5ed315": {
+        "concept_id": "a54465f1-5859-4e59-9586-587b9f5ed315",
+        "name": "Mesh Refinement via Stretched Grid Method (SGM)",
+        "type": "concept",
+        "source_ids": [
+          "wiki_stretched_grid_method"
         ],
         "status": "active",
         "parent_concept_ids": [],
@@ -557,6 +656,223 @@
         "approximation": [],
         "scope": "",
         "scope_notes": ""
+      },
+      "6ae6efad-f093-4939-a91f-e0505e0a6df3": {
+        "proposition_id": "6ae6efad-f093-4939-a91f-e0505e0a6df3",
+        "statement": "Potential Energy Minimization in SGM",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_stretched_grid_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "equation",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "96e4c02b-d036-45e0-8ac5-5af2d20bff74": {
+        "proposition_id": "96e4c02b-d036-45e0-8ac5-5af2d20bff74",
+        "statement": "Governing Equation for Coupled FVM-BEM",
+        "concept_ids": [],
+        "source_ids": [
+          "arxiv_1509.00440v1"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "equation",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "d15c07fb-2b09-479f-a873-1d3e02581b8b": {
+        "proposition_id": "d15c07fb-2b09-479f-a873-1d3e02581b8b",
+        "statement": "Mesh Quality Dependency",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_stretched_grid_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "rule",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "f16a8cb4-1c86-4658-aa24-a702e7a396bb": {
+        "proposition_id": "f16a8cb4-1c86-4658-aa24-a702e7a396bb",
+        "statement": "Constitutive Law Consistency",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_crystal_plasticity"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "rule",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "eea78e16-ffaa-476d-81ab-9e4ff5bb8a1f": {
+        "proposition_id": "eea78e16-ffaa-476d-81ab-9e4ff5bb8a1f",
+        "statement": "Discretization of the Domain",
+        "concept_ids": [],
+        "source_ids": [
+          "wiki_crystal_plasticity",
+          "wiki_stretched_grid_method"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "procedure",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
+      },
+      "122f58ef-2585-42d9-b410-77b3ab243fa6": {
+        "proposition_id": "122f58ef-2585-42d9-b410-77b3ab243fa6",
+        "statement": "Formulation of Weak Forms",
+        "concept_ids": [],
+        "source_ids": [
+          "arxiv_1509.00440v1"
+        ],
+        "provenance_kind": "legacy_knowledge_base",
+        "knowledge_item_type": "procedure",
+        "status": "proposed",
+        "context": {
+          "framework": "",
+          "assumptions": [],
+          "definitions": [],
+          "conditions": [],
+          "domain_of_validity": [],
+          "parameters": {},
+          "boundary_conditions": [],
+          "initial_conditions": [],
+          "method": "",
+          "approximation": [],
+          "scope": ""
+        },
+        "framework": "",
+        "assumptions": [],
+        "conditions": [],
+        "domain_of_validity": [],
+        "definitions": [],
+        "parameters": [],
+        "boundary_conditions": [],
+        "initial_conditions": [],
+        "method": "",
+        "approximation": [],
+        "scope": "",
+        "scope_notes": ""
       }
     },
     "relationships": {},
@@ -596,6 +912,24 @@
         "type": "concept",
         "source_ids": [
           "wiki_spectral_element_method"
+        ]
+      },
+      {
+        "event": "concept_discovered",
+        "concept_id": "4ffa4b90-c945-46a0-a9b8-c19499f4559d",
+        "name": "Crystal Plasticity Finite Element Method (CPFEM)",
+        "type": "concept",
+        "source_ids": [
+          "wiki_crystal_plasticity"
+        ]
+      },
+      {
+        "event": "concept_discovered",
+        "concept_id": "a54465f1-5859-4e59-9586-587b9f5ed315",
+        "name": "Mesh Refinement via Stretched Grid Method (SGM)",
+        "type": "concept",
+        "source_ids": [
+          "wiki_stretched_grid_method"
         ]
       }
     ],
@@ -689,6 +1023,61 @@
           "wiki_babu_ka_lax_milgram_theorem"
         ],
         "framework": ""
+      },
+      {
+        "proposition_id": "122f58ef-2585-42d9-b410-77b3ab243fa6",
+        "event": "discovered",
+        "fingerprint": "4b5e9e64eea8b473",
+        "source_ids": [
+          "arxiv_1509.00440v1"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "6ae6efad-f093-4939-a91f-e0505e0a6df3",
+        "event": "discovered",
+        "fingerprint": "01691adcee8b02a9",
+        "source_ids": [
+          "wiki_stretched_grid_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "96e4c02b-d036-45e0-8ac5-5af2d20bff74",
+        "event": "discovered",
+        "fingerprint": "acd5c6c6c346db80",
+        "source_ids": [
+          "arxiv_1509.00440v1"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "d15c07fb-2b09-479f-a873-1d3e02581b8b",
+        "event": "discovered",
+        "fingerprint": "e8ddf6e38450519c",
+        "source_ids": [
+          "wiki_stretched_grid_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "eea78e16-ffaa-476d-81ab-9e4ff5bb8a1f",
+        "event": "discovered",
+        "fingerprint": "e3c7fd9a449382b2",
+        "source_ids": [
+          "wiki_crystal_plasticity",
+          "wiki_stretched_grid_method"
+        ],
+        "framework": ""
+      },
+      {
+        "proposition_id": "f16a8cb4-1c86-4658-aa24-a702e7a396bb",
+        "event": "discovered",
+        "fingerprint": "a8207804e43a0627",
+        "source_ids": [
+          "wiki_crystal_plasticity"
+        ],
+        "framework": ""
       }
     ]
   },
@@ -750,6 +1139,28 @@
           "wiki_babu_ka_lax_milgram_theorem"
         ],
         "status": "candidate"
+      },
+      "EQC-391148f3e2787114106a": {
+        "candidate_id": "EQC-391148f3e2787114106a",
+        "fingerprint": "391148f3e2787114106a8355e117605ba9d96994309838fe08a57dca0176c485",
+        "name": "Potential Energy Minimization in SGM",
+        "expression": "\\Pi = D \\sum_{j=1}^{n} R_j^2",
+        "meaning": "This equation defines the potential energy of a distorted mesh, where $ D $ is a proportionality constant, $ R_j $ is the length of the $ j $-th segment, and $ n $ is the total number of segments. Minimizing $ \\Pi $ reduces element distortion, producing high-quality meshes for FEM analysis.",
+        "source_ids": [
+          "wiki_stretched_grid_method"
+        ],
+        "status": "candidate"
+      },
+      "EQC-43043b6cd7e7e90c6d0d": {
+        "candidate_id": "EQC-43043b6cd7e7e90c6d0d",
+        "fingerprint": "43043b6cd7e7e90c6d0da15f06665e287ac6a2939386e8608ec042764bf5378b",
+        "name": "Governing Equation for Coupled FVM-BEM",
+        "expression": "\\text{div}(-\\mathbf{A} \\nabla u + \\mathbf{b} u) + c u = f \\quad \\text{in } \\Omega",
+        "meaning": "This equation models flow and transport in a bounded domain $ \\Omega $. $ \\mathbf{A} $ is a symmetric diffusion matrix, $ \\mathbf{b} $ is a velocity field, $ c $ is a reaction term, and $ f $ is a source term. It is coupled with an exterior domain problem via boundary conditions.",
+        "source_ids": [
+          "arxiv_1509.00440v1"
+        ],
+        "status": "candidate"
       }
     },
     "equations": {}
@@ -758,18 +1169,15 @@
   "sections": [
     {
       "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
-      "content": "The weak formulation of a partial differential equation is a crucial step in the finite element method, as it transforms the PDE into an integral form by multiplying with test functions and integrating over the domain. Basis functions are selected to approximate the solution within each element, often using polynomials, and must satisfy continuity requirements across element boundaries. The weak form ensures compatibility with numerical integration and allows for the use of variational principles. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations, and is central to the finite element method as it enables the use of variational principles and ensures compatibility with numerical discretization. The weak form is typically expressed as a bilinear equation involving a bilinear form $B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V$, where $B(u, v)$ is a bilinear form representing the inner product of the differential operator and test functions $v$, $f$ is the source term, and $V$ is the test function space.\n\nThe coercivity condition, mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$ [wiki_babu_ka_lax_milgram_theorem], is a critical property that ensures the existence and uniqueness of the weak solution. This condition guarantees that the bilinear form $B$ is bounded below by a positive constant $c$ times the norm squared of $u$. In the context of the finite element method, coercivity is essential for the stability of numerical methods, as it prevents the system of equations from being ill-posed or numerically unstable [wiki_babu_ka_lax_milgram_theorem].\n\nThe variational equation, derived from the weak form of the partial differential equation, is a fundamental concept in the finite element method. It is expressed as $a(u, v) = L(v)$, where $u$ is the solution in the Hilbert space $V$, $v$ is a test function, and $L(v)$ is a bounded linear functional [wiki_c_a_s_lemma]. This equation represents the weak form of the PDE, where the bilinear form $a(u, v)$ encodes the inner product of the differential operator and test functions $v$. The coercivity of the bilinear form $a$ is a critical property that ensures the existence and uniqueness of the solution to the variational problem, and is mathematically expressed as $a(v, v) \\geq \\alpha \\|v\\|^2$ [wiki_c_a_s_lemma]. This property is essential for the finite element method, as it guarantees the stability and convergence of the numerical solution.",
+      "content": "The weak formulation of a partial differential equation is a crucial step in the finite element method, where the strong form is converted into an integral form by multiplying with test functions and integrating over the domain. Basis functions are selected to approximate the solution within each element, often using polynomials. These basis functions must satisfy continuity requirements across element boundaries. The weak form ensures compatibility with numerical integration and allows for the use of variational principles. According to the Babuška–Lax–Milgram theorem, the weak form is mathematically expressed as $B(u, v) = \\langle f, v \\rangle$ for all $v \\in V$, where $B(u, v)$ is a bilinear form representing the inner product of the differential operator and test functions $v$, $f$ is the source term, and $V$ is the test function space. The coercivity of the bilinear form $B(u, v)$ is a critical property that ensures the existence and uniqueness of the weak solution, as mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2$ for some $c > 0$.\n\nThe coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution in finite element analysis. This property is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2$ for some $c > 0$. According to Céa's lemma, a bilinear form $a$ satisfying continuity $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ and coercivity $a(v, v) \\geq \\alpha \\|v\\|^2$ ensures the existence and uniqueness of the solution to the variational problem. This property is also crucial for the stability of numerical methods, as it guarantees that the system of equations is well-posed and numerically stable.\n\nCéa's Lemma provides a framework for proving error estimates in the finite element method by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. It ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form. Specifically, for a bilinear form $a: V \\times V \\rightarrow \\mathbb{R}$ satisfying continuity $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ and coercivity $a(v, v) \\geq \\alpha \\|v\\|^2$, and a bounded linear functional $L$, the solution $u \\in V$ satisfies $a(u, v) = L(v)$ for all $v \\in V$. The finite-dimensional approximation $u_h \\in V_h$ satisfies $a(u_h, v_h) = L(v_h)$ for all $v_h \\in V_h$.",
       "key_equations": [
-        "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
+        "B(u, v) = \\langle f, v \\rangle",
+        "v \\in V",
         "B(u, v)",
         "v",
-        "f",
-        "V"
+        "f"
       ],
-      "citations_used": [
-        "wiki_babu_ka_lax_milgram_theorem",
-        "wiki_c_a_s_lemma"
-      ],
+      "citations_used": [],
       "section_id": "cd8ada70-e71a-4090-8980-b998d063463a",
       "parent_section_ids": [],
       "generated_from": "writer",
@@ -777,18 +1185,15 @@
     },
     {
       "title": "The Finite Element Procedure: The Variational Equation and Bilinear Form Properties",
-      "content": "The properties of the variational equation and bilinear form in the finite element procedure are crucial for ensuring the stability and uniqueness of the weak solution. The coercivity of a bilinear form $a$ is a critical property that ensures the existence and uniqueness of the weak solution, and is mathematically expressed as $|a(v, v)| \\geq \\alpha \\|v\\|^2$ [wiki_c_a_s_lemma]. This property is a fundamental requirement for the finite element method, as it guarantees that the bilinear form is positive definite. Furthermore, the continuity of a bilinear form $a$ is also essential, and is mathematically expressed as $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ [wiki_c_a_s_lemma]. This property ensures that the bilinear form does not grow unbounded with respect to the input functions, which is a critical requirement for the stability of the finite element method.\n\nThe weak formulation is a crucial step in the finite element procedure, transforming the strong form of a partial differential equation into an integral form by multiplying with test functions and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The weak form is typically expressed as a bilinear equation involving a bilinear form $B(u, v)$, a source term $f$, and a test function space $V$. The weak form equation is given by $B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V$ [wiki_babu_ka_lax_milgram_theorem]. The coercivity of the bilinear form $a$ is a critical property that ensures the existence and uniqueness of the weak solution, and is mathematically expressed as $a(v, v) \\geq \\alpha \\|v\\|^2$ [wiki_c_a_s_lemma].",
+      "content": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution in finite element analysis. This property is mathematically expressed as $|a(v, v)| \\geq \\alpha \\|v\\|^2$, where $\\alpha$ is a positive constant. The coercivity of a bilinear form is a direct consequence of the weak formulation of a partial differential equation, which transforms the PDE into an integral form by multiplying with a test function and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The weak form is typically expressed as a bilinear equation involving a bilinear form $B(u, v)$, where $u$ is the solution and $v$ is a test function. The coercivity of the bilinear form $a$ ensures that the solution to the variational equation is unique, which is a fundamental requirement for the finite element method.\n\nThe weak form equation is derived from the variational equation, which represents the weak form of the partial differential equation. This equation is given by $B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V$, where $B(u, v)$ is a bilinear form representing the inner product of the differential operator and test functions $v$, $f$ is the source term, and $V$ is the test function space. The weak form equation is a crucial step in the finite element method, as it transforms the PDE into an integral form by multiplying with a test function and integrating over the domain, allowing for piecewise continuous approximations. This approach ensures compatibility with numerical discretization and enables the use of variational principles.\n\nCéa's Lemma provides a framework for establishing error estimates for the finite element method by relating the exact solution of a variational problem to its finite-dimensional approximation. This fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form. Specifically, Céa's Lemma states that if the bilinear form $a$ satisfies continuity $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ and coercivity $a(v, v) \\geq \\alpha \\|v\\|^2$, and a bounded linear functional $L$ is given, then the solution $u \\in V$ satisfies $a(u, v) = L(v)$ for all $v \\in V$. The finite-dimensional approximation $u_h \\in V_h$ satisfies $a(u_h, v_h) = L(v_h)$ for all $v_h \\in V_h$. This framework enables the derivation of error estimates for the finite element method, which is essential for ensuring the accuracy and reliability of numerical simulations.",
       "key_equations": [
-        "a",
         "|a(v, v)| \\geq \\alpha \\|v\\|^2",
-        "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
+        "\\alpha",
         "B(u, v)",
-        "f"
+        "u",
+        "v"
       ],
-      "citations_used": [
-        "wiki_babu_ka_lax_milgram_theorem",
-        "wiki_c_a_s_lemma"
-      ],
+      "citations_used": [],
       "section_id": "e2697cfa-e3af-46f2-a1f8-6858982e609c",
       "parent_section_ids": [
         "6f432c39-20b9-432f-a6aa-35ed71eef6ea"
@@ -800,7 +1205,7 @@
     },
     {
       "title": "The Finite Element Procedure: Céa's Lemma and Convergence Conditions",
-      "content": "Céa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, Céa's Lemma states that for a bilinear form $a: V \\times V \\rightarrow \\mathbb{R}$ satisfying continuity $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ and coercivity $a(v, v) \\geq \\alpha \\|v\\|^2$, and a bounded linear functional $L$, the solution $u \\in V$ satisfies $a(u, v) = L(v)$ for all $v \\in V$. The finite-dimensional approximation $u_h \\in V_h$ satisfies $a(u_h, v_h) = L(v_h)$ for all $v_h \\in V_h$ [wiki_c_a_s_lemma]. This result ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form.\n\nThe convergence of the finite element procedure relies on the coercivity and continuity of the bilinear form. Coercivity, as expressed by the inequality $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$ [wiki_babu_ka_lax_milgram_theorem], ensures the existence and uniqueness of the weak solution, a critical property for numerical methods. Continuity, defined by the equation $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ [wiki_c_a_s_lemma], guarantees that the bilinear form does not grow unbounded with respect to the input functions. These conditions, combined with the properties of Hilbert spaces and bounded linear operators, enable the application of Céa's Lemma, which provides a framework for proving error estimates and ensuring the convergence of the finite element solution.\n\nThe weak formulation of a partial differential equation is a crucial component of the finite element procedure, as it transforms the PDE into an integral form by multiplying with test functions and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The coercivity of a bilinear form, expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$ [wiki_babu_ka_lax_milgram_theorem], ensures the existence and uniqueness of the weak solution. Céa's Lemma, a fundamental result in the analysis of the finite element method, provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation [wiki_c_a_s_lemma]. The finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form.",
+      "content": "Céa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, it states that for a bilinear form $a: V \\times V \\rightarrow \\mathbb{R}$ satisfying continuity $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ and coercivity $a(v, v) \\geq \\alpha \\|v\\|^2$, and a bounded linear functional $L$, the solution $u \\in V$ satisfies $a(u, v) = L(v)$ for all $v \\in V$. The finite-dimensional approximation $u_h \\in V_h$ satisfies $a(u_h, v_h) = L(v_h)$ for all $v_h \\in V_h$. This result ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form, and boundedness of the linear functional.\n\nThe convergence of the finite element method relies on the coercivity of the bilinear form, which ensures the existence and uniqueness of the weak solution. This property is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$ [wiki_babu_ka_lax_milgram_theorem]. Céa's Lemma provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation [wiki_c_a_s_lemma]. By leveraging the coercivity of the bilinear form, the finite element solution converges to the true solution under appropriate conditions, such as continuity and stability.\n\nThe formulation of weak forms is a crucial step in transforming partial differential equations into integral forms, enabling numerical solution via linear algebra techniques. This is achieved by multiplying the PDE with test functions and integrating over the domain, as described in [arxiv_1509.00440v1]. The resulting weak form is typically expressed as a bilinear equation involving a solution $u$ and a test function $v$, as given by $B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V$. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations, and is central to the finite element method.",
       "key_equations": [
         "a: V \\times V \\rightarrow \\mathbb{R}",
         "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
@@ -809,6 +1214,7 @@
         "u \\in V"
       ],
       "citations_used": [
+        "arxiv_1509.00440v1",
         "wiki_babu_ka_lax_milgram_theorem",
         "wiki_c_a_s_lemma"
       ],
@@ -823,13 +1229,13 @@
     },
     {
       "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Coercivity and Uniqueness of the Weak Solution",
-      "content": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution. This property is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$ [wiki_babu_ka_lax_milgram_theorem]. The coercivity condition guarantees that the bilinear form is bounded below by a positive constant $c$ times the norm squared of $u$, ensuring the uniqueness and stability of the weak solution, critical for numerical methods. In the context of finite element analysis, the properties of bilinear forms play a crucial role in ensuring the stability and uniqueness of the weak solution. Specifically, the coercivity of a bilinear form ensures that the solution to the variational problem is unique and stable, which is essential for the accuracy and reliability of numerical methods.\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, Céa's Lemma states that for a bilinear form $a$ satisfying coercivity $a(v, v) \\geq \\alpha \\|v\\|^2$ and continuity $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, and a bounded linear functional $L$, the solution $u \\in V$ satisfies $a(u, v) = L(v)$ for all $v \\in V$. The finite-dimensional approximation $u_h \\in V_h$ satisfies $a(u_h, v_h) = L(v_h)$ for all $v_h \\in V_h$ [wiki_c_a_s_lemma]. This result ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form.\n\nThe weak formulation and basis functions play a crucial role in the finite element procedure. By multiplying the strong form of the partial differential equation with test functions and integrating over the domain, the weak form is obtained. Basis functions are then selected to approximate the solution within each element, often using polynomials. These basis functions must satisfy continuity requirements across element boundaries. The coercivity of the bilinear form, expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$ [wiki_babu_ka_lax_milgram_theorem], ensures the existence and uniqueness of the weak solution. This property is critical for the stability of numerical methods and is a key condition in the Babuška–Lax–Milgram theorem.",
+      "content": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution. This property is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$ [wiki_babu_ka_lax_milgram_theorem]. The coercivity condition guarantees that the bilinear form is bounded below by a positive constant times the norm squared of the input function, ensuring the uniqueness and stability of the weak solution. This property is essential for the stability of numerical methods and is a key condition in the Babuška–Lax–Milgram theorem.\n\nCéa's Lemma provides a framework for proving error estimates in the finite element method by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, it states that if a bilinear form $a$ satisfies coercivity $a(v, v) \\geq \\alpha \\|v\\|^2$ and continuity $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, and a bounded linear functional $L$ is given, then the solution $u \\in V$ satisfies $a(u, v) = L(v)$ for all $v \\in V$. The finite-dimensional approximation $u_h \\in V_h$ satisfies $a(u_h, v_h) = L(v_h)$ for all $v_h \\in V_h$. This result is critical for establishing the convergence of the finite element method and is a fundamental tool in the analysis of numerical methods for elliptic partial differential equations [wiki_c_a_s_lemma].\n\nThe weak formulation of a partial differential equation is a crucial step in the finite element method, as it transforms the PDE into an integral form by multiplying with test functions and integrating over the domain. Basis functions are selected to approximate the solution within each element, often using polynomials, and must satisfy continuity requirements across element boundaries. The coercivity of a bilinear form, expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$ [wiki_babu_ka_lax_milgram_theorem], ensures the existence and uniqueness of the weak solution, while Céa's lemma provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation [wiki_c_a_s_lemma]. This framework relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators, and is essential for ensuring the stability and uniqueness of the weak solution in the finite element method.",
       "key_equations": [
         "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0",
-        "c",
-        "u",
         "a",
-        "a(v, v) \\geq \\alpha \\|v\\|^2"
+        "a(v, v) \\geq \\alpha \\|v\\|^2",
+        "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
+        "L"
       ],
       "citations_used": [
         "wiki_babu_ka_lax_milgram_theorem",
@@ -846,18 +1252,15 @@
     },
     {
       "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Continuity and Stability of the Finite Element Method",
-      "content": "",
+      "content": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution in finite element analysis. This property is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$, where $B$ is the bilinear form and $u$ is the input function. According to the Babuška–Lax–Milgram theorem, coercivity guarantees that the form is bounded below by a positive multiple of the norm squared of the input function, ensuring the stability of numerical methods. This property is essential for the finite element method, as it ensures that the system of equations is well-posed and numerically stable.\n\nThe continuity of the bilinear form is a critical property that ensures the stability of the finite element method. It is mathematically expressed as $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, where $\\gamma$ is a positive constant. This property is essential for the convergence of the finite element solution to the true solution, as it guarantees that the bilinear form does not grow unbounded with respect to the input functions. The continuity of the bilinear form is a key condition in Céa's Lemma, which provides a framework for proving error estimates in the finite element method. As stated in Céa's Lemma, the continuity of the bilinear form is a necessary condition for the stability and uniqueness of the weak solution, and it plays a crucial role in ensuring the accuracy of the finite element method.\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. According to Céa's Lemma, the solution $u_h \\in V_h$ satisfies $a(u_h, v_h) = L(v_h)$ for all $v_h \\in V_h$, where $a$ is a bilinear form satisfying continuity $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ and coercivity $a(v, v) \\geq \\alpha \\|v\\|^2$. This result ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form.",
       "key_equations": [
         "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0",
-        "a: V \\times V \\rightarrow \\mathbb{R}",
+        "B",
+        "u",
         "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
-        "a(v, v) \\geq \\alpha \\|v\\|^2",
-        "L"
+        "\\gamma"
       ],
-      "citations_used": [
-        "wiki_babu_ka_lax_milgram_theorem",
-        "wiki_c_a_s_lemma"
-      ],
+      "citations_used": [],
       "section_id": "af7144ac-f35e-4938-a21b-64ec68fba6f8",
       "parent_section_ids": [
         "4fd8f0c1-2abd-4412-a41b-4df83c1c081d"
@@ -865,18 +1268,17 @@
       "generated_from": "split",
       "subsection_index": 1,
       "parent_content_reference": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution in finite element analysis. This property is guaranteed by the inequality $a(v, v) \\geq \\alpha \\|v\\|^2$, where $\\alpha$ is a positive constant, as stated in Céa's Lemma [wiki_c_a_s_lemma]. The coercivity condition, $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$, as described in the Babuška–Lax–Milgram theorem [wiki_babu_ka_lax_milgram_theorem], ensures the uniqueness an...",
-      "status": "needs_rewrite",
-      "deduplicate_from_id": "9baf6a07-bf62-4890-a48b-4da300767ddf"
+      "status": "complete"
     },
     {
       "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Céa's Lemma and the Finite Element Method",
-      "content": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution. This property is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$. According to the Babuška–Lax–Milgram theorem, coercivity guarantees that the bilinear form is bounded below by a positive constant, ensuring the uniqueness and stability of the weak solution. This is a fundamental condition for the finite element method, as it ensures that the system of equations is well-posed and numerically stable. As a result, the coercivity of the bilinear form is a crucial property that must be satisfied for the finite element method to produce accurate and reliable results.\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, it assumes the continuity of the bilinear form, expressed as $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, and coercivity, expressed as $a(v, v) \\geq \\alpha \\|v\\|^2$, where $\\gamma$ and $\\alpha$ are positive constants. These properties ensure the existence and uniqueness of the weak solution, critical for numerical methods. According to Céa's Lemma, the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form.\n\nThe continuity of a bilinear form $a$ is a critical property that ensures the stability of the finite element method. It is mathematically expressed as $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, where $\\gamma$ is a positive constant, and $\\|v\\|, \\|w\\|$ are norms of $v$ and $w$ in the Hilbert space $V$. This property is essential for the convergence of the finite element solution to the true solution under appropriate conditions, such as continuity of the bilinear form and boundedness of the linear functional. According to Céa's Lemma, the finite element solution $u_h$ satisfies $a(u_h, v_h) = L(v_h)$ for all $v_h \\in V_h$, where $L$ is a bounded linear functional. The continuity of the bilinear form ensures that the finite element solution converges to the true solution, making it a crucial property in the analysis of the finite element method.",
+      "content": "Céa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. It ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form. The continuity of a bilinear form $a$ is a critical property that ensures the stability of the finite element method. It is mathematically expressed as $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, where $\\gamma$ is a positive constant. The coercivity of a bilinear form $a$ is a critical property that ensures the existence and uniqueness of the weak solution. It is mathematically expressed as $a(v, v) \\geq \\alpha \\|v\\|^2$ for some $\\alpha > 0$. The combination of continuity and coercivity of the bilinear form $B$ ensures the uniqueness and stability of the weak solution, critical for numerical methods. This is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2$ for some $c > 0$.\n\nThe coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution in finite element analysis. This property is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2$ for some $c > 0$, guaranteeing that the form is bounded below by a positive multiple of the norm squared of the input function. As stated in Céa's Lemma, the coercivity of a bilinear form is a key condition in the Babuška–Lax–Milgram theorem, which ensures the stability and uniqueness of the weak solution. Without coercivity, the system of equations may be ill-posed or numerically unstable, leading to non-uniqueness of the solution. Therefore, the coercivity of a bilinear form is a fundamental property that must be satisfied in finite element analysis to ensure the existence and uniqueness of the weak solution.\n\nThe continuity and coercivity of the bilinear form are crucial properties that ensure the stability and uniqueness of the weak solution in finite element analysis. Continuity, as defined by the equation $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, ensures that the bilinear form does not grow unbounded with respect to the input functions. Coercivity, on the other hand, is enforced by the equation $a(v, v) \\geq \\alpha \\|v\\|^2$, guaranteeing that the bilinear form is positive definite and ensuring the existence and uniqueness of the solution to the variational problem. The combination of these two properties, as stated by Céa's Lemma, provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. This framework is essential for ensuring the stability and uniqueness of the weak solution in finite element analysis.",
       "key_equations": [
-        "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0",
+        "a",
         "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
-        "a(v, v) \\geq \\alpha \\|v\\|^2",
         "\\gamma",
-        "\\alpha"
+        "a(v, v) \\geq \\alpha \\|v\\|^2",
+        "\\alpha > 0"
       ],
       "citations_used": [],
       "section_id": "9baf6a07-bf62-4890-a48b-4da300767ddf",
@@ -913,16 +1315,15 @@
     },
     {
       "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Coercivity and Continuity Conditions for Stability",
-      "content": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution. This property is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$ [wiki_babu_ka_lax_milgram_theorem]. The coercivity condition guarantees the uniqueness and stability of the weak solution, which is essential for numerical methods. In the context of finite element analysis, coercivity is a key condition in the Babuška–Lax–Milgram theorem, which provides a framework for proving the existence and uniqueness of weak solutions.\n\nThe continuity conditions play a crucial role in ensuring the stability and convergence of the finite element method. Céa's Lemma, a fundamental result in the analysis of the finite element method, relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators [wiki_c_a_s_lemma]. The coercivity of a bilinear form, mathematically expressed as $a(v, v) \\geq \\alpha \\|v\\|^2$ [wiki_c_a_s_lemma], is a critical property that ensures the existence and uniqueness of the weak solution. Furthermore, the continuity of the bilinear form, defined as $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ [wiki_c_a_s_lemma], guarantees that the bilinear form does not grow unbounded with respect to the input functions. These conditions, in conjunction with Céa's Lemma, ensure that the finite element solution converges to the true solution under appropriate conditions, such as continuity conditions.",
+      "content": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution in finite element analysis. It guarantees that the form is bounded below by a positive multiple of the norm squared of the input function, as expressed by the equation $|B(u, u)| \\geq c\\|u\\|^2$ for some $c > 0$. This property is mathematically expressed as $a(v, v) \\geq \\alpha \\|v\\|^2$ in the context of Céa's lemma, where $\\alpha$ is a positive constant. The coercivity of the bilinear form $a$ ensures that the bilinear form is positive definite, and this property is essential for the stability and uniqueness of the weak solution. In the context of the Babuška–Lax–Milgram theorem, the coercivity of the bilinear form $B$ is a critical condition that guarantees the existence and uniqueness of the weak solution.\n\nCéa's Lemma provides a framework for proving error estimates in finite element analysis by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, it ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form. The continuity of the bilinear form is mathematically expressed as $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, where $\\gamma$ is a positive constant, and $\\|v\\|, \\|w\\|$ are norms of $v$ and $w$ in the Hilbert space $V$. The coercivity of the bilinear form is mathematically expressed as $a(v, v) \\geq \\alpha \\|v\\|^2$, where $\\alpha$ is a positive constant, ensuring that the bilinear form is positive definite.",
       "key_equations": [
-        "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0",
+        "|B(u, u)| \\geq c\\|u\\|^2",
+        "c > 0",
         "a(v, v) \\geq \\alpha \\|v\\|^2",
-        "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+        "\\alpha",
+        "a"
       ],
-      "citations_used": [
-        "wiki_babu_ka_lax_milgram_theorem",
-        "wiki_c_a_s_lemma"
-      ],
+      "citations_used": [],
       "section_id": "e5b16fad-2ea6-439d-aff9-c587265c592c",
       "parent_section_ids": [
         "7c3c19d6-87d5-4b6b-ac7e-c946839e1167"
@@ -954,13 +1355,13 @@
     },
     {
       "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Implications of Bilinear Form Properties for Finite Element Analysis",
-      "content": "In the context of finite element analysis, the properties of bilinear forms play a crucial role in ensuring the stability and uniqueness of the weak solution. Specifically, the coercivity of a bilinear form is a critical property that guarantees the existence and uniqueness of the weak solution. This property is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$. As stated in the Babuška–Lax–Milgram theorem, coercivity of a bilinear form ensures the stability of numerical methods and is a key condition for the existence and uniqueness of the solution to the variational problem [wiki_babu_ka_lax_milgram_theorem]. Furthermore, Céa's lemma provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation, relying on the properties of Hilbert spaces, bilinear forms, and bounded linear operators [wiki_c_a_s_lemma].\n\nThe weak formulation of a partial differential equation is a critical component of the finite element method, as it transforms the equation into an integral form by multiplying with test functions and integrating over the domain. This approach relaxes the differentiability requirements of the solution, allowing for piecewise continuous approximations. The weak form is typically expressed as a bilinear equation involving a bilinear form $B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V$, where $B$ is a bilinear form, $u$ is the solution, and $f$ is the source term. The coercivity of the bilinear form, $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$, ensures the existence and uniqueness of the weak solution. This property is critical for the stability of numerical methods and is a key condition in the Babuška–Lax–Milgram theorem.\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, it requires the continuity of the bilinear form, which is mathematically expressed as $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, and the coercivity of the bilinear form, which is expressed as $a(v, v) \\geq \\alpha \\|v\\|^2$. These properties ensure that the finite element solution converges to the true solution under appropriate conditions, such as continuity and stability of the bilinear form.",
+      "content": "The coercivity of a bilinear form is a critical property that ensures the existence and uniqueness of the weak solution in finite element analysis. This property is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$ [wiki_babu_ka_lax_milgram_theorem]. The coercivity condition guarantees that the bilinear form is bounded below by a positive constant $c$ times the norm squared of $u$, ensuring the uniqueness and stability of the weak solution. This property is essential for numerical methods and is a key condition in the Babuška–Lax–Milgram theorem [wiki_babu_ka_lax_milgram_theorem].\n\nThe continuity of a bilinear form $a$ is a critical property that ensures the stability of the finite element method. It is mathematically expressed as $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, where $\\gamma$ is a positive constant [wiki_c_a_s_lemma]. This property is essential for the finite element method to converge to the exact solution. In fact, Céa's Lemma provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation [wiki_c_a_s_lemma]. The coercivity of a bilinear form is also a critical property that ensures the existence and uniqueness of the weak solution, and it is mathematically expressed as $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$ [wiki_babu_ka_lax_milgram_theorem].\n\nCéa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, for a bilinear form $a: V \\times V \\rightarrow \\mathbb{R}$ satisfying continuity $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ and coercivity $a(v, v) \\geq \\alpha \\|v\\|^2$, and a bounded linear functional $L$, the solution $u \\in V$ satisfies $a(u, v) = L(v)$ for all $v \\in V$. The finite-dimensional approximation $u_h \\in V_h$ satisfies $a(u_h, v_h) = L(v_h)$ for all $v_h \\in V_h$. This result ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form.",
       "key_equations": [
         "|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0",
-        "B(u, v) = \\langle f, v \\rangle \\quad \\text{for all } v \\in V",
-        "B",
+        "c",
         "u",
-        "f"
+        "a",
+        "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
       ],
       "citations_used": [
         "wiki_babu_ka_lax_milgram_theorem",
@@ -977,21 +1378,22 @@
     },
     {
       "title": "Rules for Modeling Physical Phenomena with FEM",
-      "content": "Céa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, Céa's Lemma requires the continuity of the bilinear form, $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ [wiki_c_a_s_lemma], and coercivity, $a(v, v) \\geq \\alpha \\|v\\|^2$ [wiki_c_a_s_lemma]. These properties ensure that the finite element solution converges to the true solution under appropriate conditions, such as continuity and boundedness. The variational equation, $a(u, v) = L(v)$ [wiki_c_a_s_lemma], forms the basis for the finite element discretization, and Céa's Lemma provides a crucial link between the exact and approximate solutions.\n\nThe mathematical properties of bilinear forms play a crucial role in the analysis of the finite element method (FEM). Specifically, the continuity and coercivity of the bilinear form $a$ are essential in ensuring the existence and uniqueness of the solution to the variational problem. The continuity of $a$ is defined by the equation $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, where $\\gamma$ is a positive constant, and the coercivity of $a$ is enforced by the equation $a(v, v) \\geq \\alpha \\|v\\|^2$, where $\\alpha$ is also a positive constant. These properties, combined with the variational equation $a(u, v) = L(v)$, form the foundation for the analysis of the FEM.\n\nThe variational equation, $a(u, v) = L(v)$, represents the weak form of the partial differential equation, where $u$ is the solution in the Hilbert space $V$, $v$ is a test function, and $L(v)$ is a bounded linear functional. This equation forms the basis for the finite element discretization. The coercivity of the bilinear form, $a(v, v) \\geq \\alpha \\|v\\|^2$, guarantees the existence and uniqueness of the solution to the variational problem, as demonstrated by Céa's Lemma, a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations [wiki_c_a_s_lemma]. The continuity of the bilinear form, $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, ensures that the bilinear form does not grow unbounded with respect to the input functions.",
+      "content": "Ensuring constitutive law consistency is crucial in finite element modeling, particularly in crystal plasticity simulations. According to Schmid's law, material behavior must align with underlying physical laws to maintain slip system validity. This is achieved by consistent tensor transformations between the crystal and sample frames. In contrast, the spectral element method combines features of spectral methods and finite elements, offering exponential convergence rates with fewer degrees of freedom. However, it faces challenges in modeling complex geometries. Céa's lemma provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation, ensuring the finite element solution converges to the true solution under appropriate conditions.\n\nOptimizing mesh refinement for high-frequency waves using the stretched grid method is crucial in finite element modeling. The method generates pseudo-regular meshes by minimizing potential energy associated with grid segment lengths, repositioning nodes to reduce distortion in arbitrary triangle grids. This is achieved through the minimization of the potential energy functional, given by $ \\Pi = D \\sum_{j=1}^{n} R_j^2 $, where $ D $ is a constant, $ R_j $ is the length of segment $ j $, and $ n $ is the total number of segments [wiki_stretched_grid_method]. The quality of the mesh significantly affects the accuracy of the finite element method, with distorted elements leading to numerical errors and necessitating techniques like the stretched grid method for refinement [wiki_stretched_grid_method]. In contrast, the spectral element method achieves exponential convergence rates with fewer degrees of freedom, making it particularly effective for problems requiring high precision, such as wave propagation [wiki_spectral_element_method].\n\nApplying Céa's Lemma for error estimates in finite element analysis is a crucial step in ensuring the accuracy of numerical solutions. According to Céa's Lemma, the error between the finite element solution and the exact solution can be bounded by the difference between the bilinear form of the finite element solution and the bilinear form of the exact solution, as expressed by the inequality $|a(u_h, u_h) - a(u, u)| \\leq C h^2 \\|u\\|^2$, where $a(u_h, u_h)$ is the bilinear form of the finite element solution, $a(u, u)$ is the bilinear form of the exact solution, $h$ is the mesh size, and $\\|u\\|$ is the norm of the exact solution. This lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators, and it ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form. The coercivity condition, $|B(u, u)| \\geq c\\|u\\|^2 \\quad \\text{for some } c > 0$, is a critical property that guarantees the uniqueness and stability of the weak solution, as stated by the Babuška-Lax-Milgram theorem.",
       "key_equations": [
-        "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
-        "a(v, v) \\geq \\alpha \\|v\\|^2",
-        "a(u, v) = L(v)",
-        "a",
-        "\\gamma"
+        "\\Pi = D \\sum_{j=1}^{n} R_j^2",
+        "D",
+        "R_j",
+        "j",
+        "n"
       ],
       "citations_used": [
-        "wiki_c_a_s_lemma"
+        "wiki_spectral_element_method",
+        "wiki_stretched_grid_method"
       ],
       "section_id": "9dd02781-acdf-48d5-87ad-6682908a49f5",
+      "parent_section_ids": [],
       "generated_from": "writer",
-      "status": "complete",
-      "parent_section_ids": []
+      "status": "complete"
     },
     {
       "title": "Verification, Validation, and Best Practices",
@@ -1044,20 +1446,25 @@
     "wiki_c_a_s_lemma",
     "wiki_crystal_plasticity",
     "wiki_spectral_element_method",
+    "wiki_stretched_grid_method",
     "wiki_virtual_method_table"
   ],
   "processed_sources_extracted": [
+    "arxiv_1509.00440v1",
     "arxiv_2209.03282v5",
     "arxiv_2210.16907v1",
     "arxiv_2412.17631v1",
     "arxiv_cs_0609119v2",
     "wiki_babu_ka_lax_milgram_theorem",
     "wiki_c_a_s_lemma",
-    "wiki_spectral_element_method"
+    "wiki_crystal_plasticity",
+    "wiki_spectral_element_method",
+    "wiki_stretched_grid_method"
   ],
   "iteration_history_data": {
     "audits": {
       "cd8ada70-e71a-4090-8980-b998d063463a": [
+        true,
         true,
         true,
         true,
@@ -1068,6 +1475,7 @@
         true
       ],
       "9dd02781-acdf-48d5-87ad-6682908a49f5": [
+        true,
         true
       ],
       "8df36f36-bed7-422c-b89b-fa3caa38ecc4": [
@@ -1075,6 +1483,7 @@
         true
       ],
       "d54cf0e1-7368-4c85-b7d9-4002ce3d80ae": [
+        true,
         true,
         true,
         true,
@@ -1087,6 +1496,7 @@
         true,
         true,
         true,
+        true,
         true
       ],
       "0557ce05-c337-4bc8-9d53-8f4f1a870fe6": [
@@ -1095,13 +1505,16 @@
       ],
       "04298acb-7e4f-45a2-884d-5a89b3d58f00": [
         true,
+        true,
         true
       ],
       "af7144ac-f35e-4938-a21b-64ec68fba6f8": [
         true,
+        true,
         true
       ],
       "9baf6a07-bf62-4890-a48b-4da300767ddf": [
+        true,
         true,
         true
       ],
@@ -1109,12 +1522,14 @@
         true
       ],
       "e5b16fad-2ea6-439d-aff9-c587265c592c": [
+        true,
         true
       ],
       "b350665b-0de5-496d-acf4-a034a611087b": [
         true
       ],
       "6ed05cc6-1b84-456f-a603-6ddc760c0d32": [
+        true,
         true
       ],
       "68eb34dc-7184-41c6-b8e0-d93b5c39d8f3": [
@@ -1125,30 +1540,32 @@
       "repetition:cd8ada70-e71a-4090-8980-b998d063463a:6f432c39-20b9-432f-a6aa-35ed71eef6ea": 0,
       "repetition:6f432c39-20b9-432f-a6aa-35ed71eef6ea:9dd02781-acdf-48d5-87ad-6682908a49f5": 0,
       "repetition:9dd02781-acdf-48d5-87ad-6682908a49f5:8df36f36-bed7-422c-b89b-fa3caa38ecc4": 0,
-      "transition:e2697cfa-e3af-46f2-a1f8-6858982e609c:d54cf0e1-7368-4c85-b7d9-4002ce3d80ae": 1,
+      "transition:e2697cfa-e3af-46f2-a1f8-6858982e609c:d54cf0e1-7368-4c85-b7d9-4002ce3d80ae": 0,
       "transition:8df36f36-bed7-422c-b89b-fa3caa38ecc4:0557ce05-c337-4bc8-9d53-8f4f1a870fe6": 0,
       "transition:cd8ada70-e71a-4090-8980-b998d063463a:e2697cfa-e3af-46f2-a1f8-6858982e609c": 0,
       "transition:d54cf0e1-7368-4c85-b7d9-4002ce3d80ae:04298acb-7e4f-45a2-884d-5a89b3d58f00": 0,
-      "repetition:af7144ac-f35e-4938-a21b-64ec68fba6f8:9baf6a07-bf62-4890-a48b-4da300767ddf": 0,
+      "repetition:af7144ac-f35e-4938-a21b-64ec68fba6f8:9baf6a07-bf62-4890-a48b-4da300767ddf": 1,
       "repetition:9baf6a07-bf62-4890-a48b-4da300767ddf:7c3c19d6-87d5-4b6b-ac7e-c946839e1167": 0,
-      "repetition:04298acb-7e4f-45a2-884d-5a89b3d58f00:af7144ac-f35e-4938-a21b-64ec68fba6f8": 1,
-      "transition:6ed05cc6-1b84-456f-a603-6ddc760c0d32:9dd02781-acdf-48d5-87ad-6682908a49f5": 1
+      "repetition:04298acb-7e4f-45a2-884d-5a89b3d58f00:af7144ac-f35e-4938-a21b-64ec68fba6f8": 0,
+      "transition:6ed05cc6-1b84-456f-a603-6ddc760c0d32:9dd02781-acdf-48d5-87ad-6682908a49f5": 2,
+      "transition:9baf6a07-bf62-4890-a48b-4da300767ddf:68eb34dc-7184-41c6-b8e0-d93b5c39d8f3": 1
     },
     "anomaly_counts": {
       "repetition:cd8ada70-e71a-4090-8980-b998d063463a:6f432c39-20b9-432f-a6aa-35ed71eef6ea": 0,
       "repetition:6f432c39-20b9-432f-a6aa-35ed71eef6ea:9dd02781-acdf-48d5-87ad-6682908a49f5": 0,
       "repetition:9dd02781-acdf-48d5-87ad-6682908a49f5:8df36f36-bed7-422c-b89b-fa3caa38ecc4": 0,
       "too_simple:6f432c39-20b9-432f-a6aa-35ed71eef6ea": 0,
-      "transition:e2697cfa-e3af-46f2-a1f8-6858982e609c:d54cf0e1-7368-4c85-b7d9-4002ce3d80ae": 1,
+      "transition:e2697cfa-e3af-46f2-a1f8-6858982e609c:d54cf0e1-7368-4c85-b7d9-4002ce3d80ae": 0,
       "transition:8df36f36-bed7-422c-b89b-fa3caa38ecc4:0557ce05-c337-4bc8-9d53-8f4f1a870fe6": 0,
       "too_simple:4fd8f0c1-2abd-4412-a41b-4df83c1c081d": 0,
       "transition:cd8ada70-e71a-4090-8980-b998d063463a:e2697cfa-e3af-46f2-a1f8-6858982e609c": 0,
       "transition:d54cf0e1-7368-4c85-b7d9-4002ce3d80ae:04298acb-7e4f-45a2-884d-5a89b3d58f00": 0,
-      "repetition:af7144ac-f35e-4938-a21b-64ec68fba6f8:9baf6a07-bf62-4890-a48b-4da300767ddf": 0,
+      "repetition:af7144ac-f35e-4938-a21b-64ec68fba6f8:9baf6a07-bf62-4890-a48b-4da300767ddf": 1,
       "repetition:9baf6a07-bf62-4890-a48b-4da300767ddf:7c3c19d6-87d5-4b6b-ac7e-c946839e1167": 0,
       "too_simple:7c3c19d6-87d5-4b6b-ac7e-c946839e1167": 0,
-      "repetition:04298acb-7e4f-45a2-884d-5a89b3d58f00:af7144ac-f35e-4938-a21b-64ec68fba6f8": 1,
-      "transition:6ed05cc6-1b84-456f-a603-6ddc760c0d32:9dd02781-acdf-48d5-87ad-6682908a49f5": 1
+      "repetition:04298acb-7e4f-45a2-884d-5a89b3d58f00:af7144ac-f35e-4938-a21b-64ec68fba6f8": 0,
+      "transition:6ed05cc6-1b84-456f-a603-6ddc760c0d32:9dd02781-acdf-48d5-87ad-6682908a49f5": 2,
+      "transition:9baf6a07-bf62-4890-a48b-4da300767ddf:68eb34dc-7184-41c6-b8e0-d93b5c39d8f3": 1
     },
     "section_titles": {
       "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method": "cd8ada70-e71a-4090-8980-b998d063463a",
@@ -1170,14 +1587,14 @@
     }
   },
   "convergence_diagnostics": {
-    "eta_variance": 0.02387428571428571,
+    "eta_variance": 0.011798095238095233,
     "invariant_violations": 0,
     "adjust_actions": 0,
     "consecutive_clean_cycles": 0,
-    "incomplete_sections": 4,
+    "incomplete_sections": 1,
     "unstable_sections": 10,
-    "reading_coverage": 9.5,
-    "citation_coverage": 55.6,
+    "reading_coverage": 45.5,
+    "citation_coverage": 72.7,
     "lexical_support_coverage": 0.0,
     "invalid_citation_sections": 0,
     "converged": false,
@@ -1190,87 +1607,78 @@
   },
   "retrieval_report": {
     "status": "partial_failure",
-    "retrieved_at": "2026-10-06T11:37:56.346425+00:00",
+    "retrieved_at": "2026-10-06T12:08:55.187320+00:00",
     "query_count": 6,
     "providers": {
       "arxiv": {
-        "status": "success",
-        "attempts": [
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "Galerkin Dimension Reduction",
-            "provider": "arxiv"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "Scaled Boundary Finite Element Method",
-            "provider": "arxiv"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "Well-Posedness of the Galerkin Equation",
-            "provider": "arxiv"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "finite element method mathematical foundation weak form Galerkin method",
-            "provider": "arxiv"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "finite element method practical implementation modeling rules",
-            "provider": "arxiv"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "finite element method verification validation numerical stability",
-            "provider": "arxiv"
-          }
-        ],
-        "queries_attempted": 6,
-        "returned_records": 12
-      },
-      "semantic_scholar": {
         "status": "partial_failure",
         "attempts": [
           {
-            "status": "rate_limited",
-            "provider": "semantic_scholar",
-            "query": "Galerkin Dimension Reduction",
-            "requested_results": 2,
-            "http_status": 429,
-            "returned_records": 0
+            "status": "empty_result",
+            "returned_records": 0,
+            "query": "crystal plasticity finite element method",
+            "provider": "arxiv"
           },
           {
-            "status": "rate_limited",
-            "provider": "semantic_scholar",
-            "query": "Scaled Boundary Finite Element Method",
-            "requested_results": 2,
-            "http_status": 429,
-            "returned_records": 0
-          },
-          {
-            "status": "rate_limited",
-            "provider": "semantic_scholar",
-            "query": "Well-Posedness of the Galerkin Equation",
-            "requested_results": 2,
-            "http_status": 429,
-            "returned_records": 0
+            "status": "empty_result",
+            "returned_records": 0,
+            "query": "finite element fft methods",
+            "provider": "arxiv"
           },
           {
             "status": "success",
+            "returned_records": 2,
+            "query": "finite element method mathematical foundation weak form Galerkin method",
+            "provider": "arxiv"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "finite element method practical implementation modeling rules",
+            "provider": "arxiv"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "finite element method verification validation numerical stability",
+            "provider": "arxiv"
+          },
+          {
+            "status": "empty_result",
+            "returned_records": 0,
+            "query": "stretched grid method fem",
+            "provider": "arxiv"
+          }
+        ],
+        "queries_attempted": 6,
+        "returned_records": 6
+      },
+      "semantic_scholar": {
+        "status": "rate_limited",
+        "attempts": [
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "crystal plasticity finite element method",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "finite element fft methods",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
             "provider": "semantic_scholar",
             "query": "finite element method mathematical foundation weak form Galerkin method",
             "requested_results": 2,
-            "returned_records": 2,
-            "records_with_oa_pdf": 0,
-            "records_with_full_text": 0
+            "http_status": 429,
+            "returned_records": 0
           },
           {
             "status": "rate_limited",
@@ -1287,10 +1695,18 @@
             "requested_results": 2,
             "http_status": 429,
             "returned_records": 0
+          },
+          {
+            "status": "rate_limited",
+            "provider": "semantic_scholar",
+            "query": "stretched grid method fem",
+            "requested_results": 2,
+            "http_status": 429,
+            "returned_records": 0
           }
         ],
         "queries_attempted": 6,
-        "returned_records": 2
+        "returned_records": 0
       },
       "wikipedia": {
         "status": "success",
@@ -1298,19 +1714,13 @@
           {
             "status": "success",
             "returned_records": 2,
-            "query": "Galerkin Dimension Reduction",
+            "query": "crystal plasticity finite element method",
             "provider": "wikipedia"
           },
           {
             "status": "success",
             "returned_records": 2,
-            "query": "Scaled Boundary Finite Element Method",
-            "provider": "wikipedia"
-          },
-          {
-            "status": "success",
-            "returned_records": 2,
-            "query": "Well-Posedness of the Galerkin Equation",
+            "query": "finite element fft methods",
             "provider": "wikipedia"
           },
           {
@@ -1330,13 +1740,19 @@
             "returned_records": 2,
             "query": "finite element method verification validation numerical stability",
             "provider": "wikipedia"
+          },
+          {
+            "status": "success",
+            "returned_records": 2,
+            "query": "stretched grid method fem",
+            "provider": "wikipedia"
           }
         ],
         "queries_attempted": 6,
         "returned_records": 12
       }
     },
-    "returned_records": 20,
+    "returned_records": 11,
     "selected_records": 4
   },
   "retrieval_history": {
@@ -2166,60 +2582,180 @@
           "selected_records": 4
         },
         "schema_version": 1
+      },
+      {
+        "event_id": "retrieval-97fd8217-810a-419a-8c9d-9d35867862de",
+        "cycle": 5,
+        "retrieved_at": "2026-10-06T12:08:58.489519+00:00",
+        "query_scope": [],
+        "report": {
+          "status": "partial_failure",
+          "retrieved_at": "2026-10-06T12:08:55.187320+00:00",
+          "query_count": 6,
+          "providers": {
+            "arxiv": {
+              "status": "partial_failure",
+              "attempts": [
+                {
+                  "status": "empty_result",
+                  "returned_records": 0,
+                  "query": "crystal plasticity finite element method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "empty_result",
+                  "returned_records": 0,
+                  "query": "finite element fft methods",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "arxiv"
+                },
+                {
+                  "status": "empty_result",
+                  "returned_records": 0,
+                  "query": "stretched grid method fem",
+                  "provider": "arxiv"
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 6
+            },
+            "semantic_scholar": {
+              "status": "rate_limited",
+              "attempts": [
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "crystal plasticity finite element method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element fft methods",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method practical implementation modeling rules",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "finite element method verification validation numerical stability",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                },
+                {
+                  "status": "rate_limited",
+                  "provider": "semantic_scholar",
+                  "query": "stretched grid method fem",
+                  "requested_results": 2,
+                  "http_status": 429,
+                  "returned_records": 0
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 0
+            },
+            "wikipedia": {
+              "status": "success",
+              "attempts": [
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "crystal plasticity finite element method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element fft methods",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method mathematical foundation weak form Galerkin method",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method practical implementation modeling rules",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "finite element method verification validation numerical stability",
+                  "provider": "wikipedia"
+                },
+                {
+                  "status": "success",
+                  "returned_records": 2,
+                  "query": "stretched grid method fem",
+                  "provider": "wikipedia"
+                }
+              ],
+              "queries_attempted": 6,
+              "returned_records": 12
+            }
+          },
+          "returned_records": 11,
+          "selected_records": 4
+        },
+        "acquisition_assessment": {
+          "status": "partial_provider_availability",
+          "operational_status": "partial_failure",
+          "available_provider_count": 1,
+          "unavailable_provider_count": 2,
+          "returned_records": 11,
+          "selected_records": 4
+        },
+        "schema_version": 1
       }
     ]
   },
   "last_budget_check": {
-    "time": "2026-10-06T11:37:50.261726+00:00",
+    "time": "2026-10-06T12:08:49.582604+00:00",
     "type": "local",
     "message": "Local limit: 20 calls"
   },
   "last_writing_decisions": [
-    {
-      "section_id": "e5b16fad-2ea6-439d-aff9-c587265c592c",
-      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Coercivity and Continuity Conditions for Stability",
-      "eta": 0.86,
-      "priority": 0.86,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
-    {
-      "section_id": "b350665b-0de5-496d-acf4-a034a611087b",
-      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Céa's Lemma and Error Estimates in Finite Element Analysis",
-      "eta": 0.86,
-      "priority": 0.86,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
-    {
-      "section_id": "6ed05cc6-1b84-456f-a603-6ddc760c0d32",
-      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Implications of Bilinear Form Properties for Finite Element Analysis",
-      "eta": 0.86,
-      "priority": 0.86,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
-    {
-      "section_id": "68eb34dc-7184-41c6-b8e0-d93b5c39d8f3",
-      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis",
-      "eta": 0.86,
-      "priority": 0.86,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
-    {
-      "section_id": "cd8ada70-e71a-4090-8980-b998d063463a",
-      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
-      "eta": 0.7,
-      "priority": 0.7,
-      "selected": true,
-      "model_index": 0,
-      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
-    },
     {
       "section_id": "d54cf0e1-7368-4c85-b7d9-4002ce3d80ae",
       "title": "The Finite Element Procedure: Céa's Lemma and Convergence Conditions",
@@ -2248,8 +2784,8 @@
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
     },
     {
-      "section_id": "9baf6a07-bf62-4890-a48b-4da300767ddf",
-      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Céa's Lemma and the Finite Element Method",
+      "section_id": "6ed05cc6-1b84-456f-a603-6ddc760c0d32",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Implications of Bilinear Form Properties for Finite Element Analysis",
       "eta": 0.6599999999999999,
       "priority": 0.6599999999999999,
       "selected": true,
@@ -2266,8 +2802,53 @@
       "model": "@cf/meta/llama-3.1-8b-instruct-fast"
     },
     {
+      "section_id": "9dd02781-acdf-48d5-87ad-6682908a49f5",
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.6400000000000001,
+      "priority": 0.6400000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast"
+    },
+    {
+      "section_id": "cd8ada70-e71a-4090-8980-b998d063463a",
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "eta": 0.5,
+      "priority": 0.5,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
       "section_id": null,
       "title": "The Finite Element Procedure",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "section_id": "9baf6a07-bf62-4890-a48b-4da300767ddf",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Céa's Lemma and the Finite Element Method",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "section_id": "e5b16fad-2ea6-439d-aff9-c587265c592c",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Coercivity and Continuity Conditions for Stability",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "section_id": "b350665b-0de5-496d-acf4-a034a611087b",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Céa's Lemma and Error Estimates in Finite Element Analysis",
       "eta": 0.45999999999999996,
       "priority": 0.45999999999999996,
       "selected": false,
@@ -2275,10 +2856,10 @@
       "model": "@cf/meta/llama-3.2-3b-instruct"
     },
     {
-      "section_id": "9dd02781-acdf-48d5-87ad-6682908a49f5",
-      "title": "Rules for Modeling Physical Phenomena with FEM",
-      "eta": 0.44000000000000006,
-      "priority": 0.44000000000000006,
+      "section_id": "68eb34dc-7184-41c6-b8e0-d93b5c39d8f3",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
       "selected": false,
       "model_index": 2,
       "model": "@cf/meta/llama-3.2-3b-instruct"
@@ -2763,6 +3344,146 @@
       "model_index": 2,
       "model": "@cf/meta/llama-3.2-3b-instruct",
       "fingerprint": "885ef9ed2dee331ec388537ea2ec659545d721a9e96c3919004fb62efa56f1fd"
+    },
+    {
+      "section_id": "d54cf0e1-7368-4c85-b7d9-4002ce3d80ae",
+      "title": "The Finite Element Procedure: Céa's Lemma and Convergence Conditions",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "5704bd5d9bc56f7e058c71e6c3b8bb97d253184690db049d54b46d2d81812a09"
+    },
+    {
+      "section_id": "04298acb-7e4f-45a2-884d-5a89b3d58f00",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Coercivity and Uniqueness of the Weak Solution",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "aedbd39757407b15c03dbc752c112c547f2153e2b43581a52293124113862a7d"
+    },
+    {
+      "section_id": "af7144ac-f35e-4938-a21b-64ec68fba6f8",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Continuity and Stability of the Finite Element Method",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "a2c5d26bedf3a65551b983e17f13d57221b07a073b2cdfe24651f9cb16e5e798"
+    },
+    {
+      "section_id": "6ed05cc6-1b84-456f-a603-6ddc760c0d32",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Implications of Bilinear Form Properties for Finite Element Analysis",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "84654facc95137e21df66b4835a34758383d1d487e1cca125d57daa6761bb653"
+    },
+    {
+      "section_id": "e2697cfa-e3af-46f2-a1f8-6858982e609c",
+      "title": "The Finite Element Procedure: The Variational Equation and Bilinear Form Properties",
+      "eta": 0.6599999999999999,
+      "priority": 0.6599999999999999,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "da36075b267b4c980fecef3e4e35cf192418455a2df2c16734e86538077531b2"
+    },
+    {
+      "section_id": "9dd02781-acdf-48d5-87ad-6682908a49f5",
+      "title": "Rules for Modeling Physical Phenomena with FEM",
+      "eta": 0.6400000000000001,
+      "priority": 0.6400000000000001,
+      "selected": true,
+      "model_index": 0,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "fingerprint": "d0aac10356f53c2ed96035b3d5af05e1bc403433174c86f288e7d1a9f958a6fb"
+    },
+    {
+      "section_id": "cd8ada70-e71a-4090-8980-b998d063463a",
+      "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
+      "eta": 0.5,
+      "priority": 0.5,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "5103f1c4f81ae769d7a682751afb84ffe40a6d3dbaf4f1f64ff0e3034b0d1dc3"
+    },
+    {
+      "section_id": null,
+      "title": "The Finite Element Procedure",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "3588ccdb0164e028eb2ee8c89149a9f35bfff84b8caea08ea0e83cf4e22a2ea0"
+    },
+    {
+      "section_id": "9baf6a07-bf62-4890-a48b-4da300767ddf",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Céa's Lemma and the Finite Element Method",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "86438f4952373956088f873d2b65cb2a33e696d4022c155954fcb72d01ace3b6"
+    },
+    {
+      "section_id": "e5b16fad-2ea6-439d-aff9-c587265c592c",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Coercivity and Continuity Conditions for Stability",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": true,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "d1bff26549b9ef360d5d0f87e124d4a770fce1ceb394fa3aa46ab9fe3b220724"
+    },
+    {
+      "section_id": "b350665b-0de5-496d-acf4-a034a611087b",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Céa's Lemma and Error Estimates in Finite Element Analysis",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "a9ab1ae2e687d312f2a441a7863cb0f3df343b702f4476622a783322bc59d018"
+    },
+    {
+      "section_id": "68eb34dc-7184-41c6-b8e0-d93b5c39d8f3",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis: Properties of Bilinear Forms in Finite Element Analysis",
+      "eta": 0.45999999999999996,
+      "priority": 0.45999999999999996,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "fc2f241f363fbf3a4baa06c1d470fd994f17b881f34c770b5608dd49437dae0c"
+    },
+    {
+      "section_id": "8df36f36-bed7-422c-b89b-fa3caa38ecc4",
+      "title": "Verification, Validation, and Best Practices",
+      "eta": 0.42000000000000004,
+      "priority": 0.42000000000000004,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "850722d49df7687d77e1b53661fee2da98c58630303c732ac97428c8972f410d"
+    },
+    {
+      "section_id": "0557ce05-c337-4bc8-9d53-8f4f1a870fe6",
+      "title": "Introduction and Scope of the Finite Element Method",
+      "eta": 0.4,
+      "priority": 0.4,
+      "selected": false,
+      "model_index": 2,
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "fingerprint": "885ef9ed2dee331ec388537ea2ec659545d721a9e96c3919004fb62efa56f1fd"
     }
   ],
   "last_semantic_review": {
@@ -2792,36 +3513,17 @@
   "last_semantic_feedback": {
     "sections": {}
   },
-  "last_adjustment_decision": {
-    "action": "deduplicate",
-    "section_id": null,
-    "section_ids": [
-      "af7144ac-f35e-4938-a21b-64ec68fba6f8",
-      "9baf6a07-bf62-4890-a48b-4da300767ddf"
-    ],
-    "reason": "Jaccard similarity: 70.63%",
-    "adjustment_score": {
-      "severity": 1.0,
-      "persistence": 0.4,
-      "cost": 0.45,
-      "score": 0.7225
-    }
-  },
+  "last_adjustment_decision": null,
   "semantic_candidate_status": {
     "status": "candidate",
     "authoritative_for_rendering": false,
     "sections": [
       {
         "section_id": "cd8ada70-e71a-4090-8980-b998d063463a",
-        "semantic_marker_count": 4,
+        "semantic_marker_count": 0,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma"
-        ],
-        "inline_math_count": 18,
+        "annotated_source_ids": [],
+        "inline_math_count": 24,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -2829,15 +3531,10 @@
       },
       {
         "section_id": "e2697cfa-e3af-46f2-a1f8-6858982e609c",
-        "semantic_marker_count": 4,
+        "semantic_marker_count": 0,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma",
-          "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_c_a_s_lemma"
-        ],
-        "inline_math_count": 10,
+        "annotated_source_ids": [],
+        "inline_math_count": 21,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -2845,16 +3542,14 @@
       },
       {
         "section_id": "d54cf0e1-7368-4c85-b7d9-4002ce3d80ae",
-        "semantic_marker_count": 5,
+        "semantic_marker_count": 3,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
-          "wiki_c_a_s_lemma",
           "wiki_babu_ka_lax_milgram_theorem",
           "wiki_c_a_s_lemma",
-          "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_c_a_s_lemma"
+          "arxiv_1509.00440v1"
         ],
-        "inline_math_count": 13,
+        "inline_math_count": 14,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -2862,14 +3557,15 @@
       },
       {
         "section_id": "04298acb-7e4f-45a2-884d-5a89b3d58f00",
-        "semantic_marker_count": 3,
+        "semantic_marker_count": 4,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "wiki_babu_ka_lax_milgram_theorem",
           "wiki_c_a_s_lemma",
-          "wiki_babu_ka_lax_milgram_theorem"
+          "wiki_babu_ka_lax_milgram_theorem",
+          "wiki_c_a_s_lemma"
         ],
-        "inline_math_count": 14,
+        "inline_math_count": 12,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -2880,7 +3576,7 @@
         "semantic_marker_count": 0,
         "annotated_equation_ids": [],
         "annotated_source_ids": [],
-        "inline_math_count": 0,
+        "inline_math_count": 11,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -2891,7 +3587,7 @@
         "semantic_marker_count": 0,
         "annotated_equation_ids": [],
         "annotated_source_ids": [],
-        "inline_math_count": 16,
+        "inline_math_count": 13,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -2915,15 +3611,10 @@
       },
       {
         "section_id": "e5b16fad-2ea6-439d-aff9-c587265c592c",
-        "semantic_marker_count": 4,
+        "semantic_marker_count": 0,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma"
-        ],
-        "inline_math_count": 3,
+        "annotated_source_ids": [],
+        "inline_math_count": 14,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -2942,13 +3633,16 @@
       },
       {
         "section_id": "6ed05cc6-1b84-456f-a603-6ddc760c0d32",
-        "semantic_marker_count": 2,
+        "semantic_marker_count": 5,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_c_a_s_lemma"
+          "wiki_babu_ka_lax_milgram_theorem",
+          "wiki_c_a_s_lemma",
+          "wiki_c_a_s_lemma",
+          "wiki_babu_ka_lax_milgram_theorem"
         ],
-        "inline_math_count": 8,
+        "inline_math_count": 17,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -2956,15 +3650,14 @@
       },
       {
         "section_id": "9dd02781-acdf-48d5-87ad-6682908a49f5",
-        "semantic_marker_count": 4,
+        "semantic_marker_count": 3,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma"
+          "wiki_stretched_grid_method",
+          "wiki_stretched_grid_method",
+          "wiki_spectral_element_method"
         ],
-        "inline_math_count": 18,
+        "inline_math_count": 11,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -3009,7 +3702,7 @@
         "diagnostics": []
       }
     ],
-    "semantic_marker_count": 44,
+    "semantic_marker_count": 33,
     "publication_views": {
       "concept_graph": {
         "available_concepts": 4,
@@ -3028,12 +3721,12 @@
       "ready": true,
       "counts": {
         "sections": 14,
-        "paragraphs": 12,
-        "text_nodes": 189,
-        "inline_math": 133,
+        "paragraphs": 13,
+        "text_nodes": 216,
+        "inline_math": 170,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 44,
+        "citation_occurrences": 33,
         "citation_cluster_occurrences": 0,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
@@ -3052,15 +3745,10 @@
     "sections": [
       {
         "section_id": "cd8ada70-e71a-4090-8980-b998d063463a",
-        "semantic_marker_count": 4,
+        "semantic_marker_count": 0,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma"
-        ],
-        "inline_math_count": 18,
+        "annotated_source_ids": [],
+        "inline_math_count": 24,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -3068,15 +3756,10 @@
       },
       {
         "section_id": "e2697cfa-e3af-46f2-a1f8-6858982e609c",
-        "semantic_marker_count": 4,
+        "semantic_marker_count": 0,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma",
-          "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_c_a_s_lemma"
-        ],
-        "inline_math_count": 10,
+        "annotated_source_ids": [],
+        "inline_math_count": 21,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -3084,16 +3767,14 @@
       },
       {
         "section_id": "d54cf0e1-7368-4c85-b7d9-4002ce3d80ae",
-        "semantic_marker_count": 5,
+        "semantic_marker_count": 3,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
-          "wiki_c_a_s_lemma",
           "wiki_babu_ka_lax_milgram_theorem",
           "wiki_c_a_s_lemma",
-          "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_c_a_s_lemma"
+          "arxiv_1509.00440v1"
         ],
-        "inline_math_count": 13,
+        "inline_math_count": 14,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -3101,14 +3782,15 @@
       },
       {
         "section_id": "04298acb-7e4f-45a2-884d-5a89b3d58f00",
-        "semantic_marker_count": 3,
+        "semantic_marker_count": 4,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "wiki_babu_ka_lax_milgram_theorem",
           "wiki_c_a_s_lemma",
-          "wiki_babu_ka_lax_milgram_theorem"
+          "wiki_babu_ka_lax_milgram_theorem",
+          "wiki_c_a_s_lemma"
         ],
-        "inline_math_count": 14,
+        "inline_math_count": 12,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -3119,7 +3801,7 @@
         "semantic_marker_count": 0,
         "annotated_equation_ids": [],
         "annotated_source_ids": [],
-        "inline_math_count": 0,
+        "inline_math_count": 11,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -3130,7 +3812,7 @@
         "semantic_marker_count": 0,
         "annotated_equation_ids": [],
         "annotated_source_ids": [],
-        "inline_math_count": 16,
+        "inline_math_count": 13,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -3154,15 +3836,10 @@
       },
       {
         "section_id": "e5b16fad-2ea6-439d-aff9-c587265c592c",
-        "semantic_marker_count": 4,
+        "semantic_marker_count": 0,
         "annotated_equation_ids": [],
-        "annotated_source_ids": [
-          "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma"
-        ],
-        "inline_math_count": 3,
+        "annotated_source_ids": [],
+        "inline_math_count": 14,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -3181,13 +3858,16 @@
       },
       {
         "section_id": "6ed05cc6-1b84-456f-a603-6ddc760c0d32",
-        "semantic_marker_count": 2,
+        "semantic_marker_count": 5,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
           "wiki_babu_ka_lax_milgram_theorem",
-          "wiki_c_a_s_lemma"
+          "wiki_babu_ka_lax_milgram_theorem",
+          "wiki_c_a_s_lemma",
+          "wiki_c_a_s_lemma",
+          "wiki_babu_ka_lax_milgram_theorem"
         ],
-        "inline_math_count": 8,
+        "inline_math_count": 17,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -3195,15 +3875,14 @@
       },
       {
         "section_id": "9dd02781-acdf-48d5-87ad-6682908a49f5",
-        "semantic_marker_count": 4,
+        "semantic_marker_count": 3,
         "annotated_equation_ids": [],
         "annotated_source_ids": [
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma",
-          "wiki_c_a_s_lemma"
+          "wiki_stretched_grid_method",
+          "wiki_stretched_grid_method",
+          "wiki_spectral_element_method"
         ],
-        "inline_math_count": 18,
+        "inline_math_count": 11,
         "citation_cluster_count": 0,
         "display_math_count": 0,
         "equation_occurrence_count": 0,
@@ -3248,7 +3927,7 @@
         "diagnostics": []
       }
     ],
-    "semantic_marker_count": 44,
+    "semantic_marker_count": 33,
     "publication_views": {
       "concept_graph": {
         "available_concepts": 4,
@@ -3267,12 +3946,12 @@
       "ready": true,
       "counts": {
         "sections": 14,
-        "paragraphs": 12,
-        "text_nodes": 189,
-        "inline_math": 133,
+        "paragraphs": 13,
+        "text_nodes": 216,
+        "inline_math": 170,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 44,
+        "citation_occurrences": 33,
         "citation_cluster_occurrences": 0,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
@@ -3291,27 +3970,28 @@
     "section_count": 14,
     "content_section_count": 13,
     "publication_view_section_count": 1,
-    "reference_count": 15
+    "reference_count": 16
   },
   "latex_static_integrity_status": {
     "ok": true,
     "issues": []
   },
   "model_usage": {
-    "total_calls": 48,
-    "logical_calls": 48,
-    "successful_calls": 48,
+    "total_calls": 40,
+    "logical_calls": 40,
+    "successful_calls": 40,
     "failed_calls": 0,
-    "http_attempts": 48,
+    "http_attempts": 40,
     "per_model": {
-      "@cf/meta/llama-3.1-8b-instruct-fast": 47,
+      "@cf/meta/llama-3.1-8b-instruct-fast": 25,
       "@cf/qwen/qwen3-30b-a3b-fp8": 1,
-      "@cf/meta/llama-3.2-3b-instruct": 0
+      "@cf/meta/llama-3.2-3b-instruct": 14
     },
     "max_logical_calls": 50,
     "extraction_stats": {
-      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 47,
-      "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8:known_patterns": 1
+      "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast:known_patterns": 25,
+      "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8:known_patterns": 1,
+      "cloudflare:@cf/meta/llama-3.2-3b-instruct:known_patterns": 14
     },
     "learned_paths": {
       "cloudflare:@cf/meta/llama-3.1-8b-instruct-fast": [
@@ -3326,6 +4006,12 @@
       "cloudflare:@cf/qwen/qwen3-30b-a3b-fp8": [
         [
           "result",
+          "response"
+        ]
+      ],
+      "cloudflare:@cf/meta/llama-3.2-3b-instruct": [
+        [
+          "result",
           "choices",
           0,
           "message",
@@ -3335,7 +4021,9 @@
     }
   },
   "parser_stats": {
-    "cloudflare:strict": 2,
-    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 10
+    "cloudflare:strict": 1,
+    "cloudflare:normalized": 1,
+    "@cf/meta/llama-3.1-8b-instruct-fast:strict": 6,
+    "@cf/meta/llama-3.2-3b-instruct:strict": 3
   }
 }

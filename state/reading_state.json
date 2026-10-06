@@ -173,5 +173,80 @@
       "procedures": 2,
       "rules": 2
     }
+  },
+  "wiki_crystal_plasticity": {
+    "first_read_at": "2026-10-06T12:09:08.027308+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-10-06T12:09:08.027334+00:00",
+        "extracted": {
+          "concepts": 1,
+          "procedures": 1,
+          "equations": 0,
+          "rules": 1
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 1,
+      "equations": 0,
+      "procedures": 1,
+      "rules": 1
+    }
+  },
+  "wiki_stretched_grid_method": {
+    "first_read_at": "2026-10-06T12:09:08.027339+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-10-06T12:09:08.027348+00:00",
+        "extracted": {
+          "concepts": 1,
+          "procedures": 1,
+          "equations": 1,
+          "rules": 1
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 1,
+      "equations": 1,
+      "procedures": 1,
+      "rules": 1
+    }
+  },
+  "arxiv_1509.00440v1": {
+    "first_read_at": "2026-10-06T12:09:08.027352+00:00",
+    "read_sections": [
+      "preamble_0"
+    ],
+    "section_details": [
+      {
+        "section_type": "preamble",
+        "char_start": 0,
+        "read_at": "2026-10-06T12:09:08.027359+00:00",
+        "extracted": {
+          "concepts": 0,
+          "procedures": 1,
+          "equations": 1,
+          "rules": 0
+        }
+      }
+    ],
+    "total_extractions": {
+      "concepts": 0,
+      "equations": 1,
+      "procedures": 1,
+      "rules": 0
+    }
   }
 }
