@@ -147,7 +147,8 @@ jobs:
             --semantic-document output/document.semantic-candidate.json \
             --state state/current_state.json \
             --ir-contract specs/contracts/document_latex_ir_projection_contract.yaml \
-            --passes 2
+            --passes 2 \
+            --max-passes 5
 
       - name: Upload validated publication artifact
         if: success()
