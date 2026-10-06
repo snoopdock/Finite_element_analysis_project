@@ -1,87 +1,94 @@
 [
   {
     "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
-    "content": "The formulation of the weak form is a crucial step in the Galerkin method, where the strong form of the governing differential equation is converted into a weak form by multiplying with a test function and integrating over the domain. This process ensures that the solution satisfies the equation in an integral sense, reducing the smoothness requirements for the approximate solution. The weak form is represented by the equation $a(u, v) = \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V$, where $a(u, v)$ is the bilinear form capturing the PDE's differential operator, $f$ is the source term, and $v$ is a test function. This equation is a fundamental concept in the Galerkin method, introduced by Boris Galerkin [wiki_boris_galerkin]. The weak form is used to select the test functions as the same as the basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations [wiki_boris_galerkin].\n\nThe Galerkin method's application of boundary conditions is critical in ensuring the problem's physical constraints are satisfied. Incorrect implementation can lead to non-physical solutions or solver failures. Essential and natural boundary conditions are treated differently in the weak form. In the weak formulation and assembly procedure, the PDE is converted into a weak form using test functions, and the Galerkin method is applied by projecting the solution onto a finite-dimensional space. This process involves integrating the weak form over elements, using Gauss-Lobatto quadrature for efficiency, and assembling local stiffness and mass matrices into global system matrices. Furthermore, the use of curved elements is particularly critical in weak Galerkin methods, where they enhance the flexibility of the solution space by allowing for more accurate modeling of domains with curved boundaries.",
+    "content": "The variational equation, $a(u, v) = L(v)$, represents the weak form of the partial differential equation, where $u$ is the solution in the Hilbert space $V$, $v$ is a test function, and $L(v)$ is a bounded linear functional. This equation forms the basis for the finite element discretization. The properties of the bilinear form $a$ are crucial in establishing the validity of the variational equation. Specifically, the coercivity of the bilinear form, $a(v, v) \\geq \\alpha \\|v\\|^2$, ensures the existence and uniqueness of the solution to the variational problem. Furthermore, the continuity of the bilinear form, $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, guarantees that the bilinear form does not grow unbounded with respect to the input functions. These properties are essential in applying Céa's lemma, which provides a framework for proving error estimates in the finite element method.\n\nThe continuity and coercivity of bilinear forms are essential properties in establishing the well-posedness of the variational equation. Specifically, the continuity of the bilinear form $a$ is ensured by the inequality $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ [wiki_c_a_s_lemma], where $\\gamma$ is a positive constant. On the other hand, the coercivity of the bilinear form $a$ is enforced by the inequality $a(v, v) \\geq \\alpha \\|v\\|^2$ [wiki_c_a_s_lemma], where $\\alpha$ is a positive constant. These properties, in conjunction with Céa's lemma [wiki_c_a_s_lemma], provide a framework for proving error estimates and ensuring the convergence of the finite element solution to the true solution under appropriate conditions.\n\nCéa's Lemma provides a fundamental result for establishing error estimates in the Galerkin method. This lemma ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form $a$. Specifically, Céa's Lemma states that for a Hilbert space $V$ with norm $\\| \\cdot \\|$ and a bilinear form $a: V \\times V \\rightarrow \\mathbb{R}$ satisfying $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ and $a(v, v) \\geq \\alpha \\|v\\|^2$, the solution $u \\in V$ satisfies $a(u, v) = L(v)$ for all $v \\in V$, and the finite-dimensional approximation $u_h \\in V_h$ satisfies $a(u_h, v_h) = L(v_h)$ for all $v_h \\in V_h$ [wiki_c_a_s_lemma].",
     "key_equations": [
-      "a(u, v) = \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V",
-      "a(u, v)",
-      "f",
-      "v"
+      "a(u, v) = L(v)",
+      "u",
+      "V",
+      "v",
+      "L(v)"
     ],
     "citations_used": [
-      "wiki_boris_galerkin"
+      "wiki_c_a_s_lemma"
     ],
-    "section_id": "b4de2d7e-2034-4c5c-b382-06f2fd93965e",
-    "parent_section_ids": [],
+    "section_id": "cd8ada70-e71a-4090-8980-b998d063463a",
     "generated_from": "writer",
     "status": "complete"
   },
   {
-    "title": "The Finite Element Procedure",
-    "content": "The Galerkin method is a foundational approach in the Finite Element Method (FEM) for solving differential equations. It involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. This method forms the theoretical basis for modern FEM formulations, as introduced by Boris Galerkin [wiki_boris_galerkin]. The Galerkin weak form, which is a crucial step in the method, is given by $ \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V $, where $ a(u, v) $ represents the bilinear form capturing the PDE's differential operator, $ f $ is the source term, and $ v $ is a test function.\n\nThe Finite Element Method (FEM) can be enhanced by incorporating advanced techniques, such as curved elements and the Spectral Element Method (SEM). Curved elements, as described by the equation $x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i$, allow for more accurate modeling of complex geometries by using higher-order polynomial shapes [arxiv_2210.16907v1]. This approach reduces discretization errors compared to straight-edged elements, particularly in weak Galerkin methods. On the other hand, SEM uses high-degree piecewise polynomials as basis functions, achieving high-order accuracy through exponential error reduction with increasing polynomial order [wiki_spectral_element_method]. The choice of element type depends on the problem's geometry and required accuracy, with curved elements improving accuracy for complex domains and higher-order elements reducing discretization errors in smooth solutions [arxiv_2210.16907v1, wiki_finite_element_limit_analysis].\n\nThe Finite Element Method (FEM) can be enhanced by incorporating advanced techniques to improve computational efficiency and accuracy. Two such techniques are the Additive Schwarz Method and Mass Lumping. The Additive Schwarz Method is a domain decomposition technique that divides the computational domain into subdomains and combines solutions from overlapping subdomains using weighted sums, improving convergence for elliptic problems. This method is particularly effective for Poisson equations and can be integrated with multigrid strategies for faster convergence, as shown in [arxiv_1512.02390v2]. On the other hand, Mass Lumping is a technique to simplify the mass matrix in FEM by approximating it as diagonal, reducing computational costs. This is achieved by placing nodes at Legendre-Gauss-Lobatto (LGL) points and using Gauss-Lobatto quadrature, enabling efficient time integration with methods like the central difference method (CDM), as described in [wiki_spectral_element_method].",
-    "key_equations": [
-      "\\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V",
-      "a(u, v)",
-      "f",
-      "v",
-      "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i"
+    "section_id": "e2697cfa-e3af-46f2-a1f8-6858982e609c",
+    "title": "The Finite Element Procedure: The Variational Equation and Bilinear Form Properties",
+    "content": "",
+    "parent_section_ids": [
+      "6f432c39-20b9-432f-a6aa-35ed71eef6ea"
     ],
-    "citations_used": [
-      "arxiv_1512.02390v2",
-      "arxiv_2210.16907v1",
-      "wiki_boris_galerkin",
-      "wiki_finite_element_limit_analysis",
-      "wiki_spectral_element_method"
+    "generated_from": "split",
+    "status": "needs_generation",
+    "parent_content_reference": "The finite element method is formulated using the variational equation, $a(u, v) = L(v)$, which represents the weak form of the partial differential equation. This equation forms the basis for the finite element discretization, where $u$ is the solution in the Hilbert space $V$, $v$ is a test function, and $L(v)$ is a bounded linear functional. The properties of the bilinear form $a$ are crucial in establishing the convergence of the finite element solution. Specifically, the coercivity of the b...",
+    "subsection_index": 0,
+    "key_equations": [],
+    "citations_used": []
+  },
+  {
+    "section_id": "d54cf0e1-7368-4c85-b7d9-4002ce3d80ae",
+    "title": "The Finite Element Procedure: Céa's Lemma and Convergence Conditions",
+    "content": "",
+    "parent_section_ids": [
+      "6f432c39-20b9-432f-a6aa-35ed71eef6ea"
     ],
-    "section_id": "34f33cbc-265c-4b09-abfd-23f12859ee6f",
-    "parent_section_ids": [],
-    "generated_from": "writer",
-    "status": "complete"
+    "generated_from": "split",
+    "status": "needs_generation",
+    "parent_content_reference": "The finite element method is formulated using the variational equation, $a(u, v) = L(v)$, which represents the weak form of the partial differential equation. This equation forms the basis for the finite element discretization, where $u$ is the solution in the Hilbert space $V$, $v$ is a test function, and $L(v)$ is a bounded linear functional. The properties of the bilinear form $a$ are crucial in establishing the convergence of the finite element solution. Specifically, the coercivity of the b...",
+    "subsection_index": 1,
+    "key_equations": [],
+    "citations_used": []
+  },
+  {
+    "section_id": "4fd8f0c1-2abd-4412-a41b-4df83c1c081d",
+    "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis",
+    "content": "",
+    "parent_section_ids": [
+      "6f432c39-20b9-432f-a6aa-35ed71eef6ea"
+    ],
+    "generated_from": "split",
+    "status": "needs_generation",
+    "parent_content_reference": "The finite element method is formulated using the variational equation, $a(u, v) = L(v)$, which represents the weak form of the partial differential equation. This equation forms the basis for the finite element discretization, where $u$ is the solution in the Hilbert space $V$, $v$ is a test function, and $L(v)$ is a bounded linear functional. The properties of the bilinear form $a$ are crucial in establishing the convergence of the finite element solution. Specifically, the coercivity of the b...",
+    "subsection_index": 2,
+    "key_equations": [],
+    "citations_used": []
   },
   {
     "title": "Rules for Modeling Physical Phenomena with FEM",
-    "content": "Boundary condition application is a critical aspect of the Finite Element Method (FEM), as it ensures that the problem's physical constraints are satisfied. Incorrect implementation can lead to non-physical solutions or solver failures. Essential and natural boundary conditions are treated differently in the weak form, with essential conditions being directly applied to the solution space, while natural conditions are enforced through the residual. The Galerkin method, a foundational approach in FEM, relies on the correct application of boundary conditions to ensure that the residual is orthogonal to the chosen basis functions, leading to a system of algebraic equations.\n\nThe Spectral Element Method (SEM) and curved elements are two distinct approaches used in the Finite Element Method (FEM) to model complex geometries. SEM utilizes high-degree piecewise polynomials as basis functions, leveraging orthogonal polynomials like Chebyshev or Lagrange polynomials over non-uniform nodes, to achieve high-order accuracy. In contrast, curved elements are specialized finite elements that allow for more accurate modeling of domains with curved boundaries by using higher-order polynomial shapes. This approach reduces discretization errors compared to straight-edged elements. The use of curved elements, particularly in weak Galerkin methods, enhances the flexibility of the solution space, making SEM and curved elements suitable for different types of problems, with SEM exceling in computational fluid dynamics and seismic wave modeling, and curved elements being critical for complex geometries.\n\nThe Galerkin method serves as a foundational approach in the Finite Element Method (FEM) for solving differential equations. By projecting the solution onto a finite-dimensional space of basis functions, the method ensures that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. This technique, introduced by Boris Galerkin, forms the theoretical basis for modern FEM formulations. The use of curved elements, which are specialized finite elements used to better approximate complex geometries, enhances the flexibility of the solution space, particularly in weak Galerkin methods.",
-    "key_equations": [],
-    "citations_used": [],
-    "section_id": "4fd83b90-6bf6-437e-9d7d-e93b694957ba",
-    "parent_section_ids": [],
+    "content": "Céa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, Céa's Lemma requires the continuity of the bilinear form, $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ [wiki_c_a_s_lemma], and coercivity, $a(v, v) \\geq \\alpha \\|v\\|^2$ [wiki_c_a_s_lemma]. These properties ensure that the finite element solution converges to the true solution under appropriate conditions, such as continuity and boundedness. The variational equation, $a(u, v) = L(v)$ [wiki_c_a_s_lemma], forms the basis for the finite element discretization, and Céa's Lemma provides a crucial link between the exact and approximate solutions.\n\nThe mathematical properties of bilinear forms play a crucial role in the analysis of the finite element method (FEM). Specifically, the continuity and coercivity of the bilinear form $a$ are essential in ensuring the existence and uniqueness of the solution to the variational problem. The continuity of $a$ is defined by the equation $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, where $\\gamma$ is a positive constant, and the coercivity of $a$ is enforced by the equation $a(v, v) \\geq \\alpha \\|v\\|^2$, where $\\alpha$ is also a positive constant. These properties, combined with the variational equation $a(u, v) = L(v)$, form the foundation for the analysis of the FEM.\n\nThe variational equation, $a(u, v) = L(v)$, represents the weak form of the partial differential equation, where $u$ is the solution in the Hilbert space $V$, $v$ is a test function, and $L(v)$ is a bounded linear functional. This equation forms the basis for the finite element discretization. The coercivity of the bilinear form, $a(v, v) \\geq \\alpha \\|v\\|^2$, guarantees the existence and uniqueness of the solution to the variational problem, as demonstrated by Céa's Lemma, a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations [wiki_c_a_s_lemma]. The continuity of the bilinear form, $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$, ensures that the bilinear form does not grow unbounded with respect to the input functions.",
+    "key_equations": [
+      "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|",
+      "a(v, v) \\geq \\alpha \\|v\\|^2",
+      "a(u, v) = L(v)",
+      "a",
+      "\\gamma"
+    ],
+    "citations_used": [
+      "wiki_c_a_s_lemma"
+    ],
+    "section_id": "9dd02781-acdf-48d5-87ad-6682908a49f5",
     "generated_from": "writer",
     "status": "complete"
   },
   {
     "title": "Verification, Validation, and Best Practices",
-    "content": "Verification of Finite Element Models involves ensuring that the numerical solution accurately represents the physical phenomenon being modeled. A crucial aspect of verification is the solution of the resulting linear system, which can be achieved using iterative or direct solvers. For large-scale problems, preconditioned conjugate gradient (PCG) methods are preferred, as they accelerate convergence. Additionally, the use of curved elements can enhance the flexibility of the solution space, particularly in weak Galerkin methods, by allowing for more accurate modeling of complex geometries. This is achieved through the use of higher-order polynomial shapes, as shown in $x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i$, where $X_i$ are control points [arxiv_2210.16907v1].\n\nOptimization and convergence enhancement strategies play a crucial role in the Finite Element Method (FEM) for solving partial differential equations (PDEs). The Additive Schwarz Method, a domain decomposition technique, is particularly effective for elliptic problems, such as Poisson equations, by combining solutions from overlapping subdomains using weighted sums. This method enhances performance for spectral element solvers, especially when integrated with multigrid strategies for faster convergence. The Residual Reduction Formula, $ \\frac{\\|r_{k+1}\\|}{\\|r_k\\|} \\leq C \\cdot \\exp(-\\gamma \\sqrt{\\frac{N}{\\log N}}) $, quantifies the exponential convergence of SEM with increasing polynomial order, highlighting the efficiency of high-order methods in reducing errors rapidly [arxiv_1512.02390v2]. Additionally, Limit Analysis, a technique to compute the upper or lower bound plastic collapse load of a mechanical system, uses optimization algorithms instead of time-stepping, making it efficient for geotechnical problems [wiki_finite_element_limit_analysis].\n\nTo ensure the accuracy and reliability of numerical simulations in the Finite Element Method (FEM), it is essential to implement advanced finite element methods with best practices. One such practice is the use of curved elements, which are specialized finite elements that allow for more accurate modeling of domains with curved boundaries by using higher-order polynomial shapes [arxiv_2210.16907v1]. This approach reduces discretization errors compared to straight-edged elements. Additionally, mass lumping can be employed to simplify the mass matrix in FEM, enabling efficient time integration with methods like the central difference method (CDM) [wiki_spectral_element_method]. Furthermore, the residual reduction formula provides a bound on the residual reduction per iteration, highlighting the efficiency of high-order methods in reducing errors rapidly [arxiv_1512.02390v2]. By incorporating these techniques, FEM practitioners can achieve more accurate and reliable results.",
+    "content": "Céa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, Céa's Lemma states that the solution $u_h$ of the finite-dimensional approximation satisfies $a(u_h, v_h) = L(v_h)$ for all $v_h \\in V_h$, where $a(u, v) = L(v)$ is the variational equation representing the weak form of the partial differential equation. This is guaranteed by the continuity of the bilinear form $a$, which is defined as $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ (wiki_c_a_s_lemma), and the coercivity of the bilinear form $a$, which is enforced by $a(v, v) \\geq \\alpha \\|v\\|^2$ (wiki_c_a_s_lemma).\n\nThe continuity and coercivity of bilinear forms are crucial properties in the analysis of the finite element method. The continuity of a bilinear form $a$ is defined by the equation $|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|$ [wiki_c_a_s_lemma], where $\\gamma$ is a positive constant and $\\|v\\|, \\|w\\|$ are norms of $v$ and $w$ in the Hilbert space $V$. This ensures that the bilinear form does not grow unbounded with respect to the input functions. Furthermore, the coercivity of a bilinear form $a$ is enforced by the equation $a(v, v) \\geq \\alpha \\|v\\|^2$ [wiki_c_a_s_lemma], where $\\alpha$ is a positive constant, guaranteeing that the bilinear form is positive definite and ensuring the existence and uniqueness of the solution to the variational problem. These properties are essential in establishing the convergence of the finite element solution to the true solution under appropriate conditions.",
     "key_equations": [
-      "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i",
-      "X_i",
-      "\\frac{\\|r_{k+1}\\|}{\\|r_k\\|} \\leq C \\cdot \\exp(-\\gamma \\sqrt{\\frac{N}{\\log N}})"
+      "u_h",
+      "a(u_h, v_h) = L(v_h)",
+      "v_h \\in V_h",
+      "a(u, v) = L(v)",
+      "a"
     ],
     "citations_used": [
-      "arxiv_1512.02390v2",
-      "arxiv_2210.16907v1",
-      "wiki_finite_element_limit_analysis",
-      "wiki_spectral_element_method"
+      "wiki_c_a_s_lemma"
     ],
-    "section_id": "66f3eaaf-46cb-4660-a1e8-941233c20fb8",
-    "parent_section_ids": [],
-    "generated_from": "writer",
-    "status": "complete"
-  },
-  {
-    "title": "Introduction and Scope of the Finite Element Method",
-    "content": "The Finite Element Method (FEM) is a powerful numerical technique for solving partial differential equations (PDEs). A foundational approach in FEM is the Galerkin method, introduced by Boris Galerkin [wiki_boris_galerkin], which involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions. This method ensures that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. FEM can be applied to various domains, including complex geometries, where curved elements [arxiv_2210.16907v1] are used to better approximate the domain's shape. Furthermore, FEM can be used to compute the upper or lower bound plastic collapse load of a mechanical system through Finite Element Limit Analysis (FELA) [wiki_finite_element_limit_analysis].\n\nThe assembly and solution of the finite element equations are critical steps in the Finite Element Method (FEM). The local element equations are assembled into a global system of algebraic equations, which involves summing contributions from all elements and applying boundary conditions. This resulting system is solved using numerical methods such as direct solvers or iterative techniques, with preconditioned conjugate gradient (PCG) methods being preferred for large-scale problems. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly, as seen in the optimization problem $ \\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K $ [wiki_finite_element_limit_analysis]. The choice of solver depends on problem size, sparsity, and desired accuracy, with iterative methods favored for their memory efficiency [arxiv_1512.02390v2].\n\nAdvanced Finite Element Methods for Complex Problems are essential for tackling intricate problems in various fields. The use of curved elements is particularly critical in weak Galerkin methods, where they enhance the flexibility of the solution space by allowing for more accurate modeling of domains with curved boundaries [arxiv_2210.16907v1]. Furthermore, the Spectral Element Method (SEM) is a FEM variant using high-degree piecewise polynomials as basis functions, achieving high-order accuracy and leveraging orthogonal polynomials like Chebyshev or Lagrange polynomials over non-uniform nodes [wiki_spectral_element_method]. Additionally, the Additive Schwarz Method is a domain decomposition technique for solving PDEs by dividing the computational domain into subdomains, combining solutions from overlapping subdomains using weighted sums, and improving convergence for elliptic problems [arxiv_1512.02390v2]. These advanced methods are crucial for large-scale simulations beyond single-processor capabilities and enable the solution of complex problems with high accuracy.",
-    "key_equations": [
-      "\\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K"
-    ],
-    "citations_used": [
-      "arxiv_1512.02390v2",
-      "arxiv_2210.16907v1",
-      "wiki_boris_galerkin",
-      "wiki_finite_element_limit_analysis",
-      "wiki_spectral_element_method"
-    ],
-    "section_id": "437252bc-b540-4157-9bd6-86f677222428",
-    "parent_section_ids": [],
+    "section_id": "8df36f36-bed7-422c-b89b-fa3caa38ecc4",
     "generated_from": "writer",
     "status": "complete"
   }

@@ -1,11 +1,11 @@
 {
   "type": "document",
   "document_id": "743c2aa8-790e-5a15-b63b-6758c778b2e0",
-  "version": 3,
+  "version": 4,
   "children": [
     {
       "type": "section",
-      "section_id": "b4de2d7e-2034-4c5c-b382-06f2fd93965e",
+      "section_id": "cd8ada70-e71a-4090-8980-b998d063463a",
       "title": "Mathematical Foundation: Strong Form, Weak Form, and Galerkin Method",
       "children": [
         {
@@ -13,31 +13,31 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "The formulation of the weak form is a crucial step in the Galerkin method, where the strong form of the governing differential equation is converted into a weak form by multiplying with a test function and integrating over the domain. This process ensures that the solution satisfies the equation in an integral sense, reducing the smoothness requirements for the approximate solution. The weak form is represented by the equation "
+              "text": "The variational equation, "
             },
             {
               "type": "inline_math",
-              "expression": "a(u, v) = \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V"
+              "expression": "a(u, v) = L(v)"
             },
             {
               "type": "text",
-              "text": ", where "
+              "text": ", represents the weak form of the partial differential equation, where "
             },
             {
               "type": "inline_math",
-              "expression": "a(u, v)"
+              "expression": "u"
             },
             {
               "type": "text",
-              "text": " is the bilinear form capturing the PDE's differential operator, "
+              "text": " is the solution in the Hilbert space "
             },
             {
               "type": "inline_math",
-              "expression": "f"
+              "expression": "V"
             },
             {
               "type": "text",
-              "text": " is the source term, and "
+              "text": ", "
             },
             {
               "type": "inline_math",
@@ -45,57 +45,60 @@
             },
             {
               "type": "text",
-              "text": " is a test function. This equation is a fundamental concept in the Galerkin method, introduced by Boris Galerkin "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "05a3f3e5-5d2d-50e5-837e-85af264a6552",
-              "source_id": "wiki_boris_galerkin"
-            },
-            {
-              "type": "text",
-              "text": ". The weak form is used to select the test functions as the same as the basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "53574d1d-f1ad-56d5-bff0-9ea478529863",
-              "source_id": "wiki_boris_galerkin"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe Galerkin method's application of boundary conditions is critical in ensuring the problem's physical constraints are satisfied. Incorrect implementation can lead to non-physical solutions or solver failures. Essential and natural boundary conditions are treated differently in the weak form. In the weak formulation and assembly procedure, the PDE is converted into a weak form using test functions, and the Galerkin method is applied by projecting the solution onto a finite-dimensional space. This process involves integrating the weak form over elements, using Gauss-Lobatto quadrature for efficiency, and assembling local stiffness and mass matrices into global system matrices. Furthermore, the use of curved elements is particularly critical in weak Galerkin methods, where they enhance the flexibility of the solution space by allowing for more accurate modeling of domains with curved boundaries."
-            }
-          ]
-        }
-      ],
-      "parent_section_ids": [],
-      "status": "complete",
-      "generated_from": "writer"
-    },
-    {
-      "type": "section",
-      "section_id": "34f33cbc-265c-4b09-abfd-23f12859ee6f",
-      "title": "The Finite Element Procedure",
-      "children": [
-        {
-          "type": "paragraph",
-          "inline_content": [
-            {
-              "type": "text",
-              "text": "The Galerkin method is a foundational approach in the Finite Element Method (FEM) for solving differential equations. It involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions, ensuring that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. This method forms the theoretical basis for modern FEM formulations, as introduced by Boris Galerkin "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "2c408981-22b6-5664-9a67-a40d27d7dff2",
-              "source_id": "wiki_boris_galerkin"
-            },
-            {
-              "type": "text",
-              "text": ". The Galerkin weak form, which is a crucial step in the method, is given by "
+              "text": " is a test function, and "
             },
             {
               "type": "inline_math",
-              "expression": " \\int_{\\Omega} w(x) \\left( \\frac{d^2 u}{dx^2} + f(x) \\right) dx = 0, \\quad \\text{for all } w(x) \\in V "
+              "expression": "L(v)"
+            },
+            {
+              "type": "text",
+              "text": " is a bounded linear functional. This equation forms the basis for the finite element discretization. The properties of the bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " are crucial in establishing the validity of the variational equation. Specifically, the coercivity of the bilinear form, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": ", ensures the existence and uniqueness of the solution to the variational problem. Furthermore, the continuity of the bilinear form, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": ", guarantees that the bilinear form does not grow unbounded with respect to the input functions. These properties are essential in applying Céa's lemma, which provides a framework for proving error estimates in the finite element method.\n\nThe continuity and coercivity of bilinear forms are essential properties in establishing the well-posedness of the variational equation. Specifically, the continuity of the bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " is ensured by the inequality "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "a1783532-be0c-5b85-898b-20b6ce5192ed",
+              "source_id": "wiki_c_a_s_lemma"
             },
             {
               "type": "text",
@@ -103,79 +106,154 @@
             },
             {
               "type": "inline_math",
-              "expression": " a(u, v) "
+              "expression": "\\gamma"
             },
             {
               "type": "text",
-              "text": " represents the bilinear form capturing the PDE's differential operator, "
+              "text": " is a positive constant. On the other hand, the coercivity of the bilinear form "
             },
             {
               "type": "inline_math",
-              "expression": " f "
+              "expression": "a"
             },
             {
               "type": "text",
-              "text": " is the source term, and "
+              "text": " is enforced by the inequality "
             },
             {
               "type": "inline_math",
-              "expression": " v "
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
             },
             {
               "type": "text",
-              "text": " is a test function.\n\nThe Finite Element Method (FEM) can be enhanced by incorporating advanced techniques, such as curved elements and the Spectral Element Method (SEM). Curved elements, as described by the equation "
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "7a8065f1-1029-515e-888d-08b24160e7d3",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ", where "
             },
             {
               "type": "inline_math",
-              "expression": "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i"
+              "expression": "\\alpha"
             },
             {
               "type": "text",
-              "text": ", allow for more accurate modeling of complex geometries by using higher-order polynomial shapes "
+              "text": " is a positive constant. These properties, in conjunction with Céa's lemma "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "e6100d72-735c-529f-9053-319af27132a6",
-              "source_id": "arxiv_2210.16907v1"
+              "occurrence_id": "9d0a14e8-eedf-5529-9e27-c7ebb2ec919f",
+              "source_id": "wiki_c_a_s_lemma"
             },
             {
               "type": "text",
-              "text": ". This approach reduces discretization errors compared to straight-edged elements, particularly in weak Galerkin methods. On the other hand, SEM uses high-degree piecewise polynomials as basis functions, achieving high-order accuracy through exponential error reduction with increasing polynomial order "
+              "text": ", provide a framework for proving error estimates and ensuring the convergence of the finite element solution to the true solution under appropriate conditions.\n\nCéa's Lemma provides a fundamental result for establishing error estimates in the Galerkin method. This lemma ensures that the finite element solution converges to the true solution under appropriate conditions, such as continuity and coercivity of the bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": ". Specifically, Céa's Lemma states that for a Hilbert space "
+            },
+            {
+              "type": "inline_math",
+              "expression": "V"
+            },
+            {
+              "type": "text",
+              "text": " with norm "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\| \\cdot \\|"
+            },
+            {
+              "type": "text",
+              "text": " and a bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a: V \\times V \\rightarrow \\mathbb{R}"
+            },
+            {
+              "type": "text",
+              "text": " satisfying "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": ", the solution "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u \\in V"
+            },
+            {
+              "type": "text",
+              "text": " satisfies "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(u, v) = L(v)"
+            },
+            {
+              "type": "text",
+              "text": " for all "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v \\in V"
+            },
+            {
+              "type": "text",
+              "text": ", and the finite-dimensional approximation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u_h \\in V_h"
+            },
+            {
+              "type": "text",
+              "text": " satisfies "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(u_h, v_h) = L(v_h)"
+            },
+            {
+              "type": "text",
+              "text": " for all "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v_h \\in V_h"
+            },
+            {
+              "type": "text",
+              "text": " "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "fefc5104-15d8-5d7b-9360-4282fb5b0732",
-              "source_id": "wiki_spectral_element_method"
-            },
-            {
-              "type": "text",
-              "text": ". The choice of element type depends on the problem's geometry and required accuracy, with curved elements improving accuracy for complex domains and higher-order elements reducing discretization errors in smooth solutions "
-            },
-            {
-              "type": "citation_cluster_occurrence",
-              "occurrence_id": "90a165f0-b708-50af-8b6d-08875b224545",
-              "source_ids": [
-                "arxiv_2210.16907v1",
-                "wiki_finite_element_limit_analysis"
-              ]
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe Finite Element Method (FEM) can be enhanced by incorporating advanced techniques to improve computational efficiency and accuracy. Two such techniques are the Additive Schwarz Method and Mass Lumping. The Additive Schwarz Method is a domain decomposition technique that divides the computational domain into subdomains and combines solutions from overlapping subdomains using weighted sums, improving convergence for elliptic problems. This method is particularly effective for Poisson equations and can be integrated with multigrid strategies for faster convergence, as shown in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "085896ce-1231-57ab-bde7-630a049a1575",
-              "source_id": "arxiv_1512.02390v2"
-            },
-            {
-              "type": "text",
-              "text": ". On the other hand, Mass Lumping is a technique to simplify the mass matrix in FEM by approximating it as diagonal, reducing computational costs. This is achieved by placing nodes at Legendre-Gauss-Lobatto (LGL) points and using Gauss-Lobatto quadrature, enabling efficient time integration with methods like the central difference method (CDM), as described in "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "437f2cca-5812-5f87-80a9-4372fc3607ce",
-              "source_id": "wiki_spectral_element_method"
+              "occurrence_id": "49970574-d1ca-52ab-af68-25328a2cf946",
+              "source_id": "wiki_c_a_s_lemma"
             },
             {
               "type": "text",
@@ -190,7 +268,43 @@
     },
     {
       "type": "section",
-      "section_id": "4fd83b90-6bf6-437e-9d7d-e93b694957ba",
+      "section_id": "e2697cfa-e3af-46f2-a1f8-6858982e609c",
+      "title": "The Finite Element Procedure: The Variational Equation and Bilinear Form Properties",
+      "children": [],
+      "parent_section_ids": [
+        "6f432c39-20b9-432f-a6aa-35ed71eef6ea"
+      ],
+      "status": "needs_generation",
+      "generated_from": "split",
+      "subsection_index": 0
+    },
+    {
+      "type": "section",
+      "section_id": "d54cf0e1-7368-4c85-b7d9-4002ce3d80ae",
+      "title": "The Finite Element Procedure: Céa's Lemma and Convergence Conditions",
+      "children": [],
+      "parent_section_ids": [
+        "6f432c39-20b9-432f-a6aa-35ed71eef6ea"
+      ],
+      "status": "needs_generation",
+      "generated_from": "split",
+      "subsection_index": 1
+    },
+    {
+      "type": "section",
+      "section_id": "4fd8f0c1-2abd-4412-a41b-4df83c1c081d",
+      "title": "The Finite Element Procedure: Implications of Bilinear Form Properties for Finite Element Analysis",
+      "children": [],
+      "parent_section_ids": [
+        "6f432c39-20b9-432f-a6aa-35ed71eef6ea"
+      ],
+      "status": "needs_generation",
+      "generated_from": "split",
+      "subsection_index": 2
+    },
+    {
+      "type": "section",
+      "section_id": "9dd02781-acdf-48d5-87ad-6682908a49f5",
       "title": "Rules for Modeling Physical Phenomena with FEM",
       "children": [
         {
@@ -198,154 +312,11 @@
           "inline_content": [
             {
               "type": "text",
-              "text": "Boundary condition application is a critical aspect of the Finite Element Method (FEM), as it ensures that the problem's physical constraints are satisfied. Incorrect implementation can lead to non-physical solutions or solver failures. Essential and natural boundary conditions are treated differently in the weak form, with essential conditions being directly applied to the solution space, while natural conditions are enforced through the residual. The Galerkin method, a foundational approach in FEM, relies on the correct application of boundary conditions to ensure that the residual is orthogonal to the chosen basis functions, leading to a system of algebraic equations.\n\nThe Spectral Element Method (SEM) and curved elements are two distinct approaches used in the Finite Element Method (FEM) to model complex geometries. SEM utilizes high-degree piecewise polynomials as basis functions, leveraging orthogonal polynomials like Chebyshev or Lagrange polynomials over non-uniform nodes, to achieve high-order accuracy. In contrast, curved elements are specialized finite elements that allow for more accurate modeling of domains with curved boundaries by using higher-order polynomial shapes. This approach reduces discretization errors compared to straight-edged elements. The use of curved elements, particularly in weak Galerkin methods, enhances the flexibility of the solution space, making SEM and curved elements suitable for different types of problems, with SEM exceling in computational fluid dynamics and seismic wave modeling, and curved elements being critical for complex geometries.\n\nThe Galerkin method serves as a foundational approach in the Finite Element Method (FEM) for solving differential equations. By projecting the solution onto a finite-dimensional space of basis functions, the method ensures that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. This technique, introduced by Boris Galerkin, forms the theoretical basis for modern FEM formulations. The use of curved elements, which are specialized finite elements used to better approximate complex geometries, enhances the flexibility of the solution space, particularly in weak Galerkin methods."
-            }
-          ]
-        }
-      ],
-      "parent_section_ids": [],
-      "status": "complete",
-      "generated_from": "writer"
-    },
-    {
-      "type": "section",
-      "section_id": "66f3eaaf-46cb-4660-a1e8-941233c20fb8",
-      "title": "Verification, Validation, and Best Practices",
-      "children": [
-        {
-          "type": "paragraph",
-          "inline_content": [
-            {
-              "type": "text",
-              "text": "Verification of Finite Element Models involves ensuring that the numerical solution accurately represents the physical phenomenon being modeled. A crucial aspect of verification is the solution of the resulting linear system, which can be achieved using iterative or direct solvers. For large-scale problems, preconditioned conjugate gradient (PCG) methods are preferred, as they accelerate convergence. Additionally, the use of curved elements can enhance the flexibility of the solution space, particularly in weak Galerkin methods, by allowing for more accurate modeling of complex geometries. This is achieved through the use of higher-order polynomial shapes, as shown in "
+              "text": "Céa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, Céa's Lemma requires the continuity of the bilinear form, "
             },
             {
               "type": "inline_math",
-              "expression": "x(\\xi, \\eta) = \\sum_{i=1}^{n} N_i(\\xi, \\eta) X_i"
-            },
-            {
-              "type": "text",
-              "text": ", where "
-            },
-            {
-              "type": "inline_math",
-              "expression": "X_i"
-            },
-            {
-              "type": "text",
-              "text": " are control points "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "c033fade-7da9-59b2-af46-80400443f8c6",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nOptimization and convergence enhancement strategies play a crucial role in the Finite Element Method (FEM) for solving partial differential equations (PDEs). The Additive Schwarz Method, a domain decomposition technique, is particularly effective for elliptic problems, such as Poisson equations, by combining solutions from overlapping subdomains using weighted sums. This method enhances performance for spectral element solvers, especially when integrated with multigrid strategies for faster convergence. The Residual Reduction Formula, "
-            },
-            {
-              "type": "inline_math",
-              "expression": " \\frac{\\|r_{k+1}\\|}{\\|r_k\\|} \\leq C \\cdot \\exp(-\\gamma \\sqrt{\\frac{N}{\\log N}}) "
-            },
-            {
-              "type": "text",
-              "text": ", quantifies the exponential convergence of SEM with increasing polynomial order, highlighting the efficiency of high-order methods in reducing errors rapidly "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "46014222-db6e-56f4-b0f0-2f4ebea8b27c",
-              "source_id": "arxiv_1512.02390v2"
-            },
-            {
-              "type": "text",
-              "text": ". Additionally, Limit Analysis, a technique to compute the upper or lower bound plastic collapse load of a mechanical system, uses optimization algorithms instead of time-stepping, making it efficient for geotechnical problems "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "f6c54c0d-36f6-5f38-8524-404b08930209",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nTo ensure the accuracy and reliability of numerical simulations in the Finite Element Method (FEM), it is essential to implement advanced finite element methods with best practices. One such practice is the use of curved elements, which are specialized finite elements that allow for more accurate modeling of domains with curved boundaries by using higher-order polynomial shapes "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "83129ee8-08e5-523c-b57d-90c53b75b2b7",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": ". This approach reduces discretization errors compared to straight-edged elements. Additionally, mass lumping can be employed to simplify the mass matrix in FEM, enabling efficient time integration with methods like the central difference method (CDM) "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "83183dfd-90a6-5ba4-9659-b4f2ecc5f1dc",
-              "source_id": "wiki_spectral_element_method"
-            },
-            {
-              "type": "text",
-              "text": ". Furthermore, the residual reduction formula provides a bound on the residual reduction per iteration, highlighting the efficiency of high-order methods in reducing errors rapidly "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "5ea01fac-b6eb-5431-9e1c-9033784b3372",
-              "source_id": "arxiv_1512.02390v2"
-            },
-            {
-              "type": "text",
-              "text": ". By incorporating these techniques, FEM practitioners can achieve more accurate and reliable results."
-            }
-          ]
-        }
-      ],
-      "parent_section_ids": [],
-      "status": "complete",
-      "generated_from": "writer"
-    },
-    {
-      "type": "section",
-      "section_id": "437252bc-b540-4157-9bd6-86f677222428",
-      "title": "Introduction and Scope of the Finite Element Method",
-      "children": [
-        {
-          "type": "paragraph",
-          "inline_content": [
-            {
-              "type": "text",
-              "text": "The Finite Element Method (FEM) is a powerful numerical technique for solving partial differential equations (PDEs). A foundational approach in FEM is the Galerkin method, introduced by Boris Galerkin "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "85de6349-52e5-55c4-8f2b-5a00aa98a92c",
-              "source_id": "wiki_boris_galerkin"
-            },
-            {
-              "type": "text",
-              "text": ", which involves approximating the solution of a problem by projecting it onto a finite-dimensional space of basis functions. This method ensures that the residual of the differential equation is orthogonal to the chosen basis functions, leading to a system of algebraic equations. FEM can be applied to various domains, including complex geometries, where curved elements "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "34b8a06a-f186-5c03-8c1d-89ad1d70be05",
-              "source_id": "arxiv_2210.16907v1"
-            },
-            {
-              "type": "text",
-              "text": " are used to better approximate the domain's shape. Furthermore, FEM can be used to compute the upper or lower bound plastic collapse load of a mechanical system through Finite Element Limit Analysis (FELA) "
-            },
-            {
-              "type": "citation_occurrence",
-              "occurrence_id": "96521db8-1e61-51a9-803a-1a7a41d26acc",
-              "source_id": "wiki_finite_element_limit_analysis"
-            },
-            {
-              "type": "text",
-              "text": ".\n\nThe assembly and solution of the finite element equations are critical steps in the Finite Element Method (FEM). The local element equations are assembled into a global system of algebraic equations, which involves summing contributions from all elements and applying boundary conditions. This resulting system is solved using numerical methods such as direct solvers or iterative techniques, with preconditioned conjugate gradient (PCG) methods being preferred for large-scale problems. For limit analysis, optimization algorithms replace traditional solvers to compute collapse loads directly, as seen in the optimization problem "
-            },
-            {
-              "type": "inline_math",
-              "expression": " \\min_{\\mathbf{\\sigma}} \\int_{\\Omega} \\mathbf{\\sigma} : \\mathbf{\\varepsilon} d\\Omega \\quad \\text{subject to } \\mathbf{\\sigma} \\in K "
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
             },
             {
               "type": "text",
@@ -353,48 +324,356 @@
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "fa5720c7-fb16-543d-a40e-a2791c14b403",
-              "source_id": "wiki_finite_element_limit_analysis"
+              "occurrence_id": "a0bdcdad-048a-5346-8966-8a74926f6cc9",
+              "source_id": "wiki_c_a_s_lemma"
             },
             {
               "type": "text",
-              "text": ". The choice of solver depends on problem size, sparsity, and desired accuracy, with iterative methods favored for their memory efficiency "
+              "text": ", and coercivity, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": " "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "b9435d2f-542e-5887-8826-2396f9405eb2",
-              "source_id": "arxiv_1512.02390v2"
+              "occurrence_id": "8eb2beab-6057-563e-b78c-7554f60318cd",
+              "source_id": "wiki_c_a_s_lemma"
             },
             {
               "type": "text",
-              "text": ".\n\nAdvanced Finite Element Methods for Complex Problems are essential for tackling intricate problems in various fields. The use of curved elements is particularly critical in weak Galerkin methods, where they enhance the flexibility of the solution space by allowing for more accurate modeling of domains with curved boundaries "
+              "text": ". These properties ensure that the finite element solution converges to the true solution under appropriate conditions, such as continuity and boundedness. The variational equation, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(u, v) = L(v)"
+            },
+            {
+              "type": "text",
+              "text": " "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "62bb49a1-61c3-589e-b879-bd9a2913e63b",
-              "source_id": "arxiv_2210.16907v1"
+              "occurrence_id": "074e1c8b-b612-576c-953b-d5198acb5700",
+              "source_id": "wiki_c_a_s_lemma"
             },
             {
               "type": "text",
-              "text": ". Furthermore, the Spectral Element Method (SEM) is a FEM variant using high-degree piecewise polynomials as basis functions, achieving high-order accuracy and leveraging orthogonal polynomials like Chebyshev or Lagrange polynomials over non-uniform nodes "
+              "text": ", forms the basis for the finite element discretization, and Céa's Lemma provides a crucial link between the exact and approximate solutions.\n\nThe mathematical properties of bilinear forms play a crucial role in the analysis of the finite element method (FEM). Specifically, the continuity and coercivity of the bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " are essential in ensuring the existence and uniqueness of the solution to the variational problem. The continuity of "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " is defined by the equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\gamma"
+            },
+            {
+              "type": "text",
+              "text": " is a positive constant, and the coercivity of "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " is enforced by the equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\alpha"
+            },
+            {
+              "type": "text",
+              "text": " is also a positive constant. These properties, combined with the variational equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(u, v) = L(v)"
+            },
+            {
+              "type": "text",
+              "text": ", form the foundation for the analysis of the FEM.\n\nThe variational equation, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(u, v) = L(v)"
+            },
+            {
+              "type": "text",
+              "text": ", represents the weak form of the partial differential equation, where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u"
+            },
+            {
+              "type": "text",
+              "text": " is the solution in the Hilbert space "
+            },
+            {
+              "type": "inline_math",
+              "expression": "V"
+            },
+            {
+              "type": "text",
+              "text": ", "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v"
+            },
+            {
+              "type": "text",
+              "text": " is a test function, and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "L(v)"
+            },
+            {
+              "type": "text",
+              "text": " is a bounded linear functional. This equation forms the basis for the finite element discretization. The coercivity of the bilinear form, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": ", guarantees the existence and uniqueness of the solution to the variational problem, as demonstrated by Céa's Lemma, a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "1de0097a-00e1-55ac-8573-cdf1946ce103",
-              "source_id": "wiki_spectral_element_method"
+              "occurrence_id": "09f435f0-c564-5bb6-b8b6-f8b35cc6cac2",
+              "source_id": "wiki_c_a_s_lemma"
             },
             {
               "type": "text",
-              "text": ". Additionally, the Additive Schwarz Method is a domain decomposition technique for solving PDEs by dividing the computational domain into subdomains, combining solutions from overlapping subdomains using weighted sums, and improving convergence for elliptic problems "
+              "text": ". The continuity of the bilinear form, "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": ", ensures that the bilinear form does not grow unbounded with respect to the input functions."
+            }
+          ]
+        }
+      ],
+      "parent_section_ids": [],
+      "status": "complete",
+      "generated_from": "writer"
+    },
+    {
+      "type": "section",
+      "section_id": "8df36f36-bed7-422c-b89b-fa3caa38ecc4",
+      "title": "Verification, Validation, and Best Practices",
+      "children": [
+        {
+          "type": "paragraph",
+          "inline_content": [
+            {
+              "type": "text",
+              "text": "Céa's Lemma is a fundamental result in the analysis of the finite element method (FEM) for elliptic partial differential equations. It provides a framework for proving error estimates by relating the exact solution of a variational problem to its finite-dimensional approximation. The lemma relies on the properties of Hilbert spaces, bilinear forms, and bounded linear operators. Specifically, Céa's Lemma states that the solution "
+            },
+            {
+              "type": "inline_math",
+              "expression": "u_h"
+            },
+            {
+              "type": "text",
+              "text": " of the finite-dimensional approximation satisfies "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(u_h, v_h) = L(v_h)"
+            },
+            {
+              "type": "text",
+              "text": " for all "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v_h \\in V_h"
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(u, v) = L(v)"
+            },
+            {
+              "type": "text",
+              "text": " is the variational equation representing the weak form of the partial differential equation. This is guaranteed by the continuity of the bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": ", which is defined as "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": " (wiki_c_a_s_lemma), and the coercivity of the bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": ", which is enforced by "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": " (wiki_c_a_s_lemma).\n\nThe continuity and coercivity of bilinear forms are crucial properties in the analysis of the finite element method. The continuity of a bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " is defined by the equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "|a(v, w)| \\leq \\gamma \\|v\\| \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": " "
             },
             {
               "type": "citation_occurrence",
-              "occurrence_id": "763e03ed-595c-52dc-95d1-9357e5c8e0c2",
-              "source_id": "arxiv_1512.02390v2"
+              "occurrence_id": "a38fc15d-3987-5060-ac8c-d37a54ac65f6",
+              "source_id": "wiki_c_a_s_lemma"
             },
             {
               "type": "text",
-              "text": ". These advanced methods are crucial for large-scale simulations beyond single-processor capabilities and enable the solution of complex problems with high accuracy."
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\gamma"
+            },
+            {
+              "type": "text",
+              "text": " is a positive constant and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\|v\\|, \\|w\\|"
+            },
+            {
+              "type": "text",
+              "text": " are norms of "
+            },
+            {
+              "type": "inline_math",
+              "expression": "v"
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "inline_math",
+              "expression": "w"
+            },
+            {
+              "type": "text",
+              "text": " in the Hilbert space "
+            },
+            {
+              "type": "inline_math",
+              "expression": "V"
+            },
+            {
+              "type": "text",
+              "text": ". This ensures that the bilinear form does not grow unbounded with respect to the input functions. Furthermore, the coercivity of a bilinear form "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a"
+            },
+            {
+              "type": "text",
+              "text": " is enforced by the equation "
+            },
+            {
+              "type": "inline_math",
+              "expression": "a(v, v) \\geq \\alpha \\|v\\|^2"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "citation_occurrence",
+              "occurrence_id": "ff5f4285-91e7-50dd-91b1-8a895f0b6caa",
+              "source_id": "wiki_c_a_s_lemma"
+            },
+            {
+              "type": "text",
+              "text": ", where "
+            },
+            {
+              "type": "inline_math",
+              "expression": "\\alpha"
+            },
+            {
+              "type": "text",
+              "text": " is a positive constant, guaranteeing that the bilinear form is positive definite and ensuring the existence and uniqueness of the solution to the variational problem. These properties are essential in establishing the convergence of the finite element solution to the true solution under appropriate conditions."
             }
           ]
         }
@@ -412,40 +691,23 @@
       "authoritative_for_rendering": false,
       "sections": [
         {
-          "section_id": "b4de2d7e-2034-4c5c-b382-06f2fd93965e",
-          "semantic_marker_count": 2,
+          "section_id": "cd8ada70-e71a-4090-8980-b998d063463a",
+          "semantic_marker_count": 4,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
-            "wiki_boris_galerkin",
-            "wiki_boris_galerkin"
+            "wiki_c_a_s_lemma",
+            "wiki_c_a_s_lemma",
+            "wiki_c_a_s_lemma",
+            "wiki_c_a_s_lemma"
           ],
-          "inline_math_count": 4,
+          "inline_math_count": 26,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
-          "section_id": "34f33cbc-265c-4b09-abfd-23f12859ee6f",
-          "semantic_marker_count": 7,
-          "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "wiki_boris_galerkin",
-            "arxiv_2210.16907v1",
-            "wiki_spectral_element_method",
-            "arxiv_2210.16907v1",
-            "wiki_finite_element_limit_analysis",
-            "arxiv_1512.02390v2",
-            "wiki_spectral_element_method"
-          ],
-          "inline_math_count": 5,
-          "citation_cluster_count": 1,
-          "display_math_count": 0,
-          "equation_occurrence_count": 0,
-          "diagnostics": []
-        },
-        {
-          "section_id": "4fd83b90-6bf6-437e-9d7d-e93b694957ba",
+          "section_id": "e2697cfa-e3af-46f2-a1f8-6858982e609c",
           "semantic_marker_count": 0,
           "annotated_equation_ids": [],
           "annotated_source_ids": [],
@@ -456,60 +718,90 @@
           "diagnostics": []
         },
         {
-          "section_id": "66f3eaaf-46cb-4660-a1e8-941233c20fb8",
-          "semantic_marker_count": 6,
+          "section_id": "d54cf0e1-7368-4c85-b7d9-4002ce3d80ae",
+          "semantic_marker_count": 0,
           "annotated_equation_ids": [],
-          "annotated_source_ids": [
-            "arxiv_2210.16907v1",
-            "arxiv_1512.02390v2",
-            "wiki_finite_element_limit_analysis",
-            "arxiv_2210.16907v1",
-            "wiki_spectral_element_method",
-            "arxiv_1512.02390v2"
-          ],
-          "inline_math_count": 3,
+          "annotated_source_ids": [],
+          "inline_math_count": 0,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         },
         {
-          "section_id": "437252bc-b540-4157-9bd6-86f677222428",
-          "semantic_marker_count": 8,
+          "section_id": "4fd8f0c1-2abd-4412-a41b-4df83c1c081d",
+          "semantic_marker_count": 0,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [],
+          "inline_math_count": 0,
+          "citation_cluster_count": 0,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
+          "diagnostics": []
+        },
+        {
+          "section_id": "9dd02781-acdf-48d5-87ad-6682908a49f5",
+          "semantic_marker_count": 4,
           "annotated_equation_ids": [],
           "annotated_source_ids": [
-            "wiki_boris_galerkin",
-            "arxiv_2210.16907v1",
-            "wiki_finite_element_limit_analysis",
-            "wiki_finite_element_limit_analysis",
-            "arxiv_1512.02390v2",
-            "arxiv_2210.16907v1",
-            "wiki_spectral_element_method",
-            "arxiv_1512.02390v2"
+            "wiki_c_a_s_lemma",
+            "wiki_c_a_s_lemma",
+            "wiki_c_a_s_lemma",
+            "wiki_c_a_s_lemma"
           ],
-          "inline_math_count": 1,
+          "inline_math_count": 18,
+          "citation_cluster_count": 0,
+          "display_math_count": 0,
+          "equation_occurrence_count": 0,
+          "diagnostics": []
+        },
+        {
+          "section_id": "8df36f36-bed7-422c-b89b-fa3caa38ecc4",
+          "semantic_marker_count": 2,
+          "annotated_equation_ids": [],
+          "annotated_source_ids": [
+            "wiki_c_a_s_lemma",
+            "wiki_c_a_s_lemma"
+          ],
+          "inline_math_count": 18,
           "citation_cluster_count": 0,
           "display_math_count": 0,
           "equation_occurrence_count": 0,
           "diagnostics": []
         }
       ],
-      "semantic_marker_count": 23,
+      "semantic_marker_count": 10,
+      "publication_views": {
+        "concept_graph": {
+          "available_concepts": 0,
+          "selected_concepts": 0,
+          "available_concept_relations": 0,
+          "selected_concept_relations": 0,
+          "selection_policy": "all"
+        },
+        "relationship_table": {
+          "available_relationships": 0,
+          "selected_relationships": 0,
+          "selection_policy": "all"
+        }
+      },
       "latex_ir_readiness": {
         "ready": true,
         "counts": {
-          "sections": 5,
-          "paragraphs": 5,
-          "text_nodes": 40,
-          "inline_math": 13,
+          "sections": 6,
+          "paragraphs": 3,
+          "text_nodes": 75,
+          "inline_math": 62,
           "display_math": 0,
           "equation_occurrences": 0,
-          "citation_occurrences": 21,
-          "citation_cluster_occurrences": 1,
+          "citation_occurrences": 10,
+          "citation_cluster_occurrences": 0,
           "cross_reference_occurrences": 0,
           "equation_proposal_references": 0,
           "figures": 0,
           "tables": 0,
+          "concept_graph_views": 0,
+          "relationship_table_views": 0,
           "raw_math_text_nodes": 0
         },
         "diagnostics": []
@@ -518,18 +810,20 @@
     "latex_ir_readiness": {
       "ready": true,
       "counts": {
-        "sections": 5,
-        "paragraphs": 5,
-        "text_nodes": 40,
-        "inline_math": 13,
+        "sections": 6,
+        "paragraphs": 3,
+        "text_nodes": 75,
+        "inline_math": 62,
         "display_math": 0,
         "equation_occurrences": 0,
-        "citation_occurrences": 21,
-        "citation_cluster_occurrences": 1,
+        "citation_occurrences": 10,
+        "citation_cluster_occurrences": 0,
         "cross_reference_occurrences": 0,
         "equation_proposal_references": 0,
         "figures": 0,
         "tables": 0,
+        "concept_graph_views": 0,
+        "relationship_table_views": 0,
         "raw_math_text_nodes": 0
       },
       "diagnostics": []
@@ -537,11 +831,13 @@
   },
   "source_snapshot": {
     "legacy_section_ids": [
-      "b4de2d7e-2034-4c5c-b382-06f2fd93965e",
-      "34f33cbc-265c-4b09-abfd-23f12859ee6f",
-      "4fd83b90-6bf6-437e-9d7d-e93b694957ba",
-      "66f3eaaf-46cb-4660-a1e8-941233c20fb8",
-      "437252bc-b540-4157-9bd6-86f677222428"
-    ]
+      "cd8ada70-e71a-4090-8980-b998d063463a",
+      "e2697cfa-e3af-46f2-a1f8-6858982e609c",
+      "d54cf0e1-7368-4c85-b7d9-4002ce3d80ae",
+      "4fd8f0c1-2abd-4412-a41b-4df83c1c081d",
+      "9dd02781-acdf-48d5-87ad-6682908a49f5",
+      "8df36f36-bed7-422c-b89b-fa3caa38ecc4"
+    ],
+    "publication_view_section_ids": []
   }
 }
