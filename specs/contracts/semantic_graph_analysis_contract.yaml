@@ -1,15 +1,28 @@
-version: 1
-milestone: G3.0
+
+version: 2
+milestone: G3.1.0-compatible
 purpose: >-
   Define the contract for backend-independent semantic graph primitive analysis,
-  with explicit evidence, provenance, verification boundaries, and lifecycle-aware
-  reusable analysis artifacts.
+  with explicit evidence, provenance, semantic interpretation context,
+  verification boundaries, and lifecycle-aware reusable analysis artifacts.
 
 source_of_truth:
   graph: audit_engine.semantic_audit.core.semantic_graph.SemanticGraph
   rule: >-
     Analysis consumes the canonical SemanticGraph and must not redefine semantic
     identity, entity meaning, or relationship meaning.
+
+semantic_context:
+  schema_version: semantic_context/v1
+  required_fields:
+    - graph_schema_version
+    - relationship_vocabulary_version
+    - analysis_contract_version
+  optional_fields:
+    - projection_contract_version
+  invariant: >-
+    Analysis identity and downstream verification must be bound to semantic
+    interpretation context in addition to the graph content fingerprint.
 
 query_contract:
   required_fields:
@@ -34,6 +47,8 @@ analysis_result_contract:
     - status
     - algorithm
     - graph_fingerprint
+    - semantic_context
+    - semantic_context_fingerprint
     - source_entities
     - discovered_entities
     - observations
@@ -41,7 +56,7 @@ analysis_result_contract:
     - verification_summary
     - parameters
   invariants:
-    - analysis_id_is_deterministic_for_same_query_graph_and_parameters
+    - analysis_id_is_deterministic_for_same_query_graph_parameters_and_semantic_context
     - graph_fingerprint_identifies_the_analyzed_semantic_snapshot
     - observations_are_not_audit_findings
     - structural_metrics_are_not_semantic_truth
@@ -77,24 +92,24 @@ memory:
     role: retain task-local intermediate analysis artifacts
     invalidation_rule: >-
       A stored result is stale when its graph_fingerprint differs from the current
-      graph fingerprint.
+      graph fingerprint. G3.1 verification additionally invalidates on semantic
+      context mismatch.
   long_term_memory:
     status: deferred
-    reason: >-
-      Cross-project persistence requires separate lifecycle, privacy, trust, and
-      governance decisions.
 
 verification_boundary:
   statuses:
+    - proposed
     - observed
     - corroborated
     - validated
     - rejected
-  current_g3_default: observed
+    - inconclusive
+    - stale
+  current_graph_analysis_default: observed
   policy: >-
-    Traversal and dependency discovery establish graph presence only. A later
-    verification layer may promote evidence after solver, analyzer, executable,
-    human, or other explicit verification.
+    Traversal and dependency discovery establish graph presence only. Explicit
+    G3.1 verifiers may change evidence state only through immutable receipts.
 
 forbidden_implicit_actions:
   - create_audit_finding_from_graph_reachability_alone

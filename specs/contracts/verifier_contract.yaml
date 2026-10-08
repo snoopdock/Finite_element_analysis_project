@@ -1,0 +1,30 @@
+
+version: 1
+milestone: G3.1.0
+purpose: Define a replaceable deterministic interface for semantic verifiers.
+
+verifier_descriptor:
+  required_fields:
+    - verifier_id
+    - version
+    - supported_obligation_types
+
+execution_contract:
+  input:
+    - verification_obligation
+    - read_only_verification_context
+  output: verification_attempt
+  requirements:
+    - validate_obligation_binding_before_reasoning
+    - preserve_evidence_identifiers
+    - expose_verifier_version
+    - return_inconclusive_when_required_evidence_is_absent
+    - never_create_audit_finding
+
+initial_verifiers:
+  observation_contract:
+    semantics: deterministic match against explicit observation fields
+  evidence_corroboration:
+    semantics: >-
+      establish explicit source-group corroboration only when provenance exposes
+      an independence key; multiple edge identifiers alone are insufficient

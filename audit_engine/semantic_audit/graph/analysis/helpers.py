@@ -1,9 +1,11 @@
+
 """Shared helpers for graph analyzers."""
 
 from __future__ import annotations
 
 from typing import Any, Iterable
 
+from .context import SemanticContext
 from .identity import deterministic_id
 from .models import AnalysisType, TraversalDirection
 from .observations import SemanticObservation
@@ -76,14 +78,14 @@ def make_analysis_id(
     query_id: str,
     graph_fingerprint: str,
     parameters: dict[str, Any],
+    semantic_context: SemanticContext | None = None,
 ) -> str:
-    return deterministic_id(
-        "analysis",
-        {
-            "analysis_type": analysis_type.value,
-            "query_id": query_id,
-            "graph_fingerprint": graph_fingerprint,
-            "parameters": parameters,
-        },
-        length=24,
-    )
+    payload: dict[str, Any] = {
+        "analysis_type": analysis_type.value,
+        "query_id": query_id,
+        "graph_fingerprint": graph_fingerprint,
+        "parameters": parameters,
+    }
+    if semantic_context is not None:
+        payload["semantic_context_fingerprint"] = semantic_context.fingerprint
+    return deterministic_id("analysis", payload, length=24)

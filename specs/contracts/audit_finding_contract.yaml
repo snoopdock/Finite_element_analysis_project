@@ -1,0 +1,32 @@
+
+version: 1
+milestone: G3.1.0
+schema_version: semantic_audit_finding/v1
+purpose: Define findings as policy judgments backed by immutable verification receipts.
+
+required_fields:
+  - finding_id
+  - rule_id
+  - rule_version
+  - receipt_id
+  - obligation_id
+  - severity
+  - title
+  - message
+  - evidence_ids
+  - graph_fingerprint
+  - semantic_context_fingerprint
+  - lifecycle_status
+
+creation_invariants:
+  - triggered_rule_evaluation_required
+  - matching_verification_receipt_required
+  - graph_analysis_result_alone_is_insufficient
+  - finding_identity_is_deterministic
+
+lifecycle_states:
+  - open
+  - acknowledged
+  - resolved
+  - suppressed
+  - stale

@@ -1,0 +1,17 @@
+
+version: 1
+milestone: G3.1.0
+purpose: Isolate learned or heuristic proposals from canonical semantic knowledge.
+
+candidate_state: proposed
+invariants:
+  - candidate_is_not_canonical_fact
+  - candidate_cannot_mutate_semantic_graph
+  - candidate_requires_explicit_verification_before_future_promotion
+  - candidate_provenance_is_preserved
+
+future_promotion:
+  status: deferred
+  requirement: >-
+    A later promotion service must require an explicit validated verification
+    receipt and a domain-specific semantic projection policy.

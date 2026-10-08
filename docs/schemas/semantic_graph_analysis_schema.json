@@ -3,83 +3,256 @@
   "$id": "https://example.org/schemas/semantic_graph_analysis_schema.json",
   "title": "Semantic Graph Analysis Artifact",
   "type": "object",
-  "required": ["schema_version", "result_count", "results"],
+  "required": [
+    "schema_version",
+    "result_count",
+    "results"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": {"const": "semantic_graph_analysis/v1"},
-    "result_count": {"type": "integer", "minimum": 0},
+    "schema_version": {
+      "const": "semantic_graph_analysis/v1"
+    },
+    "result_count": {
+      "type": "integer",
+      "minimum": 0
+    },
     "results": {
       "type": "array",
-      "items": {"$ref": "#/$defs/result"}
+      "items": {
+        "$ref": "#/$defs/result"
+      }
     }
   },
   "$defs": {
     "result": {
       "type": "object",
       "required": [
-        "schema_version", "analysis_id", "query_id", "analysis_type", "status",
-        "algorithm", "graph_fingerprint", "source_entities", "discovered_entities",
-        "observations", "evidence", "verification_summary", "parameters", "metadata"
+        "schema_version",
+        "analysis_id",
+        "query_id",
+        "analysis_type",
+        "status",
+        "algorithm",
+        "graph_fingerprint",
+        "semantic_context",
+        "semantic_context_fingerprint",
+        "source_entities",
+        "discovered_entities",
+        "observations",
+        "evidence",
+        "verification_summary",
+        "parameters",
+        "metadata"
       ],
       "additionalProperties": false,
       "properties": {
-        "schema_version": {"const": "semantic_graph_analysis/v1"},
-        "analysis_id": {"type": "string", "minLength": 1},
-        "query_id": {"type": "string", "minLength": 1},
-        "analysis_type": {"enum": ["structural", "dependency", "path", "traversal", "centrality"]},
-        "status": {"enum": ["completed", "no_match"]},
-        "algorithm": {"type": "string", "minLength": 1},
-        "graph_fingerprint": {"type": "string", "minLength": 1},
-        "source_entities": {"type": "array", "items": {"type": "string"}},
-        "discovered_entities": {"type": "array", "items": {"type": "string"}},
+        "schema_version": {
+          "const": "semantic_graph_analysis/v1"
+        },
+        "analysis_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "query_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "analysis_type": {
+          "enum": [
+            "structural",
+            "dependency",
+            "path",
+            "traversal",
+            "centrality"
+          ]
+        },
+        "status": {
+          "enum": [
+            "completed",
+            "no_match"
+          ]
+        },
+        "algorithm": {
+          "type": "string",
+          "minLength": 1
+        },
+        "graph_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_entities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "discovered_entities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "observations": {
           "type": "array",
-          "items": {"$ref": "#/$defs/observation"}
+          "items": {
+            "$ref": "#/$defs/observation"
+          }
         },
         "evidence": {
           "type": "array",
-          "items": {"$ref": "#/$defs/evidence"}
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
         },
         "verification_summary": {
           "type": "object",
-          "additionalProperties": {"type": "integer", "minimum": 0}
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
         },
-        "parameters": {"type": "object"},
-        "metadata": {"type": "object"}
+        "parameters": {
+          "type": "object"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "semantic_context": {
+          "$ref": "#/$defs/semantic_context"
+        },
+        "semantic_context_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "observation": {
       "type": "object",
       "required": [
-        "observation_id", "subject_id", "predicate", "object_id",
-        "evidence_ids", "depth", "metadata"
+        "observation_id",
+        "subject_id",
+        "predicate",
+        "object_id",
+        "evidence_ids",
+        "depth",
+        "metadata"
       ],
       "additionalProperties": false,
       "properties": {
-        "observation_id": {"type": "string", "minLength": 1},
-        "subject_id": {"type": "string", "minLength": 1},
-        "predicate": {"type": "string", "minLength": 1},
-        "object_id": {"type": "string", "minLength": 1},
-        "evidence_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
-        "depth": {"type": "integer", "minimum": 1},
-        "metadata": {"type": "object"}
+        "observation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "predicate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "object_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "metadata": {
+          "type": "object"
+        }
       }
     },
     "evidence": {
       "type": "object",
       "required": [
-        "evidence_id", "subject_id", "predicate", "object_id",
-        "verification_status", "source_kind", "provenance"
+        "evidence_id",
+        "subject_id",
+        "predicate",
+        "object_id",
+        "verification_status",
+        "source_kind",
+        "provenance"
       ],
       "additionalProperties": false,
       "properties": {
-        "evidence_id": {"type": "string", "minLength": 1},
-        "subject_id": {"type": "string", "minLength": 1},
-        "predicate": {"type": "string", "minLength": 1},
-        "object_id": {"type": "string", "minLength": 1},
-        "verification_status": {"enum": ["observed", "corroborated", "validated", "rejected"]},
-        "source_kind": {"type": "string", "minLength": 1},
-        "provenance": {"type": "object"}
+        "evidence_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "predicate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "object_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verification_status": {
+          "enum": [
+            "proposed",
+            "observed",
+            "corroborated",
+            "validated",
+            "rejected",
+            "inconclusive",
+            "stale"
+          ]
+        },
+        "source_kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provenance": {
+          "type": "object"
+        }
+      }
+    },
+    "semantic_context": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "graph_schema_version",
+        "relationship_vocabulary_version",
+        "projection_contract_version",
+        "analysis_contract_version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "semantic_context/v1"
+        },
+        "graph_schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relationship_vocabulary_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "projection_contract_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "analysis_contract_version": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     }
   }

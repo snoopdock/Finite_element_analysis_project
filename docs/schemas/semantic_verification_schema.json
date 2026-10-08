@@ -1,0 +1,30 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_verification_schema.json",
+  "title": "Semantic Verification Receipt",
+  "type": "object",
+  "required": [
+    "schema_version", "receipt_id", "attempt_id", "obligation_id",
+    "source_analysis_id", "verifier_id", "verifier_version", "decision",
+    "evidence_state", "evidence_ids", "graph_fingerprint",
+    "semantic_context_fingerprint"
+  ],
+  "properties": {
+    "schema_version": {"const": "semantic_verification_receipt/v1"},
+    "receipt_id": {"type": "string", "minLength": 1},
+    "attempt_id": {"type": "string", "minLength": 1},
+    "obligation_id": {"type": "string", "minLength": 1},
+    "source_analysis_id": {"type": "string", "minLength": 1},
+    "verifier_id": {"type": "string", "minLength": 1},
+    "verifier_version": {"type": "string", "minLength": 1},
+    "decision": {"enum": ["confirmed", "refuted", "inconclusive", "error"]},
+    "evidence_state": {"enum": ["proposed", "observed", "corroborated", "validated", "rejected", "inconclusive", "stale"]},
+    "evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "graph_fingerprint": {"type": "string", "minLength": 1},
+    "semantic_context_fingerprint": {"type": "string", "minLength": 1},
+    "details": {"type": "object"},
+    "error": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

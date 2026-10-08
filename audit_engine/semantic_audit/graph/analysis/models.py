@@ -1,3 +1,4 @@
+
 """Controlled vocabulary for G3 graph analysis."""
 
 from enum import Enum
@@ -17,18 +18,21 @@ class AnalysisStatus(str, Enum):
 
 
 class VerificationStatus(str, Enum):
-    """Epistemic status of evidence used by an analysis result.
+    """Lifecycle/epistemic state of evidence.
 
-    G3 graph traversal can establish that an observation exists in the
-    canonical semantic graph; it cannot by itself establish program behavior,
-    scientific truth, or policy compliance.  Stronger states are reserved for
-    later verification layers.
+    This enum is retained at its G3.0 import path for backward compatibility.
+    G3.1 distinguishes this evidence state from ``VerificationDecision``:
+    evidence can be validated while an obligation is refuted, and corroborated
+    evidence does not by itself imply a policy violation.
     """
 
+    PROPOSED = "proposed"
     OBSERVED = "observed"
     CORROBORATED = "corroborated"
     VALIDATED = "validated"
     REJECTED = "rejected"
+    INCONCLUSIVE = "inconclusive"
+    STALE = "stale"
 
 
 class TraversalDirection(str, Enum):

@@ -1,0 +1,29 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "audit_finding_schema.json",
+  "title": "Semantic Audit Finding",
+  "type": "object",
+  "required": [
+    "schema_version", "finding_id", "rule_id", "rule_version", "receipt_id",
+    "obligation_id", "severity", "title", "message", "evidence_ids",
+    "graph_fingerprint", "semantic_context_fingerprint", "lifecycle_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "semantic_audit_finding/v1"},
+    "finding_id": {"type": "string", "minLength": 1},
+    "rule_id": {"type": "string", "minLength": 1},
+    "rule_version": {"type": "string", "minLength": 1},
+    "receipt_id": {"type": "string", "minLength": 1},
+    "obligation_id": {"type": "string", "minLength": 1},
+    "severity": {"enum": ["info", "warning", "error", "critical"]},
+    "title": {"type": "string", "minLength": 1},
+    "message": {"type": "string", "minLength": 1},
+    "evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "graph_fingerprint": {"type": "string", "minLength": 1},
+    "semantic_context_fingerprint": {"type": "string", "minLength": 1},
+    "lifecycle_status": {"enum": ["open", "acknowledged", "resolved", "suppressed", "stale"]},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}

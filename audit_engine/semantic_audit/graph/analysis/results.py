@@ -1,3 +1,4 @@
+
 """Versioned analysis result contract for G3 semantic graph analysis."""
 
 from __future__ import annotations
@@ -5,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from .context import SemanticContext
 from .evidence import EvidenceRecord
 from .models import AnalysisStatus, AnalysisType
 from .observations import SemanticObservation
@@ -27,6 +29,7 @@ class GraphAnalysisResult:
     evidence: tuple[EvidenceRecord, ...] = field(default_factory=tuple)
     parameters: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    semantic_context: SemanticContext = field(default_factory=SemanticContext)
     schema_version: str = ANALYSIS_SCHEMA_VERSION
 
     def to_dict(self) -> dict[str, Any]:
@@ -43,6 +46,8 @@ class GraphAnalysisResult:
             "status": self.status.value,
             "algorithm": self.algorithm,
             "graph_fingerprint": self.graph_fingerprint,
+            "semantic_context": self.semantic_context.to_dict(),
+            "semantic_context_fingerprint": self.semantic_context.fingerprint,
             "source_entities": list(self.source_entities),
             "discovered_entities": list(self.discovered_entities),
             "observations": [value.to_dict() for value in self.observations],

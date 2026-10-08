@@ -1,3 +1,4 @@
+from .context import SemanticContext
 from .dependency import DependencyAnalyzer
 from .engine import GraphAnalysisEngine, UnsupportedGraphQueryError
 from .evidence import EvidenceRecord
@@ -36,6 +37,7 @@ __all__ = [
     "GraphTraversalEngine",
     "GraphTraversalError",
     "PathAnalyzer",
+    "SemanticContext",
     "SemanticObservation",
     "StructuralAnalyzer",
     "TraversalDirection",
