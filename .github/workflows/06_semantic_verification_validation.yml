@@ -1,0 +1,82 @@
+name: 06 - Semantic Verification Validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - "audit_engine/semantic_audit/verification/**"
+      - "audit_engine/semantic_audit/rules/**"
+      - "audit_engine/semantic_audit/findings/**"
+      - "audit_engine/semantic_audit/graph/analysis/context.py"
+      - "audit_engine/semantic_audit/graph/analysis/models.py"
+      - "audit_engine/semantic_audit/graph/analysis/results.py"
+      - "audit_engine/semantic_audit/graph/analysis/engine.py"
+      - "audit_engine/semantic_audit/graph/service.py"
+      - "tests/semantic_verification/**"
+      - "tests/semantic_graph/**"
+      - "tools/validate_semantic_verification.py"
+      - "specs/contracts/semantic_verification_contract.yaml"
+      - "specs/contracts/verifier_contract.yaml"
+      - "specs/contracts/semantic_audit_rule_contract.yaml"
+      - "specs/contracts/audit_finding_contract.yaml"
+      - "specs/contracts/candidate_knowledge_contract.yaml"
+      - "specs/contracts/semantic_graph_analysis_contract.yaml"
+      - "docs/schemas/semantic_verification_schema.json"
+      - "docs/schemas/audit_finding_schema.json"
+      - ".github/workflows/06_semantic_verification_validation.yml"
+  pull_request:
+    paths:
+      - "audit_engine/semantic_audit/verification/**"
+      - "audit_engine/semantic_audit/rules/**"
+      - "audit_engine/semantic_audit/findings/**"
+      - "audit_engine/semantic_audit/graph/analysis/**"
+      - "audit_engine/semantic_audit/graph/service.py"
+      - "tests/semantic_verification/**"
+      - "tests/semantic_graph/**"
+      - "tools/validate_semantic_verification.py"
+      - "specs/contracts/**"
+      - "docs/schemas/**"
+
+permissions:
+  contents: read
+
+jobs:
+  semantic-verification-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run G3.0 graph regression tests
+        run: |
+          pytest tests/semantic_graph -v
+
+      - name: Run G3.1 semantic verification tests
+        run: |
+          pytest tests/semantic_verification -v
+
+      - name: Validate G3.1 semantic verification artifact
+        run: |
+          python tools/validate_semantic_verification.py \
+            --output artifacts/semantic_verification_validation.json
+
+      - name: Upload G3.1 validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-verification-validation
+          path: artifacts/semantic_verification_validation.json
+          if-no-files-found: error
