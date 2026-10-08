@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_artifact_reconciliation.schema.json",
+  "title": "Semantic Artifact Reconciliation",
+  "type": "object",
+  "required": ["schema_version", "artifact_type", "predecessor_artifact_id", "successor_artifact_id", "disposition", "details"],
+  "properties": {
+    "schema_version": {"const": "semantic_artifact_reconciliation/v1"},
+    "artifact_type": {"enum": ["analysis", "verification_receipt", "finding"]},
+    "predecessor_artifact_id": {"type": "string", "minLength": 1},
+    "successor_artifact_id": {"type": ["string", "null"]},
+    "disposition": {
+      "enum": [
+        "analysis_equivalent", "analysis_changed", "receipt_equivalent",
+        "receipt_evidence_changed", "receipt_decision_changed", "finding_persists",
+        "finding_not_triggered", "finding_ineligible", "target_no_longer_present",
+        "prerequisite_blocked", "execution_failed"
+      ]
+    },
+    "details": {"type": "object"}
+  },
+  "additionalProperties": false
+}

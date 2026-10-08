@@ -1,0 +1,25 @@
+schema_version: semantic_replay_contract/v1
+contract:
+  authority: semantic_audit_replay_boundary
+  purpose: Reconstruct explicit prior analysis and verification intent against a new graph state.
+analysis_replay:
+  supported_types:
+    - structural
+    - dependency
+    - path
+  source_absence: target_no_longer_present
+verification_replay_modes:
+  exact_ids:
+    meaning: Preserve exact prior observation and evidence identities.
+  observation_semantics:
+    meaning: Re-select the same subject-predicate-object semantic observations and their current evidence.
+  analysis_scope:
+    meaning: Re-select the complete successor analysis.
+requirements:
+  explicit_selection_mode: true
+  hidden_scope_inference: false
+  backend_specific_query_state: false
+forbidden:
+  - guessing_prior_selector_scope
+  - automatic_candidate_promotion
+  - replay_as_semantic_validation

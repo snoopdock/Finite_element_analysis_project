@@ -1,0 +1,29 @@
+schema_version: semantic_reverification_execution_contract/v1
+contract:
+  authority: incremental_reverification_execution_boundary
+  purpose: Execute only pre-planned semantic audit work against the exact after-snapshot graph state.
+inputs:
+  required:
+    - graph_evolution_result
+    - incremental_reverification_result
+    - replay_catalog
+    - canonical_after_graph
+execution:
+  prerequisite_ordering: required
+  task_invention: forbidden
+  canonical_graph_mutation: forbidden
+  implicit_memory_persistence: forbidden
+  historical_finding_mutation: forbidden
+outputs:
+  - successor_analysis_artifacts
+  - rebound_verification_obligations
+  - successor_verification_receipts
+  - successor_rule_evaluations
+  - successor_findings_when_triggered
+  - artifact_reconciliation_records
+invariants:
+  - after_graph_fingerprint_matches_after_snapshot
+  - plan_and_impact_snapshot_bindings_match_evolution
+  - verification_requires_replayed_or_current_source_analysis
+  - finding_reevaluation_requires_current_receipt_and_obligation
+  - target_absence_is_not_reported_as_execution_failure

@@ -1,0 +1,24 @@
+schema_version: semantic_artifact_reconciliation_contract/v1
+contract:
+  authority: audit_result_reconciliation_boundary
+  purpose: Describe predecessor-to-successor audit state without rewriting historical artifacts.
+properties:
+  append_only_history: true
+  historical_lifecycle_mutation: false
+  reconciliation_is_finding_lifecycle: false
+dispositions:
+  - analysis_equivalent
+  - analysis_changed
+  - receipt_equivalent
+  - receipt_evidence_changed
+  - receipt_decision_changed
+  - finding_persists
+  - finding_not_triggered
+  - finding_ineligible
+  - target_no_longer_present
+  - prerequisite_blocked
+  - execution_failed
+forbidden:
+  - deleting_prior_findings
+  - silently_marking_historical_findings_resolved
+  - treating_non_reproduction_as_proof_of_historical_error

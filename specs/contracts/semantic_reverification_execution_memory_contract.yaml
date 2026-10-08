@@ -1,0 +1,19 @@
+schema_version: semantic_reverification_execution_memory_contract/v1
+contract:
+  authority: explicit_reverification_memory_commit_boundary
+  purpose: Persist successor execution artifacts only through an explicit caller action.
+properties:
+  executor_writes_memory: false
+  recorder_is_explicit: true
+  ledger_remains_append_only: true
+  recording_is_idempotent: true
+recordable_artifacts:
+  - reverification_execution
+  - analysis
+  - verification_obligation
+  - verification_receipt
+  - finding
+forbidden:
+  - memory_as_semantic_authority
+  - implicit_persistence_during_execution
+  - mutation_of_prior_memory_records
