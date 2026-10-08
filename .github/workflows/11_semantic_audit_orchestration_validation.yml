@@ -1,0 +1,50 @@
+name: G3.3.0 Semantic Audit Orchestration Validation
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+  pull_request:
+    branches:
+      - stage1/section-uuids
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: G3.0-G3.2.2 regression suites
+        run: >-
+          pytest
+          tests/semantic_graph
+          tests/semantic_verification
+          tests/semantic_domain_verification
+          tests/semantic_graph_evolution
+          tests/semantic_reverification_execution
+          -v
+
+      - name: G3.3.0 audit orchestration suite
+        run: pytest tests/semantic_audit_orchestration -v
+
+      - name: Full repository regression
+        run: pytest -q
+
+      - name: Generate G3.3.0 validation artifact
+        run: python tools/validate_semantic_audit_orchestration.py
+
+      - name: Upload G3.3.0 validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-audit-orchestration-validation
+          path: artifacts/semantic_audit_orchestration_validation.json
+          if-no-files-found: error
