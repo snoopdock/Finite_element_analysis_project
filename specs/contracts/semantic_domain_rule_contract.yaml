@@ -1,0 +1,31 @@
+schema_version: semantic_domain_rule_contract/v1
+purpose: >-
+  Define domain semantic audit rules as declarative policy artifacts. Rules
+  select analysis targets, route them to an explicit verifier, and describe
+  when a verified decision may produce a finding.
+required_fields:
+  - rule_id
+  - version
+  - domain
+  - obligation_type
+  - verifier_id
+  - title
+  - finding_message
+invariants:
+  - graph_analysis_does_not_create_findings
+  - rule_policy_does_not_execute_graph_algorithms
+  - verifier_id_is_explicit
+  - finding_requires_triggered_rule_evaluation
+  - rule_parameters_are_data_not_hidden_python_policy
+selector:
+  scopes: [observation, analysis]
+  fields:
+    - predicates
+    - source_entity_types
+    - target_entity_types
+semantic_context:
+  optional_constraints:
+    - graph_schema_version
+    - relationship_vocabulary_version
+    - projection_contract_version
+    - analysis_contract_version

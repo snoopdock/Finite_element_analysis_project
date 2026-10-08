@@ -1,0 +1,19 @@
+rule_id: scientific.claim_requires_support_relationship
+version: "1.0.0"
+domain: scientific
+obligation_type: required_relationship
+verifier_id: required-relationship
+title: Scientific claim has no support relationship
+finding_message: A scientific claim has no required support relationship in the audited semantic graph snapshot.
+severity: error
+trigger_decision: refuted
+minimum_evidence_state: validated
+selector:
+  scope: analysis
+  source_entity_types: [ScientificClaim]
+parameters:
+  relation_types: [SUPPORTED_BY]
+  direction: outgoing
+  minimum_matches: 1
+metadata:
+  interpretation: graph_scoped_support_completeness

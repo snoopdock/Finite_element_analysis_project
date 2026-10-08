@@ -1,0 +1,25 @@
+rule_id: architecture.no_production_to_experimental_dependency
+version: "1.0.0"
+domain: architecture
+obligation_type: graph_attribute_constraint
+verifier_id: graph-attribute-constraint
+title: Production component depends on experimental component
+finding_message: A production component has a dependency on an experimental component.
+severity: error
+trigger_decision: confirmed
+minimum_evidence_state: validated
+selector:
+  scope: observation
+  predicates: [DEPENDS_ON, IMPORTS]
+  source_entity_types: [Module]
+  target_entity_types: [Module]
+parameters:
+  relation_types: [DEPENDS_ON, IMPORTS]
+  source_entity_types: [Module]
+  target_entity_types: [Module]
+  source_attributes:
+    lifecycle: production
+  target_attributes:
+    lifecycle: experimental
+metadata:
+  interpretation: architecture_policy

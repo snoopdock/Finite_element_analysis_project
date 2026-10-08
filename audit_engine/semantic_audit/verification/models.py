@@ -11,7 +11,8 @@ from audit_engine.semantic_audit.graph.analysis import (
     GraphAnalysisResult,
     VerificationStatus,
 )
-from audit_engine.semantic_audit.graph.analysis.identity import deterministic_id
+from audit_engine.semantic_audit.core.semantic_graph import SemanticGraph
+from audit_engine.semantic_audit.graph.analysis.identity import deterministic_id, graph_fingerprint
 
 
 class VerificationDecision(str, Enum):
@@ -130,9 +131,16 @@ class VerificationObligation:
 
 @dataclass(frozen=True)
 class VerificationContext:
-    """Read-only source material supplied to a verifier."""
+    """Read-only source material supplied to a verifier.
+
+    ``semantic_graph`` is optional for backward compatibility with G3.1.0
+    verifiers that operate entirely on analysis artifacts. Domain verifiers in
+    G3.1.1 may require the canonical graph and must call :meth:`require_graph`
+    rather than assuming one is present.
+    """
 
     analysis_result: GraphAnalysisResult
+    semantic_graph: SemanticGraph | None = None
 
     def validate_obligation_binding(self, obligation: VerificationObligation) -> None:
         result = self.analysis_result
@@ -148,6 +156,19 @@ class VerificationContext:
             raise ValueError("Verification obligation references unavailable observations.")
         if not set(obligation.evidence_ids).issubset(evidence_ids):
             raise ValueError("Verification obligation references unavailable evidence.")
+        if self.semantic_graph is not None:
+            actual_graph_fingerprint = graph_fingerprint(self.semantic_graph)
+            if actual_graph_fingerprint != result.graph_fingerprint:
+                raise ValueError(
+                    "Verification context graph fingerprint does not match analysis result."
+                )
+
+    def require_graph(self) -> SemanticGraph:
+        if self.semantic_graph is None:
+            raise ValueError(
+                "This verifier requires the canonical SemanticGraph in its verification context."
+            )
+        return self.semantic_graph
 
     def all_observations(self):
         return tuple(self.analysis_result.observations)

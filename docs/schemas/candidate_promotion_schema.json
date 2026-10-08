@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "candidate_promotion_result/v1",
+  "type": "object",
+  "required": ["candidate_id", "promoted", "reason"],
+  "properties": {
+    "candidate_id": {"type": "string", "minLength": 1},
+    "promoted": {"type": "boolean"},
+    "reason": {"type": "string", "minLength": 1},
+    "relationship_fingerprint": {"type": ["string", "null"]},
+    "canonical_predicate": {"type": ["string", "null"]},
+    "graph_fingerprint_before": {"type": ["string", "null"]},
+    "graph_fingerprint_after": {"type": ["string", "null"]},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}

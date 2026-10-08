@@ -20,8 +20,12 @@ class VerificationService:
         analysis_result,
         *,
         verifier_id: str | None = None,
+        semantic_graph=None,
     ) -> VerificationReceipt:
-        context = VerificationContext(analysis_result=analysis_result)
+        context = VerificationContext(
+            analysis_result=analysis_result,
+            semantic_graph=semantic_graph,
+        )
         context.validate_obligation_binding(obligation)
 
         if verifier_id is None:

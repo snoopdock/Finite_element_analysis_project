@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from audit_engine.semantic_audit.graph.analysis.identity import deterministic_id
-from audit_engine.semantic_audit.rules import (
+from audit_engine.semantic_audit.rules.models import (
     RuleDisposition,
     RuleEvaluationResult,
     SemanticAuditRule,

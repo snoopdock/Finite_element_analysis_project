@@ -1,0 +1,17 @@
+rule_id: provenance.evidence_requires_source_identity
+version: "1.0.0"
+domain: provenance
+obligation_type: provenance_completeness
+verifier_id: provenance-completeness
+title: Semantic evidence lacks source identity
+finding_message: A semantic observation is backed by evidence without the required source identity.
+severity: error
+trigger_decision: refuted
+minimum_evidence_state: validated
+selector:
+  scope: observation
+parameters:
+  required_paths:
+    - edge_metadata.source_id
+metadata:
+  interpretation: provenance_completeness_policy

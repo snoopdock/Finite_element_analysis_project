@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_domain_rule/v1",
+  "type": "object",
+  "required": ["rule_id", "version", "domain", "obligation_type", "verifier_id", "title", "finding_message"],
+  "properties": {
+    "rule_id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "domain": {"type": "string", "minLength": 1},
+    "obligation_type": {"type": "string", "minLength": 1},
+    "verifier_id": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "finding_message": {"type": "string", "minLength": 1},
+    "severity": {"enum": ["info", "warning", "error", "critical"]},
+    "trigger_decision": {"enum": ["confirmed", "refuted", "inconclusive", "error"]},
+    "minimum_evidence_state": {"enum": ["proposed", "observed", "corroborated", "validated"]},
+    "selector": {
+      "type": "object",
+      "properties": {
+        "scope": {"enum": ["observation", "analysis"]},
+        "predicates": {"type": "array", "items": {"type": "string"}},
+        "source_entity_types": {"type": "array", "items": {"type": "string"}},
+        "target_entity_types": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "parameters": {"type": "object"},
+    "required_semantic_context": {"type": "object"},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}

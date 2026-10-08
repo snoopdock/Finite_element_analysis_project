@@ -1,0 +1,16 @@
+schema_version: candidate_promotion_contract/v1
+purpose: >-
+  Prevent inferred candidate relations from entering canonical semantic state
+  without explicit, context-bound verification.
+invariants:
+  - candidate_must_be_proposed
+  - verification_decision_must_be_confirmed
+  - evidence_state_must_meet_policy
+  - verifier_must_be_allowed_when_policy_restricts_verifiers
+  - candidate_must_be_explicitly_bound_to_verification_obligation
+  - canonical_endpoints_must_already_exist
+  - promotion_metadata_must_reference_verification_receipt
+  - duplicate_canonical_relationships_are_not_inserted
+outputs:
+  - promotion_result
+  - canonical_semantic_edge_when_promoted

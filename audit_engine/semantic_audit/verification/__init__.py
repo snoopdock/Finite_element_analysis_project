@@ -6,6 +6,11 @@ from audit_engine.semantic_audit.graph.analysis.models import VerificationStatus
 from .candidates import CandidateKnowledge
 from .contract_verifier import ObservationContractVerifier
 from .corroboration import EvidenceCorroborationVerifier
+from .domain import (
+    GraphAttributeConstraintVerifier,
+    ProvenanceCompletenessVerifier,
+    RequiredRelationshipVerifier,
+)
 from .models import (
     VerificationAttempt,
     VerificationContext,
@@ -21,6 +26,9 @@ from .verifier import Verifier, VerifierDescriptor
 __all__ = [
     "CandidateKnowledge",
     "EvidenceCorroborationVerifier",
+    "GraphAttributeConstraintVerifier",
+    "ProvenanceCompletenessVerifier",
+    "RequiredRelationshipVerifier",
     "ObservationContractVerifier",
     "VerificationArtifactSerializer",
     "VerificationAttempt",
