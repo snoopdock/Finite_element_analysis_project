@@ -1,0 +1,32 @@
+schema_version: semantic_impact_propagation_contract/v1
+contract:
+  authority: incremental_audit_impact
+  purpose: Localize graph changes to audit artifacts without turning structural change into semantic judgment.
+inputs:
+  - before_snapshot
+  - after_snapshot
+  - graph_delta
+  - artifact_dependency_index
+outputs:
+  - change_atoms
+  - artifact_impacts
+validity_states:
+  - current
+  - recheck_required
+  - stale
+rules:
+  semantic_context_change: stale
+  directly_referenced_evidence_removed: stale
+  source_entity_removed: stale
+  relevant_local_neighborhood_change: recheck_required
+  unresolved_upstream_dependency: recheck_required
+  unrelated_change_for_local_analysis: current
+invariants:
+  - impact_propagates_downstream_from_analysis_to_receipt_to_finding
+  - stale_upstream_makes_downstream_stale
+  - recheck_upstream_requires_downstream_recheck_unless_already_stale
+  - relation_filters_limit_local_change_relevance
+forbidden:
+  - topology_change_as_semantic_judgment
+  - unrelated_change_invalidates_all_artifacts
+  - learned_or_heuristic_score_promotes_validity

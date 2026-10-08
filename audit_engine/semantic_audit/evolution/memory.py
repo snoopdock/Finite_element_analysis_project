@@ -117,6 +117,12 @@ class AuditLongTermMemory:
     def records_for_snapshot(self, snapshot_id: str) -> tuple[MemoryRecord, ...]:
         return tuple(self._records[record_id] for record_id in self._snapshot_index.get(snapshot_id, ()))
 
+    def get_record(self, record_id: str) -> MemoryRecord | None:
+        return self._records.get(record_id)
+
+    def all_records(self) -> tuple[MemoryRecord, ...]:
+        return tuple(self._records[key] for key in sorted(self._records))
+
     def to_dict(self) -> dict[str, Any]:
         return {
             'schema_version': AUDIT_MEMORY_SCHEMA_VERSION,

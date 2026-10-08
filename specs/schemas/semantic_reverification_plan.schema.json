@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_reverification_plan.schema.json",
+  "title": "Semantic Reverification Plan",
+  "type": "object",
+  "required": ["schema_version", "plan_id", "before_snapshot_id", "after_snapshot_id", "policy_version", "is_empty", "tasks"],
+  "properties": {
+    "schema_version": {"const": "semantic_reverification_plan/v1"},
+    "plan_id": {"type": "string", "minLength": 1},
+    "before_snapshot_id": {"type": "string", "minLength": 1},
+    "after_snapshot_id": {"type": "string", "minLength": 1},
+    "policy_version": {"type": "string", "minLength": 1},
+    "is_empty": {"type": "boolean"},
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["task_id", "artifact_type", "artifact_id", "action", "validity", "priority_score", "priority_band", "policy_version"],
+        "properties": {
+          "task_id": {"type": "string"},
+          "artifact_type": {"enum": ["analysis", "verification_receipt", "finding"]},
+          "artifact_id": {"type": "string"},
+          "action": {"enum": ["rerun_analysis", "reverify_receipt", "reevaluate_finding"]},
+          "validity": {"enum": ["recheck_required", "stale"]},
+          "priority_score": {"type": "integer", "minimum": 0},
+          "priority_band": {"enum": ["critical", "high", "normal", "low"]},
+          "reasons": {"type": "array", "items": {"type": "string"}},
+          "change_ids": {"type": "array", "items": {"type": "string"}},
+          "prerequisite_artifact_ids": {"type": "array", "items": {"type": "string"}},
+          "policy_version": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

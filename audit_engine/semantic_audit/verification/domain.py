@@ -83,7 +83,12 @@ class GraphAttributeConstraintVerifier:
                 "source_attributes": _mapping_matches(source.attributes, source_attributes),
                 "target_attributes": _mapping_matches(target.attributes, target_attributes),
             }
-            record = {"observation_id": observation.observation_id, "checks": checks}
+            record = {
+                "observation_id": observation.observation_id,
+                "subject_id": observation.subject_id,
+                "object_id": observation.object_id,
+                "checks": checks,
+            }
             checked.append(record)
             if all(checks.values()):
                 matched.append(observation.observation_id)

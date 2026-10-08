@@ -1,0 +1,23 @@
+schema_version: audit_memory_query_contract/v1
+contract:
+  authority: audit_history_query
+  purpose: Query append-only audit memory without modifying history or canonical semantic state.
+filters:
+  - artifact_types
+  - artifact_ids
+  - snapshot_ids
+  - evidence_ids
+  - receipt_ids
+  - rule_ids
+semantics:
+  combination: logical_and_across_nonempty_filter_categories
+  result_order: deterministic_by_record_id
+  mutation: forbidden
+invariants:
+  - query_identity_is_deterministic
+  - memory_remains_append_only
+  - queries_do_not_promote_or_validate_artifacts
+forbidden:
+  - mutate_memory_during_query
+  - mutate_canonical_graph_during_query
+  - infer_semantic_truth_from_historical_presence

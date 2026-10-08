@@ -1,0 +1,26 @@
+schema_version: semantic_reverification_plan_contract/v1
+contract:
+  authority: incremental_reverification_planning
+  purpose: Produce deterministic, explainable re-verification work requirements without executing them.
+actions:
+  analysis: rerun_analysis
+  verification_receipt: reverify_receipt
+  finding: reevaluate_finding
+priority:
+  policy_versioned: true
+  inputs:
+    - validity_state
+    - impact_reason
+    - artifact_stage
+    - finding_severity
+  semantic_authority: false
+invariants:
+  - current_artifacts_create_no_tasks
+  - task_identity_is_deterministic
+  - upstream_artifact_ids_are_preserved_as_prerequisites
+  - policy_version_participates_in_plan_identity
+forbidden:
+  - execute_analysis_from_planner
+  - execute_verifier_from_planner
+  - execute_rule_from_planner
+  - treat_priority_as_truth_or_severity

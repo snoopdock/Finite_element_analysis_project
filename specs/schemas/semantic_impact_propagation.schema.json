@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_impact_propagation.schema.json",
+  "title": "Semantic Impact Propagation Report",
+  "type": "object",
+  "required": ["schema_version", "before_snapshot_id", "after_snapshot_id", "summary", "changes", "impacts"],
+  "properties": {
+    "schema_version": {"const": "semantic_impact_propagation/v1"},
+    "before_snapshot_id": {"type": "string", "minLength": 1},
+    "after_snapshot_id": {"type": "string", "minLength": 1},
+    "summary": {"type": "object"},
+    "changes": {"type": "array", "items": {"type": "object"}},
+    "impacts": {"type": "array", "items": {"type": "object"}},
+    "unresolved_upstream_ids": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

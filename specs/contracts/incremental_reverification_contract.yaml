@@ -1,0 +1,19 @@
+schema_version: incremental_reverification_contract/v1
+contract:
+  authority: incremental_audit_orchestration_boundary
+  purpose: Compose impact propagation and re-verification planning over a validated graph transition.
+flow:
+  - graph_evolution_result
+  - artifact_dependency_index
+  - impact_propagation_report
+  - reverification_plan
+properties:
+  execution: false
+  canonical_graph_mutation: false
+  deterministic_planning: true
+  evidence_lineage_preserved: true
+forbidden:
+  - direct_finding_creation
+  - automatic_candidate_promotion
+  - automatic_rule_execution
+  - automatic_verifier_execution
