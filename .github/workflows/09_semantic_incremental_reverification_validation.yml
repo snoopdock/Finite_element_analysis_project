@@ -1,0 +1,52 @@
+name: 09 Semantic Incremental Reverification Validation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "audit_engine/semantic_audit/evolution/**"
+      - "audit_engine/semantic_audit/verification/domain.py"
+      - "specs/contracts/semantic_impact_propagation_contract.yaml"
+      - "specs/contracts/semantic_reverification_plan_contract.yaml"
+      - "specs/contracts/audit_memory_query_contract.yaml"
+      - "specs/contracts/incremental_reverification_contract.yaml"
+      - "specs/schemas/semantic_impact_propagation.schema.json"
+      - "specs/schemas/semantic_reverification_plan.schema.json"
+      - "specs/schemas/semantic_audit_memory_query.schema.json"
+      - "tests/semantic_graph_evolution/**"
+      - "tools/validate_semantic_incremental_reverification.py"
+      - ".github/workflows/09_semantic_incremental_reverification_validation.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: G3.0-G3.1.1 regression suites
+        run: |
+          pytest tests/semantic_graph tests/semantic_verification tests/semantic_domain_verification -v
+
+      - name: G3.2 evolution and incremental re-verification suite
+        run: pytest tests/semantic_graph_evolution -v
+
+      - name: Full repository regression
+        run: pytest -q
+
+      - name: Generate G3.2.1 validation artifact
+        run: python tools/validate_semantic_incremental_reverification.py
+
+      - name: Upload G3.2.1 validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-incremental-reverification-validation
+          path: artifacts/semantic_incremental_reverification_validation.json
