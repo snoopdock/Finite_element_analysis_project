@@ -1,0 +1,105 @@
+version: 1
+milestone: G3.0
+purpose: >-
+  Define the contract for backend-independent semantic graph primitive analysis,
+  with explicit evidence, provenance, verification boundaries, and lifecycle-aware
+  reusable analysis artifacts.
+
+source_of_truth:
+  graph: audit_engine.semantic_audit.core.semantic_graph.SemanticGraph
+  rule: >-
+    Analysis consumes the canonical SemanticGraph and must not redefine semantic
+    identity, entity meaning, or relationship meaning.
+
+query_contract:
+  required_fields:
+    - query_id
+    - query_type
+    - source_entities
+  supported_types:
+    - structural
+    - dependency
+    - path
+  invariants:
+    - source_entities_are_semantic_ids
+    - backend_identifiers_are_forbidden_in_public_results
+    - query_intent_is_separate_from_algorithm_choice
+
+analysis_result_contract:
+  schema_version: semantic_graph_analysis/v1
+  required_fields:
+    - analysis_id
+    - query_id
+    - analysis_type
+    - status
+    - algorithm
+    - graph_fingerprint
+    - source_entities
+    - discovered_entities
+    - observations
+    - evidence
+    - verification_summary
+    - parameters
+  invariants:
+    - analysis_id_is_deterministic_for_same_query_graph_and_parameters
+    - graph_fingerprint_identifies_the_analyzed_semantic_snapshot
+    - observations_are_not_audit_findings
+    - structural_metrics_are_not_semantic_truth
+    - every_observation_must_reference_evidence
+    - evidence_defaults_to_observed_until_stronger_verification_occurs
+
+primitive_analysis:
+  structural:
+    semantics: one-hop graph structure observation
+  dependency:
+    semantics: typed direct or transitive reachability observation
+    default_relationships:
+      - IMPORTS
+      - DEPENDS_ON
+  path:
+    semantics: shortest observed semantic path under query constraints
+
+provenance:
+  minimum_evidence_fields:
+    - evidence_id
+    - subject_id
+    - predicate
+    - object_id
+    - verification_status
+    - source_kind
+    - provenance
+  policy: >-
+    Source edge attributes and metadata must remain recoverable from emitted
+    evidence records so a reviewer can reconstruct why the observation exists.
+
+memory:
+  working_memory:
+    role: retain task-local intermediate analysis artifacts
+    invalidation_rule: >-
+      A stored result is stale when its graph_fingerprint differs from the current
+      graph fingerprint.
+  long_term_memory:
+    status: deferred
+    reason: >-
+      Cross-project persistence requires separate lifecycle, privacy, trust, and
+      governance decisions.
+
+verification_boundary:
+  statuses:
+    - observed
+    - corroborated
+    - validated
+    - rejected
+  current_g3_default: observed
+  policy: >-
+    Traversal and dependency discovery establish graph presence only. A later
+    verification layer may promote evidence after solver, analyzer, executable,
+    human, or other explicit verification.
+
+forbidden_implicit_actions:
+  - create_audit_finding_from_graph_reachability_alone
+  - infer_policy_violation_from_dependency_presence_alone
+  - treat_path_plausibility_as_runtime_feasibility
+  - treat_centrality_as_scientific_or_architectural_importance
+  - silently_promote_observed_evidence_to_validated
+  - expose_backend_local_ids_as_semantic_identity
