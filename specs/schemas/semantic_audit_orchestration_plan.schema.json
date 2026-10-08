@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_audit_orchestration_plan/v1",
+  "type": "object",
+  "required": ["schema_version", "plan_id", "policy_version", "budget", "routes", "reserved_cost_units", "reserved_verifier_runs"],
+  "properties": {
+    "schema_version": {"const": "semantic_audit_orchestration_plan/v1"},
+    "plan_id": {"type": "string", "minLength": 1},
+    "policy_version": {"type": "string", "minLength": 1},
+    "reserved_cost_units": {"type": "integer", "minimum": 0},
+    "reserved_verifier_runs": {"type": "integer", "minimum": 0},
+    "budget": {
+      "type": "object",
+      "required": ["total_cost_units", "max_verifier_runs", "allowed_execution_modes"],
+      "properties": {
+        "total_cost_units": {"type": "integer", "minimum": 1},
+        "max_verifier_runs": {"type": "integer", "minimum": 1},
+        "allowed_execution_modes": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+      }
+    },
+    "routes": {"type": "array"}
+  },
+  "additionalProperties": true
+}

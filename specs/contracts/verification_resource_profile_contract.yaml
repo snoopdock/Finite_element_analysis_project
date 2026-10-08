@@ -1,0 +1,17 @@
+contract_id: verification_resource_profile/v1
+status: normative
+required_fields:
+  - verifier_id
+  - verifier_version
+  - method
+  - cost_units
+  - maximum_evidence_state
+  - execution_mode
+  - deterministic
+  - side_effect_free
+rules:
+  - profile version must match the registered verifier descriptor version
+  - cost_units must be a positive integer
+  - maximum_evidence_state is a capability ceiling, not a result guarantee
+  - resource metadata must remain outside the core verifier descriptor
+  - unprofiled verifiers are not silently assigned a cost

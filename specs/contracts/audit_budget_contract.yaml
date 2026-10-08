@@ -1,0 +1,12 @@
+contract_id: audit_budget/v1
+status: normative
+required_fields:
+  - total_cost_units
+  - max_verifier_runs
+  - allowed_execution_modes
+rules:
+  - total_cost_units must be positive
+  - max_verifier_runs must be positive
+  - planners must reserve within both limits
+  - executors must enforce both limits independently of planner correctness
+  - sandboxed or external execution requires explicit permission

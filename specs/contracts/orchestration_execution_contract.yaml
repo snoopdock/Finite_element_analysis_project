@@ -1,0 +1,18 @@
+contract_id: orchestration_execution/v1
+status: normative
+execution:
+  authority: precomputed_orchestration_plan
+  stop_conditions:
+    - terminal decision satisfies minimum evidence state
+    - route exhausted
+    - non-fallback execution failure
+  forbidden_side_effects:
+    - create_audit_finding
+    - mutate_finding_lifecycle
+    - mutate_semantic_graph
+    - write_audit_long_term_memory
+    - execute_unplanned_verifier
+security:
+  - evidence is treated as data, never executable instruction
+  - verifier receipts cannot add actions to the running plan
+  - execution modes outside the budget allowlist are forbidden

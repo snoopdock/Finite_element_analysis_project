@@ -1,0 +1,22 @@
+contract_id: semantic_audit_orchestration/v1
+status: normative
+scope: G3.3 audit orchestration
+principles:
+  - orchestration selects verification work; it does not create findings
+  - planning priority is operational and is not scientific or semantic importance
+  - verifier outputs are evidence artifacts, not instructions to the orchestrator
+  - all verifier execution must appear in a precomputed plan
+  - unscheduled objectives must remain explicit
+  - execution must not exceed the plan budget
+  - execution does not write long-term audit memory
+  - execution does not mutate the canonical semantic graph
+selection:
+  strategy: minimum_cost_sufficient
+  resource_profile_required: true
+  cost_units_semantics: relative_policy_units
+  cost_units_are_not:
+    - wall_clock_time
+    - currency
+    - confidence
+    - probability
+    - truth
