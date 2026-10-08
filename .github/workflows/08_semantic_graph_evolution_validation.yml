@@ -1,0 +1,48 @@
+name: 08 Semantic Graph Evolution Validation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "audit_engine/semantic_audit/evolution/**"
+      - "specs/contracts/semantic_graph_snapshot_contract.yaml"
+      - "specs/contracts/semantic_graph_evolution_contract.yaml"
+      - "specs/contracts/semantic_audit_invalidation_contract.yaml"
+      - "specs/contracts/audit_long_term_memory_contract.yaml"
+      - "specs/schemas/semantic_graph_snapshot.schema.json"
+      - "specs/schemas/semantic_graph_delta.schema.json"
+      - "specs/schemas/semantic_audit_memory.schema.json"
+      - "tests/semantic_graph_evolution/**"
+      - "tools/validate_semantic_graph_evolution.py"
+      - ".github/workflows/08_semantic_graph_evolution_validation.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: G3.0-G3.1.1 regression suites
+        run: |
+          pytest tests/semantic_graph tests/semantic_verification tests/semantic_domain_verification -v
+
+      - name: G3.2.0 graph evolution suite
+        run: pytest tests/semantic_graph_evolution -v
+
+      - name: Generate G3.2.0 validation artifact
+        run: python tools/validate_semantic_graph_evolution.py
+
+      - name: Upload G3.2.0 validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-graph-evolution-validation
+          path: artifacts/semantic_graph_evolution_validation.json
