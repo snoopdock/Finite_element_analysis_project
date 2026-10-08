@@ -1,0 +1,44 @@
+name: 07 Semantic Domain Verification Validation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "audit_engine/semantic_audit/**"
+      - "specs/contracts/semantic_domain_rule_contract.yaml"
+      - "specs/contracts/candidate_promotion_contract.yaml"
+      - "specs/rules/**"
+      - "tests/semantic_domain_verification/**"
+      - "tools/validate_semantic_domain_verification.py"
+      - ".github/workflows/07_semantic_domain_verification_validation.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: G3.0 and G3.1 regression suites
+        run: |
+          pytest tests/semantic_graph tests/semantic_verification -v
+
+      - name: G3.1.1 domain verification suite
+        run: pytest tests/semantic_domain_verification -v
+
+      - name: Generate G3.1.1 validation artifact
+        run: python tools/validate_semantic_domain_verification.py
+
+      - name: Upload G3.1.1 validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-domain-verification-validation
+          path: artifacts/semantic_domain_verification_validation.json
