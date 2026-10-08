@@ -1,0 +1,31 @@
+schema_version: semantic_graph_evolution_contract/v1
+contract:
+  authority: semantic_graph_evolution
+  purpose: Describe reproducible differences between two semantic graph snapshots.
+requirements:
+  graph_delta:
+    reports:
+      - added_nodes
+      - removed_nodes
+      - modified_nodes
+      - added_edges
+      - removed_edges
+      - semantic_context_delta
+  topology_delta:
+    interpretation: descriptive_only
+    reports:
+      - node_count_delta
+      - edge_count_delta
+      - self_loop_count_delta
+      - weak_component_count_delta
+      - degree_changes
+      - relation_count_changes
+      - isolation_changes
+  edge_change_semantics: >-
+    Parallel edges have no canonical occurrence identifier in the G2 graph core;
+    therefore changed edge payloads are represented conservatively as removal plus addition.
+forbidden_interpretations:
+  - centrality_equals_importance
+  - degree_equals_severity
+  - shortest_path_equals_valid_reasoning
+  - topological_change_equals_semantic_violation

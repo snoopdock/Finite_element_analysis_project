@@ -1,0 +1,27 @@
+schema_version: semantic_graph_snapshot_contract/v1
+contract:
+  authority: semantic_graph_snapshot
+  purpose: >-
+    Preserve an immutable, content-addressed observation of a canonical SemanticGraph
+    together with the semantic interpretation context under which it is understood.
+requirements:
+  snapshot:
+    - graph_fingerprint
+    - semantic_context
+    - semantic_context_fingerprint
+    - nodes
+    - edges
+  identity:
+    deterministic: true
+    includes:
+      - graph_fingerprint
+      - semantic_context_fingerprint
+      - parent_snapshot_id
+      - snapshot_metadata
+  immutability:
+    required: true
+  interpretation:
+    topology_is_semantic_judgment: false
+forbidden:
+  - mutate_canonical_graph_through_snapshot
+  - infer_truth_from_snapshot_topology

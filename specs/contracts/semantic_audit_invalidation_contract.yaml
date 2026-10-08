@@ -1,0 +1,19 @@
+schema_version: semantic_audit_invalidation_contract/v1
+contract:
+  authority: semantic_audit_invalidation
+  purpose: Distinguish direct invalidation from conservative re-verification needs.
+states:
+  current:
+    meaning: Artifact remains bound to the audited state.
+  recheck_required:
+    meaning: Graph state changed without direct evidence that the artifact is false or invalid.
+  stale:
+    meaning: A binding assumption, semantic context, or directly referenced evidence no longer holds.
+rules:
+  semantic_context_change: stale
+  directly_referenced_evidence_removed: stale
+  unrelated_graph_change: recheck_required
+  no_change: current
+forbidden:
+  - treat_any_graph_change_as_proof_of_invalidity
+  - keep_artifact_current_after_semantic_context_change

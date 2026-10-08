@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_graph_delta.schema.json",
+  "title": "Semantic Graph Delta",
+  "type": "object",
+  "required": ["schema_version", "delta_id", "before_snapshot_id", "after_snapshot_id", "is_noop", "added_nodes", "removed_nodes", "modified_nodes", "added_edges", "removed_edges", "semantic_context_delta"],
+  "properties": {
+    "schema_version": {"const": "semantic_graph_delta/v1"},
+    "delta_id": {"type": "string", "minLength": 1},
+    "before_snapshot_id": {"type": "string", "minLength": 1},
+    "after_snapshot_id": {"type": "string", "minLength": 1},
+    "is_noop": {"type": "boolean"},
+    "added_nodes": {"type": "array"},
+    "removed_nodes": {"type": "array"},
+    "modified_nodes": {"type": "array"},
+    "added_edges": {"type": "array"},
+    "removed_edges": {"type": "array"},
+    "semantic_context_delta": {"type": "object"}
+  },
+  "additionalProperties": false
+}

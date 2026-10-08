@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_graph_snapshot.schema.json",
+  "title": "Semantic Graph Snapshot",
+  "type": "object",
+  "required": ["schema_version", "snapshot_id", "graph_fingerprint", "semantic_context", "semantic_context_fingerprint", "nodes", "edges", "metadata"],
+  "properties": {
+    "schema_version": {"const": "semantic_graph_snapshot/v1"},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "graph_fingerprint": {"type": "string", "minLength": 1},
+    "semantic_context": {"type": "object"},
+    "semantic_context_fingerprint": {"type": "string", "minLength": 1},
+    "parent_snapshot_id": {"type": ["string", "null"]},
+    "nodes": {"type": "array"},
+    "edges": {"type": "array"},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}

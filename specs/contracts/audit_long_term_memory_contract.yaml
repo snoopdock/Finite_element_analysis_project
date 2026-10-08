@@ -1,0 +1,20 @@
+schema_version: audit_long_term_memory_contract/v1
+contract:
+  authority: audit_history
+  purpose: Persist versioned audit artifacts without turning history into semantic authority.
+properties:
+  append_only: true
+  deterministic_record_identity: true
+  json_round_trip: true
+  snapshot_binding_required: true
+  semantic_authority: false
+record_fields:
+  - record_id
+  - artifact_type
+  - artifact_id
+  - snapshot_id
+  - payload
+forbidden:
+  - promote_candidate_knowledge_on_load
+  - mutate_canonical_graph_on_load
+  - silently_replace_record_with_same_identity_and_different_content
