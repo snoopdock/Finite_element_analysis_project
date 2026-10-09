@@ -2,27 +2,6 @@ name: 05 - Semantic Graph Analysis Validation
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - stage1/section-uuids
-    paths:
-      - "audit_engine/semantic_audit/graph/analysis/**"
-      - "audit_engine/semantic_audit/graph/queries/**"
-      - "audit_engine/semantic_audit/graph/service.py"
-      - "tests/semantic_graph/**"
-      - "tools/validate_semantic_graph_analysis.py"
-      - "specs/contracts/semantic_graph_analysis_contract.yaml"
-      - "docs/schemas/semantic_graph_analysis_schema.json"
-      - ".github/workflows/05_semantic_graph_analysis_validation.yml"
-  pull_request:
-    paths:
-      - "audit_engine/semantic_audit/graph/analysis/**"
-      - "audit_engine/semantic_audit/graph/queries/**"
-      - "audit_engine/semantic_audit/graph/service.py"
-      - "tests/semantic_graph/**"
-      - "tools/validate_semantic_graph_analysis.py"
-      - "specs/contracts/semantic_graph_analysis_contract.yaml"
-      - "docs/schemas/semantic_graph_analysis_schema.json"
 
 permissions:
   contents: read

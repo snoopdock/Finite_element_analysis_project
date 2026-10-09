@@ -2,15 +2,6 @@ name: 07 Semantic Domain Verification Validation
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "audit_engine/semantic_audit/**"
-      - "specs/contracts/semantic_domain_rule_contract.yaml"
-      - "specs/contracts/candidate_promotion_contract.yaml"
-      - "specs/rules/**"
-      - "tests/semantic_domain_verification/**"
-      - "tools/validate_semantic_domain_verification.py"
-      - ".github/workflows/07_semantic_domain_verification_validation.yml"
 
 jobs:
   validate:
