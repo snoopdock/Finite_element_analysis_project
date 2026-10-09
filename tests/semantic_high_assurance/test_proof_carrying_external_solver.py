@@ -20,6 +20,7 @@ from audit_engine.semantic_audit.high_assurance import (
     ExternalProcessSpec,
     HighAssuranceAdapterRegistry,
     HighAssurancePolicy,
+    DRAT_PROOF_FORMAT,
     RUP_PROOF_FORMAT,
     ValidationCompleteness,
     WitnessKind,
@@ -140,3 +141,30 @@ def test_valid_rup_proof_refutes_expected_sat_hypothesis():
     result = execute("rup-unsat", variable_count=13, clauses=[[1], [-1]], expected=True)
     assert result.decision == VerificationDecision.REFUTED
     assert result.evidence_state == VerificationStatus.VALIDATED
+
+
+def test_large_unsat_can_be_validated_by_repository_checked_drat_proof():
+    result = execute(
+        "drat-unsat",
+        variable_count=13,
+        clauses=[[1, 2], [-1, 2], [1, -2], [-1, -2]],
+        expected=False,
+    )
+    assert result.decision == VerificationDecision.CONFIRMED
+    assert result.evidence_state == VerificationStatus.VALIDATED
+    assert result.validation_envelope.completeness == ValidationCompleteness.CERTIFICATE_COMPLETE_WITHIN_SCOPE
+    proof = [w for w in result.witnesses if w.kind == WitnessKind.FORMAL_PROOF]
+    assert len(proof) == 1
+    assert proof[0].details["proof_format"] == DRAT_PROOF_FORMAT
+    assert proof[0].details["rat_additions"] == 1
+    assert proof[0].details["deletions"] == 1
+
+
+def test_drat_proof_format_is_declared_in_validation_envelope():
+    result = execute(
+        "drat-unsat",
+        variable_count=13,
+        clauses=[[1, 2], [-1, 2], [1, -2], [-1, -2]],
+        expected=False,
+    )
+    assert DRAT_PROOF_FORMAT in result.validation_envelope.environment["registered_unsat_proof_formats"]

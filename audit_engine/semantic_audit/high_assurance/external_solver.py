@@ -3,8 +3,8 @@
 The external process is a candidate evidence producer, never the authority that
 marks its own output validated.  SAT models are checked clause-by-clause by
 repository code.  Bounded UNSAT claims are independently re-solved by exhaustive
-enumeration.  Larger UNSAT claims remain merely observed until a real proof
-checker is implemented.
+enumeration.  Larger UNSAT claims require a certificate accepted by an explicitly
+registered repository-owned proof checker; otherwise they remain merely observed.
 """
 
 from __future__ import annotations

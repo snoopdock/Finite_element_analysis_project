@@ -347,7 +347,15 @@ class RupUnsatProofChecker:
 def builtin_unsat_proof_checker_registry(
     *,
     rup_limits: ProofCheckLimits | None = None,
+    drat_limits: object | None = None,
 ) -> UnsatProofCheckerRegistry:
+    # Local import prevents a module cycle: the DRAT checker reuses the small
+    # repository-owned RUP primitive defined in this module.
+    from .drat_proof import DratProofCheckLimits, DratUnsatProofChecker
+
+    if drat_limits is not None and not isinstance(drat_limits, DratProofCheckLimits):
+        raise TypeError("drat_limits must be DratProofCheckLimits or None")
     registry = UnsatProofCheckerRegistry()
     registry.register(RupUnsatProofChecker(limits=rup_limits))
+    registry.register(DratUnsatProofChecker(limits=drat_limits))
     return registry

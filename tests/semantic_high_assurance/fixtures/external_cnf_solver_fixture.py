@@ -55,6 +55,29 @@ def rup_certificate(variable_count, clauses, *, valid=True):
         "steps": steps,
     }
 
+
+def drat_certificate(variable_count, clauses):
+    digest = cnf_digest(variable_count, clauses)
+    clause_set = {tuple(clause) for clause in clauses}
+    if (1,) in clause_set and (-1,) in clause_set:
+        steps = [{"op": "add", "clause": []}]
+    else:
+        # Four-clause XOR contradiction.  Exercise a genuine RAT addition on
+        # the highest declared variable, delete it, then finish with RUP steps.
+        steps = [
+            {"op": "add", "clause": [variable_count]},
+            {"op": "delete", "clause": [variable_count]},
+            {"op": "add", "clause": [1]},
+            {"op": "add", "clause": [-1]},
+            {"op": "add", "clause": []},
+        ]
+    return {
+        "kind": "unsat_proof",
+        "proof_format": "cnf-drat/v1",
+        "cnf_digest": digest,
+        "steps": steps,
+    }
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "solve"
     if mode == "sleep":
@@ -88,6 +111,8 @@ def main():
     elif verdict == "unsat":
         if mode == "rup-unsat":
             certificate = rup_certificate(variable_count, clauses, valid=True)
+        elif mode == "drat-unsat":
+            certificate = drat_certificate(variable_count, clauses)
         elif mode == "invalid-rup":
             certificate = rup_certificate(variable_count, clauses, valid=False)
         else:

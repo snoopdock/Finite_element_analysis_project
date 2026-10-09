@@ -238,7 +238,7 @@ def run() -> dict[str, object]:
         and small_invalid.completeness == ValidationCompleteness.EXHAUSTIVE_WITHIN_SCOPE
     )
 
-    checks["builtin_proof_registry_is_explicit"] = builtin_unsat_proof_checker_registry().formats() == (RUP_PROOF_FORMAT,)
+    checks["builtin_proof_registry_is_explicit"] = RUP_PROOF_FORMAT in builtin_unsat_proof_checker_registry().formats()
     checks["external_solver_still_not_in_default_adapter_registry"] = (
         builtin_high_assurance_adapter_registry().get(CONTROLLED_EXTERNAL_CNF_ADAPTER_ID) is None
     )

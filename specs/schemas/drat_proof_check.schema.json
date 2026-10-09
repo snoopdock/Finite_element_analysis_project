@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic-audit/drat-proof-check/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["accepted", "proof_format", "checker_id", "checker_version", "checked_steps", "total_proof_literals", "diagnostics"],
+  "properties": {
+    "accepted": {"type": "boolean"},
+    "proof_format": {"const": "cnf-drat/v1"},
+    "checker_id": {"type": "string", "minLength": 1},
+    "checker_version": {"type": "string", "minLength": 1},
+    "proof_digest": {"type": ["string", "null"]},
+    "checked_steps": {"type": "integer", "minimum": 0},
+    "total_proof_literals": {"type": "integer", "minimum": 0},
+    "witness_id": {"type": ["string", "null"]},
+    "diagnostics": {"type": "array", "items": {"type": "string"}}
+  }
+}

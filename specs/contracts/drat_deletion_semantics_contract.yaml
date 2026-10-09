@@ -1,0 +1,15 @@
+contract_id: semantic-audit/drat-deletion-semantics/v1
+status: normative
+owner: semantic-audit/high-assurance
+purpose: Preserve the epistemic meaning of DRAT deletion steps.
+rules:
+  - deletion removes one matching clause occurrence from proof-checker state
+  - deletion is never a semantic finding
+  - deletion is never evidence that the deleted clause is false
+  - deletion never mutates the canonical semantic graph
+  - deleting a clause not present in checker state is rejected by the strict reference checker
+  - clause matching for deletion is semantic and ignores literal ordering
+rationale: >-
+  DRAT deletion is an operational proof-compression/checking mechanism. Treating
+  it as a semantic assertion would mix proof-state optimization with scientific
+  or architectural truth.

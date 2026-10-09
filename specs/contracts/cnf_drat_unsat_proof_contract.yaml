@@ -1,0 +1,34 @@
+contract_id: semantic-audit/cnf-drat-unsat-proof/v1
+status: normative
+owner: semantic-audit/high-assurance
+purpose: >-
+  Define the repository-owned structured DRAT proof language accepted as
+  proof-carrying evidence for exact Boolean CNF UNSAT claims.
+certificate:
+  kind: unsat_proof
+  proof_format: cnf-drat/v1
+  binding:
+    - exact cnf_digest
+    - declared variable_count supplied by the verification obligation
+  steps:
+    allowed_operations: [add, delete]
+    add:
+      acceptance:
+        - reverse_unit_propagation
+        - resolution_asymmetric_tautology_on_first_literal_pivot
+    delete:
+      semantics: checker_state_only
+      requirement: exact semantic clause must currently exist
+  completion:
+    requirement: final step must add the empty clause
+trust_boundary:
+  producer_is_not_authority: true
+  checker_must_be_repository_owned: true
+  arbitrary_external_checker_execution: forbidden
+  invalid_or_unchecked_proof_does_not_refute_or_confirm_semantics: true
+limitations:
+  - structured JSON proof representation, not native textual DRAT parsing
+  - addition and deletion only
+  - no LRAT hints
+  - no SMT or first-order proof rules
+  - bounded by explicit proof-check resource limits

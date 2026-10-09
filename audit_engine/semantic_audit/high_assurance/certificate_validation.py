@@ -7,7 +7,7 @@ module checks certificates using repository-owned logic.  Supported forms are:
 * bounded UNSAT claim: independently exhaust the assignment space when the CNF
   is within the configured validation bound.
 * proof-carrying UNSAT: dispatch an explicitly supported proof format to a
-  repository-owned checker.  G3.4.3 ships an addition-only RUP checker.
+  repository-owned checker.  G3.4.3 ships addition-only RUP; G3.4.4 adds bounded structured DRAT checking.
 
 Unsupported or invalid external proofs remain solver observations unless a
 separate repository-owned validation path independently establishes a verdict.

@@ -16,6 +16,13 @@ from .cnf_solver import (
     BoundedCnfSolverAdapter,
 )
 from .execution import ControlledHighAssuranceExecutor
+from .drat_proof import (
+    DRAT_CHECKER_ID,
+    DRAT_CHECKER_VERSION,
+    DRAT_PROOF_FORMAT,
+    DratProofCheckLimits,
+    DratUnsatProofChecker,
+)
 from .executable_witness import (
     REGISTERED_EXECUTABLE_WITNESS_ADAPTER_ID,
     REGISTERED_EXECUTABLE_WITNESS_OBLIGATION,
@@ -82,6 +89,11 @@ __all__ = [
     "ControlledJsonSubprocessRunner",
     "DEFAULT_EXTERNAL_CNF_MAX_VARIABLES",
     "DEFAULT_INDEPENDENT_UNSAT_MAX_VARIABLES",
+    "DRAT_CHECKER_ID",
+    "DRAT_CHECKER_VERSION",
+    "DRAT_PROOF_FORMAT",
+    "DratProofCheckLimits",
+    "DratUnsatProofChecker",
     "EXTERNAL_JSON_PROCESS_PROTOCOL",
     "EXTERNAL_SOLVER_PROTOCOL_VERSION",
     "ExternalJsonProcessResult",
