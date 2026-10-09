@@ -2,19 +2,6 @@ name: 08 Semantic Graph Evolution Validation
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "audit_engine/semantic_audit/evolution/**"
-      - "specs/contracts/semantic_graph_snapshot_contract.yaml"
-      - "specs/contracts/semantic_graph_evolution_contract.yaml"
-      - "specs/contracts/semantic_audit_invalidation_contract.yaml"
-      - "specs/contracts/audit_long_term_memory_contract.yaml"
-      - "specs/schemas/semantic_graph_snapshot.schema.json"
-      - "specs/schemas/semantic_graph_delta.schema.json"
-      - "specs/schemas/semantic_audit_memory.schema.json"
-      - "tests/semantic_graph_evolution/**"
-      - "tools/validate_semantic_graph_evolution.py"
-      - ".github/workflows/08_semantic_graph_evolution_validation.yml"
 
 jobs:
   validate:

@@ -2,20 +2,6 @@ name: 09 Semantic Incremental Reverification Validation
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "audit_engine/semantic_audit/evolution/**"
-      - "audit_engine/semantic_audit/verification/domain.py"
-      - "specs/contracts/semantic_impact_propagation_contract.yaml"
-      - "specs/contracts/semantic_reverification_plan_contract.yaml"
-      - "specs/contracts/audit_memory_query_contract.yaml"
-      - "specs/contracts/incremental_reverification_contract.yaml"
-      - "specs/schemas/semantic_impact_propagation.schema.json"
-      - "specs/schemas/semantic_reverification_plan.schema.json"
-      - "specs/schemas/semantic_audit_memory_query.schema.json"
-      - "tests/semantic_graph_evolution/**"
-      - "tools/validate_semantic_incremental_reverification.py"
-      - ".github/workflows/09_semantic_incremental_reverification_validation.yml"
 
 jobs:
   validate:

@@ -1,4 +1,4 @@
-name: 06 - Semantic Verification Validation
+name: 05 - Semantic Graph Analysis Validation
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  semantic-verification-validation:
+  semantic-graph-analysis-validation:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,22 +25,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run G3.0 graph regression tests
+      - name: Run G3 semantic graph tests
         run: |
           pytest tests/semantic_graph -v
 
-      - name: Run G3.1 semantic verification tests
+      - name: Validate G3 semantic analysis artifact
         run: |
-          pytest tests/semantic_verification -v
+          python tools/validate_semantic_graph_analysis.py \
+            --output artifacts/semantic_graph_analysis_validation.json
 
-      - name: Validate G3.1 semantic verification artifact
-        run: |
-          python tools/validate_semantic_verification.py \
-            --output artifacts/semantic_verification_validation.json
-
-      - name: Upload G3.1 validation artifact
+      - name: Upload G3 validation artifact
         uses: actions/upload-artifact@v4
         with:
-          name: semantic-verification-validation
-          path: artifacts/semantic_verification_validation.json
+          name: semantic-graph-analysis-validation
+          path: artifacts/semantic_graph_analysis_validation.json
           if-no-files-found: error

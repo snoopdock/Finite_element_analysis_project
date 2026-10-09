@@ -2,18 +2,6 @@ name: 10 Semantic Reverification Execution Validation
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "audit_engine/semantic_audit/evolution/**"
-      - "specs/contracts/semantic_reverification_execution_contract.yaml"
-      - "specs/contracts/semantic_artifact_reconciliation_contract.yaml"
-      - "specs/contracts/semantic_replay_contract.yaml"
-      - "specs/contracts/semantic_reverification_execution_memory_contract.yaml"
-      - "specs/schemas/semantic_reverification_execution.schema.json"
-      - "specs/schemas/semantic_artifact_reconciliation.schema.json"
-      - "tests/semantic_reverification_execution/**"
-      - "tools/validate_semantic_reverification_execution.py"
-      - ".github/workflows/10_semantic_reverification_execution_validation.yml"
 
 jobs:
   validate:
