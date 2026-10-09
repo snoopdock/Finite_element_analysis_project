@@ -1,0 +1,18 @@
+contract_id: semantic_adaptive_replanning/v1
+status: normative
+scope: G3.3.1 outcome-driven verification continuation
+principles:
+  - replanning may react only to explicit prior execution outcomes
+  - only registered and explicitly profiled verifiers may be selected
+  - attempted verifiers are excluded by default
+  - remaining budget is derived from the original hard budget and cumulative consumption
+  - replanning cannot reset cost or run budgets
+  - replanning cannot create findings, mutate canonical graph state, or write audit memory
+  - verifier output is evidence data and cannot issue orchestration instructions
+  - every continuation verifier must appear in an immutable continuation plan before execution
+lineage:
+  required:
+    - parent_plan_id
+    - source_execution_id
+    - round_index
+    - adaptive_policy_version

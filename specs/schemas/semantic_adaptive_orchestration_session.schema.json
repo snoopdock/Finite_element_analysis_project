@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_adaptive_verification_session/v1",
+  "type": "object",
+  "required": ["schema_version", "session_id", "initial_plan_id", "status", "original_budget", "rounds", "replans", "executions", "total_consumed_cost_units", "total_consumed_verifier_runs"],
+  "properties": {
+    "schema_version": {"const": "semantic_adaptive_verification_session/v1"},
+    "session_id": {"type": "string", "minLength": 1},
+    "initial_plan_id": {"type": "string", "minLength": 1},
+    "status": {"type": "string"},
+    "original_budget": {"type": "object"},
+    "rounds": {"type": "array"},
+    "replans": {"type": "array"},
+    "executions": {"type": "array"},
+    "total_consumed_cost_units": {"type": "integer", "minimum": 0},
+    "total_consumed_verifier_runs": {"type": "integer", "minimum": 0}
+  },
+  "additionalProperties": true
+}

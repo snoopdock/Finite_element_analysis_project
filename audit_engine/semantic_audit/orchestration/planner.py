@@ -22,7 +22,7 @@ from .policy import OrchestrationPolicy, evidence_rank
 from .profiles import VerifierProfileCatalog
 
 
-def _eligible_profiles(
+def eligible_profiles(
     *,
     objective: VerificationObjective,
     obligation: VerificationObligation,
@@ -30,6 +30,7 @@ def _eligible_profiles(
     profiles: VerifierProfileCatalog,
     budget: AuditBudget,
     policy: OrchestrationPolicy,
+    extra_excluded_verifier_ids: frozenset[str] = frozenset(),
 ):
     compatible = registry.compatible(obligation)
     result = []
@@ -37,7 +38,7 @@ def _eligible_profiles(
         verifier_id = verifier.descriptor.verifier_id
         if objective.allowed_verifier_ids and verifier_id not in objective.allowed_verifier_ids:
             continue
-        if verifier_id in objective.excluded_verifier_ids:
+        if verifier_id in objective.excluded_verifier_ids or verifier_id in extra_excluded_verifier_ids:
             continue
         profile = profiles.get(verifier_id)
         if profile is None:
@@ -85,7 +86,7 @@ def build_orchestration_plan(
     used_runs = 0
     for objective in ordered:
         obligation = obligation_by_id[objective.obligation_id]
-        candidates = _eligible_profiles(
+        candidates = eligible_profiles(
             objective=objective,
             obligation=obligation,
             registry=registry,

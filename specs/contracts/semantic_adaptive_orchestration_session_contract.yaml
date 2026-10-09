@@ -1,0 +1,12 @@
+contract_id: semantic_adaptive_orchestration_session/v1
+status: normative
+scope: bounded multi-round G3.3.1 verification orchestration
+rules:
+  - the initial plan budget is the immutable session-wide hard ceiling
+  - cumulative cost and verifier runs must never exceed the initial plan budget
+  - each continuation round requires a prior adaptive replan artifact
+  - satisfied objectives are never re-executed implicitly
+  - failed objectives are not replanned unless policy explicitly permits it
+  - round limits are explicit and versioned
+  - session completion status is operational, not semantic truth
+  - sessions have no implicit finding, promotion, graph mutation, or memory side effects

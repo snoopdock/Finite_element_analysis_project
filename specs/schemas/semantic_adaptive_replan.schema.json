@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_adaptive_verification_replan/v1",
+  "type": "object",
+  "required": ["schema_version", "replan_id", "parent_plan_id", "source_execution_id", "round_index", "adaptive_policy_version", "remaining_budget_before", "decisions", "continuation_plan"],
+  "properties": {
+    "schema_version": {"const": "semantic_adaptive_verification_replan/v1"},
+    "replan_id": {"type": "string", "minLength": 1},
+    "parent_plan_id": {"type": "string", "minLength": 1},
+    "source_execution_id": {"type": "string", "minLength": 1},
+    "round_index": {"type": "integer", "minimum": 1},
+    "adaptive_policy_version": {"type": "string", "minLength": 1},
+    "remaining_budget_before": {"type": "object"},
+    "decisions": {"type": "array"},
+    "continuation_plan": {"type": ["object", "null"]}
+  },
+  "additionalProperties": true
+}

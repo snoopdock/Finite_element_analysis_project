@@ -34,6 +34,10 @@ class VerifierProfileCatalog:
                     f"profile={profile.verifier_version}, verifier={verifier.descriptor.version}"
                 )
 
+    def profiles(self) -> tuple[VerifierOrchestrationProfile, ...]:
+        """Return a deterministic read-only view of registered profiles."""
+        return tuple(self._profiles[key] for key in sorted(self._profiles))
+
     def __len__(self) -> int:
         return len(self._profiles)
 

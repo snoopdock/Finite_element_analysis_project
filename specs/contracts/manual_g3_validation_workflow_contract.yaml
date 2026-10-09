@@ -1,0 +1,8 @@
+contract_id: manual_g3_validation_workflows/v1
+status: normative
+scope: GitHub Actions workflows 05 through 12
+rules:
+  - G3 validation workflows are invoked only through workflow_dispatch
+  - push triggers are forbidden
+  - pull_request triggers are forbidden
+  - users choose when to run validation after committing or pushing a patch
