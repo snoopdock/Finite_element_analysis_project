@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_budget_aware_reverification/v1",
+  "type": "object",
+  "required": ["schema_version", "result_id", "preparation", "initial_plan", "session", "reconciliation"],
+  "properties": {
+    "schema_version": {"const": "semantic_budget_aware_reverification/v1"},
+    "result_id": {"type": "string", "minLength": 1},
+    "preparation": {"type": "object"},
+    "initial_plan": {"type": "object"},
+    "session": {"type": "object"},
+    "reconciliation": {"type": "object"}
+  },
+  "additionalProperties": true
+}

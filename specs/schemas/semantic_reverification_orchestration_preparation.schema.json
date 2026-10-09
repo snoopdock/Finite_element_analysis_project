@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_reverification_orchestration_preparation/v1",
+  "type": "object",
+  "required": ["schema_version", "preparation_id", "reverification_plan_id", "before_snapshot_id", "after_snapshot_id", "bridge_policy_version", "analyses", "obligations", "objectives", "bindings", "task_records"],
+  "properties": {
+    "schema_version": {"const": "semantic_reverification_orchestration_preparation/v1"},
+    "preparation_id": {"type": "string", "minLength": 1},
+    "reverification_plan_id": {"type": "string", "minLength": 1},
+    "before_snapshot_id": {"type": "string", "minLength": 1},
+    "after_snapshot_id": {"type": "string", "minLength": 1},
+    "bridge_policy_version": {"type": "string", "minLength": 1},
+    "analyses": {"type": "array"},
+    "obligations": {"type": "array"},
+    "objectives": {"type": "array"},
+    "bindings": {"type": "array"},
+    "task_records": {"type": "array"}
+  },
+  "additionalProperties": true
+}

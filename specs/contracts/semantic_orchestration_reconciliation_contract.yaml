@@ -1,0 +1,11 @@
+contract_id: semantic_reverification_orchestration_reconciliation/v1
+status: normative
+scope: G3.3.2 reconciliation of orchestrated successor receipts
+principles:
+  - only terminal receipts that satisfy an explicit verification objective are reconciled as successors
+  - historical receipts remain immutable
+  - unsatisfied objectives remain explicit and are not fabricated into successor receipts
+  - not-applicable and blocked tasks retain distinct dispositions
+  - receipt reconciliation does not create or resolve findings
+  - finding and rule reevaluation remain outside the orchestration integration layer
+  - reconciliation identity is deterministic from preparation, session, and receipt outcomes

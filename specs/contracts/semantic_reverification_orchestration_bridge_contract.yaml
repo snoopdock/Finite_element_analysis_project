@@ -1,0 +1,19 @@
+contract_id: semantic_reverification_orchestration_bridge/v1
+status: normative
+scope: G3.3.2 integration of G3.2 incremental re-verification with G3.3 orchestration
+principles:
+  - the integration layer may depend on evolution and orchestration, but core layers must not depend back on integration
+  - only receipt re-verification tasks become verification objectives
+  - prerequisite analysis intent is replayed against the after snapshot before an objective is created
+  - objective priority is operational scheduling metadata and is not semantic importance
+  - prior affirmative evidence strength is preserved as the minimum objective evidence state by default
+  - historical requested verifier restrictions are preserved exactly in v1
+  - verifier equivalence or substitution is not inferred
+  - absent replay targets remain explicitly not applicable rather than being verified against a different target
+  - bridge preparation does not execute verifiers, create findings, mutate canonical graph state, or write audit memory
+bindings:
+  required:
+    - reverification_plan_id
+    - before_snapshot_id
+    - after_snapshot_id
+    - bridge_policy_version

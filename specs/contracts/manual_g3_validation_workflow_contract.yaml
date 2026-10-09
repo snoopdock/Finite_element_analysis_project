@@ -1,6 +1,6 @@
 contract_id: manual_g3_validation_workflows/v1
 status: normative
-scope: GitHub Actions workflows 05 through 12
+scope: GitHub Actions workflows 05 through 13
 rules:
   - G3 validation workflows are invoked only through workflow_dispatch
   - push triggers are forbidden

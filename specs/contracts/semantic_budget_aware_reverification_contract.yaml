@@ -1,0 +1,12 @@
+contract_id: semantic_budget_aware_reverification/v1
+status: normative
+scope: combined G3.2/G3.3 receipt re-verification session
+principles:
+  - the combined operation is bound to one G3.2 after-snapshot
+  - G3.2 determines affected work and G3.3 determines bounded verifier allocation
+  - only prepared receipt objectives consume verifier budget
+  - adaptive continuation remains bounded by the original hard budget
+  - terminal successor receipts are reconciled non-destructively with historical receipts
+  - unresolved budget or capability remains explicit work
+  - no finding creation, finding lifecycle mutation, promotion, graph mutation, or implicit memory persistence occurs
+  - combined result identity is deterministic from preparation, initial plan, session, and reconciliation identities

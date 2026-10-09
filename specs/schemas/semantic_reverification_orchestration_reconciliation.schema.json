@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_reverification_orchestration_reconciliation/v1",
+  "type": "object",
+  "required": ["schema_version", "reconciliation_id", "preparation_id", "orchestration_session_id", "items", "successor_receipts", "unresolved_task_ids"],
+  "properties": {
+    "schema_version": {"const": "semantic_reverification_orchestration_reconciliation/v1"},
+    "reconciliation_id": {"type": "string", "minLength": 1},
+    "preparation_id": {"type": "string", "minLength": 1},
+    "orchestration_session_id": {"type": "string", "minLength": 1},
+    "items": {"type": "array"},
+    "successor_receipts": {"type": "array"},
+    "unresolved_task_ids": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,21 @@
+contract_id: semantic_orchestration_integration_memory_commit/v1
+status: normative
+scope: explicit persistence of G3.3.2 integration artifacts
+principles:
+  - orchestration execution has no implicit long-term memory side effect
+  - persistence requires an explicit recorder invocation
+  - all records are bound to the after snapshot
+  - the audit-memory ledger remains append-only and content-addressed
+  - stored orchestration history is evidence of prior execution and is not current semantic authority
+  - repeated identical commits are idempotent
+artifacts:
+  - reverification_orchestration_preparation
+  - orchestration_plan
+  - adaptive_orchestration_session
+  - orchestration_execution
+  - adaptive_orchestration_replan
+  - reverification_orchestration_reconciliation
+  - budget_aware_reverification
+  - analysis
+  - verification_obligation
+  - verification_receipt

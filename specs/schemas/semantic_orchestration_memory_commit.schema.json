@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic_orchestration_integration_memory_commit/v1",
+  "type": "object",
+  "required": ["result_id", "snapshot_id", "record_ids"],
+  "properties": {
+    "result_id": {"type": "string", "minLength": 1},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "record_ids": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  },
+  "additionalProperties": false
+}
