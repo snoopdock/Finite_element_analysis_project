@@ -60,6 +60,18 @@ from .policy import HIGH_ASSURANCE_POLICY_VERSION, HighAssurancePolicy
 from .registry import HighAssuranceAdapterRegistry
 from .serialization import write_high_assurance_execution
 from .static_python import PYTHON_STATIC_IMPORT_OBLIGATION, PythonStaticImportAdapter
+from .unsat_proof import (
+    RUP_CHECKER_ID,
+    RUP_CHECKER_VERSION,
+    RUP_PROOF_FORMAT,
+    ProofCheckLimits,
+    RupUnsatProofChecker,
+    UnsatProofCheckResult,
+    UnsatProofCheckerDescriptor,
+    UnsatProofCheckerRegistry,
+    builtin_unsat_proof_checker_registry,
+    clause_is_rup,
+)
 from .verification_bridge import ControlledHighAssuranceVerifier
 
 __all__ = [
@@ -114,5 +126,15 @@ __all__ = [
     "validate_external_cnf_certificate",
     "validate_sat_model_certificate",
     "validate_unsat_claim",
+    "ProofCheckLimits",
+    "RUP_CHECKER_ID",
+    "RUP_CHECKER_VERSION",
+    "RUP_PROOF_FORMAT",
+    "RupUnsatProofChecker",
+    "UnsatProofCheckResult",
+    "UnsatProofCheckerDescriptor",
+    "UnsatProofCheckerRegistry",
+    "builtin_unsat_proof_checker_registry",
+    "clause_is_rup",
     "write_high_assurance_execution",
 ]

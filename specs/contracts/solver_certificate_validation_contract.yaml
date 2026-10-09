@@ -13,6 +13,16 @@ bounded_unsat:
     - repository_owned_checker_independently_enumerates_assignment_space
     - every_assignment_is_checked_or_a_counterexample_is_found
   validated_completeness: exhaustive_within_scope
+proof_carrying_unsat:
+  validation:
+    - certificate_is_bound_to_exact_cnf_digest
+    - proof_format_has_repository_owned_registered_checker
+    - checker_validates_every_required_inference_step
+    - proof_establishes_terminal_unsat_claim
+  validated_completeness: certificate_complete_within_scope
+  unsupported_or_invalid_proof_without_other_independent_validation:
+    maximum_state: observed
+    completeness: partial
 large_unsat_without_supported_proof_checker:
   maximum_state: observed
   completeness: partial

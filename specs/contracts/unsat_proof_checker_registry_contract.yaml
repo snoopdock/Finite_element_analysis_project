@@ -1,0 +1,21 @@
+contract_id: unsat_proof_checker_registry_contract
+version: 1
+status: normative
+principle: proof_format_acceptance_requires_repository_owned_checker_registration
+registry:
+  key: proof_format
+  duplicate_format_registration: forbidden
+  default_registered_formats:
+    - cnf-rup/v1
+checker_authority:
+  owned_by: repository
+  independent_from: external_solver_process
+  may_promote_to_validated_only_when:
+    - proof_is_bound_to_exact_subject_digest
+    - checker_accepts_every_required_inference_step
+    - proof_establishes_the_terminal_claim
+    - configured_resource_limits_are_respected
+unsupported_format:
+  evidence_state_ceiling: observed
+  completeness: partial
+  may_not_be_silently_reinterpreted: true

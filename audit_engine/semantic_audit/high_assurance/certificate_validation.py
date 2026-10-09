@@ -1,15 +1,16 @@
-"""Independent validation of solver certificates for G3.4.2.
+"""Independent validation of solver certificates for G3.4.x.
 
 A producing solver never gets to declare its own evidence ``VALIDATED``.  This
-module checks certificates using repository-owned logic.  The first supported
-forms are intentionally narrow:
+module checks certificates using repository-owned logic.  Supported forms are:
 
 * SAT model: independently evaluate the supplied assignment against the CNF.
 * bounded UNSAT claim: independently exhaust the assignment space when the CNF
   is within the configured validation bound.
+* proof-carrying UNSAT: dispatch an explicitly supported proof format to a
+  repository-owned checker.  G3.4.3 ships an addition-only RUP checker.
 
-External UNSAT claims above that bound remain observed solver output until a
-future proof checker (for example DRAT/LRAT or SMT proof validation) exists.
+Unsupported or invalid external proofs remain solver observations unless a
+separate repository-owned validation path independently establishes a verdict.
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from audit_engine.semantic_audit.graph.analysis.models import VerificationStatus
 
 from .cnf_solver import cnf_true
 from .models import ValidationCompleteness, VerificationWitness, WitnessKind
+from .unsat_proof import UnsatProofCheckerRegistry, builtin_unsat_proof_checker_registry
 
 
 DEFAULT_INDEPENDENT_UNSAT_MAX_VARIABLES = 12
@@ -111,36 +113,22 @@ def validate_sat_model_certificate(
     )
 
 
-def validate_unsat_claim(
+def _validate_unsat_by_bounded_enumeration(
     *,
-    certificate: Mapping[str, Any] | None,
     variable_count: int,
     clauses: Sequence[Sequence[int]],
     subject_digest: str,
-    independent_max_variables: int = DEFAULT_INDEPENDENT_UNSAT_MAX_VARIABLES,
+    independent_max_variables: int,
+    diagnostic_prefix: tuple[str, ...] = (),
 ) -> SolverCertificateValidation:
-    if independent_max_variables < 1:
-        raise ValueError("independent_max_variables must be positive")
-    certificate_kind = certificate.get("kind") if certificate is not None else None
-    if certificate_kind not in {None, "unsat_claim", "unsupported_proof"}:
-        return SolverCertificateValidation(
-            established_verdict=None,
-            evidence_state=VerificationStatus.REJECTED,
-            completeness=ValidationCompleteness.PARTIAL,
-            witness=None,
-            diagnostics=(f"unsupported_unsat_certificate_kind:{certificate_kind}",),
-            certificate_accepted=False,
-        )
-
     if variable_count > independent_max_variables:
-        # The external verdict is an observation, not a validated fact.  No
-        # unimplemented proof format is silently trusted.
         return SolverCertificateValidation(
             established_verdict="unsat",
             evidence_state=VerificationStatus.OBSERVED,
             completeness=ValidationCompleteness.PARTIAL,
             witness=None,
-            diagnostics=(
+            diagnostics=diagnostic_prefix
+            + (
                 "external_unsat_observed_but_not_independently_validated",
                 f"independent_unsat_bound={independent_max_variables}",
             ),
@@ -169,7 +157,7 @@ def validate_unsat_claim(
                 evidence_state=VerificationStatus.VALIDATED,
                 completeness=ValidationCompleteness.CERTIFICATE_COMPLETE_WITHIN_SCOPE,
                 witness=witness,
-                diagnostics=("external_unsat_refuted_by_independent_model",),
+                diagnostics=diagnostic_prefix + ("external_unsat_refuted_by_independent_model",),
                 certificate_accepted=False,
             )
 
@@ -191,8 +179,115 @@ def validate_unsat_claim(
         evidence_state=VerificationStatus.VALIDATED,
         completeness=ValidationCompleteness.EXHAUSTIVE_WITHIN_SCOPE,
         witness=witness,
-        diagnostics=("external_unsat_independently_validated",),
+        diagnostics=diagnostic_prefix + ("external_unsat_independently_validated",),
         certificate_accepted=True,
+    )
+
+
+def _validate_unsat_proof_certificate(
+    *,
+    certificate: Mapping[str, Any],
+    variable_count: int,
+    clauses: Sequence[Sequence[int]],
+    subject_digest: str,
+    proof_checker_registry: UnsatProofCheckerRegistry,
+) -> SolverCertificateValidation:
+    raw_format = certificate.get("proof_format")
+    if not isinstance(raw_format, str) or not raw_format.strip():
+        return SolverCertificateValidation(
+            established_verdict="unsat",
+            evidence_state=VerificationStatus.OBSERVED,
+            completeness=ValidationCompleteness.PARTIAL,
+            witness=None,
+            diagnostics=("unsat_proof_missing_proof_format",),
+            certificate_accepted=False,
+        )
+    checker = proof_checker_registry.get(raw_format)
+    if checker is None:
+        return SolverCertificateValidation(
+            established_verdict="unsat",
+            evidence_state=VerificationStatus.OBSERVED,
+            completeness=ValidationCompleteness.PARTIAL,
+            witness=None,
+            diagnostics=(f"unsupported_unsat_proof_format:{raw_format}",),
+            certificate_accepted=False,
+        )
+    checked = checker.check(
+        certificate=certificate,
+        variable_count=variable_count,
+        clauses=clauses,
+        subject_digest=subject_digest,
+    )
+    if not checked.accepted:
+        return SolverCertificateValidation(
+            established_verdict="unsat",
+            evidence_state=VerificationStatus.OBSERVED,
+            completeness=ValidationCompleteness.PARTIAL,
+            witness=None,
+            diagnostics=checked.diagnostics + ("external_unsat_proof_not_accepted",),
+            certificate_accepted=False,
+        )
+    return SolverCertificateValidation(
+        established_verdict="unsat",
+        evidence_state=VerificationStatus.VALIDATED,
+        completeness=ValidationCompleteness.CERTIFICATE_COMPLETE_WITHIN_SCOPE,
+        witness=checked.witness,
+        diagnostics=checked.diagnostics + ("external_unsat_proof_independently_validated",),
+        certificate_accepted=True,
+    )
+
+
+def validate_unsat_claim(
+    *,
+    certificate: Mapping[str, Any] | None,
+    variable_count: int,
+    clauses: Sequence[Sequence[int]],
+    subject_digest: str,
+    independent_max_variables: int = DEFAULT_INDEPENDENT_UNSAT_MAX_VARIABLES,
+    proof_checker_registry: UnsatProofCheckerRegistry | None = None,
+) -> SolverCertificateValidation:
+    if independent_max_variables < 1:
+        raise ValueError("independent_max_variables must be positive")
+    certificate_kind = certificate.get("kind") if certificate is not None else None
+
+    if certificate_kind == "unsat_proof":
+        proof_result = _validate_unsat_proof_certificate(
+            certificate=certificate,
+            variable_count=variable_count,
+            clauses=clauses,
+            subject_digest=subject_digest,
+            proof_checker_registry=proof_checker_registry or builtin_unsat_proof_checker_registry(),
+        )
+        if proof_result.certificate_accepted:
+            return proof_result
+        # A rejected/unsupported proof never becomes trusted.  For small CNFs,
+        # however, an independent exhaustive checker can still establish the
+        # semantic verdict without relying on the external proof.
+        if variable_count <= independent_max_variables:
+            return _validate_unsat_by_bounded_enumeration(
+                variable_count=variable_count,
+                clauses=clauses,
+                subject_digest=subject_digest,
+                independent_max_variables=independent_max_variables,
+                diagnostic_prefix=proof_result.diagnostics,
+            )
+        return proof_result
+
+    if certificate_kind not in {None, "unsat_claim", "unsupported_proof"}:
+        return SolverCertificateValidation(
+            established_verdict="unsat",
+            evidence_state=VerificationStatus.OBSERVED,
+            completeness=ValidationCompleteness.PARTIAL,
+            witness=None,
+            diagnostics=(f"unsupported_unsat_certificate_kind:{certificate_kind}",),
+            certificate_accepted=False,
+        )
+
+    return _validate_unsat_by_bounded_enumeration(
+        variable_count=variable_count,
+        clauses=clauses,
+        subject_digest=subject_digest,
+        independent_max_variables=independent_max_variables,
     )
 
 
@@ -204,6 +299,7 @@ def validate_external_cnf_certificate(
     clauses: Sequence[Sequence[int]],
     subject_digest: str,
     independent_unsat_max_variables: int = DEFAULT_INDEPENDENT_UNSAT_MAX_VARIABLES,
+    proof_checker_registry: UnsatProofCheckerRegistry | None = None,
 ) -> SolverCertificateValidation:
     if verdict == "sat":
         return validate_sat_model_certificate(
@@ -219,6 +315,7 @@ def validate_external_cnf_certificate(
             clauses=clauses,
             subject_digest=subject_digest,
             independent_max_variables=independent_unsat_max_variables,
+            proof_checker_registry=proof_checker_registry,
         )
     if verdict == "unknown":
         return SolverCertificateValidation(

@@ -1,0 +1,42 @@
+contract_id: cnf_rup_unsat_proof_contract
+version: 1
+status: normative
+proof_format: cnf-rup/v1
+purpose: repository_owned_unsat_certificate_checking
+certificate:
+  required_fields:
+    - kind
+    - proof_format
+    - cnf_digest
+    - steps
+  kind: unsat_proof
+  binding:
+    - cnf_digest_must_equal_the_normalized_input_cnf_digest
+    - every_literal_must_reference_a_declared_variable
+inference_rule:
+  name: reverse_unit_propagation
+  requirement: each_added_clause_must_produce_unit_propagation_conflict_when_negated
+  proof_termination: final_added_clause_must_be_empty
+supported_operations:
+  - clause_addition
+unsupported_operations:
+  - clause_deletion
+  - rat_inference
+  - drat_extension
+  - lrat_hints
+  - smt_theory_lemmas
+validated_semantics:
+  verdict: unsat
+  evidence_state: validated
+  completeness: certificate_complete_within_scope
+resource_limits:
+  mandatory:
+    - max_steps
+    - max_total_literals
+    - max_clause_width
+  exhaustion_semantics: inconclusive_or_observed_not_sat
+forbidden_interpretations:
+  - proof_parser_success_is_proof_acceptance
+  - external_solver_self_validation
+  - unsupported_proof_format_is_validated
+  - resource_limit_exhaustion_means_the_formula_is_satisfiable

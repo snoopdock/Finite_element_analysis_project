@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from itertools import product
+import hashlib
 import json
 import sys
 import time
@@ -29,6 +30,30 @@ def solve(variable_count, clauses):
             return assignment
     return None
 
+
+def cnf_digest(variable_count, clauses):
+    payload = {"variable_count": variable_count, "clauses": clauses}
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def rup_certificate(variable_count, clauses, *, valid=True):
+    digest = cnf_digest(variable_count, clauses)
+    if valid:
+        clause_set = {tuple(clause) for clause in clauses}
+        if (1,) in clause_set and (-1,) in clause_set:
+            steps = [[]]
+        else:
+            # Standard four-clause XOR contradiction used by G3.4.3 tests.
+            steps = [[1], [-1], []]
+    else:
+        steps = [[]]
+    return {
+        "kind": "unsat_proof",
+        "proof_format": "cnf-rup/v1",
+        "cnf_digest": digest,
+        "steps": steps,
+    }
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "solve"
@@ -61,7 +86,12 @@ def main():
             "assignment": {str(i + 1): value for i, value in enumerate(model)},
         }
     elif verdict == "unsat":
-        certificate = {"kind": "unsat_claim"}
+        if mode == "rup-unsat":
+            certificate = rup_certificate(variable_count, clauses, valid=True)
+        elif mode == "invalid-rup":
+            certificate = rup_certificate(variable_count, clauses, valid=False)
+        else:
+            certificate = {"kind": "unsat_claim"}
     response = {
         "protocol_version": PROTOCOL,
         "request_id": payload["request_id"],

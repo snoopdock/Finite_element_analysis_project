@@ -1,0 +1,34 @@
+contract_id: proof_carrying_external_solver_contract
+version: 1
+status: normative
+extends:
+  - controlled_external_cnf_solver_contract
+  - solver_certificate_validation_contract
+principle: external_unsat_requires_independent_repository_owned_proof_checking_for_certificate_validation
+unsat_paths:
+  bounded_enumeration:
+    validated_when: repository_independently_exhausts_assignment_space
+    completeness: exhaustive_within_scope
+  proof_carrying:
+    validated_when: registered_repository_checker_accepts_bound_unsat_proof
+    completeness: certificate_complete_within_scope
+  unsupported_or_invalid_proof:
+    maximum_state_without_other_independent_validation: observed
+    completeness: partial
+fallback:
+  bounded_independent_enumeration_may_validate_even_when_external_proof_is_invalid: true
+  invalid_external_proof_itself_is_never_accepted: true
+lineage:
+  preserve:
+    - external_solver_identity
+    - executable_digest
+    - semantic_input_digest
+    - cnf_digest
+    - proof_format
+    - proof_digest
+    - checker_identity
+    - checker_version
+forbidden_interpretations:
+  - solver_verdict_is_equivalent_to_checked_proof
+  - proof_digest_is_equivalent_to_proof_validity
+  - unsupported_proof_format_is_equivalent_to_unsat_validation

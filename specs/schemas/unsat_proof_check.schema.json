@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Repository-owned UNSAT Proof Check",
+  "type": "object",
+  "required": [
+    "accepted",
+    "proof_format",
+    "checker_id",
+    "checker_version",
+    "proof_digest",
+    "checked_steps",
+    "total_proof_literals",
+    "witness_id",
+    "diagnostics"
+  ],
+  "properties": {
+    "accepted": {
+      "type": "boolean"
+    },
+    "proof_format": {
+      "type": "string",
+      "minLength": 1
+    },
+    "checker_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "checker_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "proof_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "checked_steps": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total_proof_literals": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "witness_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false
+}
