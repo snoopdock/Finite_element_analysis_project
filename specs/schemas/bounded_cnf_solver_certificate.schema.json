@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bounded_cnf_solver_certificate.schema.json",
+  "type": "object",
+  "required": ["verdict", "cnf_digest", "checked_assignments"],
+  "properties": {
+    "verdict": {"enum": ["sat", "unsat"]},
+    "cnf_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "checked_assignments": {"type": "integer", "minimum": 1},
+    "total_assignments": {"type": "integer", "minimum": 1},
+    "certificate_method": {"type": "string"},
+    "assignment": {
+      "type": "object",
+      "additionalProperties": {"type": "boolean"}
+    }
+  },
+  "additionalProperties": true
+}

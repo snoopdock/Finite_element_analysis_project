@@ -1,0 +1,33 @@
+contract_id: bounded_cnf_solver_contract
+version: 1
+status: normative
+adapter_id: bounded-cnf-exhaustive
+obligation_type: bounded_cnf_satisfiability
+mechanism: solver
+containment_mode: in_process_read_only
+bounds:
+  maximum_variables: 12
+  solving_method: exhaustive_boolean_assignment_enumeration
+required_parameters:
+  - clauses
+  - variable_count
+  - expected_satisfiable
+semantics:
+  positive_literal: variable_is_true
+  negative_literal: variable_is_false
+  empty_clause: unsatisfiable_clause
+  empty_cnf: satisfiable_formula
+validation:
+  completeness: exhaustive_within_scope
+  sat_witness: satisfying_assignment
+  unsat_witness: complete_truth_table_exhaustion
+excluded_scope:
+  - smt_theories
+  - first_order_logic
+  - optimization
+  - external_solver_backends
+  - instances_above_declared_variable_bound
+invariants:
+  - rejected_out_of_bound_problem_is_not_a_semantic_verdict
+  - solver_result_must_emit_reproducible_certificate_witness
+  - solver_adapter_does_not_import_inactive_formal_router

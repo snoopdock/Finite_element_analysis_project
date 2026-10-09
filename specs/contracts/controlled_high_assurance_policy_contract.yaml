@@ -1,5 +1,5 @@
 contract_id: controlled_high_assurance_policy_contract
-version: 1
+version: 2
 status: normative
 default_policy:
   allowed_mechanisms:
@@ -11,10 +11,13 @@ default_policy:
   allow_side_effects: false
   require_witness_for_validated: true
   require_exhaustive_envelope_for_validated: true
-future_mechanisms_requiring_explicit_activation:
+  activated_adapter_ids: []
+explicit_activation_required:
   - solver
   - executable_witness
   - theorem_prover
 invariants:
   - policy_denial_is_not_semantic_refutation
+  - mechanism_permission_alone_does_not_activate_sensitive_adapter
+  - profile_catalog_presence_is_not_activation
   - formal_router_stays_inactive_until_real_adapter_contracts_exist

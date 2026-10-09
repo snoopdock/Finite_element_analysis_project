@@ -1,0 +1,19 @@
+contract_id: high_assurance_explicit_activation_contract
+version: 1
+status: normative
+scope:
+  mechanisms_requiring_explicit_activation:
+    - solver
+    - executable_witness
+    - theorem_prover
+requirements:
+  - mechanism_must_be_allowed_by_policy
+  - adapter_id_must_be_explicitly_activated
+  - adapter_must_be_pre_registered
+  - adapter_version_must_be_bound_to_descriptor
+  - activation_does_not_imply_semantic_correctness
+invariants:
+  - installation_is_not_activation
+  - orchestration_profile_is_not_activation
+  - registration_is_not_activation_for_sensitive_mechanisms
+  - policy_denial_is_operational_not_semantic_refutation

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "registered_executable_witness_trace.schema.json",
+  "type": "object",
+  "required": [
+    "harness_id",
+    "harness_version",
+    "input_digest",
+    "expected_output_digest",
+    "actual_output_digest",
+    "matched"
+  ],
+  "properties": {
+    "harness_id": {"type": "string", "minLength": 1},
+    "harness_version": {"type": "string", "minLength": 1},
+    "input_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "expected_output_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "actual_output_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "matched": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}

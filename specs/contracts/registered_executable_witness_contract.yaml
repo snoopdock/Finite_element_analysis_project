@@ -1,0 +1,32 @@
+contract_id: registered_executable_witness_contract
+version: 1
+status: normative
+adapter_id: registered-executable-witness
+obligation_type: registered_executable_witness
+mechanism: executable_witness
+containment_mode: in_process_read_only
+execution_authority:
+  allowed:
+    - callable_pre_registered_by_trusted_application_code
+  forbidden:
+    - user_supplied_source_code
+    - import_path_from_audit_artifact
+    - shell_command
+    - arbitrary_executable_path
+    - network_required_harness
+    - side_effecting_harness_declaration
+required_parameters:
+  - harness_id
+  - harness_version
+  - inputs
+  - expected_output
+witness:
+  kind: execution_trace
+  raw_inputs_serialized: false
+  raw_outputs_serialized: false
+  digest_binding_required: true
+invariants:
+  - harness_identity_and_version_are_explicit
+  - unknown_harness_is_not_executed
+  - version_mismatch_is_not_executed
+  - execution_result_does_not_create_findings_or_memory_side_effects

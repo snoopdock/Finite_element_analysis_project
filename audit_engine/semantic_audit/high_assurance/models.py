@@ -157,7 +157,7 @@ class ValidationEnvelope:
             "assumptions": list(self.assumptions),
             "excluded_scope": list(self.excluded_scope),
             "completeness": self.completeness.value,
-            "environment": dict(self.environment),
+            "environment": _jsonable(self.environment),
         }
 
 
@@ -210,7 +210,7 @@ class VerificationWitness:
             "subject_digest": self.subject_digest,
             "summary": self.summary,
             "reproducible": self.reproducible,
-            "details": dict(self.details),
+            "details": _jsonable(self.details),
         }
 
 

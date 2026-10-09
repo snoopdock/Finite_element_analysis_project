@@ -79,6 +79,16 @@ def builtin_profile_catalog() -> VerifierProfileCatalog:
             "artifact-digest-integrity", "1.0.0", VerificationMethod.ARTIFACT_INTEGRITY, 2,
             VerificationStatus.VALIDATED,
         ),
+        # G3.4.1 profiles are policy metadata only. They do not activate the
+        # corresponding high-assurance adapters in a VerifierRegistry.
+        VerifierOrchestrationProfile(
+            "bounded-cnf-exhaustive", "1.0.0", VerificationMethod.SOLVER, 8,
+            VerificationStatus.VALIDATED,
+        ),
+        VerifierOrchestrationProfile(
+            "registered-executable-witness", "1.0.0", VerificationMethod.EXECUTABLE, 6,
+            VerificationStatus.VALIDATED,
+        ),
     )
     for profile in profiles:
         catalog.register(profile)

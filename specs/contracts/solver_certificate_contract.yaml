@@ -1,0 +1,24 @@
+contract_id: solver_certificate_contract
+version: 1
+status: normative
+witness_kind: solver_certificate
+required_semantics:
+  - subject_digest
+  - solver_identity
+  - solver_version
+  - verdict
+  - reproducibility_information
+bounded_cnf_sat_certificate:
+  required:
+    - cnf_digest
+    - assignment
+bounded_cnf_unsat_certificate:
+  required:
+    - cnf_digest
+    - checked_assignments
+    - total_assignments
+    - certificate_method
+forbidden_interpretations:
+  - certificate_proves_claims_outside_validation_envelope
+  - unsat_certificate_for_bounded_cnf_is_a_general_smt_proof
+  - solver_certificate_is_execution_authority
