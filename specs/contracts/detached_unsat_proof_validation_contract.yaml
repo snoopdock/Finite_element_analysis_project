@@ -1,0 +1,27 @@
+contract_id: semantic-audit/detached-unsat-proof-validation/v1
+status: normative
+owner: semantic-audit/high-assurance
+purpose: >-
+  Integrate detached proof artifacts into external CNF certificate validation
+  without granting artifact stores or solvers semantic authority.
+validation_chain:
+  - parse_strict_location_free_reference
+  - resolve_only_registered_store
+  - verify_artifact_size_and_sha256
+  - verify_artifact_header_binding
+  - stream_repository_owned_rup_or_drat_check
+  - promote_only_after_complete_check
+outcomes:
+  valid_proof:
+    evidence_state: validated
+    completeness: certificate_complete_within_scope
+  missing_store_or_invalid_artifact:
+    evidence_state: observed
+    completeness: partial
+  small_formula_fallback:
+    allowed: true
+    authority: repository_owned_bounded_enumeration
+trust_boundary:
+  solver_result_is_not_authority: true
+  store_integrity_is_not_authority: true
+  checker_is_repository_owned: true

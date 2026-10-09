@@ -1,0 +1,20 @@
+contract_id: semantic-audit/content-addressed-proof-store/v1
+status: normative
+owner: semantic-audit/high-assurance
+purpose: >-
+  Define trusted proof-artifact storage where physical locations are derived
+  from repository-owned store configuration and artifact SHA-256 identity.
+store:
+  registry_required: true
+  duplicate_store_ids: forbidden
+  local_store:
+    trusted_root_required: true
+    path_derived_from_sha256_only: true
+    symbolic_links: forbidden
+    exact_byte_size_check: required
+    exact_sha256_check: required
+    verified_handle_rewound_before_parsing: true
+semantics:
+  artifact_integrity_proves_logical_statement: false
+  missing_or_corrupt_artifact_establishes_sat_or_unsat: false
+  missing_or_corrupt_artifact_allows_evidence_promotion: false

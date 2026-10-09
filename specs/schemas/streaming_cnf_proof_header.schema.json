@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic-audit/streaming-cnf-proof-header/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["artifact_format", "proof_format", "cnf_digest"],
+  "properties": {
+    "artifact_format": {"const": "semantic_cnf_proof_jsonl/v1"},
+    "proof_format": {"enum": ["cnf-rup/v1", "cnf-drat/v1"]},
+    "cnf_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

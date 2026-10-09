@@ -23,6 +23,12 @@ from audit_engine.semantic_audit.graph.analysis.models import VerificationStatus
 
 from .cnf_solver import cnf_true
 from .models import ValidationCompleteness, VerificationWitness, WitnessKind
+from .proof_artifact import (
+    DETACHED_UNSAT_PROOF_KIND,
+    ProofArtifactReference,
+    ProofArtifactStoreRegistry,
+)
+from .streaming_proof import StreamingDetachedProofChecker, StreamingProofCheckLimits
 from .unsat_proof import UnsatProofCheckerRegistry, builtin_unsat_proof_checker_registry
 
 
@@ -237,6 +243,72 @@ def _validate_unsat_proof_certificate(
     )
 
 
+
+def _validate_detached_unsat_proof_reference(
+    *,
+    certificate: Mapping[str, Any],
+    variable_count: int,
+    clauses: Sequence[Sequence[int]],
+    subject_digest: str,
+    proof_artifact_stores: ProofArtifactStoreRegistry | None,
+    streaming_proof_limits: StreamingProofCheckLimits | None,
+) -> SolverCertificateValidation:
+    try:
+        reference = ProofArtifactReference.from_mapping(certificate)
+    except ValueError as exc:
+        return SolverCertificateValidation(
+            established_verdict="unsat",
+            evidence_state=VerificationStatus.OBSERVED,
+            completeness=ValidationCompleteness.PARTIAL,
+            witness=None,
+            diagnostics=(f"invalid_detached_unsat_proof_reference:{exc}",),
+            certificate_accepted=False,
+        )
+    if reference.cnf_digest != subject_digest:
+        return SolverCertificateValidation(
+            established_verdict="unsat",
+            evidence_state=VerificationStatus.OBSERVED,
+            completeness=ValidationCompleteness.PARTIAL,
+            witness=None,
+            diagnostics=("detached_unsat_proof_reference_cnf_digest_mismatch",),
+            certificate_accepted=False,
+        )
+    if proof_artifact_stores is None:
+        return SolverCertificateValidation(
+            established_verdict="unsat",
+            evidence_state=VerificationStatus.OBSERVED,
+            completeness=ValidationCompleteness.PARTIAL,
+            witness=None,
+            diagnostics=("detached_unsat_proof_store_registry_not_configured",),
+            certificate_accepted=False,
+        )
+    checked = StreamingDetachedProofChecker(
+        proof_artifact_stores,
+        limits=streaming_proof_limits,
+    ).check(
+        reference=reference,
+        variable_count=variable_count,
+        clauses=clauses,
+        subject_digest=subject_digest,
+    )
+    if not checked.accepted:
+        return SolverCertificateValidation(
+            established_verdict="unsat",
+            evidence_state=VerificationStatus.OBSERVED,
+            completeness=ValidationCompleteness.PARTIAL,
+            witness=None,
+            diagnostics=checked.diagnostics + ("external_detached_unsat_proof_not_accepted",),
+            certificate_accepted=False,
+        )
+    return SolverCertificateValidation(
+        established_verdict="unsat",
+        evidence_state=VerificationStatus.VALIDATED,
+        completeness=ValidationCompleteness.CERTIFICATE_COMPLETE_WITHIN_SCOPE,
+        witness=checked.witness,
+        diagnostics=checked.diagnostics + ("external_detached_unsat_proof_independently_validated",),
+        certificate_accepted=True,
+    )
+
 def validate_unsat_claim(
     *,
     certificate: Mapping[str, Any] | None,
@@ -245,10 +317,33 @@ def validate_unsat_claim(
     subject_digest: str,
     independent_max_variables: int = DEFAULT_INDEPENDENT_UNSAT_MAX_VARIABLES,
     proof_checker_registry: UnsatProofCheckerRegistry | None = None,
+    proof_artifact_stores: ProofArtifactStoreRegistry | None = None,
+    streaming_proof_limits: StreamingProofCheckLimits | None = None,
 ) -> SolverCertificateValidation:
     if independent_max_variables < 1:
         raise ValueError("independent_max_variables must be positive")
     certificate_kind = certificate.get("kind") if certificate is not None else None
+
+    if certificate_kind == DETACHED_UNSAT_PROOF_KIND:
+        proof_result = _validate_detached_unsat_proof_reference(
+            certificate=certificate,
+            variable_count=variable_count,
+            clauses=clauses,
+            subject_digest=subject_digest,
+            proof_artifact_stores=proof_artifact_stores,
+            streaming_proof_limits=streaming_proof_limits,
+        )
+        if proof_result.certificate_accepted:
+            return proof_result
+        if variable_count <= independent_max_variables:
+            return _validate_unsat_by_bounded_enumeration(
+                variable_count=variable_count,
+                clauses=clauses,
+                subject_digest=subject_digest,
+                independent_max_variables=independent_max_variables,
+                diagnostic_prefix=proof_result.diagnostics,
+            )
+        return proof_result
 
     if certificate_kind == "unsat_proof":
         proof_result = _validate_unsat_proof_certificate(
@@ -300,6 +395,8 @@ def validate_external_cnf_certificate(
     subject_digest: str,
     independent_unsat_max_variables: int = DEFAULT_INDEPENDENT_UNSAT_MAX_VARIABLES,
     proof_checker_registry: UnsatProofCheckerRegistry | None = None,
+    proof_artifact_stores: ProofArtifactStoreRegistry | None = None,
+    streaming_proof_limits: StreamingProofCheckLimits | None = None,
 ) -> SolverCertificateValidation:
     if verdict == "sat":
         return validate_sat_model_certificate(
@@ -316,6 +413,8 @@ def validate_external_cnf_certificate(
             subject_digest=subject_digest,
             independent_max_variables=independent_unsat_max_variables,
             proof_checker_registry=proof_checker_registry,
+            proof_artifact_stores=proof_artifact_stores,
+            streaming_proof_limits=streaming_proof_limits,
         )
     if verdict == "unknown":
         return SolverCertificateValidation(

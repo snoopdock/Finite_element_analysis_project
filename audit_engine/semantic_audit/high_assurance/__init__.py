@@ -63,6 +63,16 @@ from .models import (
     VerificationWitness,
     WitnessKind,
 )
+from .proof_artifact import (
+    DETACHED_UNSAT_PROOF_KIND,
+    PROOF_ARTIFACT_FORMAT,
+    PROOF_ARTIFACT_MEDIA_TYPE,
+    LocalContentAddressedProofStore,
+    ProofArtifactError,
+    ProofArtifactReference,
+    ProofArtifactStoreRegistry,
+)
+from .streaming_proof import StreamingDetachedProofChecker, StreamingProofCheckLimits
 from .policy import HIGH_ASSURANCE_POLICY_VERSION, HighAssurancePolicy
 from .registry import HighAssuranceAdapterRegistry
 from .serialization import write_high_assurance_execution
@@ -148,5 +158,14 @@ __all__ = [
     "UnsatProofCheckerRegistry",
     "builtin_unsat_proof_checker_registry",
     "clause_is_rup",
+    "DETACHED_UNSAT_PROOF_KIND",
+    "PROOF_ARTIFACT_FORMAT",
+    "PROOF_ARTIFACT_MEDIA_TYPE",
+    "LocalContentAddressedProofStore",
+    "ProofArtifactError",
+    "ProofArtifactReference",
+    "ProofArtifactStoreRegistry",
+    "StreamingDetachedProofChecker",
+    "StreamingProofCheckLimits",
     "write_high_assurance_execution",
 ]

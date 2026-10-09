@@ -1,0 +1,31 @@
+contract_id: semantic-audit/detached-proof-artifact-reference/v1
+status: normative
+owner: semantic-audit/high-assurance
+purpose: >-
+  Define a location-free, content-addressed reference for detached UNSAT proof
+  artifacts so untrusted solver output cannot authorize arbitrary file or URL access.
+reference:
+  kind: unsat_proof_ref
+  required_fields:
+    - store_id
+    - artifact_sha256
+    - byte_size
+    - proof_format
+    - cnf_digest
+    - artifact_format
+    - media_type
+  forbidden_authority_fields:
+    - path
+    - url
+    - uri
+    - command
+    - executable
+    - import_path
+binding:
+  artifact_identity: sha256_and_byte_size
+  semantic_identity: exact_cnf_digest_and_proof_format
+  store_selection: explicit_registered_store_id_only
+trust_boundary:
+  solver_may_name_registered_store: true
+  solver_may_define_store_location: false
+  content_integrity_is_not_logical_validity: true

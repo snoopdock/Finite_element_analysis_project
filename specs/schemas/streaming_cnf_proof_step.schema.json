@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic-audit/streaming-cnf-proof-step/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["op", "clause"],
+  "properties": {
+    "op": {"enum": ["add", "delete"]},
+    "clause": {
+      "type": "array",
+      "items": {"type": "integer", "not": {"const": 0}}
+    }
+  }
+}

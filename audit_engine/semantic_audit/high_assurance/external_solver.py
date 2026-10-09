@@ -24,6 +24,8 @@ from .certificate_validation import (
 from .cnf_solver import BOUNDED_CNF_SAT_OBLIGATION, cnf_digest, normalize_cnf
 from .external_process import ControlledJsonSubprocessRunner
 from .external_solver_protocol import EXTERNAL_SOLVER_PROTOCOL_VERSION, ExternalSolverResponse
+from .proof_artifact import ProofArtifactStoreRegistry
+from .streaming_proof import StreamingProofCheckLimits
 from .unsat_proof import UnsatProofCheckerRegistry, builtin_unsat_proof_checker_registry
 from .models import (
     AssuranceMechanism,
@@ -78,6 +80,8 @@ class ControlledExternalCnfSolverAdapter:
         independent_unsat_max_variables: int = DEFAULT_INDEPENDENT_UNSAT_MAX_VARIABLES,
         max_variables: int = DEFAULT_EXTERNAL_CNF_MAX_VARIABLES,
         proof_checker_registry: UnsatProofCheckerRegistry | None = None,
+        proof_artifact_stores: ProofArtifactStoreRegistry | None = None,
+        streaming_proof_limits: StreamingProofCheckLimits | None = None,
     ) -> None:
         if not solver_id.strip() or not solver_version.strip():
             raise ValueError("solver_id and solver_version must be non-empty")
@@ -91,6 +95,8 @@ class ControlledExternalCnfSolverAdapter:
         self.independent_unsat_max_variables = independent_unsat_max_variables
         self.max_variables = max_variables
         self.proof_checker_registry = proof_checker_registry or builtin_unsat_proof_checker_registry()
+        self.proof_artifact_stores = proof_artifact_stores
+        self.streaming_proof_limits = streaming_proof_limits
 
     def execute(
         self,
@@ -133,6 +139,8 @@ class ControlledExternalCnfSolverAdapter:
             subject_digest=formula_digest,
             independent_unsat_max_variables=self.independent_unsat_max_variables,
             proof_checker_registry=self.proof_checker_registry,
+            proof_artifact_stores=self.proof_artifact_stores,
+            streaming_proof_limits=self.streaming_proof_limits,
         )
         if certificate_validation.established_verdict is None:
             decision = VerificationDecision.INCONCLUSIVE
@@ -182,6 +190,7 @@ class ControlledExternalCnfSolverAdapter:
                 "network isolation by the Python process runner",
                 "filesystem isolation outside the ephemeral working directory",
                 "UNSAT proof formats without a repository-owned registered checker",
+                "detached proof stores not explicitly registered by trusted application code",
             ),
             completeness=completeness,
             environment={
@@ -193,6 +202,9 @@ class ControlledExternalCnfSolverAdapter:
                 "certificate_accepted": certificate_validation.certificate_accepted,
                 "independent_unsat_max_variables": self.independent_unsat_max_variables,
                 "registered_unsat_proof_formats": list(self.proof_checker_registry.formats()),
+                "registered_proof_artifact_stores": (
+                    list(self.proof_artifact_stores.ids()) if self.proof_artifact_stores is not None else []
+                ),
             },
         )
         diagnostics = tuple(response.diagnostics) + certificate_validation.diagnostics

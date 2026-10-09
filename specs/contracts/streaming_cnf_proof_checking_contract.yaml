@@ -1,0 +1,29 @@
+contract_id: semantic-audit/streaming-cnf-proof-checking/v1
+status: normative
+owner: semantic-audit/high-assurance
+purpose: >-
+  Check detached RUP/DRAT proof artifacts incrementally without materializing
+  the complete proof-step sequence in memory.
+artifact_format: semantic_cnf_proof_jsonl/v1
+header:
+  required_fields: [artifact_format, proof_format, cnf_digest]
+steps:
+  representation: one_json_object_per_line
+  rup_operations: [add]
+  drat_operations: [add, delete]
+  final_requirement: final proof step must add the empty clause
+streaming_boundary:
+  proof_steps_materialized: false
+  active_formula_may_be_retained: true
+  artifact_must_be_content_verified_before_logical_acceptance: true
+limits:
+  - max_artifact_bytes
+  - max_line_bytes
+  - max_steps
+  - max_total_literals
+  - max_clause_width
+  - max_formula_clauses
+  - max_rat_resolvents_per_step
+semantics:
+  resource_limit_reached: proof_not_accepted
+  semantic_counterclaim_created: false
