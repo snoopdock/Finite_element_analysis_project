@@ -1,0 +1,19 @@
+contract_id: high_assurance_validation_envelope_contract
+version: 1
+status: normative
+required_fields:
+  - envelope_id
+  - subject_digest
+  - tool_id
+  - tool_version
+  - checked_scope
+  - assumptions
+  - excluded_scope
+  - completeness
+completeness_values:
+  - partial
+  - exhaustive_within_scope
+invariants:
+  - validated_results_require_exhaustive_within_scope_under_default_policy
+  - excluded_scope_must_remain_explicit
+  - exhaustive_within_scope_does_not_mean_global_completeness

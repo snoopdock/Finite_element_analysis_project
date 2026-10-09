@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Semantic High-Assurance Execution",
+  "type": "object",
+  "required": ["schema_version", "execution_id", "request", "policy_version", "status", "result", "denial_reason"],
+  "properties": {
+    "schema_version": {"const": "semantic_high_assurance_execution/v1"},
+    "execution_id": {"type": "string"},
+    "request": {"type": "object"},
+    "policy_version": {"type": "string"},
+    "status": {"enum": ["executed", "denied", "adapter_error"]},
+    "result": {"type": ["object", "null"]},
+    "denial_reason": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

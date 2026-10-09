@@ -1,0 +1,20 @@
+contract_id: controlled_high_assurance_policy_contract
+version: 1
+status: normative
+default_policy:
+  allowed_mechanisms:
+    - static_analysis
+    - artifact_integrity
+  allowed_containment_modes:
+    - in_process_read_only
+  allow_network: false
+  allow_side_effects: false
+  require_witness_for_validated: true
+  require_exhaustive_envelope_for_validated: true
+future_mechanisms_requiring_explicit_activation:
+  - solver
+  - executable_witness
+  - theorem_prover
+invariants:
+  - policy_denial_is_not_semantic_refutation
+  - formal_router_stays_inactive_until_real_adapter_contracts_exist

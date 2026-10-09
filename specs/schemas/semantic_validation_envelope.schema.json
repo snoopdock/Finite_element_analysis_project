@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Semantic Validation Envelope",
+  "type": "object",
+  "required": ["schema_version", "envelope_id", "subject_digest", "tool_id", "tool_version", "checked_scope", "assumptions", "excluded_scope", "completeness", "environment"],
+  "properties": {
+    "schema_version": {"const": "semantic_validation_envelope/v1"},
+    "envelope_id": {"type": "string"},
+    "subject_digest": {"type": "string"},
+    "tool_id": {"type": "string"},
+    "tool_version": {"type": "string"},
+    "checked_scope": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "assumptions": {"type": "array", "items": {"type": "string"}},
+    "excluded_scope": {"type": "array", "items": {"type": "string"}},
+    "completeness": {"enum": ["partial", "exhaustive_within_scope"]},
+    "environment": {"type": "object"}
+  },
+  "additionalProperties": false
+}

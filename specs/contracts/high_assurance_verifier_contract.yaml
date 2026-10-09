@@ -1,0 +1,23 @@
+contract_id: high_assurance_verifier_contract
+version: 1
+status: normative
+principles:
+  - high_assurance_verification_is_bounded_by_declared_scope
+  - adapter_identity_and_version_are_mandatory
+  - adapter_capability_does_not_imply_result_correctness
+  - unsupported_mechanisms_must_not_be_activated_implicitly
+required_descriptor_fields:
+  - adapter_id
+  - version
+  - supported_obligation_types
+  - mechanism
+  - containment_mode
+  - maximum_evidence_state
+  - deterministic
+  - side_effect_free
+  - requires_network
+  - produces_witness
+forbidden_interpretations:
+  - high_assurance_means_globally_correct
+  - maximum_evidence_state_is_a_guarantee
+  - cost_or_mechanism_implies_truth

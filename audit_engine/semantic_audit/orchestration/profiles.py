@@ -71,6 +71,14 @@ def builtin_profile_catalog() -> VerifierProfileCatalog:
             "provenance-completeness", "1.0.0", VerificationMethod.PROVENANCE, 2,
             VerificationStatus.VALIDATED,
         ),
+        VerifierOrchestrationProfile(
+            "python-static-import", "1.0.0", VerificationMethod.STATIC_ANALYSIS, 4,
+            VerificationStatus.VALIDATED,
+        ),
+        VerifierOrchestrationProfile(
+            "artifact-digest-integrity", "1.0.0", VerificationMethod.ARTIFACT_INTEGRITY, 2,
+            VerificationStatus.VALIDATED,
+        ),
     )
     for profile in profiles:
         catalog.register(profile)

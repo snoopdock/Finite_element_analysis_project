@@ -1,0 +1,21 @@
+contract_id: high_assurance_witness_contract
+version: 1
+status: normative
+witness_kinds:
+  - static_fact
+  - integrity_digest
+  - counterexample
+  - solver_certificate
+  - execution_trace
+  - formal_proof
+required_fields:
+  - witness_id
+  - kind
+  - subject_digest
+  - summary
+  - reproducible
+  - details
+invariants:
+  - witness_identity_is_content_addressed
+  - witness_is_evidence_not_execution_authority
+  - validated_results_require_a_witness_under_default_policy

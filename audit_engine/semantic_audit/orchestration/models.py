@@ -25,6 +25,7 @@ class VerificationMethod(str, Enum):
     GRAPH_CONSTRAINT = "graph_constraint"
     PROVENANCE = "provenance"
     STATIC_ANALYSIS = "static_analysis"
+    ARTIFACT_INTEGRITY = "artifact_integrity"
     SOLVER = "solver"
     EXECUTABLE = "executable"
     EXTERNAL = "external"

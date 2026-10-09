@@ -1,0 +1,22 @@
+contract_id: high_assurance_execution_contract
+version: 1
+status: normative
+statuses:
+  - executed
+  - denied
+  - adapter_error
+boundary:
+  executor_may:
+    - resolve_pre_registered_adapter
+    - enforce_explicit_policy
+    - validate_result_binding
+    - require_validation_envelope
+    - require_witness_for_validated_result
+  executor_may_not:
+    - execute_arbitrary_shell_commands
+    - enable_network_implicitly
+    - activate_unregistered_solver_backends
+    - create_findings
+    - mutate_semantic_graph
+    - persist_audit_memory
+    - promote_candidate_knowledge

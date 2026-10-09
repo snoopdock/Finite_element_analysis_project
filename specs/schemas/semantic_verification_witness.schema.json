@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Semantic Verification Witness",
+  "type": "object",
+  "required": ["schema_version", "witness_id", "kind", "subject_digest", "summary", "reproducible", "details"],
+  "properties": {
+    "schema_version": {"const": "semantic_verification_witness/v1"},
+    "witness_id": {"type": "string"},
+    "kind": {"enum": ["static_fact", "integrity_digest", "counterexample", "solver_certificate", "execution_trace", "formal_proof"]},
+    "subject_digest": {"type": "string"},
+    "summary": {"type": "string"},
+    "reproducible": {"type": "boolean"},
+    "details": {"type": "object"}
+  },
+  "additionalProperties": false
+}
