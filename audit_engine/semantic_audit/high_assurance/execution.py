@@ -93,11 +93,10 @@ class ControlledHighAssuranceExecutor:
                 raise ValueError("Validated high-assurance results require at least one witness.")
             if (
                 self.policy.require_exhaustive_envelope_for_validated
-                and result.validation_envelope.completeness
-                != ValidationCompleteness.EXHAUSTIVE_WITHIN_SCOPE
+                and not result.validation_envelope.completeness.complete_for_validated_evidence
             ):
                 raise ValueError(
-                    "Validated high-assurance results require an exhaustive-within-scope envelope."
+                    "Validated high-assurance results require a complete-within-scope envelope."
                 )
         return HighAssuranceExecutionRecord.create(
             request=request,

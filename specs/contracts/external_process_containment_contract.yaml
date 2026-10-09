@@ -1,0 +1,26 @@
+contract_id: external_process_containment_contract
+version: 1
+status: normative
+scope: controlled_external_process_runner
+required_controls:
+  - executable_path_is_absolute
+  - executable_sha256_verified_before_each_run
+  - arguments_are_registered_by_trusted_application_code
+  - shell_is_never_used
+  - stdin_is_bounded_json
+  - stdout_is_one_bounded_json_document
+  - stderr_is_bounded
+  - timeout_is_mandatory
+  - working_directory_is_ephemeral
+  - inherited_environment_is_not_forwarded
+required_disclosures:
+  - network_isolation_is_not_enforced_by_python_runner
+  - filesystem_isolation_outside_ephemeral_workdir_is_not_enforced_by_python_runner
+required_explicit_acknowledgements:
+  - accept_no_network_isolation
+  - accept_no_filesystem_isolation
+forbidden_interpretations:
+  - controlled_external_means_os_sandboxed
+  - executable_digest_proves_solver_correctness
+  - timeout_or_process_success_is_semantic_verification
+  - request_artifacts_may_supply_executable_path_or_arguments

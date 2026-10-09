@@ -43,6 +43,21 @@ class ContainmentMode(str, Enum):
 class ValidationCompleteness(str, Enum):
     PARTIAL = "partial"
     EXHAUSTIVE_WITHIN_SCOPE = "exhaustive_within_scope"
+    CERTIFICATE_COMPLETE_WITHIN_SCOPE = "certificate_complete_within_scope"
+
+    @property
+    def complete_for_validated_evidence(self) -> bool:
+        """Whether this envelope fully discharges its declared verification scope.
+
+        ``EXHAUSTIVE_WITHIN_SCOPE`` covers exhaustive search/analysis.
+        ``CERTIFICATE_COMPLETE_WITHIN_SCOPE`` covers independently checked proof or
+        witness certificates whose validation is complete without reproducing the
+        producing solver's search.
+        """
+        return self in {
+            ValidationCompleteness.EXHAUSTIVE_WITHIN_SCOPE,
+            ValidationCompleteness.CERTIFICATE_COMPLETE_WITHIN_SCOPE,
+        }
 
 
 class WitnessKind(str, Enum):

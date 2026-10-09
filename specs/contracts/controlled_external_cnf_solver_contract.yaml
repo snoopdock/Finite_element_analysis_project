@@ -1,0 +1,28 @@
+contract_id: controlled_external_cnf_solver_contract
+version: 1
+status: normative
+adapter_id: controlled-external-cnf
+mechanism: solver
+containment_mode: controlled_external
+activation:
+  required: true
+  additionally_requires:
+    - solver_mechanism_allowed
+    - controlled_external_containment_allowed
+    - side_effecting_adapter_allowed
+    - external_process_risk_acknowledgement
+semantic_flow:
+  - normalize_cnf
+  - digest_normalized_formula
+  - invoke_fixed_registered_process
+  - parse_strict_solver_protocol
+  - validate_response_binding
+  - independently_validate_certificate_when_supported
+  - construct_validation_envelope_and_witnesses
+  - map_established_verdict_to_verification_decision
+non_goals:
+  - activate_formal_router
+  - activate_smt_or_cpsat_or_lean
+  - trust_external_unsat_without_proof_validation
+  - claim_network_or_filesystem_sandboxing
+  - mutate_findings_or_memory

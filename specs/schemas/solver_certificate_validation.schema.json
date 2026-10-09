@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Solver Certificate Validation",
+  "type": "object",
+  "required": ["established_verdict", "evidence_state", "completeness", "certificate_accepted", "diagnostics"],
+  "properties": {
+    "established_verdict": {"type": ["string", "null"], "enum": ["sat", "unsat", null]},
+    "evidence_state": {"enum": ["observed", "validated", "rejected", "inconclusive"]},
+    "completeness": {"enum": ["partial", "exhaustive_within_scope", "certificate_complete_within_scope"]},
+    "certificate_accepted": {"type": "boolean"},
+    "diagnostics": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

@@ -89,6 +89,17 @@ def builtin_profile_catalog() -> VerifierProfileCatalog:
             "registered-executable-witness", "1.0.0", VerificationMethod.EXECUTABLE, 6,
             VerificationStatus.VALIDATED,
         ),
+        # G3.4.2 profile metadata for an explicitly configured external CNF solver.
+        # Presence in the catalog does not create a subprocess runner, register a
+        # verifier, accept OS-level isolation gaps, or activate the adapter.
+        VerifierOrchestrationProfile(
+            "controlled-external-cnf", "1.0.0", VerificationMethod.SOLVER, 12,
+            VerificationStatus.VALIDATED,
+            execution_mode=ExecutionMode.CONTROLLED_EXTERNAL,
+            deterministic=False,
+            side_effect_free=False,
+            metadata={"external_process": True, "activation_required": True},
+        ),
     )
     for profile in profiles:
         catalog.register(profile)

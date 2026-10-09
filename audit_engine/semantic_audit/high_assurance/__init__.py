@@ -2,6 +2,13 @@
 
 from .adapter import HighAssuranceAdapter, HighAssuranceAdapterDescriptor
 from .builtins import builtin_high_assurance_adapter_registry, register_builtin_high_assurance_verifiers
+from .certificate_validation import (
+    DEFAULT_INDEPENDENT_UNSAT_MAX_VARIABLES,
+    SolverCertificateValidation,
+    validate_external_cnf_certificate,
+    validate_sat_model_certificate,
+    validate_unsat_claim,
+)
 from .cnf_solver import (
     BOUNDED_CNF_ADAPTER_ID,
     BOUNDED_CNF_SAT_OBLIGATION,
@@ -16,6 +23,25 @@ from .executable_witness import (
     ExecutableHarnessRegistry,
     RegisteredExecutableHarness,
     RegisteredExecutableWitnessAdapter,
+)
+from .external_process import (
+    EXTERNAL_JSON_PROCESS_PROTOCOL,
+    ControlledJsonSubprocessRunner,
+    ExternalJsonProcessResult,
+    ExternalProcessError,
+    ExternalProcessRiskAcknowledgement,
+    ExternalProcessSpec,
+    ExternalProcessTranscript,
+)
+from .external_solver import (
+    CONTROLLED_EXTERNAL_CNF_ADAPTER_ID,
+    CONTROLLED_EXTERNAL_CNF_ADAPTER_VERSION,
+    DEFAULT_EXTERNAL_CNF_MAX_VARIABLES,
+    ControlledExternalCnfSolverAdapter,
+)
+from .external_solver_protocol import (
+    EXTERNAL_SOLVER_PROTOCOL_VERSION,
+    ExternalSolverResponse,
 )
 from .integrity import ARTIFACT_DIGEST_OBLIGATION, ArtifactDigestAdapter
 from .models import (
@@ -38,6 +64,21 @@ from .verification_bridge import ControlledHighAssuranceVerifier
 
 __all__ = [
     "ARTIFACT_DIGEST_OBLIGATION",
+    "CONTROLLED_EXTERNAL_CNF_ADAPTER_ID",
+    "CONTROLLED_EXTERNAL_CNF_ADAPTER_VERSION",
+    "ControlledExternalCnfSolverAdapter",
+    "ControlledJsonSubprocessRunner",
+    "DEFAULT_EXTERNAL_CNF_MAX_VARIABLES",
+    "DEFAULT_INDEPENDENT_UNSAT_MAX_VARIABLES",
+    "EXTERNAL_JSON_PROCESS_PROTOCOL",
+    "EXTERNAL_SOLVER_PROTOCOL_VERSION",
+    "ExternalJsonProcessResult",
+    "ExternalProcessError",
+    "ExternalProcessRiskAcknowledgement",
+    "ExternalProcessSpec",
+    "ExternalProcessTranscript",
+    "ExternalSolverResponse",
+    "SolverCertificateValidation",
     "AssuranceMechanism",
     "ArtifactDigestAdapter",
     "BOUNDED_CNF_ADAPTER_ID",
@@ -70,5 +111,8 @@ __all__ = [
     "WitnessKind",
     "builtin_high_assurance_adapter_registry",
     "register_builtin_high_assurance_verifiers",
+    "validate_external_cnf_certificate",
+    "validate_sat_model_certificate",
+    "validate_unsat_claim",
     "write_high_assurance_execution",
 ]

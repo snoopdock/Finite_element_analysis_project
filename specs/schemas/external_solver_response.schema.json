@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Semantic External Solver Response",
+  "type": "object",
+  "required": ["protocol_version", "request_id", "input_digest", "solver_id", "solver_version", "verdict"],
+  "properties": {
+    "protocol_version": {"const": "semantic_external_solver/v1"},
+    "request_id": {"type": "string", "minLength": 1},
+    "input_digest": {"type": "string", "minLength": 1},
+    "solver_id": {"type": "string", "minLength": 1},
+    "solver_version": {"type": "string", "minLength": 1},
+    "verdict": {"enum": ["sat", "unsat", "unknown"]},
+    "certificate": {"type": ["object", "null"]},
+    "diagnostics": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

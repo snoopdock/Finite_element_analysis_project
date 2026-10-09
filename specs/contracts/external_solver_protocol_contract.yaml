@@ -1,0 +1,38 @@
+contract_id: external_solver_protocol_contract
+version: 1
+status: normative
+protocol_version: semantic_external_solver/v1
+request_semantics:
+  required:
+    - request_id
+    - input_digest
+    - obligation_type
+    - variable_count
+    - clauses
+  excluded:
+    - expected_satisfiable
+    - verification_decision
+    - evidence_state
+response_semantics:
+  required:
+    - protocol_version
+    - request_id
+    - input_digest
+    - solver_id
+    - solver_version
+    - verdict
+  verdicts:
+    - sat
+    - unsat
+    - unknown
+  optional:
+    - certificate
+    - diagnostics
+strict_binding:
+  - response_request_id_matches_request
+  - response_input_digest_matches_normalized_input
+  - response_solver_identity_matches_registered_solver
+forbidden_interpretations:
+  - solver_verdict_sets_validated_evidence_state
+  - solver_output_is_execution_authority
+  - expected_verdict_is_sent_to_solver

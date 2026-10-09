@@ -12,7 +12,7 @@
     "checked_scope": {"type": "array", "minItems": 1, "items": {"type": "string"}},
     "assumptions": {"type": "array", "items": {"type": "string"}},
     "excluded_scope": {"type": "array", "items": {"type": "string"}},
-    "completeness": {"enum": ["partial", "exhaustive_within_scope"]},
+    "completeness": {"enum": ["partial", "exhaustive_within_scope", "certificate_complete_within_scope"]},
     "environment": {"type": "object"}
   },
   "additionalProperties": false

@@ -35,7 +35,7 @@ BOUNDED_CNF_ADAPTER_VERSION = "1.0.0"
 MAX_BOUNDED_CNF_VARIABLES = 12
 
 
-def _normalize_cnf(raw_clauses: object, variable_count: int) -> tuple[tuple[int, ...], ...]:
+def normalize_cnf(raw_clauses: object, variable_count: int) -> tuple[tuple[int, ...], ...]:
     if not isinstance(raw_clauses, (list, tuple)):
         raise ValueError("clauses must be a list or tuple of clauses.")
     normalized: list[tuple[int, ...]] = []
@@ -55,13 +55,13 @@ def _normalize_cnf(raw_clauses: object, variable_count: int) -> tuple[tuple[int,
     return tuple(sorted(normalized))
 
 
-def _cnf_digest(variable_count: int, clauses: Sequence[Sequence[int]]) -> str:
+def cnf_digest(variable_count: int, clauses: Sequence[Sequence[int]]) -> str:
     payload = {"variable_count": variable_count, "clauses": [list(c) for c in clauses]}
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
-def _clause_true(clause: Sequence[int], assignment: Sequence[bool]) -> bool:
+def clause_true(clause: Sequence[int], assignment: Sequence[bool]) -> bool:
     for literal in clause:
         value = assignment[abs(literal) - 1]
         if literal < 0:
@@ -71,8 +71,8 @@ def _clause_true(clause: Sequence[int], assignment: Sequence[bool]) -> bool:
     return False
 
 
-def _cnf_true(clauses: Sequence[Sequence[int]], assignment: Sequence[bool]) -> bool:
-    return all(_clause_true(clause, assignment) for clause in clauses)
+def cnf_true(clauses: Sequence[Sequence[int]], assignment: Sequence[bool]) -> bool:
+    return all(clause_true(clause, assignment) for clause in clauses)
 
 
 class BoundedCnfSolverAdapter:
@@ -120,13 +120,13 @@ class BoundedCnfSolverAdapter:
         if not isinstance(expected, bool):
             raise ValueError("expected_satisfiable must be boolean.")
 
-        clauses = _normalize_cnf(request.parameters.get("clauses"), raw_count)
-        digest = _cnf_digest(raw_count, clauses)
+        clauses = normalize_cnf(request.parameters.get("clauses"), raw_count)
+        digest = cnf_digest(raw_count, clauses)
         checked = 0
         model: tuple[bool, ...] | None = None
         for assignment in product((False, True), repeat=raw_count):
             checked += 1
-            if _cnf_true(clauses, assignment):
+            if cnf_true(clauses, assignment):
                 model = tuple(assignment)
                 break
 
