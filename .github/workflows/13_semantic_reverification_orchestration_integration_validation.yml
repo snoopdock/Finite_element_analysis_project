@@ -1,0 +1,51 @@
+name: G3.3.2 Reverification Orchestration Integration Validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: G3.0-G3.2.2 regression suites
+        run: >-
+          pytest
+          tests/semantic_graph
+          tests/semantic_verification
+          tests/semantic_domain_verification
+          tests/semantic_graph_evolution
+          tests/semantic_reverification_execution
+          -v
+
+      - name: G3.3 orchestration regression suites
+        run: pytest tests/semantic_audit_orchestration -v
+
+      - name: G3.3.2 integration suite
+        run: pytest tests/semantic_orchestration_integration -v
+
+      - name: Full repository regression
+        run: pytest -q
+
+      - name: Validate re-verification orchestration integration
+        run: python tools/validate_semantic_reverification_orchestration_integration.py
+
+      - name: Upload validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-reverification-orchestration-integration-validation
+          path: artifacts/semantic_reverification_orchestration_integration_validation.json
+          if-no-files-found: error
