@@ -1,0 +1,5 @@
+id: G3.4.13
+name: Decision Memory Foundation
+
+target_tests:
+  - tests/semantic_high_assurance/test_decision_memory.py
