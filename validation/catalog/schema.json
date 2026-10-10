@@ -1,0 +1,8 @@
+{
+  "required": [
+    "bundle_sha256",
+    "profile",
+    "commit",
+    "created_at"
+  ]
+}
