@@ -1,0 +1,8 @@
+version: 1
+profiles:
+  - id: G3.4.5
+    file: profiles/G3.4.5.yaml
+  - id: G3.4.6
+    file: profiles/G3.4.6.yaml
+  - id: G3.4.7
+    file: profiles/G3.4.7.yaml
