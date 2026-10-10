@@ -1,0 +1,7 @@
+id: G3.4.9
+name: Evidence Semantic Consistency and Provenance Binding
+target_tests:
+  - tests/semantic_high_assurance/test_g349_validation_contract.py
+regression:
+  enabled: true
+  path: tests/
