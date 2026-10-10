@@ -1,1 +1,7 @@
-{"required":["id","target_tests"]}
+{
+  "required": [
+    "id",
+    "name",
+    "target_tests"
+  ]
+}
