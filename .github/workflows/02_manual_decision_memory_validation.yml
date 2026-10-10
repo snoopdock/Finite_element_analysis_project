@@ -4,35 +4,28 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: Branch containing decision memory records
         required: true
         default: stage1/section-uuids
 
 jobs:
   validate:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout target branch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
           path: source
 
-      - name: Checkout validation tools
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: main
           path: validation-engine
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install pyyaml
+      - run: pip install pyyaml
 
-      - name: Validate decision memory
-        run: |
+      - run: |
           python validation-engine/tools/decision_memory_validator.py             --repository source
