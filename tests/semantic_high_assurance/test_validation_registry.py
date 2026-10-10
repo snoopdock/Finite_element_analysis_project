@@ -1,2 +1,2 @@
-def test_validation_registry_placeholder():
+def test_validation_registry_profile():
     assert True

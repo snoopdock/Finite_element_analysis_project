@@ -1,4 +1,9 @@
 id: G3.4.7.2
 name: Dynamic Validation Registry Execution Engine
+
 target_tests:
   - tests/semantic_high_assurance/test_validation_registry.py
+
+regression:
+  enabled: true
+  path: tests/
