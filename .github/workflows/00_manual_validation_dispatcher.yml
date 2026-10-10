@@ -4,21 +4,42 @@ on:
   workflow_dispatch:
     inputs:
       branch:
+        description: Branch to validate
         required: true
         default: stage1/section-uuids
       profile:
+        description: Validation profile ID or latest
         required: true
         default: latest
 
 jobs:
   validate:
+    name: Validate selected branch with main validation engine
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout target branch
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
-      - uses: actions/setup-python@v5
+          path: source
+
+      - name: Checkout validation engine from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: validation-engine
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pyyaml
-      - run: python tools/validation_registry_runner.py --profile "${{ inputs.profile }}"
+
+      - name: Install validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: Run registry validation engine
+        run: |
+          python validation-engine/tools/validation_registry_runner.py             --repository source             --profile "${{ inputs.profile }}"
