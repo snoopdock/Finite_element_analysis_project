@@ -4,41 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: Branch to validate
         required: true
         default: stage1/section-uuids
       profile:
-        description: Validation profile id
         required: true
         default: latest
 
 jobs:
   validate:
-    name: Validate selected branch from registry
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout selected branch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
-
-      - name: Load validation profile
-        run: |
-          python tools/validation_registry_runner.py             --profile "${{ inputs.profile }}"
-
-      - name: Run validation
-        run: |
-          python tools/validation_registry_runner.py             --profile "${{ inputs.profile }}"             --execute
+      - run: pip install pyyaml
+      - run: python tools/validation_registry_runner.py --profile "${{ inputs.profile }}"
