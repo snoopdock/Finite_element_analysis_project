@@ -1,0 +1,7 @@
+id: G3.4.8
+name: Verified Test Execution and Content-Bound Evidence Publication
+target_tests:
+  - tests/semantic_high_assurance/test_g348_validation_evidence_contract.py
+regression:
+  enabled: true
+  path: tests/
