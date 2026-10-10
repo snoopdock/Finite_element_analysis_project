@@ -1,0 +1,7 @@
+id: G3.4.12
+name: Offline Validation Evidence Retrieval and Catalog Verification
+target_tests:
+  - tests/semantic_high_assurance/test_g3412_validation_catalog_contract.py
+regression:
+  enabled: true
+  path: tests/

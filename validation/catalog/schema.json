@@ -1,6 +1,29 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:finite-element-analysis:validation-catalog-entry:v1",
+  "title": "Per-run content-addressed validation evidence catalog entry",
+  "type": "object",
+  "additionalProperties": false,
   "required": [
-    "profile",
-    "created_at"
-  ]
+    "schema_version", "bundle_sha256", "bundle_size_bytes", "report_sha256",
+    "receipt_sha256", "profile_id", "branch", "source_commit_sha",
+    "engine_commit_sha", "github_run_id", "github_run_attempt", "status",
+    "targeted_tests", "regression_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "validation-evidence-catalog-entry/v1"},
+    "bundle_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "bundle_size_bytes": {"type": "integer", "minimum": 1},
+    "report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "profile_id": {"type": "string", "pattern": "^G[0-9]+(\\.[0-9]+)+$"},
+    "branch": {"type": "string", "minLength": 1},
+    "source_commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"},
+    "engine_commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"},
+    "github_run_id": {"type": "string", "pattern": "^[0-9]{1,20}$"},
+    "github_run_attempt": {"type": "string", "pattern": "^[0-9]{1,20}$"},
+    "status": {"const": "passed"},
+    "targeted_tests": {"type": "integer", "minimum": 1},
+    "regression_status": {"enum": ["passed", "skipped", null]}
+  }
 }
