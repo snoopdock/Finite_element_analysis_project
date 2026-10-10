@@ -1,0 +1,134 @@
+name: Manual Semantic Validation Dispatcher
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Existing branch or commit to test (code comes from this ref)'
+        required: true
+        type: string
+        default: 'stage1/section-uuids'
+      milestone:
+        description: 'Select validation profile'
+        required: true
+        type: choice
+        options:
+          - G3.4.6-publication
+          - G3.4.5-detached
+          - high-assurance
+          - full-repository
+        default: G3.4.6-publication
+      full_regression:
+        description: 'Also run complete repository test suite'
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manual-semantic-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: '${{ inputs.milestone }} on ${{ inputs.target_branch }}'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout requested ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch }}
+          persist-credentials: false
+
+      - name: Capture checked-out revision
+        id: revision
+        env:
+          REQUESTED_REF: ${{ inputs.target_branch }}
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Checked-out SHA: $(git rev-parse HEAD)"
+          echo "Requested ref: $REQUESTED_REF"
+
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Prepare report directory
+        run: mkdir -p validation-reports
+
+      - name: Validate selected milestone
+        env:
+          VALIDATION_PROFILE: ${{ inputs.milestone }}
+        run: |
+          set -euo pipefail
+          case "$VALIDATION_PROFILE" in
+            G3.4.6-publication)
+              python -m pytest tests/semantic_high_assurance/test_proof_publication.py \
+                -v --junitxml=validation-reports/milestone.xml
+              ;;
+            G3.4.5-detached)
+              python -m pytest tests/semantic_high_assurance -v \
+                --junitxml=validation-reports/milestone.xml
+              python tools/validate_semantic_detached_proof_artifacts.py
+              ;;
+            high-assurance)
+              python -m pytest tests/semantic_high_assurance -v \
+                --junitxml=validation-reports/milestone.xml
+              ;;
+            full-repository)
+              python -m pytest -q --junitxml=validation-reports/milestone.xml
+              ;;
+            *)
+              echo 'Unknown validation profile' >&2
+              exit 2
+              ;;
+          esac
+
+      - name: Full regression suite
+        if: ${{ inputs.full_regression && inputs.milestone != 'full-repository' }}
+        run: python -m pytest -q --junitxml=validation-reports/full-regression.xml
+
+      - name: Save validation provenance
+        if: always()
+        env:
+          PROFILE: ${{ inputs.milestone }}
+          REQUESTED_REF: ${{ inputs.target_branch }}
+          VALIDATED_SHA: ${{ steps.revision.outputs.sha }}
+          FULL_REGRESSION: ${{ inputs.full_regression }}
+        run: |
+          mkdir -p validation-reports
+          python - <<'PY'
+          import json, os, pathlib, platform
+          out = {
+              'milestone': os.environ['PROFILE'],
+              'requested_ref': os.environ['REQUESTED_REF'],
+              'validated_commit': os.environ.get('VALIDATED_SHA', ''),
+              'full_regression_requested': os.environ['FULL_REGRESSION'] == 'true',
+              'python_version': platform.python_version(),
+              'run_id': os.environ.get('GITHUB_RUN_ID', ''),
+              'run_attempt': os.environ.get('GITHUB_RUN_ATTEMPT', ''),
+          }
+          pathlib.Path('validation-reports/provenance.json').write_text(
+              json.dumps(out, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-validation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: validation-reports/
+          if-no-files-found: warn
+          retention-days: 30
