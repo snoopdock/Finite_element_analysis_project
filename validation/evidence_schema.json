@@ -1,0 +1,9 @@
+{
+  "required": [
+    "profile_id",
+    "generated_at",
+    "repository",
+    "tests",
+    "report_sha256"
+  ]
+}

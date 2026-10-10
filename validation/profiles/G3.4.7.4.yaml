@@ -1,0 +1,5 @@
+id: G3.4.7.4
+name: Validation Evidence and Provenance Reporting
+
+target_tests:
+  - tests/semantic_high_assurance/test_validation_evidence.py
