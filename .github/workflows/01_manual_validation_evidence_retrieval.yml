@@ -1,0 +1,88 @@
+name: Manual Validation Evidence Retrieval
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: GitHub Actions run ID containing the evidence artifact
+        type: string
+        required: true
+      source_attempt:
+        description: Attempt number of the evidence-producing run
+        type: string
+        required: true
+        default: '1'
+      expected_profile:
+        description: Expected profile ID (optional; e.g. G3.4.12)
+        type: string
+        required: false
+      expected_commit:
+        description: Expected source commit SHA (optional)
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  retrieve:
+    name: Retrieve and verify historical GitHub Actions evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout central validation engine
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: validation-engine
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download evidence from selected historical run
+        uses: actions/download-artifact@v4
+        with:
+          name: manual-validation-evidence-${{ inputs.source_run_id }}-${{ inputs.source_attempt }}
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: historical-evidence
+
+      - name: Verify historical content and query catalog
+        shell: bash
+        env:
+          REQUESTED_PROFILE: ${{ inputs.expected_profile }}
+          REQUESTED_COMMIT: ${{ inputs.expected_commit }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p historical-result
+          # Older verified G3.4.10/G3.4.9+ bundles have no catalog yet.
+          # Catalog reconstruction never treats hashes as signatures.
+          if [ ! -f historical-evidence/catalog/index.json ]; then
+            python validation-engine/tools/validation_catalog.py build \
+              --evidence-dir historical-evidence
+          fi
+          python validation-engine/tools/validation_catalog.py verify \
+            --evidence-dir historical-evidence
+          args=(--evidence-dir historical-evidence --run-id "$SOURCE_RUN_ID" --require-match)
+          if [ -n "$REQUESTED_PROFILE" ]; then
+            args+=(--profile "$REQUESTED_PROFILE")
+          fi
+          if [ -n "$REQUESTED_COMMIT" ]; then
+            args+=(--commit "$REQUESTED_COMMIT")
+          fi
+          python validation-engine/tools/validation_catalog.py find "${args[@]}" \
+            | tee historical-result/verified_matches.json
+
+      - name: Upload historical verification results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-validation-verification-${{ github.run_id }}
+          path: historical-result/
+          if-no-files-found: warn
+          retention-days: 30

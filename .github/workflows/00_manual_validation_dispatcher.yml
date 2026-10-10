@@ -4,42 +4,138 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: Branch to validate
+        description: Branch to validate (full branch name)
+        type: string
         required: true
         default: stage1/section-uuids
       profile:
-        description: Validation profile
+        description: Versioned validation profile ID or latest
+        type: string
         required: true
         default: latest
+      regression_mode:
+        description: Regression mode (profile = follow profile declaration)
+        required: true
+        type: choice
+        default: profile
+        options:
+          - profile
+          - skip
+          - force
+
+permissions:
+  contents: read
 
 jobs:
   validate:
-    name: Manual validation with evidence catalog
-    runs-on: ubuntu-latest
+    name: Validate selected branch using main engine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
 
     steps:
-      - name: Checkout target repository
+      - name: Checkout requested development branch
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
           path: source
+          persist-credentials: false
 
-      - name: Checkout validation engine
+      - name: Checkout central validation engine
         uses: actions/checkout@v4
         with:
           ref: main
           path: validation-engine
+          persist-credentials: false
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install target and engine dependencies
+        shell: bash
         run: |
-          python -m pip install --upgrade pip
-          pip install pyyaml
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+          python -m pip install 'jsonschema>=4.20,<5'
 
-      - name: Run validation profile
+      - name: Validate engine with independent unit tests
+        shell: bash
         run: |
-          python validation-engine/tools/validation_catalog.py             --repository source             --profile "${{ inputs.profile }}"
+          set -euo pipefail
+          mkdir -p validation-artifacts
+          python -m unittest discover -s validation-engine/tools/tests -p 'test_*.py' -v \
+            2>&1 | tee validation-artifacts/engine-unit-tests.log
+
+      - name: Run declared pytest targets and generate evidence
+        shell: bash
+        env:
+          TARGET_BRANCH: ${{ inputs.branch }}
+          TARGET_PROFILE: ${{ inputs.profile }}
+          REGRESSION_MODE: ${{ inputs.regression_mode }}
+        run: |
+          set -euo pipefail
+          python validation-engine/tools/validation_registry_runner.py \
+            --repository source \
+            --profile "$TARGET_PROFILE" \
+            --branch "$TARGET_BRANCH" \
+            --regression-mode "$REGRESSION_MODE" \
+            --require-provenance \
+            --engine-unit-log validation-artifacts/engine-unit-tests.log \
+            --evidence-dir validation-artifacts
+
+      - name: Verify detached evidence digest and artifact checksums
+        id: verify_evidence
+        if: always()
+        shell: bash
+        env:
+          EXPECTED_BRANCH: ${{ inputs.branch }}
+        run: |
+          if [ -f validation-artifacts/validation_report.json ]; then
+            python validation-engine/tools/verify_validation_evidence.py \
+              --evidence-dir validation-artifacts \
+              --repository source \
+              --engine-repository validation-engine \
+              --expected-branch "$EXPECTED_BRANCH" \
+              --expected-run-id "$GITHUB_RUN_ID" \
+              --expected-run-attempt "$GITHUB_RUN_ATTEMPT" \
+              --require-engine-tests
+          else
+            echo 'No evidence report produced; earlier job step failed.'
+            exit 1
+          fi
+
+      - name: Publish verified evidence into immutable bundle
+        id: publish_bundle
+        if: ${{ always() && steps.verify_evidence.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=source python source/tools/publish_validation_evidence_bundle.py \
+            --evidence-dir validation-artifacts \
+            --store-dir validation-bundles
+
+      - name: Build provenance catalog from verified content-addressed evidence
+        if: ${{ always() && steps.publish_bundle.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python validation-engine/tools/validation_catalog.py build \
+            --evidence-dir validation-artifacts
+
+      - name: Independently verify published provenance catalog
+        if: ${{ always() && steps.publish_bundle.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python validation-engine/tools/validation_catalog.py verify \
+            --evidence-dir validation-artifacts
+
+      - name: Upload validation evidence (even when tests fail)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-validation-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: validation-artifacts/
+          if-no-files-found: error
+          retention-days: 30
