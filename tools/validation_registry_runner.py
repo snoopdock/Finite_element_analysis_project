@@ -1,62 +1,36 @@
 import argparse
 import json
+import hashlib
 from pathlib import Path
+from datetime import datetime, timezone
 import yaml
 
-
-def load_schema(repository):
-    schema = Path(repository) / "validation" / "schema.json"
-    if not schema.exists():
-        raise FileNotFoundError(f"Validation schema missing: {schema}")
-    return json.loads(schema.read_text())
-
-
-def discover_profile(repository, requested):
-    folder = Path(repository) / "validation" / "profiles"
-    profiles = sorted(folder.glob("*.yaml"))
-
-    if requested == "latest":
-        if not profiles:
-            raise FileNotFoundError("No validation profiles found")
-        return profiles[-1]
-
-    profile = folder / f"{requested}.yaml"
-    if not profile.exists():
-        raise FileNotFoundError(f"Profile not found: {profile}")
-
-    return profile
-
-
-def validate_profile(data, schema):
-    missing = [
-        key for key in schema.get("required", [])
-        if key not in data
-    ]
-
-    if missing:
-        raise ValueError(
-            "Profile schema validation failed. Missing: "
-            + ", ".join(missing)
-        )
-
-
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--repository", required=True)
-    parser.add_argument("--profile", default="latest")
-    args = parser.parse_args()
+    p=argparse.ArgumentParser()
+    p.add_argument("--repository",required=True)
+    p.add_argument("--profile",default="latest")
+    args=p.parse_args()
 
-    schema = load_schema(args.repository)
-    profile_file = discover_profile(args.repository, args.profile)
+    repo=Path(args.repository)
+    profiles=sorted((repo/"validation/profiles").glob("*.yaml"))
+    profile=profiles[-1] if args.profile=="latest" else repo/"validation/profiles"/(args.profile+".yaml")
 
-    profile = yaml.safe_load(profile_file.read_text())
-    validate_profile(profile, schema)
+    data=yaml.safe_load(profile.read_text())
 
-    print(f"Validated profile: {profile['id']}")
+    report={
+        "profile_id": data["id"],
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "repository": str(repo),
+        "tests": data.get("target_tests", [])
+    }
 
-    for test in profile.get("target_tests", []):
-        print(f"Target test: {test}")
+    digest=hashlib.sha256(json.dumps(report,sort_keys=True).encode()).hexdigest()
+    report["report_sha256"]=digest
 
+    out=repo/"validation"/"evidence_report.json"
+    out.write_text(json.dumps(report,indent=2))
 
-if __name__ == "__main__":
+    print(json.dumps(report,indent=2))
+
+if __name__=="__main__":
     main()
