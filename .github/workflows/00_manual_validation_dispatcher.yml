@@ -81,15 +81,24 @@ jobs:
             --branch "$TARGET_BRANCH" \
             --regression-mode "$REGRESSION_MODE" \
             --require-provenance \
+            --engine-unit-log validation-artifacts/engine-unit-tests.log \
             --evidence-dir validation-artifacts
 
       - name: Verify detached evidence digest and artifact checksums
         if: always()
         shell: bash
+        env:
+          EXPECTED_BRANCH: ${{ inputs.branch }}
         run: |
           if [ -f validation-artifacts/validation_report.json ]; then
             python validation-engine/tools/verify_validation_evidence.py \
-              --evidence-dir validation-artifacts
+              --evidence-dir validation-artifacts \
+              --repository source \
+              --engine-repository validation-engine \
+              --expected-branch "$EXPECTED_BRANCH" \
+              --expected-run-id "$GITHUB_RUN_ID" \
+              --expected-run-attempt "$GITHUB_RUN_ATTEMPT" \
+              --require-engine-tests
           else
             echo 'No evidence report produced; earlier job step failed.'
             exit 1
