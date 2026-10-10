@@ -6,20 +6,17 @@ on:
       branch:
         description: Branch to validate
         required: true
-        default: developing
+        default: stage1/section-uuids
       profile:
-        description: Validation profile ID
+        description: Validation profile id
         required: true
-        default: G3.4.7
-      full_regression:
-        description: Run full repository regression
-        required: true
-        default: 'false'
+        default: latest
 
 jobs:
   validate:
     name: Validate selected branch from registry
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout selected branch
         uses: actions/checkout@v4
@@ -29,23 +26,19 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
 
-      - name: Show validation target
+      - name: Load validation profile
         run: |
-          echo "Profile: ${{ inputs.profile }}"
-          git rev-parse HEAD
+          python tools/validation_registry_runner.py             --profile "${{ inputs.profile }}"
 
-      - name: Run targeted validation
+      - name: Run validation
         run: |
-          pytest tests/semantic_high_assurance -v -s
-
-      - name: Run regression
-        if: inputs.full_regression == 'true'
-        run: |
-          pytest tests/ -v -s
+          python tools/validation_registry_runner.py             --profile "${{ inputs.profile }}"             --execute
