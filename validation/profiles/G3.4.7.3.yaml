@@ -1,0 +1,4 @@
+id: G3.4.7.3
+name: Automatic Profile Discovery and Schema Enforcement
+target_tests:
+  - tests/semantic_high_assurance/test_validation_registry_schema.py
