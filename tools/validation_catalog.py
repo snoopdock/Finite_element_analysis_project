@@ -3,42 +3,39 @@ import json
 from pathlib import Path
 from datetime import datetime, timezone
 
-def catalog_path(repo):
-    return Path(repo) / "validation-catalog" / "index.json"
-
-def load_catalog(repo):
-    p = catalog_path(repo)
-    if not p.exists():
-        return {"entries": []}
-    return json.loads(p.read_text())
-
-def add_entry(repo, entry):
-    p = catalog_path(repo)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    data = load_catalog(repo)
-    for old in data["entries"]:
-        if old.get("bundle_sha256") == entry.get("bundle_sha256"):
-            return data
-    data["entries"].append(entry)
-    p.write_text(json.dumps(data, indent=2))
-    return data
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repository", required=True)
-    parser.add_argument("--bundle-sha256", required=True)
-    parser.add_argument("--profile", required=True)
-    parser.add_argument("--commit", required=True)
+    parser.add_argument("--profile", default="latest")
     args = parser.parse_args()
 
+    repo = Path(args.repository)
+    profiles = sorted((repo / "validation" / "profiles").glob("*.yaml"))
+
+    if not profiles:
+        raise SystemExit("No validation profiles found")
+
+    selected = profiles[-1] if args.profile == "latest" else repo / "validation" / "profiles" / f"{args.profile}.yaml"
+
+    if not selected.exists():
+        raise SystemExit(f"Profile not found: {selected}")
+
     entry = {
-        "bundle_sha256": args.bundle_sha256,
-        "profile": args.profile,
-        "commit": args.commit,
+        "profile": selected.stem,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
 
-    add_entry(args.repository, entry)
+    catalog = repo / "validation-catalog" / "index.json"
+    catalog.parent.mkdir(exist_ok=True)
+
+    data = {"entries": []}
+    if catalog.exists():
+        data = json.loads(catalog.read_text())
+
+    if entry not in data["entries"]:
+        data["entries"].append(entry)
+
+    catalog.write_text(json.dumps(data, indent=2))
     print(json.dumps(entry, indent=2))
 
 if __name__ == "__main__":
