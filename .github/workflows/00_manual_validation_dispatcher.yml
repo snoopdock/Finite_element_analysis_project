@@ -1,3 +1,45 @@
-# G3.4.11 extends the existing manual dispatcher.
-# Add catalog publication after evidence verification.
-# workflow_dispatch only; no push trigger.
+name: Manual Validation Dispatcher
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to validate
+        required: true
+        default: stage1/section-uuids
+      profile:
+        description: Validation profile
+        required: true
+        default: latest
+
+jobs:
+  validate:
+    name: Manual validation with evidence catalog
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+
+      - name: Checkout validation engine
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: validation-engine
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: Run validation profile
+        run: |
+          python validation-engine/tools/validation_catalog.py             --repository source             --profile "${{ inputs.profile }}"
