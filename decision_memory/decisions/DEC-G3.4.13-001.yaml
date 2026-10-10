@@ -1,0 +1,31 @@
+id: DEC-G3.4.13-001
+
+decision:
+  title: Establish semantic decision memory records
+  statement: >
+    Engineering decisions should be stored separately from raw validation logs
+    with explicit rationale and evidence references.
+
+context:
+  problem:
+    Raw CI artifacts do not preserve engineering reasoning.
+
+alternatives:
+  - option: Store only workflow artifacts
+    rejected_reason: >
+      Artifacts prove execution but do not explain decisions.
+
+  - option: Store only generated text
+    rejected_reason: >
+      Text lacks structured rationale.
+
+evidence:
+  - G3.4.10
+  - G3.4.12
+
+confidence:
+  level: high
+
+future_use:
+  - SAT decision support
+  - engineering audit
