@@ -85,6 +85,7 @@ jobs:
             --evidence-dir validation-artifacts
 
       - name: Verify detached evidence digest and artifact checksums
+        id: verify_evidence
         if: always()
         shell: bash
         env:
@@ -103,6 +104,15 @@ jobs:
             echo 'No evidence report produced; earlier job step failed.'
             exit 1
           fi
+
+      - name: Publish verified evidence into immutable bundle
+        if: ${{ always() && steps.verify_evidence.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=source python source/tools/publish_validation_evidence_bundle.py \
+            --evidence-dir validation-artifacts \
+            --store-dir validation-bundles
 
       - name: Upload validation evidence (even when tests fail)
         if: always()
