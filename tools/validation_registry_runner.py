@@ -1,34 +1,62 @@
 import argparse
+import json
 from pathlib import Path
 import yaml
-import json
 
-def discover_profile(repo, requested):
-    folder=Path(repo)/"validation"/"profiles"
-    profiles=sorted(folder.glob("*.yaml"))
-    if requested=="latest":
+
+def load_schema(repository):
+    schema = Path(repository) / "validation" / "schema.json"
+    if not schema.exists():
+        raise FileNotFoundError(f"Validation schema missing: {schema}")
+    return json.loads(schema.read_text())
+
+
+def discover_profile(repository, requested):
+    folder = Path(repository) / "validation" / "profiles"
+    profiles = sorted(folder.glob("*.yaml"))
+
+    if requested == "latest":
+        if not profiles:
+            raise FileNotFoundError("No validation profiles found")
         return profiles[-1]
-    return folder/(requested+".yaml")
 
-def validate_schema(data, schema):
-    for field in schema.get("required", []):
-        if field not in data:
-            raise ValueError(f"Missing required field: {field}")
+    profile = folder / f"{requested}.yaml"
+    if not profile.exists():
+        raise FileNotFoundError(f"Profile not found: {profile}")
+
+    return profile
+
+
+def validate_profile(data, schema):
+    missing = [
+        key for key in schema.get("required", [])
+        if key not in data
+    ]
+
+    if missing:
+        raise ValueError(
+            "Profile schema validation failed. Missing: "
+            + ", ".join(missing)
+        )
+
 
 def main():
-    p=argparse.ArgumentParser()
-    p.add_argument("--repository",required=True)
-    p.add_argument("--profile",default="latest")
-    args=p.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repository", required=True)
+    parser.add_argument("--profile", default="latest")
+    args = parser.parse_args()
 
-    profile=discover_profile(args.repository,args.profile)
-    schema=json.loads((Path(args.repository)/"validation/schema.json").read_text())
-    data=yaml.safe_load(profile.read_text())
-    validate_schema(data,schema)
+    schema = load_schema(args.repository)
+    profile_file = discover_profile(args.repository, args.profile)
 
-    print("Validated profile:",data["id"])
-    for test in data.get("target_tests",[]):
-        print("Target:",test)
+    profile = yaml.safe_load(profile_file.read_text())
+    validate_profile(profile, schema)
 
-if __name__=="__main__":
+    print(f"Validated profile: {profile['id']}")
+
+    for test in profile.get("target_tests", []):
+        print(f"Target test: {test}")
+
+
+if __name__ == "__main__":
     main()
