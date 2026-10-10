@@ -1,12 +1,12 @@
 import argparse
 from pathlib import Path
-import yaml
 import json
+import yaml
 
 def validate(record, schema):
-    missing = [k for k in schema.get("required", []) if k not in record]
+    missing = [k for k in schema["required"] if k not in record]
     if missing:
-        raise ValueError("Missing fields: " + ", ".join(missing))
+        raise ValueError("Missing fields: " + ",".join(missing))
 
 def main():
     parser = argparse.ArgumentParser()
@@ -14,18 +14,18 @@ def main():
     args = parser.parse_args()
 
     repo = Path(args.repository)
-    schema = json.loads((repo / "decision_memory/schema.json").read_text())
+    schema = json.loads((repo/"decision_memory/schema.json").read_text())
 
-    decisions = repo / "decision_memory/decisions"
+    count = 0
+    for item in (repo/"decision_memory/decisions").glob("*.yaml"):
+        validate(yaml.safe_load(item.read_text()), schema)
+        print("Validated decision:", item.name)
+        count += 1
 
-    validated = 0
-    for item in decisions.glob("*.yaml"):
-        record = yaml.safe_load(item.read_text())
-        validate(record, schema)
-        validated += 1
-        print("Validated decision:", record["id"])
+    if count == 0:
+        raise SystemExit("No decision records found")
 
-    print("Validated decision records:", validated)
+    print("Validated decision records:", count)
 
 if __name__ == "__main__":
     main()
