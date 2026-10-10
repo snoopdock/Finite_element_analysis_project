@@ -1,7 +1,0 @@
-{
-  "required": [
-    "id",
-    "name",
-    "target_tests"
-  ]
-}
