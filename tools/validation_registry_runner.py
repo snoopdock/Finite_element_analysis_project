@@ -181,6 +181,12 @@ def run_command(label: str, command: list[str], cwd: Path, evidence: Path) -> di
     if xml.is_file():
         result["junit"] = file_record(xml, evidence)
         result["counts"] = junit_counts(xml)
+        counts = result["counts"]
+        if result["status"] == "passed" and (counts["tests"] < 1 or
+                counts["errors"] > 0 or counts["failures"] > 0 or
+                counts["skipped"] >= counts["tests"]):
+            result["status"] = "failed"
+            result["error"] = "JUnit reports no executed passing tests or nonzero failures/errors"
     elif result["status"] == "passed":
         result["status"] = "failed"
         result["error"] = "pytest returned 0 but produced no JUnit XML"
@@ -207,7 +213,7 @@ def run(args: argparse.Namespace) -> int:
         raise ValueError("Evidence must be written outside the target and engine checkouts")
     evidence.mkdir(parents=True, exist_ok=True)
     report = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "started_at": utc_now(),
         "finished_at": None,
         "status": "error",
@@ -222,11 +228,26 @@ def run(args: argparse.Namespace) -> int:
         "python_version": sys.version.split()[0],
         "regression_mode": args.regression_mode,
         "results": {},
+        "engine_unit_tests": None,
         "error": None,
     }
     try:
         if args.require_provenance and (not report["target_commit_sha"] or not report["engine_commit_sha"]):
             raise ValueError("Commit SHA unavailable for one or both checkouts")
+        if getattr(args, "engine_unit_log", None):
+            raw_engine_log = Path(args.engine_unit_log)
+            if raw_engine_log.is_symlink():
+                raise ValueError("Symlinked engine unit-test log is not allowed")
+            engine_log = raw_engine_log.resolve(strict=True)
+            if (engine_log.parent != evidence or engine_log.is_symlink() or
+                    not engine_log.is_file()):
+                raise ValueError("Engine unit-test log must be a regular file in evidence directory")
+            log_content = engine_log.read_text(encoding="utf-8", errors="replace")
+            ran = re.search(r"(?m)^Ran (\d+) tests? in ", log_content)
+            if not ran or int(ran.group(1)) < 1 or not re.search(r"(?m)^OK\s*$", log_content):
+                raise ValueError("Engine unit-test log lacks a successful unittest summary")
+            report["engine_unit_tests"] = {"status": "passed", "count": int(ran.group(1)),
+                                           "log": file_record(engine_log, evidence)}
         file = discover_profile(root, args.profile)
         data = load_profile(root, file)
         report["profile_id"] = data["id"]
@@ -262,6 +283,7 @@ def main() -> int:
     p.add_argument("--branch", default=None)
     p.add_argument("--regression-mode", choices=("profile", "skip", "force"), default="profile")
     p.add_argument("--require-provenance", action="store_true")
+    p.add_argument("--engine-unit-log", default=None)
     return run(p.parse_args())
 
 
