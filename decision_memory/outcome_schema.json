@@ -1,0 +1,9 @@
+{
+  "required": [
+    "id",
+    "action_id",
+    "result",
+    "lessons",
+    "confidence"
+  ]
+}
