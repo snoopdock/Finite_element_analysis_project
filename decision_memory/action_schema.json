@@ -1,0 +1,10 @@
+{
+  "required": [
+    "id",
+    "action",
+    "triggered_by",
+    "decision_refs",
+    "evidence_refs",
+    "outcome"
+  ]
+}
