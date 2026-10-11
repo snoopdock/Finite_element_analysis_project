@@ -1,0 +1,31 @@
+name: Manual Decision Evidence Link Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        required: true
+        default: stage1/section-uuids
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: validation-engine
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install pyyaml
+
+      - run: |
+          python validation-engine/tools/decision_evidence_link_validator.py             --repository source
