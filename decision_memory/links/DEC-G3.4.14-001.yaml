@@ -1,0 +1,17 @@
+id: DEC-G3.4.14-001
+
+decision_id: DEC-G3.4.13-001
+
+evidence_refs:
+  - G3.4.10
+  - G3.4.12
+  - G3.4.13
+
+relationship:
+  type: supported_by
+  explanation: >
+    Decision memory foundation is supported by previous validation evidence
+    architecture milestones.
+
+confidence:
+  level: high

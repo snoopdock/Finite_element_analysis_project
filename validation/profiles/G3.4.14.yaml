@@ -1,0 +1,5 @@
+id: G3.4.14
+name: Decision Evidence Graph Linking
+
+target_tests:
+  - tests/semantic_high_assurance/test_decision_evidence_links.py

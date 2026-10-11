@@ -1,0 +1,9 @@
+{
+  "required": [
+    "id",
+    "decision_id",
+    "evidence_refs",
+    "relationship",
+    "confidence"
+  ]
+}
