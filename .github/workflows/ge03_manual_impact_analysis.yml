@@ -1,0 +1,22 @@
+name: GE-03 Manual Graph Impact Analysis
+
+on:
+  workflow_dispatch:
+    inputs:
+      snapshot:
+        description: Graph snapshot path
+        required: true
+        default: .graph-state/scientific/latest.json
+
+jobs:
+  impact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: |
+          python tools/ge03_impact_analysis.py             --snapshot "${{ inputs.snapshot }}"             --output ge03-impact-report.json
