@@ -1,0 +1,136 @@
+name: G5 Manual OWL Vocabulary and Source-Bound Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing completed GE/G4 and G5.1 implementation
+        required: true
+        type: string
+        default: stage1/section-uuids
+      source_mode:
+        description: Verified persisted graph or candidate scientific graph
+        required: true
+        type: choice
+        default: persisted
+        options:
+          - persisted
+          - candidate
+      knowledge_graph_path:
+        description: Repository-relative candidate JSON path (used only for candidate mode)
+        required: true
+        type: string
+        default: examples/graph_engine/ge02_demo_graph.json
+
+permissions:
+  contents: read
+
+jobs:
+  ontology:
+    name: Source-bound OWL vocabulary and independent verification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install development dependencies including RDFLib
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+
+      - name: Run G4 RDF and G5 OWL executable tests
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q \
+            source/tests/semantic_graph/test_g4_rdf_export.py \
+            source/tests/semantic_graph/test_g4_rdf_interoperability.py \
+            source/tests/semantic_graph/test_g5_owl_ontology.py \
+            --junitxml=reports/g5-ontology-tests.xml
+
+      - name: Generate detached ontology and combined graph
+        shell: bash
+        env:
+          PYTHONPATH: source
+          SOURCE_MODE: ${{ inputs.source_mode }}
+          GRAPH_PATH: ${{ inputs.knowledge_graph_path }}
+        run: |
+          set -euo pipefail
+          if [[ "$SOURCE_MODE" == 'persisted' ]]; then
+            python -m audit_engine.semantic_audit.graph.owl_ontology build \
+              --repository source --mode persisted --output-dir reports/ontology \
+              > reports/g5-build-stdout.json
+          elif [[ "$SOURCE_MODE" == 'candidate' ]]; then
+            python -m audit_engine.semantic_audit.graph.owl_ontology build \
+              --repository source --mode candidate --knowledge-graph "$GRAPH_PATH" \
+              --output-dir reports/ontology > reports/g5-build-stdout.json
+          else
+            echo 'Invalid source mode' >&2
+            exit 2
+          fi
+
+      - name: Independently verify OWL outputs against GE and G4
+        shell: bash
+        env:
+          PYTHONPATH: source
+          SOURCE_MODE: ${{ inputs.source_mode }}
+          GRAPH_PATH: ${{ inputs.knowledge_graph_path }}
+        run: |
+          set -euo pipefail
+          if [[ "$SOURCE_MODE" == 'persisted' ]]; then
+            python -m audit_engine.semantic_audit.graph.owl_ontology verify \
+              --repository source --mode persisted --output-dir reports/ontology \
+              --report reports/g5-ontology-verification.json \
+              > reports/g5-verify-stdout.json
+          elif [[ "$SOURCE_MODE" == 'candidate' ]]; then
+            python -m audit_engine.semantic_audit.graph.owl_ontology verify \
+              --repository source --mode candidate --knowledge-graph "$GRAPH_PATH" \
+              --output-dir reports/ontology \
+              --report reports/g5-ontology-verification.json \
+              > reports/g5-verify-stdout.json
+          else
+            exit 2
+          fi
+
+      - name: Verify report digest and non-authority guarantees
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          obj = json.loads(Path('reports/g5-ontology-verification.json').read_bytes())
+          digest = obj.pop('report_sha256')
+          raw = (json.dumps(obj, ensure_ascii=False, sort_keys=True,
+                            separators=(',', ':'), allow_nan=False).encode('utf-8') + b'\n')
+          assert hashlib.sha256(raw).hexdigest() == digest
+          assert obj['schema_version'] == 'g5-owl-validation/v1'
+          assert obj['source_bound_owl_parsing_verified'] is True
+          for name in ('scientific_truth_established', 'owl_entailment_verified',
+                       'automatic_approval_permitted', 'authoritative_graph_mutation_permitted'):
+              assert obj[name] is False, name
+          print('G5.1 OWL source-bound structural contract: VERIFIED')
+          PY
+
+      - name: Upload detached ontology verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g5-owl-vocabulary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
