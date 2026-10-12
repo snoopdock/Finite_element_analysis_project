@@ -1,0 +1,76 @@
+name: Manual SAT Proposal and Text Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing decision memory
+        required: true
+        type: string
+        default: stage1/section-uuids
+      query:
+        description: Topic used to retrieve prior decisions and outcomes
+        required: true
+        type: string
+      proposed_text:
+        description: 'Proposed text, one claim per line; optional explicit citations [[RECORD-ID]]'
+        required: true
+        type: string
+      max_results:
+        description: Maximum retrieved context records
+        required: true
+        type: choice
+        options: ['5', '8', '12', '20']
+        default: '8'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Read-only proposal audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      MEMORY_QUERY: ${{ inputs.query }}
+      DRAFT_TEXT: ${{ inputs.proposed_text }}
+      MEMORY_LIMIT: ${{ inputs.max_results }}
+    steps:
+      - name: Checkout selected development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PyYAML
+        run: python -m pip install 'PyYAML>=6,<7'
+      - name: Prepare output directory
+        run: mkdir -p sat-audit-artifacts
+      - name: Audit proposed text without execution or repository writes
+        run: |
+          set -euo pipefail
+          python source/decision_memory/proposal_audit.py \
+            --repository source \
+            --query "$MEMORY_QUERY" \
+            --draft-text "$DRAFT_TEXT" \
+            --max-results "$MEMORY_LIMIT" \
+            --output sat-audit-artifacts/sat-proposal-audit.json
+      - name: Independently re-verify audit versus checked-out source
+        run: |
+          set -euo pipefail
+          python source/decision_memory/proposal_audit.py \
+            --repository source \
+            --verify-report sat-audit-artifacts/sat-proposal-audit.json
+      - name: Upload audit record (temporary transport, not permanent memory)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sat-proposal-audit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: sat-audit-artifacts/sat-proposal-audit.json
+          if-no-files-found: warn
+          retention-days: 14
