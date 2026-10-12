@@ -1,22 +1,93 @@
-name: GE-03 Manual Graph Impact Analysis
+name: GE-03 Manual Native Graph Impact Review
 
 on:
   workflow_dispatch:
     inputs:
-      snapshot:
-        description: Graph snapshot path
+      branch:
+        description: Development branch with the persisted GE-02 graph state
         required: true
-        default: .graph-state/scientific/latest.json
+        type: string
+        default: stage1/section-uuids
+      mode:
+        description: Compare candidate input or inspect last committed transition
+        required: true
+        type: choice
+        default: candidate
+        options:
+          - candidate
+          - latest-transition
+      knowledge_graph_path:
+        description: Repository-relative candidate JSON (used in candidate mode)
+        required: true
+        type: string
+        default: examples/graph_engine/ge03_demo_changed_graph.json
+
+permissions:
+  contents: read
 
 jobs:
   impact:
-    runs-on: ubuntu-latest
+    name: GE-03 verified read-only impact analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - name: Checkout selected development branch (not main)
+        uses: actions/checkout@v4
         with:
-          python-version: "3.12"
-
-      - run: |
-          python tools/ge03_impact_analysis.py             --snapshot "${{ inputs.snapshot }}"             --output ge03-impact-report.json
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install project dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+      - name: Run GE-03 native integration tests
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          python -m pytest source/tests/semantic_graph/test_ge03_native_impact_analysis.py -q
+      - name: Independently verify GE-02 persisted history
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m audit_engine.semantic_audit.graph.persistent_domain_state \
+            --repository source --command verify --store .graph-state/scientific \
+            --report reports/ge03_baseline_verification.json
+      - name: Generate scientific impact report (no graph mutation)
+        shell: bash
+        env:
+          PYTHONPATH: source
+          IMPACT_MODE: ${{ inputs.mode }}
+          CANDIDATE_GRAPH: ${{ inputs.knowledge_graph_path }}
+        run: |
+          set -euo pipefail
+          if [[ "$IMPACT_MODE" == candidate ]]; then
+            python -m audit_engine.semantic_audit.graph.native_impact_analysis \
+              --repository source --mode candidate \
+              --knowledge-graph "$CANDIDATE_GRAPH" \
+              --output reports/ge03_impact_report.json
+          elif [[ "$IMPACT_MODE" == latest-transition ]]; then
+            python -m audit_engine.semantic_audit.graph.native_impact_analysis \
+              --repository source --mode latest-transition \
+              --output reports/ge03_impact_report.json
+          else
+            echo 'Unsupported impact mode' >&2; exit 2
+          fi
+      - name: Upload impact evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ge03-native-impact-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
