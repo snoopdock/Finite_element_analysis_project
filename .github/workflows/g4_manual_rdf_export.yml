@@ -1,0 +1,122 @@
+name: G4 Manual RDF Export and Interoperability Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing verified GE graph and G4 exporter
+        required: true
+        type: string
+        default: stage1/section-uuids
+      export_mode:
+        description: Persisted GE-02 HEAD, or read-only proposed scientific graph
+        required: true
+        type: choice
+        default: persisted
+        options:
+          - persisted
+          - candidate
+      knowledge_graph_path:
+        description: Repository-relative scientific graph JSON for candidate mode
+        required: true
+        type: string
+        default: examples/graph_engine/ge02_demo_graph.json
+
+permissions:
+  contents: read
+
+jobs:
+  rdf-export:
+    name: Verified scientific RDF export
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout target development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install project dependencies and independent RDF parser
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+          python -m pip install 'rdflib>=7.0,<8'
+
+      - name: Run focused G4 RDF validation
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          python -m pytest source/tests/semantic_graph/test_g4_rdf_export.py -q
+
+      - name: Export verified RDF without modifying development repository
+        shell: bash
+        env:
+          PYTHONPATH: source
+          EXPORT_MODE: ${{ inputs.export_mode }}
+          KNOWLEDGE_GRAPH_PATH: ${{ inputs.knowledge_graph_path }}
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          if [[ "$EXPORT_MODE" == 'persisted' ]]; then
+            python -m audit_engine.semantic_audit.graph.rdf_export \
+              --repository source --mode persisted \
+              --output-dir reports/graph-rdf > reports/export_stdout_manifest.json
+          elif [[ "$EXPORT_MODE" == 'candidate' ]]; then
+            python -m audit_engine.semantic_audit.graph.rdf_export \
+              --repository source --mode candidate \
+              --knowledge-graph "$KNOWLEDGE_GRAPH_PATH" \
+              --output-dir reports/graph-rdf > reports/export_stdout_manifest.json
+          else
+            echo 'Invalid export mode' >&2; exit 2
+          fi
+
+      - name: Independently parse RDF and verify manifest and authority flags
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          from rdflib import Graph
+          p = Path('reports/graph-rdf')
+          manifest = json.loads((p/'rdf-export-manifest.json').read_text())
+          detached = manifest.pop('manifest_sha256')
+          encoded = (json.dumps(manifest, ensure_ascii=False, sort_keys=True,
+                                separators=(',', ':'), allow_nan=False).encode('utf-8') + b'\n')
+          assert hashlib.sha256(encoded).hexdigest() == detached
+          assert manifest['schema_version'] == 'g4-rdf-export/v1'
+          for flag in ('automatic_approval_permitted',
+                       'authoritative_graph_mutation_permitted',
+                       'scientific_truth_established',
+                       'rdf_semantic_entailment_verified'):
+              assert manifest[flag] is False, flag
+          nt = (p/'semantic-graph.nt').read_bytes()
+          ttl = (p/'semantic-graph.ttl').read_bytes()
+          assert hashlib.sha256(nt).hexdigest() == manifest['ntriples_sha256']
+          assert hashlib.sha256(ttl).hexdigest() == manifest['turtle_sha256']
+          a = Graph().parse(data=nt.decode('utf-8'), format='nt')
+          b = Graph().parse(data=ttl.decode('utf-8'), format='turtle')
+          assert set(a) == set(b)
+          assert len(a) == manifest['triple_count']
+          assert manifest['node_count'] > 0
+          print('RDF N-Triples and Turtle parse, match, and preserve explicit authority limits')
+          PY
+
+      - name: Upload RDF export and verification artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g4-rdf-export-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
