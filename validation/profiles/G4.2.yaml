@@ -1,0 +1,8 @@
+id: G4.2
+name: GE-02 Persistent Graph Snapshots and Incremental Dependency Updates
+# G4.2 is a validation-dispatcher compatibility alias only. Original roadmap G4 = RDF Export.
+target_tests:
+  - tests/semantic_graph/test_ge02_persistent_domain_state.py
+regression:
+  enabled: true
+  path: tests/
