@@ -10,3 +10,5 @@ pytest>=9.1.1
 # python-sat          # SAT solving
 # z3-solver           # SMT solving  
 # ortools             # CP-SAT
+# G4 RDF Export: independent Turtle/N-Triples parsing and interoperability audit
+rdflib>=7.0,<8.0

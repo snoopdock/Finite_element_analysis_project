@@ -1,0 +1,8 @@
+id: G4.6
+name: Original G4 RDF Export — independently parsed interoperability and structural round-trip acceptance
+target_tests:
+  - tests/semantic_graph/test_g4_rdf_export.py
+  - tests/semantic_graph/test_g4_rdf_interoperability.py
+regression:
+  enabled: true
+  path: tests/
