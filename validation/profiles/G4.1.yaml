@@ -1,0 +1,7 @@
+id: G4.1
+name: GE-01 Graph Identity and Scientific Domain Integration
+target_tests:
+  - tests/semantic_graph/test_ge01_domain_integration.py
+regression:
+  enabled: true
+  path: tests/
