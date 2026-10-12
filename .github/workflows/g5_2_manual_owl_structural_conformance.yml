@@ -1,0 +1,143 @@
+name: G5.2 Manual OWL Structural Conformance Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing G5.1 and G5.2
+        required: true
+        type: string
+        default: stage1/section-uuids
+      source_mode:
+        description: Verified persisted GE graph or candidate scientific graph
+        required: true
+        type: choice
+        options:
+          - persisted
+          - candidate
+        default: persisted
+      knowledge_graph_path:
+        description: Repository-relative JSON input (candidate mode only)
+        required: true
+        type: string
+        default: examples/graph_engine/ge02_demo_graph.json
+
+permissions:
+  contents: read
+
+jobs:
+  owl-structural-conformance:
+    name: Verify source-bound OWL constraints and finite structural conformance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies including RDFLib
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+
+      - name: Run G4 and G5 executable integration tests
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q \
+            source/tests/semantic_graph/test_g4_rdf_export.py \
+            source/tests/semantic_graph/test_g4_rdf_interoperability.py \
+            source/tests/semantic_graph/test_g5_owl_ontology.py \
+            source/tests/semantic_graph/test_g5_owl_constraints.py \
+            --junitxml=reports/g5-2-integration-tests.xml
+
+      - name: Build detached source-bound ontology profile
+        shell: bash
+        env:
+          PYTHONPATH: source
+          SOURCE_MODE: ${{ inputs.source_mode }}
+          GRAPH_PATH: ${{ inputs.knowledge_graph_path }}
+        run: |
+          set -euo pipefail
+          if [[ "$SOURCE_MODE" == 'persisted' ]]; then
+            python -m audit_engine.semantic_audit.graph.owl_constraints build \
+              --repository source --mode persisted \
+              --output-dir reports/ontology > reports/g5-2-build.json
+          elif [[ "$SOURCE_MODE" == 'candidate' ]]; then
+            python -m audit_engine.semantic_audit.graph.owl_constraints build \
+              --repository source --mode candidate --knowledge-graph "$GRAPH_PATH" \
+              --output-dir reports/ontology > reports/g5-2-build.json
+          else
+            echo 'Unrecognized source mode' >&2
+            exit 2
+          fi
+
+      - name: Independently verify OWL structural profile and its source
+        shell: bash
+        env:
+          PYTHONPATH: source
+          SOURCE_MODE: ${{ inputs.source_mode }}
+          GRAPH_PATH: ${{ inputs.knowledge_graph_path }}
+        run: |
+          set -euo pipefail
+          if [[ "$SOURCE_MODE" == 'persisted' ]]; then
+            python -m audit_engine.semantic_audit.graph.owl_constraints verify \
+              --repository source --mode persisted \
+              --output-dir reports/ontology \
+              --report reports/g5-structural-conformance.json \
+              > reports/g5-2-verify.json
+          elif [[ "$SOURCE_MODE" == 'candidate' ]]; then
+            python -m audit_engine.semantic_audit.graph.owl_constraints verify \
+              --repository source --mode candidate --knowledge-graph "$GRAPH_PATH" \
+              --output-dir reports/ontology \
+              --report reports/g5-structural-conformance.json \
+              > reports/g5-2-verify.json
+          else
+            exit 2
+          fi
+
+      - name: Verify evidence digest and prohibit authority escalation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PYTHON'
+          import hashlib, json
+          from pathlib import Path
+          raw = Path('reports/g5-structural-conformance.json').read_bytes()
+          obj = json.loads(raw)
+          digest = obj.pop('report_sha256')
+          data = json.dumps(obj, ensure_ascii=False, sort_keys=True,
+                            separators=(',', ':'), allow_nan=False).encode('utf-8') + b'\n'
+          assert hashlib.sha256(data).hexdigest() == digest
+          assert obj['schema_version'] == 'g5-owl-structural-conformance/v1'
+          assert obj['finite_structural_conformance'] is True
+          assert obj['constrained_property_count'] == 15
+          for name in ('owl_reasoner_consistency_verified', 'owl_entailment_verified',
+                       'scientific_truth_established', 'automatic_approval_permitted',
+                       'authoritative_graph_mutation_permitted'):
+              assert obj[name] is False, name
+          manifest = json.loads(Path('reports/ontology/g5-structural-constraints-manifest.json').read_bytes())
+          assert manifest['manifest_sha256'] == obj['source_manifest_sha256']
+          print('G5.2 finite structural conformance: VERIFIED (not OWL entailment)')
+          PYTHON
+
+      - name: Upload detached OWL structural evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g5-2-owl-conformance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
