@@ -1,0 +1,136 @@
+name: GE-04 Manual Scientific Document Impact Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing GE-02 persisted graph and GE-04 sources
+        required: true
+        type: string
+        default: stage1/section-uuids
+      mode:
+        description: Candidate graph change or most recent committed transition
+        required: true
+        type: choice
+        default: candidate
+        options:
+          - candidate
+          - latest-transition
+      knowledge_graph_path:
+        description: Repository-relative candidate scientific JSON (candidate mode)
+        required: true
+        type: string
+        default: examples/graph_engine/ge03_demo_changed_graph.json
+      document_path:
+        description: Repository-relative persisted semantic Document JSON
+        required: true
+        type: string
+        default: examples/graph_engine/ge04_demo_document.json
+      bindings_path:
+        description: Explicit, version-bound section-to-graph references
+        required: true
+        type: string
+        default: examples/graph_engine/ge04_demo_section_bindings.json
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    name: GE-04 verified read-only section review plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout selected development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install target dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+
+      - name: Run GE-04 document/graph integration tests
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          python -m pytest source/tests/semantic_graph/test_ge04_section_impact_integration.py -q
+
+      - name: Verify GE-02 graph history
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m audit_engine.semantic_audit.graph.persistent_domain_state \
+            --repository source --command verify --store .graph-state/scientific \
+            --report reports/ge04_graph_baseline_verification.json
+
+      - name: Generate GE-04 review plan without source modifications
+        shell: bash
+        env:
+          PYTHONPATH: source
+          IMPACT_MODE: ${{ inputs.mode }}
+          KNOWLEDGE_GRAPH_PATH: ${{ inputs.knowledge_graph_path }}
+          DOCUMENT_PATH: ${{ inputs.document_path }}
+          BINDINGS_PATH: ${{ inputs.bindings_path }}
+        run: |
+          set -euo pipefail
+          if [[ "$IMPACT_MODE" == 'candidate' ]]; then
+            python -m audit_engine.semantic_audit.graph.section_impact_integration \
+              --repository source --mode candidate \
+              --knowledge-graph "$KNOWLEDGE_GRAPH_PATH" \
+              --document "$DOCUMENT_PATH" --bindings "$BINDINGS_PATH" \
+              --output reports/ge04_section_review_plan.json
+          elif [[ "$IMPACT_MODE" == 'latest-transition' ]]; then
+            python -m audit_engine.semantic_audit.graph.section_impact_integration \
+              --repository source --mode latest-transition \
+              --document "$DOCUMENT_PATH" --bindings "$BINDINGS_PATH" \
+              --output reports/ge04_section_review_plan.json
+          else
+            echo 'Unexpected impact mode' >&2; exit 2
+          fi
+
+      - name: Independently inspect report digest and authority constraints
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p = Path('reports/ge04_section_review_plan.json')
+          data = json.loads(p.read_text())
+          digest = data.pop('report_sha256')
+          raw = (json.dumps(data, ensure_ascii=False, sort_keys=True,
+                            separators=(',', ':'), allow_nan=False).encode('utf-8') + b'\n')
+          assert hashlib.sha256(raw).hexdigest() == digest, 'Invalid review report digest'
+          assert data['schema_version'] == 'ge04-bound-section-review-plan/v1'
+          assert data['mapping_basis'] == 'explicit_versioned_section_bindings_only'
+          assert data['scientific_truth_established'] is False
+          assert data['automatic_approval_permitted'] is False
+          assert data['automatic_document_modification_permitted'] is False
+          assert data['persisted_graph_mutated'] is False
+          assert data['section_review_count'] == len(data['section_review_tasks'])
+          print('GE-04 report integrity and approval boundaries verified')
+          PY
+
+      - name: Upload read-only review evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ge04-document-review-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
