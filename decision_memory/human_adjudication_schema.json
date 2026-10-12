@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/sat-human-review-annotations/v1",
+  "title": "Read-only human annotations for SAT claim review",
+  "type": "object",
+  "required": ["schema_version", "dossier_sha256", "proposal_audit_sha256", "source_commit_sha", "source_file_bindings", "review_submission_sha256", "reviewer_label_unverified", "github_actor_observed_not_attested", "reviews", "summary", "execution_constraints", "approval", "limitations", "annotations_sha256"],
+  "properties": {
+    "schema_version": {"const": "sat-human-review-annotations/v1"},
+    "dossier_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "proposal_audit_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "review_submission_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "annotations_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_commit_sha": {"type": ["string", "null"]},
+    "source_file_bindings": {"type": "array"},
+    "reviewer_label_unverified": {"type": "string", "minLength": 1},
+    "github_actor_observed_not_attested": {"type": "string", "minLength": 1},
+    "reviews": {"type": "array", "minItems": 1},
+    "summary": {"type": "object", "required": ["total_claims", "reviewed_claims", "unreviewed_claims", "review_completeness", "semantic_truth_verified_by_software"]},
+    "execution_constraints": {"type": "object", "additionalProperties": {"const": false}},
+    "approval": {"type": "object", "required": ["human_identity_cryptographically_verified", "independent_engineering_approval_granted", "sat_action_authorized", "automatic_memory_writeback_permitted", "candidate_rule_promoted"], "additionalProperties": {"const": false}},
+    "limitations": {"type": "array", "minItems": 2},
+    "annotations_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}
