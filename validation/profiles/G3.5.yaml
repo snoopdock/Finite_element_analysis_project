@@ -1,0 +1,7 @@
+id: G3.5
+name: Unified Generated-Text Assurance Integration and SAT Exit Gate
+target_tests:
+  - tests/semantic_high_assurance/test_g35_assurance_integration.py
+regression:
+  enabled: true
+  path: tests/
