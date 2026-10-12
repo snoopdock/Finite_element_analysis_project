@@ -1,0 +1,10 @@
+id: G5.2
+name: Original G5 OWL Ontology — source-bound RDFS structural constraints and finite conformance review
+target_tests:
+  - tests/semantic_graph/test_g4_rdf_export.py
+  - tests/semantic_graph/test_g4_rdf_interoperability.py
+  - tests/semantic_graph/test_g5_owl_ontology.py
+  - tests/semantic_graph/test_g5_owl_constraints.py
+regression:
+  enabled: true
+  path: tests/
