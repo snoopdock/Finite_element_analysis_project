@@ -1,0 +1,8 @@
+id: G4.5
+name: Original G4 RDF Export — deterministic scientific graph and persisted-state RDF
+# G4.1–G4.4 were GE compatibility aliases; G4.5 is the first original-roadmap G4 profile.
+target_tests:
+  - tests/semantic_graph/test_g4_rdf_export.py
+regression:
+  enabled: true
+  path: tests/
