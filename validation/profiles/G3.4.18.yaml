@@ -1,0 +1,9 @@
+id: G3.4.18
+name: Decision Memory Retrieval and SAT Context Preparation
+
+target_tests:
+  - tests/semantic_high_assurance/test_sat_context_retrieval.py
+
+regression:
+  enabled: true
+  path: tests/
