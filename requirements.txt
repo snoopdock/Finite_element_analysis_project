@@ -12,3 +12,7 @@ pytest>=9.1.1
 # ortools             # CP-SAT
 # G4 RDF Export: independent Turtle/N-Triples parsing and interoperability audit
 rdflib>=7.0,<8.0
+
+# G6 backend benchmarking: runtime adapters used by the existing graph system
+networkx>=3.2,<4.0
+scipy>=1.11,<2.0

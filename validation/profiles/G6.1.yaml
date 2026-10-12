@@ -1,0 +1,9 @@
+id: G6.1
+name: Original G6 Backend Benchmarking — reproducible adapters, parity and provenance
+target_tests:
+  - tests/semantic_graph/test_g6_backend_benchmark.py
+  - tests/semantic_graph/test_analysis_engine_service.py
+  - tests/semantic_graph/test_traversal.py
+regression:
+  enabled: true
+  path: tests/
