@@ -1,0 +1,121 @@
+name: G6.1 Manual Graph Backend Benchmark and Parity Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch with the G6.1 benchmark runner
+        required: true
+        type: string
+        default: stage1/section-uuids
+      profile:
+        description: Workload scale (synthetic graphs)
+        required: true
+        type: choice
+        options:
+          - standard
+          - smoke
+        default: standard
+      repeats:
+        description: Timed repeats per metric (3 through 50)
+        required: true
+        type: string
+        default: '7'
+      include_persisted:
+        description: Also benchmark the verified persisted GE-02 graph
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  graph-backend-benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install development dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+          python -m pip check
+
+      - name: Validate existing adapter parity and G6 functional tests
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q \
+            source/tests/semantic_graph/test_g6_backend_benchmark.py \
+            source/tests/semantic_graph/test_analysis_engine_service.py \
+            source/tests/semantic_graph/test_traversal.py \
+            --junitxml=reports/g6-1-benchmark-tests.xml
+
+      - name: Run deterministic workloads and measured adapter comparisons
+        shell: bash
+        env:
+          PYTHONPATH: source
+          BENCHMARK_PROFILE: ${{ inputs.profile }}
+          BENCHMARK_REPEATS: ${{ inputs.repeats }}
+          INCLUDE_PERSISTED: ${{ inputs.include_persisted }}
+        run: |
+          set -euo pipefail
+          args=(run --profile "$BENCHMARK_PROFILE" --repeats "$BENCHMARK_REPEATS" \
+                --warmup 2 --repository source --report reports/g6-1-benchmark.json)
+          if [[ "$INCLUDE_PERSISTED" == true ]]; then
+            args+=(--include-persisted)
+          fi
+          python -m audit_engine.semantic_audit.graph.backend.backend_benchmark "${args[@]}" \
+            > reports/g6-1-execution.json
+
+      - name: Independently reconstruct and verify benchmark sources and report
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          python -m audit_engine.semantic_audit.graph.backend.backend_benchmark verify \
+            --repository source --report reports/g6-1-benchmark.json \
+            > reports/g6-1-verification.json
+          python - <<'PYTHON'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('reports/g6-1-verification.json').read_text())
+          benchmark = json.loads(Path('reports/g6-1-benchmark.json').read_text())
+          assert result['status'] == 'verified'
+          assert result['report_sha256'] == benchmark['report_sha256']
+          assert result['case_count'] == len(benchmark['cases'])
+          assert benchmark['authority'] == {
+              'backend_auto_selection_permitted': False,
+              'scientific_truth_established': False,
+              'scientific_approval_permitted': False,
+              'graph_mutation_permitted': False,
+          }
+          assert all(case['parity']['status'] == 'verified' for case in benchmark['cases'])
+          print(f"G6.1 benchmark sources and parity verified: {len(benchmark['cases'])} cases")
+          PYTHON
+
+      - name: Upload detached reproducibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g6-1-backend-benchmark-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
