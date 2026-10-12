@@ -1,0 +1,9 @@
+id: G4.3
+name: GE-03 Native Graph Dependency Propagation and Scientific Impact Review
+# G4.3 is only a numeric compatibility alias for the manually invoked dispatcher.
+# The original G4 RDF Export milestone has not begun.
+target_tests:
+  - tests/semantic_graph/test_ge03_native_impact_analysis.py
+regression:
+  enabled: true
+  path: tests/

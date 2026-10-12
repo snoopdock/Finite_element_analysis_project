@@ -1,0 +1,32 @@
+{
+  "concepts": {
+    "00000000-0000-0000-0000-000000000001": {
+      "concept_id": "00000000-0000-0000-0000-000000000001",
+      "name": "Revised illustrative FEM concept — change requires review, not proof",
+      "type": "concept",
+      "source_ids": [],
+      "parent_concept_ids": []
+    },
+    "00000000-0000-0000-0000-000000000002": {
+      "concept_id": "00000000-0000-0000-0000-000000000002",
+      "name": "Demonstration-only dependent concept",
+      "type": "concept",
+      "source_ids": [],
+      "parent_concept_ids": [
+        "00000000-0000-0000-0000-000000000001"
+      ]
+    }
+  },
+  "propositions": {
+    "00000000-0000-0000-0000-000000000003": {
+      "proposition_id": "00000000-0000-0000-0000-000000000003",
+      "statement": "Illustrative unverified proposition for graph-persistence testing only.",
+      "status": "proposed",
+      "concept_ids": [
+        "00000000-0000-0000-0000-000000000002"
+      ],
+      "source_ids": []
+    }
+  },
+  "relationships": {}
+}
