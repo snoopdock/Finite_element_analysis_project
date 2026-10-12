@@ -1,0 +1,141 @@
+name: GE-02 Manual Graph Snapshot and Incremental Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing GE-02 (not main)
+        required: true
+        default: stage1/section-uuids
+        type: string
+      knowledge_graph_path:
+        description: Repository-relative scientific knowledge graph JSON path
+        required: true
+        default: examples/graph_engine/ge02_demo_graph.json
+        type: string
+      persist_state:
+        description: Explicitly commit the graph state to the selected branch
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ge02-graph-state-${{ inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    name: Preview GE-02 graph state (no commit)
+    if: ${{ !inputs.persist_state }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout selected development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f source/requirements.txt ]; then python -m pip install -r source/requirements.txt; fi
+          python -m pip install pytest
+      - name: GE-02 focused integration tests
+        env:
+          PYTHONPATH: source
+        run: python -m pytest source/tests/semantic_graph/test_ge02_persistent_domain_state.py -q
+      - name: Capture graph state and generate review candidates
+        env:
+          PYTHONPATH: source
+          KNOWLEDGE_GRAPH: ${{ inputs.knowledge_graph_path }}
+        run: |
+          mkdir -p reports
+          python -m audit_engine.semantic_audit.graph.persistent_domain_state \
+            --repository source --command capture --knowledge-graph "$KNOWLEDGE_GRAPH" \
+            --store .graph-state/scientific --report reports/ge02_capture.json
+      - name: Export state preview and review report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ge02-preview-${{ github.run_id }}
+          path: |
+            reports/
+            source/.graph-state/scientific/
+          retention-days: 30
+          if-no-files-found: warn
+
+  persist:
+    name: Publish GE-02 graph state to selected branch
+    if: ${{ inputs.persist_state }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout selected development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: true
+          fetch-depth: 1
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f source/requirements.txt ]; then python -m pip install -r source/requirements.txt; fi
+          python -m pip install pytest
+      - name: GE-02 focused integration tests
+        env:
+          PYTHONPATH: source
+        run: python -m pytest source/tests/semantic_graph/test_ge02_persistent_domain_state.py -q
+      - name: Capture and independently verify graph history
+        env:
+          PYTHONPATH: source
+          KNOWLEDGE_GRAPH: ${{ inputs.knowledge_graph_path }}
+        run: |
+          mkdir -p reports
+          python -m audit_engine.semantic_audit.graph.persistent_domain_state \
+            --repository source --command capture --knowledge-graph "$KNOWLEDGE_GRAPH" \
+            --store .graph-state/scientific --report reports/ge02_capture.json
+          python -m audit_engine.semantic_audit.graph.persistent_domain_state \
+            --repository source --command verify --store .graph-state/scientific \
+            --report reports/ge02_verify.json
+      - name: Commit graph-state files to selected development branch
+        working-directory: source
+        env:
+          TARGET_BRANCH: ${{ inputs.branch }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TARGET_BRANCH" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]] || [[ "$TARGET_BRANCH" == main ]]; then
+            echo "Refusing unsafe or main branch publication" >&2
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f -- .graph-state/scientific/
+          if git diff --cached --quiet; then
+            echo 'Existing graph state is already current; no commit is needed.'
+          else
+            git commit -m 'graph-state(GE-02): persist verified scientific snapshot'
+            git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+          fi
+      - name: Upload graph-state evidence, even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ge02-persist-${{ github.run_id }}
+          path: |
+            reports/
+            source/.graph-state/scientific/
+          retention-days: 30
+          if-no-files-found: warn
