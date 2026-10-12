@@ -1,0 +1,8 @@
+{
+  "required": [
+    "source_snapshot",
+    "node_count",
+    "edge_count",
+    "impact_candidates"
+  ]
+}

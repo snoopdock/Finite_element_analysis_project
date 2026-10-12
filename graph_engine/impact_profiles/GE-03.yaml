@@ -1,0 +1,5 @@
+id: GE-03
+name: Dependency Propagation and Impact Analysis
+
+target_tests:
+  - tests/semantic_graph/test_ge03_impact_analysis.py
