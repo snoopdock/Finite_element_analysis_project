@@ -1,0 +1,136 @@
+name: G4 Manual RDF Structural Interoperability and Round-Trip Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch with GE and G4.6 interoperability verifier
+        required: true
+        type: string
+        default: stage1/section-uuids
+      export_mode:
+        description: Read-only export from persisted GE state or candidate scientific graph
+        required: true
+        type: choice
+        default: persisted
+        options:
+          - persisted
+          - candidate
+      knowledge_graph_path:
+        description: Repository-relative JSON path (used only with candidate mode)
+        required: true
+        type: string
+        default: examples/graph_engine/ge02_demo_graph.json
+
+permissions:
+  contents: read
+
+jobs:
+  rdf-interop:
+    name: Source-bound RDF structural equivalence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install required packages including independent RDF parser
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+
+      - name: Run real G4 RDF exporter and interoperability tests
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest source/tests/semantic_graph/test_g4_rdf_export.py \
+            source/tests/semantic_graph/test_g4_rdf_interoperability.py \
+            -q --junitxml=reports/g4-interoperability-tests.xml
+
+      - name: Export verified RDF to detached artifact directory
+        shell: bash
+        env:
+          PYTHONPATH: source
+          EXPORT_MODE: ${{ inputs.export_mode }}
+          KNOWLEDGE_GRAPH_PATH: ${{ inputs.knowledge_graph_path }}
+        run: |
+          set -euo pipefail
+          if [[ "$EXPORT_MODE" == 'persisted' ]]; then
+            python -m audit_engine.semantic_audit.graph.rdf_export \
+              --repository source --mode persisted \
+              --output-dir reports/graph-rdf > reports/export-stdout.json
+          elif [[ "$EXPORT_MODE" == 'candidate' ]]; then
+            python -m audit_engine.semantic_audit.graph.rdf_export \
+              --repository source --mode candidate --knowledge-graph "$KNOWLEDGE_GRAPH_PATH" \
+              --output-dir reports/graph-rdf > reports/export-stdout.json
+          else
+            echo 'Unrecognized export mode' >&2
+            exit 2
+          fi
+
+      - name: Independently parse, reconstruct, and verify against GE source
+        shell: bash
+        env:
+          PYTHONPATH: source
+          EXPORT_MODE: ${{ inputs.export_mode }}
+          KNOWLEDGE_GRAPH_PATH: ${{ inputs.knowledge_graph_path }}
+        run: |
+          set -euo pipefail
+          if [[ "$EXPORT_MODE" == 'persisted' ]]; then
+            python -m audit_engine.semantic_audit.graph.rdf_interoperability \
+              --repository source --export-dir reports/graph-rdf \
+              --mode persisted --report reports/rdf-interoperability-report.json \
+              > reports/interoperability-stdout.json
+          elif [[ "$EXPORT_MODE" == 'candidate' ]]; then
+            python -m audit_engine.semantic_audit.graph.rdf_interoperability \
+              --repository source --export-dir reports/graph-rdf \
+              --mode candidate --knowledge-graph "$KNOWLEDGE_GRAPH_PATH" \
+              --report reports/rdf-interoperability-report.json \
+              > reports/interoperability-stdout.json
+          else
+            exit 2
+          fi
+
+      - name: Check detached report digest and authority constraints
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p = Path('reports/rdf-interoperability-report.json')
+          obj = json.loads(p.read_bytes())
+          detached = obj.pop('report_sha256')
+          canonical = json.dumps(obj, ensure_ascii=False, sort_keys=True,
+                                 separators=(',', ':'), allow_nan=False).encode() + b'\n'
+          assert hashlib.sha256(canonical).hexdigest() == detached
+          assert obj['schema_version'] == 'g4-rdf-interoperability/v1'
+          assert obj['independent_rdf_parser_equivalence'] is True
+          assert obj['attributed_multigraph_structure_preserved'] is True
+          for k in ('scientific_truth_established', 'semantic_entailment_verified',
+                    'automatic_approval_permitted', 'authoritative_graph_mutation_permitted'):
+              assert obj[k] is False, k
+          print('G4.6 RDF source-bound structural round trip and authority boundaries: VERIFIED')
+          PY
+
+      - name: Upload RDF evidence, including failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g4-rdf-interop-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
