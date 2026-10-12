@@ -1,0 +1,42 @@
+{
+  "children": [
+    {
+      "children": [
+        {
+          "inline_content": [
+            {
+              "text": "Review the stated assumptions when the illustrative FEM concept changes.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "parent_section_ids": [],
+      "section_id": "10000000-0000-0000-0000-000000000001",
+      "title": "FEM assumptions and weak formulation",
+      "type": "section"
+    },
+    {
+      "children": [
+        {
+          "inline_content": [
+            {
+              "text": "An illustrative, non-validated proposition used to demonstrate review planning.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "parent_section_ids": [],
+      "section_id": "10000000-0000-0000-0000-000000000002",
+      "title": "Galerkin proposition and discretization",
+      "type": "section"
+    }
+  ],
+  "document_id": "10000000-0000-0000-0000-000000000100",
+  "metadata": {},
+  "type": "document",
+  "version": 4
+}

@@ -1,0 +1,27 @@
+{
+  "document_id": "10000000-0000-0000-0000-000000000100",
+  "document_sha256": "a28c4d4a42dfd24fbc4fff8859f604bb20a97b0b77be00bb56492f0aabc78a58",
+  "expected_compared_snapshot_sha256": "05de08eae7b769e0cdef299cf62cf0f08697ecec39babcd4cd51ef9b9c6a04c7",
+  "expected_store_head_sha256": "1196f2b4619d9c4624bc154cd958cdc5f1c14b1d90abbc6ee26e56c004400771",
+  "links": [
+    {
+      "graph_node_id": "scientific:concept:00000000-0000-0000-0000-000000000001",
+      "rationale": "Explicit editorial traceability to the parent FEM concept",
+      "relation": "EXPLICITLY_REFERENCES",
+      "section_id": "10000000-0000-0000-0000-000000000001"
+    },
+    {
+      "graph_node_id": "scientific:concept:00000000-0000-0000-0000-000000000002",
+      "rationale": "Explicit editorial traceability to the dependent scientific concept",
+      "relation": "EXPLICITLY_REFERENCES",
+      "section_id": "10000000-0000-0000-0000-000000000001"
+    },
+    {
+      "graph_node_id": "scientific:proposition:00000000-0000-0000-0000-000000000003",
+      "rationale": "Explicit editorial traceability to the scientific proposition",
+      "relation": "EXPLICITLY_REFERENCES",
+      "section_id": "10000000-0000-0000-0000-000000000002"
+    }
+  ],
+  "schema_version": "ge04-explicit-section-bindings/v1"
+}
