@@ -1,0 +1,9 @@
+{
+  "schema_version": "decision-learning-rule/v1",
+  "required_fields": [
+    "id", "schema_version", "status", "statement", "applicability",
+    "sources", "observations", "limitations", "evidence_assessment", "review"
+  ],
+  "allowed_statuses": ["candidate"],
+  "allowed_basis_kinds": ["contract_validation_only", "human_hypothesis"]
+}

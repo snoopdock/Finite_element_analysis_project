@@ -1,0 +1,37 @@
+id: RULE-G3.4.17-001
+schema_version: decision-learning-rule/v1
+status: candidate
+statement: >-
+  Do not treat a successful schema-validation test as proof that a referenced
+  SAT engineering action completed successfully or improved an outcome.
+applicability: >-
+  Evaluating proposed rules derived from action history, outcome feedback,
+  and validation reports for future SAT decision support.
+sources:
+  decision_ids:
+    - DEC-G3.4.13-001
+  action_ids:
+    - ACTION-G3.4.15-001
+  outcome_ids:
+    - OUTCOME-G3.4.16-001
+  validation_reports:
+    - profile_id: G3.4.16
+      report_sha256: 5c89616682251124dc2443e3dc5e2ed6323989ea19d2b8ef6e2ce9395636d4fd
+      source_commit_sha: 063f8bd3bf8d894f3d96d4418ac270cbd1ea8f88
+observations:
+  - The G3.4.16 CI run passed one test that checked only for required dictionary keys.
+  - The G3.4.15 example action says pending, while feedback labels record validation successful.
+limitations:
+  - This is a single demonstration case, not repeated operational observations.
+  - Artifact hashes support identification but do not prove engineering impact.
+  - An external evidence bundle cannot be reverified without its bytes.
+evidence_assessment:
+  basis_kind: contract_validation_only
+  engineering_impact_verified: false
+  external_bundle_checked: false
+  discrepancies:
+    - pending_action_with_successful_feedback
+review:
+  human_review_required: true
+  approved: false
+  reason: Candidate guardrail must be independently reviewed before adoption by SAT decision logic.

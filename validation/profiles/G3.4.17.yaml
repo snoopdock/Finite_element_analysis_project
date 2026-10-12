@@ -1,0 +1,9 @@
+id: G3.4.17
+name: Evidence-Gated SAT Learning Rule Candidates
+
+target_tests:
+  - tests/semantic_high_assurance/test_learning_rule_candidates.py
+
+regression:
+  enabled: true
+  path: tests/
