@@ -1,0 +1,9 @@
+id: G3.4.20
+name: SAT Claim Review Dossier and Human Review Gates
+
+target_tests:
+  - tests/semantic_high_assurance/test_sat_review_dossier.py
+
+regression:
+  enabled: true
+  path: tests/
