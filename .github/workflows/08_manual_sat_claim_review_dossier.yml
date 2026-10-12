@@ -1,0 +1,98 @@
+name: Manual SAT Claim Review Dossier
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing G3.4.20
+        required: true
+        type: string
+        default: stage1/section-uuids
+      query:
+        description: Search topic for historical engineering decisions
+        required: true
+        type: string
+      proposed_text:
+        description: 'Proposed text; separate claims by newlines; cite IDs using [[RECORD-ID]]'
+        required: true
+        type: string
+      max_results:
+        description: Maximum retrieved records
+        required: true
+        type: choice
+        options: ['5', '8', '12', '20']
+        default: '8'
+
+permissions:
+  contents: read
+
+jobs:
+  dossier:
+    name: Generate and verify read-only SAT review dossier
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      SAT_QUERY: ${{ inputs.query }}
+      SAT_PROPOSAL: ${{ inputs.proposed_text }}
+      SAT_RESULTS_LIMIT: ${{ inputs.max_results }}
+    steps:
+      - name: Checkout selected development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install memory-validation dependency
+        run: python -m pip install 'PyYAML>=6,<7'
+
+      - name: Prepare temporary output location
+        run: mkdir -p sat-review-artifacts
+
+      - name: Generate G3.4.19 proposal audit from untrusted text
+        run: |
+          set -euo pipefail
+          python source/decision_memory/proposal_audit.py \
+            --repository source \
+            --query "$SAT_QUERY" \
+            --draft-text "$SAT_PROPOSAL" \
+            --max-results "$SAT_RESULTS_LIMIT" \
+            --output sat-review-artifacts/sat-proposal-audit.json
+
+      - name: Independently re-verify G3.4.19 audit
+        run: |
+          set -euo pipefail
+          python source/decision_memory/proposal_audit.py \
+            --repository source \
+            --verify-report sat-review-artifacts/sat-proposal-audit.json
+
+      - name: Generate G3.4.20 review dossier
+        run: |
+          set -euo pipefail
+          python source/decision_memory/review_dossier.py \
+            --repository source \
+            --audit-file sat-review-artifacts/sat-proposal-audit.json \
+            --output sat-review-artifacts/sat-claim-review-dossier.json
+
+      - name: Independently verify dossier against source bytes
+        run: |
+          set -euo pipefail
+          python source/decision_memory/review_dossier.py \
+            --repository source \
+            --audit-file sat-review-artifacts/sat-proposal-audit.json \
+            --verify-file sat-review-artifacts/sat-claim-review-dossier.json
+
+      - name: Upload temporary review package (not a decision or permanent memory)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sat-claim-review-${{ github.run_id }}-${{ github.run_attempt }}
+          path: sat-review-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
