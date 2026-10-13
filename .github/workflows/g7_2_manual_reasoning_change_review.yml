@@ -1,0 +1,116 @@
+name: G7.2 Manual Reasoning Change and Retraction Review
+
+'on':
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing G7.2
+        required: true
+        type: string
+        default: stage1/section-uuids
+      mode:
+        description: Compare a proposed graph with persisted GE-02 HEAD, or inspect last persisted transition
+        required: true
+        type: choice
+        options:
+          - candidate
+          - latest-transition
+        default: candidate
+      knowledge_graph:
+        description: Repository-relative candidate JSON path (unused for latest-transition)
+        required: false
+        type: string
+        default: examples/graph_engine/g72_demo_reparented_graph.json
+
+permissions:
+  contents: read
+
+jobs:
+  reasoning-change-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout requested development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install repository dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+          python -m pip check
+
+      - name: Run existing G7 and GE-02 tests plus new G7.2 tests
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q \
+            source/tests/semantic_graph/test_g72_reasoning_change_review.py \
+            source/tests/semantic_graph/test_g71_structural_reasoning.py \
+            source/tests/semantic_graph/test_ge02_persistent_domain_state.py \
+            source/tests/semantic_verification/test_rules.py \
+            --junitxml=reports/g7-2-targeted.xml
+
+      - name: Reconcile source-bound inference closure before and after graph change
+        shell: bash
+        env:
+          PYTHONPATH: source
+          REVIEW_MODE: ${{ inputs.mode }}
+          GRAPH_PATH: ${{ inputs.knowledge_graph }}
+        run: |
+          set -euo pipefail
+          args=(--repository source --mode "$REVIEW_MODE" --report reports/g7-2-change-review.json)
+          if [[ "$REVIEW_MODE" == candidate ]]; then
+            args+=(--knowledge-graph "$GRAPH_PATH")
+          fi
+          python -m audit_engine.semantic_audit.graph.reasoning_change_review run "${args[@]}" \
+            > reports/g7-2-run-summary.json
+
+      - name: Independently replay graph change and verify all inference decisions
+        shell: bash
+        env:
+          PYTHONPATH: source
+          REVIEW_MODE: ${{ inputs.mode }}
+          GRAPH_PATH: ${{ inputs.knowledge_graph }}
+        run: |
+          set -euo pipefail
+          args=(--repository source --mode "$REVIEW_MODE" --report reports/g7-2-change-review.json)
+          if [[ "$REVIEW_MODE" == candidate ]]; then
+            args+=(--knowledge-graph "$GRAPH_PATH")
+          fi
+          python -m audit_engine.semantic_audit.graph.reasoning_change_review verify "${args[@]}" \
+            > reports/g7-2-verification.json
+          python - <<'PYTHON'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('reports/g7-2-change-review.json').read_text())
+          result = json.loads(Path('reports/g7-2-verification.json').read_text())
+          assert result['status'] == 'verified'
+          assert report['report_sha256'] == result['report_sha256']
+          assert all(value is False for value in report['authority'].values())
+          assert result['added_inference_count'] == len(report['added_inferences'])
+          assert result['retracted_inference_count'] == len(report['retracted_inferences'])
+          assert result['rewitnessed_inference_count'] == len(report['rewitnessed_inferences'])
+          print('G7.2 independently verified the complete reasoning change review')
+          PYTHON
+
+      - name: Upload detached evidence including partial failure reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g7-2-reasoning-change-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
