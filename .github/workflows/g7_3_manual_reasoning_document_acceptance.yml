@@ -1,0 +1,141 @@
+name: G7.3 Manual Reasoning-to-Document Acceptance
+
+'on':
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch with G7.3 implementation
+        required: true
+        type: string
+        default: stage1/section-uuids
+      mode:
+        description: Compare candidate graph or inspect latest persisted transition
+        required: true
+        type: choice
+        options:
+          - candidate
+          - latest-transition
+        default: candidate
+      knowledge_graph:
+        description: Candidate graph relative to development branch; ignored in latest-transition mode
+        required: false
+        type: string
+        default: examples/graph_engine/g72_demo_reparented_graph.json
+      document:
+        description: Persisted scientific document with stable section UUIDs
+        required: true
+        type: string
+        default: examples/graph_engine/ge04_demo_document.json
+      inference_bindings:
+        description: Version-bound explicit inference-to-section bindings JSON
+        required: true
+        type: string
+        default: examples/graph_engine/g73_demo_inference_section_bindings.json
+      require_complete_mapping:
+        description: Fail acceptance when an inference change lacks an explicit section link
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  reasoning-document-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout requested development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install repository dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+          python -m pip check
+
+      - name: Execute G7.3 and prerequisite acceptance tests
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q \
+            source/tests/semantic_graph/test_g73_reasoning_document_review.py \
+            source/tests/semantic_graph/test_g72_reasoning_change_review.py \
+            source/tests/semantic_graph/test_g71_structural_reasoning.py \
+            source/tests/semantic_graph/test_ge04_section_impact_integration.py \
+            source/tests/semantic_graph/test_ge03_native_impact_analysis.py \
+            source/tests/semantic_graph/test_ge02_persistent_domain_state.py \
+            source/tests/semantic_verification/test_rules.py \
+            --junitxml=reports/g7-3-acceptance-tests.xml
+
+      - name: Generate source-bound inference-to-document review plan
+        shell: bash
+        env:
+          PYTHONPATH: source
+          REVIEW_MODE: ${{ inputs.mode }}
+          GRAPH_PATH: ${{ inputs.knowledge_graph }}
+          DOCUMENT_PATH: ${{ inputs.document }}
+          BINDINGS_PATH: ${{ inputs.inference_bindings }}
+        run: |
+          set -euo pipefail
+          args=(--repository source --mode "$REVIEW_MODE" --document "$DOCUMENT_PATH" --bindings "$BINDINGS_PATH" --report reports/g7-3-review.json)
+          if [[ "$REVIEW_MODE" == candidate ]]; then
+            args+=(--knowledge-graph "$GRAPH_PATH")
+          fi
+          python -m audit_engine.semantic_audit.graph.reasoning_document_review run "${args[@]}" \
+            > reports/g7-3-run-summary.json
+
+      - name: Independently replay G7.2 inference lifecycle and G7.3 document mapping
+        shell: bash
+        env:
+          PYTHONPATH: source
+          REVIEW_MODE: ${{ inputs.mode }}
+          GRAPH_PATH: ${{ inputs.knowledge_graph }}
+          DOCUMENT_PATH: ${{ inputs.document }}
+          BINDINGS_PATH: ${{ inputs.inference_bindings }}
+          REQUIRE_COMPLETE: ${{ inputs.require_complete_mapping }}
+        run: |
+          set -euo pipefail
+          args=(--repository source --mode "$REVIEW_MODE" --document "$DOCUMENT_PATH" --bindings "$BINDINGS_PATH" --report reports/g7-3-review.json)
+          if [[ "$REVIEW_MODE" == candidate ]]; then
+            args+=(--knowledge-graph "$GRAPH_PATH")
+          fi
+          python -m audit_engine.semantic_audit.graph.reasoning_document_review verify "${args[@]}" \
+            > reports/g7-3-verification.json
+          python - <<'PYTHON'
+          import json, os
+          from pathlib import Path
+          report = json.loads(Path('reports/g7-3-review.json').read_text())
+          verified = json.loads(Path('reports/g7-3-verification.json').read_text())
+          assert verified['status'] == 'verified'
+          assert verified['report_sha256'] == report['report_sha256']
+          assert verified['reasoning_event_count'] == report['reasoning_event_count']
+          assert verified['section_review_count'] == report['section_review_count']
+          assert all(flag is False for flag in report['authority'].values())
+          if os.environ['REQUIRE_COMPLETE'].lower() == 'true' and report['reasoning_event_count']:
+              assert report['status'] == 'human_review_plan_ready', 'Incomplete inference mappings are not an acceptance pass'
+              assert not report['unmapped_inference_events']
+          print('G7.3 source-bound reasoning/document replay and authority checks passed')
+          PYTHON
+
+      - name: Upload detached evidence even on validation failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g7-3-reasoning-document-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
