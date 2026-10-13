@@ -1,0 +1,15 @@
+id: G7.3
+name: Original G7 semantic reasoning — final inference-to-document acceptance
+
+target_tests:
+  - tests/semantic_graph/test_g73_reasoning_document_review.py
+  - tests/semantic_graph/test_g72_reasoning_change_review.py
+  - tests/semantic_graph/test_g71_structural_reasoning.py
+  - tests/semantic_graph/test_ge04_section_impact_integration.py
+  - tests/semantic_graph/test_ge03_native_impact_analysis.py
+  - tests/semantic_graph/test_ge02_persistent_domain_state.py
+  - tests/semantic_verification/test_rules.py
+
+regression:
+  enabled: true
+  path: tests/

@@ -1,0 +1,32 @@
+{
+  "document_id": "10000000-0000-0000-0000-000000000100",
+  "document_sha256": "a28c4d4a42dfd24fbc4fff8859f604bb20a97b0b77be00bb56492f0aabc78a58",
+  "expected_after_snapshot_sha256": "ed308271476800589c3d86b620701229b87ce283c5842bea5d82d7ef1be251fa",
+  "expected_before_snapshot_sha256": "c864c8374779679e6f71cf1c9ca4edf88f6acd0a1f8ab80f4cba317bfc3488a2",
+  "expected_store_head_sha256": "1196f2b4619d9c4624bc154cd958cdc5f1c14b1d90abbc6ee26e56c004400771",
+  "links": [
+    {
+      "fact": {
+        "inferred_relation": "HAS_ANCESTOR_CONCEPT",
+        "rule_id": "G7.R2.PROPOSITION_ANCESTOR_ASSOCIATION",
+        "source_id": "scientific:proposition:00000000-0000-0000-0000-000000000003",
+        "target_id": "scientific:concept:00000000-0000-0000-0000-000000000001"
+      },
+      "rationale": "Editorially recorded dependency on this particular structural inference",
+      "relation": "EXPLICITLY_REVIEWS_INFERENCE",
+      "section_id": "10000000-0000-0000-0000-000000000001"
+    },
+    {
+      "fact": {
+        "inferred_relation": "HAS_ANCESTOR_CONCEPT",
+        "rule_id": "G7.R2.PROPOSITION_ANCESTOR_ASSOCIATION",
+        "source_id": "scientific:proposition:00000000-0000-0000-0000-000000000003",
+        "target_id": "scientific:concept:00000000-0000-0000-0000-000000000004"
+      },
+      "rationale": "Editorially recorded dependency on this particular structural inference",
+      "relation": "EXPLICITLY_REVIEWS_INFERENCE",
+      "section_id": "10000000-0000-0000-0000-000000000002"
+    }
+  ],
+  "schema_version": "g7-explicit-inference-section-bindings/v1"
+}
