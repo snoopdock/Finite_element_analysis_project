@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -193,7 +193,7 @@ class SemanticGraph:
     def get_node(
         self,
         node_id: str
-    ) -> SemanticNode | None:
+    ) -> Optional[SemanticNode]:
         """
         Retrieve a node by semantic identifier.
         """
