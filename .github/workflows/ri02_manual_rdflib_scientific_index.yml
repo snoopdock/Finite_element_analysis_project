@@ -1,0 +1,169 @@
+name: RI-02 Manual RDFLib Scientific Index and SPARQL Interoperability
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch with validated RI-01, G4.5 and G4.6
+        required: true
+        default: stage1/section-uuids
+        type: string
+      source_mode:
+        description: Read-only GE persisted source or scientific candidate JSON
+        required: true
+        default: persisted
+        type: choice
+        options: [persisted, candidate]
+      knowledge_graph_path:
+        description: Repository-relative candidate JSON (ignored in persisted mode)
+        required: true
+        default: examples/graph_engine/ge02_demo_graph.json
+        type: string
+      query:
+        description: Fixed, bounded SPARQL catalog entry
+        required: true
+        default: nodes_by_indexed_field
+        type: choice
+        options:
+          - nodes_by_indexed_field
+          - concepts_by_status
+          - propositions_for_concept
+          - citations_for_entity
+          - subconcepts_of
+          - relations_for_entity
+          - edges_by_claimed_type
+      argument:
+        description: Field name, status, relation claim, or full semantic node ID
+        required: true
+        default: name
+        type: string
+      limit:
+        description: Maximum returned rows (1..200)
+        required: true
+        default: '100'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verified-scientific-index:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout development branch (read-only)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install project dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+
+      - name: RI-01, RI-02 and real G4 native integration tests
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q \
+            source/tests/semantic_graph/test_ri01_rdflib_query_layer.py \
+            source/tests/semantic_graph/test_ri02_rdflib_scientific_index.py \
+            source/tests/semantic_graph/test_g4_rdf_export.py \
+            source/tests/semantic_graph/test_g4_rdf_interoperability.py \
+            --junitxml=reports/ri02-g4-integration.xml
+
+      - name: Build detached scientific RDFLib index and query report
+        shell: bash
+        env:
+          PYTHONPATH: source
+          SOURCE_MODE: ${{ inputs.source_mode }}
+          CANDIDATE_FILE: ${{ inputs.knowledge_graph_path }}
+          QUERY_ID: ${{ inputs.query }}
+          QUERY_ARGUMENT: ${{ inputs.argument }}
+          QUERY_LIMIT: ${{ inputs.limit }}
+        run: |
+          set -euo pipefail
+          test "$QUERY_LIMIT" -ge 1 && test "$QUERY_LIMIT" -le 200
+          args=(--repository source --mode "$SOURCE_MODE" --query "$QUERY_ID" \
+                --argument "$QUERY_ARGUMENT" --limit "$QUERY_LIMIT" \
+                --output-dir reports/scientific-index)
+          if [[ "$SOURCE_MODE" == candidate ]]; then
+            args+=(--knowledge-graph "$CANDIDATE_FILE")
+          fi
+          python -m audit_engine.semantic_audit.graph.rdflib_scientific_index "${args[@]}" \
+            > reports/build-report.json
+
+      - name: Replay against verified source and reparse detached N-Quads
+        shell: bash
+        env:
+          PYTHONPATH: source
+          SOURCE_MODE: ${{ inputs.source_mode }}
+          CANDIDATE_FILE: ${{ inputs.knowledge_graph_path }}
+          QUERY_ID: ${{ inputs.query }}
+          QUERY_ARGUMENT: ${{ inputs.argument }}
+          QUERY_LIMIT: ${{ inputs.limit }}
+        run: |
+          set -euo pipefail
+          args=(--repository source --mode "$SOURCE_MODE" --query "$QUERY_ID" \
+                --argument "$QUERY_ARGUMENT" --limit "$QUERY_LIMIT" \
+                --output-dir reports/scientific-index --verify)
+          if [[ "$SOURCE_MODE" == candidate ]]; then
+            args+=(--knowledge-graph "$CANDIDATE_FILE")
+          fi
+          python -m audit_engine.semantic_audit.graph.rdflib_scientific_index "${args[@]}" \
+            > reports/verify-report.json
+
+      - name: Independent artifact integrity and authority audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json
+          from rdflib import Dataset
+          p=Path('reports/scientific-index')
+          report=json.loads((p/'scientific-index-report.json').read_bytes())
+          raw=(p/'scientific-index.nq').read_bytes()
+          digest=report.pop('report_sha256')
+          def canonical(data):
+              return (json.dumps(data,sort_keys=True,ensure_ascii=False,
+                       separators=(',',':'),allow_nan=False)+'\n').encode()
+          assert hashlib.sha256(canonical(report)).hexdigest()==digest
+          assert hashlib.sha256(raw).hexdigest()==report['dataset_nquads_sha256']
+          assert report['schema_version']=='ri02-verified-scientific-index/v1'
+          assert len(report['contexts'])==5
+          assert report['g4_source_triples_preserved'] is True
+          assert report['parallel_edge_occurrences_preserved'] is True
+          for name in ('arbitrary_sparql_permitted','automatic_approval_permitted',
+                       'authoritative_mutation_permitted','scientific_truth_established',
+                       'semantic_entailment_verified'):
+              assert report[name] is False, name
+          parsed=Dataset(default_union=False)
+          parsed.parse(data=raw.decode('utf-8'),format='nquads')
+          quads=list(parsed.quads((None,None,None,None)))
+          assert len(quads)==report['dataset_quad_count']
+          assert {str(g) for _,_,_,g in quads} == set(report['contexts'])
+          assert report['result_count']==len(report['results'])
+          assert report['result_count']<=report['query_limit']<=200
+          print('RI-02 source-bound RDF, SPARQL and authority verification: PASS')
+          PY
+
+      - name: Upload detached evidence and failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ri02-scientific-rdf-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          if-no-files-found: warn
+          retention-days: 30
