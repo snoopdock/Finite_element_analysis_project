@@ -58,6 +58,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-graph-tool
 
+      - name: Check SNAP Python 3.9 import contract before native execution
+        if: inputs.backend == 'snap'
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=source python - <<'PY39'
+          import sys
+          from typing import Optional, get_type_hints
+          assert sys.version_info[:2] == (3, 9), sys.version
+          from audit_engine.semantic_audit.core.semantic_graph import SemanticGraph, SemanticNode, SemanticEdge
+          from audit_engine.semantic_audit.graph.backend.backend_factory import BackendFactory
+          from audit_engine.semantic_audit.graph.backend.execution_context import BackendExecutionContext
+          from audit_engine.semantic_audit.graph.backend.snap_adapter import SNAPAdapter
+          import snap
+          assert hasattr(snap, "TNEANet"), "Wrong SNAP module imported"
+          assert get_type_hints(SemanticGraph.get_node)["return"] == Optional[SemanticNode]
+          assert BackendFactory._ADAPTERS["snap"][1] == "SNAPAdapter"
+          print("SNAP CPython 3.9 preflight: PASS; native module:", snap.__file__)
+          PY39
+
       - name: Run actual native adapter smoke test
         shell: bash
         env:
