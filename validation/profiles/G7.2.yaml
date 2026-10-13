@@ -1,0 +1,10 @@
+id: G7.2
+name: Original G7 Semantic Reasoning Rules — source-bound inference change and retraction review
+target_tests:
+  - tests/semantic_graph/test_g72_reasoning_change_review.py
+  - tests/semantic_graph/test_g71_structural_reasoning.py
+  - tests/semantic_graph/test_ge02_persistent_domain_state.py
+  - tests/semantic_verification/test_rules.py
+regression:
+  enabled: true
+  path: tests/

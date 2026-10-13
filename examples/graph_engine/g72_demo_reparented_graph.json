@@ -1,0 +1,39 @@
+{
+  "concepts": {
+    "00000000-0000-0000-0000-000000000001": {
+      "concept_id": "00000000-0000-0000-0000-000000000001",
+      "name": "Illustrative finite element method concept — unverified demonstration",
+      "type": "concept",
+      "source_ids": [],
+      "parent_concept_ids": []
+    },
+    "00000000-0000-0000-0000-000000000002": {
+      "concept_id": "00000000-0000-0000-0000-000000000002",
+      "name": "Demonstration-only dependent concept",
+      "type": "concept",
+      "source_ids": [],
+      "parent_concept_ids": [
+        "00000000-0000-0000-0000-000000000004"
+      ]
+    },
+    "00000000-0000-0000-0000-000000000004": {
+      "concept_id": "00000000-0000-0000-0000-000000000004",
+      "name": "Alternative illustrative FEM parent concept (not an assertion of truth)",
+      "type": "concept",
+      "source_ids": [],
+      "parent_concept_ids": []
+    }
+  },
+  "propositions": {
+    "00000000-0000-0000-0000-000000000003": {
+      "proposition_id": "00000000-0000-0000-0000-000000000003",
+      "statement": "Illustrative unverified proposition for graph-persistence testing only.",
+      "status": "proposed",
+      "concept_ids": [
+        "00000000-0000-0000-0000-000000000002"
+      ],
+      "source_ids": []
+    }
+  },
+  "relationships": {}
+}
