@@ -1,0 +1,127 @@
+name: G6.2 Manual Multi-Seed Graph Backend Acceptance
+
+'on':
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing G6.1 and G6.2
+        required: true
+        type: string
+        default: stage1/section-uuids
+      profile:
+        description: Synthetic graph sizes
+        required: true
+        type: choice
+        options:
+          - standard
+          - smoke
+        default: standard
+      seeds:
+        description: Distinct ascending comma-separated integer seeds (2 to 7)
+        required: true
+        type: string
+        default: '20261013,20261014,20261015'
+      repeats:
+        description: G6.1 timer repetitions per seed and operation (3 to 20)
+        required: true
+        type: string
+        default: '5'
+      include_persisted:
+        description: Include the verified GE-02 persisted graph
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend-benchmark-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout selected development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install development dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+          python -m pip check
+
+      - name: Test G6.1 and G6.2 semantics and existing graph adapter service
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q \
+            source/tests/semantic_graph/test_g62_backend_benchmark_campaign.py \
+            source/tests/semantic_graph/test_g6_backend_benchmark.py \
+            source/tests/semantic_graph/test_analysis_engine_service.py \
+            source/tests/semantic_graph/test_traversal.py \
+            --junitxml=reports/g6-2-targeted-tests.xml
+
+      - name: Execute bounded multi-seed benchmark campaign
+        shell: bash
+        env:
+          PYTHONPATH: source
+          BENCH_PROFILE: ${{ inputs.profile }}
+          BENCH_SEEDS: ${{ inputs.seeds }}
+          BENCH_REPEATS: ${{ inputs.repeats }}
+          INCLUDE_PERSISTED: ${{ inputs.include_persisted }}
+        run: |
+          set -euo pipefail
+          args=(run --profile "$BENCH_PROFILE" --seeds "$BENCH_SEEDS" \
+                --repeats "$BENCH_REPEATS" --warmup 2 --repository source \
+                --report reports/g6-2-campaign.json)
+          if [[ "$INCLUDE_PERSISTED" == true ]]; then
+            args+=(--include-persisted)
+          fi
+          python -m audit_engine.semantic_audit.graph.backend.backend_benchmark_campaign "${args[@]}" \
+            > reports/g6-2-execution.json
+
+      - name: Independently reverify every source and campaign aggregate
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          python -m audit_engine.semantic_audit.graph.backend.backend_benchmark_campaign verify \
+            --repository source --report reports/g6-2-campaign.json \
+            > reports/g6-2-verification.json
+          python - <<'PYTHON'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('reports/g6-2-verification.json').read_text())
+          campaign = json.loads(Path('reports/g6-2-campaign.json').read_text())
+          assert result['status'] == 'verified'
+          assert result['parity'] == 'verified'
+          assert result['report_sha256'] == campaign['report_sha256']
+          assert result['run_count'] == len(campaign['seeds'])
+          assert result['case_count'] == len(campaign['runs'][0]['cases'])
+          assert not campaign['authority']['backend_auto_selection_permitted']
+          assert not campaign['authority']['performance_winner_established']
+          assert all(all(c['parity']['status']=='verified' for c in r['cases']) for r in campaign['runs'])
+          print(f"G6.2 verified: {result['run_count']} seeds × {result['case_count']} graph cases")
+          PYTHON
+
+      - name: Upload reproducibility evidence regardless of test outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g6-2-benchmark-campaign-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
