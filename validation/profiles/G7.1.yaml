@@ -1,0 +1,12 @@
+id: G7.1
+name: Original G7 Semantic Reasoning Rules — bounded source-bound structural inference
+# Existing manual dispatcher runs these targets and the full repository suite.
+target_tests:
+  - tests/semantic_graph/test_g71_structural_reasoning.py
+  - tests/semantic_graph/test_g5_owl_ontology.py
+  - tests/semantic_graph/test_g5_owl_constraints.py
+  - tests/semantic_verification/test_rules.py
+  - tests/semantic_graph/test_ge02_persistent_domain_state.py
+regression:
+  enabled: true
+  path: tests/
