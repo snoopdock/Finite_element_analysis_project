@@ -1,0 +1,113 @@
+name: G7.1 Manual Source-Bound Semantic Reasoning
+
+'on':
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing G7.1 implementation
+        required: true
+        type: string
+        default: stage1/section-uuids
+      mode:
+        description: Verified persisted GE graph or candidate scientific graph
+        required: true
+        type: choice
+        options:
+          - persisted
+          - candidate
+        default: persisted
+      knowledge_graph:
+        description: Repository-relative JSON path for candidate mode only
+        required: false
+        type: string
+        default: examples/graph_engine/ge02_demo_graph.json
+
+permissions:
+  contents: read
+
+jobs:
+  semantic-structural-reasoning:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout requested development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install repository dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+          python -m pip check
+
+      - name: Test G7 rules and established scientific graph verification
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q \
+            source/tests/semantic_graph/test_g71_structural_reasoning.py \
+            source/tests/semantic_graph/test_g5_owl_constraints.py \
+            source/tests/semantic_verification/test_rules.py \
+            --junitxml=reports/g7-1-targeted.xml
+
+      - name: Run source-bound structural reasoning
+        shell: bash
+        env:
+          PYTHONPATH: source
+          SOURCE_MODE: ${{ inputs.mode }}
+          GRAPH_PATH: ${{ inputs.knowledge_graph }}
+        run: |
+          set -euo pipefail
+          args=(--repository source --mode "$SOURCE_MODE" --report reports/g7-1-reasoning.json)
+          if [[ "$SOURCE_MODE" == candidate ]]; then
+            args+=(--knowledge-graph "$GRAPH_PATH")
+          fi
+          python -m audit_engine.semantic_audit.graph.structural_reasoning run "${args[@]}" \
+            > reports/g7-1-run.json
+
+      - name: Independently reverify all inferred facts and witnesses
+        shell: bash
+        env:
+          PYTHONPATH: source
+          SOURCE_MODE: ${{ inputs.mode }}
+          GRAPH_PATH: ${{ inputs.knowledge_graph }}
+        run: |
+          set -euo pipefail
+          args=(--repository source --mode "$SOURCE_MODE" --report reports/g7-1-reasoning.json)
+          if [[ "$SOURCE_MODE" == candidate ]]; then
+            args+=(--knowledge-graph "$GRAPH_PATH")
+          fi
+          python -m audit_engine.semantic_audit.graph.structural_reasoning verify "${args[@]}" \
+            > reports/g7-1-verification.json
+          python - <<'PYTHON'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('reports/g7-1-verification.json').read_text())
+          report = json.loads(Path('reports/g7-1-reasoning.json').read_text())
+          assert result['status'] == 'verified'
+          assert result['inference_count'] == report['inference_count']
+          assert result['report_sha256'] == report['report_sha256']
+          assert all(flag is False for flag in report['authority'].values())
+          print(f"G7.1 verified {result['inference_count']} structurally inferred facts")
+          PYTHON
+
+      - name: Upload detached reasoning evidence (including failure outputs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g7-1-structural-reasoning-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
