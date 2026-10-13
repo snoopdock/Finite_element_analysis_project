@@ -1,0 +1,7 @@
+id: G8.1
+name: GB-01 Optional Native Graph Backend Adapters (validation ID only; not a roadmap G8 milestone)
+target_tests:
+  - tests/semantic_graph/test_gb01_optional_native_backends.py
+regression:
+  enabled: true
+  path: tests/
