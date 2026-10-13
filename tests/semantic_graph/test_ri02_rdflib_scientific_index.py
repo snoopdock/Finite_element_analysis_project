@@ -258,7 +258,9 @@ def test_report_digest_and_detached_roundtrip(view,g4_contract,tmp_path,monkeypa
     mod.write_report(dest,source,report,nq)
     assert mod.verify_report(dest,source,mode='candidate',knowledge_graph='example.json',
                              query_id='citations_for_entity',argument='prop:one',limit=50)==report
-    return source,dest,report,nq
+    assert (dest/'scientific-index.nq').read_bytes() == nq
+    assert (dest/'scientific-index-report.json').read_bytes() == canonical(report)
+    assert len(report['results']) == 2
 
 
 def test_detached_report_tampering_rejected(view,g4_contract,tmp_path,monkeypatch):

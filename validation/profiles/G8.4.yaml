@@ -1,0 +1,15 @@
+id: G8.4
+name: RI-03 — RDFLib source-bound provenance, consistency and performance review
+
+target_tests:
+  - tests/semantic_graph/test_ri01_rdflib_query_layer.py
+  - tests/semantic_graph/test_ri02_rdflib_scientific_index.py
+  - tests/semantic_graph/test_ri03_rdflib_provenance_audit.py
+  - tests/semantic_graph/test_g4_rdf_export.py
+  - tests/semantic_graph/test_g4_rdf_interoperability.py
+  - tests/semantic_graph/test_g5_owl_ontology.py
+  - tests/semantic_graph/test_g5_owl_constraints.py
+
+regression:
+  enabled: true
+  path: tests/
