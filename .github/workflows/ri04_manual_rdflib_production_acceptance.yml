@@ -1,0 +1,167 @@
+name: RI-04 Manual RDFLib Production Integration and Cross-Runtime Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing RI-01 through RI-04 and G7.3
+        required: true
+        default: stage1/section-uuids
+        type: string
+      knowledge_graph_path:
+        description: Repository-relative candidate graph (G7.3 fixture is default)
+        required: true
+        default: examples/graph_engine/g72_demo_reparented_graph.json
+        type: string
+      document_path:
+        description: Versioned scientific document JSON
+        required: true
+        default: examples/graph_engine/ge04_demo_document.json
+        type: string
+      inference_bindings_path:
+        description: Explicit G7.3 reasoning-to-document bindings
+        required: true
+        default: examples/graph_engine/g73_demo_inference_section_bindings.json
+        type: string
+      sizes:
+        description: Comma-separated synthetic graph size campaign (4–1024)
+        required: true
+        default: '12,48,128'
+        type: string
+      seeds:
+        description: Comma-separated deterministic nonnegative seeds
+        required: true
+        default: '20261013,20261014'
+        type: string
+      repeats:
+        description: Per-case timing repetitions, 1–5
+        required: true
+        default: '2'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  rdf-assurance:
+    name: Detached RDF assurance and cross-runtime benchmark
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout requested development branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up Python 3.11 using Node 24 action
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install declared dependencies and independent parser
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+          python -m pip install 'pyoxigraph>=0.5,<0.6'
+          python -m pip check
+          python - <<'PY'
+          import rdflib, pyoxigraph
+          from audit_engine.semantic_audit.graph import rdf_export
+          print('RDFLib:', rdflib.__version__)
+          print('Oxigraph:', getattr(pyoxigraph, '__version__', 'version metadata unavailable'))
+          print('G4 exporter:', rdf_export.SCHEMA)
+          PY
+        env:
+          PYTHONPATH: source
+
+      - name: Run native RI-04, GE, G7 and G4 contract tests
+        env:
+          PYTHONPATH: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          timeout 900s python -m pytest -q \
+            source/tests/semantic_graph/test_ri04_production_integration.py \
+            source/tests/semantic_graph/test_ri01_rdflib_query_layer.py \
+            source/tests/semantic_graph/test_ri02_rdflib_scientific_index.py \
+            source/tests/semantic_graph/test_ri03_rdflib_provenance_audit.py \
+            source/tests/semantic_graph/test_g4_rdf_export.py \
+            source/tests/semantic_graph/test_g4_rdf_interoperability.py \
+            source/tests/semantic_graph/test_g73_reasoning_document_review.py \
+            -W error::pytest.PytestReturnNotNoneWarning \
+            --junitxml=reports/ri04-native-tests.xml
+
+      - name: Generate source-bound scientific-document dossier
+        env:
+          PYTHONPATH: source
+          GRAPH: ${{ inputs.knowledge_graph_path }}
+          DOC: ${{ inputs.document_path }}
+          BINDINGS: ${{ inputs.inference_bindings_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 600s python -m audit_engine.semantic_audit.graph.rdflib_production_integration run \
+            --repository source --mode candidate --knowledge-graph "$GRAPH" \
+            --document "$DOC" --inference-bindings "$BINDINGS" \
+            --output-dir reports/scientific-dossier > reports/dossier-build.json
+          timeout 600s python -m audit_engine.semantic_audit.graph.rdflib_production_integration verify \
+            --repository source --mode candidate --knowledge-graph "$GRAPH" \
+            --document "$DOC" --inference-bindings "$BINDINGS" \
+            --output-dir reports/scientific-dossier > reports/dossier-replay.json
+
+      - name: Build and independently verify multi-seed RDF campaign
+        env:
+          PYTHONPATH: source
+          SIZES: ${{ inputs.sizes }}
+          SEEDS: ${{ inputs.seeds }}
+          REPEATS: ${{ inputs.repeats }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REPEATS" =~ ^[1-5]$ ]]
+          timeout 1800s python -m audit_engine.semantic_audit.graph.rdflib_interoperability_campaign run \
+            --report reports/ri04-campaign.json --sizes "$SIZES" --seeds "$SEEDS" \
+            --repeats "$REPEATS" > reports/campaign-build.json
+          timeout 1800s python -m audit_engine.semantic_audit.graph.rdflib_interoperability_campaign verify \
+            --report reports/ri04-campaign.json > reports/campaign-replay.json
+
+      - name: Detached integrity and no-approval acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          root=Path('reports')
+          def sha(data):return hashlib.sha256(data).hexdigest()
+          for location in ('scientific-dossier/ri04-dossier.json','ri04-campaign.json'):
+              path=root/location
+              data=json.loads(path.read_bytes())
+              old=data.pop('report_sha256')
+              raw=json.dumps(data,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()+b"\n"
+              assert sha(raw)==old, location
+              assert data['authority']['automatic_approval_permitted'] is False
+              assert data['authority']['authoritative_graph_mutation_permitted'] is False
+          dossier=json.loads((root/'scientific-dossier/ri04-dossier.json').read_bytes())
+          nq=(root/'scientific-dossier/ri04-source-dataset.nq').read_bytes()
+          assert sha(nq)==dossier['ri02_nquads_sha256']
+          assert dossier['sections'] and dossier['status']=='human_review_required'
+          campaign=json.loads((root/'ri04-campaign.json').read_bytes())
+          assert campaign['case_count']>=4
+          assert all(c['cross_parser']['independently_verified'] for c in campaign['cases'])
+          assert all(c['index_status']=='consistent' for c in campaign['cases'])
+          print('RI-04 independent parser parity, cross-layer review, source hashes and authority: PASS')
+          PY
+
+      - name: Upload acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ri04-rdflib-production-acceptance
+          path: reports/
+          if-no-files-found: error
+          retention-days: 30
