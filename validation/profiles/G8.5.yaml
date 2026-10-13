@@ -1,0 +1,15 @@
+id: G8.5
+name: RI-04 — Integrated RDFLib Production Assurance (cross-layer dossier, Oxigraph, scaling, security)
+
+target_tests:
+  - tests/semantic_graph/test_ri04_production_integration.py
+  - tests/semantic_graph/test_ri01_rdflib_query_layer.py
+  - tests/semantic_graph/test_ri02_rdflib_scientific_index.py
+  - tests/semantic_graph/test_ri03_rdflib_provenance_audit.py
+  - tests/semantic_graph/test_ge01_domain_integration.py
+  - tests/semantic_graph/test_g4_rdf_export.py
+  - tests/semantic_graph/test_g4_rdf_interoperability.py
+  - tests/semantic_graph/test_g73_reasoning_document_review.py
+regression:
+  enabled: true
+  path: tests/
