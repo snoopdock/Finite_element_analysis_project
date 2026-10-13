@@ -1,0 +1,153 @@
+name: RI-01 Manual RDFLib Dataset and SPARQL Catalog Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Development branch containing validated GE, G4 and G5 components
+        required: true
+        default: stage1/section-uuids
+        type: string
+      source_mode:
+        description: Source for RDF view (read-only)
+        required: true
+        type: choice
+        default: persisted
+        options:
+          - persisted
+          - candidate
+      knowledge_graph_path:
+        description: Repository-relative graph JSON (candidate mode only)
+        required: true
+        default: examples/graph_engine/ge02_demo_graph.json
+        type: string
+      query:
+        description: Predefined safe SPARQL catalog query
+        required: true
+        type: choice
+        default: edge_occurrences_by_relation
+        options:
+          - nodes_by_type
+          - nodes_by_field
+          - edge_occurrences_by_relation
+      argument:
+        description: E.g. HAS_CONCEPT, ScientificConcept, or name
+        required: true
+        type: string
+        default: HAS_CONCEPT
+
+permissions:
+  contents: read
+
+jobs:
+  rdflib-query:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout development branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: source
+          persist-credentials: false
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install runtime and test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r source/requirements.txt
+
+      - name: Run source-bound RDF and query integration tests
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q \
+            source/tests/semantic_graph/test_ri01_rdflib_query_layer.py \
+            source/tests/semantic_graph/test_g4_rdf_export.py \
+            source/tests/semantic_graph/test_g4_rdf_interoperability.py \
+            --junitxml=reports/ri01-g4-tests.xml
+
+      - name: Build detached named dataset and fixed SPARQL results
+        shell: bash
+        env:
+          PYTHONPATH: source
+          SOURCE_MODE: ${{ inputs.source_mode }}
+          KNOWLEDGE_GRAPH_PATH: ${{ inputs.knowledge_graph_path }}
+          QUERY_ID: ${{ inputs.query }}
+          QUERY_ARG: ${{ inputs.argument }}
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          if [[ "$SOURCE_MODE" == candidate ]]; then
+            python -m audit_engine.semantic_audit.graph.rdflib_query_layer \
+              --repository source --mode candidate \
+              --knowledge-graph "$KNOWLEDGE_GRAPH_PATH" \
+              --query "$QUERY_ID" --argument "$QUERY_ARG" \
+              --output-dir reports/rdf-query-view > reports/build-stdout.json
+          else
+            python -m audit_engine.semantic_audit.graph.rdflib_query_layer \
+              --repository source --mode persisted \
+              --query "$QUERY_ID" --argument "$QUERY_ARG" \
+              --output-dir reports/rdf-query-view > reports/build-stdout.json
+          fi
+
+      - name: Replay from verified source and independently parse N-Quads
+        shell: bash
+        env:
+          PYTHONPATH: source
+          SOURCE_MODE: ${{ inputs.source_mode }}
+          KNOWLEDGE_GRAPH_PATH: ${{ inputs.knowledge_graph_path }}
+          QUERY_ID: ${{ inputs.query }}
+          QUERY_ARG: ${{ inputs.argument }}
+        run: |
+          set -euo pipefail
+          if [[ "$SOURCE_MODE" == candidate ]]; then
+            python -m audit_engine.semantic_audit.graph.rdflib_query_layer \
+              --repository source --mode candidate \
+              --knowledge-graph "$KNOWLEDGE_GRAPH_PATH" \
+              --query "$QUERY_ID" --argument "$QUERY_ARG" \
+              --output-dir reports/rdf-query-view --verify > reports/verify-stdout.json
+          else
+            python -m audit_engine.semantic_audit.graph.rdflib_query_layer \
+              --repository source --mode persisted \
+              --query "$QUERY_ID" --argument "$QUERY_ARG" \
+              --output-dir reports/rdf-query-view --verify > reports/verify-stdout.json
+          fi
+
+      - name: Check report authority flags and report digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path('reports/rdf-query-view/rdf-query-report.json')
+          obj=json.loads(p.read_bytes())
+          digest=obj.pop('report_sha256')
+          raw=json.dumps(obj,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()+b'\n'
+          assert digest == hashlib.sha256(raw).hexdigest()
+          assert obj['g4_source_triples_preserved'] is True
+          assert obj['parallel_edge_occurrences_preserved'] is True
+          for k in ('automatic_approval_permitted','authoritative_mutation_permitted',
+                    'scientific_truth_established','semantic_entailment_verified',
+                    'arbitrary_sparql_permitted'):
+              assert obj[k] is False, k
+          print('RI-01 dataset, bounded SPARQL query and authority checks: PASS')
+          PY
+
+      - name: Upload detached evidence, including failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ri01-rdflib-query-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
