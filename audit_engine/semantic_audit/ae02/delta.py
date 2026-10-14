@@ -33,7 +33,7 @@ def _included(g) -> dict[str, str]:
 
 def _dependencies(g) -> dict[str, dict]:
     # Import identity is a source occurrence, not a dependency string.
-    return {i['id']: {'file': i['file'], 'line': i['line'], 'column': i['column'],
+    return {i['id']: {'id': i['id'], 'file': i['file'], 'line': i['line'], 'column': i['column'],
                       'module': i['module'], 'target': i['target'],
                       'context': i['context'], 'alias': i['alias'], 'status': i['status']}
             for i in g.facts['imports'] if i['status'] == 'internal'}
