@@ -1,10 +1,10 @@
-"""AE-02: Evidence-driven audit evolution and change lifecycle."""
-from .snapshots import AuditSnapshot, create_snapshot
+"""AE-02: read-only, independently verified AE-01 audit evolution."""
+from .service import compare_generations
+from .snapshots import AuditSnapshot, VerifiedGeneration, load_generation
 from .delta import AuditDelta, compare_snapshots
-from .lifecycle import FindingLifecycleManager
-from .coverage import CoverageMatrix, CoverageStatus
+from .coverage import CoverageEntry, CoverageMatrix, CoverageStatus, from_generation
+from .lifecycle import FindingLifecycleManager, reconcile_findings
 
-__all__ = [
-    "AuditSnapshot","create_snapshot","AuditDelta","compare_snapshots",
-    "FindingLifecycleManager","CoverageMatrix","CoverageStatus",
-]
+__all__ = ['compare_generations', 'AuditSnapshot', 'VerifiedGeneration', 'load_generation',
+           'AuditDelta', 'compare_snapshots', 'CoverageEntry', 'CoverageMatrix',
+           'CoverageStatus', 'from_generation', 'FindingLifecycleManager', 'reconcile_findings']

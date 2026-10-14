@@ -1,0 +1,12 @@
+id: G9.2
+name: AE-02 Verified Audit Evolution and Evidence Lifecycle
+# Transport profile identifier only; audit milestone remains AE-02.
+target_tests:
+  - tests/semantic_audit/test_ae02_evolution.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_graph_evolution/test_delta.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/
