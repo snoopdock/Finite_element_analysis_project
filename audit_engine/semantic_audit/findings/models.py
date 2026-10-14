@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Mapping
 
+from audit_engine.semantic_audit.verification.immutable_payload import freeze, thaw
+
 
 AUDIT_FINDING_SCHEMA_VERSION = "semantic_audit_finding/v1"
 
@@ -36,6 +38,9 @@ class AuditFinding:
     metadata: Mapping[str, Any] = field(default_factory=dict)
     schema_version: str = AUDIT_FINDING_SCHEMA_VERSION
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "metadata", freeze(self.metadata))
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
@@ -51,5 +56,5 @@ class AuditFinding:
             "graph_fingerprint": self.graph_fingerprint,
             "semantic_context_fingerprint": self.semantic_context_fingerprint,
             "lifecycle_status": self.lifecycle_status.value,
-            "metadata": dict(self.metadata),
+            "metadata": thaw(self.metadata),
         }

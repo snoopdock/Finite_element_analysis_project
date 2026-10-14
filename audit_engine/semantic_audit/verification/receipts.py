@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from types import MappingProxyType
+from .immutable_payload import freeze, thaw
 from typing import Any, Mapping
 
 from audit_engine.semantic_audit.graph.analysis.identity import deterministic_id
@@ -34,7 +34,7 @@ class VerificationReceipt:
     schema_version: str = VERIFICATION_RECEIPT_SCHEMA_VERSION
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "details", MappingProxyType(dict(self.details)))
+        object.__setattr__(self, "details", freeze(self.details))
 
     @classmethod
     def seal(
@@ -101,6 +101,6 @@ class VerificationReceipt:
             "evidence_ids": list(self.evidence_ids),
             "graph_fingerprint": self.graph_fingerprint,
             "semantic_context_fingerprint": self.semantic_context_fingerprint,
-            "details": dict(self.details),
+            "details": thaw(self.details),
             "error": self.error,
         }

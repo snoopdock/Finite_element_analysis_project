@@ -1,0 +1,13 @@
+id: G9.1
+name: AE-01 Verified Python Source Model and Architecture Audit
+# G9.1 is a transport identifier compatible with the existing G-number profile schema.
+# Scientific/implementation milestone remains AE-01, not a new G-series graph phase.
+target_tests:
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_graph/test_path_analysis.py
+regression:
+  enabled: true
+  path: tests/
