@@ -1,0 +1,16 @@
+id: G9.4
+name: AE-03 Evidence-Bound Test Oracle and Mutation Effectiveness
+# Manual-only dispatcher validation against stage1/section-uuids.
+# Outcome tests run known-positive and known-negative fixtures in scratch checkouts.
+# A passing profile is NOT a full-repository mutation-quality certification.
+target_tests:
+  - tests/semantic_audit/test_ae03_mutation.py
+  - tests/semantic_audit/test_ae03_release.py
+  - tests/semantic_audit/test_ae021_impact.py
+  - tests/semantic_audit/test_ae02_evolution.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/
