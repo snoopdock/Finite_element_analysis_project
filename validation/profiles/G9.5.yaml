@@ -1,0 +1,18 @@
+id: G9.5
+name: AE-04 Evidence-Bound Audit Campaign and Assurance Decision
+# Selected tests exercise sealed generation verification, AE-02/2.1 rederivation,
+# AE-03 outcome replay, conservative decision gates, and release integrity.
+# Manual-only: invoked through the existing dispatcher on main.
+target_tests:
+  - tests/semantic_audit/test_ae04_campaign.py
+  - tests/semantic_audit/test_ae04_release.py
+  - tests/semantic_audit/test_ae03_mutation.py
+  - tests/semantic_audit/test_ae03_release.py
+  - tests/semantic_audit/test_ae021_impact.py
+  - tests/semantic_audit/test_ae02_evolution.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/
