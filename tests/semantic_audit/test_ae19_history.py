@@ -38,6 +38,8 @@ def test_two_real_uploaded_outcome_references_are_byte_pinned():
     assert labels['cases'][FAILED]['final']=='failed'
     assert labels['cases'][PASSED]['final']=='passed'
     assert labels['cases'][FAILED]['published'] is True  # failure evidence publication != success
+    assert labels['cases'][FAILED]['catalog_verified'] is False  # catalog requires passed outcome
+    assert labels['cases'][PASSED]['catalog_verified'] is True
 
 
 def test_parser_separates_failed_then_corrected_success():
@@ -47,7 +49,7 @@ def test_parser_separates_failed_then_corrected_success():
     assert (bad['targeted'],bad['regression'],bad['final'],bad['detached'])==('failed',)*4
     assert (good['targeted'],good['regression'],good['final'],good['detached'])==('passed',)*4
     assert bad['bundle_sha256']!=good['bundle_sha256']
-    assert bad['published'] and bad['catalog_verified']
+    assert bad['published'] and not bad['catalog_verified']
     assert good['published'] and good['catalog_verified']
 
 
@@ -61,6 +63,9 @@ def test_historical_corpus_reuses_AE16_and_preserves_failed_run_incompleteness()
     cases={x['id']:x for x in report['cases']}
     assert cases[FAILED]['ae16_assurance']=='incomplete_or_inconsistent'
     assert cases[FAILED]['ae16_issue_count']>=1
+    assert cases[FAILED]['observed']['published'] is True
+    assert cases[FAILED]['observed']['catalog_verified'] is False
+    assert cases[FAILED]['exact_manual_label_match'] is True
     assert not cases[FAILED]['is_complete_successful_supplied_record']
     assert cases[PASSED]['ae16_assurance']=='consistent_declared_observations_unattested'
     assert cases[PASSED]['is_complete_successful_supplied_record']
@@ -100,6 +105,21 @@ def test_valid_rebinding_does_not_force_false_concordance(tmp_path):
     p.write_bytes(p.read_bytes().replace(b'targeted: passed (exit=0)',b'targeted: failed (exit=1)'))
     _rebind(corpus,relative)
     assert evaluate_casebook(corpus)['candidate_gate']=='fail_historical_reference'
+
+
+def test_false_catalog_success_reference_is_rejected_even_if_rebound(tmp_path):
+    corpus=_clone(tmp_path)
+    p=corpus/'labels.json'
+    obj=json.loads(p.read_bytes())
+    obj['cases'][FAILED]['catalog_verified']=True
+    p.write_bytes(canonical(obj))
+    _rebind(corpus,Path('labels.json'))
+    report=evaluate_casebook(corpus)
+    assert report['candidate_gate']=='fail_historical_reference'
+    failed=next(c for c in report['cases'] if c['id']==FAILED)
+    assert failed['comparison']['catalog_verified'] is False
+    assert failed['observed']['published'] is True
+    assert failed['observed']['catalog_verified'] is False
 
 
 def test_missing_result_is_unknown_not_silently_pass(tmp_path):
