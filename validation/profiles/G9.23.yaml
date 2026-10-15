@@ -1,0 +1,21 @@
+id: G9.23
+name: AE-21 Externally Motivated Behavioral Defect Pilot and Scope-Separated Detection
+# Manual dispatcher only. Executes EXACT, SHA-256-pinned trusted fixtures.
+# The evaluator is NOT permitted to run arbitrary GitHub checkout code.
+target_tests:
+  - tests/semantic_audit/test_ae21_external_pilot.py
+  - tests/semantic_audit/test_ae20_historical_oracles.py
+  - tests/semantic_audit/test_ae20_behavioral_oracles.py
+  - tests/semantic_audit/test_ae19_history.py
+  - tests/semantic_audit/test_ae18_effectiveness.py
+  - tests/semantic_audit/test_ae17_investigation.py
+  - tests/semantic_audit/test_ae16_operations.py
+  - tests/semantic_audit/test_ae15_flow.py
+  - tests/semantic_audit/test_ae14_lexical_semantics.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/
