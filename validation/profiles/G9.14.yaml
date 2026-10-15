@@ -1,0 +1,17 @@
+id: G9.14
+name: AE-13 D1-D3 Compatibility, Relational Evidence, and Cost Study
+# Manual-only dispatcher on main, stage1/section-uuids target.
+target_tests:
+  - tests/semantic_audit/test_ae13_legacy_adapter.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/semantic_audit/test_ae13_benchmarks.py
+  - tests/semantic_audit/test_ae13_release.py
+  - tests/semantic_audit/test_ae12_code_failures.py
+  - tests/semantic_audit/test_ae09_investigation.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+  - tests/semantic_graph/test_dependency_analysis.py
+regression:
+  enabled: true
+  path: tests/
