@@ -96,6 +96,11 @@ class DomainRuleExecutor:
                 reason="semantic_context_mismatch",
             )
 
+        # Protected finding path: verify exact graph membership and G3 witness
+        # provenance before rule matching. This is conservative, not an
+        # assertion that graph-based facts establish Python execution.
+        from audit_engine.semantic_audit.ae13.bindings import admit_analysis
+        admit_analysis(result, graph=graph)
         obligations: list[VerificationObligation] = []
         if rule.selector.scope is DomainRuleScope.OBSERVATION:
             for observation in result.observations:
@@ -143,7 +148,8 @@ class DomainRuleExecutor:
             receipts.append(receipt)
             evaluations.append(evaluation)
             if evaluation.disposition is RuleDisposition.TRIGGERED:
-                findings.append(FindingFactory.create(rule.policy, evaluation, receipt))
+                findings.append(FindingFactory.create_verified(
+                    rule.policy, evaluation, receipt, obligation, result, semantic_graph=graph))
 
         return DomainRuleExecutionResult(
             rule_id=rule.policy.rule_id,

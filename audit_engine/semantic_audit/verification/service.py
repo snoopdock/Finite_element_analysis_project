@@ -52,4 +52,12 @@ class VerificationService:
             raise ValueError("Selected verifier is not permitted by the obligation.")
 
         attempt = verifier.verify(obligation, context)
-        return VerificationReceipt.seal(obligation, attempt)
+        from .integrity import validate_attempt_identity, validate_receipt_identity
+        validate_attempt_identity(attempt, obligation, verifier.descriptor)
+        if semantic_graph is not None:
+            from audit_engine.semantic_audit.graph.analysis.identity import graph_fingerprint
+            if graph_fingerprint(semantic_graph) != obligation.graph_fingerprint:
+                raise ValueError('Source graph changed during registered verifier execution')
+        receipt = VerificationReceipt.seal(obligation, attempt)
+        validate_receipt_identity(receipt, obligation)
+        return receipt

@@ -29,6 +29,8 @@ class RuleEvaluator:
         obligation: VerificationObligation,
         receipt: VerificationReceipt,
     ) -> RuleEvaluationResult:
+        from audit_engine.semantic_audit.verification.integrity import validate_receipt_identity
+        validate_receipt_identity(receipt, obligation)
         if receipt.obligation_id != obligation.obligation_id:
             raise ValueError("Receipt and obligation do not match.")
         if rule.obligation_type != obligation.obligation_type:

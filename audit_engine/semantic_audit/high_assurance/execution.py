@@ -63,17 +63,34 @@ class ControlledHighAssuranceExecutor:
         *,
         adapter_id: str,
     ) -> HighAssuranceExecutionRecord:
-        request = self.prepare_request(obligation, context, adapter_id=adapter_id)
+        # Policy prohibitions must short-circuit BEFORE authenticated analysis
+        # admission: a forbidden network/side-effecting adapter must never be
+        # given a chance to execute, even if an incoming obligation is stale.
+        # Allowed requests still pass the complete identity/context binding.
         adapter = self.registry.require(adapter_id)
         descriptor = adapter.descriptor
-        denial = self.policy.denial_reason(request, descriptor)
+        if obligation.obligation_type not in descriptor.supported_obligation_types:
+            raise ValueError('Unsupported high-assurance obligation type')
+        candidate = HighAssuranceRequest.create(
+            obligation_id=obligation.obligation_id,
+            adapter_id=adapter_id,
+            mechanism=descriptor.mechanism,
+            graph_fingerprint=obligation.graph_fingerprint,
+            semantic_context_fingerprint=obligation.semantic_context_fingerprint,
+            timeout_ms=int(obligation.parameters.get('timeout_ms', self.policy.max_timeout_ms)),
+            parameters=obligation.parameters,
+        )
+        denial = self.policy.denial_reason(candidate, descriptor)
         if denial:
             return HighAssuranceExecutionRecord.create(
-                request=request,
+                request=candidate,
                 policy_version=self.policy.policy_version,
                 status=HighAssuranceExecutionStatus.DENIED,
                 denial_reason=denial,
             )
+        request = self.prepare_request(obligation, context, adapter_id=adapter_id)
+        if request.request_id != candidate.request_id:
+            raise ValueError('High-assurance request changed after policy admission')
         try:
             result = adapter.execute(request, context)
         except Exception as exc:  # adapter boundary converts failures into explicit execution state

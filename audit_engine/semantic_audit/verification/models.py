@@ -143,6 +143,8 @@ class VerificationContext:
     semantic_graph: SemanticGraph | None = None
 
     def validate_obligation_binding(self, obligation: VerificationObligation) -> None:
+        from .integrity import validate_obligation_identity, validate_selected_associations
+        validate_obligation_identity(obligation)
         result = self.analysis_result
         if obligation.source_analysis_id != result.analysis_id:
             raise ValueError("Verification obligation is bound to a different analysis result.")
@@ -156,6 +158,7 @@ class VerificationContext:
             raise ValueError("Verification obligation references unavailable observations.")
         if not set(obligation.evidence_ids).issubset(evidence_ids):
             raise ValueError("Verification obligation references unavailable evidence.")
+        validate_selected_associations(obligation, result)
         if self.semantic_graph is not None:
             actual_graph_fingerprint = graph_fingerprint(self.semantic_graph)
             if actual_graph_fingerprint != result.graph_fingerprint:
