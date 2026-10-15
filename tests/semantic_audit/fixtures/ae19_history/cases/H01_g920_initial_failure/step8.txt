@@ -1,0 +1,25 @@
+﻿2026-10-15T21:27:53.3438930Z ##[group]Run if [ -f validation-artifacts/validation_report.json ]; then
+2026-10-15T21:27:53.3439362Z [36;1mif [ -f validation-artifacts/validation_report.json ]; then[0m
+2026-10-15T21:27:53.3439748Z [36;1m  python validation-engine/tools/verify_validation_evidence.py \[0m
+2026-10-15T21:27:53.3440074Z [36;1m    --evidence-dir validation-artifacts \[0m
+2026-10-15T21:27:53.3440319Z [36;1m    --repository source \[0m
+2026-10-15T21:27:53.3440552Z [36;1m    --engine-repository validation-engine \[0m
+2026-10-15T21:27:53.3440812Z [36;1m    --expected-branch "$EXPECTED_BRANCH" \[0m
+2026-10-15T21:27:53.3441069Z [36;1m    --expected-run-id "$GITHUB_RUN_ID" \[0m
+2026-10-15T21:27:53.3441337Z [36;1m    --expected-run-attempt "$GITHUB_RUN_ATTEMPT" \[0m
+2026-10-15T21:27:53.3441595Z [36;1m    --require-engine-tests[0m
+2026-10-15T21:27:53.3441790Z [36;1melse[0m
+2026-10-15T21:27:53.3442017Z [36;1m  echo 'No evidence report produced; earlier job step failed.'[0m
+2026-10-15T21:27:53.3442286Z [36;1m  exit 1[0m
+2026-10-15T21:27:53.3442474Z [36;1mfi[0m
+2026-10-15T21:27:53.3499643Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-15T21:27:53.3500123Z env:
+2026-10-15T21:27:53.3500343Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.3500668Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+2026-10-15T21:27:53.3500992Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.3501286Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.3501572Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.3501856Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+2026-10-15T21:27:53.3502123Z   EXPECTED_BRANCH: stage1/section-uuids
+2026-10-15T21:27:53.3502328Z ##[endgroup]
+2026-10-15T21:27:53.4142564Z Evidence verified (integrity + outcomes): failed, profile=G9.20

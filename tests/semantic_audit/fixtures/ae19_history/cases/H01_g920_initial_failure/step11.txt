@@ -1,0 +1,15 @@
+﻿2026-10-15T21:27:53.7023567Z ##[group]Run set -euo pipefail
+2026-10-15T21:27:53.7023823Z [36;1mset -euo pipefail[0m
+2026-10-15T21:27:53.7024103Z [36;1mpython validation-engine/tools/validation_catalog.py verify \[0m
+2026-10-15T21:27:53.7024436Z [36;1m  --evidence-dir validation-artifacts[0m
+2026-10-15T21:27:53.7084529Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-15T21:27:53.7084830Z env:
+2026-10-15T21:27:53.7085055Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.7085636Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+2026-10-15T21:27:53.7086152Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.7086456Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.7086748Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.7087050Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+2026-10-15T21:27:53.7087310Z ##[endgroup]
+2026-10-15T21:27:53.7472754Z Catalog verification failed: Catalog publication requires passed verification
+2026-10-15T21:27:53.7524717Z ##[error]Process completed with exit code 1.

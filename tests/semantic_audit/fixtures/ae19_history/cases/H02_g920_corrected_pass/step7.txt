@@ -1,0 +1,28 @@
+﻿2026-10-15T21:39:28.7833144Z ##[group]Run set -euo pipefail
+2026-10-15T21:39:28.7833491Z [36;1mset -euo pipefail[0m
+2026-10-15T21:39:28.7833851Z [36;1mpython validation-engine/tools/validation_registry_runner.py \[0m
+2026-10-15T21:39:28.7834254Z [36;1m  --repository source \[0m
+2026-10-15T21:39:28.7834533Z [36;1m  --profile "$TARGET_PROFILE" \[0m
+2026-10-15T21:39:28.7835135Z [36;1m  --branch "$TARGET_BRANCH" \[0m
+2026-10-15T21:39:28.7835457Z [36;1m  --regression-mode "$REGRESSION_MODE" \[0m
+2026-10-15T21:39:28.7835780Z [36;1m  --require-provenance \[0m
+2026-10-15T21:39:28.7836168Z [36;1m  --engine-unit-log validation-artifacts/engine-unit-tests.log \[0m
+2026-10-15T21:39:28.7836584Z [36;1m  --evidence-dir validation-artifacts[0m
+2026-10-15T21:39:28.7899397Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-15T21:39:28.7899759Z env:
+2026-10-15T21:39:28.7900030Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:39:28.7900465Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+2026-10-15T21:39:28.7900927Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:39:28.7901308Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:39:28.7901699Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:39:28.7902087Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+2026-10-15T21:39:28.7902434Z   TARGET_BRANCH: stage1/section-uuids
+2026-10-15T21:39:28.7902703Z   TARGET_PROFILE: G9.20
+2026-10-15T21:39:28.7902939Z   REGRESSION_MODE: profile
+2026-10-15T21:39:28.7903166Z ##[endgroup]
+2026-10-15T21:39:28.9199670Z Selected profile: G9.20 (G9.20.yaml)
+2026-10-15T21:39:39.1560870Z targeted: passed (exit=0)
+2026-10-15T21:41:19.3128086Z regression: passed (exit=0)
+2026-10-15T21:41:19.3196646Z Final validation status: passed
+2026-10-15T21:41:19.3200166Z Evidence SHA-256: 42e9f1fdf3d39e0548024321ddad106ead1b0fa2ebf4770db244312345bc47e3
+2026-10-15T21:41:19.3201229Z Report: /home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/validation-artifacts/validation_report.json

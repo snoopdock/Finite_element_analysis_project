@@ -1,0 +1,14 @@
+﻿2026-10-15T21:41:19.6613944Z ##[group]Run set -euo pipefail
+2026-10-15T21:41:19.6614291Z [36;1mset -euo pipefail[0m
+2026-10-15T21:41:19.6614660Z [36;1mpython validation-engine/tools/validation_catalog.py verify \[0m
+2026-10-15T21:41:19.6615560Z [36;1m  --evidence-dir validation-artifacts[0m
+2026-10-15T21:41:19.6677287Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-15T21:41:19.6677634Z env:
+2026-10-15T21:41:19.6677907Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:41:19.6678351Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+2026-10-15T21:41:19.6678804Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:41:19.6679226Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:41:19.6679639Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:41:19.6680046Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+2026-10-15T21:41:19.6680386Z ##[endgroup]
+2026-10-15T21:41:19.7149267Z Catalog verified: 333ad281ffbbb762804bd4deea2d1bae45e37ea78853e56b0053d2b72453e301

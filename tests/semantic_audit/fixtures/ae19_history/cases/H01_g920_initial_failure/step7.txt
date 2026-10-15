@@ -1,0 +1,354 @@
+﻿2026-10-15T21:25:32.9183739Z ##[group]Run set -euo pipefail
+2026-10-15T21:25:32.9184006Z [36;1mset -euo pipefail[0m
+2026-10-15T21:25:32.9184285Z [36;1mpython validation-engine/tools/validation_registry_runner.py \[0m
+2026-10-15T21:25:32.9184594Z [36;1m  --repository source \[0m
+2026-10-15T21:25:32.9184825Z [36;1m  --profile "$TARGET_PROFILE" \[0m
+2026-10-15T21:25:32.9185059Z [36;1m  --branch "$TARGET_BRANCH" \[0m
+2026-10-15T21:25:32.9185296Z [36;1m  --regression-mode "$REGRESSION_MODE" \[0m
+2026-10-15T21:25:32.9185541Z [36;1m  --require-provenance \[0m
+2026-10-15T21:25:32.9186001Z [36;1m  --engine-unit-log validation-artifacts/engine-unit-tests.log \[0m
+2026-10-15T21:25:32.9186345Z [36;1m  --evidence-dir validation-artifacts[0m
+2026-10-15T21:25:32.9242623Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-15T21:25:32.9242899Z env:
+2026-10-15T21:25:32.9243110Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:25:32.9243442Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+2026-10-15T21:25:32.9243803Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:25:32.9244097Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:25:32.9244388Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:25:32.9244678Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+2026-10-15T21:25:32.9244944Z   TARGET_BRANCH: stage1/section-uuids
+2026-10-15T21:25:32.9245156Z   TARGET_PROFILE: G9.20
+2026-10-15T21:25:32.9245339Z   REGRESSION_MODE: profile
+2026-10-15T21:25:32.9245521Z ##[endgroup]
+2026-10-15T21:25:33.0281491Z Selected profile: G9.20 (G9.20.yaml)
+2026-10-15T21:25:43.3640221Z targeted: failed (exit=1)
+2026-10-15T21:25:43.3640786Z .FF.....FF.............................................................. [ 25%]
+2026-10-15T21:25:43.3641381Z ........................................................................ [ 51%]
+2026-10-15T21:25:43.3641816Z ........................................................................ [ 76%]
+2026-10-15T21:25:43.3642281Z ..................................................................       [100%]
+2026-10-15T21:25:43.3642575Z =================================== FAILURES ===================================
+2026-10-15T21:25:43.3642929Z _____________ test_complete_bounded_reference_evaluation_is_exact ______________
+2026-10-15T21:25:43.3643294Z 
+2026-10-15T21:25:43.3643472Z     def test_complete_bounded_reference_evaluation_is_exact():
+2026-10-15T21:25:43.3643896Z >       result=evaluate_corpus(CORPUS)
+2026-10-15T21:25:43.3644196Z                ^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3644406Z 
+2026-10-15T21:25:43.3644591Z tests/semantic_audit/test_ae18_effectiveness.py:25: 
+2026-10-15T21:25:43.3645041Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:25:43.3646392Z audit_engine/semantic_audit/ae18/evaluate.py:140: in evaluate_corpus
+2026-10-15T21:25:43.3646952Z     source=publish_observation(declaration,evidence,ae16_path)
+2026-10-15T21:25:43.3647407Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3647899Z audit_engine/semantic_audit/ae16/publication.py:36: in publish_observation
+2026-10-15T21:25:43.3648543Z     report,graph=build_report(declaration,evidence_root,ae01_output=ae01_output,
+2026-10-15T21:25:43.3649101Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:25:43.3649401Z 
+2026-10-15T21:25:43.3650257Z declaration_file = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/declaration.json')
+2026-10-15T21:25:43.3651969Z evidence_root = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/evidence')
+2026-10-15T21:25:43.3652770Z ae01_output = None, source_root = None, max_ae09_candidates = 100
+2026-10-15T21:25:43.3652991Z 
+2026-10-15T21:25:43.3653417Z     def build_report(declaration_file: Path | str,evidence_root:Path | str,*,
+2026-10-15T21:25:43.3653806Z                      ae01_output:Path | str | None=None,source_root:Path | str | None=None,
+2026-10-15T21:25:43.3654196Z                      max_ae09_candidates:int=100) -> tuple[dict,dict]:
+2026-10-15T21:25:43.3654556Z         """Replayable observations and graph; no code execution or verified findings."""
+2026-10-15T21:25:43.3654909Z         evidence_root=Path(os.path.abspath(evidence_root))
+2026-10-15T21:25:43.3655175Z         _no_symlink_components(evidence_root)
+2026-10-15T21:25:43.3655505Z >       if not evidence_root.is_dir(): raise ValueError('Evidence root must be a directory')
+2026-10-15T21:25:43.3656016Z                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3656363Z E       ValueError: Evidence root must be a directory
+2026-10-15T21:25:43.3656535Z 
+2026-10-15T21:25:43.3656665Z audit_engine/semantic_audit/ae16/operations.py:104: ValueError
+2026-10-15T21:25:43.3657036Z ________ test_published_reference_replays_without_claiming_real_causes _________
+2026-10-15T21:25:43.3657264Z 
+2026-10-15T21:25:43.3657454Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_published_reference_repla0')
+2026-10-15T21:25:43.3657699Z 
+2026-10-15T21:25:43.3657869Z     def test_published_reference_replays_without_claiming_real_causes(tmp_path):
+2026-10-15T21:25:43.3658179Z         output=tmp_path/'out'
+2026-10-15T21:25:43.3658393Z >       first=publish_evaluation(CORPUS,output)
+2026-10-15T21:25:43.3658618Z               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3658757Z 
+2026-10-15T21:25:43.3658865Z tests/semantic_audit/test_ae18_effectiveness.py:43: 
+2026-10-15T21:25:43.3659144Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:25:43.3659487Z audit_engine/semantic_audit/ae18/publication.py:26: in publish_evaluation
+2026-10-15T21:25:43.3659792Z     report=evaluate_corpus(corpus)
+2026-10-15T21:25:43.3659998Z            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3660252Z audit_engine/semantic_audit/ae18/evaluate.py:140: in evaluate_corpus
+2026-10-15T21:25:43.3660582Z     source=publish_observation(declaration,evidence,ae16_path)
+2026-10-15T21:25:43.3660861Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3661169Z audit_engine/semantic_audit/ae16/publication.py:36: in publish_observation
+2026-10-15T21:25:43.3661563Z     report,graph=build_report(declaration,evidence_root,ae01_output=ae01_output,
+2026-10-15T21:25:43.3661906Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:25:43.3662078Z 
+2026-10-15T21:25:43.3662582Z declaration_file = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/declaration.json')
+2026-10-15T21:25:43.3663710Z evidence_root = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/evidence')
+2026-10-15T21:25:43.3664387Z ae01_output = None, source_root = None, max_ae09_candidates = 100
+2026-10-15T21:25:43.3664591Z 
+2026-10-15T21:25:43.3664753Z     def build_report(declaration_file: Path | str,evidence_root:Path | str,*,
+2026-10-15T21:25:43.3665142Z                      ae01_output:Path | str | None=None,source_root:Path | str | None=None,
+2026-10-15T21:25:43.3665489Z                      max_ae09_candidates:int=100) -> tuple[dict,dict]:
+2026-10-15T21:25:43.3666039Z         """Replayable observations and graph; no code execution or verified findings."""
+2026-10-15T21:25:43.3666413Z         evidence_root=Path(os.path.abspath(evidence_root))
+2026-10-15T21:25:43.3666679Z         _no_symlink_components(evidence_root)
+2026-10-15T21:25:43.3667018Z >       if not evidence_root.is_dir(): raise ValueError('Evidence root must be a directory')
+2026-10-15T21:25:43.3667362Z                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3667828Z E       ValueError: Evidence root must be a directory
+2026-10-15T21:25:43.3667993Z 
+2026-10-15T21:25:43.3668130Z audit_engine/semantic_audit/ae16/operations.py:104: ValueError
+2026-10-15T21:25:43.3668475Z __________________ test_reject_tampered_published_evaluation ___________________
+2026-10-15T21:25:43.3668687Z 
+2026-10-15T21:25:43.3668880Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_reject_tampered_published0')
+2026-10-15T21:25:43.3669158Z 
+2026-10-15T21:25:43.3669276Z     def test_reject_tampered_published_evaluation(tmp_path):
+2026-10-15T21:25:43.3669605Z >       output=tmp_path/'out';receipt=publish_evaluation(CORPUS,output)
+2026-10-15T21:25:43.3669917Z                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3670199Z 
+2026-10-15T21:25:43.3670311Z tests/semantic_audit/test_ae18_effectiveness.py:93: 
+2026-10-15T21:25:43.3670593Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:25:43.3670933Z audit_engine/semantic_audit/ae18/publication.py:26: in publish_evaluation
+2026-10-15T21:25:43.3671235Z     report=evaluate_corpus(corpus)
+2026-10-15T21:25:43.3671443Z            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3671713Z audit_engine/semantic_audit/ae18/evaluate.py:140: in evaluate_corpus
+2026-10-15T21:25:43.3672045Z     source=publish_observation(declaration,evidence,ae16_path)
+2026-10-15T21:25:43.3672316Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3672612Z audit_engine/semantic_audit/ae16/publication.py:36: in publish_observation
+2026-10-15T21:25:43.3672997Z     report,graph=build_report(declaration,evidence_root,ae01_output=ae01_output,
+2026-10-15T21:25:43.3673332Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:25:43.3673510Z 
+2026-10-15T21:25:43.3674001Z declaration_file = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/declaration.json')
+2026-10-15T21:25:43.3674999Z evidence_root = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/evidence')
+2026-10-15T21:25:43.3675640Z ae01_output = None, source_root = None, max_ae09_candidates = 100
+2026-10-15T21:25:43.3676040Z 
+2026-10-15T21:25:43.3676215Z     def build_report(declaration_file: Path | str,evidence_root:Path | str,*,
+2026-10-15T21:25:43.3676603Z                      ae01_output:Path | str | None=None,source_root:Path | str | None=None,
+2026-10-15T21:25:43.3676942Z                      max_ae09_candidates:int=100) -> tuple[dict,dict]:
+2026-10-15T21:25:43.3677419Z         """Replayable observations and graph; no code execution or verified findings."""
+2026-10-15T21:25:43.3677783Z         evidence_root=Path(os.path.abspath(evidence_root))
+2026-10-15T21:25:43.3678052Z         _no_symlink_components(evidence_root)
+2026-10-15T21:25:43.3678375Z >       if not evidence_root.is_dir(): raise ValueError('Evidence root must be a directory')
+2026-10-15T21:25:43.3678717Z                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3678996Z E       ValueError: Evidence root must be a directory
+2026-10-15T21:25:43.3679164Z 
+2026-10-15T21:25:43.3679289Z audit_engine/semantic_audit/ae16/operations.py:104: ValueError
+2026-10-15T21:25:43.3679631Z _____________ test_forged_seal_does_not_bypass_identity_or_replay ______________
+2026-10-15T21:25:43.3679854Z 
+2026-10-15T21:25:43.3680042Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_forged_seal_does_not_bypa0')
+2026-10-15T21:25:43.3680283Z 
+2026-10-15T21:25:43.3680433Z     def test_forged_seal_does_not_bypass_identity_or_replay(tmp_path):
+2026-10-15T21:25:43.3680775Z >       output=tmp_path/'out';receipt=publish_evaluation(CORPUS,output)
+2026-10-15T21:25:43.3681176Z                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3681336Z 
+2026-10-15T21:25:43.3681442Z tests/semantic_audit/test_ae18_effectiveness.py:101: 
+2026-10-15T21:25:43.3681717Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:25:43.3682046Z audit_engine/semantic_audit/ae18/publication.py:26: in publish_evaluation
+2026-10-15T21:25:43.3682357Z     report=evaluate_corpus(corpus)
+2026-10-15T21:25:43.3682549Z            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3682798Z audit_engine/semantic_audit/ae18/evaluate.py:140: in evaluate_corpus
+2026-10-15T21:25:43.3683126Z     source=publish_observation(declaration,evidence,ae16_path)
+2026-10-15T21:25:43.3683393Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3683691Z audit_engine/semantic_audit/ae16/publication.py:36: in publish_observation
+2026-10-15T21:25:43.3684069Z     report,graph=build_report(declaration,evidence_root,ae01_output=ae01_output,
+2026-10-15T21:25:43.3684399Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:25:43.3684579Z 
+2026-10-15T21:25:43.3685065Z declaration_file = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/declaration.json')
+2026-10-15T21:25:43.3686312Z evidence_root = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/evidence')
+2026-10-15T21:25:43.3686974Z ae01_output = None, source_root = None, max_ae09_candidates = 100
+2026-10-15T21:25:43.3687173Z 
+2026-10-15T21:25:43.3687332Z     def build_report(declaration_file: Path | str,evidence_root:Path | str,*,
+2026-10-15T21:25:43.3687718Z                      ae01_output:Path | str | None=None,source_root:Path | str | None=None,
+2026-10-15T21:25:43.3688048Z                      max_ae09_candidates:int=100) -> tuple[dict,dict]:
+2026-10-15T21:25:43.3688399Z         """Replayable observations and graph; no code execution or verified findings."""
+2026-10-15T21:25:43.3688760Z         evidence_root=Path(os.path.abspath(evidence_root))
+2026-10-15T21:25:43.3689020Z         _no_symlink_components(evidence_root)
+2026-10-15T21:25:43.3689339Z >       if not evidence_root.is_dir(): raise ValueError('Evidence root must be a directory')
+2026-10-15T21:25:43.3689682Z                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:25:43.3689952Z E       ValueError: Evidence root must be a directory
+2026-10-15T21:25:43.3690119Z 
+2026-10-15T21:25:43.3690249Z audit_engine/semantic_audit/ae16/operations.py:104: ValueError
+2026-10-15T21:25:43.3690545Z =============================== warnings summary ===============================
+2026-10-15T21:25:43.3691063Z tests/semantic_audit/test_ae18_release.py::test_reject_duplicate_member
+2026-10-15T21:25:43.3691829Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/zipfile.py:1606: UserWarning: Duplicate name: 'STAGE1_SECTION_UUIDS/tests/semantic_audit/fixtures/ae18_reference/cases/R11_undeclared_job_dependency/evidence/producer.bin'
+2026-10-15T21:25:43.3692576Z     return self._open_to_write(zinfo, force_zip64=force_zip64)
+2026-10-15T21:25:43.3692765Z 
+2026-10-15T21:25:43.3692905Z tests/semantic_audit/test_ae17_release.py::test_reject_changed_file
+2026-10-15T21:25:43.3693490Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/zipfile.py:1606: UserWarning: Duplicate name: 'STAGE1_SECTION_UUIDS/audit_engine/semantic_audit/ae17/__init__.py'
+2026-10-15T21:25:43.3694046Z     return self._open_to_write(zinfo, force_zip64=force_zip64)
+2026-10-15T21:25:43.3694228Z 
+2026-10-15T21:25:43.3694406Z -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2026-10-15T21:25:43.3694749Z =========================== short test summary info ============================
+2026-10-15T21:25:43.3695307Z FAILED tests/semantic_audit/test_ae18_effectiveness.py::test_complete_bounded_reference_evaluation_is_exact - ValueError: Evidence root must be a directory
+2026-10-15T21:25:43.3696308Z FAILED tests/semantic_audit/test_ae18_effectiveness.py::test_published_reference_replays_without_claiming_real_causes - ValueError: Evidence root must be a directory
+2026-10-15T21:25:43.3697098Z FAILED tests/semantic_audit/test_ae18_effectiveness.py::test_reject_tampered_published_evaluation - ValueError: Evidence root must be a directory
+2026-10-15T21:25:43.3697835Z FAILED tests/semantic_audit/test_ae18_effectiveness.py::test_forged_seal_does_not_bypass_identity_or_replay - ValueError: Evidence root must be a directory
+2026-10-15T21:25:43.3698342Z 4 failed, 278 passed, 2 warnings in 10.09s
+2026-10-15T21:25:43.3698497Z 
+2026-10-15T21:27:53.3192714Z regression: failed (exit=1)
+2026-10-15T21:27:53.3194729Z ^
+2026-10-15T21:27:53.3194902Z 
+2026-10-15T21:27:53.3195088Z tests/semantic_audit/test_ae18_effectiveness.py:43: 
+2026-10-15T21:27:53.3195595Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:27:53.3196313Z audit_engine/semantic_audit/ae18/publication.py:26: in publish_evaluation
+2026-10-15T21:27:53.3196806Z     report=evaluate_corpus(corpus)
+2026-10-15T21:27:53.3197040Z            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:27:53.3197328Z audit_engine/semantic_audit/ae18/evaluate.py:140: in evaluate_corpus
+2026-10-15T21:27:53.3197661Z     source=publish_observation(declaration,evidence,ae16_path)
+2026-10-15T21:27:53.3197932Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:27:53.3198227Z audit_engine/semantic_audit/ae16/publication.py:36: in publish_observation
+2026-10-15T21:27:53.3198622Z     report,graph=build_report(declaration,evidence_root,ae01_output=ae01_output,
+2026-10-15T21:27:53.3198978Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:27:53.3199157Z 
+2026-10-15T21:27:53.3199663Z declaration_file = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/declaration.json')
+2026-10-15T21:27:53.3200690Z evidence_root = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/evidence')
+2026-10-15T21:27:53.3201370Z ae01_output = None, source_root = None, max_ae09_candidates = 100
+2026-10-15T21:27:53.3201570Z 
+2026-10-15T21:27:53.3201739Z     def build_report(declaration_file: Path | str,evidence_root:Path | str,*,
+2026-10-15T21:27:53.3202118Z                      ae01_output:Path | str | None=None,source_root:Path | str | None=None,
+2026-10-15T21:27:53.3202464Z                      max_ae09_candidates:int=100) -> tuple[dict,dict]:
+2026-10-15T21:27:53.3203164Z         """Replayable observations and graph; no code execution or verified findings."""
+2026-10-15T21:27:53.3203519Z         evidence_root=Path(os.path.abspath(evidence_root))
+2026-10-15T21:27:53.3203793Z         _no_symlink_components(evidence_root)
+2026-10-15T21:27:53.3204118Z >       if not evidence_root.is_dir(): raise ValueError('Evidence root must be a directory')
+2026-10-15T21:27:53.3204462Z                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:27:53.3204738Z E       ValueError: Evidence root must be a directory
+2026-10-15T21:27:53.3204908Z 
+2026-10-15T21:27:53.3205046Z audit_engine/semantic_audit/ae16/operations.py:104: ValueError
+2026-10-15T21:27:53.3205394Z __________________ test_reject_tampered_published_evaluation ___________________
+2026-10-15T21:27:53.3205609Z 
+2026-10-15T21:27:53.3205961Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-1/test_reject_tampered_published0')
+2026-10-15T21:27:53.3206371Z 
+2026-10-15T21:27:53.3206499Z     def test_reject_tampered_published_evaluation(tmp_path):
+2026-10-15T21:27:53.3206829Z >       output=tmp_path/'out';receipt=publish_evaluation(CORPUS,output)
+2026-10-15T21:27:53.3207290Z                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:27:53.3207449Z 
+2026-10-15T21:27:53.3207566Z tests/semantic_audit/test_ae18_effectiveness.py:93: 
+2026-10-15T21:27:53.3207846Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:27:53.3208182Z audit_engine/semantic_audit/ae18/publication.py:26: in publish_evaluation
+2026-10-15T21:27:53.3208485Z     report=evaluate_corpus(corpus)
+2026-10-15T21:27:53.3208684Z            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:27:53.3208938Z audit_engine/semantic_audit/ae18/evaluate.py:140: in evaluate_corpus
+2026-10-15T21:27:53.3209272Z     source=publish_observation(declaration,evidence,ae16_path)
+2026-10-15T21:27:53.3209540Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:27:53.3209846Z audit_engine/semantic_audit/ae16/publication.py:36: in publish_observation
+2026-10-15T21:27:53.3210227Z     report,graph=build_report(declaration,evidence_root,ae01_output=ae01_output,
+2026-10-15T21:27:53.3210564Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:27:53.3210740Z 
+2026-10-15T21:27:53.3211250Z declaration_file = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/declaration.json')
+2026-10-15T21:27:53.3212236Z evidence_root = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/evidence')
+2026-10-15T21:27:53.3212874Z ae01_output = None, source_root = None, max_ae09_candidates = 100
+2026-10-15T21:27:53.3213070Z 
+2026-10-15T21:27:53.3213231Z     def build_report(declaration_file: Path | str,evidence_root:Path | str,*,
+2026-10-15T21:27:53.3213610Z                      ae01_output:Path | str | None=None,source_root:Path | str | None=None,
+2026-10-15T21:27:53.3213946Z                      max_ae09_candidates:int=100) -> tuple[dict,dict]:
+2026-10-15T21:27:53.3214299Z         """Replayable observations and graph; no code execution or verified findings."""
+2026-10-15T21:27:53.3214648Z         evidence_root=Path(os.path.abspath(evidence_root))
+2026-10-15T21:27:53.3215025Z         _no_symlink_components(evidence_root)
+2026-10-15T21:27:53.3215462Z >       if not evidence_root.is_dir(): raise ValueError('Evidence root must be a directory')
+2026-10-15T21:27:53.3215975Z                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:27:53.3216500Z E       ValueError: Evidence root must be a directory
+2026-10-15T21:27:53.3216750Z 
+2026-10-15T21:27:53.3216985Z audit_engine/semantic_audit/ae16/operations.py:104: ValueError
+2026-10-15T21:27:53.3217478Z _____________ test_forged_seal_does_not_bypass_identity_or_replay ______________
+2026-10-15T21:27:53.3217860Z 
+2026-10-15T21:27:53.3263695Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-1/test_forged_seal_does_not_bypa0')
+2026-10-15T21:27:53.3264292Z 
+2026-10-15T21:27:53.3264468Z     def test_forged_seal_does_not_bypass_identity_or_replay(tmp_path):
+2026-10-15T21:27:53.3264835Z >       output=tmp_path/'out';receipt=publish_evaluation(CORPUS,output)
+2026-10-15T21:27:53.3265136Z                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:27:53.3265315Z 
+2026-10-15T21:27:53.3265430Z tests/semantic_audit/test_ae18_effectiveness.py:101: 
+2026-10-15T21:27:53.3265717Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:27:53.3266250Z audit_engine/semantic_audit/ae18/publication.py:26: in publish_evaluation
+2026-10-15T21:27:53.3266564Z     report=evaluate_corpus(corpus)
+2026-10-15T21:27:53.3266762Z            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:27:53.3267016Z audit_engine/semantic_audit/ae18/evaluate.py:140: in evaluate_corpus
+2026-10-15T21:27:53.3267365Z     source=publish_observation(declaration,evidence,ae16_path)
+2026-10-15T21:27:53.3267636Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:27:53.3268181Z audit_engine/semantic_audit/ae16/publication.py:36: in publish_observation
+2026-10-15T21:27:53.3268566Z     report,graph=build_report(declaration,evidence_root,ae01_output=ae01_output,
+2026-10-15T21:27:53.3268901Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-15T21:27:53.3269077Z 
+2026-10-15T21:27:53.3269581Z declaration_file = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/declaration.json')
+2026-10-15T21:27:53.3270572Z evidence_root = PosixPath('/home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/source/tests/semantic_audit/fixtures/ae18_reference/cases/R05_missing_log/evidence')
+2026-10-15T21:27:53.3271218Z ae01_output = None, source_root = None, max_ae09_candidates = 100
+2026-10-15T21:27:53.3271415Z 
+2026-10-15T21:27:53.3271571Z     def build_report(declaration_file: Path | str,evidence_root:Path | str,*,
+2026-10-15T21:27:53.3271950Z                      ae01_output:Path | str | None=None,source_root:Path | str | None=None,
+2026-10-15T21:27:53.3272284Z                      max_ae09_candidates:int=100) -> tuple[dict,dict]:
+2026-10-15T21:27:53.3272644Z         """Replayable observations and graph; no code execution or verified findings."""
+2026-10-15T21:27:53.3273148Z         evidence_root=Path(os.path.abspath(evidence_root))
+2026-10-15T21:27:53.3273405Z         _no_symlink_components(evidence_root)
+2026-10-15T21:27:53.3273724Z >       if not evidence_root.is_dir(): raise ValueError('Evidence root must be a directory')
+2026-10-15T21:27:53.3274069Z                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-15T21:27:53.3274347Z E       ValueError: Evidence root must be a directory
+2026-10-15T21:27:53.3274518Z 
+2026-10-15T21:27:53.3274648Z audit_engine/semantic_audit/ae16/operations.py:104: ValueError
+2026-10-15T21:27:53.3274955Z =============================== warnings summary ===============================
+2026-10-15T21:27:53.3275351Z tests/semantic_audit/test_ae021_release.py::test_checksum_mutation_is_release_failure
+2026-10-15T21:27:53.3275944Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/zipfile.py:1606: UserWarning: Duplicate name: 'PATCH_MAP.md'
+2026-10-15T21:27:53.3276409Z     return self._open_to_write(zinfo, force_zip64=force_zip64)
+2026-10-15T21:27:53.3276603Z 
+2026-10-15T21:27:53.3276765Z tests/semantic_audit/test_ae06_release.py::test_duplicate_member_is_rejected
+2026-10-15T21:27:53.3277327Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/zipfile.py:1606: UserWarning: Duplicate name: 'STAGE1_SECTION_UUIDS/validation/profiles/G9.7.yaml'
+2026-10-15T21:27:53.3277840Z     return self._open_to_write(zinfo, force_zip64=force_zip64)
+2026-10-15T21:27:53.3278160Z 
+2026-10-15T21:27:53.3278324Z tests/semantic_audit/test_ae12_release.py::test_duplicate_zip_path_rejected
+2026-10-15T21:27:53.3278788Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/zipfile.py:1606: UserWarning: Duplicate name: 'README.md'
+2026-10-15T21:27:53.3279202Z     return self._open_to_write(zinfo, force_zip64=force_zip64)
+2026-10-15T21:27:53.3279371Z 
+2026-10-15T21:27:53.3279515Z tests/semantic_audit/test_ae17_release.py::test_reject_changed_file
+2026-10-15T21:27:53.3280051Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/zipfile.py:1606: UserWarning: Duplicate name: 'STAGE1_SECTION_UUIDS/validation/profiles/G9.19.yaml'
+2026-10-15T21:27:53.3280562Z     return self._open_to_write(zinfo, force_zip64=force_zip64)
+2026-10-15T21:27:53.3280735Z 
+2026-10-15T21:27:53.3280882Z tests/semantic_audit/test_ae18_release.py::test_reject_duplicate_member
+2026-10-15T21:27:53.3281511Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/zipfile.py:1606: UserWarning: Duplicate name: 'STAGE1_SECTION_UUIDS/audit_engine/semantic_audit/ae18/publication.py'
+2026-10-15T21:27:53.3282073Z     return self._open_to_write(zinfo, force_zip64=force_zip64)
+2026-10-15T21:27:53.3282397Z 
+2026-10-15T21:27:53.3282527Z tests/semantic_graph/test_ri01_rdflib_query_layer.py: 17 warnings
+2026-10-15T21:27:53.3282868Z tests/semantic_graph/test_ri02_rdflib_scientific_index.py: 29 warnings
+2026-10-15T21:27:53.3283214Z tests/semantic_graph/test_ri03_rdflib_provenance_audit.py: 31 warnings
+2026-10-15T21:27:53.3283560Z tests/semantic_graph/test_ri04_production_integration.py: 20 warnings
+2026-10-15T21:27:53.3284198Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/rdflib/graph.py:1721: DeprecationWarning: Dataset.default_context is deprecated, use Dataset.default_graph instead.
+2026-10-15T21:27:53.3284796Z     query_graph = self.default_context.identifier
+2026-10-15T21:27:53.3284956Z 
+2026-10-15T21:27:53.3285088Z tests/semantic_graph/test_ri01_rdflib_query_layer.py: 2 warnings
+2026-10-15T21:27:53.3285422Z tests/semantic_graph/test_ri02_rdflib_scientific_index.py: 2 warnings
+2026-10-15T21:27:53.3285755Z tests/semantic_graph/test_ri03_rdflib_provenance_audit.py: 1 warning
+2026-10-15T21:27:53.3286337Z tests/semantic_graph/test_ri04_production_integration.py: 10 warnings
+2026-10-15T21:27:53.3286971Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/rdflib/graph.py:2508: DeprecationWarning: Dataset.default_context is deprecated, use Dataset.default_graph instead.
+2026-10-15T21:27:53.3287534Z     context = self.default_context
+2026-10-15T21:27:53.3287661Z 
+2026-10-15T21:27:53.3287793Z tests/semantic_graph/test_ri01_rdflib_query_layer.py: 2 warnings
+2026-10-15T21:27:53.3288124Z tests/semantic_graph/test_ri02_rdflib_scientific_index.py: 2 warnings
+2026-10-15T21:27:53.3288451Z tests/semantic_graph/test_ri03_rdflib_provenance_audit.py: 1 warning
+2026-10-15T21:27:53.3288778Z tests/semantic_graph/test_ri04_production_integration.py: 10 warnings
+2026-10-15T21:27:53.3289449Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/rdflib/plugins/parsers/nquads.py:80: DeprecationWarning: Dataset.default_context is deprecated, use Dataset.default_graph instead.
+2026-10-15T21:27:53.3290113Z     ds_default = ds.default_context  # the DEFAULT_DATASET_GRAPH_ID
+2026-10-15T21:27:53.3290302Z 
+2026-10-15T21:27:53.3290436Z tests/semantic_graph/test_ri01_rdflib_query_layer.py: 2 warnings
+2026-10-15T21:27:53.3290775Z tests/semantic_graph/test_ri02_rdflib_scientific_index.py: 2 warnings
+2026-10-15T21:27:53.3291115Z tests/semantic_graph/test_ri03_rdflib_provenance_audit.py: 1 warning
+2026-10-15T21:27:53.3291450Z tests/semantic_graph/test_ri04_production_integration.py: 10 warnings
+2026-10-15T21:27:53.3292123Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/rdflib/plugins/parsers/nquads.py:91: DeprecationWarning: Dataset.default_context is deprecated, use Dataset.default_graph instead.
+2026-10-15T21:27:53.3292737Z     ds.default_context = new_default_context
+2026-10-15T21:27:53.3293038Z 
+2026-10-15T21:27:53.3293339Z tests/semantic_graph/test_ri04_production_integration.py::test_malformed_or_unsafe_dataset_rejected[<urn:s> <urn:p> "x" .\n]
+2026-10-15T21:27:53.3294178Z   /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/rdflib/plugins/parsers/nquads.py:142: DeprecationWarning: Dataset.default_context is deprecated, use Dataset.default_graph instead.
+2026-10-15T21:27:53.3294840Z     self.sink.default_context.add((subject, predicate, obj))
+2026-10-15T21:27:53.3295029Z 
+2026-10-15T21:27:53.3295197Z -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2026-10-15T21:27:53.3295534Z =========================== short test summary info ============================
+2026-10-15T21:27:53.3296139Z SKIPPED [1] tests/semantic_graph/test_gb011_snap_python39_compat.py:72: Stanford SNAP is binary-only; verified on Python 3.9 CI
+2026-10-15T21:27:53.3296743Z SKIPPED [2] tests/semantic_graph/test_gb01_optional_native_backends.py:273: JSON restriction is specific to SNAP
+2026-10-15T21:27:53.3297362Z SKIPPED [1] tests/semantic_graph/test_ri04_production_integration.py:130: could not import 'pyoxigraph': No module named 'pyoxigraph'
+2026-10-15T21:27:53.3297982Z SKIPPED [1] tests/test_publication_integrity.py:133: pdflatex unavailable
+2026-10-15T21:27:53.3298338Z SKIPPED [1] tests/test_publication_integrity.py:148: pdflatex unavailable
+2026-10-15T21:27:53.3298675Z SKIPPED [1] tests/test_publication_integrity.py:255: pdflatex unavailable
+2026-10-15T21:27:53.3299010Z SKIPPED [1] tests/test_publication_integrity.py:282: pdflatex unavailable
+2026-10-15T21:27:53.3299577Z FAILED tests/semantic_audit/test_ae18_effectiveness.py::test_complete_bounded_reference_evaluation_is_exact - ValueError: Evidence root must be a directory
+2026-10-15T21:27:53.3300374Z FAILED tests/semantic_audit/test_ae18_effectiveness.py::test_published_reference_replays_without_claiming_real_causes - ValueError: Evidence root must be a directory
+2026-10-15T21:27:53.3301142Z FAILED tests/semantic_audit/test_ae18_effectiveness.py::test_reject_tampered_published_evaluation - ValueError: Evidence root must be a directory
+2026-10-15T21:27:53.3301870Z FAILED tests/semantic_audit/test_ae18_effectiveness.py::test_forged_seal_does_not_bypass_identity_or_replay - ValueError: Evidence root must be a directory
+2026-10-15T21:27:53.3302412Z 4 failed, 2539 passed, 8 skipped, 148 warnings in 129.13s (0:02:09)
+2026-10-15T21:27:53.3302609Z 
+2026-10-15T21:27:53.3302688Z Final validation status: failed
+2026-10-15T21:27:53.3302997Z Evidence SHA-256: 86f029c9b475711a29b3bf97d6af0c15ecfed0140b6b712605de5b32fbfdad88
+2026-10-15T21:27:53.3303553Z Report: /home/runner/work/Finite_element_analysis_project/Finite_element_analysis_project/validation-artifacts/validation_report.json
+2026-10-15T21:27:53.3393751Z ##[error]Process completed with exit code 1.

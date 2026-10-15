@@ -1,0 +1,18 @@
+﻿2026-10-15T21:27:53.4245629Z ##[group]Run set -euo pipefail
+2026-10-15T21:27:53.4246087Z [36;1mset -euo pipefail[0m
+2026-10-15T21:27:53.4246403Z [36;1mPYTHONPATH=source python source/tools/publish_validation_evidence_bundle.py \[0m
+2026-10-15T21:27:53.4246806Z [36;1m  --evidence-dir validation-artifacts \[0m
+2026-10-15T21:27:53.4247062Z [36;1m  --store-dir validation-bundles[0m
+2026-10-15T21:27:53.4304178Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-15T21:27:53.4304446Z env:
+2026-10-15T21:27:53.4304668Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.4304996Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+2026-10-15T21:27:53.4305320Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.4305668Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.4306060Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-15T21:27:53.4306349Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+2026-10-15T21:27:53.4306640Z ##[endgroup]
+2026-10-15T21:27:53.6376792Z Verified evidence CAS bundle: bdcfd812ad0ca57595b7d14b7fdf2f834e5771ed4168d9af22072e4ba915a8d1
+2026-10-15T21:27:53.6377692Z Source report digest: 86f029c9b475711a29b3bf97d6af0c15ecfed0140b6b712605de5b32fbfdad88
+2026-10-15T21:27:53.6378226Z Published bundle size: 484310 bytes
+2026-10-15T21:27:53.6378962Z Evidence bundle path: validation-artifacts/bundles/bdcfd812ad0ca57595b7d14b7fdf2f834e5771ed4168d9af22072e4ba915a8d1.validation.zip

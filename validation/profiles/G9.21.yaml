@@ -1,0 +1,21 @@
+id: G9.21
+name: AE-19 Historical Validation Outcome Concordance with Source-Bound AE-16 Replay
+# Manual dispatch via central main-branch validation engine only; no push trigger.
+target_tests:
+  - tests/semantic_audit/test_ae19_history.py
+  - tests/semantic_audit/test_ae18_effectiveness.py
+  - tests/semantic_audit/test_ae18_release.py
+  - tests/semantic_audit/test_ae17_investigation.py
+  - tests/semantic_audit/test_ae17_release.py
+  - tests/semantic_audit/test_ae16_operations.py
+  - tests/semantic_audit/test_ae16_release.py
+  - tests/semantic_audit/test_ae15_flow.py
+  - tests/semantic_audit/test_ae15_release.py
+  - tests/semantic_audit/test_ae14_lexical_semantics.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/
