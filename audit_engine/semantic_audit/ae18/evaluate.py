@@ -107,6 +107,28 @@ def _admit(root: Path) -> tuple[dict,dict]:
     return manifest,labels
 
 
+
+def _reference_evidence_root(root: Path, case_id: str, inventory: dict[str,str], scratch: Path) -> Path:
+    """Make an *empty directory*, never a witness, for an intentionally empty fixture.
+
+    Git does not preserve empty directories. The pinned manifest may describe a
+    case with no evidence files at all (e.g. the missing-log negative control).
+    AE-16 correctly requires an existing evidence directory, so only that exact
+    no-members situation may be represented by a temporary empty directory.
+    A missing directory with any pinned evidence must fail closed.
+    """
+    reference = root / 'cases' / case_id / 'evidence'
+    if reference.is_dir():
+        return reference
+    prefix = f'cases/{case_id}/evidence/'
+    if any(name.startswith(prefix) for name in inventory):
+        raise ValueError('Reference evidence directory missing with pinned members')
+    if reference.exists() or reference.is_symlink():
+        raise ValueError('Invalid reference evidence directory')
+    scratch.mkdir()  # Only an empty, disposable input root; no evidence synthesized.
+    return scratch
+
+
 def classify(expected: list[dict],observed: list[dict]) -> dict:
     """Pure exact-identity oracle, independent of the analyzer implementation."""
     def normalize(records):
@@ -133,9 +155,9 @@ def evaluate_corpus(corpus_root:Path|str) -> dict:
     for case_id in manifest['cases']:
         where=root/'cases'/case_id
         declaration=where/'declaration.json'
-        evidence=where/'evidence'
         with tempfile.TemporaryDirectory(prefix='ae18-controlled-eval-') as directory:
             out=Path(directory)
+            evidence=_reference_evidence_root(root,case_id,manifest['sha256'],out/'empty_evidence')
             ae16_path=out/'ae16';ae17_path=out/'ae17'
             source=publish_observation(declaration,evidence,ae16_path)
             if verify_observation(declaration,evidence,ae16_path)!=source:

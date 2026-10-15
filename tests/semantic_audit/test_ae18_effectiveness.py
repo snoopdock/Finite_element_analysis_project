@@ -8,7 +8,8 @@ import pytest
 
 from audit_engine.semantic_audit.ae01.publication import canonical,sha
 from audit_engine.semantic_audit.ae18 import classify,evaluate_corpus,publish_evaluation,verify_evaluation
-from audit_engine.semantic_audit.ae18.evaluate import _admit
+from audit_engine.semantic_audit.ae18.evaluate import _admit, _reference_evidence_root
+from audit_engine.semantic_audit.ae16 import build_report
 
 CORPUS = Path(__file__).resolve().parent / 'fixtures' / 'ae18_reference'
 
@@ -19,6 +20,36 @@ def test_manually_labeled_reference_is_pinned_and_has_two_clean_controls():
     assert len([v for v in labels['cases'].values() if not v['expected_issues']])==3
     assert labels['oracle_authority']=='manually_authored_controls_not_externally_adjudicated'
     assert len({x['kind'] for v in labels['cases'].values() for x in v['expected_issues']})>=9
+
+
+def test_git_checkout_preserves_missing_log_without_empty_evidence_directory(tmp_path):
+    # A fresh Git checkout omits an intentionally empty evidence/ directory.
+    # AE-18 may construct a scratch directory but cannot invent step.log.
+    copied=tmp_path/'source-checkout'
+    shutil.copytree(CORPUS,copied)
+    absent=copied/'cases'/'R05_missing_log'/'evidence'
+    if absent.is_dir():
+        absent.rmdir()
+    assert not absent.exists()
+    manifest,_=_admit(copied)
+    scratch=tmp_path/'scratch-empty-evidence'
+    evidence=_reference_evidence_root(copied,'R05_missing_log',manifest['sha256'],scratch)
+    assert evidence==scratch and evidence.is_dir() and list(evidence.iterdir())==[]
+    assert not absent.exists()  # No mutation of the committed reference corpus.
+    report,_=build_report(copied/'cases'/'R05_missing_log'/'declaration.json',evidence)
+    assert {'kind':'missing_evidence_file','subject':'step.log'} in report['issues']
+
+
+def test_missing_pinned_evidence_directory_must_not_be_synthesized(tmp_path):
+    copied=tmp_path/'source-checkout'
+    shutil.copytree(CORPUS,copied)
+    manifest,_=_admit(copied)
+    evidence=copied/'cases'/'R01_clean_required_check'/'evidence'
+    shutil.rmtree(evidence)
+    scratch=tmp_path/'scratch-not-authorized'
+    with pytest.raises(ValueError,match='pinned members'):
+        _reference_evidence_root(copied,'R01_clean_required_check',manifest['sha256'],scratch)
+    assert not scratch.exists()
 
 
 def test_complete_bounded_reference_evaluation_is_exact():
