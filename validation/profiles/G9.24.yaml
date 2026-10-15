@@ -1,0 +1,22 @@
+id: G9.24
+name: AE-22 Scope-Safe Source-Pinned Benchmark Governance and Static Evidence Effectiveness
+# Manual dispatcher only. AE-22 evaluator DOES NOT execute examined Python code.
+# Low accuracy or abstention is valid measurement, not an automatic CI failure.
+target_tests:
+  - tests/semantic_audit/test_ae22_effectiveness_governance.py
+  - tests/semantic_audit/test_ae21_external_pilot.py
+  - tests/semantic_audit/test_ae20_historical_oracles.py
+  - tests/semantic_audit/test_ae20_behavioral_oracles.py
+  - tests/semantic_audit/test_ae19_history.py
+  - tests/semantic_audit/test_ae18_effectiveness.py
+  - tests/semantic_audit/test_ae17_investigation.py
+  - tests/semantic_audit/test_ae16_operations.py
+  - tests/semantic_audit/test_ae15_flow.py
+  - tests/semantic_audit/test_ae14_lexical_semantics.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/
