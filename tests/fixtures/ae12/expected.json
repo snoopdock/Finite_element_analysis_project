@@ -1,0 +1,19 @@
+{
+  "schema": "ae12/oracle/v1",
+  "risk_counts": {
+    "mutable_default": 1,
+    "swallowed_exception": 2,
+    "bare_except": 1,
+    "finally_return": 1,
+    "duplicate_dict_key": 1,
+    "assert_call": 1,
+    "subprocess_shell": 1
+  },
+  "independent_runtime_expectations": {
+    "shared_default_first": ["again"],
+    "shared_default_second": ["again", "again"],
+    "swallowed_return": null,
+    "finally_return": 1,
+    "duplicate_key_result": {"1": "second"}
+  }
+}

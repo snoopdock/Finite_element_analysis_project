@@ -1,0 +1,7 @@
+{
+  "schema": "ae12/policy/v1",
+  "paths": ["pkg/risk_patterns.py"],
+  "rules": ["mutable_default", "swallowed_exception", "bare_except", "finally_return", "duplicate_dict_key", "assert_call", "subprocess_shell"],
+  "max_findings": 100,
+  "max_graph_modules": 4
+}

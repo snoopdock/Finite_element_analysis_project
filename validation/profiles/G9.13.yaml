@@ -1,0 +1,14 @@
+id: G9.13
+name: AE-12 General Python Failure-Mode Audit and Semantic Correlation
+# Manual workflow_dispatch on main, targeting stage1/section-uuids.
+target_tests:
+  - tests/semantic_audit/test_ae12_code_failures.py
+  - tests/semantic_audit/test_ae12_release.py
+  - tests/semantic_audit/test_ae09_investigation.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/
