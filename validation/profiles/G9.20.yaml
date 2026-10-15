@@ -1,0 +1,25 @@
+id: G9.20
+name: AE-18 Independently Pinned Operational Effectiveness, Controlled Oracles and Source Replay
+# Dispatch exclusively using the existing main-branch manual validation engine.
+target_tests:
+  - tests/semantic_audit/test_ae18_effectiveness.py
+  - tests/semantic_audit/test_ae18_release.py
+  - tests/semantic_audit/test_ae17_investigation.py
+  - tests/semantic_audit/test_ae17_release.py
+  - tests/semantic_audit/test_ae16_operations.py
+  - tests/semantic_audit/test_ae16_release.py
+  - tests/semantic_audit/test_ae15_flow.py
+  - tests/semantic_audit/test_ae15_release.py
+  - tests/semantic_audit/test_ae14_lexical_semantics.py
+  - tests/semantic_audit/test_ae14_release.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/semantic_audit/test_ae13_legacy_adapter.py
+  - tests/semantic_audit/test_ae09_investigation.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+  - tests/semantic_graph/test_dependency_analysis.py
+regression:
+  enabled: true
+  path: tests/
