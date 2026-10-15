@@ -1,0 +1,21 @@
+id: G9.10
+name: AE-09 Source-Bound Runtime Failure Investigation and Graph Correlation
+# Manually selected via main branch workflow_dispatch; no push/schedule triggers.
+target_tests:
+  - tests/semantic_audit/test_ae09_investigation.py
+  - tests/semantic_audit/test_ae09_release.py
+  - tests/semantic_audit/test_ae08_benchmark.py
+  - tests/semantic_audit/test_ae08_release.py
+  - tests/semantic_audit/test_ae07_release.py
+  - tests/semantic_audit/test_ae06_release.py
+  - tests/semantic_audit/test_ae05_release.py
+  - tests/semantic_audit/test_ae04_release.py
+  - tests/semantic_audit/test_ae021_impact.py
+  - tests/semantic_audit/test_ae02_evolution.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/
