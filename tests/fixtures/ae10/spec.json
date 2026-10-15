@@ -1,0 +1,53 @@
+{
+  "schema": "ae10/scientific-spec/v1",
+  "artifacts": [
+    {
+      "id": "experiment",
+      "path": "experiment.json",
+      "sha256": "7e761713b9e4e8ddb480d0d10809fee61510dd7d9d3a39d1b8093d8a59aed0f1"
+    }
+  ],
+  "claims": [
+    {
+      "id": "elastic_modulus",
+      "statement_sha256": "62c5483986e9f5057978d55f4d63db731162a38d3f0390b4cf2f079df42e3949",
+      "supports": [
+        "experiment"
+      ],
+      "checks": [
+        {
+          "id": "check_modulus",
+          "artifact": "experiment",
+          "pointer": "/data/modulus",
+          "unit": "GPa",
+          "op": "between",
+          "expected": [
+            "209.5",
+            "210.5"
+          ],
+          "tolerance": "0"
+        }
+      ],
+      "statement_path": "statement_elastic_modulus.txt"
+    },
+    {
+      "id": "displacement_limit",
+      "statement_sha256": "1f63d0aba336438c42af0136c69f64bfa53bc595e5d23113ffa1e1298afd3297",
+      "supports": [
+        "experiment"
+      ],
+      "checks": [
+        {
+          "id": "check_disp",
+          "artifact": "experiment",
+          "pointer": "/data/displacement",
+          "unit": "mm",
+          "op": "le",
+          "expected": "0.025",
+          "tolerance": "0.000001"
+        }
+      ],
+      "statement_path": "statement_displacement_limit.txt"
+    }
+  ]
+}

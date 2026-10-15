@@ -1,0 +1,18 @@
+id: G9.11
+name: AE-10 Scientific Claim Evidence and Quantitative Consistency Audit
+# Explicit manual selection from existing main dispatcher only.
+target_tests:
+  - tests/semantic_audit/test_ae10_science.py
+  - tests/semantic_audit/test_ae10_release.py
+  - tests/semantic_audit/test_ae09_investigation.py
+  - tests/semantic_audit/test_ae08_benchmark.py
+  - tests/semantic_audit/test_ae07_portfolio.py
+  - tests/semantic_audit/test_ae06_remediation.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_domain_verification/test_domain_verifiers.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/

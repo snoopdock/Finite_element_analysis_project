@@ -1,0 +1,16 @@
+{
+  "data": {
+    "modulus": {
+      "value": "210.0",
+      "unit": "GPa"
+    },
+    "displacement": {
+      "value": "0.020",
+      "unit": "mm"
+    },
+    "samples": {
+      "value": 25,
+      "unit": "count"
+    }
+  }
+}
