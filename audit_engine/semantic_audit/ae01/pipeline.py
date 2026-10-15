@@ -17,7 +17,7 @@ from .publication import attempt, canonical, publish, sha
 from .source import extract, inventory, module_name
 from .projection import project_imports
 
-VERSION = 'ae01/v1'
+VERSION = 'ae01/v1+ae14-lexical-1'
 POLICY_VALUES = frozenset({'production', 'experimental', 'stable', 'deprecated'})
 
 
@@ -58,13 +58,33 @@ def _graph(manifest: dict, sources: dict[str, bytes], imports: list[dict], calls
             add(dest, 'ExternalModule')
             edge(src, dest, 'IMPORTS', {'source_id': imp['file'], 'occurrence_id': node,
                                         'line': imp['line'], 'external': True})
+    def lexical_scope(path: str, qualified: str, occurrence: str) -> str:
+        # Scope nodes describe *lexical* ownership, not runtime call edges.
+        module = module_name(path)
+        if qualified == module:
+            return 'module:' + module
+        name = 'lexical_scope:' + path + ':' + occurrence
+        if name not in known:
+            add(name, 'LexicalScope', {'qualified_name': qualified}, {'source_id': path})
+            edge('module:' + module, name, 'HAS_LEXICAL_SCOPE', {'source_id': path})
+        return name
+
     for f in functions:
-        add(f['id'], 'Function', {'name': f['name']}, {'source_id': f['file'], 'line': f['line']})
-        edge('module:' + module_name(f['file']), f['id'], 'DEFINES', {'source_id': f['file']})
+        owner = lexical_scope(f['file'], f.get('owner_scope') or module_name(f['file']),
+                              f.get('owner_scope_occurrence') or module_name(f['file']))
+        add(f['id'], 'Function', {'name': f['name'], 'qualified_name': f.get('qualified_name')},
+            {'source_id': f['file'], 'line': f['line'], 'owner_scope': f.get('owner_scope'),
+             'owner_scope_occurrence': f.get('owner_scope_occurrence')})
+        edge(owner, f['id'], 'DEFINES', {'source_id': f['file']})
     for call in calls:
-        add(call['id'], 'CallSite', {'spelling': call['spelling'], 'resolution': call['resolution']},
-            {'source_id': call['file'], 'line': call['line'], 'column': call['column']})
-        edge('module:' + module_name(call['file']), call['id'], 'HAS_CALL', {'source_id': call['file']})
+        add(call['id'], 'CallSite', {'spelling': call['spelling'], 'resolution': call['resolution'],
+                                    'candidates': call['candidates']},
+            {'source_id': call['file'], 'line': call['line'], 'column': call['column'],
+             'lexical_scope': call.get('scope'), 'scope_occurrence': call.get('scope_occurrence'),
+             'binding_reason': call.get('binding_reason')})
+        owner = lexical_scope(call['file'], call.get('scope') or module_name(call['file']),
+                              call.get('scope_occurrence') or module_name(call['file']))
+        edge(owner, call['id'], 'HAS_CALL', {'source_id': call['file']})
     return graph
 
 

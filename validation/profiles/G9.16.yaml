@@ -1,0 +1,24 @@
+id: G9.16
+name: AE-14 Lexical Python Binding and Source-Semantic Integrity
+# Manual-only validation dispatched from main; no push triggers or permission changes.
+target_tests:
+  - tests/semantic_audit/test_ae14_lexical_semantics.py
+  - tests/semantic_audit/test_ae14_release.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_audit/test_ae131_release.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/semantic_audit/test_ae13_legacy_adapter.py
+  - tests/semantic_audit/test_ae13_benchmarks.py
+  - tests/semantic_audit/test_ae12_code_failures.py
+  - tests/semantic_audit/test_ae09_investigation.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_audit/test_ae08_benchmark.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+  - tests/semantic_verification/test_rules.py
+  - tests/semantic_verification/test_findings.py
+  - tests/semantic_high_assurance/test_policy_registry.py
+  - tests/semantic_graph/test_dependency_analysis.py
+regression:
+  enabled: true
+  path: tests/

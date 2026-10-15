@@ -99,7 +99,7 @@ def _call_name(node: ast.AST) -> str:
 
 
 class _Facts(ast.NodeVisitor):
-    def __init__(self, path: str, module: str, package: str):
+    def __init__(self, path: str, module: str, package: str, lexical=None):
         self.path, self.module, self.package = path, module, package
         self.imports: list[dict] = []
         self.calls: list[dict] = []
@@ -107,6 +107,7 @@ class _Facts(ast.NodeVisitor):
         self.context: list[str] = []
         self.aliases: dict[str, str] = {}
         self.order = 0
+        self.lexical = lexical
 
     def _new(self, node: ast.AST, kind: str, **values) -> dict:
         self.order += 1
@@ -130,7 +131,7 @@ class _Facts(ast.NodeVisitor):
 
     def visit_If(self, node: ast.If) -> None:
         cond = _call_name(node.test)
-        type_check = cond in ('TYPE_CHECKING', 'typing.TYPE_CHECKING') or cond.endswith('.TYPE_CHECKING')
+        type_check = (self.lexical.type_checking(node.test) if self.lexical is not None else False)
         self.context.append('type_checking' if type_check else 'conditional')
         self.visit(node.test)
         for child in node.body: self.visit(child)
@@ -173,22 +174,52 @@ class _Facts(ast.NodeVisitor):
             self.context.pop()
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        self.functions.append(self._new(node, 'function', name=node.name))
-        self.generic_visit(node)
+        self.functions.append(self._new(node, 'function', name=node.name,
+                                        qualified_name=self.lexical.children[node].qualified_name if self.lexical else None,
+                                        owner_scope=self.lexical.children[node].parent.qualified_name if self.lexical else self.module,
+                                        owner_scope_occurrence=self.lexical.children[node].parent.occurrence_key if self.lexical else self.module))
+        # Decorators, defaults and evaluated annotations execute while the
+        # definition is created. Function bodies do NOT run at definition time.
+        for decorator in node.decorator_list:
+            self.visit(decorator)
+        self.visit(node.args)
+        if node.returns:
+            self.visit(node.returns)
+        for param in getattr(node, 'type_params', ()):
+            self.visit(param)
+        self.context.append('deferred_function')
+        try:
+            for statement in node.body:
+                self.visit(statement)
+        finally:
+            self.context.pop()
 
     visit_AsyncFunctionDef = visit_FunctionDef
 
+    def visit_Lambda(self, node: ast.Lambda) -> None:
+        for default in [*node.args.defaults, *node.args.kw_defaults]:
+            if default is not None:
+                self.visit(default)
+        self.context.append('deferred_lambda')
+        try:
+            self.visit(node.body)
+        finally:
+            self.context.pop()
+
     def visit_Call(self, node: ast.Call) -> None:
         spelling = _call_name(node.func)
-        dynamic = spelling in ('__import__', 'importlib.import_module') or (
-            spelling.endswith('.import_module') and self.aliases.get(spelling.split('.')[0]) == 'importlib') or (
-            self.aliases.get(spelling) == 'importlib.import_module')
+        classified = self.lexical.classify_call(node) if self.lexical else {
+            'resolution': 'unresolved', 'candidates': [], 'dynamic_import': False,
+            'binding_reason': 'lexical_analysis_unavailable', 'binding_confidence': 'unknown',
+            'scope': self.module, 'scope_kind': 'module'}
+        dynamic = classified['dynamic_import']
         literal = (node.args[0].value if dynamic and node.args and
                    isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str) else None)
         self.calls.append(self._new(node, 'call', spelling=spelling, receiver=spelling.rpartition('.')[0],
-                                    resolution='unresolved', candidates=[], dynamic_import=dynamic,
-                                    literal_target=literal))
-        if spelling in ('exec', 'eval'):
+                                    **classified, literal_target=literal))
+        # Shadowed exec/eval names are not evidence of executing the builtins.
+        _, binders = self.lexical.resolve(spelling, node.func) if (self.lexical and isinstance(node.func, ast.Name)) else (None, ())
+        if spelling in ('exec', 'eval') and not binders:
             self.imports.append(self._new(node, 'import', module='', level=0, symbol=None,
                                           alias=None, form='dynamic_unresolved'))
         if dynamic:
@@ -211,7 +242,9 @@ def extract(sources: dict[str, bytes], manifest: dict, classifications: dict[str
         raw = sources[path]
         encoding = next(r['encoding'] for r in manifest['files'] if r['path'] == path)
         parsed = ast.parse(raw.decode(encoding), filename=path)
-        facts = _Facts(path, module, package)
+        from audit_engine.semantic_audit.ae14 import LexicalProgram
+        lexical = LexicalProgram(parsed, module)
+        facts = _Facts(path, module, package, lexical=lexical)
         facts.visit(parsed)
         functions.extend(facts.functions)
         for imp in facts.imports:
@@ -242,19 +275,16 @@ def extract(sources: dict[str, bytes], manifest: dict, classifications: dict[str
                     status, target, candidates, reason = 'internal', candidate, targets, None
                 elif imp['level']:
                     status, target, candidates, reason = 'unresolved', None, [], 'unresolved_relative'
+                elif any(k.startswith(candidate + '.') for k in path_by_module):
+                    # An implicit PEP 420 namespace parent is not necessarily external.
+                    status, target, candidates, reason = 'unresolved', None, [], 'possible_namespace_package'
                 else:
                     status, target, candidates, reason = 'external', candidate, [], None
             imp.update(status=status, target=target, candidates=candidates, reason=reason)
             imports.append(imp)
             if status in ('unresolved', 'ambiguous'):
                 issues.append({'kind': 'unresolved_import', 'occurrence_id': imp['id'], 'reason': reason})
-        for call in facts.calls:
-            # Conservative binding: Python runtime mutation and shadowing prevent claiming sound exact callees.
-            if call['spelling'] in {f['name'] for f in facts.functions}:
-                call['resolution'] = 'candidate'
-                call['candidates'] = [module + '.' + call['spelling']]
-            elif call['receiver'] in facts.aliases:
-                call['resolution'] = 'candidate'
-                call['candidates'] = [facts.aliases[call['receiver']] + '.' + call['spelling'].split('.')[-1]]
-            calls.append(call)
+        # AE-14 has already bound lexical names in their real enclosing scopes.
+        # Never revive the older file-global same-name callee heuristic here.
+        calls.extend(facts.calls)
     return imports, calls, functions, issues
