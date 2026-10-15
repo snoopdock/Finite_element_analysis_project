@@ -1,0 +1,21 @@
+id: G9.22
+name: AE-20 Real Project Regression Oracle Reproduction and Python Behavioral Controls
+# Manual-only validation via existing central main-branch dispatcher.
+# Archived Python modules are byte-pinned and executed ONLY in an authorized trusted test run.
+# No arbitrary repository execution, network, automated push trigger, or new workflow.
+target_tests:
+  - tests/semantic_audit/test_ae20_historical_oracles.py
+  - tests/semantic_audit/test_ae20_behavioral_oracles.py
+  - tests/semantic_audit/test_ae19_history.py
+  - tests/semantic_audit/test_ae18_effectiveness.py
+  - tests/semantic_audit/test_ae17_investigation.py
+  - tests/semantic_audit/test_ae16_operations.py
+  - tests/semantic_audit/test_ae15_flow.py
+  - tests/semantic_audit/test_ae14_lexical_semantics.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/
