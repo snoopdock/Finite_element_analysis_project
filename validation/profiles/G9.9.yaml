@@ -1,0 +1,19 @@
+id: G9.9
+name: AE-08 Independent Semantic Audit Effectiveness Evaluation
+# Manual workflow_dispatch from main; bounded profile, full regression is separate.
+target_tests:
+  - tests/semantic_audit/test_ae08_benchmark.py
+  - tests/semantic_audit/test_ae08_release.py
+  - tests/semantic_audit/test_ae07_portfolio.py
+  - tests/semantic_audit/test_ae07_release.py
+  - tests/semantic_audit/test_ae06_release.py
+  - tests/semantic_audit/test_ae05_release.py
+  - tests/semantic_audit/test_ae03_release.py
+  - tests/semantic_audit/test_ae021_impact.py
+  - tests/semantic_audit/test_ae02_evolution.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/

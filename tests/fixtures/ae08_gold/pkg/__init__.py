@@ -1,0 +1,1 @@
+# A static package initializer

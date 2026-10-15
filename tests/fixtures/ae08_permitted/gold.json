@@ -1,0 +1,27 @@
+{
+  "files": {
+    "prod.py": "3591e29f02c1aa054e19efb1793ea24c9c822c08d5f7abc4505e91d56a231808",
+    "stable.py": "ddced955472eca8cf0eea19edf798c43514e97feae458369b17732a4a6453e4b"
+  },
+  "imports": [
+    {
+      "alias": null,
+      "column": 0,
+      "context": [],
+      "file": "prod.py",
+      "form": "import",
+      "line": 1,
+      "module": "stable",
+      "status": "internal",
+      "symbol": null,
+      "target": "stable"
+    }
+  ],
+  "lifecycle": {
+    "prod": "production",
+    "stable": "stable"
+  },
+  "rationale": "Separately labeled allowed-dependency negative control. The sole import target and source location were transcribed from the fixture before running the auditor.",
+  "schema": "ae08/gold_corpus/v1",
+  "violations": []
+}

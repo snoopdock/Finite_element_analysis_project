@@ -1,0 +1,174 @@
+{
+  "files": {
+    "app.py": "fe5440cde3e5b6108240068b025435b310af0d036b7811db543519aa248b4568",
+    "control.py": "3727adff524e0616022eadd8f4af21a0778b29fc4c77bdfefd1afce2cbf5e4b7",
+    "duplicate.py": "c5b2cd8126d0f84d2016840b7c7882fa743499c8cbcbcaf33434931652bbcd98",
+    "dynamic.py": "6b074d06a0b1b104951016474a3d3d1d33041832b3659e02c629ec815eaca6c6",
+    "experimental.py": "3da6c4b355804b265ecef19dfe5945fe2790a8cc38dc9d0547fb1634c94cbbe7",
+    "pkg/__init__.py": "7073ccb200fd64ea21ce6ef25673e749fbae1bb116fe5812644ac95977ee369a",
+    "pkg/feature.py": "522cf26a3bd46a680e8594220f65ba75ac3e7219ebff8f660e819e7eabae0412",
+    "pkg/helper.py": "cd09dc6a96ef641e966b34b086fe631c41dbfb8542639d47d787580a41a57302",
+    "plain.py": "3e29430f1f5190ce5b49d92306ff0a807804a34c425ce0eca201f29817ad5015",
+    "stable.py": "e13df8c44af5dea1e412403910b99cc5a48f2ccbf68a66b3374d6ab9cef9fc65",
+    "typing_case.py": "0d13598de69418fabdba981a40d6092252ae18289742055c3fedf58349af30f3"
+  },
+  "imports": [
+    {
+      "alias": null,
+      "column": 0,
+      "context": [],
+      "file": "app.py",
+      "form": "import",
+      "line": 1,
+      "module": "stable",
+      "status": "internal",
+      "symbol": null,
+      "target": "stable"
+    },
+    {
+      "alias": "risk",
+      "column": 0,
+      "context": [],
+      "file": "app.py",
+      "form": "import",
+      "line": 2,
+      "module": "experimental",
+      "status": "internal",
+      "symbol": null,
+      "target": "experimental"
+    },
+    {
+      "alias": null,
+      "column": 0,
+      "context": [],
+      "file": "control.py",
+      "form": "import",
+      "line": 1,
+      "module": "os",
+      "status": "external",
+      "symbol": null,
+      "target": "os"
+    },
+    {
+      "alias": null,
+      "column": 0,
+      "context": [],
+      "file": "duplicate.py",
+      "form": "import",
+      "line": 1,
+      "module": "experimental",
+      "status": "internal",
+      "symbol": null,
+      "target": "experimental"
+    },
+    {
+      "alias": null,
+      "column": 0,
+      "context": [],
+      "file": "duplicate.py",
+      "form": "import",
+      "line": 2,
+      "module": "experimental",
+      "status": "internal",
+      "symbol": null,
+      "target": "experimental"
+    },
+    {
+      "alias": null,
+      "column": 0,
+      "context": [],
+      "file": "dynamic.py",
+      "form": "import",
+      "line": 1,
+      "module": "importlib",
+      "status": "external",
+      "symbol": null,
+      "target": "importlib"
+    },
+    {
+      "alias": null,
+      "column": 0,
+      "context": [],
+      "file": "dynamic.py",
+      "form": "dynamic_unresolved",
+      "line": 3,
+      "module": "",
+      "status": "unresolved",
+      "symbol": null,
+      "target": null
+    },
+    {
+      "alias": "h",
+      "column": 0,
+      "context": [],
+      "file": "pkg/feature.py",
+      "form": "from",
+      "line": 1,
+      "module": "",
+      "status": "internal",
+      "symbol": "helper",
+      "target": "pkg.helper"
+    },
+    {
+      "alias": null,
+      "column": 0,
+      "context": [],
+      "file": "typing_case.py",
+      "form": "from",
+      "line": 1,
+      "module": "typing",
+      "status": "external",
+      "symbol": "TYPE_CHECKING",
+      "target": "typing"
+    },
+    {
+      "alias": null,
+      "column": 4,
+      "context": [
+        "type_checking"
+      ],
+      "file": "typing_case.py",
+      "form": "import",
+      "line": 3,
+      "module": "experimental",
+      "status": "internal",
+      "symbol": null,
+      "target": "experimental"
+    }
+  ],
+  "lifecycle": {
+    "app": "production",
+    "control": "stable",
+    "duplicate": "production",
+    "dynamic": "stable",
+    "experimental": "experimental",
+    "pkg": "stable",
+    "pkg.feature": "production",
+    "pkg.helper": "stable",
+    "plain": "stable",
+    "stable": "stable",
+    "typing_case": "stable"
+  },
+  "rationale": "Manually labeled small positive/negative corpus, source line and AST column positions independently transcribed from fixture text before comparing analyzer output. All Python files and occurrences explicitly accounted for. This is not a representative sample of production defects.",
+  "schema": "ae08/gold_corpus/v1",
+  "violations": [
+    {
+      "column": 0,
+      "file": "app.py",
+      "line": 2,
+      "target": "experimental"
+    },
+    {
+      "column": 0,
+      "file": "duplicate.py",
+      "line": 1,
+      "target": "experimental"
+    },
+    {
+      "column": 0,
+      "file": "duplicate.py",
+      "line": 2,
+      "target": "experimental"
+    }
+  ]
+}
