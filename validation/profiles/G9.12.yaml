@@ -1,0 +1,15 @@
+id: G9.12
+name: AE-11 FEM Numerical Invariants and Convergence Evidence Audit
+# Manually invoked from the central main-branch dispatcher only.
+target_tests:
+  - tests/semantic_audit/test_ae11_fem.py
+  - tests/semantic_audit/test_ae11_release.py
+  - tests/semantic_audit/test_ae10_science.py
+  - tests/semantic_audit/test_ae10_release.py
+  - tests/semantic_domain_verification/test_domain_rule_execution.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+  - tests/ae01/test_vertical_slice.py
+regression:
+  enabled: true
+  path: tests/

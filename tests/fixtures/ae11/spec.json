@@ -1,0 +1,16 @@
+{
+  "schema": "ae11/fem-spec/v1",
+  "artifact": {
+    "path": "bar_problem.json",
+    "sha256": "f065ba80aa55335d8ee144179bedef6897d1655c6e7c01f367f89a7995dc160f"
+  },
+  "checks": {
+    "symmetry_abs": "0.000001",
+    "residual_abs": "0.000001",
+    "fixed_abs": "0.000001",
+    "positive_pivot_min": "0.000001",
+    "energy_abs": "0.000001",
+    "order_min": "1.9",
+    "error_monotonic_abs": "0"
+  }
+}

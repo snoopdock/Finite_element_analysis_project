@@ -1,0 +1,66 @@
+{
+  "schema": "ae11/fem-data/v1",
+  "model": {
+    "degrees_of_freedom": 3,
+    "stiffness": [
+      [
+        "1",
+        "-1",
+        "0"
+      ],
+      [
+        "-1",
+        "2",
+        "-1"
+      ],
+      [
+        "0",
+        "-1",
+        "1"
+      ]
+    ],
+    "loads": [
+      "0",
+      "0",
+      "1"
+    ],
+    "displacements": [
+      "0",
+      "1",
+      "2"
+    ],
+    "fixed_values": {
+      "0": "0"
+    },
+    "strain_energy": "1",
+    "units": {
+      "force": "N",
+      "displacement": "m",
+      "stiffness": "N/m",
+      "energy": "J"
+    },
+    "assumptions": [
+      "linear_static",
+      "symmetric_stiffness",
+      "stable_constrained_system"
+    ]
+  },
+  "refinements": [
+    {
+      "h": ".5",
+      "error": ".25"
+    },
+    {
+      "h": ".25",
+      "error": ".0625"
+    },
+    {
+      "h": ".125",
+      "error": ".015625"
+    },
+    {
+      "h": ".0625",
+      "error": ".00390625"
+    }
+  ]
+}
