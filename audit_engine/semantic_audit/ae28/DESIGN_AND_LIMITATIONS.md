@@ -63,6 +63,18 @@ the controlled iterative layer planned for AE-29.
 In particular, a model response cannot write to `decision_memory/` merely by
 claiming that a decision should be remembered.
 
+## Validation-boundary discipline
+
+AE-28 keeps the response envelope, model trace, and model metadata as separate
+validation domains. An unexpected field inside `model` is therefore rejected
+as invalid model metadata rather than being misclassified as an outer-envelope
+error. Likewise, downstream semantic/proposal failures are reported as
+AE-27 rejection only after the AE-28 response contract has passed.
+
+This separation is important for an automated audit engine because a future
+repair loop must be able to distinguish malformed model input from a valid
+model proposal that was rejected by symbolic authority controls.
+
 ## Limitations
 
 - A digest proves consistency with supplied bytes, not provider authenticity.

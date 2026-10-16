@@ -263,6 +263,42 @@ def _validate_model_trace(trace: Any, raw_output: bytes) -> dict[str, str]:
     return normalized
 
 
+def _validate_model_metadata(model: Any) -> dict[str, str]:
+    """Validate the AE-28 model metadata object at its own contract boundary.
+
+    This is deliberately distinct from the outer response-envelope check:
+    unknown fields inside ``model`` are model-metadata errors, not envelope
+    errors.  Keeping this classification local makes failures machine-
+    distinguishable and prevents malformed metadata from being conflated with
+    AE-27 proposal rejection.
+    """
+    allowed = {
+        "adapter_id",
+        "model_family",
+        "model_version",
+        "context_sha256",
+    }
+    if not isinstance(model, dict) or set(model) != allowed:
+        raise NeuralInterpretationError("Invalid model metadata")
+
+    normalized: dict[str, str] = {}
+    for key in ("adapter_id", "model_family", "model_version"):
+        value = model[key]
+        if (
+            not isinstance(value, str)
+            or not value
+            or len(value) > 256
+            or any(ord(c) < 32 for c in value)
+        ):
+            raise NeuralInterpretationError("Invalid model metadata value")
+        normalized[key] = value
+
+    normalized["context_sha256"] = _require_digest(
+        model["context_sha256"], "model context digest"
+    )
+    return normalized
+
+
 def _validate_response_shape(response: Any) -> dict[str, Any]:
     if not isinstance(response, dict):
         raise NeuralInterpretationError("Model response must be an object")
@@ -334,11 +370,7 @@ def ingest_model_response(
         raise NeuralInterpretationError("Model response is bound to a different request")
 
     trace = _validate_model_trace(response["model_trace"], raw_output)
-    model = response["model"]
-    if not isinstance(model, dict) or set(model) != {
-        "adapter_id", "model_family", "model_version", "context_sha256"
-    }:
-        raise NeuralInterpretationError("Invalid AE-27 model metadata")
+    model = _validate_model_metadata(response["model"])
     if (
         model["adapter_id"] != trace["adapter_id"]
         or model["model_family"] != trace["model_family"]

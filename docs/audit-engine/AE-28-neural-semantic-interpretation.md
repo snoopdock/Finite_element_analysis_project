@@ -2,8 +2,10 @@
 
 ## Status
 
-Implementation prepared; behavioral acceptance is pending the manual G9.30
-GitHub validation profile.
+Implementation prepared; a G9.30 corrective revision is pending the manual
+GitHub validation profile. The prior run had one failure caused by an
+incorrect test expectation: an unexpected field inside `model` was correctly
+rejected as model metadata, but the test expected an outer-envelope error.
 
 ## Position in the Audit Engine
 
@@ -33,6 +35,24 @@ AE-28 binds both to a source/semantic request and converts the response into
 the AE-27 candidate-only proposal format.
 
 The model is not authoritative.
+
+## Error-domain separation
+
+AE-28 validates three distinct response domains:
+
+```text
+response envelope
+      ↓
+model trace
+      ↓
+model metadata
+      ↓
+AE-27 proposal semantics
+```
+
+Failures are classified at the domain where they occur. In particular,
+unexpected fields such as `confidence` inside `model` are rejected as
+`Invalid model metadata`; they are not treated as an outer-envelope failure.
 
 ## Repository audit use
 

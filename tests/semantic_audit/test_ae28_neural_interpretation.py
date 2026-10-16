@@ -395,13 +395,53 @@ def test_model_cannot_self_declare_authority():
         ingest_model_response(doc, raw, req, raw_model, resp)
 
 
-def test_model_confidence_is_not_an_accepted_authority_field():
+def test_model_confidence_is_not_an_accepted_model_metadata_field():
     doc, raw = base()
     req = request(doc, raw)
     raw_model, resp = response(doc, raw, req)
     resp["model"]["confidence"] = 0.99
     resp["response_sha256"] = sha(canonical({k: v for k, v in resp.items() if k != "response_sha256"}))
-    with pytest.raises(NeuralInterpretationError, match="Invalid model response envelope"):
+    with pytest.raises(NeuralInterpretationError, match="Invalid model metadata"):
+        ingest_model_response(doc, raw, req, raw_model, resp)
+
+
+def test_unknown_model_metadata_field_is_classified_as_metadata_error():
+    doc, raw = base()
+    req = request(doc, raw)
+    raw_model, resp = response(doc, raw, req)
+    resp["model"]["provider_confidence"] = 0.99
+    resp["response_sha256"] = sha(canonical({k: v for k, v in resp.items() if k != "response_sha256"}))
+    with pytest.raises(NeuralInterpretationError, match="Invalid model metadata"):
+        ingest_model_response(doc, raw, req, raw_model, resp)
+
+
+def test_missing_model_metadata_field_is_classified_as_metadata_error():
+    doc, raw = base()
+    req = request(doc, raw)
+    raw_model, resp = response(doc, raw, req)
+    resp["model"].pop("model_version")
+    resp["response_sha256"] = sha(canonical({k: v for k, v in resp.items() if k != "response_sha256"}))
+    with pytest.raises(NeuralInterpretationError, match="Invalid model metadata"):
+        ingest_model_response(doc, raw, req, raw_model, resp)
+
+
+def test_model_metadata_value_is_validated_at_ae28_boundary():
+    doc, raw = base()
+    req = request(doc, raw)
+    raw_model, resp = response(doc, raw, req)
+    resp["model"]["adapter_id"] = ""
+    resp["response_sha256"] = sha(canonical({k: v for k, v in resp.items() if k != "response_sha256"}))
+    with pytest.raises(NeuralInterpretationError, match="Invalid model metadata value"):
+        ingest_model_response(doc, raw, req, raw_model, resp)
+
+
+def test_model_context_digest_format_is_validated_at_ae28_boundary():
+    doc, raw = base()
+    req = request(doc, raw)
+    raw_model, resp = response(doc, raw, req)
+    resp["model"]["context_sha256"] = "not-a-digest"
+    resp["response_sha256"] = sha(canonical({k: v for k, v in resp.items() if k != "response_sha256"}))
+    with pytest.raises(NeuralInterpretationError, match="Invalid model context digest"):
         ingest_model_response(doc, raw, req, raw_model, resp)
 
 

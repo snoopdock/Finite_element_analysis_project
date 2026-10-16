@@ -127,6 +127,13 @@ AE-28 rejects:
 - oversized raw output;
 - automatic-authority fields.
 
+Validation errors are classified at the narrowest AE-28 contract boundary:
+outer-response violations report an envelope error, model-trace violations
+report a model-trace error, and model-metadata violations report a model-
+metadata error. A structurally valid response that reaches AE-27 is reported
+separately as an AE-27 proposal-rejection error. This distinction is intended
+for deterministic automated auditing and later controlled repair.
+
 No network, shell, `eval`, `exec`, source import, or repository mutation is
 part of this layer.
 
