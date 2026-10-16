@@ -1,0 +1,13 @@
+id: G9.26
+name: AE-24 Language-Agnostic Semantic Contracts and Graph Admission
+# Manual-only dispatcher from main. No push, schedule, or workflow modification.
+target_tests:
+  - tests/semantic_audit/test_ae24_semantic_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_graph/test_g71_structural_reasoning.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_audit/test_ae23_external_git_admission.py
+regression:
+  enabled: true
+  path: tests/
