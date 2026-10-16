@@ -1,0 +1,14 @@
+id: G9.28
+name: AE-26 Language-Independent Semantic Vocabulary and Contract Evolution
+# Manual-only dispatcher from main. Requires accepted G9.27.
+target_tests:
+  - tests/semantic_audit/test_ae26_semantic_evolution.py
+  - tests/semantic_audit/test_ae25_semantic_reasoning.py
+  - tests/semantic_audit/test_ae24_semantic_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_graph/test_g71_structural_reasoning.py
+  - tests/semantic_graph/test_dependency_analysis.py
+regression:
+  enabled: true
+  path: tests/
