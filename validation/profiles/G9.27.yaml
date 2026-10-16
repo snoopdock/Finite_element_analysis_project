@@ -1,0 +1,14 @@
+id: G9.27
+name: AE-25 Language-Independent Witnessed Semantic Invariant Reasoning
+# Requires acceptance of G9.26 and its complete AE-24 files.
+target_tests:
+  - tests/semantic_audit/test_ae25_semantic_reasoning.py
+  - tests/semantic_audit/test_ae24_semantic_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_graph/test_g71_structural_reasoning.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_audit/test_ae23_external_git_admission.py
+regression:
+  enabled: true
+  path: tests/
