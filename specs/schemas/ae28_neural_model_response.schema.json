@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AE-28 Neural Model Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_sha256",
+    "proposal_id",
+    "model",
+    "model_trace",
+    "candidate_assertions",
+    "evidence_links",
+    "response_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ae28/neural-model-response/v1"
+    },
+    "request_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "proposal_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter_id",
+        "model_family",
+        "model_version",
+        "context_sha256"
+      ],
+      "properties": {
+        "adapter_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "model_family": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "model_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "context_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "model_trace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter_id",
+        "model_family",
+        "model_version",
+        "raw_output_sha256",
+        "generation_config_sha256"
+      ],
+      "properties": {
+        "adapter_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "model_family": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "model_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "raw_output_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "generation_config_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "candidate_assertions": {
+      "type": "array",
+      "minItems": 1
+    },
+    "evidence_links": {
+      "type": "array"
+    },
+    "response_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

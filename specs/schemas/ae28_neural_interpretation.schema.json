@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AE-28 Neural Interpretation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_sha256",
+    "response_sha256",
+    "proposal_sha256",
+    "base_contract_sha256",
+    "base_graph_fingerprint",
+    "base_semantic_fingerprint",
+    "base_hypothesis_fingerprint",
+    "vocabulary_digest",
+    "model_trace",
+    "proposal",
+    "authority",
+    "interpretation_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ae28/neural-interpretation/v1"
+    },
+    "request_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "response_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "proposal_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "base_contract_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "base_graph_fingerprint": {
+      "type": "string",
+      "pattern": "^graph:[0-9a-f]{32}$"
+    },
+    "base_semantic_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "base_hypothesis_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "vocabulary_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "model_trace": {
+      "type": "object"
+    },
+    "proposal": {
+      "type": "object"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_output_verified",
+        "semantic_truth_verified",
+        "candidate_only",
+        "automatic_graph_mutation_permitted",
+        "candidate_promoted_to_authoritative_fact"
+      ],
+      "properties": {
+        "model_output_verified": {
+          "const": false
+        },
+        "semantic_truth_verified": {
+          "const": false
+        },
+        "candidate_only": {
+          "const": true
+        },
+        "automatic_graph_mutation_permitted": {
+          "const": false
+        },
+        "candidate_promoted_to_authoritative_fact": {
+          "const": false
+        }
+      }
+    },
+    "interpretation_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
