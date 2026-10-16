@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authority": {
+      "const": {
+        "automatic_authoritative_checkout_mutation_permitted": false,
+        "decision_memory_authorizes_repairs": false
+      }
+    },
+    "current_snapshot_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "decision_ids": {
+      "maxItems": 500,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "initial_snapshot_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "iteration_index": {
+      "maximum": 8,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "max_iterations": {
+      "maximum": 8,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "ae29/iterative-audit-session/v1"
+    },
+    "session_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "type": "string"
+    },
+    "session_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "active",
+        "complete",
+        "exhausted"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "session_id",
+    "initial_snapshot_sha256",
+    "current_snapshot_sha256",
+    "max_iterations",
+    "iteration_index",
+    "status",
+    "decision_ids",
+    "authority",
+    "session_sha256"
+  ],
+  "title": "AE-29 Iterative Audit Session",
+  "type": "object"
+}

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "files": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "content_b64": {
+            "type": "string"
+          },
+          "path": {
+            "maxLength": 512,
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "size": {
+            "maximum": 2000000,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "sha256",
+          "size",
+          "content_b64"
+        ],
+        "type": "object"
+      },
+      "maxItems": 4000,
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "ae29/repository-snapshot/v1"
+    },
+    "snapshot_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "snapshot_sha256",
+    "files"
+  ],
+  "title": "AE-29 Repository Snapshot",
+  "type": "object"
+}

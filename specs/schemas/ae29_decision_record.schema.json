@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "decision": {
+      "enum": [
+        "await_verification",
+        "await_post_audit",
+        "reject_repair",
+        "accept_repair",
+        "defer"
+      ]
+    },
+    "decision_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "type": "string"
+    },
+    "decision_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "finding_context": {
+      "type": "array",
+      "uniqueItems": true
+    },
+    "finding_ids": {
+      "type": "array",
+      "uniqueItems": true
+    },
+    "input_snapshot_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "iteration_index": {
+      "maximum": 8,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "lesson_codes": {
+      "maxItems": 32,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "memory_scope": {
+      "const": "non_authoritative_historical_guidance"
+    },
+    "neural_handoff_sha256": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "output_snapshot_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "reason_code": {
+      "type": "string"
+    },
+    "remaining_finding_ids": {
+      "type": "array",
+      "uniqueItems": true
+    },
+    "repair_kind": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "repair_sha256": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "schema_version": {
+      "const": "ae29/decision-record/v1"
+    },
+    "session_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "type": "string"
+    },
+    "verification_sha256": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "decision_id",
+    "session_id",
+    "iteration_index",
+    "input_snapshot_sha256",
+    "output_snapshot_sha256",
+    "finding_ids",
+    "neural_handoff_sha256",
+    "repair_sha256",
+    "verification_sha256",
+    "finding_context",
+    "repair_kind",
+    "decision",
+    "reason_code",
+    "remaining_finding_ids",
+    "lesson_codes",
+    "memory_scope",
+    "decision_sha256"
+  ],
+  "title": "AE-29 Decision Record",
+  "type": "object"
+}

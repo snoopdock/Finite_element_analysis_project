@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "base_snapshot_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "code_fix",
+        "test_fix",
+        "configuration_fix",
+        "dependency_fix",
+        "data_fix",
+        "documentation_fix",
+        "refactor",
+        "other"
+      ]
+    },
+    "neural_handoff_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "operations": {
+      "maxItems": 200,
+      "minItems": 1,
+      "type": "array"
+    },
+    "reason_codes": {
+      "maxItems": 32,
+      "type": "array"
+    },
+    "repair_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "type": "string"
+    },
+    "repair_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "ae29/repair-proposal/v1"
+    },
+    "target_finding_fingerprints": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "finding_fingerprint": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "finding_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "finding_id",
+          "finding_fingerprint"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "target_finding_ids": {
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schema_version",
+    "repair_id",
+    "base_snapshot_sha256",
+    "target_finding_ids",
+    "target_finding_fingerprints",
+    "neural_handoff_sha256",
+    "kind",
+    "operations",
+    "reason_codes",
+    "repair_sha256"
+  ],
+  "title": "AE-29 Repair Proposal",
+  "type": "object"
+}

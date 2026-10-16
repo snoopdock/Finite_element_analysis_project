@@ -1,0 +1,19 @@
+id: G9.31
+name: AE-29 Bounded Iterative Repository Audit and Controlled Self-Correction
+# Manual-only dispatcher. Requires accepted G9.30. No live LLM, network, shell,
+# or authoritative-checkout mutation is performed by this profile.
+target_tests:
+  - tests/semantic_audit/test_ae29_iterative_audit.py
+  - tests/semantic_audit/test_ae28_neural_interpretation.py
+  - tests/semantic_audit/test_ae27_neurosymbolic_gateway.py
+  - tests/semantic_audit/test_ae26_semantic_evolution.py
+  - tests/semantic_audit/test_ae25_semantic_reasoning.py
+  - tests/semantic_audit/test_ae24_semantic_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_graph/test_g71_structural_reasoning.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_audit/test_ae23_external_git_admission.py
+regression:
+  enabled: true
+  path: tests/
