@@ -1,50 +1,74 @@
-# AE-26 — Language-independent semantic vocabulary and contract evolution
+# AE-26 — Language-independent semantic identity and contract evolution
 
 ## Purpose
 
-AE-26 moves the Audit Engine from typed graph admission toward an explicit
-semantic layer. It defines a finite vocabulary for the relations already
-admitted by AE-24, produces deterministic semantic projections, and compares
-two admitted contracts to expose structural and meaning-level changes.
+The G9.28 corrective release hardens AE-26 before the Audit Engine enters
+AE-27 neurosymbolic proposal work.
 
-The implementation is independent of Python syntax. Future adapters for Rust,
-C++, CI workflows, API schemas, scientific pipelines, or other artifact
-sources can produce equivalent AE-24 facts and obtain the same semantic
-projection.
+It provides:
 
-## Identity and evidence
+- one canonical semantic-record construction path;
+- explicit entity/occurrence/semantic identity separation;
+- semantic IDs independent of occurrence and evidence-source identity;
+- semantic producer binding for interface relationships;
+- deterministic semantic fingerprints;
+- separate authoritative and hypothesis projections;
+- complete evolution reporting for relationships, entities, policies, and
+  coverage;
+- deterministic handling of parallel interface variants;
+- source-replay verification of serialized projections and diffs.
 
-* AE-24 remains the admission boundary. Source hashes establish byte
-  consistency, not external authenticity or truth.
-* Occurrence IDs and source IDs remain provenance identities.
-* Semantic fingerprints collapse duplicate occurrences carrying the same
-  normalized semantic relation, while the evidence projection retains every
-  occurrence.
-* Origin (`declared`, `observed`, `candidate`) remains semantically relevant.
-* Candidate/neural assertions are never promoted by AE-26.
+## Why the corrective release was required
 
-## Contract evolution
+The first G9.28 run failed one test because the test selected the first
+lexicographically sorted edge rather than the modified occurrence. That was a
+test defect.
 
-`diff_contracts()` classifies relationship additions/removals, entity-kind
-changes, and interface meaning changes. A change report describes admitted
-evidence; it does not prove a deployed runtime change.
+The deeper review also identified that the first implementation could produce:
 
-The comparison does not infer arbitrary natural-language equivalence,
-ontology entailment, behavioral causality, or intent from names.
+1. a semantic fingerprint that changed when policy/coverage state changed
+   without a corresponding semantic diff;
+2. interface diffs that were dependent on assertion ordering because parallel
+   assertions were collapsed into a single dictionary entry;
+3. a consumer binding whose semantic identity did not encode the resolved
+   producer contract even though AE-25 reasoning could distinguish producer
+   contract versions;
+4. candidate assertions participating in the main semantic fingerprint even
+   though they were explicitly quarantined by AE-24/AE-25.
 
-## Limitations
+The corrective implementation resolves these inconsistencies using a single
+canonical semantic representation.
 
-* No LLM inference or neural training.
-* No OWL-DL entailment.
-* No automatic graph mutation or remediation.
-* A source-bound relation can still be wrong if extraction is wrong.
-* Semantic equality is defined by this versioned vocabulary.
-* Entity identity is local to the contract namespace.
-* Full downstream invalidation is future work; AE-25 remains the conservative
-  dependency-impact mechanism.
+## Compatibility
+
+AE-24 contract admission remains the input boundary and is unchanged.
+
+AE-25 symbolic reasoning remains the reasoning authority for its existing
+rules and is not replaced by AE-26.
+
+The AE-26 semantic schema is intentionally versioned to `v2` because its
+semantic identity definition has materially changed. Existing v1 serialized
+AE-26 outputs should not be silently interpreted as v2 outputs.
 
 ## Security and budgets
 
-AE-24 enforces source and graph budgets. AE-26 adds a 12,000-change budget.
-CLI input is canonical JSON plus bounded regular files; symlinks and unsafe
-source names are rejected. Source programs are never executed.
+AE-24 continues to enforce contract, source, graph, and assertion budgets.
+AE-26 retains a 12,000-change evolution budget.
+
+The CLI reuses AE-25's bounded canonical contract/evidence loader and uses a
+bounded regular-file reader for serialized verification claims.
+
+Source programs are never executed.
+
+Symlink evidence paths remain forbidden.
+
+## Authority boundary
+
+A source digest establishes consistency between a contract and supplied bytes.
+It does not authenticate the source producer or prove the truth of an
+assertion.
+
+A semantic fingerprint establishes deterministic identity under this
+vocabulary. It is not a proof of real-world correctness.
+
+Candidate/model output is never promoted automatically.
