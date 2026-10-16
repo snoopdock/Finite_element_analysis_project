@@ -46,8 +46,9 @@ AE-24 contract admission remains the input boundary and is unchanged.
 AE-25 symbolic reasoning remains the reasoning authority for its existing
 rules and is not replaced by AE-26.
 
-The AE-26 semantic schema is intentionally versioned to `v2` because its
-semantic identity definition has materially changed. Existing v1 serialized
+The AE-26 semantic vocabulary schema is `v2`. The evolution report is
+versioned to `v3` because it now exposes an explicit `semantic_diff_fingerprint`
+that separates semantic determinism from exact contract/report identity. Existing v1 serialized
 AE-26 outputs should not be silently interpreted as v2 outputs.
 
 ## Security and budgets
@@ -72,3 +73,17 @@ A semantic fingerprint establishes deterministic identity under this
 vocabulary. It is not a proof of real-world correctness.
 
 Candidate/model output is never promoted automatically.
+
+
+## Diff identity boundary
+
+Assertion ordering can change the exact admitted contract digest without
+changing the semantic state. This is intentional: `contract_sha256` is a
+source/contract identity, while `semantic_diff_fingerprint` is the deterministic
+identity of the derived semantic evolution result. The complete
+`report_sha256` remains an integrity seal over the entire report.
+
+The test suite therefore compares semantic fields, reported changes, status,
+authority, and `semantic_diff_fingerprint` for order-independence tests. It
+also explicitly verifies that the exact contract and report digests may differ
+under reordered assertions.

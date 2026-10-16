@@ -24,7 +24,7 @@ from audit_engine.semantic_audit.ae24.contracts import (
 )
 
 SCHEMA = "ae26/semantic-vocabulary/v2"
-DIFF_SCHEMA = "ae26/semantic-contract-diff/v2"
+DIFF_SCHEMA = "ae26/semantic-contract-diff/v3"
 
 RELATION_SEMANTICS = {
     "PRODUCES": {
@@ -844,8 +844,44 @@ def diff_contracts(
             "candidate_hypotheses_verified": False,
         },
     }
+    result["semantic_diff_fingerprint"] = semantic_diff_fingerprint(result)
     result["report_sha256"] = _sha(canonical(result))
     return result
+
+
+def _semantic_diff_payload(result: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the order-independent semantic content of a diff report.
+
+    ``contract_sha256`` and ``report_sha256`` intentionally do not participate:
+    the former identifies the exact source contract supplied to AE-24 and may
+    change when assertion ordering changes, while the latter seals the whole
+    report and therefore changes whenever the contract identity changes.
+
+    This fingerprint identifies the *derived semantic evolution result*.
+    It is not a claim that the semantic truth itself has been independently
+    verified.
+    """
+    before = result["before"]
+    after = result["after"]
+    return {
+        "schema_version": result["schema_version"],
+        "vocabulary_digest": result["vocabulary_digest"],
+        "before": {
+            "semantic_fingerprint": before["semantic_fingerprint"],
+            "hypothesis_fingerprint": before["hypothesis_fingerprint"],
+        },
+        "after": {
+            "semantic_fingerprint": after["semantic_fingerprint"],
+            "hypothesis_fingerprint": after["hypothesis_fingerprint"],
+        },
+        "changes": result["changes"],
+        "status": result["status"],
+    }
+
+
+def semantic_diff_fingerprint(result: Mapping[str, Any]) -> str:
+    """Compute a deterministic identity for the semantic content of a diff."""
+    return _sha(canonical(_semantic_diff_payload(result)))
 
 
 def verify_diff(

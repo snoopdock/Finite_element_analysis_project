@@ -19,6 +19,7 @@ from .semantics import (
     verify_projection,
     diff_contracts,
     verify_diff,
+    semantic_diff_fingerprint,
 )
 
 __all__ = [
@@ -40,4 +41,5 @@ __all__ = [
     "verify_projection",
     "diff_contracts",
     "verify_diff",
+    "semantic_diff_fingerprint",
 ]

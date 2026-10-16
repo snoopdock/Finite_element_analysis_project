@@ -106,6 +106,25 @@ def hypothesis_records(projection):
     return projection["hypotheses"]
 
 
+def assert_semantic_diff_equivalent(first, second):
+    """Compare semantic evolution while preserving exact-contract provenance.
+
+    Reordering assertions may legitimately change ``contract_sha256`` because
+    that digest identifies the exact admitted contract bytes.  The semantic
+    evolution result must nevertheless remain identical.
+    """
+    assert first["schema_version"] == second["schema_version"]
+    assert first["vocabulary_digest"] == second["vocabulary_digest"]
+    assert first["before"]["semantic_fingerprint"] == second["before"]["semantic_fingerprint"]
+    assert first["before"]["hypothesis_fingerprint"] == second["before"]["hypothesis_fingerprint"]
+    assert first["after"]["semantic_fingerprint"] == second["after"]["semantic_fingerprint"]
+    assert first["after"]["hypothesis_fingerprint"] == second["after"]["hypothesis_fingerprint"]
+    assert first["changes"] == second["changes"]
+    assert first["status"] == second["status"]
+    assert first["authority"] == second["authority"]
+    assert first["semantic_diff_fingerprint"] == second["semantic_diff_fingerprint"]
+
+
 def test_snapshot_is_language_neutral():
     doc, raw = fixture()
     first = snapshot(doc, raw)
@@ -640,7 +659,9 @@ def test_semantic_diff_is_deterministic_under_assertion_order():
     one = diff_contracts(before, raw, after, raw)
     after["assertions"].reverse()
     two = diff_contracts(before, raw, after, raw)
-    assert one == two
+    assert_semantic_diff_equivalent(one, two)
+    assert one["after"]["contract_sha256"] != two["after"]["contract_sha256"]
+    assert one["report_sha256"] != two["report_sha256"]
 
 
 def test_parallel_interface_variants_do_not_overwrite_each_other():
@@ -660,7 +681,9 @@ def test_parallel_interface_variants_do_not_overwrite_each_other():
         after["assertions"][-1],
     )
     second = diff_contracts(before, raw, after, raw)
-    assert first == second
+    assert_semantic_diff_equivalent(first, second)
+    assert first["after"]["contract_sha256"] != second["after"]["contract_sha256"]
+    assert first["report_sha256"] != second["report_sha256"]
 
 
 def test_same_slot_variant_meaning_change_is_order_independent():
@@ -679,7 +702,9 @@ def test_same_slot_variant_meaning_change_is_order_independent():
     one = diff_contracts(before, raw, after, raw)
     after["assertions"].reverse()
     two = diff_contracts(before, raw, after, raw)
-    assert one == two
+    assert_semantic_diff_equivalent(one, two)
+    assert one["after"]["contract_sha256"] != two["after"]["contract_sha256"]
+    assert one["report_sha256"] != two["report_sha256"]
     assert any(
         x["change_type"] == "interface_meaning_changed"
         for x in one["changes"]
@@ -771,6 +796,17 @@ def test_large_change_set_fails_closed():
         diff_contracts(before, raw, after, raw)
 
 
+def test_semantic_diff_fingerprint_tampering_is_rejected():
+    before, raw = fixture()
+    after = copy.deepcopy(before)
+    add(after, "dep1", "consumer", "DEPENDS_ON", "producer")
+    claimed = diff_contracts(before, raw, after, raw)
+    tampered = copy.deepcopy(claimed)
+    tampered["semantic_diff_fingerprint"] = "0" * 64
+    with pytest.raises(SemanticModelError, match="exact source replay"):
+        verify_diff(before, raw, after, raw, tampered)
+
+
 def test_cli_snapshot_and_verify_round_trip(tmp_path, capsys):
     from audit_engine.semantic_audit.ae24 import canonical
     from audit_engine.semantic_audit.ae26.__main__ import main
@@ -840,7 +876,9 @@ def test_cli_diff_and_verify_round_trip(tmp_path, capsys):
         "--after-evidence-dir", str(after_dir),
         "--report", str(report_path),
     ]) == 0
-    assert json.loads(capsys.readouterr().out)["status"] == "source_replayed"
+    verified = json.loads(capsys.readouterr().out)
+    assert verified["status"] == "source_replayed"
+    assert verified["semantic_diff_fingerprint"] == report["semantic_diff_fingerprint"]
 
 
 def test_cli_rejects_noncanonical_claim(tmp_path):

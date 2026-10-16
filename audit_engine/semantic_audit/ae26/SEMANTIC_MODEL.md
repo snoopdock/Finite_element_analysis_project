@@ -13,17 +13,13 @@ to:
 
 `ae26/semantic-vocabulary/v2`
 
-and the evolution report schema from:
+and the evolution report schema is now:
 
-`ae26/semantic-contract-diff/v1`
+`ae26/semantic-contract-diff/v3`
 
-to:
-
-`ae26/semantic-contract-diff/v2`
-
-The schema change is intentional: the meaning of semantic identity has been
-strengthened and the previous v1 projection was not sufficiently complete or
-internally consistent for further neurosymbolic development.
+The v2 corrective model established the canonical semantic representation.
+The v3 follow-up adds an explicit `semantic_diff_fingerprint` so semantic
+order-independence is distinguishable from exact-contract/report identity.
 
 ## 2. Three identities
 
@@ -175,6 +171,22 @@ overwrite each other.
 
 All set and pairing operations are canonically ordered, making results
 independent of input assertion order.
+
+### 6.1 Exact contract identity versus semantic diff identity
+
+AE-26 deliberately exposes two different digest layers in an evolution report:
+
+- `contract_sha256` identifies the exact admitted contract representation and
+  may change when assertion ordering changes.
+- `semantic_diff_fingerprint` identifies the derived semantic evolution result
+  and is invariant to assertion ordering when the semantic state and reported
+  changes are identical.
+- `report_sha256` seals the complete report and therefore may change when
+  contract provenance changes, even when semantic evolution does not.
+
+This separation prevents exact source/contract identity from being confused
+with semantic determinism. `semantic_diff_fingerprint` is an identity of the
+computed diff, not a proof of semantic truth.
 
 ## 7. Evolution status
 

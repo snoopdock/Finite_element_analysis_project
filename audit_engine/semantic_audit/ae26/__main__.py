@@ -149,6 +149,7 @@ def main(argv=None):
         result = {
             "status": "source_replayed",
             "report_sha256": claimed["report_sha256"],
+            "semantic_diff_fingerprint": claimed["semantic_diff_fingerprint"],
             "before_semantic_fingerprint": claimed["before"]["semantic_fingerprint"],
             "after_semantic_fingerprint": claimed["after"]["semantic_fingerprint"],
             "before_hypothesis_fingerprint": claimed["before"]["hypothesis_fingerprint"],
