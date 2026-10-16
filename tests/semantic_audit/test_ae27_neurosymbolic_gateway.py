@@ -192,12 +192,44 @@ def test_candidate_evidence_cannot_support_another_candidate():
         validate_proposal(doc, raw, p)
 
 
+def test_candidate_evidence_error_precedes_generic_link_validation():
+    doc, raw = base()
+    candidates = [candidate("cand1"), candidate("cand2")]
+    links = [
+        {"candidate_occurrence_id": "cand1", "evidence_occurrence_id": "cand2", "kind": "unsupported"}
+    ]
+    p = proposal(doc, raw, candidates, links)
+    p["proposal_sha256"] = sha(canonical({k:v for k,v in p.items() if k != "proposal_sha256"}))
+    with pytest.raises(ProposalError, match="Candidate evidence"):
+        validate_proposal(doc, raw, p)
+
+
+def test_unknown_evidence_occurrence_is_not_misclassified_as_candidate_evidence():
+    doc, raw = base()
+    links = [
+        {"candidate_occurrence_id": "cand1", "evidence_occurrence_id": "missing", "kind": "supports"}
+    ]
+    p = proposal(doc, raw, links=links)
+    p["proposal_sha256"] = sha(canonical({k:v for k,v in p.items() if k != "proposal_sha256"}))
+    with pytest.raises(ProposalError, match="Invalid or duplicate evidence link"):
+        validate_proposal(doc, raw, p)
+
+
 def test_context_occurrence_must_exist():
+    doc, raw = base()
+    # Keep valid model metadata so this test isolates the graph-reference
+    # invariant rather than the separate mandatory context-digest invariant.
+    p = proposal(doc, raw, context=["missing"])
+    with pytest.raises(ProposalError, match="Context occurrence"):
+        validate_proposal(doc, raw, p)
+
+
+def test_missing_model_context_digest_is_distinct_from_missing_occurrence():
     doc, raw = base()
     p = proposal(doc, raw, context=["missing"])
     p["model"].pop("context_sha256")
     p["proposal_sha256"] = sha(canonical({k:v for k,v in p.items() if k != "proposal_sha256"}))
-    with pytest.raises(ProposalError, match="Context occurrence"):
+    with pytest.raises(ProposalError, match="model metadata"):
         validate_proposal(doc, raw, p)
 
 

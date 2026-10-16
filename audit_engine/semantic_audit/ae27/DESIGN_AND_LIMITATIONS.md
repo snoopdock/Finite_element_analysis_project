@@ -101,3 +101,18 @@ review set and rejects any altered result.
 * Counterfactual probing is bounded by AE-25 resource limits.
 * Natural-language equivalence and ontology entailment are not inferred.
 * Authoritative admission remains a separate source/evidence-controlled step.
+
+
+## Validation ordering and error specificity
+
+AE-27 distinguishes proposal-local candidate identities from authoritative
+evidence identities. When an evidence link names another candidate as its
+evidence endpoint, that candidate-role violation is reported before generic
+unknown/duplicate evidence-link validation. This prevents a semantically
+important authority violation from being hidden behind a generic envelope
+error.
+
+The validator intentionally checks mandatory model metadata before resolving
+context occurrences. This is fail-closed behavior. The test suite keeps these
+invariants independent: a missing context occurrence is tested with valid
+model metadata, while missing `context_sha256` is tested separately.

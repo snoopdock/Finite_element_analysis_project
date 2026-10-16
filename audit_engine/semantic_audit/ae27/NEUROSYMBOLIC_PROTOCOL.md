@@ -81,3 +81,16 @@ source-replay verifier. The review-set digest is order-independent because
 review events are an identified set for adjudication purposes.
 
 No source program is executed and no authoritative graph mutation occurs.
+
+
+## Validation failure classification
+
+The gateway validates proposal-local candidate identities before treating an
+evidence occurrence as part of the admitted evidence graph. This ordering is
+intentional: a candidate used as evidence for another candidate is a distinct
+authority-boundary violation, not merely an unknown evidence reference.
+
+Context validation is also layered. Mandatory model metadata is validated
+before graph-reference resolution. Tests that target a nonexistent context
+must therefore supply otherwise valid model metadata; a missing
+`context_sha256` is a separate contract failure.

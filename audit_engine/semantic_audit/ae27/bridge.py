@@ -223,15 +223,25 @@ def validate_proposal(
         cid = link["candidate_occurrence_id"]
         eid = link["evidence_occurrence_id"]
         kind = link["kind"]
+        # Validate the two sides in a stable order.  Candidate occurrences are
+        # proposal-local identities and are never part of the admitted evidence
+        # set.  Detect that role violation before the generic reference/duplicate
+        # branch so an invalid candidate-to-candidate link cannot be misreported
+        # as an ordinary malformed evidence link.
+        if cid not in candidate_ids:
+            raise ProposalError("Invalid or duplicate evidence link: unknown candidate occurrence")
+        if eid in candidate_ids:
+            raise ProposalError("Candidate evidence cannot serve as independent evidence")
         key = (cid, eid)
         if (
-            cid not in candidate_ids
-            or eid not in base
+            eid not in base
             or kind not in LINK_KINDS
             or key in seen_links
         ):
             raise ProposalError("Invalid or duplicate evidence link")
         if base[eid]["origin"] == "candidate":
+            # Defensive check for future callers that might supply a candidate
+            # occurrence through a different admission path.
             raise ProposalError("Candidate evidence cannot serve as independent evidence")
         seen_links.add(key)
 
