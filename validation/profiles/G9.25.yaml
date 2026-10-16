@@ -1,0 +1,23 @@
+id: G9.25
+name: AE-23 Offline Git Source Admission, Independent Reviewer Controls, and Scope-Safe Effectiveness
+# Manual dispatcher only; does not fetch or execute benchmark source.
+# These tests build small local Git fixtures, not externally authenticated datasets.
+target_tests:
+  - tests/semantic_audit/test_ae23_external_git_admission.py
+  - tests/semantic_audit/test_ae22_effectiveness_governance.py
+  - tests/semantic_audit/test_ae21_external_pilot.py
+  - tests/semantic_audit/test_ae20_historical_oracles.py
+  - tests/semantic_audit/test_ae20_behavioral_oracles.py
+  - tests/semantic_audit/test_ae19_history.py
+  - tests/semantic_audit/test_ae18_effectiveness.py
+  - tests/semantic_audit/test_ae17_investigation.py
+  - tests/semantic_audit/test_ae16_operations.py
+  - tests/semantic_audit/test_ae15_flow.py
+  - tests/semantic_audit/test_ae14_lexical_semantics.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/ae01/test_vertical_slice.py
+  - tests/semantic_verification/test_verification_service_receipts.py
+regression:
+  enabled: true
+  path: tests/
