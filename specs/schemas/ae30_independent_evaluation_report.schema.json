@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AE-30 Independent Evaluation Report",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "ae30/independent-evaluation/v1"
+    },
+    "evaluator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version"
+      ],
+      "properties": {
+        "id": {
+          "const": "ae30-independent-reference-evaluator"
+        },
+        "version": {
+          "const": "1"
+        }
+      }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "class_name",
+          "expected",
+          "actual",
+          "passed",
+          "state_changed",
+          "input_snapshot_sha256",
+          "output_snapshot_sha256",
+          "detail"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "class_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "expected": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "actual": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "state_changed": {
+            "type": "boolean"
+          },
+          "input_snapshot_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "output_snapshot_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_cases",
+        "passed_cases",
+        "failed_cases",
+        "case_pass_rate",
+        "unauthorized_state_changes",
+        "replay_failures",
+        "memory_authorization_violations"
+      ],
+      "properties": {
+        "total_cases": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        },
+        "passed_cases": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        },
+        "failed_cases": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        },
+        "case_pass_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "unauthorized_state_changes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "replay_failures": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "memory_authorization_violations": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "requirements"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "passed",
+            "failed"
+          ]
+        },
+        "requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "all_cases_pass",
+            "unauthorized_state_changes_zero",
+            "replay_failures_zero",
+            "memory_authorization_violations_zero"
+          ],
+          "properties": {
+            "all_cases_pass": {
+              "const": true
+            },
+            "unauthorized_state_changes_zero": {
+              "const": true
+            },
+            "replay_failures_zero": {
+              "const": true
+            },
+            "memory_authorization_violations_zero": {
+              "const": true
+            }
+          }
+        }
+      }
+    },
+    "evaluation_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository_finding_discovery",
+        "live_llm",
+        "authoritative_checkout_mutation",
+        "production_prompt"
+      ],
+      "properties": {
+        "repository_finding_discovery": {
+          "type": "string"
+        },
+        "live_llm": {
+          "type": "string"
+        },
+        "authoritative_checkout_mutation": {
+          "type": "string"
+        },
+        "production_prompt": {
+          "type": "string"
+        }
+      }
+    },
+    "open_dependencies": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "structural_control_loop",
+        "unattended_live_llm_correction",
+        "reason"
+      ],
+      "properties": {
+        "structural_control_loop": {
+          "const": "passed"
+        },
+        "unattended_live_llm_correction": {
+          "const": "not_ready"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "evaluator",
+    "cases",
+    "metrics",
+    "scope",
+    "open_dependencies",
+    "acceptance",
+    "readiness",
+    "evaluation_sha256"
+  ]
+}

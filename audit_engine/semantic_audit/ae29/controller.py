@@ -1063,7 +1063,7 @@ def evaluate_iteration(
             finding_context=finding_context,
             repair_kind=None,
         )
-        return _result(record, snapshot, current_audit, None, None, None, memory)
+        return _result(record, snapshot, current_audit, None, None, None, memory, input_snapshot=snapshot, handoff=verified_handoff)
 
     if verified_handoff is None:
         raise IterativeAuditError("A repair proposal requires a verified AE-28 neural handoff")
@@ -1101,7 +1101,7 @@ def evaluate_iteration(
             finding_context=finding_context,
             repair_kind=normalized_repair["kind"],
         )
-        return _result(record, snapshot, current_audit, normalized_repair, None, candidate, memory)
+        return _result(record, snapshot, current_audit, normalized_repair, None, candidate, memory, input_snapshot=snapshot, handoff=verified_handoff)
 
     verified = validate_verification(snapshot, candidate, normalized_repair, verification)
     if verified["status"] != "passed":
@@ -1123,7 +1123,7 @@ def evaluate_iteration(
             finding_context=finding_context,
             repair_kind=normalized_repair["kind"],
         )
-        return _result(record, snapshot, current_audit, normalized_repair, verified, candidate, memory)
+        return _result(record, snapshot, current_audit, normalized_repair, verified, candidate, memory, input_snapshot=snapshot, handoff=verified_handoff)
 
     if post_audit is None:
         record = make_decision_record(
@@ -1142,7 +1142,7 @@ def evaluate_iteration(
             finding_context=finding_context,
             repair_kind=normalized_repair["kind"],
         )
-        return _result(record, snapshot, current_audit, normalized_repair, verified, candidate, memory)
+        return _result(record, snapshot, current_audit, normalized_repair, verified, candidate, memory, input_snapshot=snapshot, handoff=verified_handoff)
 
     after_audit = validate_audit_report(candidate, post_audit)
     remaining_targeted = sorted(
@@ -1166,6 +1166,7 @@ def evaluate_iteration(
             repair_kind=normalized_repair["kind"],
         )
         return _result(record, snapshot, current_audit, normalized_repair, verified, candidate, memory,
+                       input_snapshot=snapshot, handoff=verified_handoff,
                        post_audit=after_audit, candidate_rejected=True)
 
     decision = "accept_repair"
@@ -1190,7 +1191,8 @@ def evaluate_iteration(
         finding_context=finding_context,
         repair_kind=normalized_repair["kind"],
     )
-    return _result(record, candidate, after_audit, normalized_repair, verified, candidate, memory,
+    return _result(record, candidate, current_audit, normalized_repair, verified, candidate, memory,
+                   input_snapshot=snapshot, handoff=verified_handoff,
                    post_audit=after_audit)
 
 
@@ -1203,6 +1205,8 @@ def _result(
     candidate: RepositorySnapshot | None,
     memory: "DecisionMemory | None",
     *,
+    input_snapshot: RepositorySnapshot,
+    handoff: Mapping[str, Any] | None = None,
     post_audit: Mapping[str, Any] | None = None,
     candidate_rejected: bool = False,
 ) -> dict[str, Any]:
@@ -1212,15 +1216,16 @@ def _result(
         "decision": record["decision"],
         "decision_record": record,
         "state_changed": record["output_snapshot_sha256"] != record["input_snapshot_sha256"],
+        "input_snapshot": input_snapshot,
         "snapshot": state,
         "candidate_snapshot": candidate,
         "audit": copy.deepcopy(dict(audit)),
+        "handoff": copy.deepcopy(dict(handoff)) if handoff is not None else None,
         "repair": copy.deepcopy(dict(repair)) if repair is not None else None,
         "verification": copy.deepcopy(dict(verification)) if verification is not None else None,
         "post_audit": copy.deepcopy(dict(post_audit)) if post_audit is not None else None,
         "candidate_rejected": candidate_rejected,
     }
-
 
 def _validate_session(session: Mapping[str, Any], snapshot: RepositorySnapshot) -> None:
     if not isinstance(session, Mapping):
@@ -1258,30 +1263,198 @@ def _validate_session(session: Mapping[str, Any], snapshot: RepositorySnapshot) 
         raise IterativeAuditError("Session digest mismatch")
 
 
+def _validate_transition_result(
+    session: Mapping[str, Any],
+    result: Mapping[str, Any],
+) -> tuple[dict[str, Any], "RepositorySnapshot", "RepositorySnapshot | None"]:
+    """Re-validate the complete controller result before sealing a session."""
+    if not isinstance(result, Mapping):
+        raise IterativeAuditError("Controller result must be an object")
+    required = {
+        "decision", "decision_record", "state_changed", "snapshot",
+        "candidate_snapshot", "audit", "handoff", "repair", "verification",
+        "post_audit", "candidate_rejected", "input_snapshot",
+    }
+    if set(result) != required:
+        raise IterativeAuditError("Invalid controller result envelope")
+    input_snapshot = result["input_snapshot"]
+    if not isinstance(input_snapshot, RepositorySnapshot):
+        raise IterativeAuditError("Controller result input snapshot is missing")
+    if input_snapshot.snapshot_sha256 != session.get("current_snapshot_sha256"):
+        raise IterativeAuditError("Controller result input snapshot is stale")
+    if not isinstance(result["snapshot"], RepositorySnapshot):
+        raise IterativeAuditError("Controller result snapshot is invalid")
+    if result["candidate_snapshot"] is not None and not isinstance(
+        result["candidate_snapshot"], RepositorySnapshot
+    ):
+        raise IterativeAuditError("Controller result candidate snapshot is invalid")
+
+    record = validate_decision_record(result["decision_record"])
+    if result["decision"] != record["decision"]:
+        raise IterativeAuditError("Controller result decision mismatch")
+    if record["session_id"] != session.get("session_id"):
+        raise IterativeAuditError("Decision belongs to a different session")
+    if record["iteration_index"] != session.get("iteration_index", 0) + 1:
+        raise IterativeAuditError("Decision is not the next session iteration")
+    if record["input_snapshot_sha256"] != input_snapshot.snapshot_sha256:
+        raise IterativeAuditError("Decision input snapshot mismatch")
+    if record["output_snapshot_sha256"] != result["snapshot"].snapshot_sha256:
+        raise IterativeAuditError("Result snapshot does not match decision record")
+    expected_state_changed = (
+        record["output_snapshot_sha256"] != record["input_snapshot_sha256"]
+    )
+    if result["state_changed"] is not expected_state_changed:
+        raise IterativeAuditError("Controller state-change flag mismatch")
+
+    audit = validate_audit_report(input_snapshot, result["audit"])
+    findings = {item["finding_id"]: item for item in audit["findings"]}
+    open_ids = _open_finding_ids(audit)
+
+    repair = result["repair"]
+    handoff = result["handoff"]
+    if repair is None:
+        if result["candidate_snapshot"] is not None:
+            raise IterativeAuditError("Candidate snapshot exists without repair")
+        if handoff is not None:
+            handoff = validate_neural_handoff(input_snapshot, handoff)
+            if record["neural_handoff_sha256"] != handoff["handoff_sha256"]:
+                raise IterativeAuditError("Decision and neural handoff mismatch")
+        elif record["neural_handoff_sha256"] is not None:
+            raise IterativeAuditError("Decision contains handoff binding without handoff")
+        if record["repair_sha256"] is not None:
+            raise IterativeAuditError("Decision contains repair binding without repair")
+    else:
+        repair = validate_repair(
+            input_snapshot,
+            repair,
+            finding_ids=findings.keys(),
+            finding_fingerprints={
+                key: findings[key]["finding_fingerprint"] for key in findings
+            },
+        )
+        if handoff is None:
+            raise IterativeAuditError("Repair result is missing neural handoff")
+        handoff = validate_neural_handoff(input_snapshot, handoff)
+        if repair["neural_handoff_sha256"] != handoff["handoff_sha256"]:
+            raise IterativeAuditError("Repair and neural handoff mismatch")
+        if record["neural_handoff_sha256"] != handoff["handoff_sha256"]:
+            raise IterativeAuditError("Decision and neural handoff mismatch")
+        if record["repair_sha256"] != repair["repair_sha256"]:
+            raise IterativeAuditError("Decision and repair mismatch")
+        candidate = result["candidate_snapshot"]
+        if candidate is None:
+            raise IterativeAuditError("Repair result is missing candidate snapshot")
+        expected_candidate = input_snapshot.apply(repair)
+        if expected_candidate.snapshot_sha256 != candidate.snapshot_sha256:
+            raise IterativeAuditError("Candidate snapshot does not match repair")
+
+    verification = result["verification"]
+    if verification is None:
+        if record["verification_sha256"] is not None:
+            raise IterativeAuditError("Decision contains verification binding without verification")
+    else:
+        if repair is None or result["candidate_snapshot"] is None:
+            raise IterativeAuditError("Verification lacks repair candidate")
+        verification = validate_verification(
+            input_snapshot, result["candidate_snapshot"], repair, verification
+        )
+        if record["verification_sha256"] != verification["verification_sha256"]:
+            raise IterativeAuditError("Decision and verification mismatch")
+
+    post_audit = result["post_audit"]
+    if post_audit is not None:
+        if repair is None or result["candidate_snapshot"] is None:
+            raise IterativeAuditError("Post-audit lacks candidate snapshot")
+        post_audit = validate_audit_report(result["candidate_snapshot"], post_audit)
+
+    decision = record["decision"]
+    if decision == "accept_repair":
+        if repair is None or verification is None or post_audit is None:
+            raise IterativeAuditError("Accepted transition lacks complete repair evidence")
+        if verification["status"] != "passed":
+            raise IterativeAuditError("Accepted transition has non-passed verification")
+        if result["candidate_rejected"]:
+            raise IterativeAuditError("Accepted transition marks candidate rejected")
+        if not result["state_changed"]:
+            raise IterativeAuditError("Accepted repair must change controller state")
+        targeted = set(repair["target_finding_ids"])
+        if targeted & _open_finding_ids(post_audit):
+            raise IterativeAuditError("Accepted repair leaves targeted finding open")
+        if record["output_snapshot_sha256"] != result["candidate_snapshot"].snapshot_sha256:
+            raise IterativeAuditError("Accepted transition output is not candidate state")
+        if record["remaining_finding_ids"] != sorted(_open_finding_ids(post_audit)):
+            raise IterativeAuditError("Accepted transition remaining findings mismatch")
+    elif decision == "reject_repair":
+        if result["state_changed"]:
+            raise IterativeAuditError("Rejected transition changed controller state")
+        if record["output_snapshot_sha256"] != input_snapshot.snapshot_sha256:
+            raise IterativeAuditError("Rejected transition output mismatch")
+        if result["candidate_rejected"]:
+            if repair is None or post_audit is None:
+                raise IterativeAuditError("Rejected candidate lacks post-audit")
+            if not (set(repair["target_finding_ids"]) & _open_finding_ids(post_audit)):
+                raise IterativeAuditError("Rejected candidate lacks persistent targeted finding")
+    elif decision == "defer":
+        if result["state_changed"]:
+            raise IterativeAuditError("Deferred transition changed controller state")
+        if record["output_snapshot_sha256"] != input_snapshot.snapshot_sha256:
+            raise IterativeAuditError("Deferred transition output mismatch")
+    elif decision == "await_verification":
+        if repair is None or verification is not None or result["candidate_snapshot"] is None:
+            raise IterativeAuditError("Await-verification transition is inconsistent")
+        if result["state_changed"]:
+            raise IterativeAuditError("Await-verification transition changed controller state")
+    elif decision == "await_post_audit":
+        if repair is None or verification is None or verification["status"] != "passed":
+            raise IterativeAuditError("Await-post-audit transition lacks passed verification")
+        if post_audit is not None:
+            raise IterativeAuditError("Await-post-audit transition already has post-audit")
+        if result["state_changed"]:
+            raise IterativeAuditError("Await-post-audit transition changed controller state")
+    else:
+        raise IterativeAuditError("Unsupported controller transition")
+
+    if record["remaining_finding_ids"] != (
+        sorted(_open_finding_ids(post_audit)) if post_audit is not None
+        and decision in {"accept_repair", "reject_repair"}
+        else record["remaining_finding_ids"]
+    ):
+        raise IterativeAuditError("Decision remaining findings are inconsistent")
+    return record, input_snapshot, result["snapshot"]
+
+
 def advance_session(
     session: Mapping[str, Any],
     result: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Seal one decision into the session state without changing repository files."""
-    record = validate_decision_record(result["decision_record"])
-    _validate_session(session, _snapshot_stub(session["current_snapshot_sha256"]))
-    if record["session_id"] != session["session_id"]:
-        raise IterativeAuditError("Decision belongs to a different session")
-    if record["iteration_index"] != session["iteration_index"] + 1:
-        raise IterativeAuditError("Decision is not the next session iteration")
+    """Seal one fully revalidated decision into session state.
+
+    The transition boundary rechecks the artifact chain produced by
+    ``evaluate_iteration`` so a caller cannot manufacture a validly digested
+    accept decision and bypass the repair/verification/post-audit gates.
+    """
+    if not isinstance(session, Mapping):
+        raise IterativeAuditError("Session must be an object")
+    if not isinstance(result, Mapping):
+        raise IterativeAuditError("Controller result must be an object")
+    input_snapshot = result.get("input_snapshot")
+    if not isinstance(input_snapshot, RepositorySnapshot):
+        raise IterativeAuditError("Controller result input snapshot is missing")
+    _validate_session(session, input_snapshot)
+    record, input_snapshot, output_snapshot = _validate_transition_result(session, result)
+
     decision_ids = list(session["decision_ids"]) + [record["decision_id"]]
     if len(decision_ids) > MAX_DECISIONS:
         raise IterativeAuditError("Session decision budget exceeded")
+
     current_digest = record["output_snapshot_sha256"]
-    if result["snapshot"].snapshot_sha256 != current_digest:
-        raise IterativeAuditError("Result snapshot does not match decision record")
     if record["decision"] == "accept_repair":
-        remaining = record["remaining_finding_ids"]
-        status = "complete" if not remaining else "active"
+        status = "complete" if not record["remaining_finding_ids"] else "active"
     elif record["iteration_index"] >= session["max_iterations"]:
         status = "exhausted"
     else:
         status = "active"
+
     body = {
         "schema_version": SESSION_SCHEMA,
         "session_id": session["session_id"],
@@ -1295,7 +1468,6 @@ def advance_session(
     }
     body["session_sha256"] = _digest_json(body)
     return body
-
 
 def _snapshot_stub(digest: str) -> RepositorySnapshot:
     # Session validation only needs a matching digest, but RepositorySnapshot
