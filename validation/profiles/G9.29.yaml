@@ -1,0 +1,16 @@
+id: G9.29
+name: AE-27 Controlled Neurosymbolic Proposal Gateway and Symbolic Adjudication
+# Manual-only dispatcher from main. Requires accepted G9.28.
+target_tests:
+  - tests/semantic_audit/test_ae27_neurosymbolic_gateway.py
+  - tests/semantic_audit/test_ae26_semantic_evolution.py
+  - tests/semantic_audit/test_ae25_semantic_reasoning.py
+  - tests/semantic_audit/test_ae24_semantic_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_graph/test_g71_structural_reasoning.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_audit/test_ae23_external_git_admission.py
+regression:
+  enabled: true
+  path: tests/

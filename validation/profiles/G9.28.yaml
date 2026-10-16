@@ -1,7 +1,6 @@
 id: G9.28
-name: AE-26 Corrective Semantic Identity and Contract Evolution
-# Manual-only dispatcher from main. Requires accepted G9.27 and the G9.28
-# baseline. This profile revalidates the corrected G9.28 implementation.
+name: AE-26 Language-Independent Semantic Vocabulary and Contract Evolution
+# Manual-only dispatcher from main. Requires accepted G9.27.
 target_tests:
   - tests/semantic_audit/test_ae26_semantic_evolution.py
   - tests/semantic_audit/test_ae25_semantic_reasoning.py
