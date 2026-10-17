@@ -106,7 +106,20 @@ jobs:
             echo "::error::AE-31 did not produce a diagnostic report; inspect the preceding runner step."
             exit 1
           fi
-          if grep -q '^Status: runner_error$' "$REPORT"; then
+          if grep -qx 'Status: runner_error' "$REPORT"; then
             echo "::error::AE-31 recorded runner_error. The failure report was retained as an artifact; the diagnosis is not accepted."
             exit 1
           fi
+          EXECUTIVE_STATUS="$(awk '
+            /^1\. EXECUTIVE STATUS$/ { in_status=1; next }
+            /^2\. AE-29-COMPATIBLE SNAPSHOT AND FINDING BINDING$/ { in_status=0 }
+            in_status && /^- / { sub(/^- /, ""); print; exit }
+          ' "$REPORT")"
+          if [ "$EXECUTIVE_STATUS" != "completed_with_schema_valid_llm_response" ]; then
+            if [ -z "$EXECUTIVE_STATUS" ]; then
+              EXECUTIVE_STATUS="missing or unrecognized status"
+            fi
+            echo "::error::AE-31 diagnostic status '$EXECUTIVE_STATUS' is not accepted. Only a schema-valid LLM response is accepted; the artifact was retained."
+            exit 1
+          fi
+          echo "::notice::AE-31 received at least one schema-valid LLM response. The report remains a proposal, not an accepted repository repair."
