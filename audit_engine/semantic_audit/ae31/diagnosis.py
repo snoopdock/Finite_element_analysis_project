@@ -63,6 +63,12 @@ NARAROUTER_MODELS = (
     "laguna-s-2.1",
     "nemotron-3.5-lightning-free",
 )
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+OPENROUTER_MODELS = (
+    "deepseek/deepseek-v4.1-flash-1017",
+    "nvidia/nemotron-3.5-super-vl:free",
+    "google/gemma-4-26b-a4b-it:free",
+)
 CLOUDFLARE_BASE_URL = "https://api.cloudflare.com/client/v4"
 DEFAULT_CLOUDFLARE_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
 DEFAULT_NARAROUTER_MODEL = "agnes-2.5-flash"
@@ -134,6 +140,7 @@ SECRET_ENV_NAMES = (
     "CLOUDFLARE_ACCOUNT_ID",
     "CLOUDFLARE_API_TOKEN",
     "NARAROUTER_API_KEY",
+    "OPENROUTER_TOKEN",
 )
 
 OFFICIAL_CONTEXT = {
@@ -1080,6 +1087,110 @@ def call_nararouter(
         }
 
 
+
+def call_openrouter(
+    *, api_token: str, model: str, messages: list[dict[str, str]],
+    secrets_to_redact: list[str] | None = None,
+) -> dict[str, Any]:
+    """Call one explicitly allowlisted OpenRouter model; never perform model discovery."""
+    started = time.monotonic()
+    secret_values = list(secrets_to_redact if secrets_to_redact is not None else _secret_values())
+    auth_token = api_token.strip() if isinstance(api_token, str) else ""
+    if auth_token.lower().startswith("bearer "):
+        auth_token = auth_token[7:].strip()
+        if auth_token and auth_token not in secret_values:
+            secret_values.append(auth_token)
+    selected_model = model.strip() if isinstance(model, str) else ""
+    if not auth_token:
+        return {
+            "status": "skipped", "provider": "openrouter", "model": selected_model or None,
+            "error": "OPENROUTER_TOKEN GitHub secret is missing",
+        }
+    if selected_model not in OPENROUTER_MODELS:
+        return {
+            "status": "configuration_error", "provider": "openrouter", "model": selected_model or None,
+            "error": "Model is not in the fixed OpenRouter model allowlist; no request was sent.",
+        }
+    try:
+        response = requests.post(
+            OPENROUTER_BASE_URL + "/chat/completions",
+            headers={
+                "Authorization": "Bearer " + auth_token,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://github.com/snoopdock/Finite_element_analysis_project",
+                "X-OpenRouter-Title": "Finite Element Analysis Project AE-31",
+            },
+            json={
+                "model": selected_model,
+                "messages": messages,
+                "temperature": 0.1,
+                "max_tokens": 2500,
+                "stream": False,
+            },
+            timeout=HTTP_TIMEOUT_SECONDS,
+        )
+        elapsed = int((time.monotonic() - started) * 1000)
+        if response.status_code >= 400:
+            if response.status_code == 401:
+                error = (
+                    "OpenRouter rejected authentication with HTTP 401. Verify that the GitHub "
+                    "OPENROUTER_TOKEN secret contains a current OpenRouter API key; the key value was not logged."
+                )
+            else:
+                error = _redact(response.text[:1000], secret_values)
+            return {
+                "status": "provider_error", "provider": "openrouter", "model": selected_model,
+                "model_selection": "explicit allowlisted model; no discovery",
+                "http_status": int(response.status_code), "elapsed_ms": elapsed, "error": error,
+            }
+        try:
+            data = response.json()
+        except ValueError as exc:
+            return {
+                "status": "invalid_provider_response", "provider": "openrouter", "model": selected_model,
+                "http_status": int(response.status_code), "elapsed_ms": elapsed,
+                "error": f"invalid JSON response: {type(exc).__name__}",
+            }
+        if not isinstance(data, dict):
+            raise DiagnosticError("OpenRouter response is not a JSON object")
+        choices = data.get("choices", [])
+        if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+            error_obj = data.get("error")
+            detail = json.dumps(error_obj, ensure_ascii=False)[:500] if error_obj is not None else "no choices[0]"
+            raise DiagnosticError("OpenRouter response has no choices[0]: " + detail)
+        message = choices[0].get("message", {})
+        content = message.get("content") if isinstance(message, dict) else None
+        if isinstance(content, list):
+            content = "\n".join(
+                str(part.get("text", "")) for part in content
+                if isinstance(part, dict) and isinstance(part.get("text", ""), str)
+            )
+        if not isinstance(content, str) or not content.strip():
+            raise DiagnosticError("OpenRouter response contains no text content")
+        truncation = len(content) > MAX_MODEL_OUTPUT_CHARS
+        content = content[:MAX_MODEL_OUTPUT_CHARS]
+        safe_content = _redact(content, secret_values)
+        returned_model = data.get("model")
+        return {
+            "status": "success", "provider": "openrouter", "model": selected_model,
+            "returned_model": returned_model if isinstance(returned_model, str) else None,
+            "model_selection": "explicit allowlisted model; no discovery",
+            "http_status": int(response.status_code), "elapsed_ms": elapsed,
+            "raw_output": safe_content,
+            "raw_output_sha256": sha256_bytes(safe_content.encode("utf-8")),
+            "usage": data.get("usage"),
+            "output_truncated": truncation,
+        }
+    except (requests.RequestException, ValueError, DiagnosticError) as exc:
+        return {
+            "status": "provider_error", "provider": "openrouter", "model": selected_model,
+            "model_selection": "explicit allowlisted model; no discovery",
+            "elapsed_ms": int((time.monotonic() - started) * 1000),
+            "error": _redact(f"{type(exc).__name__}: {exc}", secret_values)[:1000],
+        }
+
+
+
 def _source_line_counts(files: Mapping[str, bytes]) -> dict[str, int]:
     return {path: len(data.decode("utf-8", errors="replace").splitlines()) for path, data in files.items()}
 
@@ -1229,11 +1340,15 @@ def _render_report(report: dict[str, Any], full_prompt: str, provider_results: l
         add("Model: " + str(result.get("model", "not selected")))
         if result.get("model_selection"):
             add("Model selection: " + str(result.get("model_selection")))
+        if result.get("returned_model"):
+            add("Provider-returned model: " + str(result.get("returned_model")))
         add("HTTP status: " + str(result.get("http_status", "n/a")))
         add("Structured output parse status: " + str(result.get("parse_status", "not parsed")))
         add("Structured output schema valid: " + str(result.get("schema_valid", False)))
         add("Latency ms: " + str(result.get("elapsed_ms", "n/a")))
         add("Raw output SHA-256: " + str(result.get("raw_output_sha256", "n/a")))
+        if result.get("usage") is not None:
+            add("Usage metadata: " + json.dumps(result.get("usage"), ensure_ascii=False, sort_keys=True))
         add("Bound request SHA-256: " + str(result.get("request_sha256", "n/a")))
         add("Exact prompt SHA-256: " + str(result.get("exact_prompt_sha256", "n/a")))
         if result.get("error"):
@@ -1251,7 +1366,7 @@ def _render_report(report: dict[str, Any], full_prompt: str, provider_results: l
     add(json.dumps(report.get("cross_provider_comparison", {}), ensure_ascii=False, indent=2))
     add("")
     add("8. EXACT PROMPT SENT TO BOTH PROVIDERS")
-    add("The same prompt was sent independently to each provider; no provider received the other provider's response.")
+    add("The same prompt was sent independently to each configured provider/model; no provider received another provider's response.")
     add(full_prompt)
     add("")
     add("9. SAFETY AND LIMITATIONS")
@@ -1265,6 +1380,17 @@ def _render_report(report: dict[str, Any], full_prompt: str, provider_results: l
     add("")
     add("10. HUMAN REVIEW QUESTION")
     add("Can the proposed code-level correction be accepted after review and deterministic tests? The LLM responses are evidence for that decision, not the decision itself.")
+    add("")
+    add("11. PROVIDER STATUS SUMMARY (MACHINE-READABLE)")
+    for result in provider_results:
+        add("\t".join([
+            "PROVIDER_RESULT",
+            str(result.get("provider", "unknown")),
+            str(result.get("model", "not selected")),
+            str(result.get("status", "unknown")),
+            str(bool(result.get("schema_valid", False))).lower(),
+            str(result.get("http_status", "n/a")),
+        ]))
     return "\n".join(lines) + "\n"
 
 
@@ -1376,6 +1502,11 @@ def run_diagnostic(
         provider_results = [
             {"status": "skipped", "provider": "cloudflare", "error": "required source evidence missing; no model call made"},
             {"status": "skipped", "provider": "nararouter", "error": "required source evidence missing; no model call made"},
+            *[
+                {"status": "skipped", "provider": "openrouter", "model": model,
+                 "error": "required source evidence missing; no model call made"}
+                for model in OPENROUTER_MODELS
+            ],
         ]
     else:
         cloudflare_result = call_cloudflare(
@@ -1391,7 +1522,16 @@ def run_diagnostic(
             messages=messages,
             secrets_to_redact=_secret_values(env),
         )
-        provider_results = [cloudflare_result, nara_result]
+        openrouter_results = [
+            call_openrouter(
+                api_token=env.get("OPENROUTER_TOKEN", "").strip(),
+                model=model,
+                messages=messages,
+                secrets_to_redact=_secret_values(env),
+            )
+            for model in OPENROUTER_MODELS
+        ]
+        provider_results = [cloudflare_result, nara_result, *openrouter_results]
     visible_line_ranges = {
         path: row.get("visible_line_ranges", [])
         for path, row in prompt_context.get("evidence_excerpt_manifest", {}).items()
