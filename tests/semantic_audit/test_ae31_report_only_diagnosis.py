@@ -587,8 +587,17 @@ def test_report_only_workflow_writes_report_without_modifying_target(tmp_path, m
     assert "cfsecret" not in json.dumps(captured_messages)
     assert "orsecret" not in json.dumps(captured_messages)
     assert "[REDACTED]" in json.dumps(captured_messages)
+    report_text = out.read_text(encoding="utf-8")
+    provider_rows = [
+        tuple(line.split("\t"))
+        for line in report_text.splitlines()
+        if line.startswith("PROVIDER_RESULT\t")
+    ]
+    openrouter_rows = [row for row in provider_rows if len(row) > 1 and row[1] == "openrouter"]
+    assert len(openrouter_rows) == len(ae31.OPENROUTER_MODELS)
     for model in ae31.OPENROUTER_MODELS:
-        assert f"PROVIDER_RESULT\\topenrouter\\t{model}\\tsuccess\\ttrue\\t200" in out.read_text(encoding="utf-8")
+        expected = ("PROVIDER_RESULT", "openrouter", model, "success", "true", "200")
+        assert expected in provider_rows
 
 
 def test_output_inside_target_repository_is_rejected_before_calls(tmp_path, monkeypatch):
@@ -698,3 +707,34 @@ def test_g936_profile_declares_required_identity():
     assert profile_path.is_file(), "G9.36 profile must exist in the repository"
     lines = profile_path.read_text(encoding="utf-8").splitlines()
     assert lines and lines[0].strip() == "id: G9.36"
+
+
+def test_provider_result_summary_is_tab_delimited():
+    """Machine-readable provider rows must use actual tabs and stable fields."""
+    provider = {
+        "provider": "openrouter",
+        "model": ae31.OPENROUTER_MODELS[0],
+        "status": "success",
+        "schema_valid": True,
+        "http_status": 200,
+    }
+    report = {
+        "generated_at_utc": "2026-01-01T00:00:00Z",
+        "target_branch": "stage1/section-uuids",
+        "target_commit": "abc123",
+        "overall_status": "completed_with_schema_valid_llm_response",
+        "live_probe": {"status": "success"},
+    }
+    rendered = ae31._render_report(report, "bounded test prompt", [provider], [])
+    row = next(
+        line for line in rendered.splitlines()
+        if line.startswith("PROVIDER_RESULT\t")
+    )
+    assert row.split("\t") == [
+        "PROVIDER_RESULT",
+        "openrouter",
+        ae31.OPENROUTER_MODELS[0],
+        "success",
+        "true",
+        "200",
+    ]
