@@ -1,0 +1,49 @@
+flowchart LR
+  %% Generated from statically observed imports and workflow commands; missing edges are not proof of runtime absence.
+  N1["FEA-llm-provider-benchmark.yml"]
+  N10["AE-11"]
+  N11["AE-12"]
+  N12["AE-24"]
+  N13["AE-25"]
+  N14["AE-26"]
+  N15["AE-27"]
+  N16["AE-28"]
+  N17["AE-29"]
+  N18["AE-30"]
+  N19["AE-31"]
+  N2["FEA-pipeline.yml"]
+  N3["main.py (FEA application)"]
+  N4["SemanticGraphAnalysisService"]
+  N5["LLM provider HTTP API"]
+  N6["providers.factory"]
+  N7["AE-01"]
+  N8["AE-09"]
+  N9["AE-10"]
+  N1 -->|runs| N3
+  N2 -->|runs| N3
+  N3 -->|imports| N6
+  N7 -->|imports| N4
+  N8 -->|imports| N4
+  N8 -->|imports| N7
+  N9 -->|imports| N4
+  N9 -->|imports| N7
+  N10 -->|imports| N4
+  N10 -->|imports| N7
+  N10 -->|imports| N9
+  N11 -->|imports| N4
+  N11 -->|imports| N7
+  N11 -->|imports| N8
+  N13 -->|imports| N12
+  N14 -->|imports| N12
+  N14 -->|imports| N13
+  N15 -->|imports| N12
+  N15 -->|imports| N13
+  N15 -->|imports| N14
+  N16 -->|imports| N12
+  N16 -->|imports| N14
+  N16 -->|imports| N15
+  N17 -->|imports| N12
+  N17 -->|imports| N16
+  N18 -->|imports| N12
+  N18 -->|imports| N17
+  N19 -->|calls| N5

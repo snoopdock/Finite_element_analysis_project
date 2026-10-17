@@ -1,0 +1,17 @@
+id: G9.40
+name: AE-32A Architecture and Wiring Audit
+# Report-only source inspection; no provider calls, source execution, or repository repair.
+target_tests:
+  - tests/semantic_audit/test_ae32a_architecture_wiring_audit.py
+  - tests/semantic_audit/test_ae24_semantic_contracts.py
+  - tests/semantic_audit/test_ae25_semantic_reasoning.py
+  - tests/semantic_audit/test_ae26_semantic_evolution.py
+  - tests/semantic_audit/test_ae27_neurosymbolic_gateway.py
+  - tests/semantic_audit/test_ae28_neural_interpretation.py
+  - tests/semantic_audit/test_ae29_iterative_audit.py
+  - tests/semantic_audit/test_ae29_transition_hardening.py
+  - tests/semantic_audit/test_ae30_independent_evaluation.py
+  - tests/semantic_audit/test_ae31_report_only_diagnosis.py
+regression:
+  enabled: true
+  path: tests/
