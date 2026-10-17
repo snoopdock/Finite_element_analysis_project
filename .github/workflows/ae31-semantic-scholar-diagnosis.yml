@@ -14,10 +14,15 @@ on:
         default: "@cf/meta/llama-3.1-8b-instruct-fast"
         type: string
       nararouter_model:
-        description: "NaraRouter model alias, or auto to discover account-accessible models"
+        description: "Select one of the NaraRouter models available to this account"
         required: true
-        default: "auto"
-        type: string
+        type: choice
+        options:
+          - agnes-2.5-flash
+          - jev
+          - laguna-s-2.1
+          - nemotron-3.5-lightning-free
+        default: agnes-2.5-flash
 
 permissions:
   contents: read
