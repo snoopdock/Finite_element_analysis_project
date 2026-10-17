@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ae31/repository-diagnosis-response/v1",
+  "title": "AE-31 Report-only Repository Diagnosis Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "summary",
+    "root_cause_codes",
+    "causal_chain",
+    "evidence",
+    "alternative_hypotheses",
+    "proposed_changes",
+    "proposed_unified_diff",
+    "test_plan",
+    "code_fix_feasible_without_semantic_scholar_key",
+    "reliable_access_guaranteed_without_semantic_scholar_key",
+    "risks",
+    "remaining_questions"
+  ],
+  "properties": {
+    "summary": {"type": "string", "minLength": 1, "maxLength": 6000},
+    "root_cause_codes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "unauthenticated_shared_rate_limit",
+          "concurrent_request_fanout",
+          "missing_retry_after_backoff",
+          "search_and_pdf_failures_conflated",
+          "insufficient_failure_observability",
+          "upstream_service_throttling",
+          "configuration_or_endpoint_error",
+          "network_or_transport_error",
+          "other_or_not_proven"
+        ]
+      }
+    },
+    "causal_chain": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 1500}},
+    "evidence": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "start_line", "end_line", "claim_type", "claim"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1, "maxLength": 512},
+          "start_line": {"type": ["integer", "null"], "minimum": 1},
+          "end_line": {"type": ["integer", "null"], "minimum": 1},
+          "claim_type": {"type": "string", "enum": ["direct_observation", "inference"]},
+          "claim": {"type": "string", "minLength": 1, "maxLength": 2000}
+        }
+      }
+    },
+    "alternative_hypotheses": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 1500}},
+    "proposed_changes": {"type": "array", "maxItems": 30, "items": {"type": "string", "maxLength": 2000}},
+    "proposed_unified_diff": {"type": "string", "maxLength": 50000},
+    "test_plan": {"type": "array", "maxItems": 30, "items": {"type": "string", "maxLength": 1500}},
+    "code_fix_feasible_without_semantic_scholar_key": {"type": "boolean"},
+    "reliable_access_guaranteed_without_semantic_scholar_key": {"type": "boolean"},
+    "risks": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 1500}},
+    "remaining_questions": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 1500}}
+  }
+}
