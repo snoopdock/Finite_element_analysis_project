@@ -1,3 +1,4 @@
+id: G9.35
 name: AE-31 Prompt Budget and Failure Evidence Retention
 # Deterministic profile only. Provider calls and the anonymous Semantic Scholar
 # probe remain in the separate manually triggered report-only workflow.

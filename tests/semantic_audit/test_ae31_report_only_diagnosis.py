@@ -577,3 +577,12 @@ def test_nonstandard_diff_without_file_headers_is_flagged():
     review = ae31._validate_model_claims(payload, {"research/semantic_scholar.py": b"source\n"})
     assert review["proposed_diff_scope_status"] == "flagged"
     assert any("could not identify" in item for item in review["proposed_diff_scope_warnings"])
+
+
+def test_g935_profile_declares_required_identity():
+    """The registry schema requires the profile id even when its file exists."""
+    repository_root = Path(__file__).resolve().parents[2]
+    profile_path = repository_root / "validation" / "profiles" / "G9.35.yaml"
+    assert profile_path.is_file(), "G9.35 profile must exist in the repository"
+    lines = profile_path.read_text(encoding="utf-8").splitlines()
+    assert lines and lines[0].strip() == "id: G9.35"
