@@ -34,7 +34,7 @@ concurrency:
 jobs:
   diagnose:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout trusted AE-31 runner from main
         uses: actions/checkout@v4
@@ -66,6 +66,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
+          OPENROUTER_TOKEN: ${{ secrets.OPENROUTER_TOKEN }}
           TARGET_BRANCH: ${{ inputs.target_branch }}
           CLOUDFLARE_MODEL: ${{ inputs.cloudflare_model }}
           NARAROUTER_MODEL: ${{ inputs.nararouter_model }}
@@ -122,4 +123,32 @@ jobs:
             echo "::error::AE-31 diagnostic status '$EXECUTIVE_STATUS' is not accepted. Only a schema-valid LLM response is accepted; the artifact was retained."
             exit 1
           fi
-          echo "::notice::AE-31 received at least one schema-valid LLM response. The report remains a proposal, not an accepted repository repair."
+          python - "$REPORT" <<'PY'
+          import sys
+          from pathlib import Path
+
+          report = Path(sys.argv[1]).read_text(encoding="utf-8")
+          marker = "11. PROVIDER STATUS SUMMARY (MACHINE-READABLE)"
+          marker_at = report.rfind(marker)
+          if marker_at < 0:
+              print("::error::Missing final machine-readable provider summary; artifact retained.")
+              raise SystemExit(1)
+          summary = report[marker_at + len(marker):]
+          rows = {}
+          for line in summary.splitlines():
+              if not line.startswith("PROVIDER_RESULT\t"):
+                  continue
+              fields = line.split("\t")
+              if len(fields) == 6 and fields[0] == "PROVIDER_RESULT" and fields[1] == "openrouter":
+                  rows[fields[2]] = fields
+          expected = (
+              "deepseek/deepseek-v4.1-flash-1017",
+              "nvidia/nemotron-3.5-super-vl:free",
+              "google/gemma-4-26b-a4b-it:free",
+          )
+          failures = [model for model in expected if model not in rows or rows[model][3] != "success"]
+          if failures:
+              print("::error::OpenRouter qualification failed for: " + ", ".join(failures) + ". The report artifact was retained.")
+              raise SystemExit(1)
+          print("::notice::All three OpenRouter models returned successful completions. Individual structured-output validity remains separately reported.")
+          PY
