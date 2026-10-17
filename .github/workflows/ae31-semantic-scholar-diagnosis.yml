@@ -96,3 +96,17 @@ jobs:
           path: ${{ runner.temp }}/AE31_Semantic_Scholar_Diagnosis.txt
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Enforce diagnostic result after artifact upload
+        if: always()
+        shell: bash
+        run: |
+          REPORT="${RUNNER_TEMP}/AE31_Semantic_Scholar_Diagnosis.txt"
+          if [ ! -f "$REPORT" ]; then
+            echo "::error::AE-31 did not produce a diagnostic report; inspect the preceding runner step."
+            exit 1
+          fi
+          if grep -q '^Status: runner_error$' "$REPORT"; then
+            echo "::error::AE-31 recorded runner_error. The failure report was retained as an artifact; the diagnosis is not accepted."
+            exit 1
+          fi
