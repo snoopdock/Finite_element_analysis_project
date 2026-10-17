@@ -111,6 +111,11 @@ class OpenAICompatibleProvider:
         self.per_model: Dict[str, Dict[str, int]] = {}
         self.last_errors: List[str] = []
 
+    @property
+    def total_calls(self) -> int:
+        """Backward-compatible alias for the provider's logical-call count."""
+        return self.logical_calls
+
     def budget_exhausted(self) -> bool:
         return (
             self.max_logical_calls is not None
