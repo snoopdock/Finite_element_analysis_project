@@ -1,0 +1,93 @@
+name: AE-31 Semantic Scholar Diagnosis (Report Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Development branch to inspect as read-only data"
+        required: true
+        default: "stage1/section-uuids"
+        type: string
+      cloudflare_model:
+        description: "Cloudflare Workers AI model ID"
+        required: true
+        default: "@cf/meta/llama-3.1-8b-instruct-fast"
+        type: string
+      nararouter_model:
+        description: "NaraRouter model alias, or auto to discover account-accessible models"
+        required: true
+        default: "auto"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae31-semantic-scholar-diagnosis-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted AE-31 runner from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: trusted
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Checkout target branch as read-only evidence
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch }}
+          path: target
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal diagnostic dependency
+        run: python -m pip install --disable-pip-version-check "requests>=2.31,<3"
+
+      - name: Run report-only diagnosis with configured LLM gateways
+        working-directory: trusted
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
+          TARGET_BRANCH: ${{ inputs.target_branch }}
+          CLOUDFLARE_MODEL: ${{ inputs.cloudflare_model }}
+          NARAROUTER_MODEL: ${{ inputs.nararouter_model }}
+        run: |
+          set -eu
+          TRUSTED_RUNNER="$GITHUB_WORKSPACE/trusted/audit_engine/semantic_audit/ae31/diagnosis.py"
+          TARGET_MIRROR="$GITHUB_WORKSPACE/target/audit_engine/semantic_audit/ae31/diagnosis.py"
+          TRUSTED_SHA="$(sha256sum "$TRUSTED_RUNNER" | cut -d ' ' -f 1)"
+          TARGET_SHA="$(sha256sum "$TARGET_MIRROR" | cut -d ' ' -f 1)"
+          if [ "$TRUSTED_SHA" != "$TARGET_SHA" ]; then
+            echo "::error::AE-31 runner mirror mismatch; no LLM call was made."
+            exit 1
+          fi
+          TARGET_COMMIT="$(git -C ../target rev-parse HEAD)"
+          python "$TRUSTED_RUNNER" \
+            --repo-root "$GITHUB_WORKSPACE/target" \
+            --output "$RUNNER_TEMP/AE31_Semantic_Scholar_Diagnosis.txt" \
+            --target-branch "$TARGET_BRANCH" \
+            --target-commit "$TARGET_COMMIT" \
+            --cloudflare-model "$CLOUDFLARE_MODEL" \
+            --nararouter-model "$NARAROUTER_MODEL"
+
+      - name: Upload text diagnosis report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: AE31-Semantic-Scholar-Diagnosis
+          path: ${{ runner.temp }}/AE31_Semantic_Scholar_Diagnosis.txt
+          if-no-files-found: warn
+          retention-days: 14
