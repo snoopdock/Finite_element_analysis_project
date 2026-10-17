@@ -5,6 +5,8 @@ import sys
 import time
 
 from processing.llm_parser import LLMJSONParseError
+from core.authoring_integrity import assert_section_records_math_integrity
+from core.domain_semantic_model import ingest_equation_candidates
 
 from research.evidence import (
     retrieve_evidence_parallel,
@@ -14,6 +16,7 @@ from research.evidence import (
     confirm_sections_read,
     get_articles_needing_more_reading,
     get_reading_summary,
+    get_last_retrieval_report,
 )
 
 from research.reading_tracker import (
@@ -21,15 +24,17 @@ from research.reading_tracker import (
     save_reading_state,
 )
 
-from processing.latex_builder import (
-    build_latex_document,
-)
+from processing.document_renderer import render_document_model
+from processing.document_to_latex_ir import project_document_to_latex_ir
+from processing.publication_integrity import assert_publication_integrity
+from core.semantic_document_pipeline import build_semantic_render_document
 
 from utils.text import (
     load_json,
     save_json,
     save_text,
 )
+
 
 
 EXTRACT_SYSTEM = """You are a senior computational mechanics researcher.
@@ -126,7 +131,7 @@ def call_llm_json(
         try:
             obj = parser.parse(
                 text,
-                model_name="cloudflare",
+                model_name=str(getattr(provider, "provider_name", "unknown")),
             )
 
             if isinstance(obj, list):
@@ -503,11 +508,20 @@ def phase_research(
             max_items=max_items,
             max_workers=2,
         )
+        state["retrieval_report"] = get_last_retrieval_report()
     except Exception as exc:
         errors.append(
             f"Evidence retrieval error: {exc}"
         )
         retrieved_evidence = []
+        state["retrieval_report"] = {
+            "status": "exception",
+            "error": str(exc),
+            "query_count": len([q for q in queries if str(q).strip()]),
+            "providers": {},
+            "returned_records": 0,
+            "selected_records": 0,
+        }
 
     # Merge every retrieved record so that repeated discovery through a new
     # query/provider updates persisted provenance metadata for existing sources.
@@ -823,12 +837,25 @@ def phase_extract(
         "knowledge_base",
         {},
     )
+    valid_source_ids = {
+        item.get("source_id")
+        for item in evidence
+        if isinstance(item, dict)
+        and item.get("source_id")
+    }
+
     updated_kb = merge_knowledge(
         existing_kb,
         cleaned,
+        valid_source_ids,
     )
 
     state["knowledge_base"] = updated_kb
+    state["domain_semantic_model"] = ingest_equation_candidates(
+        state.get("domain_semantic_model", {}),
+        cleaned.get("equations", []),
+        valid_source_ids,
+    )
 
     save_json(
         paths["research"],
@@ -907,6 +934,9 @@ def phase_write(
         existing_sections,
         errors,
     )
+    state["last_authoring_integrity_rejections"] = list(
+        writer.authoring_integrity_rejections
+    )
 
     adjustment = oaa_loop.run(
         all_sections,
@@ -926,6 +956,9 @@ def phase_write(
             "pending_adjustment",
             None,
         )
+
+    # Semantic authoring must be clean before any legacy section state is persisted.
+    assert_section_records_math_integrity(all_sections)
 
     state["sections"] = all_sections
 
@@ -971,11 +1004,43 @@ def phase_assemble(state, paths):
         )
         return False
 
-    tex_content = build_latex_document(
+    semantic_document, semantic_report = build_semantic_render_document(
         state,
-        sections,
-        evidence,
+        evidence=evidence,
     )
+    latex_document = project_document_to_latex_ir(
+        semantic_document,
+        state=state,
+        evidence=evidence,
+        domain_model=state.get("domain_semantic_model", {}),
+    )
+    state["semantic_render_status"] = semantic_report
+    state["latex_ir_projection_status"] = {
+        "status": "success",
+        "source_document_id": latex_document.source_document_id,
+        "section_count": len(latex_document.sections),
+        "content_section_count": len(sections),
+        "publication_view_section_count": max(0, len(latex_document.sections) - len(sections)),
+        "reference_count": len(latex_document.references),
+    }
+
+    tex_content = render_document_model(
+        state,
+        latex_document,
+    )
+    integrity_report = assert_publication_integrity(latex_document, tex_content)
+    state["latex_static_integrity_status"] = {
+        "ok": integrity_report.ok,
+        "issues": [
+            {
+                "severity": issue.severity,
+                "code": issue.code,
+                "message": issue.message,
+                "context": issue.context,
+            }
+            for issue in integrity_report.issues
+        ],
+    }
 
     save_text(
         paths["latex"],
@@ -983,7 +1048,7 @@ def phase_assemble(state, paths):
     )
 
     print(
-        f"LaTeX assembled. {len(sections)} sections.",
+        f"LaTeX assembled through semantic IR. {len(sections)} sections.",
         file=sys.stderr,
     )
 

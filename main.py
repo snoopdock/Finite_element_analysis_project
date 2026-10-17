@@ -23,8 +23,9 @@ from core.pipeline import (
     phase_assemble,
 )
 from core.writer_orchestration import phase_write_policy_aware
+from core.research_planning_application import prepare_research_acquisition_flow
 from processing.llm_parser import UniversalLLMJSONParser
-from providers.cloudflare import CloudflareProvider
+from providers.factory import apply_runtime_overrides, build_provider
 from analysis.iteration_history import IterationHistory
 from core.convergence import ConvergenceDetector
 from analysis.gap_detector import GapDetector
@@ -32,11 +33,50 @@ from writing.section_splitter import SectionSplitter
 from writing.section_merger import SectionMerger
 from analysis.oaa_loop import OAALoop
 from analysis.writing_indicator import WritingIndicator
+from analysis.retrieval_event import create_retrieval_event
+from core.retrieval_history_state import append_retrieval_event
+from core.semantic_document_pipeline import persist_semantic_candidate_document
+from analysis.retrieval_attention_runtime import process_live_retrieval_attention
 
 from research.reading_tracker import load_reading_state
 from research.evidence import get_reading_summary
 
 ROOT = pathlib.Path(__file__).resolve().parent
+RESEARCH_PLANNING_RESULT_FIELD = "research_planning_operational_results"
+
+
+def _integrate_research_planning(
+    state,
+    config,
+    attention_runtime_result,
+):
+    """Compose R8.9.1 results at the application boundary without reinterpretation."""
+    proposals = attention_runtime_result.get("attention_proposals", [])
+    if not isinstance(proposals, list) or not proposals:
+        state.pop(RESEARCH_PLANNING_RESULT_FIELD, None)
+        return None
+
+    research_planning_config = config.get("research_planning", {})
+    if not isinstance(research_planning_config, dict):
+        research_planning_config = {}
+
+    planning_context = research_planning_config.get("planning_context")
+    if not isinstance(planning_context, dict):
+        planning_context = None
+
+    operational_constraints = research_planning_config.get(
+        "operational_constraints"
+    )
+    if not isinstance(operational_constraints, dict):
+        operational_constraints = None
+
+    result = prepare_research_acquisition_flow(
+        proposals,
+        planning_context=planning_context,
+        operational_constraints=operational_constraints,
+    )
+    state[RESEARCH_PLANNING_RESULT_FIELD] = result
+    return result
 
 
 def main():
@@ -56,6 +96,24 @@ def main():
         if not isinstance(config, dict):
             raise RuntimeError("Configuration file did not produce a dictionary.")
 
+        provider_name, provider_model = apply_runtime_overrides(config)
+        budget_config = config.get("budget", {})
+        if not isinstance(budget_config, dict):
+            raise RuntimeError("config.budget must be a mapping.")
+        # Validate the selected provider and its one required secret before
+        # initializing state or doing any pipeline work.
+        provider = build_provider(
+            config,
+            budget_config,
+            provider_name=provider_name,
+            model_override=provider_model,
+        )
+        print(
+            f"[LLM] Selected provider: {provider_name}; "
+            f"model: {provider_model or 'config/default'}",
+            file=sys.stderr,
+        )
+
         paths = {
             "state": ROOT
             / config.get("state", {}).get(
@@ -67,6 +125,9 @@ def main():
             "sections": ROOT / "output" / "sections.json",
             "latex": ROOT / "output" / "guideline.tex",
             "report": ROOT / "output" / "validation_report.md",
+            "semantic_candidate_document": (
+                ROOT / "output" / "document.semantic-candidate.json"
+            ),
         }
 
         state = initialize_state(paths, config)
@@ -85,15 +146,6 @@ def main():
             "FEA_CACHE_MAX_SIZE_MB",
             str(cache_config.get("max_size_mb", 500)),
         )
-
-        account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "").strip()
-        api_token = os.environ.get("CLOUDFLARE_API_TOKEN", "").strip()
-
-        if not account_id:
-            raise RuntimeError("CLOUDFLARE_ACCOUNT_ID is not set.")
-
-        if not api_token:
-            raise RuntimeError("CLOUDFLARE_API_TOKEN is not set.")
 
         llm_parser_instance = UniversalLLMJSONParser(
             enable_repair=False,
@@ -222,37 +274,16 @@ def main():
 
         models = config.get(
             "cloudflare_models",
-            ["@cf/meta/llama-3.1-8b-instruct"],
+            ["@cf/meta/llama-3.1-8b-instruct-fast"],
         )
 
-        max_tokens = budget_config.get(
-            "max_tokens_per_call",
-            2500,
-        )
+        max_tokens = int(budget_config.get("max_tokens_per_call", 2500))
+        max_calls = int(budget_config.get("max_llm_calls_per_run", 20))
 
-        provider = CloudflareProvider(
-            account_id,
-            api_token,
-            models,
-            max_tokens,
-            max_logical_calls=int(
-                budget_config.get(
-                    "max_llm_calls_per_run",
-                    20,
-                )
-            ),
-        )
-
-        print(f"\nModels: {models}", file=sys.stderr)
-        print(
-            f"Max tokens per call: {max_tokens}",
-            file=sys.stderr,
-        )
-        print(
-            "Max calls per run: "
-            f"{budget_config.get('max_llm_calls_per_run', 20)}",
-            file=sys.stderr,
-        )
+        print(f"\nProvider: {provider_name}", file=sys.stderr)
+        print(f"Models: {models}", file=sys.stderr)
+        print(f"Max tokens per call: {max_tokens}", file=sys.stderr)
+        print(f"Max calls per run: {max_calls}", file=sys.stderr)
 
         print("\n" + "=" * 60, file=sys.stderr)
         print("STARTING FULL CYCLE", file=sys.stderr)
@@ -301,6 +332,63 @@ def main():
             llm_parser_instance,
             skip_gap_analysis=skip_gap,
         )
+
+        retrieval_report = state.get("retrieval_report", {})
+        retrieval_event_recorded = False
+        try:
+            retrieval_event = create_retrieval_event(
+                cycle=int(state.get("cycle", 0)),
+                queries=None,
+                report=retrieval_report,
+            )
+            if append_retrieval_event(state, retrieval_event):
+                retrieval_event_recorded = True
+                print(
+                    "  [Retrieval History] Recorded retrieval event "
+                    f"{retrieval_event['event_id']}",
+                    file=sys.stderr,
+                )
+        except Exception as exc:
+            errors.append(f"Retrieval history error: {exc}")
+
+        if retrieval_event_recorded:
+            try:
+                attention_runtime_result = process_live_retrieval_attention(
+                    state,
+                    config,
+                )
+                print(
+                    "  [Retrieval Attention] "
+                    f"persisted={attention_runtime_result['persisted_count']} "
+                    f"duplicates={attention_runtime_result['duplicate_count']} "
+                    f"policy={attention_runtime_result['policy_version']}",
+                    file=sys.stderr,
+                )
+
+                planning_result = _integrate_research_planning(
+                    state,
+                    config,
+                    attention_runtime_result,
+                )
+                if planning_result is not None:
+                    print(
+                        "  [Research Planning] "
+                        f"composed={len(planning_result)} records",
+                        file=sys.stderr,
+                    )
+            except Exception as exc:
+                errors.append(
+                    f"Retrieval attention processing error: {exc}"
+                )
+                print(
+                    "  [Retrieval Attention] Processing failed; "
+                    "continuing pipeline.",
+                    file=sys.stderr,
+                )
+        else:
+            errors.append(
+                "Retrieval attention processing skipped because the current retrieval event was not recorded."
+            )
 
         if pending_query_items:
             state["last_correction_queries_used"] = pending_query_items
@@ -416,6 +504,30 @@ def main():
                 state.pop("pending_adjustment", None)
             else:
                 state.pop("pending_adjustment", None)
+
+        try:
+            evidence_for_semantic_candidate = load_json(
+                paths["evidence"],
+                [],
+            )
+            if not isinstance(evidence_for_semantic_candidate, list):
+                evidence_for_semantic_candidate = []
+            persist_semantic_candidate_document(
+                state,
+                paths,
+                evidence=evidence_for_semantic_candidate,
+            )
+        except Exception as exc:
+            state["semantic_candidate_status"] = {
+                "status": "failed",
+                "authoritative_for_rendering": False,
+                "error": str(exc),
+            }
+            print(
+                "  [Semantic candidate] Shadow generation failed: "
+                f"{exc}",
+                file=sys.stderr,
+            )
 
         assembled = phase_assemble(
             state,
