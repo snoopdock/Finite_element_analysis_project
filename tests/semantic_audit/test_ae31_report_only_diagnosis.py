@@ -320,6 +320,121 @@ def test_prompt_context_numbers_source_lines_accurately(tmp_path):
     assert "Manifest size values are byte counts, not line counts" in context["source_line_numbering_note"]
 
 
+def test_prompt_context_is_bounded_and_preserves_original_line_numbers(tmp_path):
+    repo = _fixture_repo(tmp_path / "repo")
+    # Simulate a large source file that previously pushed the full prompt over budget.
+    lines = [f"# unrelated filler line {index}" for index in range(1, 2200)]
+    lines[1199] = "def search_semantic_scholar(query):"
+    lines[1200] = '    response = requests.get(API_URL, params={"query": query})'
+    lines[1201] = "    if response.status_code == 429:"
+    lines[1202] = "        time.sleep(2)  # Retry-After bounded backoff"
+    (repo / "research/semantic_scholar.py").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    files, _, _ = ae31.read_scoped_snapshot(repo)
+    snapshot_sha, manifest = ae31.ae29_compatible_snapshot(files)
+    history = ae31.extract_retrieval_summary(files["state/current_state.json"])
+    finding = ae31._make_finding(snapshot_sha, files, history)
+    audit = ae31._make_audit_report(snapshot_sha, finding, "a" * 64)
+    context = ae31._build_prompt_context(files, snapshot_sha, manifest, finding, audit, {"status": "not_run"})
+    source = context["repository_code_and_tests_with_actual_line_numbers"]["research/semantic_scholar.py"]
+    excerpt = context["evidence_excerpt_manifest"]["research/semantic_scholar.py"]
+    assert len(source) <= ae31.MAX_SOURCE_EXCERPT_CHARS["research/semantic_scholar.py"]
+    assert "... omitted original lines" in source
+    assert '1201:     response = requests.get' in source
+    assert excerpt["omitted_lines"] > 0
+    assert any(start <= 1200 <= end for start, end in excerpt["visible_line_ranges"])
+    _, prompt = ae31._build_prompt(
+        request_envelope={"request_sha256": "a" * 64}, prompt_context=context
+    )
+    assert len(prompt) <= ae31.MAX_PROMPT_CHARS
+
+
+def test_oversized_single_source_line_is_marked_and_not_trusted_as_full_evidence():
+    source, visible_ranges, stats = ae31._numbered_excerpt(
+        "research/semantic_scholar.py", ("x" * 5000 + "\nnormal line\n").encode(), 2500
+    )
+    assert len(source) <= 2500
+    assert "LINE CONTENT TRUNCATED" in source
+    assert stats["truncated_lines_shown"] == [1]
+    payload = json.loads(_valid_model_json())
+    payload["evidence"] = [{
+        "path": "research/semantic_scholar.py", "start_line": 1, "end_line": 1,
+        "claim_type": "direct_observation", "claim": "claim based on the line",
+    }]
+    review = ae31._validate_model_claims(
+        payload,
+        {"research/semantic_scholar.py": ("x" * 5000 + "\nnormal line\n").encode()},
+        {"research/semantic_scholar.py": visible_ranges},
+        {"research/semantic_scholar.py": stats["truncated_lines_shown"]},
+    )
+    assert any("truncated source content" in warning for warning in review["evidence_reference_warnings"])
+
+
+def test_prompt_size_error_includes_diagnostic_metrics(monkeypatch):
+    monkeypatch.setattr(ae31, "MAX_PROMPT_CHARS", 100)
+    with pytest.raises(ae31.DiagnosticError, match="prompt exceeds") as caught:
+        ae31._build_prompt(
+            request_envelope={"request_sha256": "a" * 64},
+            prompt_context={"source": "x" * 500},
+        )
+    assert caught.value.details["phase"] == "prompt_construction"
+    assert caught.value.details["prompt_chars"] > caught.value.details["prompt_limit_chars"]
+    assert caught.value.details["prompt_context_json_chars"] > 0
+
+
+def test_prompt_failure_retains_live_probe_and_snapshot_manifest(tmp_path, monkeypatch):
+    repo = _fixture_repo(tmp_path / "repo")
+    probe = {
+        "status": "rate_limited", "http_status": 429, "attempt_count": 3,
+        "retry_count": 2, "attempts": [
+            {"attempt": 1, "http_status": 429},
+            {"attempt": 2, "http_status": 429},
+            {"attempt": 3, "http_status": 429},
+        ],
+    }
+    monkeypatch.setattr(ae31, "probe_semantic_scholar", lambda: probe)
+    monkeypatch.setattr(
+        ae31, "_build_prompt",
+        lambda **kwargs: (_ for _ in ()).throw(ae31.DiagnosticError(
+            "LLM prompt exceeds 120000 character limit",
+            details={"prompt_chars": 130001, "prompt_limit_chars": 120000},
+        )),
+    )
+    with pytest.raises(ae31.DiagnosticError, match="prompt exceeds") as caught:
+        ae31.run_diagnostic(repo_root=repo, output_path=tmp_path / "report.txt", environment={})
+    details = caught.value.details
+    assert details["phase"] == "prompt_construction"
+    assert details["live_semantic_scholar_probe"] == probe
+    assert details["snapshot_sha256"]
+    assert any(row["path"] == "research/semantic_scholar.py" for row in details["manifest"])
+    assert details["prompt_chars"] == 130001
+
+
+def test_runner_error_writes_probe_context_and_returns_nonzero(tmp_path, monkeypatch):
+    repo = _fixture_repo(tmp_path / "repo")
+    output = tmp_path / "failure.txt"
+    details = {
+        "phase": "prompt_construction",
+        "live_semantic_scholar_probe": {"status": "rate_limited", "http_status": 429, "attempt_count": 3},
+        "prompt_chars": 130001,
+        "prompt_limit_chars": 120000,
+        "manifest": [{"path": "research/semantic_scholar.py", "sha256": "a" * 64, "size": 100}],
+    }
+    monkeypatch.setattr(ae31, "run_diagnostic", lambda **kwargs: (_ for _ in ()).throw(
+        ae31.DiagnosticError("LLM prompt exceeds 120000 character limit", details=details)
+    ))
+    result = ae31.main([
+        "--repo-root", str(repo), "--output", str(output),
+        "--target-branch", "stage1/section-uuids", "--target-commit", "abc123",
+    ])
+    report = output.read_text(encoding="utf-8")
+    assert result == 1
+    assert "Status: runner_error" in report
+    assert "Failure phase: prompt_construction" in report
+    assert '"http_status": 429' in report
+    assert '"prompt_chars": 130001' in report
+    assert "Target repository files modified: NO" in report
+
+
 def test_semantic_scholar_recommendation_uses_two_record_minimum():
     keep = ae31._semantic_scholar_operational_recommendation({
         "status": "success", "result_count": 2, "attempt_count": 2,
