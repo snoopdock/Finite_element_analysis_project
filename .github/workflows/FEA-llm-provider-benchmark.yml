@@ -102,6 +102,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          # The full test suite imports jsonschema in semantic-high-assurance tests.
+          # Keep this test-only dependency explicit; it is not required by the FEA runtime.
+          python -m pip install 'jsonschema>=4.20,<5'
+          python -c 'import jsonschema; print("jsonschema test dependency:", jsonschema.__version__)'
           pytest -q
 
   benchmark:
