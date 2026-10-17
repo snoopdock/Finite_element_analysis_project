@@ -1,0 +1,106 @@
+name: AE-32A Architecture and Wiring Audit (Report Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch to inspect as read-only source data"
+        required: true
+        default: "stage1/section-uuids"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  architecture-wiring-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted scanner from the workflow commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: runner
+          persist-credentials: false
+
+      - name: Checkout selected source branch as data only
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch }}
+          path: repo
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run read-only architecture and wiring audit
+        id: audit
+        continue-on-error: true
+        env:
+          TARGET_BRANCH: ${{ inputs.target_branch }}
+        working-directory: runner
+        run: |
+          set -e
+          SOURCE_REVISION="$(git -C ../repo rev-parse HEAD)"
+          RUNNER_REVISION="$(git rev-parse HEAD)"
+          set +e
+          python -m audit_engine.semantic_audit.ae32a \
+            --repo-root ../repo \
+            --output-dir artifacts/audit_engine/ae32a \
+            --source-revision "$SOURCE_REVISION" \
+            --runner-revision "$RUNNER_REVISION"
+          audit_status=$?
+          echo "audit_exit_code=$audit_status" >> "$GITHUB_OUTPUT"
+          echo "source_revision=$SOURCE_REVISION" >> "$GITHUB_OUTPUT"
+          echo "runner_revision=$RUNNER_REVISION" >> "$GITHUB_OUTPUT"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report_path = Path("../repo/artifacts/audit_engine/ae32a/architecture_wiring_report.json")
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          if report_path.is_file() and summary_path:
+              report = json.loads(report_path.read_text(encoding="utf-8"))
+              audit = report.get("audit", {})
+              summary = report.get("summary", {})
+              lines = [
+                  "## AE-32A architecture/wiring audit",
+                  "",
+                  f"- Target branch: `{os.environ.get('TARGET_BRANCH', 'unknown')}`",
+                  f"- Source revision: `{audit.get('source_revision') or 'unknown'}`",
+                  f"- Runner revision: `{audit.get('runner_revision') or 'unknown'}`",
+                  f"- Scan status: `{audit.get('status', 'unknown')}`",
+                  f"- Manifest SHA-256: `{audit.get('manifest_sha256', 'unknown')}`",
+                  f"- Components discovered: {summary.get('component_count', 0)}",
+                  f"- Findings: {len(report.get('findings', []))}",
+                  f"- High-severity findings: {summary.get('high_finding_count', 0)}",
+                  "",
+                  "The selected branch was read as data. Its Python modules were not imported or executed.",
+              ]
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                  handle.write("\n".join(lines) + "\n")
+          PY
+          exit "$audit_status"
+
+      - name: Upload architecture audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32a-architecture-wiring-${{ github.run_id }}
+          path: |
+            repo/artifacts/audit_engine/ae32a/architecture_wiring_report.json
+            repo/artifacts/audit_engine/ae32a/architecture_wiring_report.md
+            repo/artifacts/audit_engine/ae32a/execution_dependency_map.mmd
+            repo/artifacts/audit_engine/ae32a/execution_dependency_map.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Enforce complete source inventory after evidence upload
+        if: steps.audit.outcome == 'failure'
+        run: |
+          echo "::error::AE-32A did not complete a fully scoped source inventory; inspect the uploaded evidence if present."
+          exit 1
