@@ -255,6 +255,94 @@ def test_nararouter_401_is_actionable_and_does_not_expose_key(monkeypatch):
     assert "secret-nara-key" not in result["error"]
 
 
+
+@pytest.mark.parametrize("model", ae31.OPENROUTER_MODELS)
+def test_openrouter_uses_explicit_allowlisted_model_without_discovery(monkeypatch, model):
+    class FakeResponse:
+        status_code = 200
+        text = ""
+        def json(self):
+            return {
+                "model": model,
+                "choices": [{"message": {"content": _valid_model_json()}}],
+                "usage": {"prompt_tokens": 12, "completion_tokens": 34, "total_tokens": 46},
+            }
+
+    calls = []
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return FakeResponse()
+
+    monkeypatch.setattr(ae31.requests, "get", lambda *a, **k: pytest.fail("OpenRouter model discovery is not used"))
+    monkeypatch.setattr(ae31.requests, "post", fake_post)
+    result = ae31.call_openrouter(
+        api_token="openrouter-test-secret", model=model,
+        messages=[{"role": "user", "content": "diagnose"}],
+        secrets_to_redact=["openrouter-test-secret"],
+    )
+    assert result["status"] == "success"
+    assert result["provider"] == "openrouter"
+    assert result["model"] == model
+    assert result["returned_model"] == model
+    assert result["raw_output"] == _valid_model_json()
+    assert result["raw_output_sha256"] == hashlib.sha256(_valid_model_json().encode()).hexdigest()
+    assert result["usage"]["total_tokens"] == 46
+    assert len(calls) == 1
+    url, kwargs = calls[0]
+    assert url == "https://openrouter.ai/api/v1/chat/completions"
+    assert kwargs["headers"]["Authorization"] == "Bearer openrouter-test-secret"
+    assert kwargs["headers"]["HTTP-Referer"].startswith("https://github.com/")
+    assert kwargs["json"]["model"] == model
+    assert kwargs["json"]["stream"] is False
+
+
+def test_openrouter_unknown_model_is_rejected_without_network(monkeypatch):
+    monkeypatch.setattr(ae31.requests, "post", lambda *a, **k: pytest.fail("No request for unapproved model"))
+    result = ae31.call_openrouter(api_token="secret", model="provider/unknown", messages=[])
+    assert result["status"] == "configuration_error"
+    assert "no request was sent" in result["error"]
+
+
+def test_openrouter_401_is_actionable_and_does_not_expose_key(monkeypatch):
+    class FakeResponse:
+        status_code = 401
+        text = '{"error":"invalid key secret-openrouter-key"}'
+    monkeypatch.setattr(ae31.requests, "post", lambda *a, **k: FakeResponse())
+    result = ae31.call_openrouter(
+        api_token="secret-openrouter-key", model=ae31.OPENROUTER_MODELS[0], messages=[],
+        secrets_to_redact=["secret-openrouter-key"],
+    )
+    assert result["status"] == "provider_error"
+    assert result["http_status"] == 401
+    assert "OPENROUTER_TOKEN" in result["error"]
+    assert "secret-openrouter-key" not in result["error"]
+
+
+def test_openrouter_missing_secret_is_skipped_without_network(monkeypatch):
+    monkeypatch.setattr(ae31.requests, "post", lambda *a, **k: pytest.fail("No request without token"))
+    for model in ae31.OPENROUTER_MODELS:
+        result = ae31.call_openrouter(api_token="", model=model, messages=[])
+        assert result["status"] == "skipped"
+        assert result["provider"] == "openrouter"
+
+
+def test_openrouter_bearer_prefix_is_normalized_and_redacted(monkeypatch):
+    class FakeResponse:
+        status_code = 200
+        text = ""
+        def json(self):
+            return {"model": ae31.OPENROUTER_MODELS[0], "choices": [{"message": {"content": "ok"}}]}
+    calls = []
+    monkeypatch.setattr(ae31.requests, "post", lambda url, **kwargs: (calls.append((url, kwargs)) or FakeResponse()))
+    result = ae31.call_openrouter(
+        api_token="Bearer openrouter-secret", model=ae31.OPENROUTER_MODELS[0], messages=[],
+        secrets_to_redact=["Bearer openrouter-secret"],
+    )
+    assert result["status"] == "success"
+    assert calls[0][1]["headers"]["Authorization"] == "Bearer openrouter-secret"
+    assert "openrouter-secret" not in result["raw_output"]
+
+
 def test_live_probe_retries_429_then_returns_records(monkeypatch):
     calls = []
     class FakeResponse:
@@ -470,10 +558,19 @@ def test_report_only_workflow_writes_report_without_modifying_target(tmp_path, m
                 "elapsed_ms": 1, "raw_output": payload, "raw_output_sha256": hashlib.sha256(payload.encode()).hexdigest()}
     monkeypatch.setattr(ae31, "call_cloudflare", fake_provider)
     monkeypatch.setattr(ae31, "call_nararouter", fake_provider)
+    def fake_openrouter(**kwargs):
+        captured_messages.append(kwargs["messages"])
+        model = kwargs["model"]
+        raw = payload
+        return {"status": "success", "provider": "openrouter", "model": model,
+                "returned_model": model, "http_status": 200, "elapsed_ms": 1,
+                "raw_output": raw, "raw_output_sha256": hashlib.sha256(raw.encode()).hexdigest()}
+    monkeypatch.setattr(ae31, "call_openrouter", fake_openrouter)
     monkeypatch.setattr(ae31, "probe_semantic_scholar", lambda: {"status": "success", "http_status": 200, "result_count": 1})
     result = ae31.run_diagnostic(
         repo_root=repo, output_path=out, target_branch="stage1/section-uuids", target_commit="abc123",
-        environment={"CLOUDFLARE_ACCOUNT_ID": "acct", "CLOUDFLARE_API_TOKEN": "cfsecret", "NARAROUTER_API_KEY": "narasecret"},
+        environment={"CLOUDFLARE_ACCOUNT_ID": "acct", "CLOUDFLARE_API_TOKEN": "cfsecret",
+                     "NARAROUTER_API_KEY": "narasecret", "OPENROUTER_TOKEN": "orsecret"},
     )
     after = {p.relative_to(repo).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in repo.rglob("*") if p.is_file()}
     assert out.exists()
@@ -486,8 +583,12 @@ def test_report_only_workflow_writes_report_without_modifying_target(tmp_path, m
     assert result["overall_status"] == "completed_with_schema_valid_llm_response"
     assert "cfsecret" not in out.read_text(encoding="utf-8")
     assert "narasecret" not in out.read_text(encoding="utf-8")
+    assert "orsecret" not in out.read_text(encoding="utf-8")
     assert "cfsecret" not in json.dumps(captured_messages)
+    assert "orsecret" not in json.dumps(captured_messages)
     assert "[REDACTED]" in json.dumps(captured_messages)
+    for model in ae31.OPENROUTER_MODELS:
+        assert f"PROVIDER_RESULT\\topenrouter\\t{model}\\tsuccess\\ttrue\\t200" in out.read_text(encoding="utf-8")
 
 
 def test_output_inside_target_repository_is_rejected_before_calls(tmp_path, monkeypatch):
@@ -500,8 +601,10 @@ def test_output_inside_target_repository_is_rejected_before_calls(tmp_path, monk
 def test_missing_provider_secrets_are_reported_without_network():
     cf = ae31.call_cloudflare(account_id="", api_token="", model="model", messages=[])
     nara = ae31.call_nararouter(api_key="", model="auto", messages=[])
+    openrouter = [ae31.call_openrouter(api_token="", model=model, messages=[]) for model in ae31.OPENROUTER_MODELS]
     assert cf["status"] == "skipped"
     assert nara["status"] == "skipped"
+    assert all(result["status"] == "skipped" for result in openrouter)
 
 
 def test_runner_has_no_dynamic_code_execution_or_subprocess_import():
@@ -520,6 +623,7 @@ def test_missing_required_evidence_skips_live_calls_and_still_writes_report(tmp_
     monkeypatch.setattr(ae31, "probe_semantic_scholar", lambda: pytest.fail("probe must be skipped"))
     monkeypatch.setattr(ae31, "call_cloudflare", lambda **kwargs: pytest.fail("LLM must be skipped"))
     monkeypatch.setattr(ae31, "call_nararouter", lambda **kwargs: pytest.fail("LLM must be skipped"))
+    monkeypatch.setattr(ae31, "call_openrouter", lambda **kwargs: pytest.fail("LLM must be skipped"))
     output = tmp_path / "report.txt"
     result = ae31.run_diagnostic(repo_root=repo, output_path=output, perform_live_probe=True, environment={})
     assert result["overall_status"] == "insufficient_required_evidence"
@@ -586,3 +690,11 @@ def test_g935_profile_declares_required_identity():
     assert profile_path.is_file(), "G9.35 profile must exist in the repository"
     lines = profile_path.read_text(encoding="utf-8").splitlines()
     assert lines and lines[0].strip() == "id: G9.35"
+
+
+def test_g936_profile_declares_required_identity():
+    repository_root = Path(__file__).resolve().parents[2]
+    profile_path = repository_root / "validation" / "profiles" / "G9.36.yaml"
+    assert profile_path.is_file(), "G9.36 profile must exist in the repository"
+    lines = profile_path.read_text(encoding="utf-8").splitlines()
+    assert lines and lines[0].strip() == "id: G9.36"
