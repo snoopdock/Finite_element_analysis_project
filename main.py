@@ -25,7 +25,7 @@ from core.pipeline import (
 from core.writer_orchestration import phase_write_policy_aware
 from core.research_planning_application import prepare_research_acquisition_flow
 from processing.llm_parser import UniversalLLMJSONParser
-from providers.cloudflare import CloudflareProvider
+from providers.factory import apply_runtime_overrides, build_provider
 from analysis.iteration_history import IterationHistory
 from core.convergence import ConvergenceDetector
 from analysis.gap_detector import GapDetector
@@ -96,6 +96,24 @@ def main():
         if not isinstance(config, dict):
             raise RuntimeError("Configuration file did not produce a dictionary.")
 
+        provider_name, provider_model = apply_runtime_overrides(config)
+        budget_config = config.get("budget", {})
+        if not isinstance(budget_config, dict):
+            raise RuntimeError("config.budget must be a mapping.")
+        # Validate the selected provider and its one required secret before
+        # initializing state or doing any pipeline work.
+        provider = build_provider(
+            config,
+            budget_config,
+            provider_name=provider_name,
+            model_override=provider_model,
+        )
+        print(
+            f"[LLM] Selected provider: {provider_name}; "
+            f"model: {provider_model or 'config/default'}",
+            file=sys.stderr,
+        )
+
         paths = {
             "state": ROOT
             / config.get("state", {}).get(
@@ -128,15 +146,6 @@ def main():
             "FEA_CACHE_MAX_SIZE_MB",
             str(cache_config.get("max_size_mb", 500)),
         )
-
-        account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "").strip()
-        api_token = os.environ.get("CLOUDFLARE_API_TOKEN", "").strip()
-
-        if not account_id:
-            raise RuntimeError("CLOUDFLARE_ACCOUNT_ID is not set.")
-
-        if not api_token:
-            raise RuntimeError("CLOUDFLARE_API_TOKEN is not set.")
 
         llm_parser_instance = UniversalLLMJSONParser(
             enable_repair=False,
@@ -265,37 +274,16 @@ def main():
 
         models = config.get(
             "cloudflare_models",
-            ["@cf/meta/llama-3.1-8b-instruct"],
+            ["@cf/meta/llama-3.1-8b-instruct-fast"],
         )
 
-        max_tokens = budget_config.get(
-            "max_tokens_per_call",
-            2500,
-        )
+        max_tokens = int(budget_config.get("max_tokens_per_call", 2500))
+        max_calls = int(budget_config.get("max_llm_calls_per_run", 20))
 
-        provider = CloudflareProvider(
-            account_id,
-            api_token,
-            models,
-            max_tokens,
-            max_logical_calls=int(
-                budget_config.get(
-                    "max_llm_calls_per_run",
-                    20,
-                )
-            ),
-        )
-
-        print(f"\nModels: {models}", file=sys.stderr)
-        print(
-            f"Max tokens per call: {max_tokens}",
-            file=sys.stderr,
-        )
-        print(
-            "Max calls per run: "
-            f"{budget_config.get('max_llm_calls_per_run', 20)}",
-            file=sys.stderr,
-        )
+        print(f"\nProvider: {provider_name}", file=sys.stderr)
+        print(f"Models: {models}", file=sys.stderr)
+        print(f"Max tokens per call: {max_tokens}", file=sys.stderr)
+        print(f"Max calls per run: {max_calls}", file=sys.stderr)
 
         print("\n" + "=" * 60, file=sys.stderr)
         print("STARTING FULL CYCLE", file=sys.stderr)

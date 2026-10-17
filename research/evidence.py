@@ -6,13 +6,13 @@ from __future__ import annotations
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Callable, Dict, List, Optional
 
 from utils.text import clean_text
 from research.arxiv_fulltext import search_arxiv
 from research.wikipedia import search_wikipedia
-from research.semantic_scholar import search_semantic_scholar, get_last_retrieval_status
 from research.content_cache import cleanup_cache
 from research.article_sectioner import split_article_into_sections, get_unread_sections
 from research.reading_tracker import mark_section_read
@@ -20,9 +20,38 @@ from research.ranking import rank_items_for_queries
 from research.diversity import select_diverse_evidence
 
 
+ACTIVE_RETRIEVAL_PROVIDERS = ("arxiv", "wikipedia")
+
+# Semantic Scholar is retired from active retrieval after repeated anonymous
+# HTTP 429 responses. Its implementation and all historical evidence records
+# are deliberately retained for provenance and reproducibility.
+RETIRED_RETRIEVAL_PROVIDERS = {
+    "semantic_scholar": {
+        "status": "retired_from_active_retrieval",
+        "reason_code": "repeated_anonymous_http_429",
+        "reason": (
+            "The bounded anonymous-access trial repeatedly returned HTTP 429 "
+            "with no usable records; no institutional API key is available."
+        ),
+        "implementation_retained": True,
+        "historical_provenance_retained": True,
+        "reactivation_requires": "explicit reviewed code/configuration change and a successful access qualification",
+    }
+}
+
+
+def get_retrieval_provider_registry() -> Dict:
+    """Expose active and retired provider policy without treating retirement as failure."""
+    return {
+        "active": list(ACTIVE_RETRIEVAL_PROVIDERS),
+        "retired": deepcopy(RETIRED_RETRIEVAL_PROVIDERS),
+    }
+
+
 _LAST_RETRIEVAL_REPORT: Dict = {
     "status": "not_run",
     "providers": {},
+    "provider_registry": get_retrieval_provider_registry(),
     "returned_records": 0,
     "selected_records": 0,
 }
@@ -58,11 +87,6 @@ def _run_provider_search(
     except Exception as exc:
         return [], {"status": "exception", "error": str(exc)}
 
-    if provider_name == "semantic_scholar":
-        status = get_last_retrieval_status()
-        if isinstance(status, dict) and status:
-            return results if isinstance(results, list) else [], dict(status)
-
     if isinstance(results, list):
         return results, {
             "status": "success" if results else "empty_result",
@@ -73,8 +97,8 @@ def _run_provider_search(
 
 
 def get_last_retrieval_report() -> Dict:
-    """Return a copy of the latest retrieval-cycle report."""
-    return dict(_LAST_RETRIEVAL_REPORT)
+    """Return an isolated copy of the latest retrieval-cycle report."""
+    return deepcopy(_LAST_RETRIEVAL_REPORT)
 
 
 def retrieve_evidence_parallel(
@@ -101,19 +125,24 @@ def retrieve_evidence_parallel(
         "retrieved_at": retrieval_timestamp,
         "query_count": len(normalized_queries),
         "providers": {},
+        "provider_registry": get_retrieval_provider_registry(),
         "returned_records": 0,
         "selected_records": 0,
     }
 
     if not normalized_queries:
         _LAST_RETRIEVAL_REPORT["status"] = "empty_query_set"
+        _LAST_RETRIEVAL_REPORT["provider_registry"] = get_retrieval_provider_registry()
         return []
 
+    # Only providers explicitly registered as active are invoked. Retired
+    # providers remain represented in provider_registry for provenance, but
+    # are not submitted to the worker pool.
     provider_specs = {
         "arxiv": (search_arxiv, "preprint"),
-        "semantic_scholar": (search_semantic_scholar, "academic"),
         "wikipedia": (search_wikipedia, "wikipedia"),
     }
+    assert tuple(provider_specs) == ACTIVE_RETRIEVAL_PROVIDERS
 
     futures = {}
     provider_attempts: Dict[str, List[Dict]] = {
@@ -245,6 +274,7 @@ def retrieve_evidence_parallel(
         "retrieved_at": retrieval_timestamp,
         "query_count": len(normalized_queries),
         "providers": provider_reports,
+        "provider_registry": get_retrieval_provider_registry(),
         "returned_records": len(candidates),
         "selected_records": len(selected),
     }

@@ -1,0 +1,130 @@
+from types import SimpleNamespace
+
+import pytest
+
+from providers.openai_compatible import OpenAICompatibleProvider
+
+
+class FakeResponse:
+    def __init__(self, status_code=200, payload=None, headers=None):
+        self.status_code = status_code
+        self._payload = payload or {}
+        self.headers = headers or {}
+
+    def json(self):
+        return self._payload
+
+
+def success_payload(content="ok", model="test-model"):
+    return {
+        "id": "chatcmpl-test",
+        "model": model,
+        "choices": [{"index": 0, "message": {"role": "assistant", "content": content}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 17, "completion_tokens": 23, "total_tokens": 40},
+    }
+
+
+def test_nararouter_uses_explicit_endpoint_model_and_bearer_auth(monkeypatch):
+    calls = []
+
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return FakeResponse(payload=success_payload("Nara answer", "agnes-2.5-flash"))
+
+    monkeypatch.setattr("providers.openai_compatible.requests.post", fake_post)
+    provider = OpenAICompatibleProvider("nararouter", "secret-value", "agnes-2.5-flash")
+    text, error = provider.chat([{"role": "user", "content": "hello"}], max_tokens=8000)
+
+    assert text == "Nara answer"
+    assert error is None
+    assert calls[0][0] == "https://router.bynara.id/v1/chat/completions"
+    assert calls[0][1]["headers"]["Authorization"] == "Bearer secret-value"
+    assert calls[0][1]["json"]["model"] == "agnes-2.5-flash"
+    assert calls[0][1]["json"]["max_tokens"] == 8000
+    stats = provider.get_stats()
+    assert stats["successful_calls"] == 1
+    assert stats["usage"]["total_tokens"] == 40
+    assert "secret-value" not in repr(stats)
+
+
+def test_openrouter_accepts_list_content_and_tracks_usage(monkeypatch):
+    def fake_post(url, **kwargs):
+        assert url == "https://openrouter.ai/api/v1/chat/completions"
+        assert kwargs["headers"]["X-Title"] == "Finite Element Analysis Pipeline"
+        return FakeResponse(payload={
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "choices": [{"message": {"content": [{"type": "text", "text": "valid "}, {"type": "text", "text": "content"}]}, "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150},
+        })
+
+    monkeypatch.setattr("providers.openai_compatible.requests.post", fake_post)
+    provider = OpenAICompatibleProvider("openrouter", "openrouter-secret", "deepseek/deepseek-v4.1-flash-1017")
+    text, error = provider.chat([{"role": "user", "content": "hello"}])
+    assert text == "valid content"
+    assert error is None
+    assert provider.get_stats()["usage"]["total_tokens"] == 150
+
+
+def test_retry_after_is_bounded_and_transient_429_can_recover(monkeypatch):
+    responses = [
+        FakeResponse(status_code=429, payload={"error": "busy"}, headers={"Retry-After": "999"}),
+        FakeResponse(payload=success_payload()),
+    ]
+    calls = []
+    sleeps = []
+
+    def fake_post(url, **kwargs):
+        calls.append(url)
+        return responses.pop(0)
+
+    monkeypatch.setattr("providers.openai_compatible.requests.post", fake_post)
+    monkeypatch.setattr("providers.openai_compatible.time.sleep", sleeps.append)
+    provider = OpenAICompatibleProvider("openrouter", "key", "model", max_retries=2)
+    text, error = provider.chat([{"role": "user", "content": "hello"}])
+    assert text == "ok"
+    assert error is None
+    assert len(calls) == 2
+    assert sleeps == [60]
+    assert provider.get_stats()["http_attempts"] == 2
+
+
+def test_missing_choices_is_reported_with_http_status_without_response_dump(monkeypatch):
+    monkeypatch.setattr(
+        "providers.openai_compatible.requests.post",
+        lambda *args, **kwargs: FakeResponse(status_code=200, payload={"error": {"message": "no choices"}}),
+    )
+    provider = OpenAICompatibleProvider("nararouter", "secret", "agnes-2.5-flash", max_retries=1)
+    text, error = provider.chat([{"role": "user", "content": "hello"}])
+    assert text is None
+    assert "missing choices" in error
+    assert "HTTP 200" in error
+    assert "secret" not in error
+    assert provider.get_stats()["failed_calls"] == 1
+
+
+def test_benchmark_mode_forces_requested_token_ceiling(monkeypatch):
+    seen = []
+    monkeypatch.setenv("FEA_BENCHMARK_MODE", "1")
+    monkeypatch.setenv("FEA_BENCHMARK_FORCE_MAX_TOKENS", "1")
+    monkeypatch.setenv("FEA_MAX_TOKENS_PER_CALL", "8000")
+    monkeypatch.setattr(
+        "providers.openai_compatible.requests.post",
+        lambda url, **kwargs: (seen.append(kwargs["json"]["max_tokens"]) or FakeResponse(payload=success_payload())),
+    )
+    provider = OpenAICompatibleProvider("openrouter", "key", "model", max_retries=1)
+    provider.chat([{"role": "user", "content": "hello"}], max_tokens=500)
+    assert seen == [8000]
+
+
+def test_logical_call_budget_is_enforced(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        "providers.openai_compatible.requests.post",
+        lambda *args, **kwargs: (calls.append(1) or FakeResponse(payload=success_payload())),
+    )
+    provider = OpenAICompatibleProvider("nararouter", "key", "model", max_logical_calls=1)
+    assert provider.chat([{"role": "user", "content": "one"}])[1] is None
+    text, error = provider.chat([{"role": "user", "content": "two"}])
+    assert text is None
+    assert "budget exhausted" in error
+    assert len(calls) == 1

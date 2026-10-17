@@ -131,7 +131,7 @@ def call_llm_json(
         try:
             obj = parser.parse(
                 text,
-                model_name="cloudflare",
+                model_name=str(getattr(provider, "provider_name", "unknown")),
             )
 
             if isinstance(obj, list):

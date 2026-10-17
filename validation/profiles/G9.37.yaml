@@ -1,0 +1,32 @@
+id: G9.37
+name: Semantic Scholar Retirement and Multi-Provider FEA Benchmark
+# Deterministic validation only. The live FEA provider benchmark is a separate
+# manually triggered workflow requiring explicit high-budget confirmation.
+target_tests:
+  - tests/test_provider_openai_compatible.py
+  - tests/test_provider_factory.py
+  - tests/test_retrieval_provider_retirement.py
+  - tests/test_fea_provider_benchmark_report.py
+  - tests/test_acquisition_adapter.py
+  - tests/test_evidence_adapter.py
+  - tests/test_retrieval_attention_planning_signal.py
+  - tests/test_research_planning_runtime.py
+  - tests/test_research_planning_application.py
+  - tests/test_semantic_scholar_reliability.py
+  - tests/semantic_audit/test_ae31_report_only_diagnosis.py
+  - tests/semantic_audit/test_ae30_independent_evaluation.py
+  - tests/semantic_audit/test_ae29_transition_hardening.py
+  - tests/semantic_audit/test_ae29_iterative_audit.py
+  - tests/semantic_audit/test_ae28_neural_interpretation.py
+  - tests/semantic_audit/test_ae27_neurosymbolic_gateway.py
+  - tests/semantic_audit/test_ae26_semantic_evolution.py
+  - tests/semantic_audit/test_ae25_semantic_reasoning.py
+  - tests/semantic_audit/test_ae24_semantic_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_graph/test_g71_structural_reasoning.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_audit/test_ae23_external_git_admission.py
+regression:
+  enabled: true
+  path: tests/

@@ -25,6 +25,7 @@ class CloudflareProvider:
         max_tokens_per_call=2500,
         max_logical_calls=20,
     ):
+        self.provider_name = "cloudflare"
         self.account_id = account_id
         self.api_token = api_token
         self.models = models if models else [DEFAULT_MODEL]
@@ -34,8 +35,27 @@ class CloudflareProvider:
         self.successful_calls = 0
         self.failed_calls = 0
         self.http_attempts = 0
+        self.http_status_counts = {}
+        self.response_chars_total = 0
+        self.response_chars_max = 0
         self.total_calls = 0
         self.max_tokens_per_call = max_tokens_per_call
+        try:
+            self.timeout_seconds = max(10, min(600, int(os.environ.get("FEA_LLM_REQUEST_TIMEOUT_SECONDS", "180"))))
+        except (TypeError, ValueError):
+            self.timeout_seconds = 180
+        try:
+            self.max_retries = max(1, min(5, int(os.environ.get("FEA_LLM_RETRY_ATTEMPTS", "3"))))
+        except (TypeError, ValueError):
+            self.max_retries = 3
+        self.usage = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "responses_with_usage": 0,
+            "reported_cost_usd": 0.0,
+            "responses_with_cost": 0,
+        }
 
         env_limit = os.environ.get("FEA_MAX_LLM_CALLS")
         if env_limit:
@@ -68,7 +88,16 @@ class CloudflareProvider:
         self.logical_calls += 1
         self.total_calls = self.logical_calls
 
-        if max_tokens is None:
+        if os.environ.get("FEA_BENCHMARK_MODE") == "1" and os.environ.get(
+            "FEA_BENCHMARK_FORCE_MAX_TOKENS"
+        ) == "1":
+            try:
+                max_tokens = max(256, min(12000, int(os.environ.get(
+                    "FEA_MAX_TOKENS_PER_CALL", self.max_tokens_per_call
+                ))))
+            except (TypeError, ValueError):
+                max_tokens = self.max_tokens_per_call
+        elif max_tokens is None:
             max_tokens = self.max_tokens_per_call
 
         if model is None:
@@ -85,23 +114,24 @@ class CloudflareProvider:
             "temperature": temperature,
         }
 
-        for attempt in range(3):
+        for attempt in range(self.max_retries):
             self.http_attempts += 1
             try:
                 resp = requests.post(
                     url,
                     headers=headers,
                     json=payload,
-                    timeout=180,
+                    timeout=self.timeout_seconds,
                 )
 
+                self.http_status_counts[str(resp.status_code)] = self.http_status_counts.get(str(resp.status_code), 0) + 1
                 if resp.status_code == 429:
                     wait = min(120, 30 * (2 ** attempt))
                     print(
                         f"  [Cloudflare] Rate limited, waiting {wait}s...",
                         file=sys.stderr,
                     )
-                    if attempt < 2:
+                    if attempt + 1 < self.max_retries:
                         time.sleep(wait)
                         continue
                     self.failed_calls += 1
@@ -116,6 +146,22 @@ class CloudflareProvider:
                     return None, f"HTTP {resp.status_code}: {resp.text[:300]}"
 
                 data = resp.json()
+                usage = data.get("usage") if isinstance(data, dict) else None
+                if not isinstance(usage, dict) and isinstance(data, dict):
+                    result_block = data.get("result")
+                    if isinstance(result_block, dict):
+                        usage = result_block.get("usage")
+                if isinstance(usage, dict):
+                    try:
+                        prompt_tokens = max(0, int(usage.get("prompt_tokens", usage.get("input_tokens", 0)) or 0))
+                        completion_tokens = max(0, int(usage.get("completion_tokens", usage.get("output_tokens", 0)) or 0))
+                        total_tokens = max(0, int(usage.get("total_tokens", prompt_tokens + completion_tokens) or 0))
+                    except (TypeError, ValueError):
+                        prompt_tokens = completion_tokens = total_tokens = 0
+                    self.usage["prompt_tokens"] += prompt_tokens
+                    self.usage["completion_tokens"] += completion_tokens
+                    self.usage["total_tokens"] += total_tokens
+                    self.usage["responses_with_usage"] += 1
 
                 try:
                     text = self.extractor.extract(
@@ -130,10 +176,12 @@ class CloudflareProvider:
 
                 self.call_counts[model] = self.call_counts.get(model, 0) + 1
                 self.successful_calls += 1
+                self.response_chars_total += len(text)
+                self.response_chars_max = max(self.response_chars_max, len(text))
                 return text, None
 
             except requests.exceptions.RequestException as exc:
-                if attempt == 2:
+                if attempt + 1 >= self.max_retries:
                     self.failed_calls += 1
                     return None, str(exc)
                 time.sleep(10 * (attempt + 1))
@@ -147,13 +195,22 @@ class CloudflareProvider:
 
     def get_stats(self):
         return {
+            "provider": self.provider_name,
+            "endpoint": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}",
             "total_calls": self.logical_calls,
             "logical_calls": self.logical_calls,
             "successful_calls": self.successful_calls,
             "failed_calls": self.failed_calls,
             "http_attempts": self.http_attempts,
+            "http_status_counts": dict(self.http_status_counts),
+            "response_chars_total": self.response_chars_total,
+            "response_chars_max": self.response_chars_max,
             "per_model": dict(self.call_counts),
+            "usage": dict(self.usage),
+            "max_tokens_per_call": self.max_tokens_per_call,
             "max_logical_calls": self.max_logical_calls,
+            "timeout_seconds": self.timeout_seconds,
+            "max_retries": self.max_retries,
             "extraction_stats": self.extractor.get_stats(),
             "learned_paths": self.extractor.get_learned_paths(),
         }
