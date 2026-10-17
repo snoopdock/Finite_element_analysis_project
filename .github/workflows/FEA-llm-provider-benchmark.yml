@@ -1,0 +1,301 @@
+name: FEA LLM Provider Benchmark (Report Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Trusted branch whose FEA pipeline will be run independently for each provider"
+        required: true
+        type: choice
+        options:
+          - stage1/section-uuids
+          - main
+        default: stage1/section-uuids
+      max_tokens_per_call:
+        description: "Maximum output-token cap for every LLM call (benchmark override)"
+        required: true
+        type: choice
+        options:
+          - "4000"
+          - "8000"
+          - "12000"
+        default: "8000"
+      max_llm_calls:
+        description: "Maximum logical LLM calls per provider run"
+        required: true
+        type: choice
+        options:
+          - "30"
+          - "50"
+          - "80"
+        default: "80"
+      timeout_minutes:
+        description: "Hard timeout for each full pipeline run"
+        required: true
+        type: choice
+        options:
+          - "120"
+          - "180"
+          - "240"
+        default: "240"
+      confirm_high_budget:
+        description: "Confirm that three isolated full-pipeline runs may use substantial provider quotas/cost"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require explicit high-budget confirmation
+        env:
+          CONFIRM_HIGH_BUDGET: ${{ inputs.confirm_high_budget }}
+          TARGET_BRANCH: ${{ inputs.target_branch }}
+          MAX_TOKENS: ${{ inputs.max_tokens_per_call }}
+          MAX_CALLS: ${{ inputs.max_llm_calls }}
+          TIMEOUT_MINUTES: ${{ inputs.timeout_minutes }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRM_HIGH_BUDGET" != "true" ]; then
+            echo "::error::Set confirm_high_budget=true to authorize three extended full-pipeline runs."
+            exit 1
+          fi
+          case "$TARGET_BRANCH" in
+            stage1/section-uuids|main) ;;
+            *) echo "::error::Unsupported target branch"; exit 1 ;;
+          esac
+          case "$MAX_TOKENS" in 4000|8000|12000) ;; *) echo "::error::Invalid token cap"; exit 1 ;; esac
+          case "$MAX_CALLS" in 30|50|80) ;; *) echo "::error::Invalid call cap"; exit 1 ;; esac
+          case "$TIMEOUT_MINUTES" in 120|180|240) ;; *) echo "::error::Invalid timeout"; exit 1 ;; esac
+          echo "Confirmed: 3 isolated provider runs; up to $MAX_CALLS logical calls x $MAX_TOKENS output tokens per call; $TIMEOUT_MINUTES minute timeout per run."
+
+  validate-source:
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout selected source branch without credentials
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.target_branch }}
+          path: repo
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-pictures lmodern
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: repo/requirements.txt
+      - name: Install dependencies and validate source
+        working-directory: repo
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # The full test suite imports jsonschema in semantic-high-assurance tests.
+          # Keep this test-only dependency explicit; it is not required by the FEA runtime.
+          python -m pip install 'jsonschema>=4.20,<5'
+          python -c 'import jsonschema; print("jsonschema test dependency:", jsonschema.__version__)'
+          pytest -q
+
+  benchmark:
+    needs: validate-source
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - provider: cloudflare
+            model: "@cf/meta/llama-3.1-8b-instruct-fast"
+          - provider: nararouter
+            model: "agnes-2.5-flash"
+          - provider: openrouter
+            model: "deepseek/deepseek-v4.1-flash-1017"
+    steps:
+      - name: Checkout selected source branch without push credentials
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.target_branch }}
+          path: repo
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-pictures lmodern
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: repo/requirements.txt
+      - name: Install dependencies
+        working-directory: repo
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Validate selected provider secret
+        env:
+          SELECTED_PROVIDER: ${{ matrix.provider }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ matrix.provider == 'cloudflare' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
+          CLOUDFLARE_API_TOKEN: ${{ matrix.provider == 'cloudflare' && secrets.CLOUDFLARE_API_TOKEN || '' }}
+          NARAROUTER_API_KEY: ${{ matrix.provider == 'nararouter' && secrets.NARAROUTER_API_KEY || '' }}
+          OPENROUTER_TOKEN: ${{ matrix.provider == 'openrouter' && secrets.OPENROUTER_TOKEN || '' }}
+        run: |
+          set -euo pipefail
+          case "$SELECTED_PROVIDER" in
+            cloudflare)
+              test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::CLOUDFLARE_ACCOUNT_ID is missing"; exit 1; }
+              test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::CLOUDFLARE_API_TOKEN is missing"; exit 1; }
+              ;;
+            nararouter)
+              test -n "$NARAROUTER_API_KEY" || { echo "::error::NARAROUTER_API_KEY is missing"; exit 1; }
+              ;;
+            openrouter)
+              test -n "$OPENROUTER_TOKEN" || { echo "::error::OPENROUTER_TOKEN is missing"; exit 1; }
+              ;;
+          esac
+          echo "Required secret for $SELECTED_PROVIDER is present (value not printed)."
+      - name: Reset generated state for identical provider comparison
+        working-directory: repo
+        run: |
+          set -euo pipefail
+          rm -f \
+            state/current_state.json \
+            state/reading_state.json \
+            output/evidence.json \
+            output/research.json \
+            output/sections.json \
+            output/guideline.tex \
+            output/validation_report.md \
+            output/document.semantic-candidate.json \
+            output/guideline.pdf \
+            output/guideline.log \
+            output/publication_manifest.json \
+            output/error.txt
+          if [ -d state/iteration_history ]; then
+            find state/iteration_history -type f ! -name '.gitkeep' -delete
+          fi
+          rm -rf output/raw_text
+          mkdir -p state output/raw_text artifacts/benchmark
+          touch state/.gitkeep output/.gitkeep
+      - name: Run full FEA pipeline with selected provider
+        id: pipeline
+        continue-on-error: true
+        working-directory: repo
+        env:
+          FEA_LLM_PROVIDER: ${{ matrix.provider }}
+          FEA_LLM_MODEL: ${{ matrix.model }}
+          FEA_BENCHMARK_MODE: "1"
+          FEA_BENCHMARK_FORCE_MAX_TOKENS: "1"
+          FEA_MAX_LLM_CALLS: ${{ inputs.max_llm_calls }}
+          FEA_MAX_TOKENS_PER_CALL: ${{ inputs.max_tokens_per_call }}
+          FEA_LLM_REQUEST_TIMEOUT_SECONDS: "300"
+          FEA_LLM_RETRY_ATTEMPTS: "3"
+          FEA_BENCHMARK_TARGET_BRANCH: ${{ inputs.target_branch }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ matrix.provider == 'cloudflare' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
+          CLOUDFLARE_API_TOKEN: ${{ matrix.provider == 'cloudflare' && secrets.CLOUDFLARE_API_TOKEN || '' }}
+          NARAROUTER_API_KEY: ${{ matrix.provider == 'nararouter' && secrets.NARAROUTER_API_KEY || '' }}
+          OPENROUTER_TOKEN: ${{ matrix.provider == 'openrouter' && secrets.OPENROUTER_TOKEN || '' }}
+        run: |
+          set -o pipefail
+          python -c 'import json,time; open("artifacts/benchmark/pipeline-start-epoch.json","w").write(json.dumps(time.time()))'
+          finish_benchmark_clock() {
+            python -c 'import json,time; open("artifacts/benchmark/pipeline-end-epoch.json","w").write(json.dumps(time.time()))'
+          }
+          trap finish_benchmark_clock EXIT
+          python main.py --config config.yaml 2>&1 | tee artifacts/benchmark/pipeline.log
+      - name: Validate publication artifact
+        id: publication
+        if: steps.pipeline.outcome == 'success'
+        continue-on-error: true
+        working-directory: repo
+        run: |
+          set -o pipefail
+          python -m processing.publication_integrity_cli \
+            --tex output/guideline.tex \
+            --pdf output/guideline.pdf \
+            --manifest output/publication_manifest.json \
+            --semantic-document output/document.semantic-candidate.json \
+            --state state/current_state.json \
+            --ir-contract specs/contracts/document_latex_ir_projection_contract.yaml \
+            --passes 2 \
+            --max-passes 5 2>&1 | tee artifacts/benchmark/publication-validation.log
+      - name: Generate credential-free benchmark summary
+        if: always()
+        working-directory: repo
+        env:
+          FEA_PIPELINE_OUTCOME: ${{ steps.pipeline.outcome }}
+          FEA_PUBLICATION_OUTCOME: ${{ steps.publication.outcome }}
+          BENCHMARK_PROVIDER: ${{ matrix.provider }}
+          BENCHMARK_MODEL: ${{ matrix.model }}
+          BENCHMARK_TARGET_BRANCH: ${{ inputs.target_branch }}
+          BENCHMARK_MAX_TOKENS: ${{ inputs.max_tokens_per_call }}
+          BENCHMARK_MAX_CALLS: ${{ inputs.max_llm_calls }}
+        run: |
+          python scripts/fea_provider_benchmark_report.py \
+            --repo-root . \
+            --output-dir artifacts/benchmark \
+            --provider "$BENCHMARK_PROVIDER" \
+            --model "$BENCHMARK_MODEL" \
+            --target-branch "$BENCHMARK_TARGET_BRANCH" \
+            --max-tokens-per-call "$BENCHMARK_MAX_TOKENS" \
+            --max-llm-calls "$BENCHMARK_MAX_CALLS" \
+            --pipeline-outcome "$FEA_PIPELINE_OUTCOME" \
+            --publication-outcome "$FEA_PUBLICATION_OUTCOME"
+      - name: Upload complete provider-run evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fea-provider-benchmark-${{ matrix.provider }}-${{ github.run_id }}
+          path: |
+            repo/artifacts/benchmark/**
+            repo/output/guideline.pdf
+            repo/output/guideline.tex
+            repo/output/guideline.log
+            repo/output/publication_manifest.json
+            repo/output/document.semantic-candidate.json
+            repo/output/evidence.json
+            repo/output/research.json
+            repo/output/sections.json
+            repo/output/validation_report.md
+            repo/output/error.txt
+            repo/state/current_state.json
+            repo/state/reading_state.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Enforce run and publication outcome after uploading evidence
+        if: always()
+        working-directory: repo
+        env:
+          PIPELINE_OUTCOME: ${{ steps.pipeline.outcome }}
+          PUBLICATION_OUTCOME: ${{ steps.publication.outcome }}
+        run: |
+          set -euo pipefail
+          if [ "$PIPELINE_OUTCOME" != "success" ]; then
+            echo "::error::The FEA main pipeline did not complete successfully; evidence was uploaded."
+            exit 1
+          fi
+          if [ "$PUBLICATION_OUTCOME" != "success" ]; then
+            echo "::error::Publication validation did not pass; evidence was uploaded."
+            exit 1
+          fi
+          if [ -f state/current_state.json ]; then
+            RUN_STATUS="$(python -c 'import json; print(json.load(open("state/current_state.json", encoding="utf-8")).get("last_run_status", "unknown"))')"
+            if [ "$RUN_STATUS" != "success" ]; then
+              echo "::error::FEA pipeline recorded status '$RUN_STATUS'; inspect the uploaded report and metrics."
+              exit 1
+            fi
+          fi
