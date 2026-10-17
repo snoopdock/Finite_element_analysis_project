@@ -1,0 +1,12 @@
+id: G9.39
+name: LLM Runtime Observability and Provider Contract Repair
+# Operational telemetry and provider-to-pipeline contract checks; no writing-prompt changes.
+target_tests:
+  - tests/test_provider_runtime_diagnostics.py
+  - tests/test_provider_openai_compatible.py
+  - tests/test_fea_provider_benchmark_report.py
+  - tests/test_provider_factory.py
+  - tests/test_fea_benchmark_workflow_dependencies.py
+regression:
+  enabled: true
+  path: tests/

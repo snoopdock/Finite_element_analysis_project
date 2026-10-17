@@ -128,3 +128,16 @@ def test_logical_call_budget_is_enforced(monkeypatch):
     assert text is None
     assert "budget exhausted" in error
     assert len(calls) == 1
+
+
+def test_total_calls_is_compatibility_alias_for_logical_calls(monkeypatch):
+    monkeypatch.setattr(
+        "providers.openai_compatible.requests.post",
+        lambda *args, **kwargs: FakeResponse(payload=success_payload()),
+    )
+    provider = OpenAICompatibleProvider("nararouter", "key", "agnes-2.5-flash", max_retries=1)
+    assert provider.total_calls == 0
+    provider.chat([{"role": "user", "content": "hello"}])
+    assert provider.total_calls == 1
+    assert provider.total_calls == provider.logical_calls
+    assert provider.get_stats()["total_calls"] == provider.total_calls

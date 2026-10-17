@@ -16,6 +16,8 @@ ARTIFACT_PATHS = (
     "artifacts/benchmark/publication-validation.log",
     "artifacts/benchmark/pipeline-start-epoch.json",
     "artifacts/benchmark/pipeline-end-epoch.json",
+    "output/provider_runtime_diagnostics.json",
+    "output/provider_runtime_diagnostics.error.txt",
     "output/guideline.pdf",
     "output/guideline.tex",
     "output/guideline.log",
@@ -36,6 +38,56 @@ def _read_json(path: Path, default: Any) -> Any:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError, TypeError):
         return default
+
+
+def _count_report_errors(state: Dict[str, Any], report_text: str) -> Any:
+    """Count operational errors from state or the generated report, without double counting."""
+    state_errors = state.get("errors")
+    state_count = len(state_errors) if isinstance(state_errors, list) else None
+    report_count = None
+    marker = "## Errors"
+    if marker in report_text:
+        section = report_text.split(marker, 1)[1]
+        section = section.split("\\n## ", 1)[0]
+        report_count = sum(1 for line in section.splitlines() if line.lstrip().startswith("- "))
+    elif "## Status: SUCCESS" in report_text:
+        report_count = 0
+    if state_count is None:
+        return report_count
+    if report_count is None:
+        return state_count
+    return max(state_count, report_count)
+
+
+def _runtime_diagnostics_summary(repo_root: Path, state: Dict[str, Any]) -> Dict[str, Any]:
+    disk_record = _read_json(repo_root / "output" / "provider_runtime_diagnostics.json", {})
+    if not isinstance(disk_record, dict):
+        disk_record = {}
+    runtime = state.get("provider_runtime_diagnostics", {})
+    if not isinstance(runtime, dict):
+        runtime = {}
+    source = disk_record or runtime
+    events = source.get("phase_events", [])
+    if not isinstance(events, list):
+        events = []
+    return {
+        "status": source.get("status", "not_recorded"),
+        "active_phase": source.get("active_phase"),
+        "source_commit": source.get("source_commit", "unknown"),
+        "workflow_commit": source.get("workflow_commit", "unknown"),
+        "phases": [
+            {
+                "phase": event.get("phase", "unknown"),
+                "status": event.get("status", "unknown"),
+                "delta": event.get("delta", {}),
+                "error_type": event.get("error_type"),
+                "error": event.get("error"),
+            }
+            for event in events[-40:]
+            if isinstance(event, dict)
+        ],
+        "failure": source.get("failure"),
+    }
 
 
 def _file_record(path: Path, root: Path) -> Dict[str, Any]:
@@ -70,6 +122,18 @@ def build_summary(repo_root: Path, metadata: Dict[str, Any]) -> Dict[str, Any]:
 
     pipeline_outcome = str(metadata.get("pipeline_outcome", "unknown"))
     publication_outcome = str(metadata.get("publication_outcome", "not_run"))
+    source_commit = str(
+        metadata.get("source_commit")
+        or metadata.get("commit")
+        or os.environ.get("FEA_SOURCE_COMMIT")
+        or "unknown"
+    )
+    workflow_commit = str(
+        metadata.get("workflow_commit")
+        or os.environ.get("FEA_WORKFLOW_COMMIT")
+        or os.environ.get("GITHUB_SHA")
+        or "unknown"
+    )
     started_epoch = _read_json(root / "artifacts" / "benchmark" / "pipeline-start-epoch.json", None)
     ended_epoch = _read_json(root / "artifacts" / "benchmark" / "pipeline-end-epoch.json", None)
     # Epoch files are intentionally JSON numbers so the report remains robust
@@ -90,7 +154,10 @@ def build_summary(repo_root: Path, metadata: Dict[str, Any]) -> Dict[str, Any]:
             "provider": str(metadata.get("provider", os.environ.get("FEA_LLM_PROVIDER", "unknown"))),
             "model": str(metadata.get("model", os.environ.get("FEA_LLM_MODEL", "unknown"))),
             "target_branch": str(metadata.get("target_branch", os.environ.get("FEA_BENCHMARK_TARGET_BRANCH", "unknown"))),
-            "commit": str(metadata.get("commit", os.environ.get("GITHUB_SHA", "unknown"))),
+            # `commit` remains as a compatibility alias for the actual source checkout.
+            "commit": source_commit,
+            "source_commit": source_commit,
+            "workflow_commit": workflow_commit,
             "max_tokens_per_call": int(metadata.get("max_tokens_per_call", os.environ.get("FEA_MAX_TOKENS_PER_CALL", 0)) or 0),
             "max_llm_calls": int(metadata.get("max_llm_calls", os.environ.get("FEA_MAX_LLM_CALLS", 0)) or 0),
             "pipeline_outcome": pipeline_outcome,
@@ -101,12 +168,13 @@ def build_summary(repo_root: Path, metadata: Dict[str, Any]) -> Dict[str, Any]:
             "reported_pipeline_status": str(state.get("last_run_status", "unknown")),
             "cycle": state.get("cycle"),
             "iteration": state.get("iteration"),
-            "errors_recorded": len(state.get("errors", [])) if isinstance(state.get("errors"), list) else None,
+            "errors_recorded": _count_report_errors(state, report_text),
             "validation_report_contains_success": "## Status: SUCCESS" in report_text,
             "validation_report_contains_errors": "## Errors" in report_text,
         },
         "model_usage": usage,
         "parser_stats": state.get("parser_stats", {}) if isinstance(state.get("parser_stats", {}), dict) else {},
+        "provider_runtime_diagnostics": _runtime_diagnostics_summary(root, state),
         "artifacts": [_file_record(root / relative, root) for relative in ARTIFACT_PATHS],
         "secret_values_included": False,
     }
@@ -121,7 +189,8 @@ def render_markdown(summary: Dict[str, Any]) -> str:
         f"- Provider: `{benchmark['provider']}`",
         f"- Model: `{benchmark['model']}`",
         f"- Target branch: `{benchmark['target_branch']}`",
-        f"- Commit: `{benchmark['commit']}`",
+        f"- Source checkout commit: `{benchmark.get('source_commit', benchmark['commit'])}`",
+        f"- Workflow commit: `{benchmark.get('workflow_commit', 'unknown')}`",
         f"- Token cap per call: `{benchmark['max_tokens_per_call']}`",
         f"- Logical-call cap: `{benchmark['max_llm_calls']}`",
         f"- Pipeline outcome: `{benchmark['pipeline_outcome']}`",
@@ -145,6 +214,24 @@ def render_markdown(summary: Dict[str, Any]) -> str:
         ])
         if int(token_usage.get("responses_with_cost", 0) or 0) > 0:
             lines.append(f"- Provider-reported cost (USD): `{token_usage.get('reported_cost_usd')}`")
+    lines.extend([
+        "",
+        "## Runtime phase trace",
+        "",
+        f"- Diagnostic status: `{summary.get('provider_runtime_diagnostics', {}).get('status', 'not_recorded')}`",
+        f"- Active phase at failure: `{summary.get('provider_runtime_diagnostics', {}).get('active_phase') or 'none'}`",
+    ])
+    phases = summary.get("provider_runtime_diagnostics", {}).get("phases", [])
+    if phases:
+        lines.extend(["", "| Phase | Status | Logical-call delta | HTTP-attempt delta | Error |", "|---|---|---:|---:|---|"])
+        for event in phases:
+            delta = event.get("delta", {}) if isinstance(event.get("delta"), dict) else {}
+            error = event.get("error") or event.get("error_type") or ""
+            lines.append(
+                f"| `{event.get('phase', 'unknown')}` | `{event.get('status', 'unknown')}` | "
+                f"{delta.get('logical_calls', '')} | {delta.get('http_attempts', '')} | "
+                f"{str(error).replace('|', '/')} |"
+            )
     lines.extend(["", "## Artifact manifest", "", "| Path | Present | Size (bytes) | SHA-256 |", "|---|---:|---:|---|"])
     for item in summary["artifacts"]:
         lines.append(
@@ -171,13 +258,18 @@ def main() -> int:
     parser.add_argument("--max-llm-calls", type=int, default=int(os.environ.get("FEA_MAX_LLM_CALLS", "0") or 0))
     parser.add_argument("--pipeline-outcome", default=os.environ.get("FEA_PIPELINE_OUTCOME", "unknown"))
     parser.add_argument("--publication-outcome", default=os.environ.get("FEA_PUBLICATION_OUTCOME", "not_run"))
-    parser.add_argument("--commit", default=os.environ.get("GITHUB_SHA", "unknown"))
+    parser.add_argument("--commit", default=None, help="Legacy alias for source commit")
+    parser.add_argument("--source-commit", default=os.environ.get("FEA_SOURCE_COMMIT", ""))
+    parser.add_argument("--workflow-commit", default=os.environ.get("FEA_WORKFLOW_COMMIT", os.environ.get("GITHUB_SHA", "")))
     args = parser.parse_args()
 
     metadata = {
         "provider": args.provider,
         "model": args.model,
         "target_branch": args.target_branch,
+        "source_commit": args.source_commit,
+        "workflow_commit": args.workflow_commit,
+        "commit": args.commit,
         "max_tokens_per_call": args.max_tokens_per_call,
         "max_llm_calls": args.max_llm_calls,
         "pipeline_outcome": args.pipeline_outcome,

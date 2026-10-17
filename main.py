@@ -22,6 +22,13 @@ from core.pipeline import (
     phase_extract,
     phase_assemble,
 )
+from core.provider_runtime_diagnostics import (
+    provider_snapshot,
+    record_provider_phase,
+    finalize_provider_diagnostics,
+    safe_provider_stats,
+    redact_runtime_text,
+)
 from core.writer_orchestration import phase_write_policy_aware
 from core.research_planning_application import prepare_research_acquisition_flow
 from processing.llm_parser import UniversalLLMJSONParser
@@ -86,6 +93,15 @@ def main():
     arg_parser.add_argument("--config", default="config.yaml")
     args = arg_parser.parse_args()
 
+    # These variables remain available to the top-level exception handler so
+    # operational telemetry can be persisted even if a phase raises.
+    provider = None
+    state = None
+    paths = {}
+    errors = None
+    active_phase = "initialization"
+    phase_start_snapshot = None
+
     try:
         config_path = pathlib.Path(args.config)
         if not config_path.is_absolute():
@@ -132,6 +148,14 @@ def main():
 
         state = initialize_state(paths, config)
         errors = []
+        state["provider_runtime_diagnostics"] = {
+            "schema_version": 1,
+            "status": "running",
+            "active_phase": "preflight",
+            "phase_events": [],
+        }
+        active_phase = "preflight"
+        phase_start_snapshot = provider_snapshot(provider)
 
         delay = int(config.get("phase_delay_seconds", 5))
         budget_config = config.get("budget", {})
@@ -322,6 +346,8 @@ def main():
                 normalized_pending.append(query)
             research_config["seed_queries"] = normalized_pending
 
+        active_phase = "research"
+        phase_start_snapshot = provider_snapshot(provider)
         evidence, new_sources = phase_research(
             research_config,
             state,
@@ -332,6 +358,11 @@ def main():
             llm_parser_instance,
             skip_gap_analysis=skip_gap,
         )
+        record_provider_phase(
+            state, provider, "research", "completed", before=phase_start_snapshot
+        )
+        active_phase = "retrieval_postprocessing"
+        phase_start_snapshot = provider_snapshot(provider)
 
         retrieval_report = state.get("retrieval_report", {})
         retrieval_event_recorded = False
@@ -449,7 +480,13 @@ def main():
                     "(No unprocessed sources) ===",
                     file=sys.stderr,
                 )
+                phase_start_snapshot = provider_snapshot(provider)
+                record_provider_phase(
+                    state, provider, "extract", "skipped", before=phase_start_snapshot
+                )
             else:
+                active_phase = "extract"
+                phase_start_snapshot = provider_snapshot(provider)
                 kb, extracted = phase_extract(
                     config,
                     state,
@@ -461,7 +498,12 @@ def main():
                     budget_config,
                 )
                 state["knowledge_base"] = kb
+                record_provider_phase(
+                    state, provider, "extract", "completed", before=phase_start_snapshot
+                )
 
+            active_phase = "write"
+            phase_start_snapshot = provider_snapshot(provider)
             sections, written, adjustment = phase_write_policy_aware(
                 config,
                 state,
@@ -476,6 +518,9 @@ def main():
                 section_topics,
                 writing_indicator=writing_indicator,
             )
+            record_provider_phase(
+                state, provider, "write", "completed", before=phase_start_snapshot
+            )
 
             state["sections"] = sections
 
@@ -486,12 +531,17 @@ def main():
                     file=sys.stderr,
                 )
 
+                active_phase = "adjustment"
+                phase_start_snapshot = provider_snapshot(provider)
                 sections = oaa_loop.execute_adjustment(
                     adjustment,
                     sections,
                     provider,
                     llm_parser_instance,
                     iteration_history,
+                )
+                record_provider_phase(
+                    state, provider, "adjustment", "completed", before=phase_start_snapshot
                 )
 
                 state["sections"] = sections
@@ -529,10 +579,17 @@ def main():
                 file=sys.stderr,
             )
 
+        active_phase = "assembly"
+        phase_start_snapshot = provider_snapshot(provider)
         assembled = phase_assemble(
             state,
             paths,
         )
+        record_provider_phase(
+            state, provider, "assembly", "completed", before=phase_start_snapshot
+        )
+        active_phase = "finalization"
+        phase_start_snapshot = provider_snapshot(provider)
 
         state["cycle"] = int(
             state.get("cycle", 0)
@@ -549,10 +606,21 @@ def main():
             else "partial"
         )
 
-        stats = provider.get_stats()
+        stats = safe_provider_stats(provider)
         state["model_usage"] = stats
+        state["errors"] = list(errors)
         state["parser_stats"] = (
             llm_parser_instance.get_stats()
+        )
+        runtime_diagnostics = finalize_provider_diagnostics(
+            state,
+            provider,
+            status=state["last_run_status"],
+            active_phase=None,
+        )
+        save_json(
+            ROOT / "output" / "provider_runtime_diagnostics.json",
+            runtime_diagnostics,
         )
 
         oaa_loop.save_persisted_state(
@@ -646,13 +714,77 @@ def main():
         )
         print("=" * 60 + "\n", file=sys.stderr)
 
-    except Exception:
-        error_text = traceback.format_exc()
-
+    except Exception as exc:
+        error_text = redact_runtime_text(traceback.format_exc(), limit=12000)
         save_text(
             ROOT / "output" / "error.txt",
             error_text,
         )
+
+        # Keep provider counters and the failing phase even when a pipeline
+        # exception prevents the normal state/report finalization path.
+        try:
+            if provider is not None:
+                if isinstance(state, dict):
+                    if isinstance(errors, list):
+                        state["errors"] = list(errors)
+                    if active_phase:
+                        record_provider_phase(
+                            state,
+                            provider,
+                            active_phase,
+                            "failed",
+                            before=phase_start_snapshot,
+                            error=exc,
+                        )
+                    state["model_usage"] = safe_provider_stats(provider)
+                    state["last_run_status"] = "error"
+                    current_errors = state.get("errors", [])
+                    if not isinstance(current_errors, list):
+                        current_errors = []
+                    current_errors.append(
+                        redact_runtime_text(
+                            f"Runtime exception during {active_phase}: {exc}"
+                        )
+                    )
+                    state["errors"] = current_errors
+                    runtime_diagnostics = finalize_provider_diagnostics(
+                        state,
+                        provider,
+                        status="error",
+                        active_phase=active_phase,
+                        error=exc,
+                    )
+                else:
+                    runtime_diagnostics = {
+                        "schema_version": 1,
+                        "status": "error",
+                        "active_phase": active_phase,
+                        "source_commit": os.environ.get("FEA_SOURCE_COMMIT", "unknown"),
+                        "workflow_commit": os.environ.get("FEA_WORKFLOW_COMMIT", os.environ.get("GITHUB_SHA", "unknown")),
+                        "final_snapshot": safe_provider_stats(provider),
+                        "failure": {
+                            "phase": active_phase,
+                            "exception_type": type(exc).__name__,
+                            "message": redact_runtime_text(exc),
+                        },
+                    }
+                save_json(
+                    ROOT / "output" / "provider_runtime_diagnostics.json",
+                    runtime_diagnostics,
+                )
+                if isinstance(state, dict) and isinstance(paths, dict) and paths.get("state"):
+                    try:
+                        save_state(paths, state)
+                    except Exception:
+                        # The separate diagnostics artifact remains authoritative
+                        # for crash telemetry if state normalization itself fails.
+                        pass
+        except Exception as diagnostics_exc:
+            save_text(
+                ROOT / "output" / "provider_runtime_diagnostics.error.txt",
+                redact_runtime_text(diagnostics_exc),
+            )
 
         print(
             error_text,
