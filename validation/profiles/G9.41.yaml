@@ -1,0 +1,24 @@
+id: G9.41
+name: AE-32B Graph-Grounded Repository Evidence Tools
+# Read-only repository evidence retrieval over the existing SemanticGraphAnalysisService.
+# No provider calls, source execution, shell execution, file writes, commits, or pushes.
+target_tests:
+  - tests/semantic_audit/test_ae32b_evidence_tools.py
+  - tests/semantic_audit/test_ae32a_architecture_wiring_audit.py
+  - tests/semantic_audit/test_ae24_semantic_contracts.py
+  - tests/semantic_audit/test_ae25_semantic_reasoning.py
+  - tests/semantic_audit/test_ae26_semantic_evolution.py
+  - tests/semantic_audit/test_ae27_neurosymbolic_gateway.py
+  - tests/semantic_audit/test_ae28_neural_interpretation.py
+  - tests/semantic_audit/test_ae29_iterative_audit.py
+  - tests/semantic_audit/test_ae29_transition_hardening.py
+  - tests/semantic_audit/test_ae30_independent_evaluation.py
+  - tests/semantic_audit/test_ae31_report_only_diagnosis.py
+  - tests/semantic_graph/test_analysis_engine_service.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_graph/test_path_analysis.py
+  - tests/semantic_graph/test_query_validation.py
+  - tests/semantic_graph/test_traversal.py
+regression:
+  enabled: true
+  path: tests/

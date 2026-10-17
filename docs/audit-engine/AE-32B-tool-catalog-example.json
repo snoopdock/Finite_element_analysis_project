@@ -1,0 +1,16 @@
+{
+  "schema_version": "ae32b/tool-catalog/v1",
+  "example_request": {
+    "tool": "graph_neighbors",
+    "arguments": {
+      "node": "audit_engine/semantic_audit/ae31/diagnosis.py",
+      "direction": "both",
+      "max_depth": 2,
+      "max_results": 20
+    }
+  },
+  "notes": [
+    "Use RepositoryEvidenceTools.list_tools() or build_tool_definitions() for the authoritative provider-neutral tool schemas.",
+    "This example does not invoke a provider or execute target repository code."
+  ]
+}
