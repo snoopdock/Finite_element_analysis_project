@@ -28,7 +28,7 @@ def _valid_model_json() -> str:
         "code_fix_feasible_without_semantic_scholar_key": True,
         "reliable_access_guaranteed_without_semantic_scholar_key": False,
         "risks": ["Retry storms must be prevented."],
-        "remaining_questions": ["Is an API key available to the owner?"]
+        "remaining_questions": ["Does a bounded anonymous probe return a useful number of records?"]
     })
 
 
@@ -54,6 +54,7 @@ def _fixture_repo(root: Path) -> Path:
     (root / "providers/cloudflare.py").write_text("class CloudflareProvider: pass\n", encoding="utf-8")
     (root / "tests/test_acquisition_adapter.py").write_text("def test_status_mapping():\n    assert True\n", encoding="utf-8")
     (root / "tests/test_evidence_adapter.py").write_text("def test_evidence():\n    assert True\n", encoding="utf-8")
+    (root / "tests/test_semantic_scholar_reliability.py").write_text("def test_retry_policy():\n    assert True\n", encoding="utf-8")
     state = {
         "last_run": "2026-10-06T16:04:18Z",
         "last_run_status": "partial",
@@ -180,50 +181,162 @@ def test_cloudflare_response_parsing_and_secret_redaction(monkeypatch):
     assert result["raw_output_sha256"] == hashlib.sha256(result["raw_output"].encode()).hexdigest()
 
 
-def test_nararouter_auto_model_discovery_and_chat(monkeypatch):
+@pytest.mark.parametrize("model", ae31.NARAROUTER_MODELS)
+def test_nararouter_uses_explicit_model_without_discovery(monkeypatch, model):
     class FakeResponse:
-        def __init__(self, status_code, data, text=""):
-            self.status_code = status_code
-            self._data = data
-            self.text = text
+        status_code = 200
+        text = ""
         def json(self):
-            return self._data
-    get_calls = []
-    def fake_get(url, **kwargs):
-        get_calls.append(url)
-        return FakeResponse(200, {"data": [{"id": "z-model"}, {"id": "deepseek-3.2"}]})
+            return {"model": model, "choices": [{"message": {"content": "diagnosis"}}]}
+
+    def forbidden_get(*args, **kwargs):
+        pytest.fail("NaraRouter model discovery must not be called")
+
     post_calls = []
     def fake_post(url, **kwargs):
         post_calls.append((url, kwargs))
-        return FakeResponse(200, {"model": "deepseek-3.2", "choices": [{"message": {"content": "diagnosis"}}]})
-    monkeypatch.setattr(ae31.requests, "get", fake_get)
+        return FakeResponse()
+
+    monkeypatch.setattr(ae31.requests, "get", forbidden_get)
     monkeypatch.setattr(ae31.requests, "post", fake_post)
-    result = ae31.call_nararouter(api_key="secret", model="auto", messages=[{"role": "user", "content": "x"}], secrets_to_redact=["secret"])
+    result = ae31.call_nararouter(
+        api_key="secret", model=model,
+        messages=[{"role": "user", "content": "x"}],
+        secrets_to_redact=["secret"],
+    )
     assert result["status"] == "success"
-    assert result["model"] == "deepseek-3.2"
-    assert get_calls == ["https://router.bynara.id/v1/models"]
+    assert result["model"] == model
+    assert result["model_selection"] == "explicit configured model"
     assert post_calls[0][0] == "https://router.bynara.id/v1/chat/completions"
+    assert post_calls[0][1]["headers"]["Authorization"] == "Bearer secret"
+    assert post_calls[0][1]["json"]["model"] == model
     assert result["raw_output"] == "diagnosis"
 
 
-def test_live_probe_is_one_low_volume_request(monkeypatch):
+def test_nararouter_auto_or_unknown_model_is_rejected_without_network(monkeypatch):
+    monkeypatch.setattr(ae31.requests, "get", lambda *a, **k: pytest.fail("no discovery"))
+    monkeypatch.setattr(ae31.requests, "post", lambda *a, **k: pytest.fail("no chat call"))
+    result = ae31.call_nararouter(api_key="secret", model="auto", messages=[])
+    assert result["status"] == "configuration_error"
+    assert "explicit NaraRouter model" in result["error"]
+
+
+def test_nararouter_normalizes_accidental_bearer_prefix(monkeypatch):
+    class FakeResponse:
+        status_code = 200
+        text = ""
+        def json(self):
+            return {"choices": [{"message": {"content": "ok"}}]}
+    calls = []
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return FakeResponse()
+    monkeypatch.setattr(ae31.requests, "post", fake_post)
+    result = ae31.call_nararouter(
+        api_key="Bearer secret-token", model="agnes-2.5-flash", messages=[],
+        secrets_to_redact=["Bearer secret-token"],
+    )
+    assert result["status"] == "success"
+    assert calls[0][1]["headers"]["Authorization"] == "Bearer secret-token"
+
+
+def test_nararouter_401_is_actionable_and_does_not_expose_key(monkeypatch):
+    class FakeResponse:
+        status_code = 401
+        text = '{"error":"A valid API key is required."}'
+    monkeypatch.setattr(ae31.requests, "post", lambda *a, **k: FakeResponse())
+    result = ae31.call_nararouter(
+        api_key="secret-nara-key", model="agnes-2.5-flash", messages=[],
+        secrets_to_redact=["secret-nara-key"],
+    )
+    assert result["status"] == "provider_error"
+    assert result["http_status"] == 401
+    assert "NARAROUTER_API_KEY" in result["error"]
+    assert "secret-nara-key" not in result["error"]
+
+
+def test_live_probe_retries_429_then_returns_records(monkeypatch):
+    calls = []
+    class FakeResponse:
+        def __init__(self, status_code, data, headers=None):
+            self.status_code = status_code
+            self._data = data
+            self.headers = headers or {}
+            self.text = json.dumps(data)
+        def json(self):
+            return self._data
+    responses = [
+        FakeResponse(429, {"message": "Too Many Requests"}, {"Retry-After": "1"}),
+        FakeResponse(200, {"data": [{"title": "Paper A"}, {"title": "Paper B"}]}, {}),
+    ]
+    def fake_get(*args, **kwargs):
+        calls.append((args, kwargs))
+        return responses.pop(0)
+    monkeypatch.setattr(ae31.requests, "get", fake_get)
+    monkeypatch.setattr(ae31.time, "sleep", lambda seconds: None)
+    result = ae31.probe_semantic_scholar()
+    assert result["status"] == "success"
+    assert result["result_count"] == 2
+    assert result["attempt_count"] == 2
+    assert result["retry_count"] == 1
+    assert result["yield_assessment"] == "few_records_returned"
+    assert [row["http_status"] for row in result["attempts"]] == [429, 200]
+    assert len(calls) == 2
+    assert calls[0][1]["params"]["limit"] == 3
+
+
+def test_live_probe_stops_after_bounded_429_attempts(monkeypatch):
     calls = []
     class FakeResponse:
         status_code = 429
-        headers = {"Retry-After": "2", "x-ratelimit-remaining": "0"}
-        text = '{"error":"rate limited"}'
+        headers = {}
+        text = '{"message":"Too Many Requests"}'
         def json(self):
-            return {"error": "rate limited"}
+            return {"message": "Too Many Requests"}
     def fake_get(*args, **kwargs):
         calls.append((args, kwargs))
         return FakeResponse()
     monkeypatch.setattr(ae31.requests, "get", fake_get)
+    monkeypatch.setattr(ae31.time, "sleep", lambda seconds: None)
     result = ae31.probe_semantic_scholar()
     assert result["status"] == "rate_limited"
     assert result["http_status"] == 429
-    assert result["retry_after"] == "2"
-    assert len(calls) == 1
-    assert calls[0][1]["timeout"] == ae31.S2_PROBE_TIMEOUT_SECONDS
+    assert result["attempt_count"] == ae31.S2_PROBE_MAX_ATTEMPTS == 3
+    assert result["retry_count"] == 2
+    assert result["retry_stop_reason"] == "max_attempts_reached"
+    assert len(calls) == 3
+
+
+def test_prompt_context_numbers_source_lines_accurately(tmp_path):
+    repo = _fixture_repo(tmp_path / "repo")
+    files, _, _ = ae31.read_scoped_snapshot(repo)
+    snapshot_sha, manifest = ae31.ae29_compatible_snapshot(files)
+    history = ae31.extract_retrieval_summary(files["state/current_state.json"])
+    finding = ae31._make_finding(snapshot_sha, files, history)
+    audit = ae31._make_audit_report(snapshot_sha, finding, "a" * 64)
+    context = ae31._build_prompt_context(files, snapshot_sha, manifest, finding, audit, {"status": "not_run"})
+    source = context["repository_code_and_tests_with_actual_line_numbers"]["research/semantic_scholar.py"]
+    assert source.startswith("0001: API_URL")
+    assert "Manifest size values are byte counts, not line counts" in context["source_line_numbering_note"]
+
+
+def test_semantic_scholar_recommendation_uses_two_record_minimum():
+    keep = ae31._semantic_scholar_operational_recommendation({
+        "status": "success", "result_count": 2, "attempt_count": 2,
+    })
+    remove_empty = ae31._semantic_scholar_operational_recommendation({
+        "status": "success", "result_count": 1, "attempt_count": 3,
+    })
+    remove_throttled = ae31._semantic_scholar_operational_recommendation({
+        "status": "rate_limited", "http_status": 429, "attempt_count": 3,
+    })
+    inconclusive = ae31._semantic_scholar_operational_recommendation({
+        "status": "network_error", "attempt_count": 1,
+    })
+    assert keep["decision"] == "keep_under_rate_limit_controls"
+    assert remove_empty["decision"] == "recommend_removal_from_active_pipeline"
+    assert remove_throttled["decision"] == "recommend_removal_from_active_pipeline"
+    assert inconclusive["decision"] == "inconclusive_no_provider_change"
 
 
 def test_report_only_workflow_writes_report_without_modifying_target(tmp_path, monkeypatch):

@@ -16,6 +16,7 @@ import time
 import requests
 import urllib.request
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Dict, List, Tuple
 
 from utils.text import clean_text
@@ -34,7 +35,37 @@ USER_AGENT = (
 
 API_URL = "https://api.semanticscholar.org/graph/v1/paper/search"
 
+# The anonymous API has a shared, variable rate limit. Serialize search requests
+# across the retrieval thread pool and retry 429 responses only a bounded number
+# of times. This is a best-effort free-access policy, not a guarantee of access.
+SEMANTIC_SCHOLAR_MAX_ATTEMPTS = 3
+SEMANTIC_SCHOLAR_MIN_REQUEST_INTERVAL_SECONDS = 1.25
+SEMANTIC_SCHOLAR_MAX_BACKOFF_SECONDS = 4.0
+SEMANTIC_SCHOLAR_MAX_RETRY_AFTER_SECONDS = 15.0
+_SEMANTIC_SCHOLAR_REQUEST_LOCK = threading.Lock()
+_LAST_SEMANTIC_SCHOLAR_REQUEST_AT = 0.0
+_SEMANTIC_SCHOLAR_COOLDOWN_UNTIL = 0.0
+
 _RETRIEVAL_STATE = threading.local()
+
+
+class _DeferredRateLimitResponse:
+    """429-like response used to avoid requests during an upstream cooldown."""
+
+    def __init__(self, remaining_seconds: float) -> None:
+        self.status_code = 429
+        self.headers = {"Retry-After": str(max(1, int(remaining_seconds)))}
+        self.text = "Semantic Scholar request skipped because a prior Retry-After cooldown is active."
+
+
+class _SearchNetworkError(requests.exceptions.RequestException):
+    """Transport failure carrying the HTTP attempts already made by this query."""
+
+    def __init__(self, cause: Exception, attempt_statuses: List[int], backoff_seconds: float) -> None:
+        super().__init__(str(cause))
+        self.attempt_statuses = list(attempt_statuses)
+        self.attempt_count = len(attempt_statuses) + 1
+        self.backoff_seconds = float(backoff_seconds)
 
 
 def _set_retrieval_status(status: str, **details) -> None:
@@ -50,6 +81,77 @@ def get_last_retrieval_status() -> Dict:
     """Return the latest Semantic Scholar retrieval outcome for this thread."""
     value = getattr(_RETRIEVAL_STATE, "status", None)
     return dict(value) if isinstance(value, dict) else {"status": "unknown"}
+
+
+def _retry_after_seconds(value: str | None) -> float | None:
+    """Parse Retry-After as seconds or an HTTP date; return None if invalid."""
+    if not value:
+        return None
+    try:
+        return max(0.0, float(value.strip()))
+    except (TypeError, ValueError):
+        pass
+    try:
+        target = parsedate_to_datetime(value)
+        if target.tzinfo is None:
+            target = target.replace(tzinfo=timezone.utc)
+        return max(0.0, (target - datetime.now(timezone.utc)).total_seconds())
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def _request_search_api(params: Dict, headers: Dict, timeout: int = 30):
+    """Issue a paced search request with bounded, Retry-After-aware 429 retry.
+
+    The lock intentionally covers pacing, the request and any retry wait so
+    concurrent query workers cannot create a synchronized retry burst.
+    Returns (response, attempt_statuses, total_backoff_seconds, stop_reason).
+    """
+    global _LAST_SEMANTIC_SCHOLAR_REQUEST_AT, _SEMANTIC_SCHOLAR_COOLDOWN_UNTIL
+    attempt_statuses: List[int] = []
+    total_backoff = 0.0
+    stop_reason = None
+
+    with _SEMANTIC_SCHOLAR_REQUEST_LOCK:
+        now = time.monotonic()
+        if _SEMANTIC_SCHOLAR_COOLDOWN_UNTIL > now:
+            remaining = _SEMANTIC_SCHOLAR_COOLDOWN_UNTIL - now
+            return _DeferredRateLimitResponse(remaining), attempt_statuses, total_backoff, "provider_cooldown_active"
+        _SEMANTIC_SCHOLAR_COOLDOWN_UNTIL = 0.0
+        for attempt in range(1, SEMANTIC_SCHOLAR_MAX_ATTEMPTS + 1):
+            elapsed = time.monotonic() - _LAST_SEMANTIC_SCHOLAR_REQUEST_AT
+            if _LAST_SEMANTIC_SCHOLAR_REQUEST_AT and elapsed < SEMANTIC_SCHOLAR_MIN_REQUEST_INTERVAL_SECONDS:
+                time.sleep(SEMANTIC_SCHOLAR_MIN_REQUEST_INTERVAL_SECONDS - elapsed)
+
+            try:
+                response = requests.get(API_URL, params=params, headers=headers, timeout=timeout)
+            except requests.exceptions.RequestException as exc:
+                raise _SearchNetworkError(exc, attempt_statuses, total_backoff) from exc
+            _LAST_SEMANTIC_SCHOLAR_REQUEST_AT = time.monotonic()
+            attempt_statuses.append(int(response.status_code))
+
+            if response.status_code != 429 or attempt >= SEMANTIC_SCHOLAR_MAX_ATTEMPTS:
+                return response, attempt_statuses, round(total_backoff, 3), stop_reason
+
+            response_headers = getattr(response, "headers", {}) or {}
+            header_value = response_headers.get("Retry-After")
+            retry_after = _retry_after_seconds(header_value)
+            if retry_after is not None and retry_after > SEMANTIC_SCHOLAR_MAX_RETRY_AFTER_SECONDS:
+                # Do not violate a long upstream Retry-After. Defer subsequent
+                # queries in this process rather than issuing more requests.
+                _SEMANTIC_SCHOLAR_COOLDOWN_UNTIL = time.monotonic() + retry_after
+                stop_reason = "retry_after_exceeds_bounded_wait"
+                return response, attempt_statuses, round(total_backoff, 3), stop_reason
+
+            delay = retry_after if retry_after is not None else min(
+                2.0 ** (attempt - 1), SEMANTIC_SCHOLAR_MAX_BACKOFF_SECONDS
+            )
+            if delay > 0:
+                time.sleep(delay)
+                total_backoff += delay
+
+    # The loop always returns, but keep a defensive explicit failure.
+    raise RuntimeError("Semantic Scholar request loop ended without a response")
 
 
 def _extract_text_from_pdf_bytes(pdf_bytes: bytes) -> Tuple[str, int, bool]:
@@ -98,9 +200,11 @@ def search_semantic_scholar(
     }
     headers = {"User-Agent": USER_AGENT}
 
+    attempt_statuses: List[int] = []
+    backoff_seconds = 0.0
+    retry_stop_reason = None
     try:
-        response = requests.get(
-            API_URL,
+        response, attempt_statuses, backoff_seconds, retry_stop_reason = _request_search_api(
             params=params,
             headers=headers,
             timeout=30,
@@ -119,20 +223,35 @@ def search_semantic_scholar(
                 provider="semantic_scholar",
                 query=str(query),
                 requested_results=int(max_results),
-                http_status=int(response.status_code),
+                http_status=(int(response.status_code) if retry_stop_reason != "provider_cooldown_active" else None),
+                attempt_count=len(attempt_statuses),
+                retry_count=max(0, len(attempt_statuses) - 1),
+                http_attempt_statuses=list(attempt_statuses),
+                backoff_seconds=backoff_seconds,
+                retry_stop_reason=retry_stop_reason,
             )
-            print(
-                f"  [S2] API error: {response.status_code}",
-                file=sys.stderr,
-            )
+            if retry_stop_reason == "provider_cooldown_active":
+                print("  [S2] Search deferred because the upstream Retry-After cooldown is still active.", file=sys.stderr)
+            else:
+                print(
+                    f"  [S2] API error after {len(attempt_statuses)} attempt(s): {response.status_code}",
+                    file=sys.stderr,
+                )
             return []
         data = response.json()
     except requests.exceptions.RequestException as exc:
+        attempt_statuses = list(getattr(exc, "attempt_statuses", attempt_statuses))
+        attempt_count = int(getattr(exc, "attempt_count", len(attempt_statuses) + 1))
+        backoff_seconds = float(getattr(exc, "backoff_seconds", backoff_seconds))
         _set_retrieval_status(
             "network_error",
             provider="semantic_scholar",
             query=str(query),
             requested_results=int(max_results),
+            attempt_count=attempt_count,
+            retry_count=max(0, attempt_count - 1),
+            http_attempt_statuses=list(attempt_statuses),
+            backoff_seconds=backoff_seconds,
             error=str(exc),
         )
         print(
@@ -146,6 +265,10 @@ def search_semantic_scholar(
             provider="semantic_scholar",
             query=str(query),
             requested_results=int(max_results),
+            attempt_count=len(attempt_statuses),
+            retry_count=max(0, len(attempt_statuses) - 1),
+            http_attempt_statuses=list(attempt_statuses),
+            backoff_seconds=backoff_seconds,
             error=str(exc),
         )
         print(
@@ -317,6 +440,11 @@ def search_semantic_scholar(
         query=str(query),
         requested_results=int(max_results),
         returned_records=len(sources),
+        attempt_count=len(attempt_statuses),
+        retry_count=max(0, len(attempt_statuses) - 1),
+        http_attempt_statuses=list(attempt_statuses),
+        backoff_seconds=backoff_seconds,
+        retry_stop_reason=retry_stop_reason,
         records_with_oa_pdf=sum(
             1
             for item in sources

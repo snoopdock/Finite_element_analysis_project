@@ -1,0 +1,24 @@
+id: G9.34
+name: AE-31 Explicit NaraRouter Models and Free Semantic Scholar Reliability
+# Deterministic profile only: all provider/API calls are mocked. Live LLM use and
+# the bounded anonymous Semantic Scholar probe are performed only by the separate
+# manual report-only workflow on main. No model output is executed or applied.
+target_tests:
+  - tests/test_semantic_scholar_reliability.py
+  - tests/semantic_audit/test_ae31_report_only_diagnosis.py
+  - tests/semantic_audit/test_ae30_independent_evaluation.py
+  - tests/semantic_audit/test_ae29_transition_hardening.py
+  - tests/semantic_audit/test_ae29_iterative_audit.py
+  - tests/semantic_audit/test_ae28_neural_interpretation.py
+  - tests/semantic_audit/test_ae27_neurosymbolic_gateway.py
+  - tests/semantic_audit/test_ae26_semantic_evolution.py
+  - tests/semantic_audit/test_ae25_semantic_reasoning.py
+  - tests/semantic_audit/test_ae24_semantic_contracts.py
+  - tests/semantic_audit/test_ae13_many_to_many.py
+  - tests/semantic_audit/test_ae131_protected_contracts.py
+  - tests/semantic_graph/test_g71_structural_reasoning.py
+  - tests/semantic_graph/test_dependency_analysis.py
+  - tests/semantic_audit/test_ae23_external_git_admission.py
+regression:
+  enabled: true
+  path: tests/
