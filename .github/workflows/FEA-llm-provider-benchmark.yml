@@ -131,6 +131,15 @@ jobs:
           path: repo
           fetch-depth: 1
           persist-credentials: false
+      - name: Record actual source checkout revision
+        id: source_revision
+        working-directory: repo
+        run: |
+          set -euo pipefail
+          source_commit="$(git rev-parse HEAD)"
+          echo "source_commit=$source_commit" >> "$GITHUB_OUTPUT"
+          echo "Source checkout commit: $source_commit"
+          echo "Workflow commit: ${GITHUB_SHA:-unknown}"
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -184,7 +193,9 @@ jobs:
             output/guideline.pdf \
             output/guideline.log \
             output/publication_manifest.json \
-            output/error.txt
+            output/error.txt \
+            output/provider_runtime_diagnostics.json \
+            output/provider_runtime_diagnostics.error.txt
           if [ -d state/iteration_history ]; then
             find state/iteration_history -type f ! -name '.gitkeep' -delete
           fi
@@ -205,6 +216,8 @@ jobs:
           FEA_LLM_REQUEST_TIMEOUT_SECONDS: "300"
           FEA_LLM_RETRY_ATTEMPTS: "3"
           FEA_BENCHMARK_TARGET_BRANCH: ${{ inputs.target_branch }}
+          FEA_SOURCE_COMMIT: ${{ steps.source_revision.outputs.source_commit }}
+          FEA_WORKFLOW_COMMIT: ${{ github.sha }}
           CLOUDFLARE_ACCOUNT_ID: ${{ matrix.provider == 'cloudflare' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
           CLOUDFLARE_API_TOKEN: ${{ matrix.provider == 'cloudflare' && secrets.CLOUDFLARE_API_TOKEN || '' }}
           NARAROUTER_API_KEY: ${{ matrix.provider == 'nararouter' && secrets.NARAROUTER_API_KEY || '' }}
@@ -244,6 +257,8 @@ jobs:
           BENCHMARK_TARGET_BRANCH: ${{ inputs.target_branch }}
           BENCHMARK_MAX_TOKENS: ${{ inputs.max_tokens_per_call }}
           BENCHMARK_MAX_CALLS: ${{ inputs.max_llm_calls }}
+          BENCHMARK_SOURCE_COMMIT: ${{ steps.source_revision.outputs.source_commit }}
+          BENCHMARK_WORKFLOW_COMMIT: ${{ github.sha }}
         run: |
           python scripts/fea_provider_benchmark_report.py \
             --repo-root . \
@@ -254,7 +269,9 @@ jobs:
             --max-tokens-per-call "$BENCHMARK_MAX_TOKENS" \
             --max-llm-calls "$BENCHMARK_MAX_CALLS" \
             --pipeline-outcome "$FEA_PIPELINE_OUTCOME" \
-            --publication-outcome "$FEA_PUBLICATION_OUTCOME"
+            --publication-outcome "$FEA_PUBLICATION_OUTCOME" \
+             --source-commit "$BENCHMARK_SOURCE_COMMIT" \
+             --workflow-commit "$BENCHMARK_WORKFLOW_COMMIT"
       - name: Upload complete provider-run evidence even on failure
         if: always()
         uses: actions/upload-artifact@v4
@@ -272,6 +289,8 @@ jobs:
             repo/output/sections.json
             repo/output/validation_report.md
             repo/output/error.txt
+            repo/output/provider_runtime_diagnostics.json
+            repo/output/provider_runtime_diagnostics.error.txt
             repo/state/current_state.json
             repo/state/reading_state.json
           if-no-files-found: warn
