@@ -1,0 +1,11 @@
+{
+  "case_id": "AE32C-HIST-PROVIDER-COUNTER-01",
+  "category": "provider-interface-mismatch",
+  "historical_error": "AttributeError: provider object has no attribute 'total_calls'",
+  "evaluation_constraints": [
+    "Do not execute the fixture code",
+    "Do not assume a specific correction before inspecting the provider interface",
+    "Distinguish source observations from runtime claims",
+    "Trace related tests and workflow context when evidence supports it"
+  ]
+}
