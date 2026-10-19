@@ -1,0 +1,301 @@
+name: AE-32C Live Evaluation (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "Provider to use for the bounded live evaluation"
+        required: true
+        type: choice
+        default: cloudflare
+        options:
+          - cloudflare
+          - nararouter
+          - openrouter
+      confirm_live_provider_calls:
+        description: "Authorize one baseline request and up to four graph-assisted investigation calls"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-live-evaluation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Confirm manual live evaluation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require main workflow ref, explicit consent, and supported provider
+        shell: bash
+        env:
+          WORKFLOW_REF: ${{ github.ref }}
+          CONFIRM_LIVE_CALLS: ${{ inputs.confirm_live_provider_calls }}
+          SELECTED_PROVIDER: ${{ inputs.provider }}
+        run: |
+          set -euo pipefail
+          if [[ "$WORKFLOW_REF" != "refs/heads/main" ]]; then
+            echo "::error::Run this workflow from main only."
+            exit 1
+          fi
+          if [[ "$CONFIRM_LIVE_CALLS" != "true" ]]; then
+            echo "::error::Explicit confirmation is required before live provider calls."
+            exit 1
+          fi
+          case "$SELECTED_PROVIDER" in
+            cloudflare|nararouter|openrouter) ;;
+            *) echo "::error::Unsupported provider selection."; exit 1 ;;
+          esac
+          echo "Manual live evaluation authorized for provider: $SELECTED_PROVIDER."
+          echo "The workflow will inspect the fixed stage1/section-uuids source branch."
+          echo "The smoke gate checks the investigation process and citations, not causal correctness."
+
+  live-evaluation:
+    name: Run bounded AE-32C live evaluation
+    needs: guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout AE-32C implementation from the development branch
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prepare artifacts and verify required AE-32C files
+        id: source
+        env:
+          SELECTED_PROVIDER: ${{ inputs.provider }}
+        run: |
+          set -euo pipefail
+          artifact_root="$RUNNER_TEMP/ae32c-live-evaluation"
+          mkdir -p "$artifact_root"
+
+          source_sha="$(git -C source rev-parse HEAD)"
+          printf '{\n  "workflow_run_id": "%s",\n  "workflow_ref": "%s",\n  "workflow_commit": "%s",\n  "source_branch": "stage1/section-uuids",\n  "source_commit": "%s",\n  "provider": "%s"\n}\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_REF" "$GITHUB_SHA" "$source_sha" "$SELECTED_PROVIDER" \
+            > "$artifact_root/run-context.json"
+
+          required_files=(
+            "audit_engine/semantic_audit/ae32c/live_evaluation.py"
+            "audit_engine/semantic_audit/ae32c/investigator.py"
+            "audit_engine/semantic_audit/ae32b/evidence_tools.py"
+            "providers/factory.py"
+            "providers/safe_errors.py"
+            "tests/semantic_audit/fixtures/ae32c_provider_interface_incident/pipeline/extractor.py"
+            "validation/profiles/G9.42.yaml"
+          )
+          for relative_path in "${required_files[@]}"; do
+            if [[ ! -f "source/$relative_path" ]]; then
+              echo "::error::Required AE-32C file is missing from stage1/section-uuids: $relative_path"
+              exit 1
+            fi
+          done
+
+          echo "Source commit: $source_sha"
+          echo "Workflow commit: $GITHUB_SHA"
+          echo "Required AE-32C entry points and G9.42 profile are present."
+          echo "No provider secrets have been exposed in this preflight step."
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal runtime dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            'requests>=2.31.0,<3.0.0' \
+            'PyYAML>=6.0.0,<7.0.0'
+
+      - name: Validate selected provider secret and run live evaluation
+        id: live
+        continue-on-error: true
+        working-directory: source
+        env:
+          FEA_LLM_PROVIDER: ${{ inputs.provider }}
+          FEA_LLM_REQUEST_TIMEOUT_SECONDS: "30"
+          FEA_LLM_RETRY_ATTEMPTS: "1"
+          CLOUDFLARE_ACCOUNT_ID: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
+          CLOUDFLARE_API_TOKEN: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_API_TOKEN || '' }}
+          NARAROUTER_API_KEY: ${{ inputs.provider == 'nararouter' && secrets.NARAROUTER_API_KEY || '' }}
+          OPENROUTER_TOKEN: ${{ inputs.provider == 'openrouter' && secrets.OPENROUTER_TOKEN || '' }}
+        run: |
+          set -euo pipefail
+          case "$FEA_LLM_PROVIDER" in
+            cloudflare)
+              test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::CLOUDFLARE_ACCOUNT_ID is missing"; exit 2; }
+              test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::CLOUDFLARE_API_TOKEN is missing"; exit 2; }
+              ;;
+            nararouter)
+              test -n "$NARAROUTER_API_KEY" || { echo "::error::NARAROUTER_API_KEY is missing"; exit 2; }
+              ;;
+            openrouter)
+              test -n "$OPENROUTER_TOKEN" || { echo "::error::OPENROUTER_TOKEN is missing"; exit 2; }
+              ;;
+            *)
+              echo "::error::Unsupported provider"; exit 2
+              ;;
+          esac
+
+          artifact_root="$RUNNER_TEMP/ae32c-live-evaluation"
+          set +e
+          python -m audit_engine.semantic_audit.ae32c.live_evaluation \
+            --confirm-live-provider-calls \
+            --provider "$FEA_LLM_PROVIDER" \
+            --repo-root tests/semantic_audit/fixtures/ae32c_provider_interface_incident \
+            --output-dir "$artifact_root" \
+            2>&1 | tee "$artifact_root/live-evaluation.log"
+          run_exit_code="${PIPESTATUS[0]}"
+          set -e
+          printf '%s\n' "$run_exit_code" > "$artifact_root/runner-exit-code.txt"
+          exit "$run_exit_code"
+
+      - name: Evaluate smoke-test evidence and write summary
+        if: always()
+        env:
+          SELECTED_PROVIDER: ${{ inputs.provider }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "ae32c-live-evaluation"
+          checks = {}
+          metrics = {}
+          problems = []
+          comparison_path = None
+          try:
+              exit_code = int((root / "runner-exit-code.txt").read_text(encoding="utf-8").strip())
+          except Exception:
+              exit_code = None
+          checks["runner_exit_code_zero"] = exit_code == 0
+          if exit_code != 0:
+              problems.append("live_runner_did_not_exit_zero")
+
+          candidates = sorted(root.rglob("comparison.json"))
+          if len(candidates) != 1:
+              checks["single_comparison_artifact"] = False
+              problems.append("comparison_artifact_missing_or_ambiguous")
+          else:
+              comparison_path = candidates[0]
+              try:
+                  record = json.loads(comparison_path.read_text(encoding="utf-8"))
+                  baseline = record.get("baseline", {})
+                  assisted = record.get("graph_assisted", {})
+                  summary = assisted.get("summary", {})
+                  report = assisted.get("report") or {}
+                  checks["baseline_completed"] = baseline.get("status") == "completed"
+                  checks["graph_investigation_terminated"] = summary.get("status") in {
+                      "completed", "completed_with_incomplete_evidence"
+                  }
+                  rounds = summary.get("model_rounds", 0)
+                  tool_calls = summary.get("tool_call_count", 0)
+                  checks["multiple_model_rounds"] = isinstance(rounds, int) and not isinstance(rounds, bool) and rounds >= 2
+                  checks["at_least_one_evidence_tool_call"] = isinstance(tool_calls, int) and not isinstance(tool_calls, bool) and tool_calls >= 1
+                  checks["source_snapshot_verified"] = report.get("snapshot_check_status") == "verified"
+                  checks["final_citations_resolved"] = summary.get("final_citation_validation") == "references_resolved"
+                  metrics = {
+                      "baseline_status": baseline.get("status", "unknown"),
+                      "graph_assisted_status": summary.get("status", "unknown"),
+                      "stop_reason": summary.get("stop_reason", "unknown"),
+                      "model_rounds": rounds if isinstance(rounds, int) and not isinstance(rounds, bool) else 0,
+                      "tool_call_count": tool_calls if isinstance(tool_calls, int) and not isinstance(tool_calls, bool) else 0,
+                      "tool_names": summary.get("tool_names", []),
+                      "evidence_count": summary.get("evidence_count", 0),
+                      "source_reference_count": summary.get("source_reference_count", 0),
+                      "snapshot_check_status": report.get("snapshot_check_status", "unknown"),
+                      "final_citation_validation": summary.get("final_citation_validation", "unknown"),
+                      "diagnosis_assurance": summary.get("diagnosis_assurance", "unknown"),
+                  }
+                  for name, passed in checks.items():
+                      if not passed:
+                          problems.append(name)
+              except Exception as exc:
+                  checks["comparison_json_readable"] = False
+                  problems.append("comparison_json_invalid:" + type(exc).__name__)
+          passed = bool(checks) and all(checks.values())
+          gate = {
+              "schema_version": "ae32c/live-smoke-gate/v1",
+              "passed": passed,
+              "provider": os.environ.get("SELECTED_PROVIDER", "unknown"),
+              "checks": checks,
+              "metrics": metrics,
+              "problems": sorted(set(problems)),
+              "comparison_artifact": str(comparison_path.relative_to(root)) if comparison_path else None,
+              "diagnostic_accuracy": "not_assessed",
+              "human_review_required": True,
+          }
+          gate_path = root / "smoke-gate.json"
+          gate_path.write_text(json.dumps(gate, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
+          print(json.dumps(gate, indent=2, sort_keys=True, allow_nan=False))
+
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary_path:
+              lines = [
+                  "## AE-32C Live Evaluation",
+                  "",
+                  f"- Provider: `{gate['provider']}`",
+                  f"- Smoke gate: **{'PASS' if passed else 'FAIL'}**",
+                  f"- Baseline status: `{metrics.get('baseline_status', 'unavailable')}`",
+                  f"- Graph-assisted status: `{metrics.get('graph_assisted_status', 'unavailable')}`",
+                  f"- Stop reason: `{metrics.get('stop_reason', 'unavailable')}`",
+                  f"- Model rounds: {metrics.get('model_rounds', 0)}",
+                  f"- Evidence-tool calls: {metrics.get('tool_call_count', 0)}",
+                  f"- Snapshot check: `{metrics.get('snapshot_check_status', 'unavailable')}`",
+                  f"- Citation validation: `{metrics.get('final_citation_validation', 'unavailable')}`",
+                  "",
+                  "This smoke gate tests the live process and evidence-reference contract only. It does not establish that the diagnosis is causally correct.",
+                  "",
+              ]
+              if problems:
+                  lines.extend(["### Failed checks", ""])
+                  lines.extend(f"- `{problem}`" for problem in sorted(set(problems)))
+                  lines.append("")
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                  handle.write("\n".join(lines) + "\n")
+          PY
+
+      - name: Upload live-evaluation evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-live-evaluation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ae32c-live-evaluation/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Enforce smoke-gate result after evidence upload
+        if: always()
+        env:
+          ARTIFACT_ROOT: ${{ runner.temp }}/ae32c-live-evaluation
+        run: |
+          set -euo pipefail
+          if [[ ! -f "$ARTIFACT_ROOT/smoke-gate.json" ]]; then
+            echo "::error::Smoke-gate report is missing; inspect the earlier step and uploaded evidence."
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          gate_path = Path(os.environ["ARTIFACT_ROOT"]) / "smoke-gate.json"
+          gate = json.loads(gate_path.read_text(encoding="utf-8"))
+          if gate.get("passed") is not True:
+              print("AE-32C live smoke gate failed. Evidence was uploaded for review.")
+              raise SystemExit(1)
+          print("AE-32C live smoke gate passed. Diagnosis correctness still requires human review.")
+          PY
