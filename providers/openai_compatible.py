@@ -14,6 +14,12 @@ from typing import Dict, List, Optional, Tuple
 import requests
 
 from providers.safe_errors import sanitize_provider_error
+from providers.response_limits import (
+    DEFAULT_MAX_RESPONSE_BYTES,
+    ProviderResponseTooLarge,
+    close_response,
+    load_bounded_json,
+)
 
 
 PROVIDER_ENDPOINTS = {
@@ -27,6 +33,7 @@ DEFAULT_MODELS = {
 }
 
 TRANSIENT_HTTP_STATUSES = {408, 425, 429, 500, 502, 503, 504}
+DEFAULT_MAX_RESPONSE_CHARS = 100_000
 
 
 def _int_env(name: str, default: int, minimum: int, maximum: int) -> int:
@@ -70,6 +77,8 @@ class OpenAICompatibleProvider:
         max_logical_calls: int = 20,
         timeout_seconds: Optional[int] = None,
         max_retries: Optional[int] = None,
+        max_response_bytes: int = DEFAULT_MAX_RESPONSE_BYTES,
+        max_response_chars: int = DEFAULT_MAX_RESPONSE_CHARS,
     ):
         name = str(provider_name or "").strip().lower()
         if name not in PROVIDER_ENDPOINTS:
@@ -91,6 +100,12 @@ class OpenAICompatibleProvider:
         self.max_retries = int(max_retries or _int_env(
             "FEA_LLM_RETRY_ATTEMPTS", 3, 1, 5
         ))
+        if isinstance(max_response_bytes, bool) or not isinstance(max_response_bytes, int) or not 1 <= max_response_bytes <= 8_000_000:
+            raise ValueError("max_response_bytes must be between 1 and 8000000")
+        if isinstance(max_response_chars, bool) or not isinstance(max_response_chars, int) or not 1 <= max_response_chars <= 1_000_000:
+            raise ValueError("max_response_chars must be between 1 and 1000000")
+        self.max_response_bytes = max_response_bytes
+        self.max_response_chars = max_response_chars
 
         self.logical_calls = 0
         self.successful_calls = 0
@@ -207,6 +222,7 @@ class OpenAICompatibleProvider:
                     headers=headers,
                     json=payload,
                     timeout=self.timeout_seconds,
+                    stream=True,
                 )
             except requests.exceptions.RequestException as exc:
                 if attempt + 1 < self.max_retries:
@@ -218,6 +234,7 @@ class OpenAICompatibleProvider:
             status_key = str(response.status_code)
             self.http_status_counts[status_key] = self.http_status_counts.get(status_key, 0) + 1
             if response.status_code in TRANSIENT_HTTP_STATUSES:
+                close_response(response)
                 if attempt + 1 < self.max_retries:
                     retry_after = response.headers.get("Retry-After", "")
                     try:
@@ -231,10 +248,15 @@ class OpenAICompatibleProvider:
                 )
 
             if response.status_code >= 400:
+                close_response(response)
                 return self._error(f"{self.provider_name} HTTP {response.status_code}")
 
             try:
-                data = response.json()
+                data = load_bounded_json(response, max_bytes=self.max_response_bytes)
+            except ProviderResponseTooLarge:
+                return self._error(f"{self.provider_name} response exceeded configured size limit")
+            except requests.exceptions.RequestException as exc:
+                return self._error(f"{self.provider_name} response stream error: {type(exc).__name__}")
             except (ValueError, TypeError):
                 if attempt + 1 < self.max_retries:
                     time.sleep(min(10, 2 ** attempt))
@@ -257,6 +279,9 @@ class OpenAICompatibleProvider:
                 return self._error(
                     f"{self.provider_name} returned empty content (HTTP {response.status_code}; finish_reason={finish_reason})"
                 )
+
+            if len(text) > self.max_response_chars:
+                return self._error(f"{self.provider_name} response text exceeded configured character limit")
 
             self._record_usage(data, selected_model)
             self.successful_calls += 1
@@ -292,6 +317,8 @@ class OpenAICompatibleProvider:
             "max_tokens_per_call": self.max_tokens_per_call,
             "timeout_seconds": self.timeout_seconds,
             "max_retries": self.max_retries,
+            "max_response_bytes": self.max_response_bytes,
+            "max_response_chars": self.max_response_chars,
             "usage": dict(self.usage),
             "per_model": {name: dict(values) for name, values in self.per_model.items()},
             "last_errors": list(self.last_errors),

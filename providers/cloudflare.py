@@ -8,6 +8,12 @@ import time
 import requests
 
 from providers.safe_errors import sanitize_provider_error
+from providers.response_limits import (
+    DEFAULT_MAX_RESPONSE_BYTES,
+    ProviderResponseTooLarge,
+    close_response,
+    load_bounded_json,
+)
 from processing.response_extractor import (
     LLMResponseExtractor,
     LLMResponseExtractionError,
@@ -15,6 +21,7 @@ from processing.response_extractor import (
 
 CF_BASE = "https://api.cloudflare.com/client/v4"
 DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
+DEFAULT_MAX_RESPONSE_CHARS = 100_000
 
 
 class CloudflareProvider:
@@ -25,6 +32,8 @@ class CloudflareProvider:
         models,
         max_tokens_per_call=2500,
         max_logical_calls=20,
+        max_response_bytes=DEFAULT_MAX_RESPONSE_BYTES,
+        max_response_chars=DEFAULT_MAX_RESPONSE_CHARS,
     ):
         self.provider_name = "cloudflare"
         self.account_id = account_id
@@ -41,6 +50,12 @@ class CloudflareProvider:
         self.response_chars_max = 0
         self.total_calls = 0
         self.max_tokens_per_call = max_tokens_per_call
+        if isinstance(max_response_bytes, bool) or not isinstance(max_response_bytes, int) or not 1 <= max_response_bytes <= 8_000_000:
+            raise ValueError("max_response_bytes must be between 1 and 8000000")
+        if isinstance(max_response_chars, bool) or not isinstance(max_response_chars, int) or not 1 <= max_response_chars <= 1_000_000:
+            raise ValueError("max_response_chars must be between 1 and 1000000")
+        self.max_response_bytes = max_response_bytes
+        self.max_response_chars = max_response_chars
         try:
             self.timeout_seconds = max(10, min(600, int(os.environ.get("FEA_LLM_REQUEST_TIMEOUT_SECONDS", "180"))))
         except (TypeError, ValueError):
@@ -123,10 +138,12 @@ class CloudflareProvider:
                     headers=headers,
                     json=payload,
                     timeout=self.timeout_seconds,
+                    stream=True,
                 )
 
                 self.http_status_counts[str(resp.status_code)] = self.http_status_counts.get(str(resp.status_code), 0) + 1
                 if resp.status_code == 429:
+                    close_response(resp)
                     wait = min(120, 30 * (2 ** attempt))
                     print(
                         f"  [Cloudflare] Rate limited, waiting {wait}s...",
@@ -139,16 +156,25 @@ class CloudflareProvider:
                     return None, "HTTP 429: rate limit after retries"
 
                 if resp.status_code == 402:
+                    close_response(resp)
                     self.failed_calls += 1
                     return None, "HTTP 402: Budget exhausted"
 
                 if resp.status_code >= 400:
+                    close_response(resp)
                     self.failed_calls += 1
                     # Upstream bodies may echo credentials or user-supplied content.
                     # Keep status diagnostics but never forward the raw body.
                     return None, f"HTTP {resp.status_code}: upstream error body omitted"
 
-                data = resp.json()
+                try:
+                    data = load_bounded_json(resp, max_bytes=self.max_response_bytes)
+                except ProviderResponseTooLarge:
+                    self.failed_calls += 1
+                    return None, "Cloudflare response exceeded configured size limit"
+                except (ValueError, TypeError):
+                    self.failed_calls += 1
+                    return None, "Invalid JSON response from Cloudflare provider"
                 usage = data.get("usage") if isinstance(data, dict) else None
                 if not isinstance(usage, dict) and isinstance(data, dict):
                     result_block = data.get("result")
@@ -177,6 +203,9 @@ class CloudflareProvider:
                     self.failed_calls += 1
                     return None, sanitize_provider_error(f"Extraction failed: {exc.message}")
 
+                if len(text) > self.max_response_chars:
+                    self.failed_calls += 1
+                    return None, "Cloudflare response text exceeded configured character limit"
                 self.call_counts[model] = self.call_counts.get(model, 0) + 1
                 self.successful_calls += 1
                 self.response_chars_total += len(text)
@@ -214,6 +243,8 @@ class CloudflareProvider:
             "max_logical_calls": self.max_logical_calls,
             "timeout_seconds": self.timeout_seconds,
             "max_retries": self.max_retries,
+            "max_response_bytes": self.max_response_bytes,
+            "max_response_chars": self.max_response_chars,
             "extraction_stats": self.extractor.get_stats(),
             "learned_paths": self.extractor.get_learned_paths(),
         }
