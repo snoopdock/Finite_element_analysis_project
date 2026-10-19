@@ -33,11 +33,15 @@ class PathAnalyzer:
         direction = parse_direction(query.constraints.get("direction"))
         max_depth = parse_max_depth(query.constraints.get("max_depth"), default=10)
 
+        max_visited_nodes = query.constraints.get("max_visited_nodes")
+        max_steps = query.constraints.get("max_traversal_steps")
         traversal = self.traversal.walk(
             query.source_entities[0],
             direction=direction,
             relation_types=relation_types,
             max_depth=max_depth,
+            max_visited_nodes=max_visited_nodes,
+            max_steps=max_steps,
         )
         hit = next((item for item in traversal.hits if item.node_id == target), None)
 
@@ -74,6 +78,10 @@ class PathAnalyzer:
             "direction": direction.value,
             "max_depth": max_depth,
         }
+        if max_visited_nodes is not None:
+            parameters["max_visited_nodes"] = max_visited_nodes
+        if max_steps is not None:
+            parameters["max_traversal_steps"] = max_steps
 
         return GraphAnalysisResult(
             analysis_id=make_analysis_id(
@@ -84,7 +92,8 @@ class PathAnalyzer:
             ),
             query_id=query.query_id,
             analysis_type=AnalysisType.PATH,
-            status=(AnalysisStatus.COMPLETED if hit is not None else AnalysisStatus.NO_MATCH),
+            status=(AnalysisStatus.COMPLETED if hit is not None else
+                    (AnalysisStatus.INCOMPLETE if traversal.truncated else AnalysisStatus.NO_MATCH)),
             algorithm=GraphTraversalEngine.ALGORITHM,
             graph_fingerprint=traversal.graph_fingerprint,
             source_entities=query.source_entities,
@@ -95,5 +104,9 @@ class PathAnalyzer:
             metadata={
                 "interpretation": "path_existence_observation",
                 "path_length": len(hit.path) if hit is not None else None,
+                "truncated": traversal.truncated,
+                "stop_reason": traversal.stop_reason,
+                "examined_edges": traversal.examined_edges,
+                "visited_node_count": len(traversal.visited_nodes) + 1,
             },
         )

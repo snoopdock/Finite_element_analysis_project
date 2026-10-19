@@ -15,6 +15,7 @@ class AnalysisType(str, Enum):
 class AnalysisStatus(str, Enum):
     COMPLETED = "completed"
     NO_MATCH = "no_match"
+    INCOMPLETE = "incomplete"
 
 
 class VerificationStatus(str, Enum):

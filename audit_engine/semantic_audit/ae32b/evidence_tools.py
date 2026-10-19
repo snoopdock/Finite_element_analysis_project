@@ -35,10 +35,14 @@ from audit_engine.semantic_audit.graph.queries import GraphQuery, QueryType
 from audit_engine.semantic_audit.graph.service import SemanticGraphAnalysisService
 
 SCHEMA_VERSION = "ae32b/repository-evidence-tools/v1"
-GRAPH_PROJECTION_VERSION = "ae32b/source-evidence-projection/v1"
+GRAPH_PROJECTION_VERSION = "ae32b/source-evidence-projection/v2"
 MAX_QUERY_CHARS = 240
 MAX_SEARCH_RESULTS = 30
 MAX_GRAPH_RESULTS = 50
+MAX_GRAPH_VISITED_NODES = 2000
+MAX_GRAPH_TRAVERSAL_STEPS = 10000
+MAX_WORKFLOW_PATH_VISITS = 5000
+MAX_WORKFLOW_CANDIDATES = 500
 MAX_NEIGHBOR_DEPTH = 4
 MAX_PATH_DEPTH = 8
 MAX_READ_LINES = 200
@@ -244,15 +248,41 @@ def _safe_relative_path(value: str) -> str:
     return normalized
 
 
-def _module_name(path: str) -> str:
-    parts = list(PurePosixPath(path).parts)
-    if not parts or not path.endswith(".py"):
+def _source_lines(text: str) -> list[str]:
+    """Split physical source lines without treating Unicode separators as newlines."""
+    lines = re.split(r"\r\n|\r|\n", text)
+    if lines and lines[-1] == "":
+        lines.pop()
+    return lines
+
+
+def _module_name(path: str, source_roots: tuple[str, ...] | list[str] = ()) -> str:
+    normalized = PurePosixPath(path).as_posix()
+    parts = list(PurePosixPath(normalized).parts)
+    if not parts or PurePosixPath(normalized).suffix.lower() != ".py":
         return ""
-    if parts[-1] == "__init__.py":
+    for root in sorted((str(item).strip("/") for item in source_roots if str(item).strip("/")),
+                       key=lambda item: (-len(item.split("/")), -len(item))):
+        if normalized.startswith(root + "/"):
+            parts = list(PurePosixPath(normalized[len(root) + 1:]).parts)
+            break
+    if not parts:
+        return ""
+    if parts[-1].lower() == "__init__.py":
         parts = parts[:-1]
     else:
         parts[-1] = PurePosixPath(parts[-1]).stem
     return ".".join(parts)
+
+
+def _contains_identifier_reference(text: str, identifier: str) -> bool:
+    """Match an identifier-like module reference without accepting prefixes."""
+    candidate = identifier.strip()
+    if candidate.startswith("module:"):
+        candidate = candidate[len("module:"):]
+    if not candidate:
+        return False
+    return re.search(r"(?<![A-Za-z0-9_])" + re.escape(candidate) + r"(?![A-Za-z0-9_])", text, re.IGNORECASE) is not None
 
 
 def _file_kind(path: str) -> str:
@@ -412,22 +442,33 @@ def _read_snapshot_file(root: Path, relative_path: str, expected_size: int) -> b
 
 
 class _SymbolVisitor(ast.NodeVisitor):
-    def __init__(self, module: str, path: str):
+    def __init__(self, module: str, path: str, source_sha256: str):
         self.module = module
         self.path = path
+        self.source_sha256 = source_sha256
         self.stack: list[str] = []
         self.symbols: list[dict[str, Any]] = []
 
     def _visit_named(self, node: ast.AST, kind: str, name: str) -> None:
         qualified = ".".join([*self.stack, name])
+        line = int(getattr(node, "lineno", 1))
+        legacy_id = f"symbol:{self.module}::{qualified}"
+        occurrence_payload = {
+            "path": self.path, "source_sha256": self.source_sha256,
+            "module": self.module, "qualified_name": qualified,
+            "line": line, "kind": kind,
+        }
+        occurrence_digest = hashlib.sha256(_canonical_json(occurrence_payload).encode("utf-8")).hexdigest()[:24]
         self.symbols.append({
             "name": name,
             "qualified_name": qualified,
             "module": self.module,
             "path": self.path,
-            "line": int(getattr(node, "lineno", 1)),
+            "line": line,
             "kind": kind,
-            "node_id": f"symbol:{self.module}::{qualified}",
+            "symbol_id": legacy_id,
+            "node_id": f"symbol-occurrence:{occurrence_digest}",
+            "occurrence_id": f"symbol-occurrence:{occurrence_digest}",
         })
         self.stack.append(name)
         self.generic_visit(node)
@@ -526,6 +567,7 @@ class RepositoryEvidenceTools:
             runner_revision=self.runner_revision,
         )
         self.manifest_sha256 = self.report["audit"]["manifest_sha256"]
+        self.python_source_roots = tuple(self.report.get("audit", {}).get("python_source_roots", []))
         self.manifest_rows = {
             row["path"]: row for row in self.report.get("source_manifest", [])
             if row.get("status") == "included"
@@ -547,11 +589,13 @@ class RepositoryEvidenceTools:
         self.file_nodes: dict[str, str] = {}
         self.module_nodes: dict[str, str] = {}
         self.module_paths: dict[str, list[str]] = defaultdict(list)
+        self.module_identity_issues: list[dict[str, Any]] = []
         self.symbols: list[dict[str, Any]] = []
         self.symbols_by_id: dict[str, dict[str, Any]] = {}
+        self.symbols_by_legacy_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
         self._edge_keys: set[str] = set()
         self._build_graph()
-        if self.skipped_non_utf8_files or self.structured_record_issues:
+        if self.skipped_non_utf8_files or self.structured_record_issues or self.module_identity_issues:
             self.evidence_index_status = "incomplete"
         self.graph_fingerprint = self._graph_fingerprint()
         self.graph_service = SemanticGraphAnalysisService(
@@ -655,7 +699,7 @@ class RepositoryEvidenceTools:
     def _build_graph(self) -> None:
         # File nodes are derived only from the hashed, included, UTF-8 source set.
         for rel in sorted(self.contents):
-            lines = self.contents[rel].splitlines()
+            lines = _source_lines(self.contents[rel])
             node_id = f"file:{rel}"
             kind = _file_kind(rel)
             self.file_nodes[rel] = node_id
@@ -668,11 +712,17 @@ class RepositoryEvidenceTools:
             })
 
         for rel in sorted(self.contents):
-            if not rel.endswith(".py"):
+            if PurePosixPath(rel).suffix.lower() != ".py":
                 continue
-            module = _module_name(rel)
+            module = _module_name(rel, self.python_source_roots)
             if not module:
                 continue
+            existing_paths = self.module_paths[module]
+            if existing_paths and rel not in existing_paths:
+                collision_paths = sorted({*existing_paths, rel})
+                issue = {"module": module, "paths": collision_paths, "kind": "ambiguous_physical_module_sources"}
+                if issue not in self.module_identity_issues:
+                    self.module_identity_issues.append(issue)
             self.module_paths[module].append(rel)
             module_id = self._ensure_module_node(module)
             self._add_edge(self.file_nodes[rel], module_id, "IMPLEMENTS", {
@@ -685,7 +735,7 @@ class RepositoryEvidenceTools:
                 tree = ast.parse(self.contents[rel], filename=rel)
             except (SyntaxError, ValueError):
                 continue
-            visitor = _SymbolVisitor(module, rel)
+            visitor = _SymbolVisitor(module, rel, self.file_hashes[rel])
             visitor.visit(tree)
             for symbol in visitor.symbols:
                 symbol_node = symbol["node_id"]
@@ -697,6 +747,8 @@ class RepositoryEvidenceTools:
                     "line": symbol["line"],
                     "kind": symbol["kind"],
                     "source_sha256": self.file_hashes[rel],
+                    "symbol_id": symbol.get("symbol_id"),
+                    "occurrence_id": symbol.get("occurrence_id", symbol_node),
                 })
                 self._add_edge(self.file_nodes[rel], symbol_node, "DEFINES", {
                     "path": rel, "line": symbol["line"], "kind": symbol["kind"],
@@ -707,6 +759,7 @@ class RepositoryEvidenceTools:
                 })
                 self.symbols.append(symbol)
                 self.symbols_by_id[symbol_node] = symbol
+                self.symbols_by_legacy_id[symbol["symbol_id"]].append(symbol)
 
         # Model the conventional ``python -m package`` entrypoint explicitly.
         # This is a static package-layout observation, not proof of runtime execution.
@@ -738,11 +791,13 @@ class RepositoryEvidenceTools:
                 "path": path,
                 "line": edge.get("line"),
                 "binding": edge.get("binding"),
+                "import_kind": edge.get("import_kind"),
+                "execution_context": edge.get("execution_context", "unknown"),
                 "observed_by": "python_ast_import",
                 "source_sha256": self.file_hashes.get(path),
             }
             self._add_edge(source_id, target_id, "IMPORTS", metadata)
-            if self._is_test_path(path):
+            if self._is_test_path(path) and edge.get("execution_context") != "type_checking_only":
                 self._add_edge(self.file_nodes[path], target_id, "TESTS", metadata)
 
         # Workflow invocation edges are static command observations, never execution proof.
@@ -759,13 +814,31 @@ class RepositoryEvidenceTools:
             elif target.endswith(".py") and target in self.contents:
                 target_id = self.file_nodes[target]
             if target_id:
-                self._add_edge(self.file_nodes[source_path], target_id, "INVOKES", {
+                invocation_metadata = {
                     "path": source_path,
                     "line": edge.get("line"),
                     "workflow_edge_kind": edge.get("kind"),
                     "observed_by": "workflow_command_static_scan",
                     "source_sha256": self.file_hashes.get(source_path),
-                })
+                    "evidence_status": edge.get("evidence_status", "static_command_candidate"),
+                    "working_directory": edge.get("working_directory", "."),
+                }
+                self._add_edge(self.file_nodes[source_path], target_id, "INVOKES", invocation_metadata)
+                # Keep the direct file invocation and add a normalized module
+                # entrypoint edge when the script maps unambiguously to a module.
+                if edge.get("kind") == "workflow_invokes_script" and target in self.file_nodes:
+                    target_module = _module_name(target, self.python_source_roots)
+                    if target_module and target_module in self.module_nodes:
+                        normalized_metadata = dict(invocation_metadata)
+                        normalized_metadata.update({
+                            "observed_by": "workflow_script_module_normalization",
+                            "normalized_script_path": target,
+                            "normalization_status": "static_path_to_module",
+                        })
+                        self._add_edge(
+                            self.file_nodes[source_path], self.module_nodes[target_module],
+                            "INVOKES", normalized_metadata,
+                        )
 
         # Carry structured decision/action/outcome/rule/link records into the graph.
         # YAML is parsed with safe_load; records remain retrieval context, not authority.
@@ -803,8 +876,11 @@ class RepositoryEvidenceTools:
             node_id = self.module_nodes.get(module)
             if node_id and self.graph.get_node(node_id) is not None:
                 normalized_paths = sorted(paths)
+                identity_status = "ambiguous_physical_sources" if len(normalized_paths) > 1 else "unique_physical_source"
                 self.graph.get_node(node_id).attributes["paths"] = normalized_paths
+                self.graph.get_node(node_id).attributes["identity_status"] = identity_status
                 self.node_metadata[node_id]["paths"] = normalized_paths
+                self.node_metadata[node_id]["identity_status"] = identity_status
         self.symbols.sort(key=lambda item: (item["path"], item["line"], item["qualified_name"]))
 
     def _build_decision_memory_graph(self) -> None:
@@ -952,7 +1028,7 @@ class RepositoryEvidenceTools:
                 target_id = record_nodes.get((target_type, reference_id))
                 if not target_id:
                     continue
-                line_number = next((index for index, line in enumerate(text.splitlines(), start=1)
+                line_number = next((index for index, line in enumerate(_source_lines(text), start=1)
                                     if reference_id in line), None)
                 self._add_edge(source_id, target_id, relation, {
                     "path": path, "line": line_number, "reference_id": reference_id,
@@ -983,6 +1059,7 @@ class RepositoryEvidenceTools:
             "evidence_index_status": self.evidence_index_status,
             "skipped_non_utf8_file_count": self.skipped_non_utf8_files,
             "structured_record_issue_count": self.structured_record_issue_count,
+            "module_identity_issue_count": len(self.module_identity_issues),
         }
 
     def _envelope(self, tool: str, status: str, result: dict[str, Any] | None = None,
@@ -1108,6 +1185,9 @@ class RepositoryEvidenceTools:
             "evidence_index_status": self.evidence_index_status,
             "structured_record_issue_count": self.structured_record_issue_count,
             "structured_record_issues": list(self.structured_record_issues[:50]),
+            "module_identity_issue_count": len(self.module_identity_issues),
+            "module_identity_issues": list(self.module_identity_issues[:50]),
+            "python_source_roots": list(self.python_source_roots),
             "python_parse_issue_count": len(self.report.get("python_parse_issues", [])),
             "scope_issue_count": len(self.report.get("scope_issues", [])),
             "graph_node_count": len(self.graph.nodes),
@@ -1137,11 +1217,11 @@ class RepositoryEvidenceTools:
                     "path": path, "line": None, "match_kind": "path",
                     "snippet": path, "source_sha256": self.file_hashes[path],
                 })
-                if len(matches) >= max_results:
+                if len(matches) > max_results:
                     break
             if mode == "path":
                 continue
-            for line_number, line in enumerate(self.contents[path].splitlines(), start=1):
+            for line_number, line in enumerate(_source_lines(self.contents[path]), start=1):
                 if needle not in line.casefold():
                     continue
                 matches.append({
@@ -1151,18 +1231,19 @@ class RepositoryEvidenceTools:
                     "snippet": _redact_then_truncate(line, MAX_SNIPPET_CHARS),
                     "source_sha256": self.file_hashes[path],
                 })
-                if len(matches) >= max_results:
+                if len(matches) > max_results:
                     break
-            if len(matches) >= max_results:
+            if len(matches) > max_results:
                 break
-        return {"query": _redact_text(query), "mode": mode, "matches": matches, "truncated": len(matches) >= max_results}
+        truncated = len(matches) > max_results
+        return {"query": _redact_text(query), "mode": mode, "matches": matches[:max_results], "truncated": truncated}
 
     def _read_source_file(self, args: dict[str, Any]) -> dict[str, Any]:
         self._check_keys(args, {"path", "start_line", "end_line"}, {"path"})
         path = _safe_relative_path(self._string(args, "path", maximum=400))
         if path not in self.contents:
             raise EvidenceToolError("file_not_indexed", "File is not in the current safe source snapshot")
-        lines = self.contents[path].splitlines()
+        lines = _source_lines(self.contents[path])
         if not lines:
             if "start_line" in args and args["start_line"] != 1:
                 raise EvidenceToolError("argument_out_of_range", "An empty file only supports start_line=1")
@@ -1212,19 +1293,26 @@ class RepositoryEvidenceTools:
             if query not in symbol["name"].casefold() and query not in symbol["qualified_name"].casefold():
                 continue
             results.append({
-                "node_id": symbol["node_id"], "name": symbol["name"],
+                "node_id": symbol["node_id"], "occurrence_id": symbol.get("occurrence_id", symbol["node_id"]),
+                "symbol_id": symbol.get("symbol_id"), "name": symbol["name"],
                 "qualified_name": symbol["qualified_name"], "kind": symbol["kind"],
                 "module": symbol["module"], "path": symbol["path"], "line": symbol["line"],
                 "source_sha256": self.file_hashes[symbol["path"]],
             })
-            if len(results) >= max_results:
+            if len(results) > max_results:
                 break
-        return {"query": _redact_text(query), "kind": kind, "symbols": results, "truncated": len(results) >= max_results}
+        truncated = len(results) > max_results
+        return {"query": _redact_text(query), "kind": kind, "symbols": results[:max_results], "truncated": truncated}
 
     def _resolve_node(self, selector: str) -> str:
         selector = selector.strip()
         if selector in self.node_metadata:
             return selector
+        if selector.startswith("symbol:") and selector in self.symbols_by_legacy_id:
+            occurrences = self.symbols_by_legacy_id[selector]
+            if len(occurrences) == 1:
+                return occurrences[0]["node_id"]
+            raise EvidenceToolError("ambiguous_symbol_identity", "Symbol name has multiple source occurrences; use a symbol occurrence ID from search_symbols")
         if selector.startswith(("file:", "module:", "symbol:", "finding:")):
             raise EvidenceToolError("graph_node_not_found", "Graph node identifier is not present in this snapshot")
         try:
@@ -1274,19 +1362,27 @@ class RepositoryEvidenceTools:
         relations = self._relation_types(args)
         if relations is None:
             relations = sorted({edge.relation_type for edge in self.graph.edges})
-        query_payload = {"node": node, "direction": direction, "max_depth": depth, "relation_types": relations}
+        query_payload = {"node": node, "direction": direction, "max_depth": depth,
+                         "relation_types": relations, "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
+                         "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS}
         query = GraphQuery(
             query_id=self._query_id("neighbors", query_payload),
             query_type=QueryType.DEPENDENCY,
             source_entities=[node],
-            constraints={"direction": direction, "max_depth": depth, "relation_types": relations},
+            constraints={"direction": direction, "max_depth": depth, "relation_types": relations,
+                         "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
+                         "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS},
         )
         result = self._query_graph(query)
         discovered = result.get("discovered_nodes", [])
         visible_nodes = discovered[:max_results]
         visible_ids = {item["node_id"] for item in visible_nodes}
         result["discovered_nodes"] = visible_nodes
-        result["truncated"] = len(discovered) > max_results
+        result_limit_truncated = len(discovered) > max_results
+        traversal_truncated = bool(result.get("metadata", {}).get("truncated", False))
+        result["result_limit_truncated"] = result_limit_truncated
+        result["truncated"] = result_limit_truncated or traversal_truncated
+        result["coverage_status"] = "partial" if result["truncated"] else "complete_for_query"
         result["discovered_entities"] = [item["node_id"] for item in visible_nodes]
         visible_observations = [
             item for item in result.get("observations", [])
@@ -1308,12 +1404,17 @@ class RepositoryEvidenceTools:
         relations = self._relation_types(args)
         if relations is None:
             relations = sorted({edge.relation_type for edge in self.graph.edges})
-        query_payload = {"source": source, "target": target, "direction": direction, "max_depth": depth, "relation_types": relations}
+        query_payload = {"source": source, "target": target, "direction": direction,
+                         "max_depth": depth, "relation_types": relations,
+                         "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
+                         "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS}
         query = GraphQuery(
             query_id=self._query_id("path", query_payload),
             query_type=QueryType.PATH,
             source_entities=[source],
-            constraints={"target_entity": target, "direction": direction, "max_depth": depth, "relation_types": relations},
+            constraints={"target_entity": target, "direction": direction, "max_depth": depth,
+                         "relation_types": relations, "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
+                         "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS},
         )
         result = self._query_graph(query)
         path = []
@@ -1330,6 +1431,9 @@ class RepositoryEvidenceTools:
             })
         result["path"] = path
         result["path_found"] = result.get("status") == "completed"
+        result["search_complete"] = not bool(result.get("metadata", {}).get("truncated", False))
+        result["truncated"] = not result["search_complete"]
+        result["coverage_status"] = "complete_for_query" if result["search_complete"] else "partial"
         return result
 
     def _find_related_tests(self, args: dict[str, Any]) -> dict[str, Any]:
@@ -1340,7 +1444,7 @@ class RepositoryEvidenceTools:
         candidate_targets = [target_id]
         node = self.graph.get_node(target_id)
         if node is not None and node.entity_type in {"PythonSourceFile", "TestFile"}:
-            module = _module_name(str(node.attributes.get("path", "")))
+            module = _module_name(str(node.attributes.get("path", "")), self.python_source_roots)
             if module and f"module:{module}" in self.node_metadata:
                 candidate_targets.append(f"module:{module}")
         results: dict[str, dict[str, Any]] = {}
@@ -1366,13 +1470,27 @@ class RepositoryEvidenceTools:
                         "source_sha256": self.file_hashes.get(str(path)),
                         "graph_evidence": edge_evidence,
                     }
-        target_text = selector.casefold()
+        module_candidates: list[str] = []
+        if selector.startswith("module:"):
+            module_candidates.append(selector[len("module:"):])
+        if node is not None and node.attributes.get("module"):
+            module_candidates.append(str(node.attributes.get("module")))
+        if node is not None and node.attributes.get("path"):
+            module_from_path = _module_name(str(node.attributes.get("path")), self.python_source_roots)
+            if module_from_path:
+                module_candidates.append(module_from_path)
+        if not module_candidates and not selector.startswith(("file:", "symbol:", "finding:")):
+            module_candidates.append(selector)
+        module_candidates = sorted(set(candidate for candidate in module_candidates if candidate))
+        path_candidate = selector[len("file:"):] if selector.startswith("file:") else selector
         for path, text in sorted(self.contents.items()):
             if not self._is_test_path(path) or path in results:
                 continue
-            lines = text.splitlines()
+            lines = _source_lines(text)
             for line_number, line in enumerate(lines, start=1):
-                if target_text in line.casefold() or (node and node.attributes.get("module") and str(node.attributes.get("module")).casefold() in line.casefold()):
+                exact_module_match = any(_contains_identifier_reference(line, candidate) for candidate in module_candidates)
+                exact_path_match = path_candidate.endswith(".py") and _contains_identifier_reference(line, path_candidate)
+                if exact_module_match or exact_path_match:
                     results[path] = {
                         "path": path,
                         "relationship": "text_reference",
@@ -1394,8 +1512,8 @@ class RepositoryEvidenceTools:
         target_module_ids: set[str] = set()
         if target_id.startswith("module:"):
             target_module_ids.add(target_id)
-        if target_node is not None and str(target_node.attributes.get("path", "")).endswith(".py"):
-            module = _module_name(str(target_node.attributes["path"]))
+        if target_node is not None and PurePosixPath(str(target_node.attributes.get("path", ""))).suffix.lower() == ".py":
+            module = _module_name(str(target_node.attributes["path"]), self.python_source_roots)
             if module in self.module_nodes:
                 target_module_ids.add(self.module_nodes[module])
 
@@ -1406,6 +1524,8 @@ class RepositoryEvidenceTools:
         invoke_adjacency: dict[str, list[SemanticEdge]] = defaultdict(list)
         for edge in self.graph.edges:
             if edge.relation_type in {"IMPORTS", "PACKAGE_ENTRYPOINT"}:
+                if edge.relation_type == "IMPORTS" and edge.metadata.get("execution_context") == "type_checking_only":
+                    continue
                 import_adjacency[edge.source_id].append(edge)
             elif edge.relation_type == "INVOKES":
                 invoke_adjacency[edge.source_id].append(edge)
@@ -1413,12 +1533,17 @@ class RepositoryEvidenceTools:
             values.sort(key=lambda edge: (edge.target_id, int(edge.metadata.get("line") or 0), edge.source_id))
 
         def import_path(source: str, target: str, max_depth: int = 4) -> list[SemanticEdge] | None:
+            nonlocal path_visit_count, path_budget_exhausted
             if source == target:
                 return []
             queue: list[tuple[str, list[SemanticEdge]]] = [(source, [])]
             visited = {source}
             cursor = 0
             while cursor < len(queue):
+                if path_visit_count >= MAX_WORKFLOW_PATH_VISITS:
+                    path_budget_exhausted = True
+                    return None
+                path_visit_count += 1
                 current, path = queue[cursor]
                 cursor += 1
                 if len(path) >= max_depth:
@@ -1434,10 +1559,23 @@ class RepositoryEvidenceTools:
             return None
 
         results: dict[str, dict[str, Any]] = {}
-        workflow_paths = [path for path in sorted(self.file_nodes) if _file_kind(path) == "WorkflowDefinition"]
+        active_workflow_paths = {
+            item.get("path") for item in self.report.get("workflows", [])
+            if item.get("active_workflow_candidate") and item.get("status") == "scanned"
+        }
+        all_workflow_paths = [path for path in sorted(self.file_nodes)
+                              if _file_kind(path) == "WorkflowDefinition" and path in active_workflow_paths]
+        workflow_candidates_truncated = len(all_workflow_paths) > MAX_WORKFLOW_CANDIDATES
+        workflow_paths = all_workflow_paths[:MAX_WORKFLOW_CANDIDATES]
+        path_visit_count = 0
+        path_budget_exhausted = False
         for workflow_path in workflow_paths:
+            if path_budget_exhausted:
+                break
             workflow_id = self.file_nodes[workflow_path]
             for invoke_edge in invoke_adjacency.get(workflow_id, []):
+                if path_budget_exhausted:
+                    break
                 invoked = invoke_edge.target_id
                 path_edges: list[SemanticEdge] | None = None
                 final_file_edge: SemanticEdge | None = None
@@ -1473,6 +1611,7 @@ class RepositoryEvidenceTools:
                         "from": edge.source_id, "to": edge.target_id,
                         "relation": edge.relation_type, "depth": depth,
                         "source_path": metadata.get("path"), "line": metadata.get("line"),
+                        "execution_context": metadata.get("execution_context"),
                     })
                     graph_evidence.append({
                         "evidence_id": self._edge_evidence_id(edge),
@@ -1499,7 +1638,11 @@ class RepositoryEvidenceTools:
         return {
             "target": selector,
             "workflows": ordered[:max_results],
-            "truncated": len(ordered) > max_results,
+            "truncated": len(ordered) > max_results or path_budget_exhausted or workflow_candidates_truncated,
+            "coverage_status": "partial" if len(ordered) > max_results or path_budget_exhausted or workflow_candidates_truncated else "complete_for_query",
+            "traversal_visits": path_visit_count,
+            "workflow_candidates_examined": len(workflow_paths),
+            "stop_reason": "max_workflow_path_visits" if path_budget_exhausted else ("max_workflow_candidates" if workflow_candidates_truncated else None),
             "note": "Direct and transitive paths are static source/workflow observations, not proof that a workflow ran or imported code at runtime.",
         }
 
@@ -1520,7 +1663,7 @@ class RepositoryEvidenceTools:
         for path in sorted(self.contents):
             if not path.startswith(prefixes):
                 continue
-            for line_number, line in enumerate(self.contents[path].splitlines(), start=1):
+            for line_number, line in enumerate(_source_lines(self.contents[path]), start=1):
                 if query not in line.casefold():
                     continue
                 matches.append({
@@ -1528,11 +1671,12 @@ class RepositoryEvidenceTools:
                     "snippet": _redact_then_truncate(line, MAX_SNIPPET_CHARS),
                     "source_sha256": self.file_hashes[path],
                 })
-                if len(matches) >= max_results:
+                if len(matches) > max_results:
                     break
-            if len(matches) >= max_results:
+            if len(matches) > max_results:
                 break
-        return {"query": _redact_text(query), "matches": matches, "truncated": len(matches) >= max_results,
+        truncated = len(matches) > max_results
+        return {"query": _redact_text(query), "matches": matches[:max_results], "truncated": truncated,
                 "search_scope": list(prefixes),
                 "note": "Historical records are retrieval context, not automatically authoritative decisions."}
 

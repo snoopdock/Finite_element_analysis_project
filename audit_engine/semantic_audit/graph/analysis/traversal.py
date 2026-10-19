@@ -65,6 +65,9 @@ class TraversalResult:
     hits: tuple[TraversalHit, ...] = field(default_factory=tuple)
     steps: tuple[TraversalStep, ...] = field(default_factory=tuple)
     evidence: tuple[EvidenceRecord, ...] = field(default_factory=tuple)
+    truncated: bool = False
+    stop_reason: str | None = None
+    examined_edges: int = 0
 
     @property
     def visited_nodes(self) -> tuple[str, ...]:
@@ -89,28 +92,20 @@ class GraphTraversalEngine:
         *,
         direction: TraversalDirection,
         relation_types: set[str] | None,
+        outgoing: dict[str, list[SemanticEdge]],
+        incoming: dict[str, list[SemanticEdge]],
     ) -> list[tuple[SemanticEdge, str]]:
         candidates: list[tuple[SemanticEdge, str]] = []
-
-        for edge in self.graph.edges:
-            if relation_types is not None and edge.relation_type not in relation_types:
-                continue
-
-            if direction in (TraversalDirection.OUTGOING, TraversalDirection.BOTH):
-                if edge.source_id == node_id:
-                    candidates.append((edge, edge.target_id))
-
-            if direction in (TraversalDirection.INCOMING, TraversalDirection.BOTH):
-                if edge.target_id == node_id:
-                    candidates.append((edge, edge.source_id))
-
+        if direction in (TraversalDirection.OUTGOING, TraversalDirection.BOTH):
+            candidates.extend((edge, edge.target_id) for edge in outgoing.get(node_id, [])
+                              if relation_types is None or edge.relation_type in relation_types)
+        if direction in (TraversalDirection.INCOMING, TraversalDirection.BOTH):
+            candidates.extend((edge, edge.source_id) for edge in incoming.get(node_id, [])
+                              if relation_types is None or edge.relation_type in relation_types)
         candidates.sort(
             key=lambda item: (
-                item[1],
-                item[0].relation_type,
-                item[0].source_id,
-                item[0].target_id,
-                edge_fingerprint(item[0]),
+                item[1], item[0].relation_type, item[0].source_id,
+                item[0].target_id, edge_fingerprint(item[0]),
             )
         )
         return candidates
@@ -122,6 +117,8 @@ class GraphTraversalEngine:
         direction: TraversalDirection = TraversalDirection.OUTGOING,
         relation_types: Iterable[str] | None = None,
         max_depth: int | None = 1,
+        max_visited_nodes: int | None = None,
+        max_steps: int | None = None,
     ) -> TraversalResult:
         if not self.graph.has_node(start_node):
             raise GraphTraversalError(
@@ -129,6 +126,24 @@ class GraphTraversalEngine:
             )
         if max_depth is not None and max_depth < 0:
             raise GraphTraversalError("max_depth must be non-negative or None.")
+        if max_visited_nodes is not None and (
+            isinstance(max_visited_nodes, bool) or not isinstance(max_visited_nodes, int) or max_visited_nodes < 1
+        ):
+            raise GraphTraversalError("max_visited_nodes must be a positive integer or None.")
+        if max_steps is not None and (
+            isinstance(max_steps, bool) or not isinstance(max_steps, int) or max_steps < 1
+        ):
+            raise GraphTraversalError("max_steps must be a positive integer or None.")
+
+        # Build adjacency once per walk. The previous implementation scanned the
+        # complete edge list for every visited node, making broad queries O(V*E).
+        outgoing: dict[str, list[SemanticEdge]] = {}
+        incoming: dict[str, list[SemanticEdge]] = {}
+        for edge in self.graph.edges:
+            outgoing.setdefault(edge.source_id, []).append(edge)
+            incoming.setdefault(edge.target_id, []).append(edge)
+        for values in (*outgoing.values(), *incoming.values()):
+            values.sort(key=lambda edge: (edge.target_id, edge.relation_type, edge.source_id, edge_fingerprint(edge)))
 
         normalized_relations = None
         if relation_types is not None:
@@ -144,7 +159,11 @@ class GraphTraversalEngine:
         steps: list[TraversalStep] = []
         evidence_by_id: dict[str, EvidenceRecord] = {}
 
-        while queue:
+        truncated = False
+        stop_reason: str | None = None
+        examined_edges = 0
+        stop = False
+        while queue and not stop:
             current, depth, path = queue.popleft()
             if max_depth is not None and depth >= max_depth:
                 continue
@@ -153,7 +172,15 @@ class GraphTraversalEngine:
                 current,
                 direction=direction,
                 relation_types=normalized_relations,
+                outgoing=outgoing,
+                incoming=incoming,
             ):
+                if max_steps is not None and examined_edges >= max_steps:
+                    truncated = True
+                    stop_reason = "max_traversal_steps"
+                    stop = True
+                    break
+                examined_edges += 1
                 evidence = EvidenceRecord.from_edge(edge)
                 evidence_by_id[evidence.evidence_id] = evidence
 
@@ -170,6 +197,11 @@ class GraphTraversalEngine:
 
                 if neighbor in visited:
                     continue
+                if max_visited_nodes is not None and len(visited) >= max_visited_nodes:
+                    truncated = True
+                    stop_reason = "max_visited_nodes"
+                    stop = True
+                    break
 
                 visited.add(neighbor)
                 next_path = path + (step,)
@@ -194,4 +226,7 @@ class GraphTraversalEngine:
             hits=tuple(hits),
             steps=tuple(steps),
             evidence=evidence,
+            truncated=truncated,
+            stop_reason=stop_reason,
+            examined_edges=examined_edges,
         )

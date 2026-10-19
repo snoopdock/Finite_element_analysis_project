@@ -8,14 +8,20 @@ loops, and measurement. Static presence is never reported as proof of runtime us
 from __future__ import annotations
 
 import ast
+import configparser
 import hashlib
 import json
 import os
 import re
+import shlex
 import tempfile
+import tomllib
 from collections import defaultdict
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Mapping
+
+import yaml
+from yaml.nodes import MappingNode, Node, ScalarNode, SequenceNode
 
 SCHEMA_VERSION = "ae32a/architecture-wiring-report/v1"
 MAP_SCHEMA_VERSION = "ae32a/execution-dependency-map/v1"
@@ -29,7 +35,7 @@ EXCLUDED_RUNTIME_PREFIXES = ("state/", "output/", "artifacts/", ".graph-state/",
 MAX_FILE_BYTES = 8 * 1024 * 1024
 MAX_TOTAL_BYTES = 200 * 1024 * 1024
 MAX_FILES = 30000
-AE_PACKAGE_RE = re.compile(r"(?:^|/)audit_engine/semantic_audit/(ae\d{2,3})(?:/|$)")
+AE_PACKAGE_RE = re.compile(r"(?:^|/)audit_engine/semantic_audit/(ae\d{2,3}[a-z]?)(?:/|$)", re.IGNORECASE)
 REVISION_RE = re.compile(r"^[0-9a-fA-F]{7,64}$")
 WORKFLOW_MODULE_RE = re.compile(r"\bpython(?:\d(?:\.\d+)*)?\s+-m\s+([A-Za-z_][A-Za-z0-9_.]+)")
 WORKFLOW_SCRIPT_RE = re.compile(r"\bpython(?:\d(?:\.\d+)*)?\s+([A-Za-z0-9_./-]+\.py)\b")
@@ -41,6 +47,18 @@ def _canonical_json(value: Any) -> bytes:
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def _source_lines(text: str) -> list[str]:
+    """Split physical source lines using Python-compatible newline boundaries."""
+    lines = re.split(r"\r\n|\r|\n", text)
+    if lines and lines[-1] == "":
+        lines.pop()
+    return lines
+
+
+def _line_number_for_offset(text: str, offset: int) -> int:
+    return len(re.findall(r"\r\n|\r|\n", text[:offset])) + 1
 
 
 def _relative(path: Path, root: Path) -> str:
@@ -174,29 +192,111 @@ def _inventory(root: Path, output_rel: str | None) -> tuple[list[dict[str, Any]]
     return rows, contents, scope_issues
 
 
-def _module_name(path: str) -> str:
-    parts = list(PurePosixPath(path).parts)
-    if parts[-1] == "__init__.py":
+def _module_name(path: str, source_roots: Iterable[str] = ()) -> str:
+    """Map a repository-relative Python path to its import name.
+
+    Only explicitly configured source roots are stripped. Without such a
+    declaration, repository-relative module naming remains backward compatible.
+    """
+    normalized = PurePosixPath(path).as_posix()
+    parts = list(PurePosixPath(normalized).parts)
+    if not parts or PurePosixPath(normalized).suffix.lower() != ".py":
+        return ""
+    for root in sorted((str(item).strip("/") for item in source_roots if str(item).strip("/")),
+                       key=lambda item: (-len(item.split("/")), -len(item))):
+        if normalized.startswith(root + "/"):
+            parts = list(PurePosixPath(normalized[len(root) + 1:]).parts)
+            break
+    if not parts:
+        return ""
+    if parts[-1].lower() == "__init__.py":
         parts = parts[:-1]
     else:
         parts[-1] = PurePosixPath(parts[-1]).stem
     return ".".join(parts)
 
 
-def _module_index(python_paths: Iterable[str]) -> tuple[set[str], set[str]]:
+def _configured_python_source_roots(contents: Mapping[str, bytes]) -> tuple[list[str], list[dict[str, str]]]:
+    """Read explicit, statically declared Python package roots without executing setup.py."""
+    roots: set[str] = set()
+    issues: list[dict[str, str]] = []
+
+    def add_root(value: Any, source: str) -> None:
+        if not isinstance(value, str) or not value.strip():
+            return
+        raw = value.strip().replace("\\", "/")
+        candidate = PurePosixPath(raw)
+        if candidate.is_absolute() or any(part in {"", ".", ".."} for part in candidate.parts):
+            issues.append({"path": source, "kind": "invalid_python_source_root"})
+            return
+        normalized = candidate.as_posix()
+        if any(path.startswith(normalized + "/") and PurePosixPath(path).suffix.lower() == ".py" for path in contents):
+            roots.add(normalized)
+        else:
+            # Keep a configured root when it exists in the snapshot even if
+            # the current fixture has no Python module beneath it.
+            if any(path == normalized or path.startswith(normalized + "/") for path in contents):
+                roots.add(normalized)
+
+    raw_pyproject = contents.get("pyproject.toml")
+    if raw_pyproject is not None:
+        try:
+            config = tomllib.loads(raw_pyproject.decode("utf-8"))
+            setuptools = config.get("tool", {}).get("setuptools", {})
+            package_dir = setuptools.get("package-dir", {})
+            if isinstance(package_dir, dict):
+                add_root(package_dir.get(""), "pyproject.toml")
+            find_config = setuptools.get("packages", {}).get("find", {})
+            where = find_config.get("where", []) if isinstance(find_config, dict) else []
+            if isinstance(where, str):
+                where = [where]
+            if isinstance(where, list):
+                for item in where:
+                    add_root(item, "pyproject.toml")
+        except (UnicodeDecodeError, tomllib.TOMLDecodeError, AttributeError, TypeError):
+            issues.append({"path": "pyproject.toml", "kind": "python_source_config_unreadable"})
+
+    raw_setup_cfg = contents.get("setup.cfg")
+    if raw_setup_cfg is not None:
+        parser = configparser.ConfigParser(interpolation=None, strict=False)
+        try:
+            parser.read_string(raw_setup_cfg.decode("utf-8"))
+            if parser.has_option("options", "package_dir"):
+                for line in parser.get("options", "package_dir").splitlines():
+                    if "=" in line:
+                        key, value = line.split("=", 1)
+                        if not key.strip():
+                            add_root(value.strip(), "setup.cfg")
+            if parser.has_option("options.packages.find", "where"):
+                for item in re.split(r"[\s,]+", parser.get("options.packages.find", "where").strip()):
+                    add_root(item, "setup.cfg")
+        except (UnicodeDecodeError, configparser.Error):
+            issues.append({"path": "setup.cfg", "kind": "python_source_config_unreadable"})
+
+    return sorted(roots), sorted(issues, key=lambda item: (item["path"], item["kind"]))
+
+
+def _module_index(python_paths: Iterable[str], source_roots: Iterable[str] = ()) -> tuple[set[str], set[str]]:
     modules: set[str] = set()
     packages: set[str] = set()
+    roots = tuple(source_roots)
     for path in python_paths:
-        name = _module_name(path)
+        name = _module_name(path, roots)
         if name:
             modules.add(name)
-        parts = PurePosixPath(path).parts
-        for i in range(1, len(parts)):
-            packages.add(".".join(parts[:i]))
+        effective_path = PurePosixPath(path).as_posix()
+        for root in sorted(roots, key=lambda item: -len(item)):
+            if effective_path.startswith(root.rstrip("/") + "/"):
+                effective_path = effective_path[len(root.rstrip("/")) + 1:]
+                break
+        parts = list(PurePosixPath(effective_path).parts)
+        package_parts = parts[:-1]
+        for i in range(1, len(package_parts) + 1):
+            packages.add(".".join(package_parts[:i]))
     return modules, packages
 
 
-def _resolve_import(path: str, node: ast.Import | ast.ImportFrom, modules: set[str], packages: set[str]) -> list[dict[str, str]]:
+def _resolve_import(path: str, node: ast.Import | ast.ImportFrom, modules: set[str], packages: set[str], source_roots: Iterable[str] = ()) -> list[dict[str, str]]:
     results: list[dict[str, str]] = []
     if isinstance(node, ast.Import):
         for alias in node.names:
@@ -206,9 +306,10 @@ def _resolve_import(path: str, node: ast.Import | ast.ImportFrom, modules: set[s
         return results
 
     if node.level:
-        current_parts = list(PurePosixPath(path).parts[:-1])
-        if PurePosixPath(path).name == "__init__.py":
-            current_parts = list(PurePosixPath(path).parts[:-1])
+        current_module = _module_name(path, source_roots)
+        current_parts = current_module.split(".") if current_module else []
+        if PurePosixPath(path).name.lower() != "__init__.py" and current_parts:
+            current_parts = current_parts[:-1]
         base_parts = current_parts[: max(0, len(current_parts) - (node.level - 1))]
         if node.module:
             base_parts.extend(node.module.split("."))
@@ -256,12 +357,53 @@ def _evidence(path: str, line: int | None, kind: str, detail: str) -> dict[str, 
     return {"path": path, "line": line, "kind": kind, "detail": detail}
 
 
-def _parse_python(contents: Mapping[str, bytes], modules: set[str], packages: set[str]) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+def _is_type_checking_guard(node: ast.AST) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id == "TYPE_CHECKING"
+    if isinstance(node, ast.Attribute):
+        return node.attr == "TYPE_CHECKING"
+    if isinstance(node, ast.BoolOp):
+        return any(_is_type_checking_guard(value) for value in node.values)
+    return False
+
+
+def _import_execution_context(node: ast.AST, parents: Mapping[ast.AST, ast.AST]) -> str:
+    cursor = parents.get(node)
+    has_function = False
+    has_class = False
+    has_conditional = False
+    while cursor is not None:
+        if isinstance(cursor, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            has_function = True
+        elif isinstance(cursor, ast.ClassDef):
+            has_class = True
+        elif isinstance(cursor, ast.If):
+            has_conditional = True
+            if _is_type_checking_guard(cursor.test):
+                return "type_checking_only"
+        elif isinstance(cursor, (ast.Try, getattr(ast, "TryStar", ast.Try), ast.With, ast.AsyncWith)):
+            has_conditional = True
+        cursor = parents.get(cursor)
+    if has_function:
+        return "function_local"
+    if has_class:
+        return "class_body"
+    if has_conditional:
+        return "conditional_module_level"
+    return "module_level"
+
+
+def _parse_python(
+    contents: Mapping[str, bytes], modules: set[str], packages: set[str],
+    source_roots: Iterable[str] = (),
+) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     parsed: dict[str, dict[str, Any]] = {}
     import_edges: list[dict[str, Any]] = []
     parse_issues: list[dict[str, Any]] = []
-    for path in sorted(p for p in contents if p.endswith(".py")):
+    python_paths = sorted(p for p in contents if PurePosixPath(p).suffix.lower() == ".py")
+    for path in python_paths:
         raw = contents[path]
+        module_name = _module_name(path, source_roots)
         try:
             source = raw.decode("utf-8")
             tree = ast.parse(source, filename=path)
@@ -269,32 +411,38 @@ def _parse_python(contents: Mapping[str, bytes], modules: set[str], packages: se
             issue = {"path": path, "kind": "source_decode_error" if isinstance(exc, UnicodeDecodeError) else "python_syntax_error",
                      "line": getattr(exc, "lineno", None), "detail": str(exc).splitlines()[0][:240]}
             parse_issues.append(issue)
-            parsed[path] = {"module": _module_name(path), "tree": None, "source": None, "imports": [], "calls": [], "functions": [], "strings": []}
+            parsed[path] = {"module": module_name, "tree": None, "source": None, "imports": [], "calls": [], "functions": [], "strings": []}
             continue
         imports: list[dict[str, Any]] = []
         calls: list[dict[str, Any]] = []
         functions: list[dict[str, Any]] = []
         strings: list[str] = []
+        parents: dict[ast.AST, ast.AST] = {}
+        for parent in ast.walk(tree):
+            for child in ast.iter_child_nodes(parent):
+                parents[child] = parent
         for node in ast.walk(tree):
             if isinstance(node, (ast.Import, ast.ImportFrom)):
-                for resolved in _resolve_import(path, node, modules, packages):
-                    row = {"source_path": path, "source_module": _module_name(path), "line": node.lineno,
+                context = _import_execution_context(node, parents)
+                for resolved in _resolve_import(path, node, modules, packages, source_roots):
+                    row = {"source_path": path, "source_module": module_name, "line": node.lineno,
                            "import_kind": "import" if isinstance(node, ast.Import) else "from_import",
-                           **resolved}
+                           "execution_context": context, **resolved}
                     imports.append(row)
                     if resolved["status"] == "internal":
-                        import_edges.append({"kind": "python_import", "source": _module_name(path),
+                        import_edges.append({"kind": "python_import", "source": module_name,
                                              "target": resolved["target"], "path": path,
-                                             "line": node.lineno, "binding": resolved["binding"]})
+                                             "line": node.lineno, "binding": resolved["binding"],
+                                             "import_kind": row["import_kind"], "execution_context": context})
             elif isinstance(node, ast.Call):
                 calls.append({"name": _call_name(node), "line": getattr(node, "lineno", None)})
             elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 functions.append({"name": node.name, "kind": type(node).__name__, "line": node.lineno})
             elif isinstance(node, ast.Constant) and isinstance(node.value, str):
                 strings.append(node.value)
-        parsed[path] = {"module": _module_name(path), "tree": tree, "source": source,
+        parsed[path] = {"module": module_name, "tree": tree, "source": source,
                         "imports": imports, "calls": calls, "functions": functions, "strings": strings}
-    import_edges.sort(key=lambda e: (e["source"], e["line"] or 0, e["target"], e["binding"]))
+    import_edges.sort(key=lambda e: (e["source"], e["line"] or 0, e["target"], e["binding"], e.get("execution_context", "")))
     parse_issues.sort(key=lambda e: (e["path"], e["line"] or 0))
     return parsed, import_edges, parse_issues
 
@@ -330,11 +478,11 @@ def _component_inventory(parsed: Mapping[str, Mapping[str, Any]], import_edges: 
             token = f"audit_engine.semantic_audit.{component}"
             if token in text and not any(e["path"] == path for e in tests_by_component[component]):
                 match = re.search(re.escape(token), text)
-                line = text.count("\n", 0, match.start()) + 1 if match else None
+                line = _line_number_for_offset(text, match.start()) if match else None
                 tests_by_component[component].append(_evidence(path, line, "test_reference", f"test file references {token}"))
 
     result: list[dict[str, Any]] = []
-    for component in sorted(components, key=lambda x: int(x[2:])):
+    for component in sorted(components, key=lambda x: (int(re.match(r"ae(\d+)", x, re.IGNORECASE).group(1)), x)) :
         paths = sorted(components[component])
         source_paths = [p for p in paths if parsed[p].get("source") is not None]
         has_cli = any(PurePosixPath(p).name == "__main__.py" for p in paths)
@@ -416,7 +564,7 @@ def _tool_loop_evidence(paths: Iterable[str], parsed: Mapping[str, Mapping[str, 
         component = _component_for_path(path)
         scope = component or PurePosixPath(path).parts[0]
         source = parsed[path].get("source") or ""
-        for line_no, line in enumerate(source.splitlines(), 1):
+        for line_no, line in enumerate(_source_lines(source), 1):
             lower = line.lower()
             protocol_match = next((pattern for pattern in protocol_patterns if pattern in lower), None)
             dispatch_match = next((pattern for pattern in dispatch_patterns if pattern in lower), None)
@@ -440,7 +588,7 @@ def _graph_api_evidence(paths: Iterable[str], parsed: Mapping[str, Mapping[str, 
     out = []
     for path in sorted(paths):
         source = parsed[path].get("source") or ""
-        for line_no, line in enumerate(source.splitlines(), 1):
+        for line_no, line in enumerate(_source_lines(source), 1):
             if any(token in line for token in tokens):
                 out.append(_evidence(path, line_no, "graph_api_indicator", "indicator: " + next(token for token in tokens if token in line)))
     return out
@@ -453,7 +601,7 @@ def _repository_retrieval_evidence(paths: Iterable[str], parsed: Mapping[str, Ma
     external = []
     for path in sorted(paths):
         source = parsed[path].get("source") or ""
-        for line_no, line in enumerate(source.splitlines(), 1):
+        for line_no, line in enumerate(_source_lines(source), 1):
             lower = line.lower()
             if any(token in lower for token in tokens):
                 retrieval.append(_evidence(path, line_no, "repository_retrieval_indicator", "indicator: " + next(token for token in tokens if token in lower)))
@@ -468,7 +616,7 @@ def _fixed_allowlist_evidence(paths: Iterable[str], parsed: Mapping[str, Mapping
     out = []
     for path in sorted(paths):
         source = parsed[path].get("source") or ""
-        for line_no, line in enumerate(source.splitlines(), 1):
+        for line_no, line in enumerate(_source_lines(source), 1):
             if re.match(r"^\s*(?:INPUT_PATHS|CODE_CONTEXT_PATHS|ARCHITECTURE_CONTEXT_PATHS)\s*=", line):
                 out.append(_evidence(path, line_no, "fixed_context_allowlist", "fixed context declaration: " + re.match(r"^\s*(INPUT_PATHS|CODE_CONTEXT_PATHS|ARCHITECTURE_CONTEXT_PATHS)\s*=", line).group(1)))
     return out
@@ -479,7 +627,7 @@ def _memory_evidence(paths: Iterable[str], parsed: Mapping[str, Mapping[str, Any
     persistent = []
     for path in sorted(paths):
         source = parsed[path].get("source") or ""
-        for line_no, line in enumerate(source.splitlines(), 1):
+        for line_no, line in enumerate(_source_lines(source), 1):
             if "DecisionMemory" in line or "decision_memory" in line:
                 out.append(_evidence(path, line_no, "decision_memory_indicator", "indicator: " + ("DecisionMemory" if "DecisionMemory" in line else "decision_memory")))
             if any(token in line for token in ("sqlite3", "shelve.open", "decision_memory.json", "save_decision", "load_decision")):
@@ -493,7 +641,7 @@ def _measurement_evidence(component: str, paths: Iterable[str], parsed: Mapping[
     quality = []
     for path in sorted(paths):
         source = parsed[path].get("source") or ""
-        for line_no, line in enumerate(source.splitlines(), 1):
+        for line_no, line in enumerate(_source_lines(source), 1):
             low = line.lower()
             if any(token in low for token in ("elapsed_ms", "prompt_tokens", "completion_tokens", "total_tokens", "http_attempts", "logical_calls")):
                 operational.append(_evidence(path, line_no, "operational_measurement", "indicator: " + next(token for token in ("elapsed_ms", "prompt_tokens", "completion_tokens", "total_tokens", "http_attempts", "logical_calls") if token in low)))
@@ -505,40 +653,217 @@ def _measurement_evidence(component: str, paths: Iterable[str], parsed: Mapping[
             "live_model_quality_measurement_evidence": quality[:10]}
 
 
-def _workflow_inventory(contents: Mapping[str, bytes], parsed: Mapping[str, Mapping[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    workflows = []
-    edges = []
+def _yaml_mapping_value(node: Node | None, key: str) -> Node | None:
+    if not isinstance(node, MappingNode):
+        return None
+    for key_node, value_node in node.value:
+        if isinstance(key_node, ScalarNode) and key_node.value == key:
+            return value_node
+    return None
+
+
+def _workflow_trigger_entries(node: Node | None) -> list[tuple[str, int]]:
+    entries: list[tuple[str, int]] = []
+    if isinstance(node, ScalarNode):
+        if node.value.strip():
+            entries.append((node.value.strip(), node.start_mark.line + 1))
+    elif isinstance(node, SequenceNode):
+        for item in node.value:
+            if isinstance(item, ScalarNode) and item.value.strip():
+                entries.append((item.value.strip(), item.start_mark.line + 1))
+    elif isinstance(node, MappingNode):
+        for key_node, _value_node in node.value:
+            if isinstance(key_node, ScalarNode) and key_node.value.strip():
+                entries.append((key_node.value.strip(), key_node.start_mark.line + 1))
+    return entries
+
+
+def _split_shell_commands(line: str) -> list[list[str]]:
+    """Tokenize one shell line without treating comments/quoted strings as commands."""
+    try:
+        lexer = shlex.shlex(line, posix=True, punctuation_chars=";&|")
+        lexer.whitespace_split = True
+        lexer.commenters = "#"
+        tokens = list(lexer)
+    except ValueError:
+        return []
+    commands: list[list[str]] = []
+    current: list[str] = []
+    for token in tokens:
+        if token and all(char in ";&|" for char in token):
+            if current:
+                commands.append(current)
+                current = []
+        else:
+            current.append(token)
+    if current:
+        commands.append(current)
+    return commands
+
+
+def _python_invocation(tokens: list[str]) -> tuple[str, str] | None:
+    if not tokens:
+        return None
+    items = list(tokens)
+    index = 0
+    # Accept common transparent launchers, but never search arbitrary arguments
+    # for a Python-looking substring (which would misread echo/curl/etc.).
+    while index < len(items) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=.*", items[index]):
+        index += 1
+    if index < len(items) and items[index] == "env":
+        index += 1
+        while index < len(items) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=.*", items[index]):
+            index += 1
+    if index + 1 < len(items) and items[index] in {"uv", "poetry", "pipenv"} and items[index + 1] == "run":
+        index += 2
+    if index >= len(items) or not re.fullmatch(r"python(?:\d+(?:\.\d+)*)?", items[index], re.IGNORECASE):
+        return None
+    index += 1
+    while index < len(items) and items[index].startswith("-") and items[index] not in {"-m", "-c", "-"}:
+        flag = items[index]
+        if flag in {"-X", "-W"}:
+            index += 2
+        else:
+            index += 1
+    if index >= len(items) or items[index] in {"-c", "-"}:
+        return None
+    if items[index] == "-m":
+        if index + 1 >= len(items):
+            return None
+        module = items[index + 1]
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*", module):
+            return None
+        return "module_command", module
+    script = items[index]
+    if script.lower().endswith(".py") and not any(token in script for token in ("${{", "}}", "$(", "*", "?")):
+        script_path = PurePosixPath(script.removeprefix("./"))
+        if script_path.is_absolute() or ".." in script_path.parts:
+            return None
+        return "script_command", script_path.as_posix()
+    return None
+
+
+def _workflow_inventory(
+    contents: Mapping[str, bytes], parsed: Mapping[str, Mapping[str, Any]],
+    source_roots: Iterable[str] = (),
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, str]]]:
+    workflows: list[dict[str, Any]] = []
+    edges: list[dict[str, Any]] = []
+    issues: list[dict[str, str]] = []
+    known_modules = {
+        str(info.get("module")) for info in parsed.values()
+        if isinstance(info.get("module"), str) and info.get("module")
+    }
+    known_packages = set()
+    for module in known_modules:
+        parts = module.split(".")
+        for index in range(1, len(parts)):
+            known_packages.add(".".join(parts[:index]))
     for path in sorted(p for p in contents if p.startswith(".github/workflows/") and p.lower().endswith((".yml", ".yaml"))):
         is_active = "/" not in path[len(".github/workflows/"):]
         try:
             text = contents[path].decode("utf-8")
         except UnicodeDecodeError:
-            workflows.append({"path": path, "status": "unreadable", "active_workflow_candidate": is_active, "trigger_evidence": [], "commands": []})
+            workflows.append({"path": path, "status": "unreadable", "active_workflow_candidate": is_active,
+                              "trigger_evidence": [], "commands": [], "trigger_status": "unreadable"})
+            if is_active:
+                issues.append({"path": path, "kind": "workflow_decode_error"})
             continue
-        triggers = []
-        for line_no, line in enumerate(text.splitlines(), 1):
-            stripped = line.strip()
-            if stripped in {"workflow_dispatch:", "push:", "pull_request:", "schedule:"}:
-                triggers.append(_evidence(path, line_no, "workflow_trigger", stripped))
-        commands = []
-        for line_no, line in enumerate(text.splitlines(), 1):
-            module_match = WORKFLOW_MODULE_RE.search(line)
-            if module_match:
-                module = module_match.group(1)
-                item = {"kind": "module_command", "target": module, "line": line_no, "command_pattern": "python -m <module>"}
-                commands.append(item)
-                if is_active:
-                    edges.append({"kind": "workflow_invokes_module", "source": path, "target": module, "line": line_no})
-            script_match = WORKFLOW_SCRIPT_RE.search(line)
-            if script_match:
-                script = script_match.group(1)
-                item = {"kind": "script_command", "target": script, "line": line_no, "command_pattern": "python <script>"}
-                commands.append(item)
-                if is_active:
-                    edges.append({"kind": "workflow_invokes_script", "source": path, "target": script, "line": line_no})
+        try:
+            root_node = yaml.compose(text, Loader=yaml.SafeLoader)
+        except yaml.YAMLError:
+            workflows.append({"path": path, "status": "invalid_yaml", "active_workflow_candidate": is_active,
+                              "trigger_evidence": [], "commands": [], "trigger_status": "invalid_yaml"})
+            if is_active:
+                issues.append({"path": path, "kind": "workflow_yaml_error"})
+            continue
+        if not isinstance(root_node, MappingNode):
+            workflows.append({"path": path, "status": "invalid_structure", "active_workflow_candidate": is_active,
+                              "trigger_evidence": [], "commands": [], "trigger_status": "invalid_structure"})
+            if is_active:
+                issues.append({"path": path, "kind": "workflow_invalid_structure"})
+            continue
+
+        on_node = _yaml_mapping_value(root_node, "on")
+        trigger_entries = _workflow_trigger_entries(on_node)
+        trigger_evidence = [
+            _evidence(path, line, "workflow_trigger", name)
+            for name, line in sorted(set(trigger_entries), key=lambda item: (item[1], item[0]))
+        ]
+        trigger_status = "parsed" if on_node is not None and trigger_entries else "missing_or_unresolved"
+        if trigger_status != "parsed" and is_active:
+            issues.append({"path": path, "kind": "workflow_trigger_unresolved"})
+
+        commands: list[dict[str, Any]] = []
+        jobs_node = _yaml_mapping_value(root_node, "jobs")
+        if isinstance(jobs_node, MappingNode):
+            for _job_key, job_node in jobs_node.value:
+                steps_node = _yaml_mapping_value(job_node, "steps")
+                if not isinstance(steps_node, SequenceNode):
+                    continue
+                for step_node in steps_node.value:
+                    run_node = _yaml_mapping_value(step_node, "run")
+                    if not isinstance(run_node, ScalarNode) or not isinstance(run_node.value, str):
+                        continue
+                    workdir_node = _yaml_mapping_value(step_node, "working-directory")
+                    working_directory = workdir_node.value.strip() if isinstance(workdir_node, ScalarNode) else "."
+                    dynamic_workdir = "${{" in working_directory or "$((" in working_directory
+                    if working_directory in {"${{ github.workspace }}", "${{github.workspace}}"}:
+                        working_directory = "."
+                        dynamic_workdir = False
+                    # Block scalars start their content on the following source line.
+                    base_line = run_node.start_mark.line + (2 if run_node.style in {"|", ">"} else 1)
+                    for offset, shell_line in enumerate(_source_lines(run_node.value)):
+                        for tokens in _split_shell_commands(shell_line):
+                            invocation = _python_invocation(tokens)
+                            if invocation is None:
+                                continue
+                            kind, target = invocation
+                            line_no = base_line + offset
+                            normalized_target = target
+                            evidence_status = "static_command_candidate"
+                            if dynamic_workdir:
+                                evidence_status = "unresolved_dynamic_working_directory"
+                            elif kind == "script_command" and working_directory not in {"", "."}:
+                                directory_path = PurePosixPath(working_directory)
+                                if directory_path.is_absolute() or ".." in directory_path.parts or any(token in working_directory for token in ("${{", "}}", "$(", "*", "?")):
+                                    evidence_status = "unresolved_working_directory"
+                                else:
+                                    normalized_target = (directory_path / target).as_posix()
+                                    if ".." in PurePosixPath(normalized_target).parts:
+                                        evidence_status = "unresolved_working_directory"
+                            target_resolution = "not_evaluated"
+                            if evidence_status == "static_command_candidate":
+                                if kind == "module_command" and working_directory not in {"", "."}:
+                                    target_resolution = "unresolved_non_root_working_directory"
+                                    evidence_status = "unresolved_non_root_working_directory"
+                                elif kind == "module_command":
+                                    target_resolution = "internal_source_module" if normalized_target in known_modules or normalized_target in known_packages else "target_not_in_source_inventory"
+                                else:
+                                    target_resolution = "indexed_python_script" if normalized_target in contents and PurePosixPath(normalized_target).suffix.lower() == ".py" else "target_not_in_source_inventory"
+                                if target_resolution == "target_not_in_source_inventory":
+                                    evidence_status = "target_not_in_source_inventory"
+                            item = {
+                                "kind": kind, "target": normalized_target, "line": line_no,
+                                "command_pattern": "python -m <module>" if kind == "module_command" else "python <script>",
+                                "evidence_status": evidence_status,
+                                "target_resolution": target_resolution,
+                                "working_directory": working_directory,
+                            }
+                            commands.append(item)
+                            if is_active and evidence_status == "static_command_candidate":
+                                edge_kind = "workflow_invokes_module" if kind == "module_command" else "workflow_invokes_script"
+                                edges.append({
+                                    "kind": edge_kind, "source": path, "target": normalized_target,
+                                    "line": line_no, "evidence_status": evidence_status,
+                                    "target_resolution": target_resolution,
+                                    "working_directory": working_directory,
+                                })
+
         workflows.append({"path": path, "status": "scanned" if is_active else "archived_nested_workflow_candidate",
-                          "active_workflow_candidate": is_active, "trigger_evidence": triggers, "commands": commands})
-    return workflows, edges
+                          "active_workflow_candidate": is_active, "trigger_evidence": trigger_evidence,
+                          "trigger_status": trigger_status, "commands": commands})
+    return workflows, edges, sorted(issues, key=lambda item: (item["path"], item["kind"]))
 
 
 def _system_components(parsed: Mapping[str, Mapping[str, Any]], contents: Mapping[str, bytes], import_edges: list[dict[str, Any]], workflows: list[dict[str, Any]], workflow_edges: list[dict[str, Any]]) -> dict[str, Any]:
@@ -924,16 +1249,17 @@ def audit_repository(
     runner_revision = _validate_revision(runner_revision, "runner_revision")
     out_dir, output_rel = _validate_output_dir(repo_root, output_dir)
     manifest, contents, scope_issues = _inventory(repo_root, output_rel)
-    python_paths = sorted(p for p in contents if p.endswith(".py"))
-    modules, packages = _module_index(python_paths)
-    parsed, import_edges, parse_issues = _parse_python(contents, modules, packages)
+    source_roots, source_root_issues = _configured_python_source_roots(contents)
+    python_paths = sorted(p for p in contents if PurePosixPath(p).suffix.lower() == ".py")
+    modules, packages = _module_index(python_paths, source_roots)
+    parsed, import_edges, parse_issues = _parse_python(contents, modules, packages, source_roots)
     components = _component_inventory(parsed, import_edges)
-    workflows, workflow_edges = _workflow_inventory(contents, parsed)
+    workflows, workflow_edges, workflow_issues = _workflow_inventory(contents, parsed, source_roots)
     system = _system_components(parsed, contents, import_edges, workflows, workflow_edges)
     global_tool_loop_evidence = _tool_loop_evidence(parsed.keys(), parsed)
     system["global_tool_loop_evidence"] = global_tool_loop_evidence[:30]
     manifest_digest = _sha256(_canonical_json(manifest))
-    status = "complete" if not parse_issues and not scope_issues else "incomplete"
+    status = "complete" if not parse_issues and not scope_issues and not source_root_issues and not workflow_issues else "incomplete"
     report: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "audit": {
@@ -948,6 +1274,9 @@ def audit_repository(
             "archived_nested_workflow_count": sum(1 for item in workflows if not item.get("active_workflow_candidate")),
             "python_parse_issue_count": len(parse_issues),
             "scope_issue_count": len(scope_issues),
+            "python_source_roots": source_roots,
+            "python_source_root_issue_count": len(source_root_issues),
+            "workflow_issue_count": len(workflow_issues),
             "manifest_sha256": manifest_digest,
             "scope_policy": {
                 "extensions": sorted(SOURCE_SUFFIXES),
@@ -961,6 +1290,8 @@ def audit_repository(
         },
         "source_manifest": manifest,
         "scope_issues": scope_issues,
+        "python_source_root_issues": source_root_issues,
+        "workflow_issues": workflow_issues,
         "python_parse_issues": parse_issues,
         "components": components,
         "workflows": workflows,
