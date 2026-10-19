@@ -146,7 +146,7 @@ def test_multiple_rounds_consume_actual_tool_results_and_resolve_citations():
 
     assert report["status"] == "completed_with_incomplete_evidence"
     assert report["diagnosis_assurance"] == "references_resolved_not_independently_proven"
-    assert report["stop_reason"] == "diagnosis_submitted"
+    assert report["stop_reason"] == "diagnosis_submitted_with_coverage_or_snapshot_limitations"
     assert [item["tool"] for item in report["tool_calls"]] == ["repository_summary", "search_repository", "graph_path"]
     assert report["diagnosis"]["root_cause"]["source_references"][0]["line"] == 2
     assert len(provider.messages) == 3

@@ -234,7 +234,7 @@ def test_source_change_between_manifest_scan_and_index_fails_closed(monkeypatch,
         return report
 
     monkeypatch.setattr(module, "audit_repository", scan_then_change)
-    with pytest.raises(EvidenceToolError, match="changed during snapshot construction"):
+    with pytest.raises(EvidenceToolError, match="Indexed source changed"):
         RepositoryEvidenceTools(root)
 
 
