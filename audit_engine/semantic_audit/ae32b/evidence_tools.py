@@ -10,8 +10,11 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import math
 import os
 import re
+import stat
+from datetime import date, datetime
 from collections import Counter, defaultdict
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Mapping
@@ -41,6 +44,11 @@ MAX_PATH_DEPTH = 8
 MAX_READ_LINES = 200
 MAX_READ_CHARS = 12000
 MAX_SNIPPET_CHARS = 420
+MAX_OUTPUT_STRING_CHARS = 16000
+MAX_TOOL_RESPONSE_BYTES = 250000
+MAX_STRUCTURED_RECORD_DEPTH = 24
+MAX_STRUCTURED_RECORD_ITEMS = 10000
+MAX_STRUCTURED_STRING_CHARS = 16000
 
 _EXCLUDED_DIRS = frozenset({
     ".git", ".venv", "venv", "__pycache__", ".pytest_cache", ".mypy_cache",
@@ -69,6 +77,7 @@ _TOKEN_SHAPES = re.compile(
     r"\b(?:sk-[A-Za-z0-9_-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})\b"
 )
 _REVISION_RE = re.compile(r"^[0-9a-fA-F]{7,64}$")
+_SENSITIVE_FIELD_NAME = re.compile(r"(?i)(?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth(?:orization)?|password|client[_-]?secret|secret|credential)")
 
 
 class EvidenceToolError(ValueError):
@@ -84,7 +93,100 @@ def _sha256(data: bytes) -> str:
 
 
 def _canonical_json(value: Any) -> str:
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    """Serialize canonical JSON strictly; non-finite numbers are not JSON."""
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+
+class _StructuredRecordError(ValueError):
+    """A structured history record cannot be represented safely."""
+
+    def __init__(self, code: str):
+        super().__init__(code)
+        self.code = code
+
+
+def _normalize_record_value(
+    value: Any,
+    *,
+    active: set[int] | None = None,
+    depth: int = 0,
+    budget: list[int] | None = None,
+    issue_codes: list[str] | None = None,
+) -> Any:
+    """Convert safe YAML/JSON values to bounded, acyclic JSON-compatible data.
+
+    YAML dates are normalized to ISO-8601 strings. Non-finite floats are
+    represented explicitly and reported. Recursive aliases, excessive nesting,
+    oversized structures, non-string mapping keys, and unsupported Python values
+    reject the record rather than entering the evidence graph.
+    """
+    if active is None:
+        active = set()
+    if budget is None:
+        budget = [0]
+    if issue_codes is None:
+        issue_codes = []
+    if depth > MAX_STRUCTURED_RECORD_DEPTH:
+        raise _StructuredRecordError("maximum_nesting_depth")
+    budget[0] += 1
+    if budget[0] > MAX_STRUCTURED_RECORD_ITEMS:
+        raise _StructuredRecordError("maximum_structured_items")
+
+    if value is None or isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        if len(value) > MAX_STRUCTURED_STRING_CHARS:
+            issue_codes.append("string_value_truncated")
+            return value[:MAX_STRUCTURED_STRING_CHARS] + "…<truncated>"
+        return value
+    if isinstance(value, int):
+        if value.bit_length() > 4096:
+            raise _StructuredRecordError("integer_too_large")
+        return value
+    if isinstance(value, float):
+        if math.isfinite(value):
+            return value
+        label = "nan" if math.isnan(value) else ("positive_infinity" if value > 0 else "negative_infinity")
+        issue_codes.append("non_finite_number_normalized")
+        return f"<non-finite-number:{label}>"
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+
+    if isinstance(value, Mapping):
+        identity = id(value)
+        if identity in active:
+            raise _StructuredRecordError("recursive_value")
+        active.add(identity)
+        try:
+            normalized: dict[str, Any] = {}
+            for key, item in value.items():
+                if not isinstance(key, str):
+                    raise _StructuredRecordError("non_string_mapping_key")
+                normalized[key] = _normalize_record_value(
+                    item, active=active, depth=depth + 1, budget=budget, issue_codes=issue_codes
+                )
+            return normalized
+        finally:
+            active.remove(identity)
+
+    if isinstance(value, (list, tuple)):
+        identity = id(value)
+        if identity in active:
+            raise _StructuredRecordError("recursive_value")
+        active.add(identity)
+        try:
+            return [
+                _normalize_record_value(
+                    item, active=active, depth=depth + 1, budget=budget, issue_codes=issue_codes
+                )
+                for item in value
+            ]
+        finally:
+            active.remove(identity)
+
+    raise _StructuredRecordError("unsupported_value_type")
 
 
 def _validate_revision(value: str | None, name: str) -> str | None:
@@ -168,12 +270,145 @@ def _file_kind(path: str) -> str:
 
 
 def _redact_text(text: str) -> str:
+    """Redact the complete value before any presentation truncation."""
     text = _SECRET_ASSIGNMENT.sub(lambda m: f"{m.group(1)}{m.group(2)}<redacted>{m.group(2)}", text)
     text = _SECRET_COLON_QUOTED.sub(lambda m: f"{m.group(1)}{m.group(2)}<redacted>{m.group(2)}", text)
     text = _SECRET_YAML.sub(lambda m: f"{m.group(1)}<redacted>", text)
     text = _BEARER.sub("Bearer <redacted>", text)
     text = _TOKEN_SHAPES.sub("<redacted-token>", text)
     return text
+
+
+def _redact_then_truncate(text: str, limit: int) -> str:
+    """Apply redaction to the full input before limiting its visible prefix."""
+    redacted = _redact_text(text)
+    if len(redacted) <= limit:
+        return redacted
+    return redacted[:limit] + "…<truncated-after-redaction>"
+
+
+def _sanitize_output_value(
+    value: Any,
+    *,
+    field_name: str | None = None,
+    active: set[int] | None = None,
+    depth: int = 0,
+) -> Any:
+    """Return a detached, redacted, strict-JSON-compatible output structure."""
+    if active is None:
+        active = set()
+    if depth > 32:
+        return "<omitted:maximum-nesting-depth>"
+    if field_name and _SENSITIVE_FIELD_NAME.search(field_name) and value is not None:
+        return "<redacted>"
+    if value is None or isinstance(value, (bool, str)):
+        if isinstance(value, str):
+            return _redact_then_truncate(value, MAX_OUTPUT_STRING_CHARS)
+        return value
+    if isinstance(value, int):
+        return value if value.bit_length() <= 4096 else "<omitted:integer-too-large>"
+    if isinstance(value, float):
+        if math.isfinite(value):
+            return value
+        return "<omitted:non-finite-number>"
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, Mapping):
+        identity = id(value)
+        if identity in active:
+            return "<omitted:cyclic-reference>"
+        active.add(identity)
+        try:
+            result: dict[str, Any] = {}
+            for raw_key, item in value.items():
+                key = raw_key if isinstance(raw_key, str) else "<non-string-key>"
+                safe_key = _redact_then_truncate(key, 240)
+                if safe_key in result:
+                    suffix = 2
+                    while f"{safe_key}#{suffix}" in result:
+                        suffix += 1
+                    safe_key = f"{safe_key}#{suffix}"
+                result[safe_key] = _sanitize_output_value(
+                    item, field_name=key, active=active, depth=depth + 1
+                )
+            return result
+        finally:
+            active.remove(identity)
+    if isinstance(value, (list, tuple)):
+        identity = id(value)
+        if identity in active:
+            return "<omitted:cyclic-reference>"
+        active.add(identity)
+        try:
+            return [
+                _sanitize_output_value(item, active=active, depth=depth + 1)
+                for item in value
+            ]
+        finally:
+            active.remove(identity)
+    return f"<omitted:unsupported-{type(value).__name__}>"
+
+
+def _read_snapshot_file(root: Path, relative_path: str, expected_size: int) -> bytes:
+    """Read a manifest file without following symlinked path components where supported."""
+    parts = PurePosixPath(relative_path).parts
+    if not parts or expected_size < 0:
+        raise OSError("invalid manifest file entry")
+
+    supports_dir_fd = getattr(os, "supports_dir_fd", set())
+    if (os.name == "posix" and hasattr(os, "O_NOFOLLOW") and hasattr(os, "O_DIRECTORY")
+            and os.open in supports_dir_fd):
+        directory_fds: list[int] = []
+        file_fd: int | None = None
+        try:
+            root_fd = os.open(str(root), os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            directory_fds.append(root_fd)
+            current_fd = root_fd
+            for part in parts[:-1]:
+                next_fd = os.open(
+                    part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=current_fd
+                )
+                directory_fds.append(next_fd)
+                current_fd = next_fd
+            file_fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW, dir_fd=current_fd)
+            info = os.fstat(file_fd)
+            if not stat.S_ISREG(info.st_mode) or info.st_size != expected_size:
+                raise OSError("manifest file type or size changed")
+            with os.fdopen(file_fd, "rb", closefd=False) as stream:
+                data = stream.read(expected_size + 1)
+            if len(data) != expected_size:
+                raise OSError("manifest file size changed while reading")
+            return data
+        finally:
+            if file_fd is not None:
+                os.close(file_fd)
+            for descriptor in reversed(directory_fds):
+                os.close(descriptor)
+
+    # Portable fallback: verify each component before opening, refuse a symlink
+    # at the final component where O_NOFOLLOW exists, and recheck containment.
+    cursor = root
+    for part in parts:
+        cursor = cursor / part
+        if cursor.is_symlink():
+            raise OSError("symlinked manifest path is not permitted")
+    resolved = cursor.resolve(strict=True)
+    resolved.relative_to(root)
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    file_fd = os.open(str(resolved), flags)
+    try:
+        info = os.fstat(file_fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_size != expected_size:
+            raise OSError("manifest file type or size changed")
+        with os.fdopen(file_fd, "rb", closefd=False) as stream:
+            data = stream.read(expected_size + 1)
+        if len(data) != expected_size:
+            raise OSError("manifest file size changed while reading")
+        return data
+    finally:
+        os.close(file_fd)
 
 
 class _SymbolVisitor(ast.NodeVisitor):
@@ -295,6 +530,12 @@ class RepositoryEvidenceTools:
             row["path"]: row for row in self.report.get("source_manifest", [])
             if row.get("status") == "included"
         }
+        self.structured_record_issues: list[dict[str, str]] = []
+        self.structured_record_issue_count = 0
+        self._structured_record_issue_keys: set[tuple[str, str]] = set()
+        self.evidence_index_status = (
+            "complete" if self.report.get("audit", {}).get("status") == "complete" else "incomplete"
+        )
         self.contents: dict[str, str] = {}
         self.file_hashes: dict[str, str] = {}
         self.file_sizes: dict[str, int] = {}
@@ -310,6 +551,8 @@ class RepositoryEvidenceTools:
         self.symbols_by_id: dict[str, dict[str, Any]] = {}
         self._edge_keys: set[str] = set()
         self._build_graph()
+        if self.skipped_non_utf8_files or self.structured_record_issues:
+            self.evidence_index_status = "incomplete"
         self.graph_fingerprint = self._graph_fingerprint()
         self.graph_service = SemanticGraphAnalysisService(
             self.graph,
@@ -335,34 +578,42 @@ class RepositoryEvidenceTools:
     def list_tools(self) -> list[dict[str, Any]]:
         return build_tool_definitions()
 
+    def _record_structured_issue(self, path: str, code: str) -> None:
+        self.evidence_index_status = "incomplete"
+        key = (path, code)
+        if key in self._structured_record_issue_keys:
+            return
+        self._structured_record_issue_keys.add(key)
+        self.structured_record_issue_count += 1
+        if len(self.structured_record_issues) < 500:
+            self.structured_record_issues.append({"path": path, "code": code})
+
     def _load_indexed_content(self) -> None:
         for rel, row in sorted(self.manifest_rows.items()):
             if _is_sensitive_path(rel):
                 self.skipped_sensitive_files += 1
                 continue
-            path = self.root / PurePosixPath(rel)
-            cursor = self.root
-            unsafe = False
-            for part in PurePosixPath(rel).parts:
-                cursor = cursor / part
-                if cursor.is_symlink():
-                    unsafe = True
-                    break
-            if unsafe:
-                raise EvidenceToolError("source_changed_during_index", f"Indexed source became a symlink: {rel}")
-            try:
-                resolved = path.resolve(strict=True)
-                resolved.relative_to(self.root)
-                data = path.read_bytes()
-            except (OSError, ValueError) as exc:
-                raise EvidenceToolError("source_changed_during_index", f"Indexed source changed or became unavailable: {rel}") from exc
             expected_hash = row.get("sha256")
+            expected_size = row.get("size")
+            if not isinstance(expected_hash, str) or not isinstance(expected_size, int) or expected_size < 0:
+                raise EvidenceToolError("invalid_source_manifest", "Included source has an invalid size or digest")
+            try:
+                data = _read_snapshot_file(self.root, rel, expected_size)
+            except (OSError, ValueError) as exc:
+                raise EvidenceToolError(
+                    "source_changed_during_index",
+                    f"Indexed source changed, became unavailable, or crossed a path boundary: {rel}",
+                ) from exc
             if _sha256(data) != expected_hash:
-                raise EvidenceToolError("source_changed_during_index", f"Indexed source changed during snapshot construction: {rel}")
+                raise EvidenceToolError(
+                    "source_changed_during_index",
+                    f"Indexed source changed during snapshot construction: {rel}",
+                )
             try:
                 text = data.decode("utf-8")
             except UnicodeDecodeError:
                 self.skipped_non_utf8_files += 1
+                self.evidence_index_status = "incomplete"
                 continue
             self.contents[rel] = text
             self.file_hashes[rel] = expected_hash
@@ -575,22 +826,45 @@ class RepositoryEvidenceTools:
             record_type = record_dirs[parts[1]]
             text = self.contents[path]
             try:
-                payload = json.loads(text) if path.lower().endswith(".json") else yaml.safe_load(text)
-            except (json.JSONDecodeError, yaml.YAMLError):
+                raw_payload = json.loads(text) if path.lower().endswith(".json") else yaml.safe_load(text)
+            except (json.JSONDecodeError, yaml.YAMLError, RecursionError):
+                self._record_structured_issue(path, "invalid_structured_record")
                 continue
-            if not isinstance(payload, Mapping):
+            if not isinstance(raw_payload, Mapping):
+                self._record_structured_issue(path, "record_not_mapping")
+                continue
+            normalization_issues: list[str] = []
+            try:
+                payload = _normalize_record_value(raw_payload, issue_codes=normalization_issues)
+            except _StructuredRecordError as exc:
+                self._record_structured_issue(path, exc.code)
+                continue
+            for issue_code in sorted(set(normalization_issues)):
+                self._record_structured_issue(path, issue_code)
+            if not isinstance(payload, dict):
+                self._record_structured_issue(path, "record_not_mapping")
                 continue
             record_id = payload.get("id")
             if not isinstance(record_id, str) or not record_id.strip():
+                self._record_structured_issue(path, "missing_record_id")
                 continue
             record_id = record_id.strip()
+            if len(record_id) > 240:
+                self._record_structured_issue(path, "record_id_too_long")
+                continue
+            record_key = (record_type, record_id)
+            if record_key in record_nodes:
+                # Do not silently merge two physical records into one graph node.
+                self._record_structured_issue(path, "duplicate_record_identity")
+                continue
             node_id = f"decision_record:{record_type}:{record_id}"
             title = ""
             summary = ""
             if record_type == "decision":
                 nested = payload.get("decision") if isinstance(payload.get("decision"), Mapping) else {}
+                context = payload.get("context") if isinstance(payload.get("context"), Mapping) else {}
                 title = str(nested.get("title", ""))
-                summary = str(nested.get("statement", payload.get("context", {}).get("problem", ""))) if isinstance(payload.get("context", {}), Mapping) else str(nested.get("statement", ""))
+                summary = str(nested.get("statement", context.get("problem", "")))
             elif record_type == "action":
                 nested = payload.get("action") if isinstance(payload.get("action"), Mapping) else {}
                 title = str(nested.get("type", "action"))
@@ -606,19 +880,34 @@ class RepositoryEvidenceTools:
                 nested = payload.get("relationship") if isinstance(payload.get("relationship"), Mapping) else {}
                 title = str(nested.get("type", "link"))
                 summary = str(nested.get("explanation", ""))
+
             status_value = payload.get("status")
             if status_value is None and isinstance(payload.get("result"), Mapping):
                 status_value = payload["result"].get("status")
             review = payload.get("review") if isinstance(payload.get("review"), Mapping) else {}
+
+            def safe_review_field(field: str) -> Any:
+                value = review.get(field)
+                if value is None or isinstance(value, (str, bool, int, float)):
+                    return _sanitize_output_value(value, field_name=field)
+                self._record_structured_issue(path, f"non_scalar_review_{field}")
+                return "<invalid-structured-field>"
+
+            if status_value is None or isinstance(status_value, (str, bool, int, float)):
+                safe_status = _sanitize_output_value(status_value, field_name="status")
+            else:
+                self._record_structured_issue(path, "non_scalar_status")
+                safe_status = "<invalid-structured-field>"
+
             attributes = {
                 "record_id": record_id,
                 "record_type": record_type,
                 "path": path,
-                "title": _redact_text(title)[:240],
-                "summary": _redact_text(summary)[:800],
-                "status": str(status_value)[:80] if status_value is not None else None,
-                "human_review_required": review.get("human_review_required"),
-                "approved": review.get("approved"),
+                "title": _redact_then_truncate(title, 240),
+                "summary": _redact_then_truncate(summary, 800),
+                "status": safe_status,
+                "human_review_required": safe_review_field("human_review_required"),
+                "approved": safe_review_field("approved"),
                 "source_sha256": self.file_hashes[path],
             }
             self._add_node(node_id, "DecisionMemoryRecord", attributes)
@@ -626,7 +915,7 @@ class RepositoryEvidenceTools:
                 "path": path, "line": 1, "source_sha256": self.file_hashes[path],
                 "observed_by": "safe_structured_record_parse",
             })
-            record_nodes[(record_type, record_id)] = node_id
+            record_nodes[record_key] = node_id
             records.append({"record_type": record_type, "record_id": record_id, "node_id": node_id,
                             "path": path, "payload": payload, "text": text})
 
@@ -684,11 +973,16 @@ class RepositoryEvidenceTools:
     def _provenance(self) -> dict[str, Any]:
         return {
             "source_revision": self.source_revision,
+            "source_revision_status": "caller_asserted_not_git_verified" if self.source_revision else "not_provided",
             "runner_revision": self.runner_revision,
+            "runner_revision_status": "caller_asserted_not_git_verified" if self.runner_revision else "not_provided",
             "source_manifest_sha256": self.manifest_sha256,
             "graph_fingerprint": self.graph_fingerprint,
             "graph_projection_version": GRAPH_PROJECTION_VERSION,
             "source_snapshot_status": self.report.get("audit", {}).get("status", "unknown"),
+            "evidence_index_status": self.evidence_index_status,
+            "skipped_non_utf8_file_count": self.skipped_non_utf8_files,
+            "structured_record_issue_count": self.structured_record_issue_count,
         }
 
     def _envelope(self, tool: str, status: str, result: dict[str, Any] | None = None,
@@ -705,33 +999,63 @@ class RepositoryEvidenceTools:
             value["error"] = error
         return value
 
+    def _finalize_response(self, response: dict[str, Any]) -> dict[str, Any]:
+        """Detach and sanitize all output before it crosses the evidence boundary."""
+        safe = _sanitize_output_value(response)
+        try:
+            encoded = json.dumps(safe, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        except (TypeError, ValueError):
+            safe = {
+                "schema_version": SCHEMA_VERSION,
+                "tool": str(response.get("tool", "unknown"))[:100],
+                "status": "error",
+                "provenance": _sanitize_output_value(self._provenance()),
+                "error": {"code": "response_not_json_compatible", "message": "Tool output failed strict JSON validation"},
+            }
+            encoded = json.dumps(safe, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        if len(encoded.encode("utf-8")) > MAX_TOOL_RESPONSE_BYTES:
+            safe = {
+                "schema_version": SCHEMA_VERSION,
+                "tool": str(response.get("tool", "unknown"))[:100],
+                "status": "error",
+                "provenance": _sanitize_output_value(self._provenance()),
+                "error": {
+                    "code": "tool_response_too_large",
+                    "message": "Tool output exceeded the safe response-size limit; no partial result was returned",
+                },
+            }
+        return safe
+
     def invoke(self, tool_name: str, arguments: Mapping[str, Any] | None = None) -> dict[str, Any]:
-        """Invoke one approved tool and return a stable JSON-compatible envelope."""
+        """Invoke an approved tool and return detached, redacted strict JSON data."""
         if not isinstance(tool_name, str) or tool_name not in self._handlers:
-            return self._envelope(str(tool_name)[:100], "error", error={
+            response = self._envelope(str(tool_name)[:100], "error", error={
                 "code": "unknown_tool", "message": "Tool name is not in the approved AE-32B registry",
             })
+            return self._finalize_response(response)
         if arguments is None:
             arguments = {}
         if not isinstance(arguments, Mapping):
-            return self._envelope(tool_name, "error", error={
+            response = self._envelope(tool_name, "error", error={
                 "code": "invalid_arguments", "message": "Tool arguments must be a JSON object",
             })
+            return self._finalize_response(response)
         try:
             result = self._handlers[tool_name](dict(arguments))
-            return self._envelope(tool_name, "ok", result=result)
+            response = self._envelope(tool_name, "ok", result=result)
         except EvidenceToolError as exc:
-            return self._envelope(tool_name, "error", error={"code": exc.code, "message": str(exc)})
+            response = self._envelope(tool_name, "error", error={"code": exc.code, "message": str(exc)})
         except (TypeError, ValueError, KeyError) as exc:
-            # Argument failures are intentionally concise; never echo supplied secrets.
-            return self._envelope(tool_name, "error", error={
+            # Argument failures are concise; the finalizer redacts their text.
+            response = self._envelope(tool_name, "error", error={
                 "code": "invalid_arguments", "message": str(exc)[:240] or "Invalid tool arguments",
             })
         except Exception:
-            # Fail closed: do not expose a stack trace or arbitrary exception payload to a model.
-            return self._envelope(tool_name, "error", error={
+            # Never expose stack traces or arbitrary exception payloads to a model.
+            response = self._envelope(tool_name, "error", error={
                 "code": "tool_internal_error", "message": "Evidence tool failed safely; inspect runner logs",
             })
+        return self._finalize_response(response)
 
     @staticmethod
     def _check_keys(args: dict[str, Any], allowed: set[str], required: set[str] = frozenset()) -> None:
@@ -781,6 +1105,9 @@ class RepositoryEvidenceTools:
             "manifest_included_file_count": len(self.manifest_rows),
             "skipped_sensitive_file_count": self.skipped_sensitive_files,
             "skipped_non_utf8_file_count": self.skipped_non_utf8_files,
+            "evidence_index_status": self.evidence_index_status,
+            "structured_record_issue_count": self.structured_record_issue_count,
+            "structured_record_issues": list(self.structured_record_issues[:50]),
             "python_parse_issue_count": len(self.report.get("python_parse_issues", [])),
             "scope_issue_count": len(self.report.get("scope_issues", [])),
             "graph_node_count": len(self.graph.nodes),
@@ -821,7 +1148,7 @@ class RepositoryEvidenceTools:
                     "path": path,
                     "line": line_number,
                     "match_kind": "content",
-                    "snippet": _redact_text(line[:MAX_SNIPPET_CHARS]),
+                    "snippet": _redact_then_truncate(line, MAX_SNIPPET_CHARS),
                     "source_sha256": self.file_hashes[path],
                 })
                 if len(matches) >= max_results:
@@ -1050,7 +1377,7 @@ class RepositoryEvidenceTools:
                         "path": path,
                         "relationship": "text_reference",
                         "line": line_number,
-                        "snippet": _redact_text(line[:MAX_SNIPPET_CHARS]),
+                        "snippet": _redact_then_truncate(line, MAX_SNIPPET_CHARS),
                         "source_sha256": self.file_hashes[path],
                     }
                     break
@@ -1198,7 +1525,7 @@ class RepositoryEvidenceTools:
                     continue
                 matches.append({
                     "path": path, "line": line_number,
-                    "snippet": _redact_text(line[:MAX_SNIPPET_CHARS]),
+                    "snippet": _redact_then_truncate(line, MAX_SNIPPET_CHARS),
                     "source_sha256": self.file_hashes[path],
                 })
                 if len(matches) >= max_results:

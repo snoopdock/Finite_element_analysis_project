@@ -7,6 +7,7 @@ import time
 
 import requests
 
+from providers.safe_errors import sanitize_provider_error
 from processing.response_extractor import (
     LLMResponseExtractor,
     LLMResponseExtractionError,
@@ -143,7 +144,9 @@ class CloudflareProvider:
 
                 if resp.status_code >= 400:
                     self.failed_calls += 1
-                    return None, f"HTTP {resp.status_code}: {resp.text[:300]}"
+                    # Upstream bodies may echo credentials or user-supplied content.
+                    # Keep status diagnostics but never forward the raw body.
+                    return None, f"HTTP {resp.status_code}: upstream error body omitted"
 
                 data = resp.json()
                 usage = data.get("usage") if isinstance(data, dict) else None
@@ -172,7 +175,7 @@ class CloudflareProvider:
                     )
                 except LLMResponseExtractionError as exc:
                     self.failed_calls += 1
-                    return None, f"Extraction failed: {exc.message}"
+                    return None, sanitize_provider_error(f"Extraction failed: {exc.message}")
 
                 self.call_counts[model] = self.call_counts.get(model, 0) + 1
                 self.successful_calls += 1
@@ -183,12 +186,12 @@ class CloudflareProvider:
             except requests.exceptions.RequestException as exc:
                 if attempt + 1 >= self.max_retries:
                     self.failed_calls += 1
-                    return None, str(exc)
+                    return None, sanitize_provider_error(f"Transport error: {type(exc).__name__}")
                 time.sleep(10 * (attempt + 1))
 
-            except ValueError as exc:
+            except ValueError:
                 self.failed_calls += 1
-                return None, f"Invalid JSON response: {exc}"
+                return None, "Invalid JSON response from Cloudflare provider"
 
         self.failed_calls += 1
         return None, "Max retries exceeded"

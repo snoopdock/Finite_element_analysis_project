@@ -13,6 +13,8 @@ from typing import Dict, List, Optional, Tuple
 
 import requests
 
+from providers.safe_errors import sanitize_provider_error
+
 
 PROVIDER_ENDPOINTS = {
     "nararouter": "https://router.bynara.id/v1/chat/completions",
@@ -164,7 +166,7 @@ class OpenAICompatibleProvider:
         per_model["total_tokens"] += total
 
     def _error(self, message: str) -> Tuple[None, str]:
-        safe = str(message)[:500]
+        safe = sanitize_provider_error(message)
         self.last_errors.append(safe)
         self.last_errors = self.last_errors[-20:]
         self.failed_calls += 1

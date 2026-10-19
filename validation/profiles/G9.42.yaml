@@ -1,0 +1,14 @@
+id: G9.42
+name: AE-32C Patch 1 Evidence Integrity and Provider Error Safety
+# Patch 1 secures evidence output and structured history records before live LLM use.
+# No live provider credentials are required by this profile.
+target_tests:
+  - tests/semantic_audit/test_ae32c_patch1_evidence_integrity.py
+  - tests/semantic_audit/test_ae32b_evidence_tools.py
+  - tests/semantic_audit/test_ae32a_architecture_wiring_audit.py
+  - tests/test_provider_safe_errors.py
+  - tests/test_provider_openai_compatible.py
+  - tests/test_provider_factory.py
+regression:
+  enabled: true
+  path: tests/
