@@ -156,6 +156,63 @@ def test_multiple_rounds_consume_actual_tool_results_and_resolve_citations():
     assert "E0003" in provider.messages[2][-1]["content"]
 
 
+
+def test_finalization_rounds_reject_extra_tools_and_reach_final_diagnosis():
+    limits = InvestigationLimits(
+        max_rounds=4,
+        finalization_rounds_reserved=2,
+        max_tool_calls=8,
+        max_tokens_per_call=1_000,
+        max_total_tokens=12_000,
+        max_total_prompt_chars=500_000,
+        max_elapsed_seconds=30,
+    )
+    investigator, provider, tools = make_investigator([
+        action_tool("search_repository", {"query": "total_calls", "mode": "content", "max_results": 5}),
+        action_tool("graph_path", {"source": "module:main", "target": "module:providers.factory", "max_depth": 3}),
+        action_tool("search_repository", {"query": "another detail", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ], limits=limits)
+
+    report = investigator.run("Investigate a provider interface mismatch.")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert report["stop_reason"] == "diagnosis_submitted_with_coverage_or_snapshot_limitations"
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository", "graph_path"]
+    assert report["budget"]["finalization_rounds_reserved"] == 2
+    assert report["budget"]["finalization_start_round"] == 3
+    assert report["budget"]["finalization_rounds_used"] == 2
+    assert report["budget"]["finalization_tool_requests_rejected"] == 1
+    assert any(event.get("event") == "finalization_tool_request_rejected" for event in report["errors"])
+    assert "finalization_mode" in provider.messages[2][-1]["content"]
+    assert any("validation_feedback" in message["content"] for message in provider.messages[3])
+
+
+def test_repeated_tool_requests_during_finalization_stop_without_dispatch():
+    limits = InvestigationLimits(
+        max_rounds=3,
+        finalization_rounds_reserved=2,
+        max_tool_calls=8,
+        max_tokens_per_call=1_000,
+        max_total_tokens=12_000,
+        max_total_prompt_chars=500_000,
+        max_elapsed_seconds=30,
+    )
+    investigator, provider, tools = make_investigator([
+        action_tool("search_repository", {"query": "total_calls", "mode": "content", "max_results": 5}),
+        action_tool("graph_path", {"source": "module:main", "target": "module:providers.factory", "max_depth": 3}),
+        action_tool("search_repository", {"query": "more", "mode": "content", "max_results": 5}),
+    ], limits=limits)
+
+    report = investigator.run("Investigate a provider interface mismatch.")
+
+    assert report["status"] == "inconclusive"
+    assert report["stop_reason"] == "finalization_budget_exhausted"
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
+    assert report["budget"]["finalization_rounds_used"] == 2
+    assert report["budget"]["finalization_tool_requests_rejected"] == 2
+    assert len(provider.messages) == 3
+
 def test_verified_snapshot_can_produce_completed_status(tmp_path: Path):
     repository = tmp_path / "repo"
     source_path = repository / SOURCE

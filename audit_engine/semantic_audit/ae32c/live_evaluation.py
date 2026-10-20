@@ -78,8 +78,9 @@ def build_live_investigation_limits() -> InvestigationLimits:
     separate cap still bounds a single investigation.
     """
     return InvestigationLimits(
-        max_rounds=8,
+        max_rounds=9,
         max_tool_calls=12,
+        finalization_rounds_reserved=2,
         max_tokens_per_call=LIVE_GRAPH_MAX_TOKENS,
         max_total_tokens=180_000,
         max_response_chars=40_000,

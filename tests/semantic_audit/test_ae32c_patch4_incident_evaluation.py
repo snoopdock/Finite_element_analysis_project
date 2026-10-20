@@ -276,8 +276,9 @@ def test_live_investigation_limits_allow_multiround_evidence_work():
     from audit_engine.semantic_audit.ae32c.live_evaluation import build_live_investigation_limits
 
     limits = build_live_investigation_limits()
-    assert limits.max_rounds == 8
+    assert limits.max_rounds == 9
     assert limits.max_tool_calls == 12
+    assert limits.finalization_rounds_reserved == 2
     assert limits.max_tokens_per_call == 8_000
     assert limits.max_total_tokens == 180_000
     assert limits.max_total_prompt_chars == 200_000
