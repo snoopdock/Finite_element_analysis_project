@@ -64,7 +64,7 @@ jobs:
     name: Run bounded AE-32C live evaluation
     needs: guard
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 22
     defaults:
       run:
         shell: bash
