@@ -13,7 +13,7 @@ The workflow definition must be installed on `main`, because GitHub exposes `wor
 3. Checks out `stage1/section-uuids` without persistent Git credentials.
 4. Verifies that the AE-32C live evaluator, evidence tools, controlled incident fixture, provider-safe-error module, and G9.42 profile exist.
 5. Installs only the minimal runtime dependencies needed by this evaluator (`requests` and `PyYAML`), rather than installing arbitrary requirements from the target branch.
-6. Makes one baseline request and then, if the baseline succeeds, up to four graph-assisted investigation requests. Provider timeout is set to 30 seconds and retry count to one. The investigator has its own bounded rounds, tool calls, response sizes, token estimates, and 90-second budget.
+6. Makes one baseline request and then, if the baseline succeeds, up to eight graph-assisted investigation requests. Provider timeout is set to 30 seconds and retry count to one. The investigator allows up to 8,000 output tokens per call, 180,000 estimated/reported total tokens, 200,000 cumulative prompt characters and 300 seconds, while retaining bounded rounds, tool calls, response sizes and evidence storage.
 7. Uploads the comparison report and run logs even when the evaluator or smoke gate fails.
 8. Marks the workflow failed unless the baseline completes, the graph-assisted path performs multiple rounds and at least one evidence-tool call, the source snapshot is verified, and the final citations are resolved.
 
@@ -64,7 +64,7 @@ A failed gate still uploads evidence. Review the Actions summary and artifact be
 - Target branch: fixed to `stage1/section-uuids`.
 - Job timeout: 12 minutes.
 - Provider timeout: 30 seconds; retries: one.
-- Provider-call budget: one baseline request plus at most four graph-assisted rounds.
+- Provider-call budget: one baseline request plus at most eight graph-assisted model rounds; the investigator remains bounded by its total token, prompt-size, evidence-size and elapsed-time limits.
 - No target fixture execution, shell tool, source modification, patch application, commit, or push.
 - Output is written under `$RUNNER_TEMP`, outside the source checkout.
 - Existing validation workflows remain unchanged.
