@@ -1,0 +1,178 @@
+name: AE-32C Provider Compatibility Preflight (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "Provider to probe without starting a repository investigation"
+        required: true
+        type: choice
+        default: nararouter
+        options:
+          - nararouter
+          - cloudflare
+          - openrouter
+      model:
+        description: "Optional provider-specific model override; leave blank for provider default"
+        required: false
+        type: string
+        default: ""
+      confirm_live_provider_calls:
+        description: "Authorize one transport probe and, for Cloudflare, one strict-JSON probe"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-provider-preflight-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Confirm provider preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require main workflow ref, explicit consent, and supported provider
+        shell: bash
+        env:
+          WORKFLOW_REF: ${{ github.ref }}
+          CONFIRM_LIVE_CALLS: ${{ inputs.confirm_live_provider_calls }}
+          SELECTED_PROVIDER: ${{ inputs.provider }}
+        run: |
+          set -euo pipefail
+          if [[ "$WORKFLOW_REF" != "refs/heads/main" ]]; then
+            echo "::error::Run this workflow from main only."
+            exit 1
+          fi
+          if [[ "$CONFIRM_LIVE_CALLS" != "true" ]]; then
+            echo "::error::Explicit confirmation is required before live provider calls."
+            exit 1
+          fi
+          case "$SELECTED_PROVIDER" in
+            cloudflare|nararouter|openrouter) ;;
+            *) echo "::error::Unsupported provider selection."; exit 1 ;;
+          esac
+          echo "Provider-only preflight authorized for $SELECTED_PROVIDER. No repository investigation will run."
+
+  preflight:
+    name: Run bounded provider compatibility preflight
+    needs: guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout AE-32C implementation from the development branch
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prepare artifacts and verify preflight entry points
+        env:
+          SELECTED_PROVIDER: ${{ inputs.provider }}
+        run: |
+          set -euo pipefail
+          artifact_root="$RUNNER_TEMP/ae32c-provider-preflight"
+          mkdir -p "$artifact_root"
+          source_sha="$(git -C source rev-parse HEAD)"
+          printf '{\n  "workflow_run_id": "%s",\n  "workflow_ref": "%s",\n  "workflow_commit": "%s",\n  "source_branch": "stage1/section-uuids",\n  "source_commit": "%s",\n  "provider": "%s",\n  "mode": "provider_preflight"\n}\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_REF" "$GITHUB_SHA" "$source_sha" "$SELECTED_PROVIDER" \
+            > "$artifact_root/run-context.json"
+          required_files=(
+            "audit_engine/semantic_audit/ae32c/provider_preflight.py"
+            "providers/factory.py"
+            "providers/cloudflare.py"
+            "providers/openai_compatible.py"
+            "providers/safe_errors.py"
+          )
+          for relative_path in "${required_files[@]}"; do
+            if [[ ! -f "source/$relative_path" ]]; then
+              echo "::error::Required provider preflight file is missing: $relative_path"
+              exit 1
+            fi
+          done
+          echo "Source commit: $source_sha"
+          echo "No provider secret is read in this preparation step."
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal runtime dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            'requests>=2.31.0,<3.0.0' \
+            'PyYAML>=6.0.0,<7.0.0'
+
+      - name: Validate selected provider secret and run provider-only preflight
+        id: preflight-run
+        continue-on-error: true
+        working-directory: source
+        env:
+          FEA_LLM_PROVIDER: ${{ inputs.provider }}
+          FEA_LLM_MODEL: ${{ inputs.model }}
+          FEA_LLM_REQUEST_TIMEOUT_SECONDS: ${{ inputs.provider == 'nararouter' && '90' || inputs.provider == 'cloudflare' && '45' || '30' }}
+          FEA_LLM_RETRY_ATTEMPTS: ${{ inputs.provider == 'nararouter' && '2' || inputs.provider == 'cloudflare' && '2' || '1' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
+          CLOUDFLARE_API_TOKEN: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_API_TOKEN || '' }}
+          NARAROUTER_API_KEY: ${{ inputs.provider == 'nararouter' && secrets.NARAROUTER_API_KEY || '' }}
+          OPENROUTER_TOKEN: ${{ inputs.provider == 'openrouter' && secrets.OPENROUTER_TOKEN || '' }}
+        run: |
+          set -euo pipefail
+          case "$FEA_LLM_PROVIDER" in
+            cloudflare)
+              test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::CLOUDFLARE_ACCOUNT_ID is missing"; exit 2; }
+              test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::CLOUDFLARE_API_TOKEN is missing"; exit 2; }
+              ;;
+            nararouter)
+              test -n "$NARAROUTER_API_KEY" || { echo "::error::NARAROUTER_API_KEY is missing"; exit 2; }
+              ;;
+            openrouter)
+              test -n "$OPENROUTER_TOKEN" || { echo "::error::OPENROUTER_TOKEN is missing"; exit 2; }
+              ;;
+            *) echo "::error::Unsupported provider"; exit 2 ;;
+          esac
+          artifact_root="$RUNNER_TEMP/ae32c-provider-preflight"
+          args=(--confirm-live-provider-calls --provider "$FEA_LLM_PROVIDER" --output-dir "$artifact_root")
+          if [[ -n "$FEA_LLM_MODEL" ]]; then args+=(--model "$FEA_LLM_MODEL"); fi
+          set +e
+          python -m audit_engine.semantic_audit.ae32c.provider_preflight "${args[@]}" 2>&1 | tee "$artifact_root/preflight.log"
+          run_exit_code="${PIPESTATUS[0]}"
+          set -e
+          printf '%s\n' "$run_exit_code" > "$artifact_root/runner-exit-code.txt"
+          exit "$run_exit_code"
+
+      - name: Upload provider preflight evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-provider-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ae32c-provider-preflight/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Enforce provider preflight result after evidence upload
+        if: always()
+        env:
+          ARTIFACT_ROOT: ${{ runner.temp }}/ae32c-provider-preflight
+        run: |
+          set -euo pipefail
+          if [[ ! -f "$ARTIFACT_ROOT/runner-exit-code.txt" ]]; then
+            echo "::error::Provider preflight did not produce an exit-code record; inspect logs and uploaded artifacts."
+            exit 1
+          fi
+          if [[ "$(cat "$ARTIFACT_ROOT/runner-exit-code.txt")" != "0" ]]; then
+            echo "Provider compatibility preflight failed. Evidence was uploaded for review."
+            exit 1
+          fi
+          echo "Provider compatibility preflight passed. This does not establish full investigation success."

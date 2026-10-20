@@ -12,6 +12,11 @@ on:
           - cloudflare
           - nararouter
           - openrouter
+      model:
+        description: "Optional provider-specific model override; leave blank to use the provider default"
+        required: false
+        type: string
+        default: ""
       confirm_live_provider_calls:
         description: "Authorize one baseline request and up to nine graph-assisted model calls"
         required: true
@@ -125,8 +130,9 @@ jobs:
         working-directory: source
         env:
           FEA_LLM_PROVIDER: ${{ inputs.provider }}
-          FEA_LLM_REQUEST_TIMEOUT_SECONDS: "30"
-          FEA_LLM_RETRY_ATTEMPTS: "1"
+          FEA_LLM_MODEL: ${{ inputs.model }}
+          FEA_LLM_REQUEST_TIMEOUT_SECONDS: ${{ inputs.provider == 'nararouter' && '90' || inputs.provider == 'cloudflare' && '45' || '30' }}
+          FEA_LLM_RETRY_ATTEMPTS: ${{ inputs.provider == 'nararouter' && '2' || inputs.provider == 'cloudflare' && '2' || '1' }}
           CLOUDFLARE_ACCOUNT_ID: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
           CLOUDFLARE_API_TOKEN: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_API_TOKEN || '' }}
           NARAROUTER_API_KEY: ${{ inputs.provider == 'nararouter' && secrets.NARAROUTER_API_KEY || '' }}
