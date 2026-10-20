@@ -175,24 +175,69 @@ def test_verified_snapshot_can_produce_completed_status(tmp_path: Path):
     assert report["status"] == "completed"
 
 
-def test_unknown_tool_request_is_rejected_without_dispatch():
+def test_unknown_tool_request_is_rejected_without_dispatch_when_recovery_disabled():
     investigator, provider, tools = make_investigator([
         action_tool("run_shell", {"command": "echo unsafe"}),
-    ])
+    ], limits=InvestigationLimits(max_invalid_tool_retries=0))
     report = investigator.run("Investigate a failed workflow")
     assert report["status"] == "incomplete"
     assert report["stop_reason"] == "invalid_tool_request"
     assert len(provider.messages) == 1
     assert [call[0] for call in tools.calls] == ["repository_summary"]
+    assert any(event.get("event") == "tool_action_recovery_exhausted" for event in report["errors"])
 
 
-def test_unknown_tool_arguments_are_rejected_before_dispatch():
-    investigator, _, tools = make_investigator([
+def test_unknown_tool_arguments_receive_feedback_and_recover_once():
+    investigator, provider, tools = make_investigator([
         action_tool("search_repository", {"query": "observed", "unexpected": "extra"}),
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
     ])
     report = investigator.run("Investigate a failed workflow")
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
+    assert report["budget"]["invalid_tool_retries_used"] == 1
+    feedback_envelope = json.loads(provider.messages[1][-1]["content"])
+    feedback = feedback_envelope["validation_feedback"]
+    assert feedback["status"] == "rejected_before_dispatch"
+    assert feedback["unknown_fields"] == ["unexpected"]
+    assert "No evidence tool was executed" in feedback["message"]
+    assert any(event.get("event") == "tool_action_recovery_offered" for event in report["errors"])
+
+
+def test_invalid_enum_receives_allowed_values_and_corrected_action_succeeds():
+    investigator, provider, tools = make_investigator([
+        action_tool("search_symbols", {"query": "total_calls", "kind": "method", "max_results": 5}),
+        action_tool("search_symbols", {"query": "total_calls", "kind": "function", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=False),
+    ])
+    report = investigator.run("Investigate a provider interface failure")
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert report["stop_reason"] == "diagnosis_submitted_with_coverage_or_snapshot_limitations"
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_symbols"]
+    feedback_envelope = json.loads(provider.messages[1][-1]["content"])
+    feedback = feedback_envelope["validation_feedback"]
+    assert feedback["field_guidance"] == [{
+        "field": "kind",
+        "allowed_values": ["any", "class", "function", "async_function"],
+    }]
+    assert '"method"' not in json.dumps(feedback)
+    assert report["budget"]["invalid_tool_retries_used"] == 1
+
+
+def test_repeated_invalid_tool_schema_stops_after_one_correction_opportunity():
+    investigator, provider, tools = make_investigator([
+        action_tool("search_symbols", {"query": "total_calls", "kind": "method", "max_results": 5}),
+        action_tool("search_symbols", {"query": "total_calls", "kind": "property", "max_results": 5}),
+    ])
+    report = investigator.run("Investigate a provider interface failure")
+    assert report["status"] == "incomplete"
     assert report["stop_reason"] == "invalid_tool_request"
+    assert report["budget"]["invalid_tool_retries_used"] == 1
+    assert report["budget"]["max_invalid_tool_retries"] == 1
     assert [call[0] for call in tools.calls] == ["repository_summary"]
+    assert len(provider.messages) == 2
+    assert any(event.get("event") == "tool_action_recovery_exhausted" for event in report["errors"])
 
 
 def test_duplicate_json_keys_are_rejected():
