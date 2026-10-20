@@ -18,6 +18,7 @@ from audit_engine.semantic_audit.ae32c.evaluation import (
     summarize_graph_report,
 )
 from audit_engine.semantic_audit.ae32c.investigator import InvestigationLimits, RepositoryInvestigator
+from audit_engine.semantic_audit.ae32c.provider_preflight import run_preflight
 from audit_engine.semantic_audit.ae32c.live_evaluation import (
     LIVE_GRAPH_MAX_CALLS,
     build_live_investigation_limits,
@@ -287,3 +288,103 @@ def test_live_investigation_limits_allow_multiround_evidence_work():
     assert limits.max_total_prompt_chars == 200_000
     assert limits.max_elapsed_seconds == 300
     assert limits.max_response_chars == 40_000
+
+
+class PreflightFakeProvider:
+    provider_name = "preflight-fake"
+    model = "preflight-fake-model"
+
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.calls = []
+
+    def chat(self, messages, temperature=0.2, max_tokens=None, model=None):
+        self.calls.append({"messages": [dict(item) for item in messages], "temperature": temperature, "max_tokens": max_tokens, "model": model})
+        if not self.responses:
+            return None, "scripted response queue exhausted"
+        return self.responses.pop(0)
+
+    def get_stats(self):
+        return {
+            "provider": self.provider_name,
+            "model": self.model,
+            "timeout_seconds": 90,
+            "max_retries": 2,
+            "http_attempts": len(self.calls),
+            "http_status_counts": {"200": len(self.calls)},
+            "successful_calls": len(self.calls),
+            "failed_calls": 0,
+        }
+
+
+def _fake_preflight_builder(provider):
+    def build(config, budget, provider_name, model_override="", environ=None):
+        assert budget["max_tokens_per_call"] == 256
+        assert budget["max_llm_calls_per_run"] == (2 if provider_name == "cloudflare" else 1)
+        return provider
+    return build
+
+
+def test_nararouter_preflight_checks_transport_only_and_does_not_start_investigation():
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None)])
+    report = run_preflight("nararouter", provider_builder=_fake_preflight_builder(fake), environ={})
+    assert report["status"] == "passed"
+    assert report["transport_probe"]["status"] == "completed"
+    assert report["transport_probe"]["sentinel_match"] is True
+    assert report["json_action_probe"]["status"] == "not_applicable"
+    assert len(fake.calls) == 1
+    assert fake.calls[0]["max_tokens"] == 128
+
+
+def test_cloudflare_preflight_accepts_valid_strict_json_action_shape():
+    action = json.dumps({"action": "tool_call", "tool": "repository_summary", "arguments": {}, "reason": "Check available repository evidence."})
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (action, None)])
+    report = run_preflight("cloudflare", provider_builder=_fake_preflight_builder(fake), environ={})
+    assert report["status"] == "passed"
+    assert report["json_action_probe"]["strict_json_valid"] is True
+    assert report["json_action_probe"]["action_schema_valid"] is True
+    assert len(fake.calls) == 2
+    assert "Check available repository evidence." not in json.dumps(report)
+
+
+def test_cloudflare_preflight_classifies_malformed_json_without_storing_response():
+    raw_response = "```json\n{ action: tool_call }\n```"
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (raw_response, None)])
+    report = run_preflight("cloudflare", provider_builder=_fake_preflight_builder(fake), environ={})
+    assert report["status"] == "json_compatibility_failed"
+    assert report["json_action_probe"]["status"] == "invalid_json"
+    assert report["json_action_probe"]["parse_error_code"] == "json_syntax_error"
+    assert raw_response not in json.dumps(report)
+
+
+def test_provider_preflight_failure_stops_before_json_probe():
+    fake = PreflightFakeProvider([(None, "nararouter transport error: ReadTimeout")])
+    report = run_preflight("nararouter", provider_builder=_fake_preflight_builder(fake), environ={})
+    assert report["status"] == "provider_failed"
+    assert report["transport_probe"]["status"] == "provider_failed"
+    assert report["json_action_probe"]["status"] == "not_applicable"
+    assert len(fake.calls) == 1
+
+
+def test_cloudflare_json_probe_rejects_duplicate_keys_and_wrong_action_schema():
+    duplicate = '{"action":"tool_call","action":"final","tool":"repository_summary","arguments":{},"reason":"probe"}'
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (duplicate, None)])
+    report = run_preflight("cloudflare", provider_builder=_fake_preflight_builder(fake), environ={})
+    assert report["status"] == "json_compatibility_failed"
+    assert report["json_action_probe"]["strict_json_valid"] is False
+    assert report["json_action_probe"]["parse_error_code"] == "json_syntax_error"
+
+
+
+def test_provider_preflight_rejects_unsafe_model_override_before_provider_initialization():
+    builder_called = False
+
+    def builder(config, budget, provider_name, model_override="", environ=None):
+        nonlocal builder_called
+        builder_called = True
+        raise AssertionError("provider must not be initialized for an invalid model override")
+
+    report = run_preflight("cloudflare", "model name with spaces", provider_builder=builder, environ={})
+    assert report["status"] == "configuration_failed"
+    assert report["error"] == "invalid_model_override"
+    assert builder_called is False

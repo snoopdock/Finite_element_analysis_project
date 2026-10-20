@@ -11,6 +11,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import sys
 import time
 from typing import Any
@@ -170,6 +171,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-dir", required=True,
                         help="Existing directory outside the repository checkout, e.g. RUNNER_TEMP.")
     args = parser.parse_args(argv)
+    requested_model = args.model.strip()
+    if requested_model and (len(requested_model) > 200 or re.fullmatch(r"[A-Za-z0-9@._:/-]{1,200}", requested_model) is None):
+        parser.error("--model must be at most 200 characters and use only letters, digits, @, ., _, :, /, or -")
 
     if not args.confirm_live_provider_calls:
         parser.error("live provider calls are disabled unless --confirm-live-provider-calls is supplied")
