@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This patch adds a separate, manually triggered GitHub Actions workflow for the AE-32C controlled live-provider evaluation. It does not modify the existing Manual Validation Dispatcher, the validation registry, or the FEA full-pipeline provider benchmark.
+This guide documents the separate, manually triggered GitHub Actions workflow for the AE-32C controlled live-provider evaluation. Corrective v8 also adds a separate provider-compatibility preflight workflow. Neither workflow modifies the existing Manual Validation Dispatcher, the validation registry, or the FEA full-pipeline provider benchmark.
 
-The workflow definition must be installed on `main`, because GitHub exposes `workflow_dispatch` workflows from the default branch. The workflow then checks out and executes the AE-32C implementation from the fixed `stage1/section-uuids` branch.
+The workflow definitions must be installed on `main`, because GitHub exposes `workflow_dispatch` workflows from the default branch. Each workflow checks out the AE-32C implementation from the fixed `stage1/section-uuids` branch. The optional model override accepts a bounded model identifier containing letters, digits, `@`, `.`, `_`, `:`, `/`, or `-` only.
 
 ## What the workflow does
 
@@ -13,25 +13,22 @@ The workflow definition must be installed on `main`, because GitHub exposes `wor
 3. Checks out `stage1/section-uuids` without persistent Git credentials.
 4. Verifies that the AE-32C live evaluator, evidence tools, controlled incident fixture, provider-safe-error module, and G9.42 profile exist.
 5. Installs only the minimal runtime dependencies needed by this evaluator (`requests` and `PyYAML`), rather than installing arbitrary requirements from the target branch.
-6. Makes one baseline request and then, if the baseline succeeds, up to nine graph-assisted model calls. Provider timeout is set to 30 seconds and retry count to one. The investigator has its own bounded rounds, tool calls, response sizes, token estimates, and 300-second investigation deadline.
+6. Uses provider-specific transport settings: NaraRouter 90 seconds/2 attempts, Cloudflare 45 seconds/2 attempts, and OpenRouter 30 seconds/1 attempt. It makes one baseline request and then, if the baseline succeeds, up to nine graph-assisted model calls. The investigator retains its own bounded rounds, tool calls, response sizes, token estimates, and 300-second investigation deadline.
 7. Uploads the comparison report and run logs even when the evaluator or smoke gate fails.
 8. Marks the workflow failed unless the baseline completes, the graph-assisted path performs multiple rounds and at least one evidence-tool call, the source snapshot is verified, and the final citations are resolved.
 
 ## Install
 
-Copy:
+Copy both workflow files to the matching paths on the repository's `main` branch:
 
-`MAIN_BRANCH/.github/workflows/ae32c-live-evaluation.yml`
+- `MAIN_BRANCH/.github/workflows/ae32c-live-evaluation.yml` → `.github/workflows/ae32c-live-evaluation.yml`
+- `MAIN_BRANCH/.github/workflows/ae32c-provider-compatibility-preflight.yml` → `.github/workflows/ae32c-provider-compatibility-preflight.yml`
 
-to:
+Corrective v8 also adds the provider-preflight module and tests on the development branch. Install the `STAGE1_SECTION_UUIDS/` payload on `stage1/section-uuids` and the `MAIN_BRANCH/` payload on `main`, preserving paths.
 
-`.github/workflows/ae32c-live-evaluation.yml`
+After the workflows are merged into `main`, open GitHub → **Actions** → **AE-32C Live Evaluation (Manual)** → **Run workflow** for a full investigation, or **AE-32C Provider Compatibility Preflight (Manual)** for a provider-only check.
 
-on the repository's `main` branch. This patch contains no `STAGE1_SECTION_UUIDS/` payload and does not modify existing workflow files.
-
-After the new workflow is merged into `main`, open GitHub → **Actions** → **AE-32C Live Evaluation (Manual)** → **Run workflow**.
-
-Choose one provider and check the confirmation box only when you intend to make live API calls. If confirmation is absent, the workflow stops before checking out or running the target source. If the selected provider's secret is missing, the workflow stops before calling the provider.
+Choose one provider, optionally provide a model override, and check the confirmation box only when you intend to make live API calls. If confirmation is absent, the workflow stops before checking out or running the target source. If the selected provider's secret is missing, the workflow stops before calling the provider.
 
 ## Required GitHub repository secrets
 
@@ -63,8 +60,16 @@ A failed gate still uploads evidence. Review the Actions summary and artifact be
 - Repository permissions: `contents: read`.
 - Target branch: fixed to `stage1/section-uuids`.
 - Job timeout: 12 minutes.
-- Provider timeout: 30 seconds; retries: one.
+- Provider-specific request settings: NaraRouter 90 seconds/2 attempts; Cloudflare 45 seconds/2 attempts; OpenRouter 30 seconds/1 attempt.
 - Provider-call budget: one baseline request plus at most nine graph-assisted model calls.
 - No target fixture execution, shell tool, source modification, patch application, commit, or push.
 - Output is written under `$RUNNER_TEMP`, outside the source checkout.
 - Existing validation workflows remain unchanged.
+
+
+## Provider compatibility preflight (Corrective v8)
+
+Before a full live investigation on Cloudflare or NaraRouter, run **Actions → AE-32C Provider Compatibility Preflight (Manual)** from `main`. It makes only a small provider probe and uploads a report even when the probe fails. For Cloudflare it performs a transport probe followed by a prompt-only strict-JSON action-shape probe. For NaraRouter it performs a transport-only probe. This does not claim support for an API-level constrained-output parameter; it tests the current prompt/request path.
+
+The full live evaluation supports an optional model override so a model that passes preflight can be selected for the full run. Leave it blank to use the provider default. Effective timeouts/retries are NaraRouter 90s/2 attempts, Cloudflare 45s/2 attempts, and OpenRouter 30s/1 attempt. These are request-level settings; the investigator's own elapsed-time and call budgets remain in force.
+
