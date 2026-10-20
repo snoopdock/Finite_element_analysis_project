@@ -11,7 +11,7 @@ Use this workflow to isolate provider connectivity and Cloudflare strict-JSON be
 3. Select one provider, optionally specify a model override, and explicitly confirm live calls.
 4. Download the uploaded `ae32c-provider-preflight-...` artifact, even if the run fails.
 5. For NaraRouter, inspect `transport_probe`, elapsed time, effective timeout/retry settings, HTTP status counts and safe error category. A successful preflight only proves a small request returned.
-6. For Cloudflare, inspect both `transport_probe` and `json_action_probe`. The JSON probe requires one strict JSON object with the investigator's action envelope; it is prompt-only and does not assert that Cloudflare's API supports a constrained-output request parameter.
+6. For Cloudflare, inspect both `transport_probe` and `json_action_probe`. The JSON probe uses Cloudflare's API-level `response_format: {type: json_object}` and then locally validates one strict JSON object with the investigator's action envelope. JSON mode constrains syntax but does not guarantee the action schema for every complex response.
 7. After a provider/model passes preflight, rerun **AE-32C Live Evaluation (Manual)** from `main`, selecting the same provider and model override.
 
 ## Effective transport settings
@@ -20,7 +20,7 @@ Use this workflow to isolate provider connectivity and Cloudflare strict-JSON be
 - Cloudflare: 45-second request timeout, two attempts.
 - OpenRouter: 30-second request timeout, one attempt (the known-good control).
 
-The full live evaluation remains bounded by the investigator's 300-second elapsed-time budget, nine model rounds, token budget, tool-call budget, snapshot checks and citation validation. The workflow job timeout is a separate outer limit.
+The full live evaluation remains bounded by nine model rounds, token budget, tool-call budget, snapshot checks and citation validation. Its elapsed-time budget is 900 seconds for NaraRouter and 300 seconds for Cloudflare/OpenRouter. The 22-minute workflow job timeout is a separate outer limit.
 
 ## What the result does and does not mean
 
