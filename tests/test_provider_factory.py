@@ -104,3 +104,31 @@ def test_cloudflare_honors_benchmark_token_cap(monkeypatch):
     assert error is None
     assert text == "hello"
     assert seen == [8000]
+
+
+def test_cloudflare_structured_chat_requests_api_json_mode(monkeypatch):
+    seen = []
+    expected = '{"action":"tool_call","tool":"repository_summary","arguments":{},"reason":"Inspect repository."}'
+
+    class Response:
+        status_code = 200
+        text = ""
+
+        def json(self):
+            return {"success": True, "result": {"response": expected}}
+
+    def fake_post(url, **kwargs):
+        seen.append(kwargs["json"])
+        return Response()
+
+    monkeypatch.delenv("FEA_BENCHMARK_MODE", raising=False)
+    monkeypatch.delenv("FEA_BENCHMARK_FORCE_MAX_TOKENS", raising=False)
+    monkeypatch.setattr("providers.cloudflare.requests.post", fake_post)
+    provider = CloudflareProvider("account", "token", ["@cf/meta/llama-3.1-8b-instruct-fast"], 2500, max_logical_calls=2)
+
+    text, error = provider.chat_structured([{"role": "user", "content": "Return an action."}], max_tokens=512)
+
+    assert error is None
+    assert text == expected
+    assert seen[0]["response_format"] == {"type": "json_object"}
+    assert provider.get_stats()["structured_json_calls"] == 1

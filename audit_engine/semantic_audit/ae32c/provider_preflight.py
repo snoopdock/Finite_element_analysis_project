@@ -2,9 +2,9 @@
 
 This command makes no repository-tool calls and never executes the incident fixture.
 It first checks that the selected provider returns non-empty content. For Cloudflare
-only, it then probes the current model's ability to return the same strict JSON action
-shape expected by the investigator. The JSON probe is prompt-only: it does not claim
-that an API-level constrained-output feature is supported.
+only, it then requests API-level JSON-object mode and validates the returned strict JSON
+action envelope locally. JSON mode constrains syntax but does not guarantee that every
+model response satisfies the investigator's full action schema.
 
 Live calls require an explicit confirmation flag. Artifacts intentionally omit raw
 model response bodies and credentials.
@@ -55,6 +55,7 @@ def _provider_runtime_settings(provider: Any) -> dict[str, Any]:
         "timeout_seconds", "max_retries", "http_attempts", "http_status_counts",
         "successful_calls", "failed_calls", "logical_calls", "total_calls",
         "last_http_status", "last_returned_model", "finish_reason_counts",
+        "structured_json_calls",
     )
     return {key: stats[key] for key in allowed if key in stats}
 
@@ -80,15 +81,26 @@ def _build_provider(
     )
 
 
-def _call(provider: Any, messages: list[dict[str, str]], model_name: str) -> tuple[str | None, str | None, float]:
+def _call(
+    provider: Any,
+    messages: list[dict[str, str]],
+    model_name: str,
+    *,
+    structured_json: bool = False,
+) -> tuple[str | None, str | None, float]:
     started = time.monotonic()
     try:
-        response, error = provider.chat(
-            messages,
-            temperature=0.0,
-            max_tokens=128,
-            model=model_name or None,
-        )
+        method = getattr(provider, "chat_structured", None) if structured_json else None
+        if structured_json and not callable(method):
+            response, error = None, "provider_structured_json_mode_unavailable"
+        else:
+            method = method if callable(method) else provider.chat
+            response, error = method(
+                messages,
+                temperature=0.0,
+                max_tokens=128,
+                model=model_name or None,
+            )
     except Exception as exc:  # defensive: do not leak exception payloads
         response, error = None, f"provider_call_exception:{type(exc).__name__}"
     elapsed = round(max(0.0, time.monotonic() - started), 3)
@@ -166,7 +178,7 @@ def run_preflight(
         "runtime_settings": {},
         "notes": [
             "No repository evidence tools are called by this preflight.",
-            "The Cloudflare JSON action probe tests prompt-only output compatibility, not API-level constrained-output support.",
+            "The Cloudflare JSON action probe requests API-level response_format json_object; local schema validation still applies and JSON mode does not guarantee action-schema compliance.",
             "Raw model response bodies and provider credentials are not included in artifacts.",
         ],
     }
@@ -241,10 +253,17 @@ def run_preflight(
         },
         {"role": "user", "content": "Return the required JSON action object now."},
     ]
-    json_response, json_error, json_elapsed = _call(provider, json_messages, model_name)
+    json_response, json_error, json_elapsed = _call(
+        provider, json_messages, model_name, structured_json=True
+    )
     if json_response is None:
         report["json_action_probe"] = {
             "status": "provider_failed",
+            "request_mode": (
+                "api_response_format_json_object"
+                if callable(getattr(provider, "chat_structured", None))
+                else "unavailable"
+            ),
             "elapsed_seconds": json_elapsed,
             "response_chars": 0,
             "strict_json_valid": False,
@@ -256,6 +275,7 @@ def run_preflight(
         return report
 
     json_probe = _json_action_probe(json_response)
+    json_probe["request_mode"] = "api_response_format_json_object"
     json_probe["elapsed_seconds"] = json_elapsed
     json_probe["error"] = "" if json_probe["action_schema_valid"] else str(json_probe.get("parse_error_code") or json_probe["status"])
     report["json_action_probe"] = json_probe
@@ -299,6 +319,7 @@ def write_preflight_artifacts(report: dict[str, Any], output_dir: Path) -> tuple
         probe = report.get("json_action_probe", {})
         lines.extend([
             f"- JSON action probe: `{probe.get('status', 'unknown')}`",
+            f"- Request mode: `{probe.get('request_mode', 'api_response_format_json_object' if probe.get('status') == 'passed' else 'not_confirmed')}`",
             f"- Strict JSON valid: `{probe.get('strict_json_valid', False)}`",
             f"- Action schema valid: `{probe.get('action_schema_valid', False)}`",
             f"- JSON response characters: `{probe.get('response_chars', 0)}`",

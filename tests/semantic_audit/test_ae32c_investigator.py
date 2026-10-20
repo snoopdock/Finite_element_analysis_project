@@ -90,6 +90,18 @@ class FakeProvider:
         return {"provider": self.provider_name, "model": self.model, "usage": dict(self.usage)}
 
 
+class StructuredCloudflareFakeProvider(FakeProvider):
+    provider_name = "cloudflare"
+
+    def __init__(self, responses, on_chat=None):
+        super().__init__(responses, on_chat=on_chat)
+        self.structured_calls = 0
+
+    def chat_structured(self, messages, temperature=0.2, max_tokens=None, model=None):
+        self.structured_calls += 1
+        return self.chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)
+
+
 def action_tool(tool, arguments, reason="need additional evidence"):
     return json.dumps({"action": "tool_call", "tool": tool, "arguments": arguments, "reason": reason})
 
@@ -215,6 +227,95 @@ def test_repeated_tool_requests_during_finalization_stop_without_dispatch():
     assert report["budget"]["finalization_rounds_used"] == 2
     assert report["budget"]["finalization_tool_requests_rejected"] == 2
     assert len(provider.messages) == 3
+
+def test_invalid_final_action_shape_gets_one_bounded_correction_turn():
+    invalid = json.loads(final_action(evidence_id="E0002", source_reference=True))
+    invalid["unexpected"] = "do-not-echo-this-value"
+    invalid_response = json.dumps(invalid)
+    limits = InvestigationLimits(
+        max_rounds=3,
+        finalization_rounds_reserved=2,
+        max_invalid_final_attempts=1,
+        max_tool_calls=5,
+        max_tokens_per_call=1_000,
+        max_total_tokens=32_000,
+        max_total_prompt_chars=500_000,
+        max_elapsed_seconds=30,
+    )
+    investigator, provider, tools = make_investigator([
+        action_tool("search_repository", {"query": "total_calls", "mode": "content", "max_results": 5}),
+        invalid_response,
+        final_action(evidence_id="E0002", source_reference=True),
+    ], limits=limits)
+
+    report = investigator.run("Investigate a provider interface mismatch.")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert report["diagnosis"] is not None
+    assert report["budget"]["invalid_final_attempts_used"] == 1
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
+    serialized = json.dumps({"messages": provider.messages, "report": report})
+    assert "do-not-echo-this-value" not in serialized
+    assert any(
+        event.get("event") == "final_action_rejected"
+        and event.get("reason_code") == "final_action_shape_invalid"
+        and event.get("received_keys") == ["action", "diagnosis", "unexpected"]
+        for event in report["errors"]
+    )
+    assert "expected_top_level_keys" in json.dumps(provider.messages)
+
+
+def test_repeated_invalid_final_action_shape_stops_after_one_recovery():
+    invalid = json.loads(final_action(evidence_id="E0002", source_reference=True))
+    invalid["unexpected"] = "do-not-echo-this-value"
+    invalid_response = json.dumps(invalid)
+    limits = InvestigationLimits(
+        max_rounds=3,
+        finalization_rounds_reserved=2,
+        max_invalid_final_attempts=1,
+        max_tool_calls=5,
+        max_tokens_per_call=1_000,
+        max_total_tokens=32_000,
+        max_total_prompt_chars=500_000,
+        max_elapsed_seconds=30,
+    )
+    investigator, provider, tools = make_investigator([
+        action_tool("search_repository", {"query": "total_calls", "mode": "content", "max_results": 5}),
+        invalid_response,
+        invalid_response,
+    ], limits=limits)
+
+    report = investigator.run("Investigate a provider interface mismatch.")
+
+    assert report["status"] == "incomplete"
+    assert report["stop_reason"] == "invalid_final_action"
+    assert report["budget"]["invalid_final_attempts_used"] == 2
+    assert len(tools.calls) == 2
+    assert any(event.get("event") == "final_action_recovery_exhausted" for event in report["errors"])
+    assert "do-not-echo-this-value" not in json.dumps({"messages": provider.messages, "report": report})
+
+
+def test_cloudflare_investigator_uses_structured_provider_method():
+    provider = StructuredCloudflareFakeProvider([
+        action_tool("search_repository", {"query": "total_calls", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    tools = FakeEvidenceTools()
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        provider_name="cloudflare",
+        evidence_tools=tools,
+        limits=InvestigationLimits(max_total_tokens=32_000, max_total_prompt_chars=500_000),
+        id_factory=lambda: "test-cloudflare-structured-json",
+    )
+
+    report = investigator.run("Investigate a provider interface mismatch.")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert provider.structured_calls == 2
+    assert sum(event.get("event") == "provider_structured_json_mode_requested" for event in report["errors"]) == 2
+
 
 def test_verified_snapshot_can_produce_completed_status(tmp_path: Path):
     repository = tmp_path / "repo"

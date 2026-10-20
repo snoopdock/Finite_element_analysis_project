@@ -278,7 +278,7 @@ def test_comparison_artifact_writer_rejects_output_inside_checkout(tmp_path: Pat
 
 
 def test_live_investigation_limits_allow_multiround_evidence_work():
-    limits = build_live_investigation_limits()
+    limits = build_live_investigation_limits("cloudflare")
     assert LIVE_GRAPH_MAX_CALLS == limits.max_rounds
     assert limits.max_rounds == 9
     assert limits.max_tool_calls == 12
@@ -290,6 +290,13 @@ def test_live_investigation_limits_allow_multiround_evidence_work():
     assert limits.max_response_chars == 40_000
 
 
+def test_nararouter_gets_provider_specific_elapsed_budget():
+    limits = build_live_investigation_limits("nararouter")
+    assert limits.max_elapsed_seconds == 900
+    assert limits.max_rounds == 9
+    assert limits.max_total_tokens == 180_000
+
+
 class PreflightFakeProvider:
     provider_name = "preflight-fake"
     model = "preflight-fake-model"
@@ -297,12 +304,17 @@ class PreflightFakeProvider:
     def __init__(self, responses):
         self.responses = list(responses)
         self.calls = []
+        self.structured_calls = 0
 
     def chat(self, messages, temperature=0.2, max_tokens=None, model=None):
         self.calls.append({"messages": [dict(item) for item in messages], "temperature": temperature, "max_tokens": max_tokens, "model": model})
         if not self.responses:
             return None, "scripted response queue exhausted"
         return self.responses.pop(0)
+
+    def chat_structured(self, messages, temperature=0.2, max_tokens=None, model=None):
+        self.structured_calls += 1
+        return self.chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)
 
     def get_stats(self):
         return {
@@ -343,6 +355,8 @@ def test_cloudflare_preflight_accepts_valid_strict_json_action_shape():
     assert report["status"] == "passed"
     assert report["json_action_probe"]["strict_json_valid"] is True
     assert report["json_action_probe"]["action_schema_valid"] is True
+    assert report["json_action_probe"]["request_mode"] == "api_response_format_json_object"
+    assert fake.structured_calls == 1
     assert len(fake.calls) == 2
     assert "Check available repository evidence." not in json.dumps(report)
 
@@ -354,6 +368,7 @@ def test_cloudflare_preflight_classifies_malformed_json_without_storing_response
     assert report["status"] == "json_compatibility_failed"
     assert report["json_action_probe"]["status"] == "invalid_json"
     assert report["json_action_probe"]["parse_error_code"] == "json_syntax_error"
+    assert fake.structured_calls == 1
     assert raw_response not in json.dumps(report)
 
 
@@ -373,6 +388,7 @@ def test_cloudflare_json_probe_rejects_duplicate_keys_and_wrong_action_schema():
     assert report["status"] == "json_compatibility_failed"
     assert report["json_action_probe"]["strict_json_valid"] is False
     assert report["json_action_probe"]["parse_error_code"] == "json_syntax_error"
+    assert fake.structured_calls == 1
 
 
 

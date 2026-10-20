@@ -71,14 +71,15 @@ def _build_provider(provider_name: str, model_name: str, *, max_calls: int, max_
     )
 
 
-def build_live_investigation_limits() -> InvestigationLimits:
-    """Return the deliberately generous but still finite live smoke-test limits.
+def build_live_investigation_limits(provider_name: str = "") -> InvestigationLimits:
+    """Return finite live limits, allowing slower NaraRouter calls more wall time.
 
-    These values are higher than ordinary deterministic tests because real
-    provider prompts include the full tool catalog and grow with each evidence
-    round. The daily provider quota is not treated as a per-run budget; this
-    separate cap still bounds a single investigation.
+    The NaraRouter preflight returned a valid response in 28.256 seconds, while
+    its full-context investigation exhausted the 300-second deadline. Other
+    providers retain the existing deadline; NaraRouter receives a 900-second
+    investigation budget, still bounded by the workflow job timeout.
     """
+    elapsed_budget = 900 if str(provider_name).strip().lower() == "nararouter" else 300
     return InvestigationLimits(
         max_rounds=LIVE_GRAPH_MAX_ROUNDS,
         max_tool_calls=12,
@@ -90,7 +91,7 @@ def build_live_investigation_limits() -> InvestigationLimits:
         max_tool_context_chars=10_000,
         max_total_evidence_bytes=300_000,
         max_total_prompt_chars=200_000,
-        max_elapsed_seconds=300,
+        max_elapsed_seconds=elapsed_budget,
         max_snapshot_files=100,
         max_snapshot_bytes=2_000_000,
         temperature=0.0,
@@ -267,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 else:
                     graph_provider = _build_provider(args.provider, model_name, max_calls=LIVE_GRAPH_MAX_CALLS, max_tokens=LIVE_GRAPH_MAX_TOKENS)
-                    limits = build_live_investigation_limits()
+                    limits = build_live_investigation_limits(args.provider)
                     investigator = RepositoryInvestigator(
                         repo_root,
                         graph_provider,

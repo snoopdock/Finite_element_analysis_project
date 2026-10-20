@@ -1132,12 +1132,25 @@ class RepositoryInvestigator:
                 except Exception:
                     pass
         try:
-            response, error = self.provider.chat(
-                messages,
-                temperature=float(self.limits.temperature),
-                max_tokens=self.limits.max_tokens_per_call,
-                model=self.model_name if self.model_name != "unknown" else None,
-            )
+            call_kwargs = {
+                "temperature": float(self.limits.temperature),
+                "max_tokens": self.limits.max_tokens_per_call,
+                "model": self.model_name if self.model_name != "unknown" else None,
+            }
+            if self.provider_name.strip().lower() == "cloudflare":
+                structured_chat = getattr(self.provider, "chat_structured", None)
+                if not callable(structured_chat):
+                    response, error = None, "cloudflare_structured_json_mode_unavailable"
+                else:
+                    self._events.append({
+                        "event": "provider_structured_json_mode_requested",
+                        "round": self._model_rounds,
+                        "provider": "cloudflare",
+                        "mode": "json_object",
+                    })
+                    response, error = structured_chat(messages, **call_kwargs)
+            else:
+                response, error = self.provider.chat(messages, **call_kwargs)
         except Exception as exc:
             return None, self._safe_text(f"provider_exception:{type(exc).__name__}", 300), reserve
         finally:
@@ -1165,6 +1178,8 @@ class RepositoryInvestigator:
             "tool_calls_used": self._tool_calls,
             "max_invalid_tool_retries": self.limits.max_invalid_tool_retries,
             "invalid_tool_retries_used": self._invalid_tool_retries,
+            "max_invalid_final_attempts": self.limits.max_invalid_final_attempts,
+            "invalid_final_attempts_used": self._invalid_final_attempts,
             "max_invalid_json_retries": self.limits.max_invalid_json_retries,
             "invalid_json_retries_used": self._invalid_json_retries,
             "max_source_path_guidance": self.limits.max_source_path_guidance,
@@ -1488,9 +1503,66 @@ class RepositoryInvestigator:
                     continue
                 if action_name == "final":
                     if set(action) != {"action", "diagnosis"}:
-                        self._model_action_trace.append({"round": self._model_rounds, "action": "rejected", "reason": "final_action_shape_invalid"})
-                        self._events.append({"event": "final_action_rejected", "round": self._model_rounds, "reason": "final_action_shape_invalid"})
-                        return self._finalize_report(report, "incomplete", "invalid_final_action")
+                        self._invalid_final_attempts += 1
+                        received_keys = sorted(
+                            self._safe_text(key, 100)
+                            for key in action.keys()
+                            if isinstance(key, str)
+                        )[:20]
+                        self._model_action_trace.append({
+                            "round": self._model_rounds,
+                            "action": "final_rejected",
+                            "reason_codes": ["final_action_shape_invalid"],
+                            "received_keys": received_keys,
+                        })
+                        self._events.append({
+                            "event": "final_action_rejected",
+                            "round": self._model_rounds,
+                            "reason_code": "final_action_shape_invalid",
+                            "expected_keys": ["action", "diagnosis"],
+                            "received_keys": received_keys,
+                            "recovery_attempt": self._invalid_final_attempts,
+                        })
+                        if (
+                            self._invalid_final_attempts > self.limits.max_invalid_final_attempts
+                            or self._model_rounds >= self.limits.max_rounds
+                        ):
+                            self._events.append({
+                                "event": "final_action_recovery_exhausted",
+                                "round": self._model_rounds,
+                                "recovery_attempts_used": self._invalid_final_attempts,
+                                "max_invalid_final_attempts": self.limits.max_invalid_final_attempts,
+                            })
+                            return self._finalize_report(report, "incomplete", "invalid_final_action")
+                        # Do not echo the untrusted invalid action or any of its values.
+                        # A reserved finalization round remains available for correction.
+                        self._messages.append({
+                            "role": "assistant",
+                            "content": self._canonical_json({
+                                "action": "rejected",
+                                "reason": "final_action_shape_invalid",
+                                "received_keys": received_keys,
+                            }),
+                        })
+                        self._messages.append({
+                            "role": "user",
+                            "content": self._canonical_json({
+                                "validation_feedback": {
+                                    "schema_version": "ae32c/final-action-validation-feedback/v1",
+                                    "reason_code": "final_action_shape_invalid",
+                                    "expected_top_level_keys": ["action", "diagnosis"],
+                                    "message": (
+                                        "The final action must be exactly one JSON object with only the "
+                                        "top-level keys action and diagnosis. Set action to final and place "
+                                        "the diagnosis object under diagnosis. Do not add top-level keys. "
+                                        "Submit the corrected final diagnosis using only evidence already "
+                                        "returned. If evidence is insufficient, state that explicitly and "
+                                        "cite the evidence and limitations."
+                                    ),
+                                }
+                            }),
+                        })
+                        continue
                     diagnosis, errors = self._validate_diagnosis(action.get("diagnosis"))
                     if errors:
                         self._invalid_final_attempts += 1
