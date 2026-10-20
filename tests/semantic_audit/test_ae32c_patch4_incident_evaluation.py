@@ -110,6 +110,7 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
             max_tool_calls=7,
             max_tokens_per_call=500,
             max_total_tokens=32_000,
+            max_total_prompt_chars=120_000,
             max_elapsed_seconds=120,
             max_snapshot_files=100,
             max_snapshot_bytes=2_000_000,

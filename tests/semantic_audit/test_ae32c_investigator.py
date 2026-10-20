@@ -313,11 +313,55 @@ def test_failed_source_read_gives_exact_path_recovery_guidance():
     assert report["budget"]["source_path_guidance_used"] == 1
 
 
-def test_duplicate_json_keys_are_rejected():
-    investigator, _, tools = make_investigator(['{"action":"tool_call","action":"final"}'])
+def test_duplicate_json_keys_are_rejected_when_json_recovery_is_disabled():
+    investigator, provider, tools = make_investigator(
+        ['{"action":"tool_call","action":"final"}'],
+        limits=InvestigationLimits(max_invalid_json_retries=0),
+    )
     report = investigator.run("Investigate a failed workflow")
     assert report["stop_reason"] == "invalid_model_json"
+    assert len(provider.messages) == 1
     assert len(tools.calls) == 1
+    assert report["budget"]["invalid_json_retries_used"] == 0
+    assert any(event.get("event") == "invalid_json_recovery_exhausted" for event in report["errors"])
+
+
+def test_malformed_json_gets_one_bounded_recovery_and_can_continue():
+    malformed = "I will search the repository now. ```json {not valid}"
+    investigator, provider, tools = make_investigator([
+        malformed,
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ], limits=InvestigationLimits(max_invalid_json_retries=1))
+    report = investigator.run("Investigate a failed workflow")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert report["stop_reason"] == "diagnosis_submitted_with_coverage_or_snapshot_limitations"
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
+    assert report["budget"]["invalid_json_retries_used"] == 1
+    assert report["budget"]["max_invalid_json_retries"] == 1
+    assert len(provider.messages) == 3
+    recovery_context = json.dumps(provider.messages[1])
+    assert "ae32c/json-validation-feedback/v1" in recovery_context
+    assert "exactly one valid strict JSON object" in recovery_context
+    assert malformed not in json.dumps(provider.messages)
+    assert malformed not in json.dumps(report)
+    assert any(event.get("event") == "invalid_json_recovery_offered" for event in report["errors"])
+
+
+def test_repeated_malformed_json_stops_after_bounded_retries():
+    investigator, provider, tools = make_investigator(
+        ["not json one", "not json two", final_action(evidence_id="E0001", source_reference=False)],
+        limits=InvestigationLimits(max_invalid_json_retries=1),
+    )
+    report = investigator.run("Investigate a failed workflow")
+
+    assert report["status"] == "incomplete"
+    assert report["stop_reason"] == "invalid_model_json"
+    assert len(provider.messages) == 2
+    assert len(tools.calls) == 1
+    assert report["budget"]["invalid_json_retries_used"] == 1
+    assert any(event.get("event") == "invalid_json_recovery_exhausted" for event in report["errors"])
 
 
 def test_sensitive_structured_fields_are_redacted_before_model_context():
