@@ -163,7 +163,7 @@ def test_finalization_rounds_reject_extra_tools_and_reach_final_diagnosis():
         finalization_rounds_reserved=2,
         max_tool_calls=8,
         max_tokens_per_call=1_000,
-        max_total_tokens=12_000,
+        max_total_tokens=32_000,
         max_total_prompt_chars=500_000,
         max_elapsed_seconds=30,
     )
@@ -176,7 +176,10 @@ def test_finalization_rounds_reject_extra_tools_and_reach_final_diagnosis():
 
     report = investigator.run("Investigate a provider interface mismatch.")
 
-    assert report["status"] == "completed_with_incomplete_evidence"
+    assert report["status"] == "completed_with_incomplete_evidence", (
+        f"stop_reason={report.get('stop_reason')!r}; budget={report.get('budget')!r}; "
+        f"errors={report.get('errors')!r}"
+    )
     assert report["stop_reason"] == "diagnosis_submitted_with_coverage_or_snapshot_limitations"
     assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository", "graph_path"]
     assert report["budget"]["finalization_rounds_reserved"] == 2

@@ -18,7 +18,11 @@ from audit_engine.semantic_audit.ae32c.evaluation import (
     summarize_graph_report,
 )
 from audit_engine.semantic_audit.ae32c.investigator import InvestigationLimits, RepositoryInvestigator
-from audit_engine.semantic_audit.ae32c.live_evaluation import main as live_evaluation_main
+from audit_engine.semantic_audit.ae32c.live_evaluation import (
+    LIVE_GRAPH_MAX_CALLS,
+    build_live_investigation_limits,
+    main as live_evaluation_main,
+)
 
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "ae32c_provider_interface_incident"
@@ -273,9 +277,8 @@ def test_comparison_artifact_writer_rejects_output_inside_checkout(tmp_path: Pat
 
 
 def test_live_investigation_limits_allow_multiround_evidence_work():
-    from audit_engine.semantic_audit.ae32c.live_evaluation import build_live_investigation_limits
-
     limits = build_live_investigation_limits()
+    assert LIVE_GRAPH_MAX_CALLS == limits.max_rounds
     assert limits.max_rounds == 9
     assert limits.max_tool_calls == 12
     assert limits.finalization_rounds_reserved == 2
