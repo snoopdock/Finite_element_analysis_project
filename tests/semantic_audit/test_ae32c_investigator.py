@@ -146,7 +146,7 @@ def test_multiple_rounds_consume_actual_tool_results_and_resolve_citations():
 
     assert report["status"] == "completed_with_incomplete_evidence"
     assert report["diagnosis_assurance"] == "references_resolved_not_independently_proven"
-    assert report["stop_reason"] == "diagnosis_submitted_with_coverage_or_snapshot_limitations"
+    assert report["stop_reason"] == "diagnosis_submitted"
     assert [item["tool"] for item in report["tool_calls"]] == ["repository_summary", "search_repository", "graph_path"]
     assert report["diagnosis"]["root_cause"]["source_references"][0]["line"] == 2
     assert len(provider.messages) == 3
@@ -357,3 +357,33 @@ def test_report_writer_creates_json_and_markdown_outside_repository(tmp_path: Pa
     assert len(result["artifacts"]) == 2
     assert all(Path(item["path"]).is_file() for item in result["artifacts"])
     assert all(len(item["sha256"]) == 64 for item in result["artifacts"])
+
+
+def test_token_budget_rejection_reports_reservation_math_without_prompt_content():
+    provider = FakeProvider([])
+    evidence = FakeEvidenceTools()
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        evidence_tools=evidence,
+        limits=InvestigationLimits(
+            max_rounds=2,
+            max_tool_calls=2,
+            max_tokens_per_call=64,
+            max_total_tokens=256,
+            max_total_prompt_chars=500_000,
+            max_elapsed_seconds=30,
+        ),
+        id_factory=lambda: "ae32c-budget-diagnostic-test",
+    )
+    report = investigator.run("Inspect the provider interface mismatch.")
+
+    assert report["stop_reason"] == "estimated_token_budget_exhausted"
+    check = report["budget"]["last_provider_reservation_check"]
+    assert check["decision"] == "rejected"
+    assert check["reason"] == "estimated_token_budget_exhausted"
+    assert check["prompt_chars_this_call"] > 0
+    assert check["requested_reservation_tokens"] > check["max_total_tokens"]
+    assert check["reserved_before_tokens"] == 0
+    assert "messages" not in check
+    assert "prompt" not in check

@@ -27,7 +27,10 @@ from audit_engine.semantic_audit.ae32c.investigator import (
 from providers.factory import SUPPORTED_PROVIDERS, build_provider
 from providers.safe_errors import sanitize_provider_error
 
-MAX_BASELINE_RESPONSE_CHARS = 8_000
+MAX_BASELINE_RESPONSE_CHARS = 16_000
+LIVE_BASELINE_MAX_TOKENS = 2_000
+LIVE_GRAPH_MAX_TOKENS = 8_000
+LIVE_GRAPH_MAX_CALLS = 8
 DEFAULT_PROBLEM = (
     "A previous extraction workflow failed with AttributeError because the "
     "consumer attempted to access provider.total_calls. Investigate the "
@@ -63,6 +66,31 @@ def _build_provider(provider_name: str, model_name: str, *, max_calls: int, max_
         provider_name,
         model_name,
         environ=os.environ,
+    )
+
+
+def build_live_investigation_limits() -> InvestigationLimits:
+    """Return the deliberately generous but still finite live smoke-test limits.
+
+    These values are higher than ordinary deterministic tests because real
+    provider prompts include the full tool catalog and grow with each evidence
+    round. The daily provider quota is not treated as a per-run budget; this
+    separate cap still bounds a single investigation.
+    """
+    return InvestigationLimits(
+        max_rounds=8,
+        max_tool_calls=12,
+        max_tokens_per_call=LIVE_GRAPH_MAX_TOKENS,
+        max_total_tokens=180_000,
+        max_response_chars=40_000,
+        max_tool_response_bytes=100_000,
+        max_tool_context_chars=10_000,
+        max_total_evidence_bytes=300_000,
+        max_total_prompt_chars=200_000,
+        max_elapsed_seconds=300,
+        max_snapshot_files=100,
+        max_snapshot_bytes=2_000_000,
+        temperature=0.0,
     )
 
 
@@ -128,7 +156,7 @@ def main(argv: list[str] | None = None) -> int:
         description="Manually opt in to a bounded baseline-vs-graph-assisted AE-32C live evaluation."
     )
     parser.add_argument("--confirm-live-provider-calls", action="store_true",
-                        help="Required explicit consent to make live provider calls (one baseline call plus up to four investigation calls).")
+                        help="Required explicit consent to make live provider calls (one baseline call plus up to eight investigation calls).")
     parser.add_argument("--repo-root", default=str(DEFAULT_FIXTURE),
                         help="Controlled incident fixture root; must remain inside the checkout.")
     parser.add_argument("--baseline-context-path", default="pipeline/extractor.py",
@@ -169,7 +197,7 @@ def main(argv: list[str] | None = None) -> int:
         baseline_problem = _safe_text(args.problem, limit=8_000)
         model_name = args.model.strip()
 
-        baseline_provider = _build_provider(args.provider, model_name, max_calls=1, max_tokens=400)
+        baseline_provider = _build_provider(args.provider, model_name, max_calls=1, max_tokens=LIVE_BASELINE_MAX_TOKENS)
         effective_model_name = _effective_model_name(baseline_provider, model_name)
         baseline_messages = [
             {
@@ -199,7 +227,7 @@ def main(argv: list[str] | None = None) -> int:
             response, error = baseline_provider.chat(
                 baseline_messages,
                 temperature=0.0,
-                max_tokens=400,
+                max_tokens=LIVE_BASELINE_MAX_TOKENS,
                 model=model_name or None,
             )
             if error or not isinstance(response, str):
@@ -232,22 +260,8 @@ def main(argv: list[str] | None = None) -> int:
                         "limitations": ["The baseline and graph-assisted conditions did not use the same evidence snapshot."],
                     }
                 else:
-                    graph_provider = _build_provider(args.provider, model_name, max_calls=4, max_tokens=400)
-                    limits = InvestigationLimits(
-                        max_rounds=4,
-                        max_tool_calls=5,
-                        max_tokens_per_call=400,
-                        max_total_tokens=2_000,
-                        max_response_chars=8_000,
-                        max_tool_response_bytes=50_000,
-                        max_tool_context_chars=4_000,
-                        max_total_evidence_bytes=100_000,
-                        max_total_prompt_chars=30_000,
-                        max_elapsed_seconds=90,
-                        max_snapshot_files=100,
-                        max_snapshot_bytes=2_000_000,
-                        temperature=0.0,
-                    )
+                    graph_provider = _build_provider(args.provider, model_name, max_calls=LIVE_GRAPH_MAX_CALLS, max_tokens=LIVE_GRAPH_MAX_TOKENS)
+                    limits = build_live_investigation_limits()
                     investigator = RepositoryInvestigator(
                         repo_root,
                         graph_provider,

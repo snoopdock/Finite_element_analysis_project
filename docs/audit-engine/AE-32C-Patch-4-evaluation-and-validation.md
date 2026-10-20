@@ -26,7 +26,7 @@ The fixture is never executed. It is read as source evidence only.
   - Runs the graph-assisted investigator against the same controlled source snapshot if the baseline succeeds and the snapshot fingerprint remains stable.
   - Uses the existing provider factory and provider adapters.
   - Requires `--confirm-live-provider-calls` before making any provider request.
-  - Limits the baseline to one call (400 output tokens) and graph-assisted investigation to at most four model rounds, five evidence-tool calls including the initial summary, 400 output tokens per call, 2,000 estimated/reported total tokens and 90 seconds.
+  - Limits the baseline to one call (2,000 output tokens) and graph-assisted investigation to at most eight model rounds, twelve evidence-tool calls including the initial summary, 8,000 output tokens per call, 180,000 estimated/reported total tokens, 200,000 cumulative prompt characters and 300 seconds. These are per-run caps; they are deliberately larger than deterministic-test budgets so the live model can read the tool catalog and investigate across multiple rounds.
   - Does not execute fixture code, run shell commands, modify source files, apply patches, commit or push.
 - `tests/semantic_audit/test_ae32c_patch4_incident_evaluation.py`
   - Exercises the real AE-32B source graph and evidence dispatcher using a deterministic fake provider.
@@ -81,4 +81,4 @@ This patch does not add or modify a GitHub Actions workflow. The current `main` 
 
 ## Validation status
 
-No local repository runtime, test suite, compilation or live-provider request was executed during patch preparation. Tests are authored but unexecuted. Archive checksums establish package integrity only; GitHub validation and acceptance remain pending.
+The live evaluation limits are tested deterministically as configuration values; no local repository runtime, test suite, compilation or live-provider request was executed during patch preparation. Tests are authored but unexecuted. Archive checksums establish package integrity only; GitHub validation and acceptance remain pending.

@@ -177,6 +177,7 @@ class RepositoryInvestigator:
         self._tool_calls = 0
         self._model_rounds = 0
         self._reserved_token_estimate = 0
+        self._last_provider_reservation_check: dict[str, Any] | None = None
         self._reported_tokens = 0
         self._reported_cost_usd = 0.0
         self._estimated_cost_usd = 0.0
@@ -809,11 +810,43 @@ class RepositoryInvestigator:
             raise _BudgetStop("elapsed_time_budget_exhausted")
         serialized = self._canonical_json(messages)
         prompt_chars = len(serialized)
-        if self._total_prompt_chars + prompt_chars > self.limits.max_total_prompt_chars:
-            raise _BudgetStop("prompt_size_budget_exhausted")
         estimated_prompt_tokens = max(1, math.ceil(prompt_chars / 4))
         reserve = estimated_prompt_tokens + self.limits.max_tokens_per_call
-        if self._reserved_token_estimate + reserve > self.limits.max_total_tokens:
+        reserved_before = self._reserved_token_estimate
+        projected_total = reserved_before + reserve
+        prompt_total = self._total_prompt_chars + prompt_chars
+        if prompt_total > self.limits.max_total_prompt_chars:
+            self._last_provider_reservation_check = {
+                "decision": "rejected",
+                "reason": "prompt_size_budget_exhausted",
+                "prompt_chars_this_call": prompt_chars,
+                "estimated_prompt_tokens": estimated_prompt_tokens,
+                "response_tokens_reserved": self.limits.max_tokens_per_call,
+                "requested_reservation_tokens": reserve,
+                "reserved_before_tokens": reserved_before,
+                "projected_reserved_tokens": projected_total,
+                "max_total_tokens": self.limits.max_total_tokens,
+                "prompt_chars_before": self._total_prompt_chars,
+                "projected_total_prompt_chars": prompt_total,
+                "max_total_prompt_chars": self.limits.max_total_prompt_chars,
+            }
+            raise _BudgetStop("prompt_size_budget_exhausted")
+        token_rejected = projected_total > self.limits.max_total_tokens
+        self._last_provider_reservation_check = {
+            "decision": "rejected" if token_rejected else "accepted",
+            "reason": "estimated_token_budget_exhausted" if token_rejected else None,
+            "prompt_chars_this_call": prompt_chars,
+            "estimated_prompt_tokens": estimated_prompt_tokens,
+            "response_tokens_reserved": self.limits.max_tokens_per_call,
+            "requested_reservation_tokens": reserve,
+            "reserved_before_tokens": reserved_before,
+            "projected_reserved_tokens": projected_total,
+            "max_total_tokens": self.limits.max_total_tokens,
+            "prompt_chars_before": self._total_prompt_chars,
+            "projected_total_prompt_chars": prompt_total,
+            "max_total_prompt_chars": self.limits.max_total_prompt_chars,
+        }
+        if token_rejected:
             raise _BudgetStop("estimated_token_budget_exhausted")
         estimated_call_cost = 0.0
         if self.limits.max_cost_usd is not None:
@@ -876,6 +909,8 @@ class RepositoryInvestigator:
             "max_tokens_per_call": self.limits.max_tokens_per_call,
             "max_total_tokens": self.limits.max_total_tokens,
             "reserved_token_estimate": self._reserved_token_estimate,
+            # Contains sizes and budget arithmetic only; never includes prompt content.
+            "last_provider_reservation_check": self._last_provider_reservation_check,
             "provider_reported_tokens": self._reported_tokens,
             "total_prompt_chars": self._total_prompt_chars,
             "max_total_prompt_chars": self.limits.max_total_prompt_chars,
