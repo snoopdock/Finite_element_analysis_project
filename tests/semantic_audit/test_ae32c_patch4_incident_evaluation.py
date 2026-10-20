@@ -109,7 +109,7 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
             max_rounds=6,
             max_tool_calls=7,
             max_tokens_per_call=500,
-            max_total_tokens=8_000,
+            max_total_tokens=32_000,
             max_elapsed_seconds=120,
             max_snapshot_files=100,
             max_snapshot_bytes=2_000_000,
@@ -119,7 +119,10 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
 
     report = investigator.run(PROBLEM)
 
-    assert report["status"] in {"completed", "completed_with_incomplete_evidence"}
+    assert report["status"] in {"completed", "completed_with_incomplete_evidence"}, (
+        f"controlled incident did not reach a diagnosis: stop_reason={report.get('stop_reason')!r}; "
+        f"budget={report.get('budget')!r}; errors={report.get('errors')!r}"
+    )
     assert report["diagnosis_assurance"] == "references_resolved_not_independently_proven"
     assert report["diagnosis"]["root_cause"]["source_references"][0] == {
         "evidence_id": "E0002",

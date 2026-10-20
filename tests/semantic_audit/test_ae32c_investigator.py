@@ -146,7 +146,7 @@ def test_multiple_rounds_consume_actual_tool_results_and_resolve_citations():
 
     assert report["status"] == "completed_with_incomplete_evidence"
     assert report["diagnosis_assurance"] == "references_resolved_not_independently_proven"
-    assert report["stop_reason"] == "diagnosis_submitted"
+    assert report["stop_reason"] == "diagnosis_submitted_with_coverage_or_snapshot_limitations"
     assert [item["tool"] for item in report["tool_calls"]] == ["repository_summary", "search_repository", "graph_path"]
     assert report["diagnosis"]["root_cause"]["source_references"][0]["line"] == 2
     assert len(provider.messages) == 3
@@ -229,7 +229,7 @@ def test_repeated_invalid_tool_schema_stops_after_one_correction_opportunity():
     investigator, provider, tools = make_investigator([
         action_tool("search_symbols", {"query": "total_calls", "kind": "method", "max_results": 5}),
         action_tool("search_symbols", {"query": "total_calls", "kind": "property", "max_results": 5}),
-    ])
+    ], limits=InvestigationLimits(max_invalid_tool_retries=1))
     report = investigator.run("Investigate a provider interface failure")
     assert report["status"] == "incomplete"
     assert report["stop_reason"] == "invalid_tool_request"
@@ -238,6 +238,79 @@ def test_repeated_invalid_tool_schema_stops_after_one_correction_opportunity():
     assert [call[0] for call in tools.calls] == ["repository_summary"]
     assert len(provider.messages) == 2
     assert any(event.get("event") == "tool_action_recovery_exhausted" for event in report["errors"])
+
+
+def test_mismatched_tool_arguments_feedback_suggests_the_matching_registered_tool():
+    investigator, provider, tools = make_investigator([
+        action_tool("graph_path", {"query": "total_calls", "mode": "content", "max_results": 5}),
+        action_tool("search_repository", {"query": "total_calls", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    report = investigator.run("Find source references for the total_calls attribute access.")
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
+    feedback = json.loads(provider.messages[1][-1]["content"])["validation_feedback"]
+    assert feedback["requested_tool"] == "graph_path"
+    assert "source" in feedback["accepted_argument_names"]
+    assert "target" in feedback["accepted_argument_names"]
+    assert feedback["unknown_fields"] == ["max_results", "mode", "query"]
+    assert feedback["possible_tool_matches"][0]["name"] == "search_repository"
+    assert feedback["possible_tool_matches"][0]["matching_fields"] == ["max_results", "mode", "query"]
+    assert report["budget"]["invalid_tool_retries_used"] == 1
+
+
+def test_multiple_invalid_tool_actions_can_recover_within_global_bound():
+    investigator, provider, tools = make_investigator([
+        action_tool("graph_path", {"query": "total_calls", "mode": "content", "max_results": 5}),
+        action_tool("search_repository", {"query": "total_calls", "mode": "content", "max_results": 5}),
+        action_tool("read_source_file", {"query": "total_calls"}),
+        action_tool("graph_path", {"source": "module:main", "target": "module:providers.factory", "max_depth": 3}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    report = investigator.run("Investigate the provider interface failure.")
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository", "graph_path"]
+    assert report["budget"]["invalid_tool_retries_used"] == 2
+    assert report["budget"]["max_invalid_tool_retries"] == 3
+    assert sum(event.get("event") == "tool_action_recovery_offered" for event in report["errors"]) == 2
+    assert len(provider.messages) == 5
+
+
+def test_failed_source_read_gives_exact_path_recovery_guidance():
+    class MissingPathEvidenceTools(FakeEvidenceTools):
+        def invoke(self, tool, arguments):
+            if tool == "read_source_file":
+                self.calls.append((tool, dict(arguments)))
+                return {
+                    "schema_version": "fake/v1",
+                    "tool": tool,
+                    "status": "error",
+                    "error": {
+                        "code": "invalid_path",
+                        "message": "Absolute paths are not accepted",
+                    },
+                    "provenance": dict(self.provenance),
+                }
+            return super().invoke(tool, arguments)
+
+    tools = MissingPathEvidenceTools()
+    tools.file_hashes["providers/adapter.py"] = hashlib.sha256(
+        b"class ProviderAdapter:\n    pass\n"
+    ).hexdigest()
+    investigator, provider, _ = make_investigator([
+        action_tool("read_source_file", {"path": "/path/to/provider.py", "start_line": 1, "end_line": 10}),
+        action_tool("search_repository", {"query": "ProviderAdapter", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0003", source_reference=True),
+    ], evidence=tools)
+    report = investigator.run("Inspect the provider adapter for the interface mismatch.")
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert [call[0] for call in tools.calls] == ["repository_summary", "read_source_file", "search_repository"]
+    feedback = json.loads(provider.messages[1][-1]["content"])["validation_feedback"]
+    assert feedback["schema_version"] == "ae32c/source-path-guidance/v1"
+    assert feedback["reason_code"] == "invalid_path"
+    assert "exact repository-relative path" in feedback["message"]
+    assert "providers/adapter.py" in feedback["possible_indexed_paths"]
+    assert report["budget"]["source_path_guidance_used"] == 1
 
 
 def test_duplicate_json_keys_are_rejected():
