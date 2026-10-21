@@ -625,11 +625,21 @@ def test_finalization_json_recovery_remains_available_after_evidence_budget_is_u
         finalization_rounds_reserved=3,
         max_invalid_json_retries=2,
         max_finalization_invalid_json_retries=1,
+        # This test isolates phase-scoped JSON recovery. The growing fake
+        # conversation history must not accidentally hit unrelated prompt or
+        # estimated-token budgets before the expected final response.
+        max_total_tokens=180_000,
+        max_total_prompt_chars=500_000,
     ))
 
     report = investigator.run("Investigate the provider interface mismatch.")
 
-    assert report["diagnosis"] is not None
+    assert report["diagnosis"] is not None, (
+        f"stop_reason={report.get('stop_reason')!r}; "
+        f"budget={report.get('budget')!r}; "
+        f"errors={report.get('errors')!r}; "
+        f"model_actions={report.get('model_actions')!r}"
+    )
     assert report["budget"]["model_rounds_used"] == 9
     assert report["budget"]["invalid_json_retries_used"] == 3
     assert report["budget"]["max_invalid_json_retries"] == 2
