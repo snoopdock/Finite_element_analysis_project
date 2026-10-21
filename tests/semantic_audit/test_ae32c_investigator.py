@@ -544,6 +544,7 @@ def test_finalization_json_recovery_uses_reserved_rounds_and_can_finish():
         max_rounds=4,
         finalization_rounds_reserved=3,
         max_invalid_json_retries=2,
+        max_finalization_invalid_json_retries=2,
         max_tool_calls=5,
         max_tokens_per_call=1_000,
         max_total_tokens=32_000,
@@ -565,6 +566,9 @@ def test_finalization_json_recovery_uses_reserved_rounds_and_can_finish():
     assert report["budget"]["finalization_rounds_reserved"] == 3
     assert report["budget"]["finalization_rounds_used"] == 3
     assert report["budget"]["invalid_json_retries_used"] == 2
+    assert report["budget"]["evidence_gathering_invalid_json_retries_used"] == 0
+    assert report["budget"]["finalization_invalid_json_retries_used"] == 2
+    assert report["budget"]["max_invalid_json_retries_total"] == 4
     assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
     serialized = json.dumps({"messages": provider.messages, "report": report})
     assert malformed_one not in serialized
@@ -596,6 +600,90 @@ def test_finalization_json_recovery_uses_reserved_rounds_and_can_finish():
     ]
     assert len(syntax_events) == 2
     assert all(item["parse_error_line"] == 1 and item["parse_error_column"] == 1 for item in syntax_events)
+
+
+def test_finalization_json_recovery_remains_available_after_evidence_budget_is_used():
+    malformed_evidence_one = "malformed evidence response one; must not be retained"
+    malformed_evidence_two = "malformed evidence response two; must not be retained"
+    malformed_finalization = "malformed finalization response; must not be retained"
+    search = action_tool(
+        "search_repository",
+        {"query": "provider.total_calls", "mode": "content", "max_results": 5},
+    )
+    investigator, provider, tools = make_investigator([
+        search,                         # round 1
+        search,                         # round 2
+        search,                         # round 3
+        search,                         # round 4
+        malformed_evidence_one,         # round 5: evidence recovery 1
+        search,                         # round 6
+        malformed_evidence_two,         # round 7: evidence recovery 2 (evidence budget exhausted)
+        malformed_finalization,         # round 8: finalization gets its independent recovery
+        final_action(evidence_id="E0002", source_reference=True),  # round 9
+    ], limits=InvestigationLimits(
+        max_rounds=10,
+        finalization_rounds_reserved=3,
+        max_invalid_json_retries=2,
+        max_finalization_invalid_json_retries=1,
+    ))
+
+    report = investigator.run("Investigate the provider interface mismatch.")
+
+    assert report["diagnosis"] is not None
+    assert report["budget"]["model_rounds_used"] == 9
+    assert report["budget"]["invalid_json_retries_used"] == 3
+    assert report["budget"]["max_invalid_json_retries"] == 2
+    assert report["budget"]["evidence_gathering_invalid_json_retries_used"] == 2
+    assert report["budget"]["max_evidence_gathering_invalid_json_retries"] == 2
+    assert report["budget"]["finalization_invalid_json_retries_used"] == 1
+    assert report["budget"]["max_finalization_invalid_json_retries"] == 1
+    assert report["budget"]["max_invalid_json_retries_total"] == 3
+
+    feedback = []
+    for turn in provider.messages:
+        for message in turn:
+            content = message.get("content", "")
+            if not isinstance(content, str):
+                continue
+            try:
+                envelope = json.loads(content)
+            except (json.JSONDecodeError, TypeError):
+                continue
+            if not isinstance(envelope, dict):
+                continue
+            candidate = envelope.get("validation_feedback")
+            if (
+                isinstance(candidate, dict)
+                and candidate.get("schema_version") == "ae32c/json-validation-feedback/v1"
+            ):
+                feedback.append(candidate)
+
+    final_feedback = [item for item in feedback if item.get("phase") == "finalization"]
+    assert len(final_feedback) == 1
+    assert final_feedback[0]["recovery_attempt"] == 1
+    assert final_feedback[0]["total_recovery_attempts_used"] == 3
+    assert final_feedback[0]["remaining_recovery_attempts"] == 0
+    assert final_feedback[0]["required_action"] == "final"
+
+    offered = [
+        event for event in report["errors"]
+        if event.get("event") == "invalid_json_recovery_offered"
+    ]
+    assert [(event["round"], event["phase"]) for event in offered] == [
+        (5, "evidence_gathering"),
+        (7, "evidence_gathering"),
+        (8, "finalization"),
+    ]
+    assert not any(
+        event.get("event") == "invalid_json_recovery_exhausted"
+        for event in report["errors"]
+    )
+    serialized = json.dumps({"messages": provider.messages, "report": report})
+    assert malformed_evidence_one not in serialized
+    assert malformed_evidence_two not in serialized
+    assert malformed_finalization not in serialized
+    # The finalization-only recovery must not dispatch another tool.
+    assert [name for name, _ in tools.calls].count("search_repository") == 5
 
 
 def test_malformed_json_gets_one_bounded_recovery_and_can_continue():

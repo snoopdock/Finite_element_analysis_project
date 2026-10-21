@@ -284,6 +284,8 @@ def test_live_investigation_limits_allow_multiround_evidence_work():
     assert limits.max_tool_calls == 12
     assert limits.finalization_rounds_reserved == 3
     assert limits.max_invalid_final_attempts == 2
+    assert limits.max_invalid_json_retries == 2
+    assert limits.max_finalization_invalid_json_retries == 1
     assert limits.max_tokens_per_call == 8_000
     assert limits.max_total_tokens == 180_000
     assert limits.max_total_prompt_chars == 200_000
@@ -297,6 +299,8 @@ def test_nararouter_gets_provider_specific_elapsed_budget():
     assert limits.max_rounds == 10
     assert limits.finalization_rounds_reserved == 3
     assert limits.max_invalid_final_attempts == 2
+    assert limits.max_invalid_json_retries == 2
+    assert limits.max_finalization_invalid_json_retries == 1
     assert limits.max_total_tokens == 180_000
 
 

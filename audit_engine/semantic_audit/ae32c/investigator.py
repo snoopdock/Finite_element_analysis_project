@@ -75,7 +75,9 @@ class InvestigationLimits:
     max_invalid_final_attempts: int = 1
     finalization_rounds_reserved: int = 1
     max_invalid_tool_retries: int = 3
+    # Evidence-gathering retries are independent from the reserved finalization phase.
     max_invalid_json_retries: int = 2
+    max_finalization_invalid_json_retries: int = 1
     max_source_path_guidance: int = 2
     max_cost_usd: float | None = None
     temperature: float = 0.0
@@ -98,6 +100,7 @@ class InvestigationLimits:
             "finalization_rounds_reserved": (1, 4),
             "max_invalid_tool_retries": (0, 5),
             "max_invalid_json_retries": (0, 3),
+            "max_finalization_invalid_json_retries": (0, 3),
             "max_source_path_guidance": (0, 5),
         }
         for name, (minimum, maximum) in integer_ranges.items():
@@ -197,6 +200,8 @@ class RepositoryInvestigator:
         self._invalid_tool_retries = 0
         self._unsupported_action_retries = 0
         self._invalid_json_retries = 0
+        self._invalid_json_evidence_retries = 0
+        self._invalid_json_finalization_retries = 0
         self._nararouter_transport_retries_used = 0
         self._cloudflare_transport_retries_used = 0
         self._source_path_guidance_used = 0
@@ -1295,6 +1300,14 @@ class RepositoryInvestigator:
             "invalid_final_attempts_used": self._invalid_final_attempts,
             "max_invalid_json_retries": self.limits.max_invalid_json_retries,
             "invalid_json_retries_used": self._invalid_json_retries,
+            "max_evidence_gathering_invalid_json_retries": self.limits.max_invalid_json_retries,
+            "evidence_gathering_invalid_json_retries_used": self._invalid_json_evidence_retries,
+            "max_finalization_invalid_json_retries": self.limits.max_finalization_invalid_json_retries,
+            "finalization_invalid_json_retries_used": self._invalid_json_finalization_retries,
+            "max_invalid_json_retries_total": (
+                self.limits.max_invalid_json_retries
+                + self.limits.max_finalization_invalid_json_retries
+            ),
             "max_nararouter_transport_retries": 1 if self.provider_name.strip().lower() == "nararouter" else 0,
             "nararouter_transport_retries_used": self._nararouter_transport_retries_used,
             "max_cloudflare_transport_retries": 1 if self.provider_name.strip().lower() == "cloudflare" else 0,
@@ -1440,38 +1453,66 @@ class RepositoryInvestigator:
                         "response_chars": len(response),
                         **parse_error_metadata,
                     })
+                    in_finalization = self._is_finalization_round(self._model_rounds)
+                    phase_name = "finalization" if in_finalization else "evidence_gathering"
+                    phase_retries_used = (
+                        self._invalid_json_finalization_retries
+                        if in_finalization
+                        else self._invalid_json_evidence_retries
+                    )
+                    phase_retry_limit = (
+                        self.limits.max_finalization_invalid_json_retries
+                        if in_finalization
+                        else self.limits.max_invalid_json_retries
+                    )
                     if (
-                        self._invalid_json_retries >= self.limits.max_invalid_json_retries
+                        phase_retries_used >= phase_retry_limit
                         or self._model_rounds >= self.limits.max_rounds
                     ):
                         self._events.append({
                             "event": "invalid_json_recovery_exhausted",
                             "round": self._model_rounds,
+                            "phase": phase_name,
                             "parse_error_code": parse_error_code,
                             "recovery_attempts_used": self._invalid_json_retries,
-                            "max_invalid_json_retries": self.limits.max_invalid_json_retries,
+                            "phase_recovery_attempts_used": phase_retries_used,
+                            "phase_retry_limit": phase_retry_limit,
+                            "max_invalid_json_retries": phase_retry_limit,
+                            "max_invalid_json_retries_total": (
+                                self.limits.max_invalid_json_retries
+                                + self.limits.max_finalization_invalid_json_retries
+                            ),
                             **parse_error_metadata,
                         })
                         return self._finalize_report(report, "incomplete", "invalid_model_json")
 
+                    if in_finalization:
+                        self._invalid_json_finalization_retries += 1
+                    else:
+                        self._invalid_json_evidence_retries += 1
                     self._invalid_json_retries += 1
+                    phase_recovery_attempt = (
+                        self._invalid_json_finalization_retries
+                        if in_finalization
+                        else self._invalid_json_evidence_retries
+                    )
                     # Never echo malformed provider output back into context or diagnostics.
                     # A placeholder preserves the conversational turn structure.
                     self._messages.append({
                         "role": "assistant",
                         "content": "<response rejected: invalid strict JSON; original content omitted>",
                     })
-                    in_finalization = self._is_finalization_round(self._model_rounds)
                     feedback = {
                         "schema_version": "ae32c/json-validation-feedback/v1",
                         "status": "rejected_before_dispatch",
                         "reason_code": "invalid_strict_json",
                         "parse_error_code": parse_error_code,
-                        "recovery_attempt": self._invalid_json_retries,
+                        "recovery_attempt": phase_recovery_attempt,
+                        "total_recovery_attempts_used": self._invalid_json_retries,
                         "remaining_recovery_attempts": max(
-                            0, self.limits.max_invalid_json_retries - self._invalid_json_retries
+                            0, phase_retry_limit - phase_recovery_attempt
                         ),
-                        "phase": "finalization" if in_finalization else "evidence_gathering",
+                        "phase": phase_name,
                         "required_action": "final" if in_finalization else "tool_call_or_final",
                         **(
                             {"required_top_level_keys": ["action", "diagnosis"]}
@@ -1506,8 +1547,12 @@ class RepositoryInvestigator:
                         "event": "invalid_json_recovery_offered",
                         "round": self._model_rounds,
                         "parse_error_code": parse_error_code,
-                        "recovery_attempt": self._invalid_json_retries,
-                        "phase": "finalization" if in_finalization else "evidence_gathering",
+                        "recovery_attempt": phase_recovery_attempt,
+                        "total_recovery_attempts_used": self._invalid_json_retries,
+                        "remaining_recovery_attempts": max(
+                            0, phase_retry_limit - phase_recovery_attempt
+                        ),
+                        "phase": phase_name,
                         **parse_error_metadata,
                     })
                     continue
