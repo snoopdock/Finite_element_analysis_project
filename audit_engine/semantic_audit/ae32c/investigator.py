@@ -718,6 +718,30 @@ class RepositoryInvestigator:
             ),
         }
 
+        if reason_code == "tool_action_shape_invalid":
+            expected_action_keys = {"action", "tool", "arguments", "reason"}
+            received_action_keys = sorted(
+                self._safe_text(key, 100) for key in action if isinstance(key, str)
+            )[:20]
+            feedback.update({
+                "expected_top_level_keys": sorted(expected_action_keys),
+                "received_top_level_keys": received_action_keys,
+                "missing_top_level_keys": sorted(expected_action_keys - set(action)),
+                "unexpected_top_level_keys": sorted(
+                    self._safe_text(key, 100)
+                    for key in action
+                    if isinstance(key, str) and key not in expected_action_keys
+                )[:20],
+                "message": (
+                    "No evidence tool was executed. The top-level action envelope is invalid: it must contain "
+                    "exactly the keys action, tool, arguments, and reason. Put all tool parameters inside the "
+                    "arguments object; do not place tool parameters at the top level or add extra envelope keys. "
+                    "Return one corrected JSON object using the exact registered tool name and its schema. "
+                    "Do not repeat the rejected envelope. This feedback is protocol guidance, not repository evidence."
+                ),
+                "available_tools": sorted(self._tool_schemas)[:30],
+            })
+
         # If the supplied argument names fit another registered tool better than the selected
         # tool, offer ranked names only. Never dispatch or rewrite a model action automatically.
         supplied = set(argument_keys)
@@ -1287,10 +1311,16 @@ class RepositoryInvestigator:
                 if len(response) > self.limits.max_response_chars:
                     self._events.append({"event": "provider_response_rejected", "round": self._model_rounds, "reason": "response_too_large", "response_chars": len(response)})
                     return self._finalize_report(report, "incomplete", "provider_response_too_large")
+                parse_error_metadata: dict[str, int] = {}
                 try:
                     parsed = self._strict_json_loads(response)
-                except json.JSONDecodeError:
+                except json.JSONDecodeError as exc:
                     parse_error_code = "json_syntax_error"
+                    # Record position only; never persist or echo the raw model response.
+                    parse_error_metadata = {
+                        "parse_error_line": int(exc.lineno),
+                        "parse_error_column": int(exc.colno),
+                    }
                 except ValueError as exc:
                     known_parse_errors = {"duplicate_json_key", "non_standard_json_constant"}
                     parse_error_code = str(exc) if str(exc) in known_parse_errors else "invalid_json_value"
@@ -1307,6 +1337,7 @@ class RepositoryInvestigator:
                         "parse_error_code": parse_error_code,
                         "response_chars": len(response),
                         "recovery_attempts_used": self._invalid_json_retries,
+                        **parse_error_metadata,
                     })
                     self._events.append({
                         "event": "model_action_rejected",
@@ -1314,6 +1345,7 @@ class RepositoryInvestigator:
                         "reason": "invalid_strict_json",
                         "parse_error_code": parse_error_code,
                         "response_chars": len(response),
+                        **parse_error_metadata,
                     })
                     if (
                         self._invalid_json_retries >= self.limits.max_invalid_json_retries
@@ -1325,6 +1357,7 @@ class RepositoryInvestigator:
                             "parse_error_code": parse_error_code,
                             "recovery_attempts_used": self._invalid_json_retries,
                             "max_invalid_json_retries": self.limits.max_invalid_json_retries,
+                            **parse_error_metadata,
                         })
                         return self._finalize_report(report, "incomplete", "invalid_model_json")
 
@@ -1335,18 +1368,41 @@ class RepositoryInvestigator:
                         "role": "assistant",
                         "content": "<response rejected: invalid strict JSON; original content omitted>",
                     })
+                    in_finalization = self._is_finalization_round(self._model_rounds)
                     feedback = {
                         "schema_version": "ae32c/json-validation-feedback/v1",
                         "status": "rejected_before_dispatch",
                         "reason_code": "invalid_strict_json",
                         "parse_error_code": parse_error_code,
+                        "recovery_attempt": self._invalid_json_retries,
+                        "remaining_recovery_attempts": max(
+                            0, self.limits.max_invalid_json_retries - self._invalid_json_retries
+                        ),
+                        "phase": "finalization" if in_finalization else "evidence_gathering",
+                        "required_action": "final" if in_finalization else "tool_call_or_final",
+                        **(
+                            {"required_top_level_keys": ["action", "diagnosis"]}
+                            if in_finalization else {}
+                        ),
                         "message": (
-                            "Your previous response was rejected because it was not exactly one valid strict JSON object. "
-                            "No action was executed and the malformed response was omitted from the conversation. "
-                            "Return exactly one JSON object with no Markdown fences, no commentary, no trailing text, "
-                            "no duplicate keys, and only the documented action schema. Use either a registered tool_call "
-                            "with its exact arguments schema or a final diagnosis action. This feedback is protocol guidance, "
-                            "not repository evidence."
+                            (
+                                "The reserved finalization phase is active. Your previous response was rejected "
+                                "because it was not exactly one valid strict JSON object. No action was executed, "
+                                "and the malformed response was omitted. Return exactly one JSON object for a final "
+                                "diagnosis, with only the top-level keys action and diagnosis and action set to final. "
+                                "Do not request tools, add Markdown fences, add commentary, or include trailing text. "
+                                "Use only evidence IDs and source references already returned; if evidence is "
+                                "insufficient, say so explicitly and cite the available evidence and limitations. "
+                            )
+                            if in_finalization else
+                            (
+                                "Your previous response was rejected because it was not exactly one valid strict JSON object. "
+                                "No action was executed and the malformed response was omitted from the conversation. "
+                                "Return exactly one JSON object with no Markdown fences, no commentary, no trailing text, "
+                                "no duplicate keys, and only the documented action schema. Use either a registered tool_call "
+                                "with its exact arguments schema or a final diagnosis action. This feedback is protocol guidance, "
+                                "not repository evidence."
+                            )
                         ),
                     }
                     self._messages.append({
@@ -1358,6 +1414,8 @@ class RepositoryInvestigator:
                         "round": self._model_rounds,
                         "parse_error_code": parse_error_code,
                         "recovery_attempt": self._invalid_json_retries,
+                        "phase": "finalization" if in_finalization else "evidence_gathering",
+                        **parse_error_metadata,
                     })
                     continue
 
@@ -1423,11 +1481,24 @@ class RepositoryInvestigator:
                             for key in rejected_arguments
                             if isinstance(key, str)
                         )[:30] if isinstance(rejected_arguments, dict) else []
+                        expected_action_keys = {"action", "tool", "arguments", "reason"}
+                        received_action_keys = sorted(
+                            self._safe_text(key, 100) for key in action if isinstance(key, str)
+                        )[:20]
+                        missing_action_keys = sorted(expected_action_keys - set(action))
+                        unexpected_action_keys = sorted(
+                            self._safe_text(key, 100)
+                            for key in action
+                            if isinstance(key, str) and key not in expected_action_keys
+                        )[:20]
                         self._model_action_trace.append({
                             "round": self._model_rounds,
                             "action": "rejected",
                             "tool": self._safe_text(rejected_tool, 120) if isinstance(rejected_tool, str) else None,
                             "argument_keys": rejected_argument_keys,
+                            "received_top_level_keys": received_action_keys,
+                            "missing_top_level_keys": missing_action_keys,
+                            "unexpected_top_level_keys": unexpected_action_keys,
                             "reason": reason,
                             "recovery_attempts_used": self._invalid_tool_retries,
                         })
@@ -1436,6 +1507,9 @@ class RepositoryInvestigator:
                             "round": self._model_rounds,
                             "tool": self._safe_text(rejected_tool, 120) if isinstance(rejected_tool, str) else None,
                             "argument_keys": rejected_argument_keys,
+                            "received_top_level_keys": received_action_keys,
+                            "missing_top_level_keys": missing_action_keys,
+                            "unexpected_top_level_keys": unexpected_action_keys,
                             "reason": reason,
                             "reason_code": reason_code,
                         })
@@ -1453,9 +1527,19 @@ class RepositoryInvestigator:
                         self._invalid_tool_retries += 1
                         # Keep the conversation structurally valid while sanitizing the
                         # rejected model action before it is echoed back into context.
+                        if reason_code == "tool_action_shape_invalid":
+                            rejected_action_context = {
+                                "action": "rejected",
+                                "reason": "tool_action_shape_invalid",
+                                "received_top_level_keys": received_action_keys,
+                                "missing_top_level_keys": missing_action_keys,
+                                "unexpected_top_level_keys": unexpected_action_keys,
+                            }
+                        else:
+                            rejected_action_context = self._safe_value(action)
                         self._messages.append({
                             "role": "assistant",
-                            "content": self._canonical_json(self._safe_value(action)),
+                            "content": self._canonical_json(rejected_action_context),
                         })
                         self._messages.append({
                             "role": "user",
@@ -1468,6 +1552,9 @@ class RepositoryInvestigator:
                             "recovery_attempt": self._invalid_tool_retries,
                             "guided_field_count": len(feedback.get("field_guidance", [])),
                             "unknown_field_count": len(feedback.get("unknown_fields", [])),
+                            "top_level_shape_guidance": reason_code == "tool_action_shape_invalid",
+                            "missing_top_level_key_count": len(feedback.get("missing_top_level_keys", [])),
+                            "unexpected_top_level_key_count": len(feedback.get("unexpected_top_level_keys", [])),
                         })
                         continue
                     if self._tool_calls >= self.limits.max_tool_calls:

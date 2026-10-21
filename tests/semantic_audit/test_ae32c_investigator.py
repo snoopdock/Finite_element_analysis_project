@@ -348,6 +348,47 @@ def test_unknown_tool_request_is_rejected_without_dispatch_when_recovery_disable
     assert any(event.get("event") == "tool_action_recovery_exhausted" for event in report["errors"])
 
 
+def test_invalid_tool_action_envelope_reports_top_level_keys_and_recovers_safely():
+    invalid = json.loads(action_tool(
+        "search_repository",
+        {"query": "observed", "mode": "content", "max_results": 5},
+    ))
+    invalid["unexpected_envelope_key"] = "do-not-echo-this-value"
+    investigator, provider, tools = make_investigator([
+        json.dumps(invalid),
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ], limits=InvestigationLimits(max_invalid_tool_retries=1))
+
+    report = investigator.run("Investigate a failed workflow")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
+    assert report["budget"]["invalid_tool_retries_used"] == 1
+    rejection = next(
+        event for event in report["errors"]
+        if event.get("event") == "model_action_rejected"
+        and event.get("reason_code") == "tool_action_shape_invalid"
+    )
+    assert rejection["received_top_level_keys"] == [
+        "action", "arguments", "reason", "tool", "unexpected_envelope_key"
+    ]
+    assert rejection["missing_top_level_keys"] == []
+    assert rejection["unexpected_top_level_keys"] == ["unexpected_envelope_key"]
+    recovery = next(
+        event for event in report["errors"]
+        if event.get("event") == "tool_action_recovery_offered"
+        and event.get("reason_code") == "tool_action_shape_invalid"
+    )
+    assert recovery["top_level_shape_guidance"] is True
+    feedback = json.loads(provider.messages[1][-1]["content"])["validation_feedback"]
+    assert feedback["expected_top_level_keys"] == ["action", "arguments", "reason", "tool"]
+    assert feedback["unexpected_top_level_keys"] == ["unexpected_envelope_key"]
+    assert "Put all tool parameters inside the arguments object" in feedback["message"]
+    serialized = json.dumps({"messages": provider.messages, "report": report})
+    assert "do-not-echo-this-value" not in serialized
+
+
 def test_unknown_tool_arguments_receive_feedback_and_recover_once():
     investigator, provider, tools = make_investigator([
         action_tool("search_repository", {"query": "observed", "unexpected": "extra"}),
@@ -487,6 +528,67 @@ def test_duplicate_json_keys_are_rejected_when_json_recovery_is_disabled():
     assert any(event.get("event") == "invalid_json_recovery_exhausted" for event in report["errors"])
 
 
+def test_finalization_json_recovery_uses_reserved_rounds_and_can_finish():
+    malformed_one = "not json response one"
+    malformed_two = "not json response two"
+    limits = InvestigationLimits(
+        max_rounds=4,
+        finalization_rounds_reserved=3,
+        max_invalid_json_retries=2,
+        max_tool_calls=5,
+        max_tokens_per_call=1_000,
+        max_total_tokens=32_000,
+        max_total_prompt_chars=500_000,
+        max_elapsed_seconds=30,
+    )
+    investigator, provider, tools = make_investigator([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        malformed_one,
+        malformed_two,
+        final_action(evidence_id="E0002", source_reference=True),
+    ], limits=limits)
+
+    report = investigator.run("Investigate a failed workflow")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert report["stop_reason"] == "diagnosis_submitted_with_coverage_or_snapshot_limitations"
+    assert report["budget"]["model_rounds_used"] == 4
+    assert report["budget"]["finalization_rounds_reserved"] == 3
+    assert report["budget"]["finalization_rounds_used"] == 3
+    assert report["budget"]["invalid_json_retries_used"] == 2
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
+    serialized = json.dumps({"messages": provider.messages, "report": report})
+    assert malformed_one not in serialized
+    assert malformed_two not in serialized
+    unique_feedback = {}
+    for turn in provider.messages:
+        for message in turn:
+            content = message.get("content", "")
+            if message.get("role") != "user" or "validation_feedback" not in content:
+                continue
+            try:
+                envelope = json.loads(content)
+            except json.JSONDecodeError:
+                continue
+            feedback = envelope.get("validation_feedback")
+            if isinstance(feedback, dict) and feedback.get("schema_version") == "ae32c/json-validation-feedback/v1":
+                unique_feedback[content] = feedback
+    finalization_feedback = [
+        item for item in unique_feedback.values()
+        if item.get("phase") == "finalization"
+    ]
+    assert len(finalization_feedback) == 2
+    assert all(item["required_action"] == "final" for item in finalization_feedback)
+    assert all(item["required_top_level_keys"] == ["action", "diagnosis"] for item in finalization_feedback)
+    syntax_events = [
+        item for item in report["errors"]
+        if item.get("event") == "model_action_rejected"
+        and item.get("parse_error_code") == "json_syntax_error"
+    ]
+    assert len(syntax_events) == 2
+    assert all(item["parse_error_line"] == 1 and item["parse_error_column"] == 1 for item in syntax_events)
+
+
 def test_malformed_json_gets_one_bounded_recovery_and_can_continue():
     malformed = "I will search the repository now. ```json {not valid}"
     investigator, provider, tools = make_investigator([
@@ -507,6 +609,13 @@ def test_malformed_json_gets_one_bounded_recovery_and_can_continue():
     assert "exactly one valid strict JSON object" in recovery_context
     assert malformed not in json.dumps(provider.messages)
     assert malformed not in json.dumps(report)
+    syntax_event = next(
+        event for event in report["errors"]
+        if event.get("event") == "model_action_rejected"
+        and event.get("parse_error_code") == "json_syntax_error"
+    )
+    assert syntax_event["parse_error_line"] == 1
+    assert syntax_event["parse_error_column"] == 1
     assert any(event.get("event") == "invalid_json_recovery_offered" for event in report["errors"])
 
 

@@ -31,7 +31,7 @@ from providers.safe_errors import sanitize_provider_error
 MAX_BASELINE_RESPONSE_CHARS = 16_000
 LIVE_BASELINE_MAX_TOKENS = 2_000
 LIVE_GRAPH_MAX_TOKENS = 8_000
-LIVE_GRAPH_MAX_ROUNDS = 9
+LIVE_GRAPH_MAX_ROUNDS = 10
 LIVE_GRAPH_MAX_CALLS = LIVE_GRAPH_MAX_ROUNDS
 DEFAULT_PROBLEM = (
     "A previous extraction workflow failed with AttributeError because the "
@@ -83,7 +83,7 @@ def build_live_investigation_limits(provider_name: str = "") -> InvestigationLim
     return InvestigationLimits(
         max_rounds=LIVE_GRAPH_MAX_ROUNDS,
         max_tool_calls=12,
-        finalization_rounds_reserved=2,
+        finalization_rounds_reserved=3,
         max_tokens_per_call=LIVE_GRAPH_MAX_TOKENS,
         max_total_tokens=180_000,
         max_response_chars=40_000,
@@ -160,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
         description="Manually opt in to a bounded baseline-vs-graph-assisted AE-32C live evaluation."
     )
     parser.add_argument("--confirm-live-provider-calls", action="store_true",
-                        help="Required explicit consent to make live provider calls (one baseline call plus up to nine investigation calls).")
+                        help="Required explicit consent to make live provider calls (one baseline call plus up to ten investigation calls).")
     parser.add_argument("--repo-root", default=str(DEFAULT_FIXTURE),
                         help="Controlled incident fixture root; must remain inside the checkout.")
     parser.add_argument("--baseline-context-path", default="pipeline/extractor.py",
