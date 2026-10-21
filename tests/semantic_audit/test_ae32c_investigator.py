@@ -796,7 +796,32 @@ def test_unsupported_action_during_finalization_only_allows_final_recovery():
 
     assert report["diagnosis"] is not None
     assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
-    feedback = json.loads(provider.messages[2][-1]["content"])["validation_feedback"]
+    # The provider records a complete message history per request. The feedback
+    # is not guaranteed to be the final message at a fixed request index, so
+    # locate it by its stable schema identifier rather than message position.
+    feedback = None
+    for turn in provider.messages:
+        for message in turn:
+            content = message.get("content", "")
+            if not isinstance(content, str):
+                continue
+            try:
+                envelope = json.loads(content)
+            except (json.JSONDecodeError, TypeError):
+                continue
+            if not isinstance(envelope, dict):
+                continue
+            candidate = envelope.get("validation_feedback")
+            if (
+                isinstance(candidate, dict)
+                and candidate.get("schema_version") == "ae32c/unsupported-action-feedback/v1"
+            ):
+                feedback = candidate
+                break
+        if feedback is not None:
+            break
+
+    assert feedback is not None, "finalization unsupported-action feedback was not recorded"
     assert feedback["phase"] == "finalization"
     assert feedback["supported_action_values"] == ["final"]
     assert "Do not request tools" in feedback["message"]
