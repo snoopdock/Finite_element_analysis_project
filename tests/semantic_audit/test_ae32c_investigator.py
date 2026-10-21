@@ -69,10 +69,14 @@ class FakeProvider:
         self.on_chat = on_chat
         self.messages = []
         self.calls = 0
+        self.max_retries = 3
+        self.max_retries_seen = []
+        self.http_attempts = 0
         self.usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "reported_cost_usd": 0.0}
 
     def chat(self, messages, temperature=0.2, max_tokens=None, model=None):
         self.messages.append([dict(message) for message in messages])
+        self.max_retries_seen.append(self.max_retries)
         self.calls += 1
         if self.on_chat is not None:
             self.on_chat()
@@ -87,7 +91,12 @@ class FakeProvider:
         return item, None
 
     def get_stats(self):
-        return {"provider": self.provider_name, "model": self.model, "usage": dict(self.usage)}
+        return {
+            "provider": self.provider_name,
+            "model": self.model,
+            "http_attempts": self.http_attempts,
+            "usage": dict(self.usage),
+        }
 
 
 class StructuredCloudflareFakeProvider(FakeProvider):
@@ -676,6 +685,106 @@ def test_invalid_citation_is_rejected_and_one_repair_turn_can_succeed():
     assert any(event.get("event") == "final_diagnosis_rejected" for event in report["errors"])
     assert len(provider.messages) == 3
     assert report["diagnosis_assurance"] == "references_resolved_not_independently_proven"
+
+
+def test_invalid_source_references_receive_exact_ledger_candidates_and_recover_twice():
+    invalid_line = json.loads(final_action(evidence_id="E0002", source_reference=True))
+    invalid_line["diagnosis"]["root_cause"]["source_references"][0]["line"] = 999
+    invalid_line["diagnosis"]["claims"][0]["source_references"][0]["line"] = 999
+
+    invalid_shape = json.loads(final_action(evidence_id="E0002", source_reference=True))
+    invalid_shape["diagnosis"]["root_cause"]["source_references"][0]["extra"] = "not permitted"
+    invalid_shape["diagnosis"]["claims"][0]["source_references"][0]["extra"] = "not permitted"
+
+    investigator, provider, _ = make_investigator([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        json.dumps(invalid_line),
+        json.dumps(invalid_shape),
+        final_action(evidence_id="E0002", source_reference=True),
+    ], limits=InvestigationLimits(max_invalid_final_attempts=2))
+
+    report = investigator.run("Investigate a failed workflow")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert report["diagnosis"] is not None
+    rejected = [
+        event for event in report["errors"]
+        if event.get("event") == "final_diagnosis_rejected"
+    ]
+    assert len(rejected) == 2
+    assert "source_reference_line_invalid" in rejected[0]["reason_codes"]
+    assert "source_reference_shape_invalid" in rejected[1]["reason_codes"]
+
+    feedback_envelopes = []
+    for turn in provider.messages[2:]:
+        if not turn:
+            continue
+        try:
+            envelope = json.loads(turn[-1].get("content", ""))
+        except json.JSONDecodeError:
+            continue
+        feedback = envelope.get("validation_feedback") if isinstance(envelope, dict) else None
+        if isinstance(feedback, dict) and feedback.get("schema_version") == "ae32c/diagnosis-validation-feedback/v1":
+            feedback_envelopes.append(feedback)
+
+    assert len(feedback_envelopes) == 2
+    candidate = {
+        "evidence_id": "E0002",
+        "path": SOURCE,
+        "line": 2,
+        "source_sha256": SOURCE_HASH,
+    }
+    assert candidate in feedback_envelopes[0]["source_reference_candidates"]
+    assert feedback_envelopes[0]["required_source_reference_keys"] == [
+        "evidence_id", "path", "line", "source_sha256"
+    ]
+    assert "line must be a positive JSON integer" in " ".join(feedback_envelopes[0]["rules"])
+    assert "Do not invent citations" in feedback_envelopes[1]["message"]
+
+
+def test_nararouter_gets_one_global_transport_retry_then_returns_to_single_attempts():
+    class RetryAwareNaraProvider(FakeProvider):
+        provider_name = "nararouter"
+
+        def __init__(self, responses, attempts_per_call):
+            super().__init__(responses)
+            self.attempts_per_call = list(attempts_per_call)
+
+        def chat(self, messages, temperature=0.2, max_tokens=None, model=None):
+            attempts = self.attempts_per_call.pop(0)
+            self.http_attempts += attempts
+            return super().chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)
+
+    provider = RetryAwareNaraProvider([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ], attempts_per_call=[2, 1])
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        evidence_tools=FakeEvidenceTools(),
+        limits=InvestigationLimits(),
+        id_factory=lambda: "test-investigation-nararouter-retry",
+    )
+
+    report = investigator.run("Investigate a failed workflow")
+
+    assert report["diagnosis"] is not None
+    assert provider.max_retries_seen == [2, 1]
+    assert provider.max_retries == 3
+    assert report["budget"]["max_nararouter_transport_retries"] == 1
+    assert report["budget"]["nararouter_transport_retries_used"] == 1
+    retry_events = [
+        event for event in report["errors"]
+        if event.get("event") == "nararouter_transport_retry_budget_consumed"
+    ]
+    assert retry_events == [{
+        "event": "nararouter_transport_retry_budget_consumed",
+        "round": 1,
+        "http_attempts": 2,
+        "retry_attempts": 1,
+        "retry_budget_remaining": 0,
+    }]
 
 
 def test_unobserved_source_line_is_rejected():

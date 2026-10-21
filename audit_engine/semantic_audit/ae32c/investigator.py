@@ -196,6 +196,7 @@ class RepositoryInvestigator:
         self._finalization_tool_requests_rejected = 0
         self._invalid_tool_retries = 0
         self._invalid_json_retries = 0
+        self._nararouter_transport_retries_used = 0
         self._source_path_guidance_used = 0
         self._used = False
         self._secret_values = self._provider_secret_values(provider)
@@ -308,6 +309,19 @@ class RepositoryInvestigator:
         current = self._usage_snapshot()
         self._reported_tokens = max(0, int(current["total_tokens"] - self._initial_usage["total_tokens"]))
         self._reported_cost_usd = max(0.0, current["reported_cost_usd"] - self._initial_usage["reported_cost_usd"])
+
+    def _provider_http_attempt_count(self) -> int | None:
+        """Read safe transport-attempt telemetry without requiring a specific adapter."""
+        try:
+            stats = self.provider.get_stats()
+        except Exception:
+            return None
+        if not isinstance(stats, Mapping):
+            return None
+        value = stats.get("http_attempts")
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            return None
+        return value
 
     def _verify_snapshot(self) -> tuple[bool, str]:
         """Rehash included files and the graph where the concrete AE-32B API permits it."""
@@ -930,6 +944,33 @@ class RepositoryInvestigator:
             for child in value:
                 self._observed_source_references(child, evidence_id, output)
 
+    def _available_source_reference_candidates(self, maximum: int = 80) -> list[dict[str, Any]]:
+        """Return exact, ledger-observed source references that pass manifest checks."""
+        candidates: list[dict[str, Any]] = []
+        seen: set[tuple[str, str, int, str]] = set()
+        expected_hashes = self._expected_file_hashes
+        for entry in self._ledger:
+            if entry.status != "ok" or entry.tool == "repository_summary":
+                continue
+            observed: set[tuple[str, int, str]] = set()
+            self._observed_source_references(entry.response, entry.evidence_id, observed)
+            for path, line, digest in sorted(observed):
+                if expected_hashes and expected_hashes.get(path) != digest:
+                    continue
+                candidate_key = (entry.evidence_id, path, line, digest)
+                if candidate_key in seen:
+                    continue
+                seen.add(candidate_key)
+                candidates.append({
+                    "evidence_id": entry.evidence_id,
+                    "path": path,
+                    "line": line,
+                    "source_sha256": digest,
+                })
+                if len(candidates) >= max(1, int(maximum)):
+                    return candidates
+        return candidates
+
     def _validate_source_reference(self, reference: Any, evidence_refs: set[str]) -> tuple[dict[str, Any] | None, str | None]:
         if not isinstance(reference, dict) or set(reference) != {"evidence_id", "path", "line", "source_sha256"}:
             return None, "source_reference_shape_invalid"
@@ -1146,8 +1187,16 @@ class RepositoryInvestigator:
         self._reserved_token_estimate += reserve
         self._estimated_cost_usd += estimated_call_cost
         remaining = max(1, int(math.ceil(self._remaining_seconds())))
+        provider_name_normalized = self.provider_name.strip().lower()
+        http_attempts_before = self._provider_http_attempt_count()
+        retry_limit = (
+            2
+            if provider_name_normalized == "nararouter"
+            and self._nararouter_transport_retries_used < 1
+            else 1
+        )
         restored: list[tuple[str, Any]] = []
-        for name, value in (("timeout_seconds", remaining), ("max_retries", 1)):
+        for name, value in (("timeout_seconds", remaining), ("max_retries", retry_limit)):
             if hasattr(self.provider, name):
                 try:
                     old = getattr(self.provider, name)
@@ -1178,6 +1227,22 @@ class RepositoryInvestigator:
         except Exception as exc:
             return None, self._safe_text(f"provider_exception:{type(exc).__name__}", 300), reserve
         finally:
+            http_attempts_after = self._provider_http_attempt_count()
+            if (
+                provider_name_normalized == "nararouter"
+                and self._nararouter_transport_retries_used < 1
+                and http_attempts_before is not None
+                and http_attempts_after is not None
+                and http_attempts_after - http_attempts_before > 1
+            ):
+                self._nararouter_transport_retries_used = 1
+                self._events.append({
+                    "event": "nararouter_transport_retry_budget_consumed",
+                    "round": self._model_rounds,
+                    "http_attempts": min(2, http_attempts_after - http_attempts_before),
+                    "retry_attempts": 1,
+                    "retry_budget_remaining": 0,
+                })
             for name, old in reversed(restored):
                 try:
                     setattr(self.provider, name, old)
@@ -1206,6 +1271,8 @@ class RepositoryInvestigator:
             "invalid_final_attempts_used": self._invalid_final_attempts,
             "max_invalid_json_retries": self.limits.max_invalid_json_retries,
             "invalid_json_retries_used": self._invalid_json_retries,
+            "max_nararouter_transport_retries": 1 if self.provider_name.strip().lower() == "nararouter" else 0,
+            "nararouter_transport_retries_used": self._nararouter_transport_retries_used,
             "max_source_path_guidance": self.limits.max_source_path_guidance,
             "source_path_guidance_used": self._source_path_guidance_used,
             "max_tokens_per_call": self.limits.max_tokens_per_call,
@@ -1659,7 +1726,31 @@ class RepositoryInvestigator:
                             return self._finalize_report(report, "inconclusive", "invalid_diagnosis_references_or_schema")
                         self._messages.append({"role": "assistant", "content": self._canonical_json(action)})
                         self._messages.append({"role": "user", "content": self._canonical_json({
-                            "validation_feedback": "The proposed diagnosis was rejected. Correct the schema and evidence references using only evidence_ids and source locations returned by the tools.",
+                            "validation_feedback": {
+                                "schema_version": "ae32c/diagnosis-validation-feedback/v1",
+                                "status": "rejected_before_acceptance",
+                                "reason_codes": errors,
+                                "required_source_reference_keys": [
+                                    "evidence_id", "path", "line", "source_sha256"
+                                ],
+                                "source_reference_candidates": self._available_source_reference_candidates(),
+                                "rules": [
+                                    "A source reference must contain exactly the four required keys; no missing or extra keys.",
+                                    "line must be a positive JSON integer, not a string, float, or boolean.",
+                                    "evidence_id must appear in the same claim or root_cause evidence_refs list.",
+                                    "The evidence_id, path, line, and source_sha256 tuple must match one of the supplied ledger-observed candidates exactly.",
+                                    "Do not invent or repair a path, line number, digest, or evidence ID.",
+                                    "If no supplied candidate supports a claim, remove the unsupported source reference, state the limitation, and do not overstate the conclusion.",
+                                ],
+                                "message": (
+                                    "The diagnosis was rejected before acceptance. Correct only the reported "
+                                    "schema/reference violations. Use the exact source_reference_candidates "
+                                    "from the evidence ledger; keep each reference bound to an evidence_id "
+                                    "listed by that same claim. Do not invent citations. If the evidence is "
+                                    "insufficient, state that limitation explicitly. This feedback is protocol "
+                                    "guidance, not new repository evidence."
+                                ),
+                            },
                             "rejection_codes": errors,
                         })})
                         continue

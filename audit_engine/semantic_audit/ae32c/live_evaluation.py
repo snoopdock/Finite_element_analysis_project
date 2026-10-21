@@ -92,6 +92,7 @@ def build_live_investigation_limits(provider_name: str = "") -> InvestigationLim
         max_total_evidence_bytes=300_000,
         max_total_prompt_chars=200_000,
         max_elapsed_seconds=elapsed_budget,
+        max_invalid_final_attempts=2,
         max_snapshot_files=100,
         max_snapshot_bytes=2_000_000,
         temperature=0.0,
