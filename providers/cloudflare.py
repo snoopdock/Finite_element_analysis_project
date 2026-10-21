@@ -151,6 +151,7 @@ class CloudflareProvider:
 
         for attempt in range(self.max_retries):
             self.http_attempts += 1
+            resp = None
             try:
                 resp = requests.post(
                     url,
@@ -217,8 +218,9 @@ class CloudflareProvider:
                     self.oversized_responses += 1
                     self.response_chars_rejected_total += len(text)
                     return None, (
-                        "Decoded response exceeds max_response_chars limit "
-                        f"({len(text)} > {self.max_response_chars})"
+                        "Decoded response exceeds character limit "
+                        f"({len(text)} > {self.max_response_chars}; "
+                        f"max_response_chars={self.max_response_chars})"
                     )
 
                 self.call_counts[model] = self.call_counts.get(model, 0) + 1
@@ -236,6 +238,20 @@ class CloudflareProvider:
             except ValueError as exc:
                 self.failed_calls += 1
                 return None, f"Invalid JSON response: {exc}"
+            finally:
+                # Close every obtained HTTP response, including status errors,
+                # retry/continue paths, parse failures, oversized payloads and
+                # successful returns. A minimal fake/adapter response may not
+                # expose close(), so cleanup must remain defensive.
+                if resp is not None:
+                    close_response = getattr(resp, "close", None)
+                    if callable(close_response):
+                        try:
+                            close_response()
+                        except Exception:
+                            # Cleanup must not replace the primary provider
+                            # result or error with a secondary close failure.
+                            pass
 
         self.failed_calls += 1
         return None, "Max retries exceeded"
