@@ -742,6 +742,126 @@ def test_invalid_source_references_receive_exact_ledger_candidates_and_recover_t
     assert "Do not invent citations" in feedback_envelopes[1]["message"]
 
 
+def test_unsupported_action_gets_safe_bounded_recovery_and_can_continue():
+    unsupported = json.dumps({
+        "action": "search_repository",
+        "query": "sensitive-untrusted-query-must-not-be-echoed",
+        "reason": "attempted direct tool name",
+    })
+    investigator, provider, tools = make_investigator([
+        unsupported,
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+
+    report = investigator.run("Investigate a failed workflow")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
+    assert report["budget"]["unsupported_action_retries_used"] == 1
+    rejection = next(
+        event for event in report["errors"]
+        if event.get("event") == "model_action_rejected"
+        and event.get("reason") == "unsupported_action"
+    )
+    assert rejection["received_action_name"] == "search_repository"
+    assert rejection["received_top_level_keys"] == ["action", "query", "reason"]
+    offered = next(
+        event for event in report["errors"]
+        if event.get("event") == "unsupported_action_recovery_offered"
+    )
+    assert offered["tool_dispatch_count"] == 0
+    feedback = json.loads(provider.messages[1][-1]["content"])["validation_feedback"]
+    assert feedback["supported_action_values"] == ["tool_call", "final"]
+    assert feedback["required_envelopes"]["tool_call"]["top_level_keys"] == [
+        "action", "tool", "arguments", "reason"
+    ]
+    serialized = json.dumps({"messages": provider.messages, "report": report})
+    assert "sensitive-untrusted-query-must-not-be-echoed" not in serialized
+
+
+def test_unsupported_action_during_finalization_only_allows_final_recovery():
+    unsupported = json.dumps({
+        "action": "search_repository",
+        "query": "must-not-dispatch-during-finalization",
+        "reason": "unsupported direct action",
+    })
+    investigator, provider, tools = make_investigator([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        unsupported,
+        final_action(evidence_id="E0002", source_reference=True),
+    ], limits=InvestigationLimits(max_rounds=4, finalization_rounds_reserved=3))
+
+    report = investigator.run("Investigate a failed workflow")
+
+    assert report["diagnosis"] is not None
+    assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
+    feedback = json.loads(provider.messages[2][-1]["content"])["validation_feedback"]
+    assert feedback["phase"] == "finalization"
+    assert feedback["supported_action_values"] == ["final"]
+    assert "Do not request tools" in feedback["message"]
+    assert "must-not-dispatch-during-finalization" not in json.dumps(provider.messages)
+
+
+def test_unsupported_action_recovery_stops_at_configured_bound():
+    unsupported = json.dumps({"action": "search_repository", "query": "not-echoed"})
+    investigator, provider, tools = make_investigator(
+        [unsupported, unsupported, final_action(evidence_id="E0001", source_reference=False)],
+        limits=InvestigationLimits(max_invalid_tool_retries=1),
+    )
+
+    report = investigator.run("Investigate a failed workflow")
+
+    assert report["status"] == "incomplete"
+    assert report["stop_reason"] == "unsupported_model_action"
+    assert report["budget"]["unsupported_action_retries_used"] == 1
+    assert report["budget"]["model_rounds_used"] == 2
+    assert len(tools.calls) == 1
+    assert any(event.get("event") == "unsupported_action_recovery_exhausted" for event in report["errors"])
+
+
+def test_cloudflare_gets_one_investigation_wide_transport_retry_then_single_attempts():
+    class RetryAwareCloudflareProvider(StructuredCloudflareFakeProvider):
+        def __init__(self, responses, attempts_per_call):
+            super().__init__(responses)
+            self.attempts_per_call = list(attempts_per_call)
+
+        def chat(self, messages, temperature=0.2, max_tokens=None, model=None):
+            self.http_attempts += self.attempts_per_call.pop(0)
+            return super().chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)
+
+    provider = RetryAwareCloudflareProvider([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ], attempts_per_call=[2, 1])
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        evidence_tools=FakeEvidenceTools(),
+        limits=InvestigationLimits(),
+        id_factory=lambda: "test-investigation-cloudflare-retry",
+    )
+
+    report = investigator.run("Investigate a failed workflow")
+
+    assert report["diagnosis"] is not None
+    assert provider.max_retries_seen == [2, 1]
+    assert provider.max_retries == 3
+    assert report["budget"]["max_cloudflare_transport_retries"] == 1
+    assert report["budget"]["cloudflare_transport_retries_used"] == 1
+    retry_events = [
+        event for event in report["errors"]
+        if event.get("event") == "cloudflare_transport_retry_budget_consumed"
+    ]
+    assert retry_events == [{
+        "event": "cloudflare_transport_retry_budget_consumed",
+        "round": 1,
+        "http_attempts": 2,
+        "retry_attempts": 1,
+        "retry_budget_remaining": 0,
+    }]
+
+
 def test_nararouter_gets_one_global_transport_retry_then_returns_to_single_attempts():
     class RetryAwareNaraProvider(FakeProvider):
         provider_name = "nararouter"

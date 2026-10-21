@@ -195,8 +195,10 @@ class RepositoryInvestigator:
         self._finalization_rounds_used = 0
         self._finalization_tool_requests_rejected = 0
         self._invalid_tool_retries = 0
+        self._unsupported_action_retries = 0
         self._invalid_json_retries = 0
         self._nararouter_transport_retries_used = 0
+        self._cloudflare_transport_retries_used = 0
         self._source_path_guidance_used = 0
         self._used = False
         self._secret_values = self._provider_secret_values(provider)
@@ -1189,12 +1191,17 @@ class RepositoryInvestigator:
         remaining = max(1, int(math.ceil(self._remaining_seconds())))
         provider_name_normalized = self.provider_name.strip().lower()
         http_attempts_before = self._provider_http_attempt_count()
-        retry_limit = (
-            2
-            if provider_name_normalized == "nararouter"
+        retry_available = (
+            provider_name_normalized == "nararouter"
             and self._nararouter_transport_retries_used < 1
-            else 1
+        ) or (
+            provider_name_normalized == "cloudflare"
+            and self._cloudflare_transport_retries_used < 1
         )
+        # Provider adapters interpret max_retries as total HTTP attempts.
+        # Two attempts permit one retry; after telemetry confirms it was used,
+        # subsequent logical model calls are restricted to one attempt.
+        retry_limit = 2 if retry_available else 1
         restored: list[tuple[str, Any]] = []
         for name, value in (("timeout_seconds", remaining), ("max_retries", retry_limit)):
             if hasattr(self.provider, name):
@@ -1228,21 +1235,36 @@ class RepositoryInvestigator:
             return None, self._safe_text(f"provider_exception:{type(exc).__name__}", 300), reserve
         finally:
             http_attempts_after = self._provider_http_attempt_count()
-            if (
-                provider_name_normalized == "nararouter"
-                and self._nararouter_transport_retries_used < 1
-                and http_attempts_before is not None
-                and http_attempts_after is not None
-                and http_attempts_after - http_attempts_before > 1
-            ):
-                self._nararouter_transport_retries_used = 1
-                self._events.append({
-                    "event": "nararouter_transport_retry_budget_consumed",
-                    "round": self._model_rounds,
-                    "http_attempts": min(2, http_attempts_after - http_attempts_before),
-                    "retry_attempts": 1,
-                    "retry_budget_remaining": 0,
-                })
+            attempts_delta = (
+                http_attempts_after - http_attempts_before
+                if http_attempts_before is not None and http_attempts_after is not None
+                else None
+            )
+            if attempts_delta is not None and attempts_delta > 1:
+                if (
+                    provider_name_normalized == "nararouter"
+                    and self._nararouter_transport_retries_used < 1
+                ):
+                    self._nararouter_transport_retries_used = 1
+                    self._events.append({
+                        "event": "nararouter_transport_retry_budget_consumed",
+                        "round": self._model_rounds,
+                        "http_attempts": min(2, attempts_delta),
+                        "retry_attempts": 1,
+                        "retry_budget_remaining": 0,
+                    })
+                elif (
+                    provider_name_normalized == "cloudflare"
+                    and self._cloudflare_transport_retries_used < 1
+                ):
+                    self._cloudflare_transport_retries_used = 1
+                    self._events.append({
+                        "event": "cloudflare_transport_retry_budget_consumed",
+                        "round": self._model_rounds,
+                        "http_attempts": min(2, attempts_delta),
+                        "retry_attempts": 1,
+                        "retry_budget_remaining": 0,
+                    })
             for name, old in reversed(restored):
                 try:
                     setattr(self.provider, name, old)
@@ -1267,12 +1289,16 @@ class RepositoryInvestigator:
             "tool_calls_used": self._tool_calls,
             "max_invalid_tool_retries": self.limits.max_invalid_tool_retries,
             "invalid_tool_retries_used": self._invalid_tool_retries,
+            "max_unsupported_action_retries": self.limits.max_invalid_tool_retries,
+            "unsupported_action_retries_used": self._unsupported_action_retries,
             "max_invalid_final_attempts": self.limits.max_invalid_final_attempts,
             "invalid_final_attempts_used": self._invalid_final_attempts,
             "max_invalid_json_retries": self.limits.max_invalid_json_retries,
             "invalid_json_retries_used": self._invalid_json_retries,
             "max_nararouter_transport_retries": 1 if self.provider_name.strip().lower() == "nararouter" else 0,
             "nararouter_transport_retries_used": self._nararouter_transport_retries_used,
+            "max_cloudflare_transport_retries": 1 if self.provider_name.strip().lower() == "cloudflare" else 0,
+            "cloudflare_transport_retries_used": self._cloudflare_transport_retries_used,
             "max_source_path_guidance": self.limits.max_source_path_guidance,
             "source_path_guidance_used": self._source_path_guidance_used,
             "max_tokens_per_call": self.limits.max_tokens_per_call,
@@ -1762,9 +1788,108 @@ class RepositoryInvestigator:
                     if coverage == "complete" and source_status == "complete" and self._snapshot_check_status == "verified":
                         return self._finalize_report(report, "completed", "diagnosis_submitted")
                     return self._finalize_report(report, "completed_with_incomplete_evidence", "diagnosis_submitted_with_coverage_or_snapshot_limitations")
-                self._model_action_trace.append({"round": self._model_rounds, "action": "rejected", "reason": "unsupported_action"})
-                self._events.append({"event": "model_action_rejected", "round": self._model_rounds, "reason": "unsupported_action"})
-                return self._finalize_report(report, "incomplete", "unsupported_model_action")
+                received_action_name = self._safe_text(action_name, 100)
+                received_top_level_keys = sorted(
+                    self._safe_text(key, 100)
+                    for key in action
+                    if isinstance(key, str)
+                )[:20]
+                in_finalization = self._is_finalization_round(self._model_rounds)
+                self._model_action_trace.append({
+                    "round": self._model_rounds,
+                    "action": "rejected",
+                    "reason": "unsupported_action",
+                    "received_action_name": received_action_name,
+                    "received_top_level_keys": received_top_level_keys,
+                })
+                self._events.append({
+                    "event": "model_action_rejected",
+                    "round": self._model_rounds,
+                    "reason": "unsupported_action",
+                    "received_action_name": received_action_name,
+                    "received_top_level_keys": received_top_level_keys,
+                })
+
+                if (
+                    self._unsupported_action_retries >= self.limits.max_invalid_tool_retries
+                    or self._model_rounds >= self.limits.max_rounds
+                ):
+                    self._events.append({
+                        "event": "unsupported_action_recovery_exhausted",
+                        "round": self._model_rounds,
+                        "received_action_name": received_action_name,
+                        "recovery_attempts_used": self._unsupported_action_retries,
+                        "max_unsupported_action_retries": self.limits.max_invalid_tool_retries,
+                    })
+                    return self._finalize_report(report, "incomplete", "unsupported_model_action")
+
+                self._unsupported_action_retries += 1
+                self._messages.append({
+                    "role": "assistant",
+                    "content": self._canonical_json({
+                        "action": "rejected",
+                        "reason": "unsupported_action",
+                        "received_top_level_keys": received_top_level_keys,
+                    }),
+                })
+                supported_actions = ["final"] if in_finalization else ["tool_call", "final"]
+                feedback = {
+                    "schema_version": "ae32c/unsupported-action-feedback/v1",
+                    "status": "rejected_before_dispatch",
+                    "reason_code": "unsupported_action",
+                    "phase": "finalization" if in_finalization else "evidence_gathering",
+                    "received_action_name": received_action_name,
+                    "received_top_level_keys": received_top_level_keys,
+                    "supported_action_values": supported_actions,
+                    "required_envelopes": {
+                        "tool_call": {
+                            "action": "tool_call",
+                            "top_level_keys": ["action", "tool", "arguments", "reason"],
+                        },
+                        "final": {
+                            "action": "final",
+                            "top_level_keys": ["action", "diagnosis"],
+                        },
+                    },
+                    "message": (
+                        (
+                            "The reserved finalization phase is active. The previous action name was unsupported. "
+                            "Return exactly one final JSON object with only the top-level keys action and diagnosis; "
+                            "set action to final. Do not request tools or add extra keys. Use only evidence already "
+                            "returned, and state limitations if evidence is insufficient. This is protocol guidance, "
+                            "not repository evidence."
+                        )
+                        if in_finalization else
+                        (
+                            "The previous action name was unsupported and no tool was executed. The action field "
+                            "must be exactly tool_call or final. For tool_call, use exactly the top-level keys action, "
+                            "tool, arguments, and reason, and place all tool parameters inside arguments. For final, "
+                            "use exactly action and diagnosis. Choose a registered tool and follow its schema. Do not "
+                            "repeat the unsupported action form. This is protocol guidance, not repository evidence."
+                        )
+                    ),
+                    "recovery_attempt": self._unsupported_action_retries,
+                    "remaining_recovery_attempts": max(
+                        0, self.limits.max_invalid_tool_retries - self._unsupported_action_retries
+                    ),
+                }
+                if not in_finalization:
+                    feedback["available_tools"] = sorted(self._tool_schemas)[:30]
+                self._messages.append({
+                    "role": "user",
+                    "content": self._canonical_json({"validation_feedback": feedback}),
+                })
+                self._events.append({
+                    "event": "unsupported_action_recovery_offered",
+                    "round": self._model_rounds,
+                    "recovery_attempt": self._unsupported_action_retries,
+                    "remaining_recovery_attempts": max(
+                        0, self.limits.max_invalid_tool_retries - self._unsupported_action_retries
+                    ),
+                    "phase": "finalization" if in_finalization else "evidence_gathering",
+                    "tool_dispatch_count": 0,
+                })
+                continue
 
             if self._finalization_rounds_used:
                 return self._finalize_report(report, "inconclusive", "finalization_budget_exhausted")
