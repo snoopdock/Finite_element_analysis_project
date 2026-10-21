@@ -196,6 +196,7 @@ class RepositoryInvestigator:
         self._total_prompt_chars = 0
         self._invalid_final_attempts = 0
         self._finalization_rounds_used = 0
+        self._finalization_rejections = 0
         self._finalization_tool_requests_rejected = 0
         self._invalid_tool_retries = 0
         self._unsupported_action_retries = 0
@@ -1298,6 +1299,11 @@ class RepositoryInvestigator:
             "unsupported_action_retries_used": self._unsupported_action_retries,
             "max_invalid_final_attempts": self.limits.max_invalid_final_attempts,
             "invalid_final_attempts_used": self._invalid_final_attempts,
+            "finalization_rejections_used": self._finalization_rejections,
+            "finalization_rounds_used": self._finalization_rounds_used,
+            "finalization_rounds_reserved": min(
+                self.limits.finalization_rounds_reserved, self.limits.max_rounds
+            ),
             "max_invalid_json_retries": self.limits.max_invalid_json_retries,
             "invalid_json_retries_used": self._invalid_json_retries,
             "max_evidence_gathering_invalid_json_retries": self.limits.max_invalid_json_retries,
@@ -1466,7 +1472,7 @@ class RepositoryInvestigator:
                         else self.limits.max_invalid_json_retries
                     )
                     if (
-                        phase_retries_used >= phase_retry_limit
+                        (phase_retries_used >= phase_retry_limit and not in_finalization)
                         or self._model_rounds >= self.limits.max_rounds
                     ):
                         self._events.append({
@@ -1488,6 +1494,7 @@ class RepositoryInvestigator:
 
                     if in_finalization:
                         self._invalid_json_finalization_retries += 1
+                        self._finalization_rejections += 1
                     else:
                         self._invalid_json_evidence_retries += 1
                     self._invalid_json_retries += 1
@@ -1748,8 +1755,14 @@ class RepositoryInvestigator:
                             "received_keys": received_keys,
                             "recovery_attempt": self._invalid_final_attempts,
                         })
+                        in_finalization = self._is_finalization_round(self._model_rounds)
+                        if in_finalization:
+                            self._finalization_rejections += 1
                         if (
-                            self._invalid_final_attempts > self.limits.max_invalid_final_attempts
+                            (
+                                self._invalid_final_attempts > self.limits.max_invalid_final_attempts
+                                and not in_finalization
+                            )
                             or self._model_rounds >= self.limits.max_rounds
                         ):
                             self._events.append({
@@ -1791,9 +1804,18 @@ class RepositoryInvestigator:
                     diagnosis, errors = self._validate_diagnosis(action.get("diagnosis"))
                     if errors:
                         self._invalid_final_attempts += 1
+                        in_finalization = self._is_finalization_round(self._model_rounds)
+                        if in_finalization:
+                            self._finalization_rejections += 1
                         self._model_action_trace.append({"round": self._model_rounds, "action": "final_rejected", "reason_codes": errors})
                         self._events.append({"event": "final_diagnosis_rejected", "round": self._model_rounds, "reason_codes": errors})
-                        if self._invalid_final_attempts > self.limits.max_invalid_final_attempts or self._model_rounds >= self.limits.max_rounds:
+                        if (
+                            (
+                                self._invalid_final_attempts > self.limits.max_invalid_final_attempts
+                                and not in_finalization
+                            )
+                            or self._model_rounds >= self.limits.max_rounds
+                        ):
                             return self._finalize_report(report, "inconclusive", "invalid_diagnosis_references_or_schema")
                         self._messages.append({"role": "assistant", "content": self._canonical_json(action)})
                         self._messages.append({"role": "user", "content": self._canonical_json({
@@ -1856,7 +1878,10 @@ class RepositoryInvestigator:
                 })
 
                 if (
-                    self._unsupported_action_retries >= self.limits.max_invalid_tool_retries
+                    (
+                        self._unsupported_action_retries >= self.limits.max_invalid_tool_retries
+                        and not in_finalization
+                    )
                     or self._model_rounds >= self.limits.max_rounds
                 ):
                     self._events.append({
@@ -1869,6 +1894,8 @@ class RepositoryInvestigator:
                     return self._finalize_report(report, "incomplete", "unsupported_model_action")
 
                 self._unsupported_action_retries += 1
+                if in_finalization:
+                    self._finalization_rejections += 1
                 self._messages.append({
                     "role": "assistant",
                     "content": self._canonical_json({

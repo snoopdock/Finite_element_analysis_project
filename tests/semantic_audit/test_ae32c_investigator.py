@@ -696,6 +696,45 @@ def test_finalization_json_recovery_remains_available_after_evidence_budget_is_u
     assert [name for name, _ in tools.calls].count("search_repository") == 5
 
 
+def test_finalization_uses_reserved_rounds_across_mixed_response_failures():
+    malformed = "malformed finalization JSON; must not be echoed"
+    invalid_envelope = json.dumps({
+        "action": "final",
+        "diagnosis": {},
+        "limitations": ["extra top-level key"],
+    })
+    investigator, provider, tools = make_investigator([
+        action_tool("search_repository", {"query": "adapter", "mode": "content", "max_results": 5}),
+        malformed,
+        invalid_envelope,
+        final_action(evidence_id="E0002", source_reference=True),
+    ], limits=InvestigationLimits(
+        max_rounds=4,
+        finalization_rounds_reserved=3,
+        max_invalid_json_retries=2,
+        max_finalization_invalid_json_retries=1,
+        max_invalid_final_attempts=1,
+    ))
+
+    report = investigator.run("Investigate the provider adapter interface.")
+
+    assert report["diagnosis"] is not None, (
+        "mixed finalization recovery failed: "
+        f"stop_reason={report.get('stop_reason')!r}; "
+        f"budget={report.get('budget')!r}; "
+        f"errors={report.get('errors')!r}; "
+        f"model_actions={report.get('model_actions')!r}"
+    )
+    assert report["budget"]["finalization_rounds_used"] == 3
+    assert report["budget"]["finalization_rounds_reserved"] == 3
+    assert report["budget"]["finalization_rejections_used"] == 2
+    assert report["budget"]["finalization_invalid_json_retries_used"] == 1
+    assert report["budget"]["invalid_final_attempts_used"] == 1
+    assert report["stop_reason"] == "diagnosis_submitted"
+    assert malformed not in json.dumps({"messages": provider.messages, "report": report})
+    assert len(tools.calls) == 2
+
+
 def test_malformed_json_gets_one_bounded_recovery_and_can_continue():
     malformed = "I will search the repository now. ```json {not valid}"
     investigator, provider, tools = make_investigator([
