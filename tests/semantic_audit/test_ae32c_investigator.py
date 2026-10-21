@@ -689,8 +689,8 @@ def test_invalid_citation_is_rejected_and_one_repair_turn_can_succeed():
 
 def test_invalid_source_references_receive_exact_ledger_candidates_and_recover_twice():
     invalid_line = json.loads(final_action(evidence_id="E0002", source_reference=True))
-    invalid_line["diagnosis"]["root_cause"]["source_references"][0]["line"] = 999
-    invalid_line["diagnosis"]["claims"][0]["source_references"][0]["line"] = 999
+    invalid_line["diagnosis"]["root_cause"]["source_references"][0]["line"] = 0
+    invalid_line["diagnosis"]["claims"][0]["source_references"][0]["line"] = 0
 
     invalid_shape = json.loads(final_action(evidence_id="E0002", source_reference=True))
     invalid_shape["diagnosis"]["root_cause"]["source_references"][0]["extra"] = "not permitted"
