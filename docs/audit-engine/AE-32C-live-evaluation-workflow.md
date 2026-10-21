@@ -13,7 +13,7 @@ The workflow definitions must be installed on `main`, because GitHub exposes `wo
 3. Checks out `stage1/section-uuids` without persistent Git credentials.
 4. Verifies that the AE-32C live evaluator, evidence tools, controlled incident fixture, provider-safe-error module, and G9.42 profile exist.
 5. Installs only the minimal runtime dependencies needed by this evaluator (`requests` and `PyYAML`), rather than installing arbitrary requirements from the target branch.
-6. Uses provider-specific transport settings: NaraRouter 90 seconds/2 attempts, Cloudflare 45 seconds/2 attempts, and OpenRouter 30 seconds/1 attempt. It makes one baseline request and then, if the baseline succeeds, up to nine graph-assisted model calls. The investigator retains its own bounded rounds, tool calls, response sizes, token estimates, and provider-specific deadline: 900 seconds for NaraRouter and 300 seconds for Cloudflare/OpenRouter.
+6. Uses provider-specific transport settings: NaraRouter 90 seconds/2 attempts, Cloudflare 45 seconds/2 attempts, and OpenRouter 30 seconds/1 attempt. It makes one baseline request and then, if the baseline succeeds, up to ten graph-assisted model calls. The investigator retains its own bounded rounds, tool calls, response sizes, token estimates, and provider-specific deadline: 900 seconds for NaraRouter and 300 seconds for Cloudflare/OpenRouter.
 7. Uploads the comparison report and run logs even when the evaluator or smoke gate fails.
 8. Marks the workflow failed unless the baseline completes, the graph-assisted path performs multiple rounds and at least one evidence-tool call, the source snapshot is verified, and the final citations are resolved.
 
@@ -61,7 +61,7 @@ A failed gate still uploads evidence. Review the Actions summary and artifact be
 - Target branch: fixed to `stage1/section-uuids`.
 - Job timeout: 22 minutes. NaraRouter may use up to 900 seconds inside the investigator; the outer job timeout includes setup and artifact publication.
 - Provider-specific request settings: NaraRouter 90 seconds/2 attempts; Cloudflare 45 seconds/2 attempts; OpenRouter 30 seconds/1 attempt.
-- Provider-call budget: one baseline request plus at most nine graph-assisted model calls.
+- Provider-call budget: one baseline request plus at most ten graph-assisted model calls.
 - No target fixture execution, shell tool, source modification, patch application, commit, or push.
 - Output is written under `$RUNNER_TEMP`, outside the source checkout.
 - Existing validation workflows remain unchanged.
