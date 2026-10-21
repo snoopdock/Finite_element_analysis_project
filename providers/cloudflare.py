@@ -14,6 +14,8 @@ from processing.response_extractor import (
 
 CF_BASE = "https://api.cloudflare.com/client/v4"
 DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
+DEFAULT_MAX_RESPONSE_CHARS = 200_000
+MAX_ALLOWED_RESPONSE_CHARS = 2_000_000
 
 
 class CloudflareProvider:
@@ -24,6 +26,7 @@ class CloudflareProvider:
         models,
         max_tokens_per_call=2500,
         max_logical_calls=20,
+        max_response_chars=None,
     ):
         self.provider_name = "cloudflare"
         self.account_id = account_id
@@ -40,6 +43,26 @@ class CloudflareProvider:
         self.response_chars_max = 0
         self.total_calls = 0
         self.max_tokens_per_call = max_tokens_per_call
+        self.oversized_responses = 0
+        self.response_chars_rejected_total = 0
+        if max_response_chars is None:
+            raw_response_limit = os.environ.get(
+                "FEA_MAX_LLM_RESPONSE_CHARS", str(DEFAULT_MAX_RESPONSE_CHARS)
+            )
+            try:
+                resolved_response_limit = int(raw_response_limit)
+            except (TypeError, ValueError):
+                resolved_response_limit = DEFAULT_MAX_RESPONSE_CHARS
+        else:
+            try:
+                resolved_response_limit = int(max_response_chars)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("max_response_chars must be a positive integer") from exc
+        if not 1 <= resolved_response_limit <= MAX_ALLOWED_RESPONSE_CHARS:
+            raise ValueError(
+                f"max_response_chars must be between 1 and {MAX_ALLOWED_RESPONSE_CHARS}"
+            )
+        self.max_response_chars = resolved_response_limit
         try:
             self.timeout_seconds = max(10, min(600, int(os.environ.get("FEA_LLM_REQUEST_TIMEOUT_SECONDS", "180"))))
         except (TypeError, ValueError):
@@ -154,8 +177,11 @@ class CloudflareProvider:
                     return None, "HTTP 402: Budget exhausted"
 
                 if resp.status_code >= 400:
+                    # Never echo provider-controlled HTTP error bodies into logs or
+                    # reports: they may contain credentials, request fragments, or
+                    # other sensitive diagnostic data. Do not require response.text.
                     self.failed_calls += 1
-                    return None, f"HTTP {resp.status_code}: {resp.text[:300]}"
+                    return None, f"HTTP {resp.status_code}: upstream error body omitted"
 
                 data = resp.json()
                 usage = data.get("usage") if isinstance(data, dict) else None
@@ -185,6 +211,15 @@ class CloudflareProvider:
                 except LLMResponseExtractionError as exc:
                     self.failed_calls += 1
                     return None, f"Extraction failed: {exc.message}"
+
+                if len(text) > self.max_response_chars:
+                    self.failed_calls += 1
+                    self.oversized_responses += 1
+                    self.response_chars_rejected_total += len(text)
+                    return None, (
+                        "Decoded response exceeds max_response_chars limit "
+                        f"({len(text)} > {self.max_response_chars})"
+                    )
 
                 self.call_counts[model] = self.call_counts.get(model, 0) + 1
                 self.successful_calls += 1
@@ -227,6 +262,9 @@ class CloudflareProvider:
             "http_status_counts": dict(self.http_status_counts),
             "response_chars_total": self.response_chars_total,
             "response_chars_max": self.response_chars_max,
+            "max_response_chars": self.max_response_chars,
+            "oversized_responses": self.oversized_responses,
+            "response_chars_rejected_total": self.response_chars_rejected_total,
             "per_model": dict(self.call_counts),
             "usage": dict(self.usage),
             "max_tokens_per_call": self.max_tokens_per_call,
