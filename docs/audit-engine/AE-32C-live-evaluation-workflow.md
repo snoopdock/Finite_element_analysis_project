@@ -13,7 +13,7 @@ The workflow definitions must be installed on `main`, because GitHub exposes `wo
 3. Checks out `stage1/section-uuids` without persistent Git credentials.
 4. Verifies that the AE-32C live evaluator, evidence tools, controlled incident fixture, provider-safe-error module, and G9.42 profile exist.
 5. Installs only the minimal runtime dependencies needed by this evaluator (`requests` and `PyYAML`), rather than installing arbitrary requirements from the target branch.
-6. Uses provider-specific transport settings: NaraRouter 90 seconds/2 attempts, Cloudflare 45 seconds/2 attempts, and OpenRouter 30 seconds/1 attempt. It makes one baseline request and then, if the baseline succeeds, up to ten graph-assisted model calls. The investigator retains its own bounded rounds, tool calls, response sizes, token estimates, and provider-specific deadline: 900 seconds for NaraRouter and 300 seconds for Cloudflare/OpenRouter.
+6. Uses provider-specific transport timeouts: NaraRouter 90 seconds, Cloudflare 45 seconds, and OpenRouter 30 seconds. Cloudflare and NaraRouter may each use one investigation-wide extra HTTP attempt when a transient transport failure occurs; after the extra attempt is consumed, later logical calls are limited to one HTTP attempt. OpenRouter remains at one HTTP attempt per logical call. The workflow makes one baseline request and then, if the baseline succeeds, up to ten graph-assisted model calls. The investigator retains its own bounded rounds, tool calls, response sizes, token estimates, and provider-specific deadline: 900 seconds for NaraRouter and 300 seconds for Cloudflare/OpenRouter.
 7. Uploads the comparison report and run logs even when the evaluator or smoke gate fails.
 8. Marks the workflow failed unless the baseline completes, the graph-assisted path performs multiple rounds and at least one evidence-tool call, the source snapshot is verified, and the final citations are resolved.
 
@@ -73,4 +73,4 @@ Before a full live investigation on Cloudflare or NaraRouter, run **Actions → 
 
 The full live evaluation supports an optional model override so a model that passes preflight can be selected for the full run. Leave it blank to use the provider default. Request-level settings are NaraRouter 90s/2 attempts, Cloudflare 45s/2 attempts, and OpenRouter 30s/1 attempt. During investigation calls, the investigator limits each provider call to one HTTP attempt and applies the elapsed-time budget; this prevents hidden retries from overrunning the investigation deadline.
 
-NaraRouter may use one bounded transport retry across the entire investigation. The retry is recorded in the report, does not execute tools, and is separate from the ten-model-round limit.
+Cloudflare or NaraRouter may use one bounded transport retry across the entire investigation. The retry is recorded in the report, does not execute tools, and is separate from the ten-model-round limit.
