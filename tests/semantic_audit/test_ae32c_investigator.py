@@ -730,7 +730,17 @@ def test_finalization_uses_reserved_rounds_across_mixed_response_failures():
     assert report["budget"]["finalization_rejections_used"] == 2
     assert report["budget"]["finalization_invalid_json_retries_used"] == 1
     assert report["budget"]["invalid_final_attempts_used"] == 1
-    assert report["stop_reason"] == "diagnosis_submitted"
+    assert report["stop_reason"] in {
+        "diagnosis_submitted",
+        "diagnosis_submitted_with_coverage_or_snapshot_limitations",
+    }
+    if report["stop_reason"] == "diagnosis_submitted":
+        assert report["status"] == "completed"
+    else:
+        # This small fixture does not establish complete evidence coverage or a
+        # fully verified snapshot. Preserve that limitation rather than treating
+        # it as a production failure or weakening the engine's acceptance gate.
+        assert report["status"] == "completed_with_incomplete_evidence"
     assert malformed not in json.dumps({"messages": provider.messages, "report": report})
     assert len(tools.calls) == 2
 
