@@ -73,3 +73,4 @@ Before a full live investigation on Cloudflare or NaraRouter, run **Actions → 
 
 The full live evaluation supports an optional model override so a model that passes preflight can be selected for the full run. Leave it blank to use the provider default. Request-level settings are NaraRouter 90s/2 attempts, Cloudflare 45s/2 attempts, and OpenRouter 30s/1 attempt. During investigation calls, the investigator limits each provider call to one HTTP attempt and applies the elapsed-time budget; this prevents hidden retries from overrunning the investigation deadline.
 
+NaraRouter may use one bounded transport retry across the entire investigation. The retry is recorded in the report, does not execute tools, and is separate from the ten-model-round limit.
