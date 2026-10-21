@@ -18,7 +18,7 @@ on:
         type: string
         default: ""
       confirm_live_provider_calls:
-        description: "Authorize one baseline request and up to nine graph-assisted model calls"
+        description: "Authorize one baseline request and up to ten graph-assisted model calls"
         required: true
         type: boolean
         default: false
