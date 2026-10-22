@@ -3,6 +3,10 @@ name: AE-32C Provider Compatibility Preflight (Manual)
 on:
   workflow_dispatch:
     inputs:
+      validation_run_id:
+        description: "Successful Manual Validation Dispatcher run ID whose G9.42 evidence validates the exact source commit"
+        required: true
+        type: string
       provider:
         description: "Provider to probe without starting a repository investigation"
         required: true
@@ -24,6 +28,7 @@ on:
         default: false
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -42,6 +47,7 @@ jobs:
           WORKFLOW_REF: ${{ github.ref }}
           CONFIRM_LIVE_CALLS: ${{ inputs.confirm_live_provider_calls }}
           SELECTED_PROVIDER: ${{ inputs.provider }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
         run: |
           set -euo pipefail
           if [[ "$WORKFLOW_REF" != "refs/heads/main" ]]; then
@@ -52,22 +58,34 @@ jobs:
             echo "::error::Explicit confirmation is required before live provider calls."
             exit 1
           fi
+          if [[ ! "$VALIDATION_RUN_ID" =~ ^[0-9]{1,20}$ ]]; then
+            echo "::error::A numeric G9.42 validation run ID is required."
+            exit 1
+          fi
           case "$SELECTED_PROVIDER" in
             cloudflare|nararouter|openrouter) ;;
             *) echo "::error::Unsupported provider selection."; exit 1 ;;
           esac
           echo "Provider-only preflight authorized for $SELECTED_PROVIDER. No repository investigation will run."
 
-  preflight:
-    name: Run bounded provider compatibility preflight
+
+  validation-gate:
+    name: Verify exact-commit G9.42 evidence
     needs: guard
     runs-on: ubuntu-24.04
     timeout-minutes: 8
+    outputs:
+      source_commit_sha: ${{ steps.verify_gate.outputs.source_commit_sha }}
+      validation_run_id: ${{ steps.verify_gate.outputs.validation_run_id }}
+      validation_run_attempt: ${{ steps.verify_gate.outputs.validation_run_attempt }}
+      validation_report_sha256: ${{ steps.verify_gate.outputs.validation_report_sha256 }}
+      validation_bundle_sha256: ${{ steps.verify_gate.outputs.validation_bundle_sha256 }}
+      validation_engine_commit_sha: ${{ steps.verify_gate.outputs.validation_engine_commit_sha }}
     defaults:
       run:
         shell: bash
     steps:
-      - name: Checkout AE-32C implementation from the development branch
+      - name: Checkout candidate development source
         uses: actions/checkout@v4
         with:
           ref: stage1/section-uuids
@@ -75,16 +93,125 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Set up Python for evidence verification
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install evidence-verifier dependency
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
+
+      - name: Retrieve and validate central dispatcher run metadata
+        id: check_validation_run
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$VALIDATION_RUN_ID" =~ ^[0-9]{1,20}$ ]]; then
+            echo "::error::validation_run_id must be a numeric GitHub Actions run ID."
+            exit 1
+          fi
+          metadata="$RUNNER_TEMP/ae32c-validation-run-metadata.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}" > "$metadata"
+          python audit_engine/semantic_audit/ae32c/validation_gate.py check-run \
+            --run-metadata "$metadata" \
+            --expected-run-id "$VALIDATION_RUN_ID" \
+            --expected-repository "$GITHUB_REPOSITORY" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Download the exact validation run evidence artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ steps.check_validation_run.outputs.run_attempt }}
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/ae32c-validation-evidence"
+          mkdir -p "$evidence_dir"
+          gh run download "$VALIDATION_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "manual-validation-evidence-${VALIDATION_RUN_ID}-${VALIDATION_RUN_ATTEMPT}" \
+            --dir "$evidence_dir"
+
+      - name: Checkout the exact validation-engine commit recorded by the run
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.check_validation_run.outputs.engine_commit_sha }}
+          path: validation-engine
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Independently verify G9.42 report, artifacts, and provenance catalog
+        id: verify_gate
+        working-directory: source
+        env:
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/ae32c-validation-evidence"
+          metadata="$RUNNER_TEMP/ae32c-validation-run-metadata.json"
+          python audit_engine/semantic_audit/ae32c/validation_gate.py verify \
+            --evidence-dir "$evidence_dir" \
+            --run-metadata "$metadata" \
+            --expected-run-id "$VALIDATION_RUN_ID" \
+            --expected-repository "$EXPECTED_REPOSITORY" \
+            --source-root . \
+            --engine-root ../validation-engine \
+            --github-output "$GITHUB_OUTPUT" \
+            | tee "$RUNNER_TEMP/ae32c-validation-gate.json"
+
+      - name: Upload validation-gate diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-validation-gate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ae32c-validation-gate.json
+            ${{ runner.temp }}/ae32c-validation-run-metadata.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  preflight:
+    name: Run bounded provider compatibility preflight
+    needs: [guard, validation-gate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout the exact G9.42-validated AE-32C source commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Prepare artifacts and verify preflight entry points
         env:
           SELECTED_PROVIDER: ${{ inputs.provider }}
+          VALIDATED_SOURCE_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          VALIDATION_RUN_ID: ${{ needs.validation-gate.outputs.validation_run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ needs.validation-gate.outputs.validation_run_attempt }}
+          VALIDATION_ENGINE_COMMIT: ${{ needs.validation-gate.outputs.validation_engine_commit_sha }}
+          VALIDATION_REPORT_SHA256: ${{ needs.validation-gate.outputs.validation_report_sha256 }}
+          VALIDATION_BUNDLE_SHA256: ${{ needs.validation-gate.outputs.validation_bundle_sha256 }}
         run: |
           set -euo pipefail
           artifact_root="$RUNNER_TEMP/ae32c-provider-preflight"
           mkdir -p "$artifact_root"
           source_sha="$(git -C source rev-parse HEAD)"
-          printf '{\n  "workflow_run_id": "%s",\n  "workflow_ref": "%s",\n  "workflow_commit": "%s",\n  "source_branch": "stage1/section-uuids",\n  "source_commit": "%s",\n  "provider": "%s",\n  "mode": "provider_preflight"\n}\n' \
+          [[ "$source_sha" == "$VALIDATED_SOURCE_SHA" ]] || { echo "::error::Live checkout differs from the source commit verified by the G9.42 gate."; exit 1; }
+          printf '{\n  "workflow_run_id": "%s",\n  "workflow_ref": "%s",\n  "workflow_commit": "%s",\n  "source_branch": "stage1/section-uuids",\n  "source_commit": "%s",\n  "provider": "%s",\n  "validation_run_id": "%s",\n  "validation_run_attempt": "%s",\n  "validation_profile": "G9.42",\n  "validation_engine_commit": "%s",\n  "validation_report_sha256": "%s",\n  "validation_bundle_sha256": "%s",\n  "mode": "provider_preflight"\n}\n' \
             "$GITHUB_RUN_ID" "$GITHUB_REF" "$GITHUB_SHA" "$source_sha" "$SELECTED_PROVIDER" \
+            "$VALIDATION_RUN_ID" "$VALIDATION_RUN_ATTEMPT" "$VALIDATION_ENGINE_COMMIT" \
+            "$VALIDATION_REPORT_SHA256" "$VALIDATION_BUNDLE_SHA256" \
             > "$artifact_root/run-context.json"
           required_files=(
             "audit_engine/semantic_audit/ae32c/provider_preflight.py"
@@ -92,6 +219,8 @@ jobs:
             "providers/cloudflare.py"
             "providers/openai_compatible.py"
             "providers/safe_errors.py"
+            "validation/profiles/G9.42.yaml"
+            "audit_engine/semantic_audit/ae32c/validation_gate.py"
           )
           for relative_path in "${required_files[@]}"; do
             if [[ ! -f "source/$relative_path" ]]; then
