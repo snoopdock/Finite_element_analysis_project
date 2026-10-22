@@ -243,3 +243,47 @@ def test_cli_module_source_parses():
     import audit_engine.semantic_audit.ae32b.__main__ as cli
     ast.parse(Path(evidence_tools.__file__).read_text(encoding="utf-8"))
     assert callable(cli.main)
+
+
+def test_read_source_file_clamps_end_line_to_eof_and_reports_requested_range(tmp_path):
+    server = _server(tmp_path)
+    response = server.invoke("read_source_file", {
+        "path": "src/pkg/b.py", "start_line": 1, "end_line": 999,
+    })
+    assert response["status"] == "ok"
+    result = response["result"]
+    assert result["total_lines"] == 2
+    assert result["requested_start_line"] == 1
+    assert result["requested_end_line"] == 999
+    assert result["start_line"] == 1
+    assert result["end_line"] == 2
+    assert result["truncated"] is True
+    assert "1: class B:" in result["content"]
+    assert "2:     pass" in result["content"]
+
+
+def test_read_source_file_rejects_start_after_eof_and_end_before_start(tmp_path):
+    server = _server(tmp_path)
+    invalid_start = server.invoke("read_source_file", {
+        "path": "src/pkg/b.py", "start_line": 3, "end_line": 999,
+    })
+    invalid_order = server.invoke("read_source_file", {
+        "path": "src/pkg/b.py", "start_line": 2, "end_line": 1,
+    })
+    assert invalid_start["status"] == "error"
+    assert invalid_start["error"]["code"] == "argument_out_of_range"
+    assert invalid_order["status"] == "error"
+    assert invalid_order["error"]["code"] == "argument_out_of_range"
+
+
+def test_empty_source_end_range_clamps_to_zero_lines(tmp_path):
+    server = _server(tmp_path)
+    response = server.invoke("read_source_file", {
+        "path": "src/pkg/empty.txt", "start_line": 1, "end_line": 50,
+    })
+    assert response["status"] == "ok"
+    assert response["result"]["total_lines"] == 0
+    assert response["result"]["requested_end_line"] == 50
+    assert response["result"]["end_line"] == 0
+    assert response["result"]["content"] == ""
+    assert response["result"]["truncated"] is True

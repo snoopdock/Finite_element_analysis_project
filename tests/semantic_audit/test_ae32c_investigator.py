@@ -106,6 +106,14 @@ class StructuredCloudflareFakeProvider(FakeProvider):
         super().__init__(responses, on_chat=on_chat)
         self.structured_calls = 0
 
+    def get_capabilities(self):
+        return {
+            "json_object_mode": True,
+            "json_schema_mode": False,
+            "native_tool_calls": False,
+            "finish_reason_reporting": False,
+        }
+
     def chat_structured(self, messages, temperature=0.2, max_tokens=None, model=None):
         self.structured_calls += 1
         return self.chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)

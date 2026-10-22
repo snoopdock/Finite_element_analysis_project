@@ -1245,22 +1245,38 @@ class RepositoryEvidenceTools:
             raise EvidenceToolError("file_not_indexed", "File is not in the current safe source snapshot")
         lines = _source_lines(self.contents[path])
         if not lines:
-            if "start_line" in args and args["start_line"] != 1:
+            if "start_line" in args and (
+                isinstance(args["start_line"], bool)
+                or not isinstance(args["start_line"], int)
+                or args["start_line"] != 1
+            ):
                 raise EvidenceToolError("argument_out_of_range", "An empty file only supports start_line=1")
-            if "end_line" in args and args["end_line"] not in {0, 1}:
-                raise EvidenceToolError("argument_out_of_range", "An empty file only supports end_line=0 or 1")
+            requested_end = args.get("end_line", 1)
+            if isinstance(requested_end, bool) or not isinstance(requested_end, int):
+                raise EvidenceToolError("invalid_argument", "end_line must be an integer")
+            if requested_end < 1:
+                raise EvidenceToolError("argument_out_of_range", "end_line must be at least 1")
             return {
                 "path": path, "source_sha256": self.file_hashes[path], "total_lines": 0,
-                "start_line": 1, "end_line": 0, "content": "", "truncated": False,
-                "redaction_applied": True,
+                "requested_start_line": 1, "requested_end_line": requested_end,
+                "start_line": 1, "end_line": 0, "content": "",
+                "truncated": requested_end > 1, "redaction_applied": True,
             }
+        # Starting positions must identify a real line. An end position may
+        # legitimately overshoot EOF: clamp it to the indexed source length,
+        # while retaining both the requested and effective range in evidence.
         start = self._bounded_int(args, "start_line", 1, 1, len(lines))
         default_end = min(len(lines), start + MAX_READ_LINES - 1)
-        requested_end = self._bounded_int(args, "end_line", default_end, start, len(lines))
-        end = min(requested_end, start + MAX_READ_LINES - 1)
+        requested_end = args.get("end_line", default_end)
+        if isinstance(requested_end, bool) or not isinstance(requested_end, int):
+            raise EvidenceToolError("invalid_argument", "end_line must be an integer")
+        if requested_end < start:
+            raise EvidenceToolError("argument_out_of_range", "end_line must be greater than or equal to start_line")
+        effective_requested_end = min(requested_end, len(lines))
+        end = min(effective_requested_end, start + MAX_READ_LINES - 1)
         rendered = []
         char_count = 0
-        truncated = end < requested_end
+        truncated = requested_end > len(lines) or end < effective_requested_end
         for line_no in range(start, end + 1):
             rendered_line = f"{line_no}: {_redact_text(lines[line_no - 1])}"
             if char_count + len(rendered_line) + 1 > MAX_READ_CHARS:
@@ -1272,10 +1288,12 @@ class RepositoryEvidenceTools:
             "path": path,
             "source_sha256": self.file_hashes[path],
             "total_lines": len(lines),
+            "requested_start_line": start,
+            "requested_end_line": requested_end,
             "start_line": start,
-            "end_line": start + len(rendered) - 1 if rendered else start,
+            "end_line": start + len(rendered) - 1 if rendered else start - 1,
             "content": "\n".join(rendered),
-            "truncated": truncated or (rendered and start + len(rendered) - 1 < end),
+            "truncated": bool(truncated or (rendered and start + len(rendered) - 1 < end)),
             "redaction_applied": True,
         }
 

@@ -256,6 +256,15 @@ class CloudflareProvider:
         self.failed_calls += 1
         return None, "Max retries exceeded"
 
+    def get_capabilities(self):
+        """Declare adapter-supported response modes; model compliance is unverified."""
+        return {
+            "json_object_mode": True,
+            "json_schema_mode": False,
+            "native_tool_calls": False,
+            "finish_reason_reporting": False,
+        }
+
     def chat_structured(self, messages, temperature=0.2, max_tokens=None, model=None):
         """Request API-level JSON mode for a structured AE-32C action response."""
         return self.chat(

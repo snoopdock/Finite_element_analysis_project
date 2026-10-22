@@ -14,6 +14,7 @@ target_tests:
   - tests/semantic_graph/test_dependency_analysis.py
   - tests/semantic_graph/test_path_analysis.py
   - tests/test_provider_safe_errors.py
+  - tests/test_provider_capabilities.py
   - tests/test_provider_response_limits.py
   - tests/test_provider_openai_compatible.py
   - tests/test_provider_factory.py

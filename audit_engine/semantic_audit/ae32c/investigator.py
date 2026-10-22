@@ -22,6 +22,7 @@ from audit_engine.semantic_audit.ae32b.evidence_tools import (
     build_tool_definitions,
 )
 from providers.safe_errors import sanitize_provider_error
+from providers.capabilities import get_provider_capabilities
 
 SCHEMA_VERSION = "ae32c/interactive-investigation/v1"
 MAX_PROBLEM_CHARS = 8_000
@@ -1223,19 +1224,31 @@ class RepositoryInvestigator:
                 "max_tokens": self.limits.max_tokens_per_call,
                 "model": self.model_name if self.model_name != "unknown" else None,
             }
-            if self.provider_name.strip().lower() == "cloudflare":
-                structured_chat = getattr(self.provider, "chat_structured", None)
-                if not callable(structured_chat):
-                    response, error = None, "cloudflare_structured_json_mode_unavailable"
-                else:
-                    self._events.append({
-                        "event": "provider_structured_json_mode_requested",
-                        "round": self._model_rounds,
-                        "provider": "cloudflare",
-                        "mode": "json_object",
-                    })
-                    response, error = structured_chat(messages, **call_kwargs)
+            capability_record = get_provider_capabilities(
+                self.provider,
+                provider_name=self.provider_name,
+                model_name=self.model_name,
+            )
+            capabilities = capability_record["capabilities"]
+            structured_chat = getattr(self.provider, "chat_structured", None)
+            if capabilities["json_object_mode"] and callable(structured_chat):
+                self._events.append({
+                    "event": "provider_structured_json_mode_requested",
+                    "round": self._model_rounds,
+                    "provider": capability_record["provider"],
+                    "model": capability_record["model"],
+                    "mode": "json_object",
+                    "capability_scope": capability_record["scope"],
+                })
+                response, error = structured_chat(messages, **call_kwargs)
             else:
+                self._events.append({
+                    "event": "provider_structured_json_mode_not_requested",
+                    "round": self._model_rounds,
+                    "provider": capability_record["provider"],
+                    "model": capability_record["model"],
+                    "reason": "adapter_capability_unavailable_or_unverified",
+                })
                 response, error = self.provider.chat(messages, **call_kwargs)
         except Exception as exc:
             return None, self._safe_text(f"provider_exception:{type(exc).__name__}", 300), reserve
