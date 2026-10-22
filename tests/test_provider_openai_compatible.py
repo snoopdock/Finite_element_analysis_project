@@ -99,7 +99,30 @@ def test_missing_choices_is_reported_with_http_status_without_response_dump(monk
     assert "missing choices" in error
     assert "HTTP 200" in error
     assert "secret" not in error
-    assert provider.get_stats()["failed_calls"] == 1
+    stats = provider.get_stats()
+    assert stats["failed_calls"] == 1
+    assert stats["last_error_code"] == "malformed_completion_envelope"
+    assert stats["error_counts"] == {"malformed_completion_envelope": 1}
+
+
+def test_http_api_error_payload_is_classified_without_echoing_payload(monkeypatch):
+    monkeypatch.setattr(
+        "providers.openai_compatible.requests.post",
+        lambda *args, **kwargs: FakeResponse(
+            status_code=400,
+            payload={"error": {"message": "private upstream detail", "token": "must-not-leak"}},
+        ),
+    )
+    provider = OpenAICompatibleProvider("openrouter", "secret", "model", max_retries=1)
+    text, error = provider.chat([{"role": "user", "content": "hello"}])
+    stats = provider.get_stats()
+
+    assert text is None
+    assert "HTTP 400" in error
+    assert "private upstream detail" not in error
+    assert "must-not-leak" not in repr(stats)
+    assert stats["last_error_code"] == "provider_api_error_payload"
+    assert stats["error_counts"] == {"provider_api_error_payload": 1}
 
 
 def test_benchmark_mode_forces_requested_token_ceiling(monkeypatch):

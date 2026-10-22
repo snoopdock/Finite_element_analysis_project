@@ -127,6 +127,8 @@ class OpenAICompatibleProvider:
         }
         self.per_model: Dict[str, Dict[str, int]] = {}
         self.last_errors: List[str] = []
+        self.last_error_code: Optional[str] = None
+        self.error_counts: Dict[str, int] = {}
 
     @property
     def total_calls(self) -> int:
@@ -180,8 +182,11 @@ class OpenAICompatibleProvider:
         per_model["completion_tokens"] += completion
         per_model["total_tokens"] += total
 
-    def _error(self, message: str) -> Tuple[None, str]:
+    def _error(self, message: str, *, code: str = "provider_error") -> Tuple[None, str]:
         safe = sanitize_provider_error(message)
+        safe_code = str(code)[:80] if isinstance(code, str) and code else "provider_error"
+        self.last_error_code = safe_code
+        self.error_counts[safe_code] = self.error_counts.get(safe_code, 0) + 1
         self.last_errors.append(safe)
         self.last_errors = self.last_errors[-20:]
         self.failed_calls += 1
@@ -194,8 +199,9 @@ class OpenAICompatibleProvider:
         max_tokens: Optional[int] = None,
         model: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str]]:
+        self.last_error_code = None
         if self.budget_exhausted():
-            return None, "Local logical-call budget exhausted"
+            return self._error("Local logical-call budget exhausted", code="logical_call_budget_exhausted")
 
         self.logical_calls += 1
         selected_model = str(model or self.model).strip()
@@ -228,7 +234,7 @@ class OpenAICompatibleProvider:
                 if attempt + 1 < self.max_retries:
                     time.sleep(min(30, 2 ** attempt))
                     continue
-                return self._error(f"{self.provider_name} transport error: {type(exc).__name__}")
+                return self._error(f"{self.provider_name} transport error: {type(exc).__name__}", code="transport_error")
 
             self.last_http_status = int(response.status_code)
             status_key = str(response.status_code)
@@ -244,30 +250,48 @@ class OpenAICompatibleProvider:
                     time.sleep(wait_seconds)
                     continue
                 return self._error(
-                    f"{self.provider_name} HTTP {response.status_code} after {self.max_retries} attempts"
+                    f"{self.provider_name} HTTP {response.status_code} after {self.max_retries} attempts",
+                    code="transient_http_status_exhausted",
                 )
 
             if response.status_code >= 400:
-                close_response(response)
-                return self._error(f"{self.provider_name} HTTP {response.status_code}")
+                # Classify a structured upstream API error without persisting or
+                # echoing its potentially sensitive body. Transient statuses are
+                # handled by the bounded retry branch above.
+                has_error_payload = False
+                try:
+                    error_payload = load_bounded_json(
+                        response, max_bytes=min(self.max_response_bytes, 64_000)
+                    )
+                    has_error_payload = (
+                        isinstance(error_payload, dict) and "error" in error_payload
+                    )
+                except (ValueError, TypeError, requests.exceptions.RequestException):
+                    close_response(response)
+                error_code = "provider_api_error_payload" if has_error_payload else "http_error"
+                return self._error(
+                    f"{self.provider_name} HTTP {response.status_code}",
+                    code=error_code,
+                )
 
             try:
                 data = load_bounded_json(response, max_bytes=self.max_response_bytes)
             except ProviderResponseTooLarge:
-                return self._error(f"{self.provider_name} response exceeded configured size limit")
+                return self._error(f"{self.provider_name} response exceeded configured size limit", code="response_too_large")
             except requests.exceptions.RequestException as exc:
-                return self._error(f"{self.provider_name} response stream error: {type(exc).__name__}")
+                return self._error(f"{self.provider_name} response stream error: {type(exc).__name__}", code="response_stream_error")
             except (ValueError, TypeError):
                 if attempt + 1 < self.max_retries:
                     time.sleep(min(10, 2 ** attempt))
                     continue
-                return self._error(f"{self.provider_name} returned invalid JSON (HTTP {response.status_code})")
+                return self._error(f"{self.provider_name} returned invalid JSON (HTTP {response.status_code})", code="invalid_json_response")
 
             choices = data.get("choices") if isinstance(data, dict) else None
             if not isinstance(choices, list) or not choices:
                 keys = sorted(str(key) for key in data.keys()) if isinstance(data, dict) else []
                 return self._error(
-                    f"{self.provider_name} malformed chat completion: missing choices (HTTP {response.status_code}; keys={keys[:12]})"
+                    f"{self.provider_name} malformed chat completion: missing choices (HTTP {response.status_code}; keys={keys[:12]})",
+                    code="malformed_completion_envelope",
                 )
             first = choices[0] if isinstance(choices[0], dict) else {}
             text = _extract_content(first.get("message"))
@@ -277,11 +301,12 @@ class OpenAICompatibleProvider:
             if not text or not text.strip():
                 finish_reason = first.get("finish_reason", "unknown")
                 return self._error(
-                    f"{self.provider_name} returned empty content (HTTP {response.status_code}; finish_reason={finish_reason})"
+                    f"{self.provider_name} returned empty content (HTTP {response.status_code}; finish_reason={finish_reason})",
+                    code="empty_completion_content",
                 )
 
             if len(text) > self.max_response_chars:
-                return self._error(f"{self.provider_name} response text exceeded configured character limit")
+                return self._error(f"{self.provider_name} response text exceeded configured character limit", code="response_text_too_large")
 
             self._record_usage(data, selected_model)
             self.successful_calls += 1
@@ -295,7 +320,7 @@ class OpenAICompatibleProvider:
                 per_model["calls"] += 1
             return text, None
 
-        return self._error(f"{self.provider_name} request exhausted retry budget")
+        return self._error(f"{self.provider_name} request exhausted retry budget", code="retry_budget_exhausted")
 
     def get_stats(self) -> Dict:
         return {
@@ -322,4 +347,6 @@ class OpenAICompatibleProvider:
             "usage": dict(self.usage),
             "per_model": {name: dict(values) for name, values in self.per_model.items()},
             "last_errors": list(self.last_errors),
+            "last_error_code": self.last_error_code,
+            "error_counts": dict(self.error_counts),
         }
