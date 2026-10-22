@@ -74,3 +74,12 @@ Before a full live investigation on Cloudflare or NaraRouter, run **Actions → 
 The full live evaluation supports an optional model override so a model that passes preflight can be selected for the full run. Leave it blank to use the provider default. Request-level settings are NaraRouter 90s/2 attempts, Cloudflare 45s/2 attempts, and OpenRouter 30s/1 attempt. During investigation calls, the investigator limits each provider call to one HTTP attempt and applies the elapsed-time budget; this prevents hidden retries from overrunning the investigation deadline.
 
 Cloudflare or NaraRouter may use one bounded transport retry across the entire investigation. The retry is recorded in the report, does not execute tools, and is separate from the ten-model-round limit.
+
+
+## Exact-commit G9.42 prerequisite (Phase D)
+
+Both this live-evaluation workflow and the provider-compatibility preflight now require the run ID of a successful, manual **Manual Validation Dispatcher** run. The gate checks that the run came from the central dispatcher on `main`, retrieves its exact evidence artifact, verifies G9.42 and the source commit, and runs the central detached-evidence and provenance-catalog verifiers.
+
+The provider job checks out the exact commit that passed validation; it does not resolve `stage1/section-uuids` to a newer HEAD after the gate. Missing, expired, failed, stale, or mismatched validation evidence blocks the provider job before provider secrets are made available.
+
+See `AE-32C-Phase-D-Exact-Commit-Validation-Gate.md` for the evidence bindings and operator procedure.
