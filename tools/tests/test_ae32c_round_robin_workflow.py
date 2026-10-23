@@ -52,3 +52,16 @@ def test_phase_e4_retains_one_dispatch_and_machine_readable_batch_summary():
     assert 'batch-summary.md" >> "$GITHUB_STEP_SUMMARY"' in workflow
     assert 'name: ae32c-round-robin-${{ github.run_id }}-${{ github.run_attempt }}' in workflow
     assert 'Enforce complete batch gate after evidence publication' in workflow
+
+
+def test_e5_round_robin_retains_single_manual_dispatch_and_independent_trials():
+    workflow = (ROOT/'.github/workflows/ae32c-round-robin-evaluation.yml').read_text(encoding='utf-8')
+    assert workflow.count('workflow_dispatch:') == 1
+    assert 'providers=(cloudflare nararouter openrouter)' in workflow
+    assert 'for provider in "${providers[@]}"' in workflow
+    assert 'sleep "$PAUSE_SECONDS"' in workflow
+    assert 'validation_gate.py verify' in workflow
+    assert 'runner-exit-code.txt' in workflow
+    assert '--confirm-live-provider-calls' in workflow
+    assert 'Enforce complete batch gate after evidence publication' in workflow
+    assert not __import__('re').search(r'(?m)^  (?:schedule|push|pull_request):', workflow)
