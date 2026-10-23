@@ -1,0 +1,339 @@
+name: AE-32C Round-Robin Provider Evaluation (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      validation_run_id:
+        description: "Successful G9.42 Manual Validation Dispatcher run ID for the exact source commit"
+        type: string
+        required: true
+      rounds:
+        description: "Complete rounds: Cloudflare, NaraRouter, OpenRouter per round (1-4)"
+        type: choice
+        required: true
+        default: '4'
+        options: ['1', '2', '3', '4']
+      pause_seconds:
+        description: "Pause between consecutive trials, including between rounds"
+        type: choice
+        required: true
+        default: '60'
+        options: ['30', '60', '120']
+      confirm_live_provider_calls:
+        description: "Authorize up to 11 model requests per trial, plus bounded transport retries; up to 12 trials"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ae32c-round-robin-evaluation
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Explicit manual consent and bounded parameters
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Validate batch authorization
+        shell: bash
+        env:
+          REF: ${{ github.ref }}
+          EVENT_NAME: ${{ github.event_name }}
+          CONFIRMED: ${{ inputs.confirm_live_provider_calls }}
+          RUN_ID: ${{ inputs.validation_run_id }}
+          ROUNDS: ${{ inputs.rounds }}
+          PAUSE: ${{ inputs.pause_seconds }}
+        run: |
+          set -euo pipefail
+          [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF" == "refs/heads/main" ]] || { echo "::error::Manual main-branch dispatch only"; exit 1; }
+          [[ "$CONFIRMED" == "true" ]] || { echo "::error::Explicit live-provider confirmation required"; exit 1; }
+          [[ "$RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::G9.42 validation run ID must be numeric"; exit 1; }
+          case "$ROUNDS" in 1|2|3|4) ;; *) exit 1;; esac
+          case "$PAUSE" in 30|60|120) ;; *) exit 1;; esac
+          echo "Authorized $ROUNDS rounds × 3 providers with $PAUSE second pauses."
+
+  validation-gate:
+    name: Verify exact-commit G9.42 evidence before any live calls
+    needs: guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    outputs:
+      source_commit_sha: ${{ steps.verify_gate.outputs.source_commit_sha }}
+      validation_run_id: ${{ steps.verify_gate.outputs.validation_run_id }}
+      validation_run_attempt: ${{ steps.verify_gate.outputs.validation_run_attempt }}
+      validation_report_sha256: ${{ steps.verify_gate.outputs.validation_report_sha256 }}
+      validation_bundle_sha256: ${{ steps.verify_gate.outputs.validation_bundle_sha256 }}
+      validation_engine_commit_sha: ${{ steps.verify_gate.outputs.validation_engine_commit_sha }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout candidate development source
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python for evidence verification
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install evidence-verifier dependency
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
+
+      - name: Retrieve and validate central dispatcher run metadata
+        id: check_validation_run
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$VALIDATION_RUN_ID" =~ ^[0-9]{1,20}$ ]]; then
+            echo "::error::validation_run_id must be a numeric GitHub Actions run ID."
+            exit 1
+          fi
+          metadata="$RUNNER_TEMP/ae32c-validation-run-metadata.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}" > "$metadata"
+          python audit_engine/semantic_audit/ae32c/validation_gate.py check-run \
+            --run-metadata "$metadata" \
+            --expected-run-id "$VALIDATION_RUN_ID" \
+            --expected-repository "$GITHUB_REPOSITORY" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Download the exact validation run evidence artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ steps.check_validation_run.outputs.run_attempt }}
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/ae32c-validation-evidence"
+          mkdir -p "$evidence_dir"
+          gh run download "$VALIDATION_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "manual-validation-evidence-${VALIDATION_RUN_ID}-${VALIDATION_RUN_ATTEMPT}" \
+            --dir "$evidence_dir"
+
+      - name: Checkout the exact validation-engine commit recorded by the run
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.check_validation_run.outputs.engine_commit_sha }}
+          path: validation-engine
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Independently verify G9.42 report, artifacts, and provenance catalog
+        id: verify_gate
+        working-directory: source
+        env:
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/ae32c-validation-evidence"
+          metadata="$RUNNER_TEMP/ae32c-validation-run-metadata.json"
+          python audit_engine/semantic_audit/ae32c/validation_gate.py verify \
+            --evidence-dir "$evidence_dir" \
+            --run-metadata "$metadata" \
+            --expected-run-id "$VALIDATION_RUN_ID" \
+            --expected-repository "$EXPECTED_REPOSITORY" \
+            --source-root . \
+            --engine-root ../validation-engine \
+            --github-output "$GITHUB_OUTPUT" \
+            | tee "$RUNNER_TEMP/ae32c-validation-gate.json"
+
+      - name: Upload validation-gate diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-validation-gate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ae32c-validation-gate.json
+            ${{ runner.temp }}/ae32c-validation-run-metadata.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  round-robin-evaluation:
+    name: Sequential bounded provider evaluations
+    needs: [guard, validation-gate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 340
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout exact validated source commit (not moving branch HEAD)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          path: source
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install runtime dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            'requests>=2.31.0,<3.0.0' 'PyYAML>=6.0.0,<7.0.0'
+
+      - name: Verify source pin and create source-bound batch manifest
+        env:
+          EXPECTED_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          VALIDATION_RUN_ID: ${{ needs.validation-gate.outputs.validation_run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ needs.validation-gate.outputs.validation_run_attempt }}
+          VALIDATION_REPORT_SHA256: ${{ needs.validation-gate.outputs.validation_report_sha256 }}
+          VALIDATION_BUNDLE_SHA256: ${{ needs.validation-gate.outputs.validation_bundle_sha256 }}
+          VALIDATION_ENGINE_COMMIT: ${{ needs.validation-gate.outputs.validation_engine_commit_sha }}
+          SELECTED_ROUNDS: ${{ inputs.rounds }}
+          SELECTED_PAUSE: ${{ inputs.pause_seconds }}
+        run: |
+          set -euo pipefail
+          [[ "$(git -C source rev-parse HEAD)" == "$EXPECTED_SHA" ]]
+          [[ -f source/audit_engine/semantic_audit/ae32c/batch_evaluation.py ]]
+          [[ -f source/validation/profiles/G9.42.yaml ]]
+          [[ -f source/tests/semantic_audit/fixtures/ae32c_provider_interface_incident/providers/adapter.py ]]
+          mkdir -p "$RUNNER_TEMP/ae32c-batch"
+          python - <<'PYBATCH'
+          import json, os
+          from pathlib import Path
+          keys = {"source_commit":"EXPECTED_SHA", "validation_run_id":"VALIDATION_RUN_ID",
+                  "validation_run_attempt":"VALIDATION_RUN_ATTEMPT", "validation_report_sha256":"VALIDATION_REPORT_SHA256",
+                  "validation_bundle_sha256":"VALIDATION_BUNDLE_SHA256", "validation_engine_commit":"VALIDATION_ENGINE_COMMIT",
+                  "rounds":"SELECTED_ROUNDS", "pause_seconds":"SELECTED_PAUSE"}
+          record = {key:os.environ[value] for key,value in keys.items()}
+          record.update({"workflow_run_id": os.environ["GITHUB_RUN_ID"], "workflow_commit":os.environ["GITHUB_SHA"],
+                         "validation_profile":"G9.42", "sequence":"round_robin", "human_review_required": True})
+          root=Path(os.environ["RUNNER_TEMP"])/"ae32c-batch"
+          (root/"run-context.json").write_text(json.dumps(record,indent=2,sort_keys=True)+"\n",encoding="utf-8")
+          PYBATCH
+
+      - name: Evaluate providers in alternating rounds with pauses
+        id: live_batch
+        continue-on-error: true
+        working-directory: source
+        env:
+          BATCH_ROUNDS: ${{ inputs.rounds }}
+          PAUSE_SECONDS: ${{ inputs.pause_seconds }}
+          VALIDATED_SOURCE_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
+          OPENROUTER_TOKEN: ${{ secrets.OPENROUTER_TOKEN }}
+        run: |
+          set -euo pipefail
+          batch="$RUNNER_TEMP/ae32c-batch"
+          [[ "$(git rev-parse HEAD)" == "$VALIDATED_SOURCE_SHA" ]] || { echo "::error::Validated source changed"; exit 1; }
+          providers=(cloudflare nararouter openrouter)
+          total=$((BATCH_ROUNDS * ${#providers[@]}))
+          count=0
+          for (( round=1; round<=BATCH_ROUNDS; round++ )); do
+            printf -v round_id 'round-%02d' "$round"
+            for provider in "${providers[@]}"; do
+              count=$((count+1))
+              trial="$batch/$round_id/$provider"
+              mkdir -p "$trial"
+              echo "::group::Round $round/$BATCH_ROUNDS · $provider ($count/$total)"
+              case "$provider" in
+                cloudflare)
+                  [[ -n "$CLOUDFLARE_ACCOUNT_ID" && -n "$CLOUDFLARE_API_TOKEN" ]] && ready=true || ready=false
+                  export FEA_LLM_REQUEST_TIMEOUT_SECONDS=45 FEA_LLM_RETRY_ATTEMPTS=2 ;;
+                nararouter)
+                  [[ -n "$NARAROUTER_API_KEY" ]] && ready=true || ready=false
+                  export FEA_LLM_REQUEST_TIMEOUT_SECONDS=90 FEA_LLM_RETRY_ATTEMPTS=2 ;;
+                openrouter)
+                  [[ -n "$OPENROUTER_TOKEN" ]] && ready=true || ready=false
+                  export FEA_LLM_REQUEST_TIMEOUT_SECONDS=30 FEA_LLM_RETRY_ATTEMPTS=1 ;;
+              esac
+              # Limit the child process to credentials for its own provider.
+              case "$provider" in
+                cloudflare) env_without_other_secrets=(-u NARAROUTER_API_KEY -u OPENROUTER_TOKEN) ;;
+                nararouter) env_without_other_secrets=(-u CLOUDFLARE_ACCOUNT_ID -u CLOUDFLARE_API_TOKEN -u OPENROUTER_TOKEN) ;;
+                openrouter) env_without_other_secrets=(-u CLOUDFLARE_ACCOUNT_ID -u CLOUDFLARE_API_TOKEN -u NARAROUTER_API_KEY) ;;
+              esac
+              if [[ "$ready" == false ]]; then
+                printf '2\n' > "$trial/runner-exit-code.txt"
+                printf 'Missing required provider secret for %s\n' "$provider" > "$trial/live-evaluation.log"
+              else
+                set +e
+                env "${env_without_other_secrets[@]}" timeout --signal=TERM --kill-after=15s 1100s \
+                  python -m audit_engine.semantic_audit.ae32c.live_evaluation \
+                  --confirm-live-provider-calls \
+                  --provider "$provider" \
+                  --repo-root tests/semantic_audit/fixtures/ae32c_provider_interface_incident \
+                  --output-dir "$trial" \
+                  > "$trial/live-evaluation.log" 2>&1
+                result=$?
+                set -e
+                printf '%s\n' "$result" > "$trial/runner-exit-code.txt"
+              fi
+              echo "Round $round: $provider finished; evidence retained; later providers will still run."
+              echo "::endgroup::"
+              if (( count < total )); then
+                echo "Pausing $PAUSE_SECONDS seconds between provider evaluations."
+                sleep "$PAUSE_SECONDS"
+              fi
+            done
+          done
+
+      - name: Summarize all trials without conflating citation validity and evidence completeness
+        if: always()
+        id: batch_summary
+        continue-on-error: true
+        working-directory: source
+        env:
+          BATCH_ROUNDS: ${{ inputs.rounds }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ae32c-batch"
+          python -m audit_engine.semantic_audit.ae32c.batch_evaluation \
+            --batch-dir "$RUNNER_TEMP/ae32c-batch" --rounds "$BATCH_ROUNDS"
+
+      - name: Display batch summary
+        if: always()
+        run: |
+          if [[ -f "$RUNNER_TEMP/ae32c-batch/batch-summary.md" ]]; then
+            cat "$RUNNER_TEMP/ae32c-batch/batch-summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload every trial's artifacts, including failed trials
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-round-robin-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ae32c-batch/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Enforce complete batch gate after evidence publication
+        if: always()
+        env:
+          BATCH_ROOT: ${{ runner.temp }}/ae32c-batch
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          path=Path(os.environ['BATCH_ROOT'])/'batch-summary.json'
+          if not path.is_file():
+              raise SystemExit('Batch summary missing; cannot claim success.')
+          result=json.loads(path.read_text(encoding='utf-8'))
+          if result.get('passed') is not True or result.get('evidence_complete') != result.get('expected_trials'):
+              raise SystemExit('One or more trials failed protocol or declared evidence-completeness checks; see uploaded artifacts.')
+          print('All declared source-coverage gates passed; causal accuracy still requires human review.')
+          PY

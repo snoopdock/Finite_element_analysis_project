@@ -336,6 +336,17 @@ jobs:
                   checks["graph_investigation_terminated"] = summary.get("status") in {
                       "completed", "completed_with_incomplete_evidence"
                   }
+                  # Protocol completion is not evidence-complete diagnosis.
+                  # The smoke gate now fails closed on an explicitly incomplete
+                  # read or a missing root-cause direct citation.
+                  coverage = report.get("required_source_coverage") or {}
+                  checks["required_source_evidence_complete"] = (
+                      summary.get("status") == "completed"
+                      and isinstance(coverage, dict)
+                      and coverage.get("status") == "complete"
+                      and not coverage.get("missing_complete_reads")
+                      and not coverage.get("missing_root_cause_direct_citations")
+                  )
                   rounds = summary.get("model_rounds", 0)
                   tool_calls = summary.get("tool_call_count", 0)
                   checks["multiple_model_rounds"] = isinstance(rounds, int) and not isinstance(rounds, bool) and rounds >= 2
@@ -354,6 +365,7 @@ jobs:
                       "snapshot_check_status": report.get("snapshot_check_status", "unknown"),
                       "final_citation_validation": summary.get("final_citation_validation", "unknown"),
                       "diagnosis_assurance": summary.get("diagnosis_assurance", "unknown"),
+                      "required_source_coverage": (report.get("required_source_coverage") or {}).get("status", "unknown"),
                   }
                   for name, passed in checks.items():
                       if not passed:
