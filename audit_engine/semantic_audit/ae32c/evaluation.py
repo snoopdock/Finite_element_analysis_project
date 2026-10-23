@@ -54,6 +54,9 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
             "evidence_count": 0,
             "source_reference_count": 0,
             "diagnosis_assurance": "not_assessed",
+            "required_source_coverage_status": "not_assessed",
+            "required_source_missing_reads": [],
+            "required_source_missing_root_citations": [],
             "final_citation_validation": "not_run",
         }
 
@@ -79,6 +82,16 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
         "evidence_count": len(ledger),
         "source_reference_count": _source_reference_count(diagnosis),
         "diagnosis_assurance": _safe_text(report.get("diagnosis_assurance", "not_assessed"), 120),
+        "required_source_coverage_status": _safe_text(
+            (report.get("required_source_coverage") or {}).get("status", "not_assessed")
+            if isinstance(report.get("required_source_coverage"), Mapping) else "not_assessed", 80
+        ),
+        "required_source_missing_reads": list(
+            (report.get("required_source_coverage") or {}).get("missing_complete_reads", [])
+        ) if isinstance(report.get("required_source_coverage"), Mapping) else [],
+        "required_source_missing_root_citations": list(
+            (report.get("required_source_coverage") or {}).get("missing_root_cause_direct_citations", [])
+        ) if isinstance(report.get("required_source_coverage"), Mapping) else [],
         "final_citation_validation": final_validation,
     }
 
@@ -158,6 +171,7 @@ def build_comparison_record(
             "graph_assisted_evidence_count": graph_summary["evidence_count"],
             "graph_assisted_distinct_tool_count": len(graph_summary["tool_names"]),
             "graph_assisted_source_reference_count": graph_summary["source_reference_count"],
+            "graph_assisted_required_source_coverage": graph_summary["required_source_coverage_status"],
         },
         "evaluation_policy": {
             "diagnostic_accuracy": "not_automatically_assessed",
@@ -216,6 +230,9 @@ def render_comparison_markdown(record: Mapping[str, Any]) -> str:
         f"- Evidence records: {metrics.get('graph_assisted_evidence_count', 0)}",
         f"- Source references: {metrics.get('graph_assisted_source_reference_count', 0)}",
         f"- Citation validation: `{_markdown_text(summary.get('final_citation_validation', 'not assessed'), 100)}`",
+        f"- Declared source-inspection coverage: `{_markdown_text(summary.get('required_source_coverage_status', 'not assessed'), 80)}`",
+        f"- Missing complete direct reads: {', '.join(_markdown_text(p, 400) for p in summary.get('required_source_missing_reads', [])) or 'none'}",
+        f"- Missing direct root-cause citations: {', '.join(_markdown_text(p, 400) for p in summary.get('required_source_missing_root_citations', [])) or 'none'}",
         "",
     ]
     report = assisted.get("report")

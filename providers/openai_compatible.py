@@ -288,12 +288,21 @@ class OpenAICompatibleProvider:
 
             choices = data.get("choices") if isinstance(data, dict) else None
             if not isinstance(choices, list) or not choices:
-                keys = sorted(str(key) for key in data.keys()) if isinstance(data, dict) else []
                 return self._error(
-                    f"{self.provider_name} malformed chat completion: missing choices (HTTP {response.status_code}; keys={keys[:12]})",
+                    f"{self.provider_name} malformed chat completion: missing choices (HTTP {response.status_code})",
                     code="malformed_completion_envelope",
                 )
             first = choices[0] if isinstance(choices[0], dict) else {}
+            finish_reason = str(first.get("finish_reason", "unknown"))
+            # A cut-off or filtered completion must not be passed to the
+            # strict JSON parser as an ordinary full response. Record only a
+            # bounded category; never persist the partial text or error body.
+            if finish_reason in {"length", "max_tokens"}:
+                self.finish_reason_counts[finish_reason] = self.finish_reason_counts.get(finish_reason, 0) + 1
+                return self._error(f"{self.provider_name} completion truncated at model token limit", code="completion_truncated")
+            if finish_reason in {"content_filter", "safety"}:
+                self.finish_reason_counts[finish_reason] = self.finish_reason_counts.get(finish_reason, 0) + 1
+                return self._error(f"{self.provider_name} completion filtered by provider", code="completion_filtered")
             text = _extract_content(first.get("message"))
             if not text:
                 # Some OpenAI-compatible services return a refusal or legacy text field.

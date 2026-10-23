@@ -156,6 +156,7 @@ class RepositoryInvestigator:
         source_revision: str | None = None,
         runner_revision: str | None = None,
         evidence_tools: Any | None = None,
+        required_source_paths: tuple[str, ...] = (),
         limits: InvestigationLimits | None = None,
         cost_estimator: Callable[[str, str, int, int], float] | None = None,
         clock: Callable[[], float] = time.monotonic,
@@ -187,6 +188,22 @@ class RepositoryInvestigator:
         } if isinstance(initial_rows, Mapping) else {}
         initial_hashes = getattr(self.evidence_tools, "file_hashes", {})
         self._expected_file_hashes = dict(initial_hashes) if isinstance(initial_hashes, Mapping) else {}
+        # A caller may declare critical implementation files for a bounded
+        # investigation. This is evidence coverage, not a causal proof oracle.
+        if (not isinstance(required_source_paths, (tuple, list))
+                or len(required_source_paths) > 12):
+            raise ValueError("required_source_paths must be a bounded list of paths")
+        checked_paths: list[str] = []
+        for path in required_source_paths:
+            if (not isinstance(path, str) or not path or len(path) > 400
+                    or "\\" in path or path.startswith("/")
+                    or any(part in {"", ".", ".."} for part in path.split("/"))):
+                raise ValueError("invalid required source path")
+            if path not in self._expected_file_hashes:
+                raise ValueError("required source path not indexed in the supplied evidence snapshot")
+            if path not in checked_paths:
+                checked_paths.append(path)
+        self._required_source_paths = tuple(sorted(checked_paths))
         self._tool_definitions = build_tool_definitions()
         self._tool_schemas = {
             item["function"]["name"]: item["function"]
@@ -444,6 +461,7 @@ class RepositoryInvestigator:
             "evidence_ledger": [],
             "diagnosis": None,
             "diagnosis_assurance": "not_assessed",
+            "required_source_coverage": self._required_source_coverage(),
             "budget": {},
             "elapsed_seconds": 0.0,
             "errors": [],
@@ -596,6 +614,16 @@ class RepositoryInvestigator:
         user_payload = {
             "problem_statement": problem,
             "initial_repository_evidence": self._model_view(summary),
+            "required_source_inspection": {
+                "paths": list(self._required_source_paths),
+                "instructions": (
+                    "Read every declared path with read_source_file and inspect all indexed lines "
+                    "before the final diagnosis. A search hit or graph relation is not a substitute "
+                    "for direct inspection. Bind root-cause citations to those exact source-read "
+                    "evidence IDs. If you cannot inspect the required files, report a limitation "
+                    "and do not make a high-confidence causal claim."
+                ) if self._required_source_paths else "not_configured",
+            },
             "operating_limits": {
                 "max_rounds": self.limits.max_rounds,
                 "finalization_rounds_reserved": min(self.limits.finalization_rounds_reserved, self.limits.max_rounds),
@@ -689,6 +717,7 @@ class RepositoryInvestigator:
             "initial_repository_evidence": summary_view,
             "evidence_ledger": evidence_items,
             "source_reference_candidates": candidates,
+            "required_source_coverage": self._required_source_coverage(),
         }
         messages = [
             {"role": "system", "content": FINALIZATION_SYSTEM_INSTRUCTIONS},
@@ -826,6 +855,7 @@ class RepositoryInvestigator:
                 "max_finalization_recovery_retries": self.limits.max_finalization_recovery_retries,
                 "finalization_rejections_used": self._finalization_rejections,
                 "required_action": "final",
+                "required_source_coverage": self._required_source_coverage(),
                 "instructions": (
                     "Evidence gathering is closed. Do not request another tool. Submit a final diagnosis "
                     "using only the source-bound evidence ledger and exact source-reference candidates in "
@@ -1171,12 +1201,63 @@ class RepositoryInvestigator:
             for child in value:
                 self._observed_source_references(child, evidence_id, output)
 
+    def _required_source_coverage(self, diagnosis: Mapping[str, Any] | None = None) -> dict[str, Any]:
+        """Measure direct indexed source reads, not searches or model assertions.
+
+        A read is complete only if the indexed file's full numbered line range
+        was returned. An EOF-clamped request counts as complete even if the
+        tool's `truncated` flag reflects the overshooting requested end line.
+        """
+        observed: dict[str, set[str]] = {path: set() for path in self._required_source_paths}
+        complete: dict[str, set[str]] = {path: set() for path in self._required_source_paths}
+        for entry in self._ledger:
+            if entry.tool != "read_source_file" or entry.status != "ok":
+                continue
+            result = entry.response.get("result", {})
+            if not isinstance(result, Mapping):
+                continue
+            path = result.get("path")
+            if not isinstance(path, str) or path not in observed or result.get("source_sha256") != self._expected_file_hashes.get(path):
+                continue
+            start, end, count = result.get("start_line"), result.get("end_line"), result.get("total_lines")
+            if (isinstance(start, int) and not isinstance(start, bool)
+                    and isinstance(end, int) and not isinstance(end, bool)
+                    and isinstance(count, int) and not isinstance(count, bool)
+                    and count > 0 and 1 <= start <= end <= count
+                    and isinstance(result.get("content"), str)
+                    and result["content"].strip()):
+                observed[path].add(entry.evidence_id)
+                if start == 1 and end == count:
+                    complete[path].add(entry.evidence_id)
+        cited: dict[str, bool] = {path: False for path in self._required_source_paths}
+        if isinstance(diagnosis, Mapping):
+            root = diagnosis.get("root_cause", {})
+            if isinstance(root, Mapping):
+                for ref in root.get("source_references", []):
+                    if (isinstance(ref, Mapping) and ref.get("path") in cited
+                            and ref.get("evidence_id") in complete[ref["path"]]):
+                        cited[ref["path"]] = True
+        missing = [p for p in self._required_source_paths if not complete[p]]
+        missing_root_citations = [p for p in self._required_source_paths if not cited[p]]
+        return {
+            "schema_version": "ae32c/required-source-coverage/v1",
+            "required_paths": list(self._required_source_paths),
+            "direct_read_paths": sorted(p for p in observed if observed[p]),
+            "complete_read_paths": sorted(p for p in complete if complete[p]),
+            "missing_complete_reads": missing,
+            "root_cause_direct_citation_paths": sorted(p for p in cited if cited[p]),
+            "missing_root_cause_direct_citations": missing_root_citations,
+            "status": "not_configured" if not self._required_source_paths else (
+                "complete" if not missing and (diagnosis is None or not missing_root_citations)
+                else "incomplete"),
+        }
+
     def _available_source_reference_candidates(self, maximum: int = 80) -> list[dict[str, Any]]:
         """Return exact, ledger-observed source references that pass manifest checks."""
         candidates: list[dict[str, Any]] = []
         seen: set[tuple[str, str, int, str]] = set()
         expected_hashes = self._expected_file_hashes
-        for entry in self._ledger:
+        for entry in sorted(self._ledger, key=lambda e: (e.tool != "read_source_file", e.evidence_id)):
             if entry.status != "ok" or entry.tool == "repository_summary":
                 continue
             observed: set[tuple[str, int, str]] = set()
@@ -1333,6 +1414,16 @@ class RepositoryInvestigator:
         except InvestigationError:
             next_steps = []
             errors.append("next_steps_invalid")
+        # Do not accept a high-confidence claim about declared critical files
+        # without a complete direct read and a root-cause citation to EACH.
+        # For other confidence levels an incomplete coverage result is reported
+        # and the final status cannot be `completed`.
+        if not errors and root.get("confidence") == "high" and self._required_source_paths:
+            candidate_coverage = self._required_source_coverage({
+                "root_cause": {"source_references": root_source_refs}
+            })
+            if candidate_coverage["status"] != "complete":
+                errors.append("high_confidence_required_source_coverage_incomplete")
         if errors:
             return None, sorted(set(errors))[:30]
         normalized = {
@@ -1584,6 +1675,7 @@ class RepositoryInvestigator:
         report["status"] = status
         report["stop_reason"] = stop_reason
         report["snapshot_check_status"] = self._snapshot_check_status
+        report["required_source_coverage"] = self._required_source_coverage(report.get("diagnosis"))
         report["tool_calls"] = self._tool_trace
         report["model_actions"] = self._model_action_trace
         report["evidence_ledger"] = [
@@ -2163,6 +2255,18 @@ class RepositoryInvestigator:
                     self._model_action_trace.append({"round": self._model_rounds, "action": "final_accepted", "citation_validation": "references_resolved"})
                     report["diagnosis"] = diagnosis
                     report["diagnosis_assurance"] = "references_resolved_not_independently_proven"
+                    required_coverage = self._required_source_coverage(diagnosis)
+                    report["required_source_coverage"] = required_coverage
+                    if required_coverage["status"] == "incomplete":
+                        report["diagnosis_assurance"] = "references_resolved_required_source_coverage_incomplete"
+                        report["limitations"].append(
+                            "Required direct source-file inspection or root-cause citations are incomplete; "
+                            "the diagnosis must not be treated as verified or complete."
+                        )
+                        return self._finalize_report(
+                            report, "completed_with_incomplete_evidence",
+                            "diagnosis_submitted_with_required_source_coverage_gap",
+                        )
                     coverage = self._source_provenance.get("evidence_index_status", "unknown")
                     source_status = self._source_provenance.get("source_snapshot_status", "unknown")
                     if coverage == "complete" and source_status == "complete" and self._snapshot_check_status == "verified":

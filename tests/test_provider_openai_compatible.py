@@ -164,3 +164,36 @@ def test_total_calls_is_compatibility_alias_for_logical_calls(monkeypatch):
     assert provider.total_calls == 1
     assert provider.total_calls == provider.logical_calls
     assert provider.get_stats()["total_calls"] == provider.total_calls
+
+
+@pytest.mark.parametrize("finish_reason,error_code", [
+    ("length", "completion_truncated"),
+    ("max_tokens", "completion_truncated"),
+    ("content_filter", "completion_filtered"),
+    ("safety", "completion_filtered"),
+])
+def test_finish_reason_rejects_incomplete_or_filtered_response(monkeypatch, finish_reason, error_code):
+    payload = success_payload(content='{"action":"final"')
+    payload["choices"][0]["finish_reason"] = finish_reason
+    monkeypatch.setattr("providers.openai_compatible.requests.post", lambda *a, **k: FakeResponse(payload=payload))
+    provider = OpenAICompatibleProvider("openrouter", "secret", "test-model", max_retries=1)
+    text, error = provider.chat([{"role": "user", "content": "hello"}])
+    assert text is None
+    assert "secret" not in error
+    assert "action" not in error
+    stats = provider.get_stats()
+    assert stats["last_error_code"] == error_code
+    assert stats["failed_calls"] == 1
+    assert stats["finish_reason_counts"] == {finish_reason: 1}
+    assert stats["successful_calls"] == 0
+
+
+def test_absent_finish_reason_keeps_legacy_success_behavior(monkeypatch):
+    payload = success_payload("plain response without a finish reason")
+    del payload["choices"][0]["finish_reason"]
+    monkeypatch.setattr("providers.openai_compatible.requests.post", lambda *a, **k: FakeResponse(payload=payload))
+    provider = OpenAICompatibleProvider("nararouter", "secret", "model", max_retries=1)
+    content, error = provider.chat([{"role": "user", "content": "test"}])
+    assert error is None
+    assert content == "plain response without a finish reason"
+    assert provider.get_stats()["finish_reason_counts"] == {"unknown": 1}
