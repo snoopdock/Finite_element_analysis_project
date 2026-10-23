@@ -42,3 +42,13 @@ class BatchWorkflowContracts(unittest.TestCase):
 
 if __name__=='__main__':
     unittest.main()
+
+
+def test_phase_e4_retains_one_dispatch_and_machine_readable_batch_summary():
+    workflow = (ROOT/'.github/workflows/ae32c-round-robin-evaluation.yml').read_text(encoding='utf-8')
+    assert workflow.count('workflow_dispatch:') == 1
+    assert 'python -m audit_engine.semantic_audit.ae32c.batch_evaluation' in workflow
+    assert '--batch-dir "$RUNNER_TEMP/ae32c-batch"' in workflow
+    assert 'batch-summary.md" >> "$GITHUB_STEP_SUMMARY"' in workflow
+    assert 'name: ae32c-round-robin-${{ github.run_id }}-${{ github.run_attempt }}' in workflow
+    assert 'Enforce complete batch gate after evidence publication' in workflow
