@@ -1261,6 +1261,9 @@ class RepositoryEvidenceTools:
                 "requested_start_line": 1, "requested_end_line": requested_end,
                 "start_line": 1, "end_line": 0, "content": "",
                 "truncated": requested_end > 1, "redaction_applied": True,
+                "end_clamped_to_eof": requested_end > 0,
+                "content_omitted": False, "source_range_complete": True,
+                "omitted_line_count": 0, "read_coverage": "empty_file",
             }
         # Starting positions must identify a real line. An end position may
         # legitimately overshoot EOF: clamp it to the indexed source length,
@@ -1284,6 +1287,11 @@ class RepositoryEvidenceTools:
                 break
             rendered.append(rendered_line)
             char_count += len(rendered_line) + 1
+        last_returned = start + len(rendered) - 1
+        # Legacy `truncated` also describes an overshooting *request*, not only
+        # omitted source. New fields disambiguate this without breaking callers.
+        omitted_lines = (start - 1) + max(0, len(lines) - last_returned)
+        range_complete = start == 1 and last_returned == len(lines)
         return {
             "path": path,
             "source_sha256": self.file_hashes[path],
@@ -1291,9 +1299,14 @@ class RepositoryEvidenceTools:
             "requested_start_line": start,
             "requested_end_line": requested_end,
             "start_line": start,
-            "end_line": start + len(rendered) - 1 if rendered else start - 1,
+            "end_line": last_returned,
             "content": "\n".join(rendered),
-            "truncated": bool(truncated or (rendered and start + len(rendered) - 1 < end)),
+            "truncated": bool(truncated or last_returned < end),
+            "end_clamped_to_eof": requested_end > len(lines),
+            "content_omitted": not range_complete,
+            "source_range_complete": range_complete,
+            "omitted_line_count": omitted_lines,
+            "read_coverage": "complete_file" if range_complete else "partial_file",
             "redaction_applied": True,
         }
 

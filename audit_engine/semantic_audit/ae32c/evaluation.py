@@ -54,6 +54,7 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
             "evidence_count": 0,
             "source_reference_count": 0,
             "diagnosis_assurance": "not_assessed",
+            "semantic_claim_support": "requires_independent_adjudication",
             "required_source_coverage_status": "not_assessed",
             "required_source_missing_reads": [],
             "required_source_missing_root_citations": [],
@@ -82,6 +83,7 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
         "evidence_count": len(ledger),
         "source_reference_count": _source_reference_count(diagnosis),
         "diagnosis_assurance": _safe_text(report.get("diagnosis_assurance", "not_assessed"), 120),
+        "semantic_claim_support": "requires_independent_adjudication",
         "required_source_coverage_status": _safe_text(
             (report.get("required_source_coverage") or {}).get("status", "not_assessed")
             if isinstance(report.get("required_source_coverage"), Mapping) else "not_assessed", 80
@@ -177,6 +179,7 @@ def build_comparison_record(
             "diagnostic_accuracy": "not_automatically_assessed",
             "graph_benefit": "not_claimed_without_independent_comparison",
             "human_review_required": True,
+            "resolved_citations_are_not_causal_proof": True,
             "limitations": [
                 "A scripted or live model response is not proof of causal correctness.",
                 "The two conditions may produce different evidence and token consumption.",
