@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -88,12 +89,21 @@ def _make_trial(root: Path, round_number: int, provider: str, *, coverage="compl
                         "final_citation_validation": "references_resolved",
                         "stop_reason": "diagnosis_submitted"},
             "report": {"snapshot_check_status": "verified", "elapsed_seconds": 4.5,
+                       "source_textual_support": {"status": "complete", "declared_anchor_count": 2, "missing_direct_cited_anchors": []},
                        "required_source_coverage": {"status": coverage,
                          "missing_complete_reads": [] if coverage == "complete" else ["providers/adapter.py"],
                          "missing_root_cause_direct_citations": []}},
         },
     }
-    (path / "comparison.json").write_text(json.dumps(comparison), encoding="utf-8")
+    output = path / "ae32c-evaluation-test"
+    output.mkdir()
+    data = json.dumps(comparison, sort_keys=True) + "\n"
+    (output / "comparison.json").write_text(data, encoding="utf-8")
+    md = "# Test comparison fixture\n"
+    (output / "comparison.md").write_text(md, encoding="utf-8")
+    (output / "SHA256SUMS.txt").write_text(
+        hashlib.sha256(data.encode()).hexdigest() + "  comparison.json\n" +
+        hashlib.sha256(md.encode()).hexdigest() + "  comparison.md\n", encoding="ascii")
     return path
 
 

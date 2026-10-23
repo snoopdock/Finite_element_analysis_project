@@ -84,6 +84,7 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
         "source_reference_count": _source_reference_count(diagnosis),
         "diagnosis_assurance": _safe_text(report.get("diagnosis_assurance", "not_assessed"), 120),
         "semantic_claim_support": "requires_independent_adjudication",
+        "source_textual_support_status": _safe_text((report.get("source_textual_support") or {}).get("status", "not_assessed") if isinstance(report.get("source_textual_support"), Mapping) else "not_assessed", 80),
         "required_source_coverage_status": _safe_text(
             (report.get("required_source_coverage") or {}).get("status", "not_assessed")
             if isinstance(report.get("required_source_coverage"), Mapping) else "not_assessed", 80

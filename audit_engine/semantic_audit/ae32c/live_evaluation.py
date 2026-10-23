@@ -279,6 +279,10 @@ def main(argv: list[str] | None = None) -> int:
                         model_name=effective_model_name,
                         evidence_tools=graph_tools,
                         required_source_paths=("pipeline/extractor.py", "providers/adapter.py") if repo_root.name == DEFAULT_FIXTURE.name else (),
+                        required_source_anchors={
+                            "pipeline/extractor.py": ("provider.total_calls",),
+                            "providers/adapter.py": ("self.calls",),
+                        },
                         limits=limits,
                     )
                     graph_report = investigator.run(baseline_problem)
