@@ -254,56 +254,56 @@ def main(argv: list[str] | None = None) -> int:
             baseline_status = "provider_failed"
         baseline_elapsed_seconds = max(0.0, time.monotonic() - baseline_started)
         baseline_usage = _usage_summary(baseline_provider)
+        # Whitelisted structural diagnostics; no response body, model text,
+        # upstream error messages, IDs, endpoints, or credentials are stored.
+        try:
+            baseline_provider_stats = baseline_provider.get_stats()
+        except Exception:
+            baseline_provider_stats = {}
+        if not isinstance(baseline_provider_stats, dict):
+            baseline_provider_stats = {}
 
         graph_report: dict[str, Any] | None = None
-        if baseline_status == "completed":
-            try:
-                graph_tools = RepositoryEvidenceTools(repo_root)
-                if graph_tools.manifest_sha256 != manifest_hash or graph_tools.graph_fingerprint != baseline_tools.graph_fingerprint:
-                    graph_report = {
-                        "schema_version": "ae32c/interactive-investigation/v1",
-                        "status": "inconclusive",
-                        "stop_reason": "snapshot_changed_between_evaluation_conditions",
-                        "provenance": {"source_manifest_sha256": graph_tools.manifest_sha256,
-                                       "graph_fingerprint": graph_tools.graph_fingerprint},
-                        "tool_calls": [], "model_actions": [], "evidence_ledger": [],
-                        "limitations": ["The baseline and graph-assisted conditions did not use the same evidence snapshot."],
-                    }
-                else:
-                    graph_provider = _build_provider(args.provider, model_name, max_calls=LIVE_GRAPH_MAX_CALLS, max_tokens=LIVE_GRAPH_MAX_TOKENS)
-                    limits = build_live_investigation_limits(args.provider)
-                    investigator = RepositoryInvestigator(
-                        repo_root,
-                        graph_provider,
-                        provider_name=args.provider,
-                        model_name=effective_model_name,
-                        evidence_tools=graph_tools,
-                        required_source_paths=("pipeline/extractor.py", "providers/adapter.py") if repo_root.name == DEFAULT_FIXTURE.name else (),
-                        required_source_anchors={
-                            "pipeline/extractor.py": ("provider.total_calls",),
-                            "providers/adapter.py": ("self.calls",),
-                        },
-                        limits=limits,
-                    )
-                    graph_report = investigator.run(baseline_problem)
-            except Exception as exc:
+        # E.5: run the graph condition independently of baseline transport and
+        # parsing outcomes. The common immutable snapshot check still fails closed.
+        try:
+            graph_tools = RepositoryEvidenceTools(repo_root)
+            if graph_tools.manifest_sha256 != manifest_hash or graph_tools.graph_fingerprint != baseline_tools.graph_fingerprint:
                 graph_report = {
                     "schema_version": "ae32c/interactive-investigation/v1",
-                    "status": "failed",
-                    "stop_reason": "graph_assisted_initialization_failed",
-                    "error_type": type(exc).__name__,
+                    "status": "inconclusive",
+                    "stop_reason": "snapshot_changed_between_evaluation_conditions",
+                    "provenance": {"source_manifest_sha256": graph_tools.manifest_sha256,
+                                   "graph_fingerprint": graph_tools.graph_fingerprint},
                     "tool_calls": [], "model_actions": [], "evidence_ledger": [],
-                    "limitations": ["The graph-assisted condition could not initialize; no causal conclusion is implied."],
+                    "limitations": ["The baseline and graph-assisted conditions did not use the same evidence snapshot."],
                 }
-        else:
+            else:
+                graph_provider = _build_provider(args.provider, model_name, max_calls=LIVE_GRAPH_MAX_CALLS, max_tokens=LIVE_GRAPH_MAX_TOKENS)
+                limits = build_live_investigation_limits(args.provider)
+                investigator = RepositoryInvestigator(
+                    repo_root,
+                    graph_provider,
+                    provider_name=args.provider,
+                    model_name=effective_model_name,
+                    evidence_tools=graph_tools,
+                    required_source_paths=("pipeline/extractor.py", "providers/adapter.py") if repo_root.name == DEFAULT_FIXTURE.name else (),
+                    required_source_anchors={
+                        "pipeline/extractor.py": ("provider.total_calls",),
+                        "providers/adapter.py": ("self.calls",),
+                    },
+                    limits=limits,
+                )
+                graph_report = investigator.run(baseline_problem)
+        except Exception as exc:
             graph_report = {
                 "schema_version": "ae32c/interactive-investigation/v1",
-                "status": "not_run",
-                "stop_reason": "baseline_provider_failed_or_response_rejected",
+                "status": "failed",
+                "stop_reason": "graph_assisted_initialization_failed",
+                "error_type": type(exc).__name__,
                 "tool_calls": [], "model_actions": [], "evidence_ledger": [],
-                "limitations": ["The paired graph-assisted condition was skipped to avoid spending additional calls after the baseline failed."],
+                "limitations": ["The graph-assisted condition could not initialize; no causal conclusion is implied."],
             }
-
         record = build_comparison_record(
             problem_statement=baseline_problem,
             provider_name=args.provider,
@@ -317,6 +317,7 @@ def main(argv: list[str] | None = None) -> int:
             graph_report=graph_report,
             baseline_usage=baseline_usage,
             baseline_elapsed_seconds=baseline_elapsed_seconds,
+            baseline_provider_diagnostics=baseline_provider_stats,
         )
         publication = write_comparison_artifacts(
             record,
@@ -324,7 +325,7 @@ def main(argv: list[str] | None = None) -> int:
             checkout_root=checkout_root,
         )
         print(json.dumps({
-            "status": "completed" if baseline_status == "completed" else "incomplete",
+            "status": "published_independent_conditions",
             "baseline_status": baseline_status,
             "graph_assisted_status": (graph_report or {}).get("status", "not_run"),
             "publication": publication,
@@ -332,7 +333,9 @@ def main(argv: list[str] | None = None) -> int:
             "automatic_accuracy_claim": False,
             "human_review_required": True,
         }, ensure_ascii=True, sort_keys=True, indent=2, allow_nan=False))
-        return 0 if baseline_status == "completed" else 2
+        # Nonzero means runner/publication failure, not a provider condition failure.
+        # Both condition outcomes are independently evaluated by the batch assessor.
+        return 0
     except Exception as exc:
         # Do not emit arbitrary provider exception messages or environment values.
         print(json.dumps({

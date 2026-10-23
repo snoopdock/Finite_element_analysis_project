@@ -776,6 +776,13 @@ class RepositoryInvestigator:
             "source_reference_candidates": candidates,
             "required_source_coverage": self._required_source_coverage(),
         }
+        if self._required_source_anchors:
+            payload["required_source_line_witnesses"] = self._required_anchor_reference_candidates()
+            payload["source_line_witness_rules"] = [
+                "Cite only exact observed anchor-line tuples in root_cause.source_references and root_cause.evidence_refs.",
+                "Class declarations and file-wide citations do not prove attributes; missing witnesses mean inconclusive evidence.",
+                "Literal source support is not causal or runtime proof.",
+            ]
         messages = [
             {"role": "system", "content": FINALIZATION_SYSTEM_INSTRUCTIONS},
             {"role": "user", "content": self._canonical_json(payload)},
@@ -921,6 +928,8 @@ class RepositoryInvestigator:
                 ),
             }
         }
+        if self._required_source_anchors:
+            notice["finalization_mode"]["required_source_line_witnesses"] = self._required_anchor_reference_candidates()
         # Rebuild on every finalization round so stale messages and rejected model
         # output cannot make later prompts exceed the remaining cumulative budget.
         self._compact_finalization_context(
@@ -1374,6 +1383,38 @@ class RepositoryInvestigator:
             "missing_direct_cited_anchors": missing,
             "causal_accuracy": "requires_independent_review",
         }
+
+
+    def _required_anchor_reference_candidates(self) -> list[dict[str, Any]]:
+        """Offer only ledger-observed, source-hash-bound line witnesses.
+
+        These are protocol hints, not new evidence. No candidate can justify a
+        causal interpretation beyond the literal code text it references.
+        """
+        if not self._required_source_anchors:
+            return []
+        available = self._available_source_reference_candidates(maximum=200)
+        indexed = getattr(self.evidence_tools, "contents", {})
+        if not isinstance(indexed, Mapping):
+            return []
+        witnesses: list[dict[str, Any]] = []
+        for path, tokens in self._required_source_anchors.items():
+            content = indexed.get(path)
+            if not isinstance(content, str):
+                continue
+            lines = content.splitlines()
+            for token in tokens:
+                matches = [c for c in available if c.get("path") == path
+                           and isinstance(c.get("line"), int)
+                           and 1 <= c["line"] <= len(lines)
+                           and token in lines[c["line"] - 1]
+                           and any(e.evidence_id == c.get("evidence_id")
+                                   and e.tool == "read_source_file" and e.status == "ok"
+                                   for e in self._ledger)]
+                witnesses.append({"path": path, "anchor": token,
+                                  "source_reference_candidates": matches[:4],
+                                  "witness_status": "observed" if matches else "not_observed"})
+        return witnesses[:32]
 
     def _available_source_reference_candidates(self, maximum: int = 80) -> list[dict[str, Any]]:
         """Return exact, ledger-observed source references that pass manifest checks."""
@@ -1834,6 +1875,15 @@ class RepositoryInvestigator:
             last_error_code = provider_stats.get("last_error_code")
             if isinstance(last_error_code, str) and last_error_code:
                 report.setdefault("provider", {})["last_error_code"] = self._safe_text(last_error_code, 100)
+            envelope = provider_stats.get("last_envelope_diagnostic")
+            if isinstance(envelope, Mapping):
+                # Keep a typed, strictly allowlisted diagnostic without
+                # persisting untrusted JSON keys or messages.
+                safe_kinds = {"standard_choices", "upstream_error_object", "alternate_wrapper",
+                              "unrecognized_object", "non_object"}
+                kind = envelope.get("envelope_kind")
+                if isinstance(kind, str) and kind in safe_kinds:
+                    report.setdefault("provider", {})["last_envelope_kind"] = kind
             error_counts = provider_stats.get("error_counts")
             if isinstance(error_counts, Mapping):
                 report.setdefault("provider", {})["error_counts"] = {
@@ -2380,6 +2430,7 @@ class RepositoryInvestigator:
                                     "evidence_id", "path", "line", "source_sha256"
                                 ],
                                 "source_reference_candidates": self._available_source_reference_candidates(),
+                                "required_source_line_witnesses": self._required_anchor_reference_candidates(),
                                 "rules": [
                                     "A source reference must contain exactly the four required keys; no missing or extra keys.",
                                     "line must be a positive JSON integer, not a string, float, or boolean.",

@@ -65,6 +65,27 @@ def _extract_content(message: object) -> Optional[str]:
     return None
 
 
+def completion_envelope_diagnostic(payload: object) -> dict[str, object]:
+    """Return only whitelisted structural observations, never upstream content.
+
+    A 200 response can be an upstream error object or a nonstandard wrapper.
+    Neither is a successful chat completion; the adapter stays fail-closed.
+    """
+    if not isinstance(payload, dict):
+        return {"envelope_kind": "non_object", "choices_shape": "absent", "has_error_object": False}
+    choices = payload.get("choices")
+    shape = "nonempty_list" if isinstance(choices, list) and choices else (
+        "empty_list" if isinstance(choices, list) else
+        "absent" if "choices" not in payload else "wrong_type")
+    # No arbitrary keys, error strings, content snippets, model names, or IDs.
+    kind = "standard_choices" if shape == "nonempty_list" else (
+        "upstream_error_object" if isinstance(payload.get("error"), (dict, str)) else
+        "alternate_wrapper" if isinstance(payload.get("data"), dict) or isinstance(payload.get("result"), dict) else
+        "unrecognized_object")
+    return {"envelope_kind": kind, "choices_shape": shape,
+            "has_error_object": isinstance(payload.get("error"), (dict, str))}
+
+
 class OpenAICompatibleProvider:
     """Small retry-bounded adapter for NaraRouter/OpenRouter chat completions."""
 
@@ -129,6 +150,8 @@ class OpenAICompatibleProvider:
         self.last_errors: List[str] = []
         self.last_error_code: Optional[str] = None
         self.error_counts: Dict[str, int] = {}
+        self.envelope_diagnostic_counts: Dict[str, int] = {}
+        self.last_envelope_diagnostic: dict[str, object] | None = None
 
     @property
     def total_calls(self) -> int:
@@ -286,6 +309,12 @@ class OpenAICompatibleProvider:
                     continue
                 return self._error(f"{self.provider_name} returned invalid JSON (HTTP {response.status_code})", code="invalid_json_response")
 
+            diagnostic = completion_envelope_diagnostic(data)
+            # The summary is deliberately non-sensitive and carries no raw
+            # upstream JSON or error text into persisted evaluation evidence.
+            self.last_envelope_diagnostic = diagnostic
+            kind = str(diagnostic["envelope_kind"])
+            self.envelope_diagnostic_counts[kind] = self.envelope_diagnostic_counts.get(kind, 0) + 1
             choices = data.get("choices") if isinstance(data, dict) else None
             if not isinstance(choices, list) or not choices:
                 return self._error(
@@ -358,4 +387,6 @@ class OpenAICompatibleProvider:
             "last_errors": list(self.last_errors),
             "last_error_code": self.last_error_code,
             "error_counts": dict(self.error_counts),
+            "last_envelope_diagnostic": dict(self.last_envelope_diagnostic) if self.last_envelope_diagnostic else None,
+            "envelope_diagnostic_counts": dict(self.envelope_diagnostic_counts),
         }

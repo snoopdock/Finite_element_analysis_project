@@ -104,6 +104,10 @@ def evaluate_trial(root: Path, *, round_number: int, provider: str) -> dict[str,
                 source_support = {}
             metrics = {
                 "baseline_status": baseline.get("status"),
+                "baseline_error_code": baseline.get("error_code", "unclassified_or_none"),
+                "baseline_envelope_kind": (baseline.get("envelope_diagnostic") or {}).get("envelope_kind", "not_observed") if isinstance(baseline.get("envelope_diagnostic"), Mapping) else "not_observed",
+                "graph_provider_error_code": (report.get("provider") or {}).get("last_error_code", "unclassified_or_none") if isinstance(report.get("provider"), Mapping) else "unclassified_or_none",
+                "graph_provider_envelope_kind": (report.get("provider") or {}).get("last_envelope_kind", "not_observed") if isinstance(report.get("provider"), Mapping) else "not_observed",
                 "investigation_status": summary.get("status"),
                 "stop_reason": summary.get("stop_reason"),
                 "model_rounds": rounds,
@@ -122,7 +126,6 @@ def evaluate_trial(root: Path, *, round_number: int, provider: str) -> dict[str,
                 "elapsed_seconds": report.get("elapsed_seconds"),
             }
             requirements = {
-                "baseline_completed": baseline.get("status") == "completed",
                 "diagnosis_accepted": summary.get("status") in ("completed", "completed_with_incomplete_evidence"),
                 "multiple_model_rounds": isinstance(rounds, int) and not isinstance(rounds, bool) and rounds >= 2,
                 "evidence_tool_used": isinstance(tool_calls, int) and not isinstance(tool_calls, bool) and tool_calls >= 1,
@@ -148,6 +151,11 @@ def evaluate_trial(root: Path, *, round_number: int, provider: str) -> dict[str,
                 failures.append("required_direct_source_anchor_support_incomplete")
         except (OSError, UnicodeError, ValueError, TypeError, KeyError, json.JSONDecodeError):
             failures.append("comparison_invalid")
+    baseline_complete = metrics.get("baseline_status") == "completed"
+    if not baseline_complete:
+        failures.append("baseline_not_completed")
+    # Graph completion is now condition-independent: a baseline failure cannot
+    # relabel a successful graph run as a graph-protocol failure.
     protocol_complete = not any(code in failures for code in (
         "runner_nonzero_or_missing", "comparison_missing_or_ambiguous", "comparison_invalid",
         "baseline_completed", "diagnosis_accepted", "multiple_model_rounds",
@@ -159,6 +167,8 @@ def evaluate_trial(root: Path, *, round_number: int, provider: str) -> dict[str,
         "round": round_number,
         "provider": provider,
         "protocol_complete": protocol_complete,
+        "baseline_complete": baseline_complete,
+        "graph_protocol_complete": protocol_complete,
         "evidence_complete": not any(x in failures for x in ("required_source_evidence_incomplete", "required_direct_source_anchor_support_incomplete")) and protocol_complete,
         "passed": not failures,
         "issues": sorted(set(failures)),
@@ -187,8 +197,21 @@ def build_summary(root: Path, rounds: int) -> dict[str, Any]:
             reason = str(row["metrics"].get("stop_reason", "missing"))
             if not row["passed"]:
                 causes[reason] = causes.get(reason, 0) + 1
+        baseline_errors = {}
+        graph_errors = {}
+        for row in subset:
+            if not row["baseline_complete"]:
+                code = str(row["metrics"].get("baseline_error_code", "unclassified_or_none"))
+                baseline_errors[code] = baseline_errors.get(code, 0) + 1
+            if not row["graph_protocol_complete"]:
+                code = str(row["metrics"].get("graph_provider_error_code", "unclassified_or_none"))
+                graph_errors[code] = graph_errors.get(code, 0) + 1
         provider_breakdown[name] = {
+            "baseline_failure_classes": dict(sorted(baseline_errors.items())),
+            "graph_failure_classes": dict(sorted(graph_errors.items())),
             "trials": len(subset),
+            "baseline_completed": sum(bool(row["baseline_complete"]) for row in subset),
+            "graph_protocol_completed": sum(bool(row["graph_protocol_complete"]) for row in subset),
             "protocol_completed": sum(bool(row["protocol_complete"]) for row in subset),
             "evidence_complete": sum(bool(row["evidence_complete"]) for row in subset),
             "textual_support_complete": sum(row["metrics"].get("source_textual_support_status") == "complete" for row in subset),
@@ -204,7 +227,10 @@ def build_summary(root: Path, rounds: int) -> dict[str, Any]:
         "rounds": rounds,
         "expected_trials": len(trials),
         "observed_trials": sum(bool(row["metrics"]) for row in trials),
+        "baseline_completed": sum(row["baseline_complete"] for row in trials),
+        "graph_protocol_completed": sum(row["graph_protocol_complete"] for row in trials),
         "protocol_completed": sum(row["protocol_complete"] for row in trials),
+        "graph_evidence_complete": sum(row["evidence_complete"] for row in trials),
         "evidence_complete": sum(row["passed"] for row in trials),
         "passed": all(row["passed"] for row in trials),
         "provider_breakdown": provider_breakdown,
@@ -225,15 +251,15 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("batch directory missing")
     result = build_summary(root, args.rounds)
     (root / "batch-summary.json").write_text(json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
-    lines = ["# AE-32C Round-Robin Evaluation", "", "| Round | Provider | Protocol | Evidence | Stop reason |", "|---:|---|---|---|---|"]
+    lines = ["# AE-32C Round-Robin Evaluation", "", "| Round | Provider | Baseline | Graph protocol | Graph evidence | Overall | Stop reason |", "|---:|---|---|---|---|---|---|"]
     for trial in result["trials"]:
         metrics = trial["metrics"]
         reason = str(metrics.get("stop_reason", "missing"))
-        lines.append(f"| {trial['round']} | {trial['provider']} | {'PASS' if trial['protocol_complete'] else 'FAIL'} | {'PASS' if trial['passed'] else 'FAIL'} | `{reason}` |")
-    lines += ["", "## Per-provider operational measures", "", "| Provider | Protocol | Evidence | Textual support | Median seconds |", "|---|---:|---:|---:|---:|"]
+        lines.append(f"| {trial['round']} | {trial['provider']} | {'PASS' if trial['baseline_complete'] else 'FAIL'} | {'PASS' if trial['graph_protocol_complete'] else 'FAIL'} | {'PASS' if trial['evidence_complete'] else 'FAIL'} | {'PASS' if trial['passed'] else 'FAIL'} | `{reason}` |")
+    lines += ["", "## Per-provider operational measures", "", "| Provider | Baseline | Graph protocol | Evidence | Textual support | Median seconds |", "|---|---:|---:|---:|---:|---:|"]
     for name, row in result["provider_breakdown"].items():
-        lines.append(f"| {name} | {row['protocol_completed']}/{row['trials']} | {row['evidence_complete']}/{row['trials']} | {row['textual_support_complete']}/{row['trials']} | {row['median_elapsed_seconds']} |")
-    lines.extend(["", f"- Complete evidence: **{result['evidence_complete']}/{result['expected_trials']}**", "- Diagnostic correctness: **not assessed; human review required**.", ""])
+        lines.append(f"| {name} | {row['baseline_completed']}/{row['trials']} | {row['graph_protocol_completed']}/{row['trials']} | {row['evidence_complete']}/{row['trials']} | {row['textual_support_complete']}/{row['trials']} | {row['median_elapsed_seconds']} |")
+    lines.extend(["", f"- Graph evidence complete (independent condition): **{result['graph_evidence_complete']}/{result['expected_trials']}**", f"- Both conditions passing: **{result['evidence_complete']}/{result['expected_trials']}**", "- Diagnostic correctness: **not assessed; human review required**.", ""])
     (root / "batch-summary.md").write_text("\n".join(lines), encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "trials"}, sort_keys=True))
     return 0 if result["passed"] else 1

@@ -113,6 +113,7 @@ def build_comparison_record(
     graph_report: Mapping[str, Any] | None,
     baseline_usage: Mapping[str, Any] | None = None,
     baseline_elapsed_seconds: float | None = None,
+    baseline_provider_diagnostics: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a comparison record that explicitly leaves accuracy to human review."""
     if source_manifest_sha256 is not None and not re.fullmatch(r"[0-9a-f]{64}", source_manifest_sha256):
@@ -133,7 +134,30 @@ def build_comparison_record(
         numeric_elapsed = float(baseline_elapsed_seconds)
         if math.isfinite(numeric_elapsed) and numeric_elapsed >= 0:
             elapsed = round(numeric_elapsed, 3)
+    # Redaction-by-construction: only fixed enums from the provider adapter,
+    # never raw HTTP responses or upstream error messages.
+    known_errors = {"malformed_completion_envelope", "transport_error", "http_error",
+        "provider_api_error_payload", "invalid_json_response", "completion_truncated",
+        "completion_filtered", "response_too_large", "response_text_too_large",
+        "empty_completion_content", "response_stream_error", "transient_http_status_exhausted",
+        "logical_call_budget_exhausted", "retry_budget_exhausted"}
+    known_envelopes = {"standard_choices", "upstream_error_object", "alternate_wrapper",
+        "unrecognized_object", "non_object"}
+    known_shapes = {"nonempty_list", "empty_list", "absent", "wrong_type"}
+    diagnostics = baseline_provider_diagnostics if isinstance(baseline_provider_diagnostics, Mapping) else {}
+    error_code = diagnostics.get("last_error_code")
+    error_code = error_code if isinstance(error_code, str) and error_code in known_errors else "unclassified_or_none"
+    envelope = diagnostics.get("last_envelope_diagnostic")
+    envelope = envelope if isinstance(envelope, Mapping) else {}
+    shape = envelope.get("choices_shape")
+    kind = envelope.get("envelope_kind")
     baseline = {
+        "error_code": error_code,
+        "envelope_diagnostic": {
+            "envelope_kind": kind if isinstance(kind, str) and kind in known_envelopes else "not_observed",
+            "choices_shape": shape if isinstance(shape, str) and shape in known_shapes else "not_observed",
+            "has_error_object": envelope.get("has_error_object") is True,
+        },
         "status": _safe_text(baseline_status, 100),
         "response": _safe_text(baseline_response or "", _MAX_REPORT_CHARS),
         "error": _safe_text(baseline_error or "", 500),
@@ -215,6 +239,8 @@ def render_comparison_markdown(record: Mapping[str, Any]) -> str:
         "## Baseline: error plus basic source context",
         "",
         f"- Status: `{_markdown_text(baseline.get('status', 'unknown'), 100)}`",
+        f"- Provider error category: `{_markdown_text(baseline.get('error_code', 'not_reported'), 100)}`",
+        f"- Envelope shape category: `{_markdown_text((baseline.get('envelope_diagnostic') or {}).get('envelope_kind', 'not_observed'), 100)}`",
         f"- Context: `{_markdown_text((baseline.get('context') or {}).get('source_path', 'unknown'), 400)}`",
         f"- Response characters: {metrics.get('baseline_response_chars', 0)}",
         f"- Reported tokens: {metrics.get('baseline_reported_tokens', 'not reported')}",
