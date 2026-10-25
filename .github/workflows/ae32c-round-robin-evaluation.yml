@@ -333,7 +333,15 @@ jobs:
           if not path.is_file():
               raise SystemExit('Batch summary missing; cannot claim success.')
           result=json.loads(path.read_text(encoding='utf-8'))
-          if result.get('passed') is not True or result.get('evidence_complete') != result.get('expected_trials'):
-              raise SystemExit('One or more trials failed protocol or declared evidence-completeness checks; see uploaded artifacts.')
-          print('All declared source-coverage gates passed; causal accuracy still requires human review.')
+          if result.get('schema_version') != 'ae32c/batch-evaluation/v2':
+              raise SystemExit('Unsupported or missing batch-summary schema; expected ae32c/batch-evaluation/v2.')
+          expected=result.get('expected_trials')
+          observed=result.get('observed_trials')
+          accepted=result.get('overall_accepted_trials')
+          if (not isinstance(expected, int) or isinstance(expected, bool) or expected <= 0
+                  or not isinstance(observed, int) or isinstance(observed, bool)
+                  or not isinstance(accepted, int) or isinstance(accepted, bool)
+                  or observed != expected or accepted != expected or result.get('passed') is not True):
+              raise SystemExit('One or more trials failed protocol, evidence, integrity, or overall acceptance checks; see uploaded artifacts.')
+          print('All overall acceptance gates passed; causal accuracy still requires human review.')
           PY
