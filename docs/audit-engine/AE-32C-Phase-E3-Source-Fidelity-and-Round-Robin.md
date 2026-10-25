@@ -22,7 +22,7 @@ At the last evidence-gathering round before reserved finalization, an incomplete
 
 ### Full versus incomplete smoke outcomes
 
-The original single-provider live workflow now fails its **evidence-complete** gate when an accepted diagnosis is `completed_with_incomplete_evidence`, required coverage is missing, or required root-cause citations are absent. It still preserves those reports as valuable incomplete evidence. The new batch assessor makes this distinction explicit via `protocol_complete`, `evidence_complete`, and `passed`. No test that merely resolves citations can manufacture a `passed` evidence-completeness outcome.
+The original single-provider live workflow now fails its **evidence-complete** gate when an accepted diagnosis is `completed_with_incomplete_evidence`, required coverage is missing, or required root-cause citations are absent. It still preserves those reports as valuable incomplete evidence. The E.3-era batch assessor made this distinction explicit via `protocol_complete`, `evidence_complete`, and `passed`. The E.5 v2 reporting contract supersedes the ambiguous batch-level name with `graph_evidence_complete` and `overall_accepted_trials`. No test that merely resolves citations can manufacture an overall accepted outcome.
 
 ### Round-robin workflow
 

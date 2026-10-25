@@ -122,15 +122,16 @@ def test_batch_full_coverage_requires_every_trial(tmp_path: Path):
     assert summary["passed"] is True
     assert summary["expected_trials"] == 6
     assert summary["protocol_completed"] == 6
-    assert summary["evidence_complete"] == 6
+    assert summary["graph_evidence_complete"] == 6
+    assert summary["overall_accepted_trials"] == 6
     assert [(r["round"],r["provider"]) for r in summary["trials"]] == trial_sequence(2)
 
 
-def test_batch_never_counts_incomplete_accepted_diagnosis_as_evidence_complete(tmp_path: Path):
+def test_batch_never_counts_incomplete_accepted_diagnosis_as_graph_evidence_complete(tmp_path: Path):
     path = _make_trial(tmp_path, 1, "cloudflare", status="completed_with_incomplete_evidence", coverage="incomplete")
     row = evaluate_trial(path, round_number=1, provider="cloudflare")
     assert row["protocol_complete"] is True
-    assert row["evidence_complete"] is False
+    assert row["graph_evidence_complete"] is False
     assert row["passed"] is False
     assert "required_source_evidence_incomplete" in row["issues"]
 
@@ -141,7 +142,8 @@ def test_batch_preserves_other_trials_after_one_failure(tmp_path: Path):
     summary = build_summary(tmp_path, 1)
     assert summary["expected_trials"] == 3
     assert summary["observed_trials"] == 3
-    assert summary["evidence_complete"] == 2
+    assert summary["graph_evidence_complete"] == 2
+    assert summary["overall_accepted_trials"] == 2
     assert summary["passed"] is False
     assert summary["trials"][2]["passed"] is True
 

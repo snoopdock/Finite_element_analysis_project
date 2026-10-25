@@ -136,13 +136,13 @@ def evaluate_trial(root: Path, *, round_number: int, provider: str) -> dict[str,
                 if not passed:
                     failures.append(key)
             # `not_configured` does not satisfy the evidence-completeness gate.
-            evidence_complete = (
+            graph_evidence_complete = (
                 summary.get("status") == "completed"
                 and coverage.get("status") == "complete"
                 and not coverage.get("missing_complete_reads")
                 and not coverage.get("missing_root_cause_direct_citations")
             )
-            if not evidence_complete:
+            if not graph_evidence_complete:
                 failures.append("required_source_evidence_incomplete")
             # E.4 task-declared witnesses must be sourced from code lines, not
             # class declarations. Legacy evaluations without a declared witness
@@ -163,13 +163,16 @@ def evaluate_trial(root: Path, *, round_number: int, provider: str) -> dict[str,
         "comparison_sha256_manifest_invalid",
     ))
     return {
-        "schema_version": "ae32c/trial-gate/v1",
+        "schema_version": "ae32c/trial-gate/v2",
         "round": round_number,
         "provider": provider,
         "protocol_complete": protocol_complete,
         "baseline_complete": baseline_complete,
         "graph_protocol_complete": protocol_complete,
-        "evidence_complete": not any(x in failures for x in ("required_source_evidence_incomplete", "required_direct_source_anchor_support_incomplete")) and protocol_complete,
+        "graph_evidence_complete": not any(
+            x in failures
+            for x in ("required_source_evidence_incomplete", "required_direct_source_anchor_support_incomplete")
+        ) and protocol_complete,
         "passed": not failures,
         "issues": sorted(set(failures)),
         "metrics": metrics,
@@ -213,7 +216,8 @@ def build_summary(root: Path, rounds: int) -> dict[str, Any]:
             "baseline_completed": sum(bool(row["baseline_complete"]) for row in subset),
             "graph_protocol_completed": sum(bool(row["graph_protocol_complete"]) for row in subset),
             "protocol_completed": sum(bool(row["protocol_complete"]) for row in subset),
-            "evidence_complete": sum(bool(row["evidence_complete"]) for row in subset),
+            "graph_evidence_complete": sum(bool(row["graph_evidence_complete"]) for row in subset),
+            "overall_accepted_trials": sum(bool(row["passed"]) for row in subset),
             "textual_support_complete": sum(row["metrics"].get("source_textual_support_status") == "complete" for row in subset),
             "textual_support_not_assessed": sum(row["metrics"].get("source_textual_support_status") in (None, "not_assessed", "not_configured") for row in subset),
             "median_elapsed_seconds": round(statistics.median(durations), 3) if durations else None,
@@ -222,7 +226,7 @@ def build_summary(root: Path, rounds: int) -> dict[str, Any]:
             "diagnostic_accuracy": "not_assessed",
         }
     result = {
-        "schema_version": "ae32c/batch-evaluation/v1",
+        "schema_version": "ae32c/batch-evaluation/v2",
         "sequence": "round_robin",
         "rounds": rounds,
         "expected_trials": len(trials),
@@ -230,8 +234,8 @@ def build_summary(root: Path, rounds: int) -> dict[str, Any]:
         "baseline_completed": sum(row["baseline_complete"] for row in trials),
         "graph_protocol_completed": sum(row["graph_protocol_complete"] for row in trials),
         "protocol_completed": sum(row["protocol_complete"] for row in trials),
-        "graph_evidence_complete": sum(row["evidence_complete"] for row in trials),
-        "evidence_complete": sum(row["passed"] for row in trials),
+        "graph_evidence_complete": sum(row["graph_evidence_complete"] for row in trials),
+        "overall_accepted_trials": sum(row["passed"] for row in trials),
         "passed": all(row["passed"] for row in trials),
         "provider_breakdown": provider_breakdown,
         "trials": trials,
@@ -251,15 +255,21 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("batch directory missing")
     result = build_summary(root, args.rounds)
     (root / "batch-summary.json").write_text(json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
-    lines = ["# AE-32C Round-Robin Evaluation", "", "| Round | Provider | Baseline | Graph protocol | Graph evidence | Overall | Stop reason |", "|---:|---|---|---|---|---|---|"]
+    lines = ["# AE-32C Round-Robin Evaluation", "", "| Round | Provider | Baseline | Graph protocol | Graph evidence | Overall gate | Stop reason |", "|---:|---|---|---|---|---|---|"]
     for trial in result["trials"]:
         metrics = trial["metrics"]
         reason = str(metrics.get("stop_reason", "missing"))
-        lines.append(f"| {trial['round']} | {trial['provider']} | {'PASS' if trial['baseline_complete'] else 'FAIL'} | {'PASS' if trial['graph_protocol_complete'] else 'FAIL'} | {'PASS' if trial['evidence_complete'] else 'FAIL'} | {'PASS' if trial['passed'] else 'FAIL'} | `{reason}` |")
-    lines += ["", "## Per-provider operational measures", "", "| Provider | Baseline | Graph protocol | Evidence | Textual support | Median seconds |", "|---|---:|---:|---:|---:|---:|"]
+        lines.append(f"| {trial['round']} | {trial['provider']} | {'PASS' if trial['baseline_complete'] else 'FAIL'} | {'PASS' if trial['graph_protocol_complete'] else 'FAIL'} | {'PASS' if trial['graph_evidence_complete'] else 'FAIL'} | {'PASS' if trial['passed'] else 'FAIL'} | `{reason}` |")
+    lines += ["", "## Per-provider operational measures", "", "| Provider | Baseline | Graph protocol | Graph evidence | Overall accepted | Textual support | Median seconds |", "|---|---:|---:|---:|---:|---:|---:|"]
     for name, row in result["provider_breakdown"].items():
-        lines.append(f"| {name} | {row['baseline_completed']}/{row['trials']} | {row['graph_protocol_completed']}/{row['trials']} | {row['evidence_complete']}/{row['trials']} | {row['textual_support_complete']}/{row['trials']} | {row['median_elapsed_seconds']} |")
-    lines.extend(["", f"- Graph evidence complete (independent condition): **{result['graph_evidence_complete']}/{result['expected_trials']}**", f"- Both conditions passing: **{result['evidence_complete']}/{result['expected_trials']}**", "- Diagnostic correctness: **not assessed; human review required**.", ""])
+        lines.append(f"| {name} | {row['baseline_completed']}/{row['trials']} | {row['graph_protocol_completed']}/{row['trials']} | {row['graph_evidence_complete']}/{row['trials']} | {row['overall_accepted_trials']}/{row['trials']} | {row['textual_support_complete']}/{row['trials']} | {row['median_elapsed_seconds']} |")
+    lines.extend([
+        "",
+        f"- Graph evidence complete (independent graph condition): **{result['graph_evidence_complete']}/{result['expected_trials']}**",
+        f"- Overall accepted trials (baseline + graph + evidence/integrity gates): **{result['overall_accepted_trials']}/{result['expected_trials']}**",
+        "- Diagnostic correctness: **not assessed; human review required**.",
+        "",
+    ])
     (root / "batch-summary.md").write_text("\n".join(lines), encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "trials"}, sort_keys=True))
     return 0 if result["passed"] else 1

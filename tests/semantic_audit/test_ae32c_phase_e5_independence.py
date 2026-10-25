@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 from audit_engine.semantic_audit.ae32c import live_evaluation
-from audit_engine.semantic_audit.ae32c.batch_evaluation import evaluate_trial, build_summary
+from audit_engine.semantic_audit.ae32c.batch_evaluation import evaluate_trial, build_summary, main as batch_main, trial_sequence
 from audit_engine.semantic_audit.ae32c.evaluation import build_comparison_record
 from providers.openai_compatible import completion_envelope_diagnostic, OpenAICompatibleProvider
 from tests.semantic_audit.test_ae32c_phase_e3_fidelity import _make_trial
@@ -81,17 +81,44 @@ def test_batch_tracks_baseline_separately_from_graph_gate(tmp_path):
     result = evaluate_trial(root, round_number=1, provider="nararouter")
     assert result["baseline_complete"] is False
     assert result["graph_protocol_complete"] is True
-    assert result["evidence_complete"] is True
+    assert result["graph_evidence_complete"] is True
     assert result["passed"] is False
     assert result["issues"] == ["baseline_not_completed"]
     # Overall batch fails even though the graph condition independently passed.
     for name in ("cloudflare", "openrouter"):
         _make_trial(tmp_path, 1, name)
     summary = build_summary(tmp_path, 1)
+    assert summary["schema_version"] == "ae32c/batch-evaluation/v2"
     assert summary["baseline_completed"] == 2
     assert summary["graph_protocol_completed"] == 3
+    assert summary["graph_evidence_complete"] == 3
+    assert summary["overall_accepted_trials"] == 2
     assert summary["passed"] is False
+    assert summary["trials"][1]["schema_version"] == "ae32c/trial-gate/v2"
+    assert summary["trials"][1]["graph_evidence_complete"] is True
+    assert summary["trials"][1]["passed"] is False
+    assert summary["provider_breakdown"]["nararouter"]["graph_evidence_complete"] == 1
+    assert summary["provider_breakdown"]["nararouter"]["overall_accepted_trials"] == 0
+    assert sum(row["graph_evidence_complete"] for row in summary["trials"]) == summary["graph_evidence_complete"]
+    assert sum(row["passed"] for row in summary["trials"]) == summary["overall_accepted_trials"]
+    assert sum(row["graph_evidence_complete"] for row in summary["provider_breakdown"].values()) == summary["graph_evidence_complete"]
+    assert sum(row["overall_accepted_trials"] for row in summary["provider_breakdown"].values()) == summary["overall_accepted_trials"]
 
+
+
+def test_batch_markdown_uses_unambiguous_v2_metric_names(tmp_path, capsys):
+    for round_number, provider in trial_sequence(1):
+        _make_trial(tmp_path, round_number, provider)
+    assert batch_main(["--batch-dir", str(tmp_path), "--rounds", "1"]) == 0
+    capsys.readouterr()
+    summary = json.loads((tmp_path / "batch-summary.json").read_text(encoding="utf-8"))
+    markdown = (tmp_path / "batch-summary.md").read_text(encoding="utf-8")
+    assert summary["schema_version"] == "ae32c/batch-evaluation/v2"
+    assert "Graph evidence" in markdown
+    assert "Overall accepted" in markdown
+    assert "Graph evidence complete (independent graph condition): **3/3**" in markdown
+    assert "Overall accepted trials (baseline + graph + evidence/integrity gates): **3/3**" in markdown
+    assert "Both conditions passing" not in markdown
 
 def test_anchor_guidance_lists_only_observed_source_line_candidates(tmp_path):
     tools = corpus(tmp_path)

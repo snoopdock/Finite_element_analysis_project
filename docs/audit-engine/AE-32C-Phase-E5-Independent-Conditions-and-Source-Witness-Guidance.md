@@ -1,6 +1,6 @@
 # AE-32C Phase E.5 — independent evaluation conditions and source witnesses
 
-Status: implemented on development branch; **GitHub validation pending**.
+Status: baseline E.5 passed G9.42 run `39979486887` at source commit `c5f8e394d2c5fb9be424bc8c34aab99bcd59d737`. The reporting-contract correction in this patch is **not yet validated**; do not run live providers until a new exact-commit G9.42 run passes.
 
 ## Evidence motivating this change
 
@@ -14,10 +14,13 @@ The batch measures distinct concepts:
 
 - `baseline_complete`: a usable baseline model answer was returned;
 - `graph_protocol_complete`: the graph protocol met its independent operational constraints;
-- `evidence_complete`: the graph met declared source-file and literal line-witness requirements;
-- `passed`: both conditions and all declared evidence requirements passed, with artifacts intact.
+- `graph_evidence_complete`: the graph-assisted condition met declared source-file and literal line-witness requirements, independently of baseline completion;
+- `overall_accepted_trials`: the count of trials where baseline, graph, evidence, and integrity gates all passed;
+- `passed`: all expected trials passed the overall gate, with artifacts intact.
 
-The batch summary includes provider denominators, failure categories and the graph-only evidence count even when the baseline fails. A successful model answer is **not** an independently established accurate diagnosis.
+The batch summary uses schema `ae32c/batch-evaluation/v2`; individual trial records use `ae32c/trial-gate/v2`. The former ambiguous `evidence_complete` fields have been removed. Graph evidence counts and overall accepted-trial counts must reconcile with both per-trial records and per-provider aggregates.
+
+The batch summary includes provider denominators, failure categories, graph-only evidence counts, and overall accepted-trial counts even when the baseline fails. A successful model answer is **not** an independently established accurate diagnosis.
 
 ## Structured provider-envelope telemetry
 
