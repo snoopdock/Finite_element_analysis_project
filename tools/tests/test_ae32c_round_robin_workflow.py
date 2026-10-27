@@ -65,3 +65,10 @@ def test_e5_round_robin_retains_single_manual_dispatch_and_independent_trials():
     assert '--confirm-live-provider-calls' in workflow
     assert 'Enforce complete batch gate after evidence publication' in workflow
     assert not __import__('re').search(r'(?m)^  (?:schedule|push|pull_request):', workflow)
+
+
+def test_e5_report_schema_and_historical_pause_default_are_explicit():
+    workflow = (ROOT/'.github/workflows/ae32c-round-robin-evaluation.yml').read_text(encoding='utf-8')
+    assert "default: '120'" in workflow
+    assert "ae32c/batch-evaluation/v3" in workflow
+    assert "ae32c/batch-evaluation/v2" not in workflow
