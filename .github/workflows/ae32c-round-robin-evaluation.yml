@@ -14,10 +14,10 @@ on:
         default: '4'
         options: ['1', '2', '3', '4']
       pause_seconds:
-        description: "Pause between consecutive trials, including between rounds"
+        description: "Pause between consecutive trials; 120 seconds is the historical-comparison default"
         type: choice
         required: true
-        default: '60'
+        default: '120'
         options: ['30', '60', '120']
       confirm_live_provider_calls:
         description: "Authorize up to 11 model requests per trial, plus bounded transport retries; up to 12 trials"
@@ -333,8 +333,8 @@ jobs:
           if not path.is_file():
               raise SystemExit('Batch summary missing; cannot claim success.')
           result=json.loads(path.read_text(encoding='utf-8'))
-          if result.get('schema_version') != 'ae32c/batch-evaluation/v2':
-              raise SystemExit('Unsupported or missing batch-summary schema; expected ae32c/batch-evaluation/v2.')
+          if result.get('schema_version') != 'ae32c/batch-evaluation/v3':
+              raise SystemExit('Unsupported or missing batch-summary schema; expected ae32c/batch-evaluation/v3.')
           expected=result.get('expected_trials')
           observed=result.get('observed_trials')
           accepted=result.get('overall_accepted_trials')
