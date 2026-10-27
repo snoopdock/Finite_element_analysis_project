@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/snoopdock/Finite_element_analysis_project/blob/stage1/section-uuids/evaluation/ae32d/manifest.schema.json",
+  "title": "AE-32D benchmark manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "benchmark_id",
+    "protocol_version",
+    "status",
+    "case_counts",
+    "primary_outcome",
+    "cases",
+    "policy"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ae32d/manifest/v1"
+    },
+    "benchmark_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "protocol_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "design_only",
+        "pilot",
+        "frozen",
+        "retired"
+      ]
+    },
+    "case_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_pilot_min",
+        "target_pilot_max",
+        "eventual_benchmark_min",
+        "eventual_benchmark_max"
+      ],
+      "properties": {
+        "target_pilot_min": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_pilot_max": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "eventual_benchmark_min": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "eventual_benchmark_max": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "primary_outcome": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "path",
+          "status",
+          "primary_benchmark_eligible"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "pattern": "^AE32D-[A-Z0-9-]{3,80}$"
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "candidate_not_adjudicated",
+              "adjudicated",
+              "excluded",
+              "holdout"
+            ]
+          },
+          "primary_benchmark_eligible": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pending_cases_excluded_from_primary_score",
+        "raw_trial_artifacts_immutable",
+        "diagnostic_accuracy_requires_independent_review",
+        "no_llm_judge_as_only_ground_truth"
+      ],
+      "properties": {
+        "pending_cases_excluded_from_primary_score": {
+          "type": "boolean"
+        },
+        "raw_trial_artifacts_immutable": {
+          "type": "boolean"
+        },
+        "diagnostic_accuracy_requires_independent_review": {
+          "type": "boolean"
+        },
+        "no_llm_judge_as_only_ground_truth": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

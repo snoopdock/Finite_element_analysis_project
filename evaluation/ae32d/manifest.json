@@ -1,0 +1,27 @@
+{
+  "schema_version": "ae32d/manifest/v1",
+  "benchmark_id": "AE32D-AUDIT-QUALITY",
+  "protocol_version": "0.1",
+  "status": "design_only",
+  "case_counts": {
+    "target_pilot_min": 6,
+    "target_pilot_max": 10,
+    "eventual_benchmark_min": 30,
+    "eventual_benchmark_max": 50
+  },
+  "primary_outcome": "independently_adjudicated_case_level_correct_audit_outcome",
+  "cases": [
+    {
+      "case_id": "AE32D-CANDIDATE-PROVIDER-INTERFACE-001",
+      "path": "cases/AE32D-CANDIDATE-PROVIDER-INTERFACE-001.json",
+      "status": "candidate_not_adjudicated",
+      "primary_benchmark_eligible": false
+    }
+  ],
+  "policy": {
+    "pending_cases_excluded_from_primary_score": true,
+    "raw_trial_artifacts_immutable": true,
+    "diagnostic_accuracy_requires_independent_review": true,
+    "no_llm_judge_as_only_ground_truth": true
+  }
+}

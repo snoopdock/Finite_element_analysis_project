@@ -88,13 +88,13 @@ def test_batch_tracks_baseline_separately_from_graph_gate(tmp_path):
     for name in ("cloudflare", "openrouter"):
         _make_trial(tmp_path, 1, name)
     summary = build_summary(tmp_path, 1)
-    assert summary["schema_version"] == "ae32c/batch-evaluation/v2"
+    assert summary["schema_version"] == "ae32c/batch-evaluation/v3"
     assert summary["baseline_completed"] == 2
     assert summary["graph_protocol_completed"] == 3
     assert summary["graph_evidence_complete"] == 3
     assert summary["overall_accepted_trials"] == 2
     assert summary["passed"] is False
-    assert summary["trials"][1]["schema_version"] == "ae32c/trial-gate/v2"
+    assert summary["trials"][1]["schema_version"] == "ae32c/trial-gate/v3"
     assert summary["trials"][1]["graph_evidence_complete"] is True
     assert summary["trials"][1]["passed"] is False
     assert summary["provider_breakdown"]["nararouter"]["graph_evidence_complete"] == 1
@@ -106,19 +106,70 @@ def test_batch_tracks_baseline_separately_from_graph_gate(tmp_path):
 
 
 
-def test_batch_markdown_uses_unambiguous_v2_metric_names(tmp_path, capsys):
+def test_batch_markdown_uses_unambiguous_v3_metric_names(tmp_path, capsys):
     for round_number, provider in trial_sequence(1):
         _make_trial(tmp_path, round_number, provider)
     assert batch_main(["--batch-dir", str(tmp_path), "--rounds", "1"]) == 0
     capsys.readouterr()
     summary = json.loads((tmp_path / "batch-summary.json").read_text(encoding="utf-8"))
     markdown = (tmp_path / "batch-summary.md").read_text(encoding="utf-8")
-    assert summary["schema_version"] == "ae32c/batch-evaluation/v2"
+    assert summary["schema_version"] == "ae32c/batch-evaluation/v3"
     assert "Graph evidence" in markdown
     assert "Overall accepted" in markdown
     assert "Graph evidence complete (independent graph condition): **3/3**" in markdown
     assert "Overall accepted trials (baseline + graph + evidence/integrity gates): **3/3**" in markdown
     assert "Both conditions passing" not in markdown
+    assert "Failure attribution" in markdown
+    assert "Graph protocol failure classes" in markdown
+
+def test_batch_separates_graph_protocol_failures_from_evidence_failures(tmp_path):
+    import hashlib
+
+    # Cloudflare: protocol completed, but the required source evidence was incomplete.
+    cloudflare = _make_trial(
+        tmp_path, 1, "cloudflare",
+        status="completed_with_incomplete_evidence",
+        coverage="incomplete",
+    )
+    # NaraRouter: graph protocol did not complete because final model JSON was invalid.
+    nararouter = _make_trial(tmp_path, 1, "nararouter", status="incomplete")
+    openrouter = _make_trial(tmp_path, 1, "openrouter")
+
+    for path, stop_reason, citation_status in (
+        (cloudflare, "diagnosis_submitted_with_required_source_coverage_gap", "references_resolved"),
+        (nararouter, "invalid_model_json", "not_accepted"),
+    ):
+        comparison = next(path.rglob("comparison.json"))
+        record = json.loads(comparison.read_text(encoding="utf-8"))
+        record["graph_assisted"]["summary"]["stop_reason"] = stop_reason
+        record["graph_assisted"]["summary"]["final_citation_validation"] = citation_status
+        comparison.write_text(json.dumps(record, sort_keys=True) + "\n", encoding="utf-8")
+        manifest = comparison.parent / "SHA256SUMS.txt"
+        markdown = comparison.parent / "comparison.md"
+        manifest.write_text(
+            hashlib.sha256(comparison.read_bytes()).hexdigest() + "  comparison.json\n"
+            + hashlib.sha256(markdown.read_bytes()).hexdigest() + "  comparison.md\n",
+            encoding="ascii",
+        )
+
+    summary = build_summary(tmp_path, 1)
+    assert summary["schema_version"] == "ae32c/batch-evaluation/v3"
+    assert summary["graph_protocol_failure_classes"] == {"model_protocol_or_budget": 1}
+    assert summary["graph_evidence_failure_classes"] == {"source_or_evidence": 1}
+    assert summary["provider_breakdown"]["nararouter"]["graph_protocol_failure_classes"] == {
+        "model_protocol_or_budget": 1
+    }
+    assert summary["provider_breakdown"]["cloudflare"]["graph_evidence_failure_classes"] == {
+        "source_or_evidence": 1
+    }
+    # Error codes are retained separately and are not mislabeled as failure classes.
+    assert summary["provider_breakdown"]["nararouter"]["graph_provider_error_codes"] == {
+        "unclassified_or_none": 1
+    }
+    assert summary["graph_protocol_completed"] == 2
+    assert summary["graph_evidence_complete"] == 1
+    assert summary["overall_accepted_trials"] == 1
+
 
 def test_anchor_guidance_lists_only_observed_source_line_candidates(tmp_path):
     tools = corpus(tmp_path)

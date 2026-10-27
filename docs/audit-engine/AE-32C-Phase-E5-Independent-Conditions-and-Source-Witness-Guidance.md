@@ -1,6 +1,6 @@
 # AE-32C Phase E.5 — independent evaluation conditions and source witnesses
 
-Status: baseline E.5 passed G9.42 run `39979486887` at source commit `c5f8e394d2c5fb9be424bc8c34aab99bcd59d737`. The reporting-contract correction in this patch is **not yet validated**; do not run live providers until a new exact-commit G9.42 run passes.
+Status: E.5 reporting-contract v2 passed G9.42 run `40166491875` at source commit `afcb1cba064de6f3d680f6be3085a365c6687c7b`. The live batch `40166657083` retained and reconciled all 12 trials but failed overall operational acceptance (7/12 accepted). This follow-up introduces v3 failure attribution and benchmark protocol files; **the v3 changes are not yet validated**. Do not run another live batch until a new exact-commit G9.42 run passes.
 
 ## Evidence motivating this change
 
@@ -18,9 +18,9 @@ The batch measures distinct concepts:
 - `overall_accepted_trials`: the count of trials where baseline, graph, evidence, and integrity gates all passed;
 - `passed`: all expected trials passed the overall gate, with artifacts intact.
 
-The batch summary uses schema `ae32c/batch-evaluation/v2`; individual trial records use `ae32c/trial-gate/v2`. The former ambiguous `evidence_complete` fields have been removed. Graph evidence counts and overall accepted-trial counts must reconcile with both per-trial records and per-provider aggregates.
+The v2 batch summary removed the ambiguous `evidence_complete` count and was used in live run `40166657083`. Review of that run exposed a separate naming problem: `graph_failure_classes` contained provider error codes, while the actual outcome class was available per trial and stop reasons were summarized separately. The v3 contract separates `graph_protocol_failure_classes`, `graph_evidence_failure_classes`, `graph_provider_error_codes`, and `baseline_error_codes`. Individual trial records use `ae32c/trial-gate/v3`; batch summaries use `ae32c/batch-evaluation/v3`. All aggregate counts must reconcile with per-trial records and provider aggregates.
 
-The batch summary includes provider denominators, failure categories, graph-only evidence counts, and overall accepted-trial counts even when the baseline fails. A successful model answer is **not** an independently established accurate diagnosis.
+The batch summary includes provider denominators, graph-only evidence counts, overall accepted-trial counts, stop reasons, failure classes, and provider error codes even when the baseline fails. A successful model answer is **not** an independently established accurate diagnosis.
 
 ## Structured provider-envelope telemetry
 
@@ -34,6 +34,6 @@ During finalization, and on applicable invalid-diagnosis feedback, the investiga
 
 ## Workflow and safety
 
-No push trigger, scheduled provider call, auto-edit or auto-commit is introduced. Run G9.42 validation through the manual dispatcher, then manually dispatch the existing `AE-32C Round-Robin Provider Evaluation (Manual)` from `main` with the new successful run ID and explicit provider consent. The sequence remains Cloudflare → NaraRouter → OpenRouter, repeated for each selected round, with delays and independent trial artifacts. The job can still fail overall even if a graph investigation succeeds after its baseline failed.
+No push trigger, scheduled provider call, auto-edit or auto-commit is introduced. Run G9.42 validation through the manual dispatcher, then manually dispatch the existing `AE-32C Round-Robin Provider Evaluation (Manual)` from `main` with the new successful run ID and explicit provider consent. The sequence remains Cloudflare → NaraRouter → OpenRouter, repeated for each selected round, with delays and independent trial artifacts. The historical-comparison pause is 120 seconds; exploratory pauses must be labelled as deviations. The job can still fail overall even if a graph investigation succeeds after its baseline failed.
 
 E.5 makes **no claim** of improving provider reliability until new E.5 live runs are compared against the prior E.4 evidence. NaraRouter's alternate response shape cannot be safely normalized without an independently documented response contract and dedicated tests.

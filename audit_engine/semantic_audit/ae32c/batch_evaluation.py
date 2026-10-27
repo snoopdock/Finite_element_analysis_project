@@ -55,9 +55,9 @@ def _verify_comparison_checksums(root: Path, comparison_path: Path) -> bool:
 
 
 def _failure_class(stop_reason: str) -> str:
-    """Stable coarse label; does not guess transport internals from HTTP 200."""
-    if stop_reason in {"diagnosis_submitted", "diagnosis_submitted_with_required_source_coverage_gap"}:
-        return "none_or_evidence_gap"
+    """Classify the observed graph outcome, not a provider error code."""
+    if stop_reason == "diagnosis_submitted":
+        return "none"
     if "provider" in stop_reason or "transport" in stop_reason:
         return "provider_or_transport"
     if "json" in stop_reason or "recovery" in stop_reason or "finalization" in stop_reason:
@@ -122,7 +122,7 @@ def evaluate_trial(root: Path, *, round_number: int, provider: str) -> dict[str,
                 "source_anchor_count": source_support.get("declared_anchor_count", 0),
                 "source_missing_anchors": list(source_support.get("missing_direct_cited_anchors", []))[:16],
                 "provider_reported_tokens": (report.get("budget") or {}).get("provider_reported_tokens") if isinstance(report.get("budget"), Mapping) else None,
-                "protocol_failure_class": _failure_class(str(summary.get("stop_reason", "unknown"))),
+                "graph_outcome_failure_class": _failure_class(str(summary.get("stop_reason", "unknown"))),
                 "elapsed_seconds": report.get("elapsed_seconds"),
             }
             requirements = {
@@ -163,7 +163,7 @@ def evaluate_trial(root: Path, *, round_number: int, provider: str) -> dict[str,
         "comparison_sha256_manifest_invalid",
     ))
     return {
-        "schema_version": "ae32c/trial-gate/v2",
+        "schema_version": "ae32c/trial-gate/v3",
         "round": round_number,
         "provider": provider,
         "protocol_complete": protocol_complete,
@@ -200,18 +200,27 @@ def build_summary(root: Path, rounds: int) -> dict[str, Any]:
             reason = str(row["metrics"].get("stop_reason", "missing"))
             if not row["passed"]:
                 causes[reason] = causes.get(reason, 0) + 1
-        baseline_errors = {}
-        graph_errors = {}
+        baseline_error_codes = {}
+        graph_provider_error_codes = {}
+        graph_protocol_failure_classes = {}
+        graph_evidence_failure_classes = {}
         for row in subset:
             if not row["baseline_complete"]:
                 code = str(row["metrics"].get("baseline_error_code", "unclassified_or_none"))
-                baseline_errors[code] = baseline_errors.get(code, 0) + 1
+                baseline_error_codes[code] = baseline_error_codes.get(code, 0) + 1
             if not row["graph_protocol_complete"]:
                 code = str(row["metrics"].get("graph_provider_error_code", "unclassified_or_none"))
-                graph_errors[code] = graph_errors.get(code, 0) + 1
+                graph_provider_error_codes[code] = graph_provider_error_codes.get(code, 0) + 1
+                failure_class = str(row["metrics"].get("graph_outcome_failure_class", "other_or_unclassified"))
+                graph_protocol_failure_classes[failure_class] = graph_protocol_failure_classes.get(failure_class, 0) + 1
+            elif not row["graph_evidence_complete"]:
+                failure_class = str(row["metrics"].get("graph_outcome_failure_class", "other_or_unclassified"))
+                graph_evidence_failure_classes[failure_class] = graph_evidence_failure_classes.get(failure_class, 0) + 1
         provider_breakdown[name] = {
-            "baseline_failure_classes": dict(sorted(baseline_errors.items())),
-            "graph_failure_classes": dict(sorted(graph_errors.items())),
+            "baseline_error_codes": dict(sorted(baseline_error_codes.items())),
+            "graph_provider_error_codes": dict(sorted(graph_provider_error_codes.items())),
+            "graph_protocol_failure_classes": dict(sorted(graph_protocol_failure_classes.items())),
+            "graph_evidence_failure_classes": dict(sorted(graph_evidence_failure_classes.items())),
             "trials": len(subset),
             "baseline_completed": sum(bool(row["baseline_complete"]) for row in subset),
             "graph_protocol_completed": sum(bool(row["graph_protocol_complete"]) for row in subset),
@@ -225,8 +234,24 @@ def build_summary(root: Path, rounds: int) -> dict[str, Any]:
             "stop_reasons_for_failed_trials": dict(sorted(causes.items())),
             "diagnostic_accuracy": "not_assessed",
         }
+    graph_protocol_failure_classes = {}
+    graph_evidence_failure_classes = {}
+    baseline_error_codes = {}
+    graph_provider_error_codes = {}
+    for row in trials:
+        if not row["baseline_complete"]:
+            code = str(row["metrics"].get("baseline_error_code", "unclassified_or_none"))
+            baseline_error_codes[code] = baseline_error_codes.get(code, 0) + 1
+        if not row["graph_protocol_complete"]:
+            failure_class = str(row["metrics"].get("graph_outcome_failure_class", "other_or_unclassified"))
+            graph_protocol_failure_classes[failure_class] = graph_protocol_failure_classes.get(failure_class, 0) + 1
+            code = str(row["metrics"].get("graph_provider_error_code", "unclassified_or_none"))
+            graph_provider_error_codes[code] = graph_provider_error_codes.get(code, 0) + 1
+        elif not row["graph_evidence_complete"]:
+            failure_class = str(row["metrics"].get("graph_outcome_failure_class", "other_or_unclassified"))
+            graph_evidence_failure_classes[failure_class] = graph_evidence_failure_classes.get(failure_class, 0) + 1
     result = {
-        "schema_version": "ae32c/batch-evaluation/v2",
+        "schema_version": "ae32c/batch-evaluation/v3",
         "sequence": "round_robin",
         "rounds": rounds,
         "expected_trials": len(trials),
@@ -236,6 +261,10 @@ def build_summary(root: Path, rounds: int) -> dict[str, Any]:
         "protocol_completed": sum(row["protocol_complete"] for row in trials),
         "graph_evidence_complete": sum(row["graph_evidence_complete"] for row in trials),
         "overall_accepted_trials": sum(row["passed"] for row in trials),
+        "baseline_error_codes": dict(sorted(baseline_error_codes.items())),
+        "graph_provider_error_codes": dict(sorted(graph_provider_error_codes.items())),
+        "graph_protocol_failure_classes": dict(sorted(graph_protocol_failure_classes.items())),
+        "graph_evidence_failure_classes": dict(sorted(graph_evidence_failure_classes.items())),
         "passed": all(row["passed"] for row in trials),
         "provider_breakdown": provider_breakdown,
         "trials": trials,
@@ -265,8 +294,22 @@ def main(argv: list[str] | None = None) -> int:
         lines.append(f"| {name} | {row['baseline_completed']}/{row['trials']} | {row['graph_protocol_completed']}/{row['trials']} | {row['graph_evidence_complete']}/{row['trials']} | {row['overall_accepted_trials']}/{row['trials']} | {row['textual_support_complete']}/{row['trials']} | {row['median_elapsed_seconds']} |")
     lines.extend([
         "",
+        "## Failure attribution",
+        "",
+        "| Provider | Graph protocol failure classes | Graph evidence failure classes | Graph provider error codes |",
+        "|---|---|---|---|",
+    ])
+    for name, row in result["provider_breakdown"].items():
+        protocol_classes = ", ".join(f"{k}={v}" for k, v in row["graph_protocol_failure_classes"].items()) or "none"
+        evidence_classes = ", ".join(f"{k}={v}" for k, v in row["graph_evidence_failure_classes"].items()) or "none"
+        provider_codes = ", ".join(f"{k}={v}" for k, v in row["graph_provider_error_codes"].items()) or "none"
+        lines.append(f"| {name} | {protocol_classes} | {evidence_classes} | {provider_codes} |")
+    lines.extend([
+        "",
         f"- Graph evidence complete (independent graph condition): **{result['graph_evidence_complete']}/{result['expected_trials']}**",
         f"- Overall accepted trials (baseline + graph + evidence/integrity gates): **{result['overall_accepted_trials']}/{result['expected_trials']}**",
+        f"- Graph protocol failure classes: `{json.dumps(result['graph_protocol_failure_classes'], sort_keys=True)}`",
+        f"- Graph evidence failure classes: `{json.dumps(result['graph_evidence_failure_classes'], sort_keys=True)}`",
         "- Diagnostic correctness: **not assessed; human review required**.",
         "",
     ])

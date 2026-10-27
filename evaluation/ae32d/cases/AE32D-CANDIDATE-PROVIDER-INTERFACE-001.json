@@ -1,0 +1,92 @@
+{
+  "schema_version": "ae32d/case/v1",
+  "case_id": "AE32D-CANDIDATE-PROVIDER-INTERFACE-001",
+  "case_status": "candidate",
+  "source": {
+    "repository": "snoopdock/Finite_element_analysis_project",
+    "source_commit_sha": "afcb1cba064de6f3d680f6be3085a365c6687c7b",
+    "fixture_path": "tests/semantic_audit/fixtures/ae32c_provider_interface_incident",
+    "source_manifest_sha256": "5d186a8801781c0c63ea29bc102a0c67f08bf8bd8358888cc96de381a24cb0cf",
+    "environment": {
+      "status": "source_fixture_recorded",
+      "runtime_reproduction": "not_run"
+    }
+  },
+  "task": {
+    "title": "Provider interface attribute mismatch",
+    "problem_statement": "Investigate the controlled provider-interface incident using only the declared read-only evidence tools; report confirmed observations, causal hypotheses, missing evidence, and an appropriate uncertainty level.",
+    "declared_scope": [
+      "tests/semantic_audit/fixtures/ae32c_provider_interface_incident/pipeline/extractor.py",
+      "tests/semantic_audit/fixtures/ae32c_provider_interface_incident/providers/adapter.py",
+      "related tests and documented runtime behavior where present"
+    ],
+    "constraints": [
+      "Do not treat token presence or citation resolution as proof of causal correctness.",
+      "Acknowledge uncertainty if the supplied source does not establish runtime behavior.",
+      "Do not apply code changes during evaluation."
+    ]
+  },
+  "ground_truth": {
+    "label": "pending_adjudication",
+    "defect_family": "interface_mismatch",
+    "severity": "pending",
+    "expected_findings": [
+      {
+        "finding_id": "OBS-1",
+        "statement": "The fixture consumer accesses provider.total_calls while the adapter fixture initializes and increments self.calls; the intended interface relationship and runtime effect must be independently reviewed before this case is scored.",
+        "locations": [
+          {
+            "path": "pipeline/extractor.py",
+            "line_start": 6,
+            "line_end": 6,
+            "role": "trigger"
+          },
+          {
+            "path": "providers/adapter.py",
+            "line_start": 6,
+            "line_end": 9,
+            "role": "cause"
+          }
+        ],
+        "supporting_evidence": [
+          "Fixture source lines for the consumer-side attribute access",
+          "Fixture source lines for the adapter-side counter"
+        ],
+        "counterevidence": [
+          "Static text alone does not establish dynamic wrappers, subclass behavior, or runtime call paths."
+        ],
+        "acceptable_alternatives": [
+          "A report that identifies the mismatch as a hypothesis and requests runtime/test evidence may be correct if it accurately describes the available evidence."
+        ]
+      }
+    ],
+    "verification": {
+      "status": "pending_independent_review",
+      "method": "Inspect the seeded fixture, reproduce with a minimal test, and independently adjudicate whether the intended defect and acceptable explanations are unambiguous.",
+      "artifacts": [
+        "tests/semantic_audit/fixtures/ae32c_provider_interface_incident/pipeline/extractor.py",
+        "tests/semantic_audit/fixtures/ae32c_provider_interface_incident/providers/adapter.py"
+      ],
+      "notes": "This is a candidate regression case only. It is not a scored gold case and must not be included in the primary benchmark until independently reviewed."
+    },
+    "notes": "Retain this known incident as one case among several defect families. Avoid tuning the benchmark solely to the two required textual anchors."
+  },
+  "review": {
+    "required_independent_reviewers": 2,
+    "status": "pending",
+    "reviewers": [],
+    "adjudication": null,
+    "agreement": "not_assessed"
+  },
+  "evaluation": {
+    "primary_benchmark_eligible": false,
+    "holdout": false,
+    "abstention_acceptable": true,
+    "conditions": [
+      "A_deterministic",
+      "B_graph",
+      "C_graph_llm"
+    ],
+    "exclusion_reason": "Candidate case; independent ground-truth adjudication and reproducibility check are pending."
+  }
+}
