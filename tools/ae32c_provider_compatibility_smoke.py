@@ -22,6 +22,7 @@ MODEL_PATTERN = re.compile(r"[A-Za-z0-9@._:/-]{1,200}")
 SAFE_DIAGNOSTIC_FIELDS = {
     "http_status", "body_status", "body_shape", "error_shape",
     "error_type", "error_code", "error_param", "error_fields", "top_level_error_fields",
+    "error_message_category", "error_request_id",
 }
 SAFE_FIELD_NAMES = {"type", "code", "param", "message", "details", "metadata", "status", "request_id", "trace_id"}
 

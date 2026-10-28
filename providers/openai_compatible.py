@@ -39,6 +39,50 @@ _SAFE_ERROR_TOKEN = re.compile(r"^[A-Za-z0-9_.:/\-\[\]]{1,100}$")
 _SAFE_ERROR_FIELD_NAMES = {"type", "code", "param", "message", "details", "metadata", "status", "request_id", "trace_id"}
 
 
+def _classify_error_message(message: object) -> str | None:
+    """Classify an upstream error message without retaining its free-form text.
+
+    The message is treated as untrusted. Only a small category is emitted; raw
+    content, URLs, tokens, and provider-specific prose are never persisted.
+    """
+    if not isinstance(message, str) or not message.strip():
+        return None
+    text = re.sub(r"\s+", " ", message).strip().lower()[:4000]
+
+    model_rejected = (
+        re.search(r"\b(model|deployment)\b.{0,100}\b(not found|unknown|invalid|unavailable|unsupported|does not exist|not available|not recognized)\b", text)
+        or re.search(r"\b(not found|unknown|invalid|unavailable|unsupported|does not exist|not available|not recognized)\b.{0,100}\b(model|deployment)\b", text)
+    )
+    if model_rejected:
+        return "model_identifier_rejected"
+
+    if re.search(r"\b(unauthorized|invalid api key|authentication failed|permission denied|forbidden|not authorized|access denied|invalid token)\b", text):
+        return "authentication_or_permission"
+
+    if re.search(r"\b(rate limit|quota|billing|insufficient (credit|balance|funds)|too many requests)\b", text):
+        return "quota_or_rate_limit"
+
+    if (
+        re.search(r"\b(unsupported|unknown|invalid|unrecognized|unexpected|not allowed)\s+(request\s+)?(parameter|param|field|argument)\b", text)
+        or re.search(r"\b(parameter|param|field|argument)\b.{0,80}\b(unsupported|unknown|invalid|unrecognized|unexpected|not allowed|not supported)\b", text)
+        or re.search(r"\b(extra inputs are not permitted|unknown field|unexpected field)\b", text)
+    ):
+        return "request_parameter_rejected"
+
+    if re.search(r"\b(endpoint|route|url path|http method)\b.{0,80}\b(not found|unsupported|not allowed|invalid)\b", text):
+        return "endpoint_or_method_rejected"
+
+    if (
+        re.search(r"\b(invalid json|malformed json|invalid request body|request body|schema validation|invalid type|required field|missing field|expected (an? )?(object|array|string|number|integer|boolean)|messages\b.{0,80}\b(required|invalid|must)\b|must be (an? )?(object|array|string|number|integer|boolean))", text)
+    ):
+        return "request_schema_or_body_rejected"
+
+    if re.search(r"\b(internal server error|server error|upstream error|temporarily unavailable|service unavailable)\b", text):
+        return "provider_internal_error"
+
+    return "other_unclassified"
+
+
 def http_error_diagnostic(payload: object, status_code: int, *, body_status: str = "json") -> dict[str, object]:
     """Expose safe structure from an HTTP error without persisting its message/body.
 
@@ -64,6 +108,21 @@ def http_error_diagnostic(payload: object, status_code: int, *, body_status: str
             value = error.get(source_key)
             if isinstance(value, str) and value:
                 result[target_key] = value if _SAFE_ERROR_TOKEN.fullmatch(value) else "present_unclassified"
+
+        # Keep only a coarse category derived from the free-form message; never
+        # persist the message itself. This makes generic HTTP 400s actionable
+        # without exposing arbitrary upstream prose in evaluation artifacts.
+        message_category = _classify_error_message(error.get("message"))
+        if message_category:
+            result["error_message_category"] = message_category
+
+        # Correlation IDs are useful for provider-side support. Emit only a
+        # short identifier-shaped value, never arbitrary text.
+        request_id = error.get("request_id")
+        if not isinstance(request_id, str) or not request_id:
+            request_id = payload.get("request_id", payload.get("trace_id"))
+        if isinstance(request_id, str) and len(request_id) <= 100 and re.fullmatch(r"[A-Za-z0-9_.:/-]{1,100}", request_id):
+            result["error_request_id"] = request_id
     elif isinstance(error, str):
         result["error_shape"] = "string"
         result["error_fields"] = []
