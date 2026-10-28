@@ -510,9 +510,18 @@ jobs:
           import json,sys
           from pathlib import Path
           candidates=list(Path(sys.argv[1]).rglob("comparison.json"))
-          if not candidates: raise SystemExit("Cloudflare comparison missing; inspect uploaded artifact.")
-          d=json.loads(candidates[0].read_text(encoding="utf-8")); report=d.get("graph_assisted",{}).get("report",{}); coverage=report.get("required_source_coverage",{})
-          if report.get("status") != "completed" or coverage.get("status") != "complete": raise SystemExit("Cloudflare run did not complete with required source coverage; artifacts were preserved.")
+          if not candidates: raise SystemExit("Cloudflare comparison missing; inspect uploaded artifacts.")
+          d=json.loads(candidates[0].read_text(encoding="utf-8"))
+          graph=d.get("graph_assisted",{}) if isinstance(d.get("graph_assisted"),dict) else {}
+          report=graph.get("report",{}) if isinstance(graph.get("report"),dict) else {}
+          coverage=report.get("required_source_coverage",{}) if isinstance(report.get("required_source_coverage"),dict) else {}
+          status=report.get("status","unknown")
+          stop_reason=report.get("stop_reason","unknown")
+          coverage_status=coverage.get("status","unknown")
+          if coverage_status != "complete":
+              raise SystemExit(f"Cloudflare required source coverage is {coverage_status!r} (stop_reason={stop_reason!r}); artifacts were preserved.")
+          if status != "completed":
+              raise SystemExit(f"Cloudflare source coverage is complete, but graph status is {status!r} (stop_reason={stop_reason!r}); artifacts were preserved.")
           print("Cloudflare run completed with required source coverage. Accuracy remains unassessed.")
           PY
           fi
