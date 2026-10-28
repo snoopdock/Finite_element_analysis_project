@@ -8,11 +8,11 @@ on:
         type: string
         required: true
       diagnostic_mode:
-        description: "Run one NaraRouter smoke test, one bounded NaraRouter investigation, or one focused Cloudflare investigation"
+        description: "Run one NaraRouter smoke test/investigation or one Cloudflare model smoke test/investigation"
         type: choice
         required: true
         default: nararouter_smoke
-        options: [nararouter_smoke, nararouter_focused, cloudflare_focused]
+        options: [nararouter_smoke, nararouter_focused, cloudflare_smoke, cloudflare_focused]
       nararouter_model:
         description: "NaraRouter model for smoke/focused modes; use laguna-s-2.1 (the verified working alias)"
         type: choice
@@ -23,6 +23,14 @@ on:
           - jev
           - laguna-s-2.1
           - nemotron-3.5-lightning-free
+      cloudflare_model:
+        description: "Cloudflare model for cloudflare_smoke/cloudflare_focused"
+        type: choice
+        required: true
+        default: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+        options:
+          - "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+          - "@cf/meta/llama-3.1-8b-instruct-fast"
       baseline_round_robin_run_id:
         description: "Historical round-robin run ID for Cloudflare comparison"
         type: string
@@ -58,13 +66,20 @@ jobs:
           BASELINE_RUN_ID: ${{ inputs.baseline_round_robin_run_id }}
           MODE: ${{ inputs.diagnostic_mode }}
           NARAROUTER_MODEL: ${{ inputs.nararouter_model }}
+          CLOUDFLARE_MODEL: ${{ inputs.cloudflare_model }}
         run: |
           set -euo pipefail
           [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF" == "refs/heads/main" ]] || { echo "::error::Run manually from main."; exit 1; }
           [[ "$CONFIRMED" == "true" ]] || { echo "::error::Explicit live-provider confirmation is required."; exit 1; }
           [[ "$VALIDATION_RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::validation_run_id must be numeric."; exit 1; }
           [[ "$BASELINE_RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::baseline_round_robin_run_id must be numeric."; exit 1; }
-          case "$MODE" in nararouter_smoke|nararouter_focused|cloudflare_focused) ;; *) exit 1;; esac
+          case "$MODE" in nararouter_smoke|nararouter_focused|cloudflare_smoke|cloudflare_focused) ;; *) exit 1;; esac
+          if [[ "$MODE" == "cloudflare_smoke" || "$MODE" == "cloudflare_focused" ]]; then
+            case "$CLOUDFLARE_MODEL" in
+              "@cf/meta/llama-3.3-70b-instruct-fp8-fast"|"@cf/meta/llama-3.1-8b-instruct-fast") ;;
+              *) echo "::error::Cloudflare model is not in the reviewed allowlist."; exit 1;;
+            esac
+          fi
           if [[ "$MODE" == "nararouter_smoke" || "$MODE" == "nararouter_focused" ]]; then
             case "$NARAROUTER_MODEL" in
               agnes-2.5-flash|jev|laguna-s-2.1|nemotron-3.5-lightning-free) ;;
@@ -174,6 +189,14 @@ jobs:
           path: source
           fetch-depth: 1
           persist-credentials: false
+      - name: Checkout workflow-support files from the exact workflow revision
+        if: inputs.diagnostic_mode == 'cloudflare_focused'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: workflow-support
+          fetch-depth: 1
+          persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -199,6 +222,16 @@ jobs:
             [[ -f providers/factory.py ]]
             [[ -f tests/semantic_audit/fixtures/ae32c_provider_interface_incident/pipeline/extractor.py ]]
             [[ -f tests/semantic_audit/fixtures/ae32c_provider_interface_incident/providers/adapter.py ]]
+          fi
+          if [[ "$MODE" == "cloudflare_smoke" ]]; then
+            [[ -f tools/ae32c_provider_compatibility_smoke.py ]] || { echo "::error::Provider smoke script is missing from validated source."; exit 1; }
+            PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" python tools/ae32c_provider_compatibility_smoke.py --help >/dev/null
+          fi
+          if [[ "$MODE" == "cloudflare_focused" ]]; then
+            [[ -f providers/cloudflare.py ]]
+            [[ -f tests/semantic_audit/fixtures/ae32c_provider_interface_incident/pipeline/extractor.py ]]
+            [[ -f tests/semantic_audit/fixtures/ae32c_provider_interface_incident/providers/adapter.py ]]
+            [[ -f "$GITHUB_WORKSPACE/workflow-support/tools/compare_ae32c_cloudflare_focus.py" ]] || { echo "::error::Comparison helper missing from workflow-support checkout."; exit 1; }
           fi
       - name: Download historical batch before Cloudflare call
         if: inputs.diagnostic_mode == 'cloudflare_focused'
@@ -282,12 +315,40 @@ jobs:
             printf '%s\n' "$rc" > "$out/nararouter-runner-exit-code.txt"
             printf '{"status":"runner_finished","runner_exit_code":%s,"live_provider_calls_may_have_started":true}\n' "$rc" > "$out/nararouter-run-status.json"
           fi
+      - name: Run one Cloudflare model compatibility smoke request
+        if: inputs.diagnostic_mode == 'cloudflare_smoke'
+        working-directory: source
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DIAGNOSTIC_MODEL: ${{ inputs.cloudflare_model }}
+          FEA_LLM_REQUEST_TIMEOUT_SECONDS: "45"
+          FEA_LLM_RETRY_ATTEMPTS: "1"
+        run: |
+          set -u
+          out="$RUNNER_TEMP/ae32c-focused-diagnostic"; mkdir -p "$out"
+          result="$out/cloudflare-smoke.json"
+          if [[ -z "${CLOUDFLARE_ACCOUNT_ID:-}" || -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+            printf '%s\n' '{"schema_version":"ae32c/provider-compatibility-smoke/v1","provider":"cloudflare","status":"configuration_failed","reason_code":"Cloudflare credentials missing","live_provider_calls_made":false}' > "$result"
+          else
+            set +e
+            PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" timeout --signal=TERM --kill-after=5s 180s \
+              python tools/ae32c_provider_compatibility_smoke.py \
+                --confirm-live-provider-calls --provider cloudflare --model "$CLOUDFLARE_DIAGNOSTIC_MODEL" \
+                > "$result" 2> "$out/cloudflare-smoke-stderr.txt"
+            rc=$?; set -e
+            printf '%s\n' "$rc" > "$out/cloudflare-smoke-runner-exit-code.txt"
+            if [[ ! -s "$result" ]]; then
+              printf '{"schema_version":"ae32c/provider-compatibility-smoke/v1","provider":"cloudflare","status":"runner_timeout_or_no_output","runner_exit_code":%s,"live_provider_calls_may_have_started":true}\n' "$rc" > "$result"
+            fi
+          fi
       - name: Run one focused Cloudflare investigation
         if: inputs.diagnostic_mode == 'cloudflare_focused'
         working-directory: source
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DIAGNOSTIC_MODEL: ${{ inputs.cloudflare_model }}
           FEA_LLM_REQUEST_TIMEOUT_SECONDS: "45"
           FEA_LLM_RETRY_ATTEMPTS: "2"
         run: |
@@ -298,7 +359,7 @@ jobs:
           else
             set +e
             timeout --signal=TERM --kill-after=15s 1100s python -m audit_engine.semantic_audit.ae32c.live_evaluation \
-              --confirm-live-provider-calls --provider cloudflare \
+              --confirm-live-provider-calls --provider cloudflare --model "$CLOUDFLARE_DIAGNOSTIC_MODEL" \
               --repo-root tests/semantic_audit/fixtures/ae32c_provider_interface_incident \
               --output-dir "$current" > "$out/cloudflare-live-evaluation.log" 2>&1
             rc=$?; set -e
@@ -313,10 +374,33 @@ jobs:
           OUTPUT_ROOT: ${{ runner.temp }}/ae32c-focused-diagnostic
         run: |
           set -euo pipefail
-          python tools/compare_ae32c_cloudflare_focus.py --baseline-root "$BASELINE_ROOT" \
+          python workflow-support/tools/compare_ae32c_cloudflare_focus.py --baseline-root "$BASELINE_ROOT" \
             --current-root "$CURRENT_ROOT" --output-json "$OUTPUT_ROOT/cloudflare-comparison.json" \
             --output-markdown "$OUTPUT_ROOT/cloudflare-comparison.md"
           cat "$OUTPUT_ROOT/cloudflare-comparison.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Summarize Cloudflare smoke outcome
+        if: inputs.diagnostic_mode == 'cloudflare_smoke' && always()
+        env:
+          RESULT: ${{ runner.temp }}/ae32c-focused-diagnostic/cloudflare-smoke.json
+        run: |
+          python - "$RESULT" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json,sys
+          from pathlib import Path
+          p=Path(sys.argv[1])
+          print("### Cloudflare one-request model compatibility smoke")
+          if not p.is_file():
+              print("- Result JSON: **missing**; inspect uploaded artifacts.")
+              raise SystemExit(0)
+          d=json.loads(p.read_text(encoding="utf-8"))
+          diag=d.get("diagnostics",{}) if isinstance(d.get("diagnostics"),dict) else {}
+          http=diag.get("last_http_error_diagnostic",{}) if isinstance(diag.get("last_http_error_diagnostic"),dict) else {}
+          print(f"- Model: `{d.get('model','not reported')}`")
+          print(f"- Status: `{d.get('status','unknown')}`")
+          print(f"- HTTP status: `{diag.get('last_http_status',http.get('http_status','not reported'))}`")
+          print(f"- Marker matched: `{d.get('response_marker_match','not reported')}`")
+          print(f"- Error code/type/parameter: `{http.get('error_code','not reported')}` / `{http.get('error_type','not reported')}` / `{http.get('error_param','not reported')}`")
+          print("- One-request diagnostic only; no investigation was run.")
+          PY
       - name: Summarize NaraRouter focused investigation
         if: inputs.diagnostic_mode == 'nararouter_focused' && always()
         env:
@@ -397,6 +481,17 @@ jobs:
           if d.get("status") != "completion_received": raise SystemExit("NaraRouter did not return a parseable completion; diagnostics were preserved.")
           if d.get("response_marker_match") is not True: raise SystemExit("NaraRouter did not match the expected marker; diagnostics were preserved.")
           print("NaraRouter returned a parseable completion and matched the marker.")
+          PY
+          elif [[ "$MODE" == "cloudflare_smoke" ]]; then
+            python - "$RESULT_ROOT/cloudflare-smoke.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          p=Path(sys.argv[1])
+          if not p.is_file(): raise SystemExit("Cloudflare smoke output missing; inspect uploaded artifacts.")
+          d=json.loads(p.read_text(encoding="utf-8"))
+          if d.get("status") != "completion_received": raise SystemExit("Cloudflare did not return a parseable completion; diagnostics were preserved.")
+          if d.get("response_marker_match") is not True: raise SystemExit("Cloudflare did not match the expected marker; do not run the full investigation yet.")
+          print("Cloudflare returned a parseable completion and matched the marker. Full investigation may be run separately.")
           PY
           elif [[ "$MODE" == "nararouter_focused" ]]; then
             python - "$RESULT_ROOT/nararouter-current" <<'PY'
