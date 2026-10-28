@@ -8,16 +8,16 @@ on:
         type: string
         required: true
       diagnostic_mode:
-        description: "Run one NaraRouter request or one focused Cloudflare investigation"
+        description: "Run one NaraRouter smoke test, one bounded NaraRouter investigation, or one focused Cloudflare investigation"
         type: choice
         required: true
         default: nararouter_smoke
-        options: [nararouter_web_catalog_check, nararouter_smoke, cloudflare_focused]
+        options: [nararouter_smoke, nararouter_focused, cloudflare_focused]
       nararouter_model:
-        description: "Model alias for nararouter_smoke; ignored in cloudflare_focused mode"
+        description: "NaraRouter model for smoke/focused modes; use laguna-s-2.1 (the verified working alias)"
         type: choice
         required: true
-        default: agnes-2.5-flash
+        default: laguna-s-2.1
         options:
           - agnes-2.5-flash
           - jev
@@ -64,12 +64,16 @@ jobs:
           [[ "$CONFIRMED" == "true" ]] || { echo "::error::Explicit live-provider confirmation is required."; exit 1; }
           [[ "$VALIDATION_RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::validation_run_id must be numeric."; exit 1; }
           [[ "$BASELINE_RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::baseline_round_robin_run_id must be numeric."; exit 1; }
-          case "$MODE" in nararouter_web_catalog_check|nararouter_smoke|cloudflare_focused) ;; *) exit 1;; esac
-          if [[ "$MODE" == "nararouter_smoke" ]]; then
+          case "$MODE" in nararouter_smoke|nararouter_focused|cloudflare_focused) ;; *) exit 1;; esac
+          if [[ "$MODE" == "nararouter_smoke" || "$MODE" == "nararouter_focused" ]]; then
             case "$NARAROUTER_MODEL" in
               agnes-2.5-flash|jev|laguna-s-2.1|nemotron-3.5-lightning-free) ;;
               *) echo "::error::Model alias is not in the reviewed allowlist."; exit 1;;
             esac
+          fi
+          if [[ "$MODE" == "nararouter_focused" && "$NARAROUTER_MODEL" != "laguna-s-2.1" ]]; then
+            echo "::error::The bounded NaraRouter investigation is restricted to the smoke-tested laguna-s-2.1 model."
+            exit 1
           fi
           echo "Authorized mode: $MODE. No other provider will be called."
 
@@ -191,6 +195,11 @@ jobs:
             # only asks argparse for help; it does not initialize a provider or make HTTP calls.
             PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" python tools/ae32c_provider_compatibility_smoke.py --help >/dev/null
           fi
+          if [[ "$MODE" == "nararouter_focused" ]]; then
+            [[ -f providers/factory.py ]]
+            [[ -f tests/semantic_audit/fixtures/ae32c_provider_interface_incident/pipeline/extractor.py ]]
+            [[ -f tests/semantic_audit/fixtures/ae32c_provider_interface_incident/providers/adapter.py ]]
+          fi
       - name: Download historical batch before Cloudflare call
         if: inputs.diagnostic_mode == 'cloudflare_focused'
         env:
@@ -205,156 +214,6 @@ jobs:
           gh run download "$BASELINE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
             --name "ae32c-round-robin-${BASELINE_RUN_ID}-${attempt}" --dir "$RUNNER_TEMP/ae32c-baseline"
           echo "Historical artifact downloaded before any new Cloudflare call."
-      - name: Run read-only NaraRouter model-catalog research through the online model
-        if: inputs.diagnostic_mode == 'nararouter_web_catalog_check'
-        working-directory: source
-        env:
-          NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
-        run: |
-          set -euo pipefail
-          out="$RUNNER_TEMP/ae32c-focused-diagnostic"
-          mkdir -p "$out"
-          result="$out/nararouter-web-catalog-research.json"
-          if [[ -z "${NARAROUTER_API_KEY:-}" ]]; then
-            printf '%s\n' '{"schema_version":"ae32c/nararouter-web-catalog-research/v1","status":"configuration_failed","reason_code":"NARAROUTER_API_KEY_missing","live_provider_calls_made":false}' > "$result"
-          else
-            python - "$result" <<'PY'
-          import json, os, re, sys
-          from datetime import datetime, timezone
-          import requests
-
-          output_path = sys.argv[1]
-          endpoint = "https://router.bynara.id/v1/chat/completions"
-          model = "deepseek-v4.1-flash:online"
-          prompt = """Use your web_search and web_fetch/page-reading capabilities for a narrowly scoped, read-only research task. Prefer official NaraRouter pages, the official model catalog, and official API documentation. Keep the research bounded: at most one web search and at most three page reads.
-
-          Answer:
-          1. Is agnes-2.5-flash currently listed in the Free models catalog, and do official sources say whether it remains API-accessible?
-          2. Is laguna-s-2.1 currently listed, and what exact API model ID do official sources show?
-          3. Does the UI's Free models list establish API availability, or could the UI catalog and API access differ?
-          4. What is the best-supported next single diagnostic test?
-
-          Cite every material claim with the source page title and URL. Include publication/update date when available. Separate directly observed official-source facts from inference. If official sources do not answer a question, say so explicitly; do not guess, invent model IDs, or use unofficial pages to fill gaps. Do not call APIs, change account settings, or perform actions other than web search/page reading."""
-          result = {
-              "schema_version": "ae32c/nararouter-web-catalog-research/v1",
-              "provider": "nararouter",
-              "model": model,
-              "endpoint": endpoint,
-              "created_at_utc": datetime.now(timezone.utc).isoformat(),
-              "status": "unknown",
-              "live_provider_calls_made": True,
-              "web_search_budget_requested": {"searches": 1, "page_reads": 3},
-              "raw_error_body_logged": False,
-          }
-          try:
-              response = requests.post(
-                  endpoint,
-                  headers={
-                      "Authorization": "Bearer " + os.environ["NARAROUTER_API_KEY"],
-                      "Content-Type": "application/json",
-                  },
-                  json={
-                      "model": model,
-                      "messages": [
-                          {"role": "system", "content": "You are a source-grounded research assistant. Do not invent sources or model availability. Follow the requested search/page-read budget as closely as the gateway permits."},
-                          {"role": "user", "content": prompt},
-                      ],
-                      "temperature": 0.1,
-                      "max_tokens": 1800,
-                      "stream": False,
-                  },
-                  timeout=(10, 180),
-              )
-              result["http_status"] = response.status_code
-              if response.status_code < 200 or response.status_code >= 300:
-                  safe_error = {}
-                  try:
-                      body = response.json()
-                      err = body.get("error", {}) if isinstance(body, dict) else {}
-                      if isinstance(err, dict):
-                          for key in ("type", "code", "param"):
-                              value = err.get(key)
-                              if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_.:-]{1,100}", value):
-                                  safe_error[key] = value
-                          request_id = err.get("request_id") or body.get("request_id")
-                          if isinstance(request_id, str) and re.fullmatch(r"[A-Fa-f0-9-]{8,80}", request_id):
-                              safe_error["request_id"] = request_id
-                  except Exception:
-                      pass
-                  result["status"] = "http_error"
-                  result["safe_error_fields"] = safe_error
-                  result["raw_error_body_logged"] = False
-              else:
-                  try:
-                      body = response.json()
-                  except Exception:
-                      body = {}
-                  choices = body.get("choices", []) if isinstance(body, dict) else []
-                  content = None
-                  if choices and isinstance(choices[0], dict):
-                      message = choices[0].get("message", {})
-                      if isinstance(message, dict):
-                          content = message.get("content")
-                  if isinstance(content, list):
-                      content = "\n".join(
-                          item.get("text", "") for item in content
-                          if isinstance(item, dict) and isinstance(item.get("text"), str)
-                      )
-                  if isinstance(content, str) and content.strip():
-                      result["status"] = "completion_received"
-                      result["answer_and_sources"] = content.strip()
-                      usage = body.get("usage", {})
-                      if isinstance(usage, dict):
-                          safe_usage = {}
-                          for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
-                              value = usage.get(key)
-                              if isinstance(value, int) and value >= 0:
-                                  safe_usage[key] = value
-                          result["usage"] = safe_usage
-                      choice = choices[0] if choices and isinstance(choices[0], dict) else {}
-                      if isinstance(choice.get("finish_reason"), str):
-                          result["finish_reason"] = choice["finish_reason"]
-                  else:
-                      result["status"] = "empty_or_unparseable_completion"
-                      result["raw_response_logged"] = False
-          except requests.Timeout:
-              result["status"] = "request_timeout"
-              result["raw_error_body_logged"] = False
-          except requests.RequestException as exc:
-              result["status"] = "transport_error"
-              result["transport_error_type"] = type(exc).__name__
-              result["raw_error_body_logged"] = False
-          except Exception as exc:
-              result["status"] = "client_error"
-              result["client_error_type"] = type(exc).__name__
-              result["raw_error_body_logged"] = False
-
-          with open(output_path, "w", encoding="utf-8") as f:
-              json.dump(result, f, ensure_ascii=False, indent=2)
-              f.write("\n")
-          print(json.dumps({
-              "status": result.get("status"),
-              "http_status": result.get("http_status"),
-              "model": model,
-              "endpoint": endpoint,
-              "raw_error_body_logged": False,
-          }))
-          PY
-          fi
-          python - "$result" >> "$GITHUB_STEP_SUMMARY" <<'PY'
-          import json,sys
-          d=json.load(open(sys.argv[1],encoding="utf-8"))
-          print("### NaraRouter online model-catalog research")
-          print(f"- Status: `{d.get('status','unknown')}`")
-          print(f"- Model: `{d.get('model','not reported')}`")
-          print(f"- HTTP status: `{d.get('http_status','not reported')}`")
-          if isinstance(d.get("answer_and_sources"), str):
-              print("")
-              print(d["answer_and_sources"])
-          else:
-              print(f"- Safe error fields: `{d.get('safe_error_fields',{})}`")
-              print("- Raw provider error body was not saved.")
-          PY
       - name: Run exactly one NaraRouter compatibility request
         if: inputs.diagnostic_mode == 'nararouter_smoke'
         working-directory: source
@@ -393,6 +252,36 @@ jobs:
           print(f"- Marker matched: `{d.get('response_marker_match','not applicable')}`")
           print("- Raw response and free-form provider error are not printed.")
           PY
+      - name: Run one bounded NaraRouter baseline-versus-graph investigation
+        if: inputs.diagnostic_mode == 'nararouter_focused'
+        working-directory: source
+        env:
+          NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
+          NARAROUTER_DIAGNOSTIC_MODEL: ${{ inputs.nararouter_model }}
+          FEA_LLM_REQUEST_TIMEOUT_SECONDS: "90"
+          FEA_LLM_RETRY_ATTEMPTS: "1"
+        run: |
+          set -u
+          out="$RUNNER_TEMP/ae32c-focused-diagnostic"
+          current="$out/nararouter-current"
+          mkdir -p "$current"
+          if [[ -z "${NARAROUTER_API_KEY:-}" ]]; then
+            printf '%s\n' '{"status":"configuration_failed","reason_code":"NARAROUTER_API_KEY_missing","live_provider_calls_made":false}' > "$out/nararouter-run-status.json"
+            echo "NaraRouter secret missing; no provider request was made."
+          else
+            set +e
+            timeout --signal=TERM --kill-after=15s 1100s \
+              python -m audit_engine.semantic_audit.ae32c.live_evaluation \
+                --confirm-live-provider-calls --provider nararouter \
+                --model "$NARAROUTER_DIAGNOSTIC_MODEL" \
+                --repo-root tests/semantic_audit/fixtures/ae32c_provider_interface_incident \
+                --output-dir "$current" \
+                > "$out/nararouter-live-evaluation.log" 2>&1
+            rc=$?
+            set -e
+            printf '%s\n' "$rc" > "$out/nararouter-runner-exit-code.txt"
+            printf '{"status":"runner_finished","runner_exit_code":%s,"live_provider_calls_may_have_started":true}\n' "$rc" > "$out/nararouter-run-status.json"
+          fi
       - name: Run one focused Cloudflare investigation
         if: inputs.diagnostic_mode == 'cloudflare_focused'
         working-directory: source
@@ -428,6 +317,45 @@ jobs:
             --current-root "$CURRENT_ROOT" --output-json "$OUTPUT_ROOT/cloudflare-comparison.json" \
             --output-markdown "$OUTPUT_ROOT/cloudflare-comparison.md"
           cat "$OUTPUT_ROOT/cloudflare-comparison.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Summarize NaraRouter focused investigation
+        if: inputs.diagnostic_mode == 'nararouter_focused' && always()
+        env:
+          CURRENT_ROOT: ${{ runner.temp }}/ae32c-focused-diagnostic/nararouter-current
+          STATUS_FILE: ${{ runner.temp }}/ae32c-focused-diagnostic/nararouter-run-status.json
+        run: |
+          python - "$CURRENT_ROOT" "$STATUS_FILE" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json,sys
+          from pathlib import Path
+          root=Path(sys.argv[1])
+          status_path=Path(sys.argv[2])
+          print("### NaraRouter bounded baseline-versus-graph investigation")
+          if status_path.is_file():
+              status=json.loads(status_path.read_text(encoding="utf-8"))
+              print(f"- Runner status: `{status.get('status','unknown')}`")
+              print(f"- Runner exit code: `{status.get('runner_exit_code','not reported')}`")
+          candidates=sorted(root.rglob("comparison.json"), key=lambda p: p.stat().st_mtime)
+          if not candidates:
+              print("- Comparison artifact: **missing**; inspect uploaded logs.")
+              raise SystemExit(0)
+          d=json.loads(candidates[-1].read_text(encoding="utf-8"))
+          baseline=d.get("baseline",{}) if isinstance(d.get("baseline"),dict) else {}
+          graph=d.get("graph_assisted",{}) if isinstance(d.get("graph_assisted"),dict) else {}
+          summary=graph.get("summary",{}) if isinstance(graph.get("summary"),dict) else {}
+          report=graph.get("report",{}) if isinstance(graph.get("report"),dict) else {}
+          coverage=report.get("required_source_coverage",{}) if isinstance(report.get("required_source_coverage"),dict) else {}
+          textual=report.get("source_textual_support",{}) if isinstance(report.get("source_textual_support"),dict) else {}
+          print(f"- Provider/model: `{d.get('provider','unknown')}` / `{d.get('model','unknown')}`")
+          print(f"- Baseline status: `{baseline.get('status','unknown')}`")
+          print(f"- Graph status / stop reason: `{summary.get('status','unknown')}` / `{summary.get('stop_reason','unknown')}`")
+          print(f"- Model rounds / tool calls: `{summary.get('model_rounds','unknown')}` / `{summary.get('tool_call_count','unknown')}`")
+          print(f"- Required source coverage: `{coverage.get('status',summary.get('required_source_coverage_status','unknown'))}`")
+          print(f"- Textual source support: `{textual.get('status',summary.get('source_textual_support_status','unknown'))}`")
+          print(f"- Citation validation: `{summary.get('final_citation_validation','unknown')}`")
+          print(f"- Missing complete reads: `{coverage.get('missing_complete_reads',summary.get('required_source_missing_reads',[]))}`")
+          print(f"- Missing direct root-cause citations: `{coverage.get('missing_root_cause_direct_citations',summary.get('required_source_missing_root_citations',[]))}`")
+          print(f"- Automated diagnosis accuracy: `{d.get('evaluation_policy',{}).get('diagnostic_accuracy','not assessed')}`")
+          print(f"- Comparison Markdown: `{candidates[-1].with_suffix('.md')}`")
+          PY
       - name: Summarize NaraRouter outcome
         if: inputs.diagnostic_mode == 'nararouter_smoke' && always()
         env:
@@ -467,14 +395,27 @@ jobs:
           if not p.is_file(): raise SystemExit("NaraRouter output missing; inspect uploaded artifacts.")
           d=json.loads(p.read_text(encoding="utf-8"))
           if d.get("status") != "completion_received": raise SystemExit("NaraRouter did not return a parseable completion; diagnostics were preserved.")
-          print("NaraRouter returned a parseable completion; marker match is separate.")
+          if d.get("response_marker_match") is not True: raise SystemExit("NaraRouter did not match the expected marker; diagnostics were preserved.")
+          print("NaraRouter returned a parseable completion and matched the marker.")
+          PY
+          elif [[ "$MODE" == "nararouter_focused" ]]; then
+            python - "$RESULT_ROOT/nararouter-current" <<'PY'
+          import json,sys
+          from pathlib import Path
+          candidates=list(Path(sys.argv[1]).rglob("comparison.json"))
+          if not candidates: raise SystemExit("NaraRouter comparison artifact missing; inspect uploaded logs.")
+          d=json.loads(sorted(candidates,key=lambda p:p.stat().st_mtime)[-1].read_text(encoding="utf-8"))
+          graph=d.get("graph_assisted",{}).get("summary",{})
+          print("NaraRouter investigation artifacts were published.")
+          print(f"Graph status: {graph.get('status','unknown')}; stop reason: {graph.get('stop_reason','unknown')}.")
+          print("This workflow validates artifact publication, not diagnosis correctness or investigation success.")
           PY
           else
             python - "$RESULT_ROOT/cloudflare-current" <<'PY'
           import json,sys
           from pathlib import Path
           candidates=list(Path(sys.argv[1]).rglob("comparison.json"))
-          if not candidates: raise SystemExit("Cloudflare comparison missing; inspect run log and artifact.")
+          if not candidates: raise SystemExit("Cloudflare comparison missing; inspect uploaded artifact.")
           d=json.loads(candidates[0].read_text(encoding="utf-8")); report=d.get("graph_assisted",{}).get("report",{}); coverage=report.get("required_source_coverage",{})
           if report.get("status") != "completed" or coverage.get("status") != "complete": raise SystemExit("Cloudflare run did not complete with required source coverage; artifacts were preserved.")
           print("Cloudflare run completed with required source coverage. Accuracy remains unassessed.")
