@@ -1,0 +1,310 @@
+name: AE-32C Focused Diagnostics (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      validation_run_id:
+        description: "Successful G9.42 run ID for the exact corrected stage1/section-uuids commit"
+        type: string
+        required: true
+      diagnostic_mode:
+        description: "Run one NaraRouter request or one focused Cloudflare investigation"
+        type: choice
+        required: true
+        default: nararouter_smoke
+        options: [nararouter_smoke, cloudflare_focused]
+      baseline_round_robin_run_id:
+        description: "Historical round-robin run ID for Cloudflare comparison"
+        type: string
+        required: true
+        default: "40503324230"
+      confirm_live_provider_calls:
+        description: "Authorize the selected live diagnostic"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ae32c-focused-diagnostics
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Explicit consent and bounded inputs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Validate manual diagnostic request
+        shell: bash
+        env:
+          REF: ${{ github.ref }}
+          EVENT_NAME: ${{ github.event_name }}
+          CONFIRMED: ${{ inputs.confirm_live_provider_calls }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          BASELINE_RUN_ID: ${{ inputs.baseline_round_robin_run_id }}
+          MODE: ${{ inputs.diagnostic_mode }}
+        run: |
+          set -euo pipefail
+          [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF" == "refs/heads/main" ]] || { echo "::error::Run manually from main."; exit 1; }
+          [[ "$CONFIRMED" == "true" ]] || { echo "::error::Explicit live-provider confirmation is required."; exit 1; }
+          [[ "$VALIDATION_RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::validation_run_id must be numeric."; exit 1; }
+          [[ "$BASELINE_RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::baseline_round_robin_run_id must be numeric."; exit 1; }
+          case "$MODE" in nararouter_smoke|cloudflare_focused) ;; *) exit 1;; esac
+          echo "Authorized mode: $MODE. No other provider will be called."
+
+  validation-gate:
+    name: Verify exact-commit G9.42 evidence before any live call
+    needs: guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    outputs:
+      source_commit_sha: ${{ steps.verify_gate.outputs.source_commit_sha }}
+      validation_engine_commit_sha: ${{ steps.verify_gate.outputs.validation_engine_commit_sha }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout candidate development source
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install evidence-verifier dependency
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
+      - name: Retrieve and validate G9.42 run metadata
+        id: check_validation_run
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+        run: |
+          set -euo pipefail
+          metadata="$RUNNER_TEMP/ae32c-validation-run-metadata.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}" > "$metadata"
+          python audit_engine/semantic_audit/ae32c/validation_gate.py check-run \
+            --run-metadata "$metadata" --expected-run-id "$VALIDATION_RUN_ID" \
+            --expected-repository "$GITHUB_REPOSITORY" --github-output "$GITHUB_OUTPUT"
+      - name: Download exact validation evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ steps.check_validation_run.outputs.run_attempt }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ae32c-validation-evidence"
+          gh run download "$VALIDATION_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name "manual-validation-evidence-${VALIDATION_RUN_ID}-${VALIDATION_RUN_ATTEMPT}" \
+            --dir "$RUNNER_TEMP/ae32c-validation-evidence"
+      - name: Checkout validation-engine commit from the run
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.check_validation_run.outputs.engine_commit_sha }}
+          path: validation-engine
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Independently verify report, artifacts, provenance, and source commit
+        id: verify_gate
+        working-directory: source
+        env:
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          python audit_engine/semantic_audit/ae32c/validation_gate.py verify \
+            --evidence-dir "$RUNNER_TEMP/ae32c-validation-evidence" \
+            --run-metadata "$RUNNER_TEMP/ae32c-validation-run-metadata.json" \
+            --expected-run-id "$VALIDATION_RUN_ID" --expected-repository "$EXPECTED_REPOSITORY" \
+            --source-root . --engine-root ../validation-engine --github-output "$GITHUB_OUTPUT" \
+            | tee "$RUNNER_TEMP/ae32c-validation-gate.json"
+      - name: Upload validation-gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-focused-validation-gate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ae32c-validation-gate.json
+            ${{ runner.temp }}/ae32c-validation-run-metadata.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  focused-diagnostic:
+    name: Run selected focused diagnostic
+    needs: [guard, validation-gate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout exact G9.42-validated source commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install runtime dependencies
+        run: python -m pip install --disable-pip-version-check 'requests>=2.31.0,<3.0.0' 'PyYAML>=6.0,<7.0'
+      - name: Verify diagnostic files at the validated commit
+        working-directory: source
+        env:
+          MODE: ${{ inputs.diagnostic_mode }}
+          VALIDATED_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$VALIDATED_SHA" ]]
+          [[ -f audit_engine/semantic_audit/ae32c/live_evaluation.py ]]
+          if [[ "$MODE" == "nararouter_smoke" ]]; then
+            [[ -f tools/ae32c_provider_compatibility_smoke.py ]] || { echo "::error::Operational patch is missing from validated source."; exit 1; }
+          fi
+      - name: Download historical batch before Cloudflare call
+        if: inputs.diagnostic_mode == 'cloudflare_focused'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASELINE_RUN_ID: ${{ inputs.baseline_round_robin_run_id }}
+        run: |
+          set -euo pipefail
+          metadata="$RUNNER_TEMP/ae32c-baseline-run-metadata.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${BASELINE_RUN_ID}" > "$metadata"
+          attempt="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["run_attempt"])' "$metadata")"
+          mkdir -p "$RUNNER_TEMP/ae32c-baseline"
+          gh run download "$BASELINE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name "ae32c-round-robin-${BASELINE_RUN_ID}-${attempt}" --dir "$RUNNER_TEMP/ae32c-baseline"
+          echo "Historical artifact downloaded before any new Cloudflare call."
+      - name: Run exactly one NaraRouter compatibility request
+        if: inputs.diagnostic_mode == 'nararouter_smoke'
+        working-directory: source
+        env:
+          NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
+          FEA_LLM_REQUEST_TIMEOUT_SECONDS: "90"
+          FEA_LLM_RETRY_ATTEMPTS: "1"
+        run: |
+          set -u
+          out="$RUNNER_TEMP/ae32c-focused-diagnostic"; mkdir -p "$out"
+          result="$out/nararouter-smoke.json"
+          if [[ -z "${NARAROUTER_API_KEY:-}" ]]; then
+            printf '%s\n' '{"schema_version":"ae32c/provider-compatibility-smoke/v1","provider":"nararouter","status":"configuration_failed","reason_code":"NARAROUTER_API_KEY_missing","live_provider_calls_made":false}' > "$result"
+          else
+            set +e
+            timeout --signal=TERM --kill-after=5s 180s python tools/ae32c_provider_compatibility_smoke.py \
+              --confirm-live-provider-calls --provider nararouter > "$result" 2> "$out/nararouter-smoke-stderr.txt"
+            rc=$?; set -e
+            printf '%s\n' "$rc" > "$out/nararouter-smoke-runner-exit-code.txt"
+            if [[ ! -s "$result" ]]; then
+              printf '{"schema_version":"ae32c/provider-compatibility-smoke/v1","provider":"nararouter","status":"runner_timeout_or_no_output","runner_exit_code":%s,"live_provider_calls_may_have_started":true}\n' "$rc" > "$result"
+            fi
+          fi
+          python - "$result" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1],encoding="utf-8")); diag=d.get("diagnostics",{}).get("last_http_error_diagnostic",{})
+          print("### NaraRouter one-request diagnostic")
+          print(f"- Status: `{d.get('status','unknown')}`")
+          print("- Endpoint: `https://router.bynara.id/v1/chat/completions` (fixed)")
+          print(f"- Model: `{d.get('model','not reported')}`")
+          print(f"- HTTP status: `{diag.get('http_status','not reported')}`")
+          print(f"- Error type/code/parameter: `{diag.get('error_type','not reported')}` / `{diag.get('error_code','not reported')}` / `{diag.get('error_param','not reported')}`")
+          print(f"- Body shape/status: `{diag.get('body_shape','not reported')}` / `{diag.get('body_status','not reported')}`")
+          print(f"- Marker matched: `{d.get('response_marker_match','not applicable')}`")
+          print("- Raw response and free-form provider error are not printed.")
+          PY
+      - name: Run one focused Cloudflare investigation
+        if: inputs.diagnostic_mode == 'cloudflare_focused'
+        working-directory: source
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          FEA_LLM_REQUEST_TIMEOUT_SECONDS: "45"
+          FEA_LLM_RETRY_ATTEMPTS: "2"
+        run: |
+          set -u
+          out="$RUNNER_TEMP/ae32c-focused-diagnostic"; current="$out/cloudflare-current"; mkdir -p "$current"
+          if [[ -z "${CLOUDFLARE_ACCOUNT_ID:-}" || -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+            printf '%s\n' '{"status":"configuration_failed","reason_code":"Cloudflare credentials missing","live_provider_calls_made":false}' > "$out/cloudflare-run-status.json"
+          else
+            set +e
+            timeout --signal=TERM --kill-after=15s 1100s python -m audit_engine.semantic_audit.ae32c.live_evaluation \
+              --confirm-live-provider-calls --provider cloudflare \
+              --repo-root tests/semantic_audit/fixtures/ae32c_provider_interface_incident \
+              --output-dir "$current" > "$out/cloudflare-live-evaluation.log" 2>&1
+            rc=$?; set -e
+            printf '%s\n' "$rc" > "$out/cloudflare-runner-exit-code.txt"
+            printf '{"status":"runner_finished","runner_exit_code":%s,"live_provider_calls_may_have_started":true}\n' "$rc" > "$out/cloudflare-run-status.json"
+          fi
+      - name: Compare Cloudflare result with historical trials
+        if: inputs.diagnostic_mode == 'cloudflare_focused'
+        env:
+          BASELINE_ROOT: ${{ runner.temp }}/ae32c-baseline
+          CURRENT_ROOT: ${{ runner.temp }}/ae32c-focused-diagnostic/cloudflare-current
+          OUTPUT_ROOT: ${{ runner.temp }}/ae32c-focused-diagnostic
+        run: |
+          set -euo pipefail
+          python tools/compare_ae32c_cloudflare_focus.py --baseline-root "$BASELINE_ROOT" \
+            --current-root "$CURRENT_ROOT" --output-json "$OUTPUT_ROOT/cloudflare-comparison.json" \
+            --output-markdown "$OUTPUT_ROOT/cloudflare-comparison.md"
+          cat "$OUTPUT_ROOT/cloudflare-comparison.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Summarize NaraRouter outcome
+        if: inputs.diagnostic_mode == 'nararouter_smoke' && always()
+        env:
+          RESULT: ${{ runner.temp }}/ae32c-focused-diagnostic/nararouter-smoke.json
+        run: |
+          if [[ -f "$RESULT" ]]; then
+            python - "$RESULT" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1],encoding="utf-8"))
+          print(f"\nCompletion received: `{d.get('response_received',False)}`")
+          print(f"One-request limit: `{d.get('request_count_limit','not reported')}`")
+          print(f"HTTP attempts reported: `{d.get('http_attempts_reported','not reported')}`")
+          PY
+          fi
+      - name: Upload diagnostic artifacts, including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-focused-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ae32c-focused-diagnostic/
+            ${{ runner.temp }}/ae32c-validation-gate.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Enforce diagnostic outcome after preserving artifacts
+        if: always()
+        env:
+          MODE: ${{ inputs.diagnostic_mode }}
+          RESULT_ROOT: ${{ runner.temp }}/ae32c-focused-diagnostic
+        run: |
+          set -euo pipefail
+          if [[ "$MODE" == "nararouter_smoke" ]]; then
+            python - "$RESULT_ROOT/nararouter-smoke.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          p=Path(sys.argv[1])
+          if not p.is_file(): raise SystemExit("NaraRouter output missing; inspect uploaded artifacts.")
+          d=json.loads(p.read_text(encoding="utf-8"))
+          if d.get("status") != "completion_received": raise SystemExit("NaraRouter did not return a parseable completion; diagnostics were preserved.")
+          print("NaraRouter returned a parseable completion; marker match is separate.")
+          PY
+          else
+            python - "$RESULT_ROOT/cloudflare-current" <<'PY'
+          import json,sys
+          from pathlib import Path
+          candidates=list(Path(sys.argv[1]).rglob("comparison.json"))
+          if not candidates: raise SystemExit("Cloudflare comparison missing; inspect run log and artifact.")
+          d=json.loads(candidates[0].read_text(encoding="utf-8")); report=d.get("graph_assisted",{}).get("report",{}); coverage=report.get("required_source_coverage",{})
+          if report.get("status") != "completed" or coverage.get("status") != "complete": raise SystemExit("Cloudflare run did not complete with required source coverage; artifacts were preserved.")
+          print("Cloudflare run completed with required source coverage. Accuracy remains unassessed.")
+          PY
+          fi
