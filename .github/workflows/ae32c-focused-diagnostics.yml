@@ -170,6 +170,9 @@ jobs:
           [[ -f audit_engine/semantic_audit/ae32c/live_evaluation.py ]]
           if [[ "$MODE" == "nararouter_smoke" ]]; then
             [[ -f tools/ae32c_provider_compatibility_smoke.py ]] || { echo "::error::Operational patch is missing from validated source."; exit 1; }
+            # The script's imports must resolve from the repository root. This preflight
+            # only asks argparse for help; it does not initialize a provider or make HTTP calls.
+            PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" python tools/ae32c_provider_compatibility_smoke.py --help >/dev/null
           fi
       - name: Download historical batch before Cloudflare call
         if: inputs.diagnostic_mode == 'cloudflare_focused'
@@ -200,7 +203,7 @@ jobs:
             printf '%s\n' '{"schema_version":"ae32c/provider-compatibility-smoke/v1","provider":"nararouter","status":"configuration_failed","reason_code":"NARAROUTER_API_KEY_missing","live_provider_calls_made":false}' > "$result"
           else
             set +e
-            timeout --signal=TERM --kill-after=5s 180s python tools/ae32c_provider_compatibility_smoke.py \
+            PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" timeout --signal=TERM --kill-after=5s 180s python tools/ae32c_provider_compatibility_smoke.py \
               --confirm-live-provider-calls --provider nararouter > "$result" 2> "$out/nararouter-smoke-stderr.txt"
             rc=$?; set -e
             printf '%s\n' "$rc" > "$out/nararouter-smoke-runner-exit-code.txt"
