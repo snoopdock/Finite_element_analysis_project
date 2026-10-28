@@ -1,0 +1,25 @@
+{
+  "schema_version": "ae32d/reviewer-form/v1",
+  "case_id": "AE32D-CANDIDATE-PROVIDER-INTERFACE-001",
+  "reviewer_id": "REPLACE_WITH_REVIEWER_2_ID",
+  "case_source_commit_sha": "afcb1cba064de6f3d680f6be3085a365c6687c7b",
+  "review_stage": "ground_truth_case_adjudication",
+  "label": "pending_adjudication",
+  "defect_family": "interface_mismatch",
+  "severity": "pending",
+  "expected_findings": [],
+  "verification": {
+    "status": "pending_independent_review",
+    "method": "Not completed. Inspect the frozen fixture and related interface/tests; reproduce if feasible.",
+    "artifacts": []
+  },
+  "abstention_acceptable": true,
+  "acceptable_alternatives": [],
+  "confidence": "not_assessed",
+  "rationale": "TEMPLATE ONLY \u2014 replace this text after independent review. Do not infer runtime causality from token presence alone.",
+  "blindness_attestation": {
+    "has_not_seen_other_reviewer_labels": false,
+    "has_not_seen_model_outputs_or_provider_identity": false
+  },
+  "review_completed_at": null
+}

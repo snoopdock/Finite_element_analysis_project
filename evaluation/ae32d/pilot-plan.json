@@ -1,0 +1,48 @@
+{
+  "schema_version": "ae32d/pilot-plan/v1",
+  "benchmark_id": "AE32D-AUDIT-QUALITY",
+  "protocol_version": "0.1",
+  "status": "draft_pending_approval",
+  "target_case_count": {
+    "minimum": 6,
+    "maximum": 10
+  },
+  "eventual_benchmark_case_count": {
+    "minimum": 30,
+    "maximum": 50
+  },
+  "current_case_status": {
+    "candidate_count": 1,
+    "adjudicated_count": 0,
+    "primary_score_eligible_count": 0,
+    "candidate_case_ids": [
+      "AE32D-CANDIDATE-PROVIDER-INTERFACE-001"
+    ]
+  },
+  "required_case_mix": [
+    "confirmed real defects with fix/test/reproduction evidence",
+    "seeded interface or contract mismatches",
+    "graph/data-flow/control-flow defect families",
+    "negative controls and no-defect cases",
+    "ambiguous or insufficient-evidence cases where abstention may be correct"
+  ],
+  "conditions": [
+    "A_deterministic",
+    "B_graph",
+    "C_graph_llm"
+  ],
+  "optional_later_condition": "D_claim_assessment",
+  "primary_metric": "case_level_correct_audit_outcome_rate",
+  "independent_reviewers_per_high_value_case": 2,
+  "holdout_policy": "Hold out by repository or defect family where feasible; do not tune against holdout outcomes.",
+  "current_gate": "Do not score any case until its ground truth is adjudicated and the rubric is frozen.",
+  "approval_required_before_scoring": true,
+  "prohibited_shortcuts": [
+    "Treating source token presence as proof of causality",
+    "Treating resolved citations as proof of semantic support",
+    "Treating protocol completion as diagnostic correctness",
+    "Using an LLM judge as the only source of ground truth",
+    "Including pending/disputed cases in the primary score",
+    "Treating the E.5 single-response baseline as AE-32D condition A"
+  ]
+}

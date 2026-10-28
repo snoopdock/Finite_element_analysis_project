@@ -8,6 +8,7 @@ transport, response extraction, retry policy, and operational usage telemetry.
 from __future__ import annotations
 
 import os
+import re
 import time
 from typing import Dict, List, Optional, Tuple
 
@@ -34,6 +35,45 @@ DEFAULT_MODELS = {
 
 TRANSIENT_HTTP_STATUSES = {408, 425, 429, 500, 502, 503, 504}
 DEFAULT_MAX_RESPONSE_CHARS = 100_000
+_SAFE_ERROR_TOKEN = re.compile(r"^[A-Za-z0-9_.:/\-\[\]]{1,100}$")
+_SAFE_ERROR_FIELD_NAMES = {"type", "code", "param", "message", "details", "metadata", "status", "request_id", "trace_id"}
+
+
+def http_error_diagnostic(payload: object, status_code: int, *, body_status: str = "json") -> dict[str, object]:
+    """Expose safe structure from an HTTP error without persisting its message/body.
+
+    Only allowlisted field names and conservative identifier-like values are
+    retained. Free-form messages, request IDs, arbitrary keys, headers, and raw
+    response text are intentionally excluded.
+    """
+    result: dict[str, object] = {"http_status": int(status_code), "body_status": body_status}
+    if not isinstance(payload, dict):
+        result["body_shape"] = "non_object"
+        return result
+    result["body_shape"] = "object"
+    result["top_level_error_fields"] = sorted(
+        key for key in payload if isinstance(key, str) and key in _SAFE_ERROR_FIELD_NAMES
+    )
+    error = payload.get("error")
+    if isinstance(error, dict):
+        result["error_shape"] = "object"
+        result["error_fields"] = sorted(
+            key for key in error if isinstance(key, str) and key in _SAFE_ERROR_FIELD_NAMES
+        )
+        for source_key, target_key in (("type", "error_type"), ("code", "error_code"), ("param", "error_param")):
+            value = error.get(source_key)
+            if isinstance(value, str) and value:
+                result[target_key] = value if _SAFE_ERROR_TOKEN.fullmatch(value) else "present_unclassified"
+    elif isinstance(error, str):
+        result["error_shape"] = "string"
+        result["error_fields"] = []
+    elif error is None:
+        result["error_shape"] = "absent"
+        result["error_fields"] = []
+    else:
+        result["error_shape"] = "other"
+        result["error_fields"] = []
+    return result
 
 
 def _int_env(name: str, default: int, minimum: int, maximum: int) -> int:
@@ -152,6 +192,8 @@ class OpenAICompatibleProvider:
         self.error_counts: Dict[str, int] = {}
         self.envelope_diagnostic_counts: Dict[str, int] = {}
         self.last_envelope_diagnostic: dict[str, object] | None = None
+        self.last_http_error_diagnostic: dict[str, object] | None = None
+        self.http_error_diagnostic_counts: Dict[str, int] = {}
 
     @property
     def total_calls(self) -> int:
@@ -223,6 +265,7 @@ class OpenAICompatibleProvider:
         model: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str]]:
         self.last_error_code = None
+        self.last_http_error_diagnostic = None
         if self.budget_exhausted():
             return self._error("Local logical-call budget exhausted", code="logical_call_budget_exhausted")
 
@@ -278,19 +321,25 @@ class OpenAICompatibleProvider:
                 )
 
             if response.status_code >= 400:
-                # Classify a structured upstream API error without persisting or
-                # echoing its potentially sensitive body. Transient statuses are
-                # handled by the bounded retry branch above.
-                has_error_payload = False
+                # Retain only allowlisted structural error metadata. The free-form
+                # upstream message/body is never copied into logs or artifacts.
+                error_payload: object = None
+                body_status = "json"
                 try:
                     error_payload = load_bounded_json(
                         response, max_bytes=min(self.max_response_bytes, 64_000)
                     )
-                    has_error_payload = (
-                        isinstance(error_payload, dict) and "error" in error_payload
-                    )
-                except (ValueError, TypeError, requests.exceptions.RequestException):
+                except ProviderResponseTooLarge:
+                    body_status = "too_large"
                     close_response(response)
+                except (ValueError, TypeError, requests.exceptions.RequestException):
+                    body_status = "unreadable_or_non_json"
+                    close_response(response)
+                has_error_payload = isinstance(error_payload, dict) and "error" in error_payload
+                diagnostic = http_error_diagnostic(error_payload, response.status_code, body_status=body_status)
+                self.last_http_error_diagnostic = diagnostic
+                diagnostic_key = str(diagnostic.get("error_code") or diagnostic.get("error_type") or diagnostic.get("error_shape") or body_status)
+                self.http_error_diagnostic_counts[diagnostic_key] = self.http_error_diagnostic_counts.get(diagnostic_key, 0) + 1
                 error_code = "provider_api_error_payload" if has_error_payload else "http_error"
                 return self._error(
                     f"{self.provider_name} HTTP {response.status_code}",
@@ -389,4 +438,6 @@ class OpenAICompatibleProvider:
             "error_counts": dict(self.error_counts),
             "last_envelope_diagnostic": dict(self.last_envelope_diagnostic) if self.last_envelope_diagnostic else None,
             "envelope_diagnostic_counts": dict(self.envelope_diagnostic_counts),
+            "last_http_error_diagnostic": dict(self.last_http_error_diagnostic) if self.last_http_error_diagnostic else None,
+            "http_error_diagnostic_counts": dict(self.http_error_diagnostic_counts),
         }

@@ -1,7 +1,6 @@
 id: G9.42
-name: AE-32C Phases A-D and Phase E.1–E.5 Reliability and Evidence-Support Fidelity
-# Consolidated deterministic validation profile for AE-32C phases A-D and E.1.
-# No live provider credentials or network calls are required by this profile.
+name: AE-32C E.1–E.5 reliability/evidence fidelity plus AE-32D benchmark integrity
+# Deterministic validation only. No live provider credentials or network calls are required.
 # The separate live comparison runner is opt-in and is not invoked here.
 target_tests:
   - tests/semantic_audit/test_ae32c_patch1_evidence_integrity.py
@@ -16,6 +15,9 @@ target_tests:
   - tests/semantic_audit/test_ae32c_validation_gate.py
   - tests/semantic_audit/test_ae32b_evidence_tools.py
   - tests/semantic_audit/test_ae32a_architecture_wiring_audit.py
+  - tests/semantic_audit/test_ae32d_benchmark_scaffold.py
+  - tests/semantic_audit/test_ae32d_adjudication_pack.py
+  - tests/semantic_audit/test_ae32c_operational_failure_modes.py
   - tests/semantic_graph/test_traversal.py
   - tests/semantic_graph/test_dependency_analysis.py
   - tests/semantic_graph/test_path_analysis.py

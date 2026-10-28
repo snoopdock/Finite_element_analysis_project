@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/snoopdock/Finite_element_analysis_project/blob/stage1/section-uuids/evaluation/ae32d/adjudication/adjudication-record.schema.json",
+  "title": "AE-32D adjudication record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "status",
+    "reviewer_submissions",
+    "agreement",
+    "final_label",
+    "final_severity",
+    "final_findings",
+    "verification",
+    "resolution_summary",
+    "adjudicator_id",
+    "decided_at",
+    "primary_benchmark_eligible",
+    "exclusion_reason"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ae32d/adjudication-record/v1"
+    },
+    "case_id": {
+      "type": "string",
+      "pattern": "^AE32D-[A-Z0-9-]{3,80}$"
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "adjudicated",
+        "excluded"
+      ]
+    },
+    "reviewer_submissions": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reviewer_id",
+          "form_sha256",
+          "label",
+          "confidence",
+          "rationale_summary"
+        ],
+        "properties": {
+          "reviewer_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "form_sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "label": {
+            "enum": [
+              "confirmed_defect",
+              "no_defect",
+              "ambiguous",
+              "pending_adjudication"
+            ]
+          },
+          "confidence": {
+            "enum": [
+              "high",
+              "medium",
+              "low",
+              "not_assessed"
+            ]
+          },
+          "rationale_summary": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "agreement": {
+      "enum": [
+        "agreement",
+        "disagreement",
+        "not_assessed"
+      ]
+    },
+    "final_label": {
+      "enum": [
+        "confirmed_defect",
+        "no_defect",
+        "ambiguous",
+        "pending_adjudication"
+      ]
+    },
+    "final_severity": {
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "informational",
+        "not_applicable",
+        "pending"
+      ]
+    },
+    "final_findings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "method",
+        "artifacts"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "confirmed_fix",
+            "test_reproduction",
+            "independent_review",
+            "fixture_construction_only",
+            "pending_independent_review",
+            "not_reproduced",
+            "not_run"
+          ]
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "resolution_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "adjudicator_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "decided_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "primary_benchmark_eligible": {
+      "type": "boolean"
+    },
+    "exclusion_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": "ae32d/adjudication-record/v1",
+  "case_id": "AE32D-CANDIDATE-PROVIDER-INTERFACE-001",
+  "status": "pending",
+  "reviewer_submissions": [
+    {
+      "reviewer_id": "REPLACE_WITH_REVIEWER_1_ID",
+      "form_sha256": null,
+      "label": "pending_adjudication",
+      "confidence": "not_assessed",
+      "rationale_summary": "Pending independent submission."
+    },
+    {
+      "reviewer_id": "REPLACE_WITH_REVIEWER_2_ID",
+      "form_sha256": null,
+      "label": "pending_adjudication",
+      "confidence": "not_assessed",
+      "rationale_summary": "Pending independent submission."
+    }
+  ],
+  "agreement": "not_assessed",
+  "final_label": "pending_adjudication",
+  "final_severity": "pending",
+  "final_findings": [],
+  "verification": {
+    "status": "pending_independent_review",
+    "method": "Pending review and, if feasible, test/runtime reproduction.",
+    "artifacts": []
+  },
+  "resolution_summary": "TEMPLATE ONLY \u2014 no adjudication has been performed.",
+  "adjudicator_id": "REPLACE_WITH_ADJUDICATOR_ID",
+  "decided_at": null,
+  "primary_benchmark_eligible": false,
+  "exclusion_reason": "Pending independent review and verification."
+}

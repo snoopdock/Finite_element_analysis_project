@@ -1,0 +1,102 @@
+{
+  "schema_version": "ae32d/scoring-rubric/v1",
+  "status": "draft_pending_approval",
+  "benchmark_id": "AE32D-AUDIT-QUALITY",
+  "protocol_version": "0.1",
+  "primary_metric": {
+    "name": "case_level_correct_audit_outcome_rate",
+    "unit": "case",
+    "definition": "Among cases with frozen, adjudicated ground truth, the fraction whose audit outcome is judged correct under the categorical rules below. Report raw numerator, denominator, and all categories; do not report this metric for pending/disputed cases.",
+    "categories": {
+      "correct_detection": "Confirmed defect identified with a materially supported core explanation; localization may be exact or partial and is reported separately.",
+      "missed_defect": "Ground truth confirms a defect, but the audit fails to identify it and does not appropriately abstain due to genuine ambiguity.",
+      "false_positive": "Audit asserts a defect on a no-defect case, or asserts a material causal claim contradicted by the adjudicated evidence.",
+      "correct_no_defect": "Ground truth says no defect and the audit does not assert one.",
+      "correct_abstention": "Ground truth is ambiguous or insufficiently evidenced and the audit accurately communicates that limitation.",
+      "incorrect_abstention": "Ground truth supports a determinate outcome, but the audit abstains without a justified evidence limitation.",
+      "not_scorable": "Ground truth is pending/disputed, output is missing, or required provenance is invalid."
+    },
+    "report_all_categories": true,
+    "raw_denominators_required": true
+  },
+  "secondary_dimensions": {
+    "defect_detection": [
+      "correct",
+      "missed",
+      "false_positive",
+      "correct_no_defect",
+      "appropriate_abstention",
+      "inappropriate_abstention",
+      "not_applicable"
+    ],
+    "localization": [
+      "exact",
+      "partial",
+      "incorrect",
+      "unsupported",
+      "not_applicable"
+    ],
+    "causal_explanation": [
+      "supported",
+      "partially_supported",
+      "unsupported",
+      "contradicted",
+      "unverified"
+    ],
+    "claim_level_support": [
+      "directly_supported",
+      "indirectly_supported",
+      "counterevidence_present",
+      "unsupported",
+      "not_assessed"
+    ],
+    "evidence_integrity": [
+      "valid",
+      "incomplete",
+      "invalid",
+      "not_assessed"
+    ],
+    "uncertainty": [
+      "appropriate",
+      "overconfident",
+      "unnecessary_abstention",
+      "appropriate_abstention"
+    ],
+    "actionability": [
+      "actionable",
+      "partially_actionable",
+      "not_actionable"
+    ],
+    "operational": [
+      "elapsed_seconds",
+      "model_calls",
+      "tool_calls",
+      "tokens_if_available",
+      "cost_if_available",
+      "reviewer_time_minutes"
+    ]
+  },
+  "review_policy": {
+    "independent_reviewers_per_high_value_case": 2,
+    "reviewer_blind_to_provider_and_condition_where_feasible": true,
+    "preserve_original_labels_and_adjudication": true,
+    "pending_or_disputed_cases_excluded_from_primary_score": true,
+    "llm_judge_alone_is_not_ground_truth": true,
+    "textual_witness_is_lexical_check_only": true,
+    "citation_resolution_is_not_semantic_proof": true,
+    "no_weighted_composite_score": true
+  },
+  "conditions": {
+    "A_deterministic": "Deterministic audit baseline and standard source search.",
+    "B_graph": "Same baseline plus graph retrieval.",
+    "C_graph_llm": "Graph plus bounded LLM investigation.",
+    "D_claim_assessment": "Optional later condition; evaluate only after claim-assessment mechanism is separately validated."
+  },
+  "freeze_requirements": [
+    "Freeze case set and exact source commits.",
+    "Freeze scoring rubric and primary metric before inspecting scored outputs.",
+    "Freeze prompts, model/version, budgets, graph snapshot, and scorer within each paired comparison.",
+    "Retain failures, abstentions, and missing outputs in the denominator or explicitly classify them.",
+    "Record reviewer disagreement and adjudication."
+  ]
+}

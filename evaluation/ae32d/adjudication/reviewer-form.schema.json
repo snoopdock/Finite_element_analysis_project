@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/snoopdock/Finite_element_analysis_project/blob/stage1/section-uuids/evaluation/ae32d/adjudication/reviewer-form.schema.json",
+  "title": "AE-32D independent ground-truth reviewer form",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "reviewer_id",
+    "case_source_commit_sha",
+    "review_stage",
+    "label",
+    "defect_family",
+    "severity",
+    "expected_findings",
+    "verification",
+    "abstention_acceptable",
+    "acceptable_alternatives",
+    "confidence",
+    "rationale",
+    "blindness_attestation",
+    "review_completed_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ae32d/reviewer-form/v1"
+    },
+    "case_id": {
+      "type": "string",
+      "pattern": "^AE32D-[A-Z0-9-]{3,80}$"
+    },
+    "reviewer_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_source_commit_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "review_stage": {
+      "const": "ground_truth_case_adjudication"
+    },
+    "label": {
+      "enum": [
+        "confirmed_defect",
+        "no_defect",
+        "ambiguous",
+        "pending_adjudication"
+      ]
+    },
+    "defect_family": {
+      "type": "string",
+      "minLength": 1
+    },
+    "severity": {
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "informational",
+        "not_applicable",
+        "pending"
+      ]
+    },
+    "expected_findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "finding_id",
+          "statement",
+          "locations",
+          "supporting_evidence",
+          "counterevidence",
+          "confidence"
+        ],
+        "properties": {
+          "finding_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "line_start",
+                "line_end",
+                "role"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "line_start": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "line_end": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "role": {
+                  "enum": [
+                    "trigger",
+                    "cause",
+                    "counterevidence",
+                    "test",
+                    "context"
+                  ]
+                }
+              }
+            }
+          },
+          "supporting_evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "counterevidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confidence": {
+            "enum": [
+              "high",
+              "medium",
+              "low",
+              "not_assessed"
+            ]
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "method",
+        "artifacts"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "confirmed_fix",
+            "test_reproduction",
+            "independent_review",
+            "fixture_construction_only",
+            "pending_independent_review",
+            "not_reproduced",
+            "not_run"
+          ]
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "abstention_acceptable": {
+      "type": "boolean"
+    },
+    "acceptable_alternatives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "confidence": {
+      "enum": [
+        "high",
+        "medium",
+        "low",
+        "not_assessed"
+      ]
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1
+    },
+    "blindness_attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "has_not_seen_other_reviewer_labels",
+        "has_not_seen_model_outputs_or_provider_identity"
+      ],
+      "properties": {
+        "has_not_seen_other_reviewer_labels": {
+          "type": "boolean"
+        },
+        "has_not_seen_model_outputs_or_provider_identity": {
+          "type": "boolean"
+        }
+      }
+    },
+    "review_completed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  }
+}
