@@ -243,6 +243,9 @@ jobs:
               --model "$MODEL" \
               --repo-root "$FIXTURE" \
               --baseline-context-path branch_logic.py \
+              --required-source-path branch_logic.py \
+              --required-source-anchor 'branch_logic.py::if flag:' \
+              --required-source-anchor 'branch_logic.py::return result' \
               --problem "A caller reports that work(False) raises an exception, although the expected behavior is to return 0 for a false flag and 5 for a true flag. Inspect the available source and expected-behavior evidence. Identify a defect only if supported; cite exact source evidence and distinguish static inference from runtime proof. Do not assume tests were executed." \
               --output-dir "$OUT" \
               2>&1 | tee "$OUT/live-evaluation.log"
@@ -281,3 +284,33 @@ jobs:
           path: ${{ runner.temp }}/ae32d-second-incident/
           if-no-files-found: warn
           retention-days: 90
+
+      - name: Enforce graph protocol and evidence requirements after artifact upload
+        if: always()
+        env:
+          OUT: ${{ runner.temp }}/ae32d-second-incident
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          out = Path(os.environ["OUT"])
+          candidate = out / "candidate-verification.json"
+          if not candidate.is_file() or json.loads(candidate.read_text(encoding="utf-8")).get("passed") is not True:
+              raise SystemExit("Controlled fixture machine verification missing or failed.")
+          comparisons = sorted(out.rglob("comparison.json"))
+          if len(comparisons) != 1:
+              raise SystemExit(f"Expected exactly one comparison record; found {len(comparisons)}.")
+          comparison = json.loads(comparisons[0].read_text(encoding="utf-8"))
+          graph = comparison.get("graph_assisted", {})
+          summary = graph.get("summary", {}) if isinstance(graph, dict) else {}
+          checks = {
+              "graph_status": summary.get("status") == "completed",
+              "source_coverage": summary.get("required_source_coverage_status") == "complete",
+              "citations": summary.get("final_citation_validation") == "references_resolved",
+              "textual_witnesses": summary.get("source_textual_support_status") == "complete",
+          }
+          print("AE-32D operational acceptance gates:", checks)
+          if not all(checks.values()):
+              raise SystemExit("Graph investigation incomplete or evidence gate failed; artifacts were retained.")
+          print("Graph protocol/evidence passed; diagnostic correctness is not independently established.")
+          PY
