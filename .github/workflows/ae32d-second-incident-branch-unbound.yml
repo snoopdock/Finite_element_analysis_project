@@ -292,6 +292,23 @@ jobs:
               "attestation_source": "GitHub Actions validation-gate outputs and workflow checkout SHA",
           }
 
+          candidate_path = out / "candidate-verification.json"
+          if candidate_path.is_file():
+              candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+              if not isinstance(candidate, dict):
+                  raise SystemExit("candidate-verification.json must contain a JSON object.")
+              candidate["source_revision"] = source_revision
+              candidate["source_revision_status"] = "validated_checkout_commit"
+              candidate["workflow_revision"] = workflow_revision
+              candidate["workflow_revision_status"] = "github_actions_workflow_checkout_commit"
+              candidate["validation_run_id"] = str(validation_run_id)
+              candidate["workflow_run_id"] = str(workflow_run_id)
+              candidate["execution_provenance"] = dict(attestation)
+              candidate_path.write_text(
+                  json.dumps(candidate, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+                  encoding="utf-8",
+              )
+
           if comparisons:
               report_path = comparisons[0]
               report = json.loads(report_path.read_text(encoding="utf-8"))
@@ -422,6 +439,7 @@ jobs:
           summary = graph.get("summary", {}) if isinstance(graph, dict) else {}
           provenance_path = out / "execution-provenance.json"
           provenance = json.loads(provenance_path.read_text(encoding="utf-8")) if provenance_path.is_file() else {}
+          candidate_report = json.loads(candidate.read_text(encoding="utf-8"))
           checks = {
               "graph_status": summary.get("status") == "completed",
               "source_coverage": summary.get("required_source_coverage_status") == "complete",
@@ -430,6 +448,9 @@ jobs:
               "source_revision_attested": provenance.get("source_revision_status") == "validated_checkout_commit",
               "workflow_revision_attested": provenance.get("workflow_revision_status") == "github_actions_workflow_checkout_commit",
               "comparison_stamped": provenance.get("reports_stamped") == 1,
+              "candidate_source_revision_matches": candidate_report.get("source_revision") == provenance.get("source_revision"),
+              "candidate_workflow_revision_matches": candidate_report.get("workflow_revision") == provenance.get("workflow_revision"),
+              "candidate_validation_run_matches": str(candidate_report.get("validation_run_id")) == str(provenance.get("validation_run_id")),
           }
           print("AE-32D operational acceptance gates:", checks)
           if not all(checks.values()):
