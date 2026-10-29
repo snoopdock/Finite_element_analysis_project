@@ -1,0 +1,283 @@
+name: AE-32D Second Incident — Branch Unbound (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      validation_run_id:
+        description: "Successful G9.42 validation run ID for the exact stage1/section-uuids source commit"
+        type: string
+        required: true
+      model:
+        description: "Cloudflare model ID"
+        type: string
+        required: true
+        default: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      confirm_live_provider_calls:
+        description: "Authorize one baseline call plus up to ten investigation calls, with bounded retries"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ae32d-second-incident-branch-unbound
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Explicit consent and bounded inputs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Validate authorization
+        shell: bash
+        env:
+          REF: ${{ github.ref }}
+          EVENT_NAME: ${{ github.event_name }}
+          CONFIRMED: ${{ inputs.confirm_live_provider_calls }}
+          RUN_ID: ${{ inputs.validation_run_id }}
+          MODEL: ${{ inputs.model }}
+        run: |
+          set -euo pipefail
+          [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF" == "refs/heads/main" ]] || { echo "::error::Manual main-branch dispatch only"; exit 1; }
+          [[ "$CONFIRMED" == "true" ]] || { echo "::error::Explicit live-provider confirmation required"; exit 1; }
+          [[ "$RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::G9.42 validation run ID must be numeric"; exit 1; }
+          [[ "$MODEL" =~ ^[A-Za-z0-9@._:/-]{1,200}$ ]] || { echo "::error::Invalid model ID"; exit 1; }
+          echo "Authorized one bounded Cloudflare investigation for the second incident."
+
+  validation-gate:
+    name: Verify exact-commit G9.42 evidence before any live calls
+    needs: guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    outputs:
+      source_commit_sha: ${{ steps.verify_gate.outputs.source_commit_sha }}
+      validation_run_id: ${{ steps.verify_gate.outputs.validation_run_id }}
+      validation_run_attempt: ${{ steps.verify_gate.outputs.validation_run_attempt }}
+      validation_report_sha256: ${{ steps.verify_gate.outputs.validation_report_sha256 }}
+      validation_bundle_sha256: ${{ steps.verify_gate.outputs.validation_bundle_sha256 }}
+      validation_engine_commit_sha: ${{ steps.verify_gate.outputs.validation_engine_commit_sha }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout candidate development source
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python for evidence verification
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install evidence-verifier dependency
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
+
+      - name: Retrieve and validate central dispatcher run metadata
+        id: check_validation_run
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$VALIDATION_RUN_ID" =~ ^[0-9]{1,20}$ ]]; then
+            echo "::error::validation_run_id must be a numeric GitHub Actions run ID."
+            exit 1
+          fi
+          metadata="$RUNNER_TEMP/ae32c-validation-run-metadata.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}" > "$metadata"
+          python audit_engine/semantic_audit/ae32c/validation_gate.py check-run \
+            --run-metadata "$metadata" \
+            --expected-run-id "$VALIDATION_RUN_ID" \
+            --expected-repository "$GITHUB_REPOSITORY" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Download the exact validation run evidence artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ steps.check_validation_run.outputs.run_attempt }}
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/ae32c-validation-evidence"
+          mkdir -p "$evidence_dir"
+          gh run download "$VALIDATION_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "manual-validation-evidence-${VALIDATION_RUN_ID}-${VALIDATION_RUN_ATTEMPT}" \
+            --dir "$evidence_dir"
+
+      - name: Checkout the exact validation-engine commit recorded by the run
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.check_validation_run.outputs.engine_commit_sha }}
+          path: validation-engine
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Independently verify G9.42 report, artifacts, and provenance catalog
+        id: verify_gate
+        working-directory: source
+        env:
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/ae32c-validation-evidence"
+          metadata="$RUNNER_TEMP/ae32c-validation-run-metadata.json"
+          python audit_engine/semantic_audit/ae32c/validation_gate.py verify \
+            --evidence-dir "$evidence_dir" \
+            --run-metadata "$metadata" \
+            --expected-run-id "$VALIDATION_RUN_ID" \
+            --expected-repository "$EXPECTED_REPOSITORY" \
+            --source-root . \
+            --engine-root ../validation-engine \
+            --github-output "$GITHUB_OUTPUT" \
+            | tee "$RUNNER_TEMP/ae32c-validation-gate.json"
+
+      - name: Upload validation-gate diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-validation-gate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ae32c-validation-gate.json
+            ${{ runner.temp }}/ae32c-validation-run-metadata.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  second-incident:
+    name: Verify fixture and run one bounded Cloudflare investigation
+    needs: [guard, validation-gate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout exact validated source commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal runtime dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'requests>=2.31.0,<3.0.0' 'PyYAML>=6.0,<7.0'
+
+      - name: Verify exact source pin and machine-check the second fixture
+        env:
+          EXPECTED_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          GITHUB_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          FIXTURE: source/tests/semantic_audit/fixtures/ae32d_branch_unbound_incident
+          OUT: ${{ runner.temp }}/ae32d-second-incident
+        run: |
+          set -euo pipefail
+          [[ "$(git -C source rev-parse HEAD)" == "$EXPECTED_SHA" ]]
+          mkdir -p "$OUT"
+          python source/tools/ae32d_verify_branch_unbound_candidate.py \
+            --fixture "$FIXTURE" \
+            --output "$OUT/candidate-verification.json"
+
+      - name: Run bounded baseline and graph-assisted investigation
+        id: live
+        continue-on-error: true
+        working-directory: source
+        env:
+          FEA_LLM_PROVIDER: cloudflare
+          FEA_LLM_MODEL: ${{ inputs.model }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          MODEL: ${{ inputs.model }}
+          FIXTURE: tests/semantic_audit/fixtures/ae32d_branch_unbound_incident
+          OUT: ${{ runner.temp }}/ae32d-second-incident
+          VALIDATED_SOURCE_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          VALIDATION_RUN_ID: ${{ needs.validation-gate.outputs.validation_run_id }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$VALIDATED_SOURCE_SHA" ]]
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::CLOUDFLARE_ACCOUNT_ID is missing"; exit 2; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::CLOUDFLARE_API_TOKEN is missing"; exit 2; }
+          mkdir -p "$OUT"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path(os.environ["OUT"])/"run-context.json"
+          p.write_text(json.dumps({
+            "schema_version":"ae32d/second-incident-run-context/v1",
+            "case_id":"AE32D-CANDIDATE-BRANCH-UNBOUND-001",
+            "source_revision":os.environ["VALIDATED_SOURCE_SHA"],
+            "validation_run_id":os.environ["VALIDATION_RUN_ID"],
+            "workflow_revision":os.environ["WORKFLOW_REVISION"],
+            "provider":"cloudflare",
+            "model":os.environ["MODEL"],
+            "live_provider_calls_authorized":True,
+            "primary_benchmark_eligible":False
+          },indent=2,sort_keys=True)+"\n",encoding="utf-8")
+          PY
+          export FEA_LLM_REQUEST_TIMEOUT_SECONDS=45
+          export FEA_LLM_RETRY_ATTEMPTS=2
+          timeout --signal=TERM --kill-after=15s 1200s \
+            python -m audit_engine.semantic_audit.ae32c.live_evaluation \
+              --confirm-live-provider-calls \
+              --provider cloudflare \
+              --model "$MODEL" \
+              --repo-root "$FIXTURE" \
+              --baseline-context-path branch_logic.py \
+              --problem "A caller reports that work(False) raises an exception, although the expected behavior is to return 0 for a false flag and 5 for a true flag. Inspect the available source and expected-behavior evidence. Identify a defect only if supported; cite exact source evidence and distinguish static inference from runtime proof. Do not assume tests were executed." \
+              --output-dir "$OUT" \
+              2>&1 | tee "$OUT/live-evaluation.log"
+
+      - name: Publish result summary
+        if: always()
+        env:
+          OUT: ${{ runner.temp }}/ae32d-second-incident
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          out=Path(os.environ["OUT"])
+          summary=Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a",encoding="utf-8") as f:
+            f.write("## AE-32D second-incident evaluation\n\n")
+            f.write("- Case: `AE32D-CANDIDATE-BRANCH-UNBOUND-001`\n")
+            for name in ("candidate-verification.json","comparison.json","cloudflare-comparison.json"):
+              paths=list(out.rglob(name))
+              if paths:
+                f.write(f"- Artifact file present: `{name}`\n")
+                try:
+                  d=json.loads(paths[0].read_text(encoding="utf-8"))
+                  f.write(f"  - Status: `{d.get('status', 'not supplied')}`\n")
+                except Exception:
+                  pass
+            f.write("- Primary benchmark eligible: **false**\n")
+            f.write("- A successful provider response does not establish diagnostic correctness.\n")
+          PY
+
+      - name: Upload all second-incident evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32d-second-incident-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ae32d-second-incident/
+          if-no-files-found: warn
+          retention-days: 90
