@@ -366,12 +366,83 @@ jobs:
             printf '%s\n' "$rc" > "$out/cloudflare-runner-exit-code.txt"
             printf '{"status":"runner_finished","runner_exit_code":%s,"live_provider_calls_may_have_started":true}\n' "$rc" > "$out/cloudflare-run-status.json"
           fi
+      - name: Stamp validated source and runner revisions into investigation report
+        if: inputs.diagnostic_mode == 'cloudflare_focused' && always()
+        env:
+          CURRENT_ROOT: ${{ runner.temp }}/ae32c-focused-diagnostic/cloudflare-current
+          OUTPUT_ROOT: ${{ runner.temp }}/ae32c-focused-diagnostic
+          VALIDATED_SOURCE_REVISION: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          WORKFLOW_RUNNER_REVISION: ${{ github.sha }}
+        run: |
+          python - "$CURRENT_ROOT" "$OUTPUT_ROOT" "$VALIDATED_SOURCE_REVISION" "$WORKFLOW_RUNNER_REVISION" <<'PY'
+          import json, re, sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          current_root, output_root = Path(sys.argv[1]), Path(sys.argv[2])
+          source_revision, runner_revision = sys.argv[3], sys.argv[4]
+          sha = re.compile(r"^[0-9a-f]{40}$")
+          if not sha.fullmatch(source_revision or "") or not sha.fullmatch(runner_revision or ""):
+              raise SystemExit("Revision attestation failed: expected full 40-character Git SHAs.")
+          attestation = {
+              "source_revision": source_revision,
+              "source_revision_status": "validated_checkout_commit",
+              "runner_revision": runner_revision,
+              "runner_revision_status": "workflow_checkout_commit",
+              "attested_at_utc": datetime.now(timezone.utc).isoformat(),
+              "attestation_source": "GitHub Actions validated checkout and workflow revision",
+          }
+          reports = sorted(current_root.rglob("comparison.json"))
+          stamped = 0
+          for path in reports:
+              data = json.loads(path.read_text(encoding="utf-8"))
+              if not isinstance(data, dict):
+                  continue
+              data["source_revision"] = source_revision
+              data["source_revision_status"] = "validated_checkout_commit"
+              data["runner_revision"] = runner_revision
+              data["runner_revision_status"] = "workflow_checkout_commit"
+              data["revision_attestation"] = dict(attestation)
+              graph = data.get("graph_assisted")
+              if isinstance(graph, dict):
+                  report = graph.get("report")
+                  if isinstance(report, dict):
+                      report["source_revision"] = source_revision
+                      report["source_revision_status"] = "validated_checkout_commit"
+                      report["runner_revision"] = runner_revision
+                      report["runner_revision_status"] = "workflow_checkout_commit"
+                      provenance = report.get("provenance")
+                      if not isinstance(provenance, dict):
+                          provenance = {}
+                          report["provenance"] = provenance
+                      provenance["source_revision"] = source_revision
+                      provenance["source_revision_status"] = "validated_checkout_commit"
+                      provenance["runner_revision"] = runner_revision
+                      provenance["runner_revision_status"] = "workflow_checkout_commit"
+                      provenance["revision_attestation_source"] = "GitHub Actions validated checkout and workflow revision"
+              path.write_text(json.dumps(data, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
+              stamped += 1
+          summary = {
+              "schema_version": "ae32c/revision-attestation/v1",
+              **attestation,
+              "reports_stamped": stamped,
+              "source_report_count": len(reports),
+          }
+          output_root.mkdir(parents=True, exist_ok=True)
+          (output_root / "execution-provenance.json").write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          print(json.dumps({"reports_stamped": stamped, "source_revision": source_revision,
+                            "runner_revision": runner_revision}))
+          PY
       - name: Compare Cloudflare result with historical trials
         if: inputs.diagnostic_mode == 'cloudflare_focused'
         env:
           BASELINE_ROOT: ${{ runner.temp }}/ae32c-baseline
           CURRENT_ROOT: ${{ runner.temp }}/ae32c-focused-diagnostic/cloudflare-current
           OUTPUT_ROOT: ${{ runner.temp }}/ae32c-focused-diagnostic
+          VALIDATED_SOURCE_REVISION: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          WORKFLOW_RUNNER_REVISION: ${{ github.sha }}
         run: |
           set -euo pipefail
           python workflow-support/tools/compare_ae32c_cloudflare_focus.py --baseline-root "$BASELINE_ROOT" \
@@ -510,18 +581,9 @@ jobs:
           import json,sys
           from pathlib import Path
           candidates=list(Path(sys.argv[1]).rglob("comparison.json"))
-          if not candidates: raise SystemExit("Cloudflare comparison missing; inspect uploaded artifacts.")
-          d=json.loads(candidates[0].read_text(encoding="utf-8"))
-          graph=d.get("graph_assisted",{}) if isinstance(d.get("graph_assisted"),dict) else {}
-          report=graph.get("report",{}) if isinstance(graph.get("report"),dict) else {}
-          coverage=report.get("required_source_coverage",{}) if isinstance(report.get("required_source_coverage"),dict) else {}
-          status=report.get("status","unknown")
-          stop_reason=report.get("stop_reason","unknown")
-          coverage_status=coverage.get("status","unknown")
-          if coverage_status != "complete":
-              raise SystemExit(f"Cloudflare required source coverage is {coverage_status!r} (stop_reason={stop_reason!r}); artifacts were preserved.")
-          if status != "completed":
-              raise SystemExit(f"Cloudflare source coverage is complete, but graph status is {status!r} (stop_reason={stop_reason!r}); artifacts were preserved.")
+          if not candidates: raise SystemExit("Cloudflare comparison missing; inspect uploaded artifact.")
+          d=json.loads(candidates[0].read_text(encoding="utf-8")); report=d.get("graph_assisted",{}).get("report",{}); coverage=report.get("required_source_coverage",{})
+          if report.get("status") != "completed" or coverage.get("status") != "complete": raise SystemExit("Cloudflare run did not complete with required source coverage; artifacts were preserved.")
           print("Cloudflare run completed with required source coverage. Accuracy remains unassessed.")
           PY
           fi
