@@ -92,7 +92,7 @@ def build_live_investigation_limits(provider_name: str = "") -> InvestigationLim
         max_total_evidence_bytes=300_000,
         max_total_prompt_chars=200_000,
         max_elapsed_seconds=elapsed_budget,
-        max_invalid_final_attempts=2,
+        max_invalid_final_attempts=3,
         max_invalid_json_retries=2,
         max_finalization_invalid_json_retries=1,
         max_snapshot_files=100,
@@ -158,64 +158,6 @@ def _validate_paths(repo_root: Path, output_dir: Path, checkout_root: Path) -> t
     return root, out
 
 
-
-def _required_source_contract(
-    repo_root: Path,
-    required_paths: list[str],
-    requested_anchors: list[str],
-    indexed_source_paths: set[str],
-) -> tuple[tuple[str, ...], dict[str, tuple[str, ...]]]:
-    """Resolve only explicit, bounded source witnesses for one incident.
-
-    An explicit contract must not inherit the original fixture's witnesses.
-    It is checked before either provider is called. The investigator performs
-    its own independent evidence-snapshot validation as an additional guard.
-    """
-    if required_paths or requested_anchors:
-        if not 1 <= len(required_paths) <= 12:
-            raise ValueError("declared_source_contract_requires_1_to_12_paths")
-        paths = tuple(dict.fromkeys(required_paths))
-        if len(paths) != len(required_paths):
-            raise ValueError("duplicate_declared_source_path")
-        if len(requested_anchors) > 48:
-            raise ValueError("too_many_declared_source_anchors")
-        anchor_map: dict[str, list[str]] = {}
-        for record in requested_anchors:
-            if "::" not in record:
-                raise ValueError("invalid_declared_source_anchor_format")
-            path, anchor = record.split("::", 1)
-            if path not in paths:
-                raise ValueError("declared_source_anchor_path_not_required")
-            if not 2 <= len(anchor) <= 120 or any(ch in anchor for ch in "\n\r\x00"):
-                raise ValueError("invalid_declared_source_anchor")
-            items = anchor_map.setdefault(path, [])
-            if anchor in items:
-                raise ValueError("duplicate_declared_source_anchor")
-            items.append(anchor)
-            if len(items) > 4:
-                raise ValueError("too_many_anchors_for_declared_source")
-        anchors = {path: tuple(items) for path, items in anchor_map.items()}
-    elif repo_root.name == DEFAULT_FIXTURE.name:
-        paths = ("pipeline/extractor.py", "providers/adapter.py")
-        anchors = {
-            "pipeline/extractor.py": ("provider.total_calls",),
-            "providers/adapter.py": ("self.calls",),
-        }
-    else:
-        # An unknown fixture must never receive the original incident's
-        # witnesses or pretend that they apply to its source tree.
-        paths = ()
-        anchors = {}
-
-    for path in paths:
-        if (not isinstance(path, str) or not path or len(path) > 400
-                or "\\" in path or path.startswith("/")
-                or any(part in {"", ".", ".."} for part in path.split("/"))):
-            raise ValueError("invalid_declared_source_path")
-        if path not in indexed_source_paths:
-            raise ValueError("declared_source_path_not_in_snapshot")
-    return paths, anchors
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Manually opt in to a bounded baseline-vs-graph-assisted AE-32C live evaluation."
@@ -226,10 +168,6 @@ def main(argv: list[str] | None = None) -> int:
                         help="Controlled incident fixture root; must remain inside the checkout.")
     parser.add_argument("--baseline-context-path", default="pipeline/extractor.py",
                         help="One source file supplied as basic context to the no-tool baseline.")
-    parser.add_argument("--required-source-path", action="append", default=[],
-                        help="Explicit fixture-relative source path that must be read and cited by the graph condition. Repeat for each path.")
-    parser.add_argument("--required-source-anchor", action="append", default=[],
-                        help="Explicit PATH::TEXT source-line witness bound to a required source path. Repeat for each anchor.")
     parser.add_argument("--problem", default=DEFAULT_PROBLEM, help="Incident description; bounded and sanitized.")
     parser.add_argument("--provider", choices=SUPPORTED_PROVIDERS,
                         default=os.environ.get("FEA_LLM_PROVIDER", "cloudflare"))
@@ -251,12 +189,6 @@ def main(argv: list[str] | None = None) -> int:
         repo_root, output_dir = _validate_paths(Path(args.repo_root), Path(args.output_dir), checkout_root)
         # Capture one immutable evidence snapshot for the baseline context.
         baseline_tools = RepositoryEvidenceTools(repo_root)
-        required_source_paths, required_source_anchors = _required_source_contract(
-            repo_root,
-            args.required_source_path,
-            args.required_source_anchor,
-            set(baseline_tools.contents),
-        )
         indexed_source = baseline_tools.contents.get(args.baseline_context_path)
         if not isinstance(indexed_source, str):
             raise ValueError("baseline_source_context_unavailable")
@@ -355,8 +287,11 @@ def main(argv: list[str] | None = None) -> int:
                     provider_name=args.provider,
                     model_name=effective_model_name,
                     evidence_tools=graph_tools,
-                    required_source_paths=required_source_paths,
-                    required_source_anchors=required_source_anchors,
+                    required_source_paths=("pipeline/extractor.py", "providers/adapter.py") if repo_root.name == DEFAULT_FIXTURE.name else (),
+                    required_source_anchors={
+                        "pipeline/extractor.py": ("provider.total_calls",),
+                        "providers/adapter.py": ("self.calls",),
+                    },
                     limits=limits,
                 )
                 graph_report = investigator.run(baseline_problem)

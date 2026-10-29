@@ -895,6 +895,114 @@ def test_invalid_source_references_receive_exact_ledger_candidates_and_recover_t
     ]
     assert "line must be a positive JSON integer" in " ".join(feedback_envelopes[0]["rules"])
     assert "Do not invent citations" in feedback_envelopes[1]["message"]
+    assert feedback_envelopes[0]["required_diagnosis_shape"]["top_level_keys"] == ["action", "diagnosis"]
+    assert "source_references must never be top-level" in feedback_envelopes[0]["message"]
+
+
+def test_three_bad_final_attempts_can_recover_with_bounded_live_budget():
+    invalid_top_level = json.loads(final_action(evidence_id="E0002", source_reference=True))
+    invalid_top_level["source_references"] = invalid_top_level["diagnosis"]["root_cause"]["source_references"]
+    invalid_missing_root_refs = json.loads(final_action(evidence_id="E0002", source_reference=True))
+    del invalid_missing_root_refs["diagnosis"]["root_cause"]["source_references"]
+    invalid_line = json.loads(final_action(evidence_id="E0002", source_reference=True))
+    invalid_line["diagnosis"]["root_cause"]["source_references"][0]["line"] = 0
+    invalid_line["diagnosis"]["claims"][0]["source_references"][0]["line"] = 0
+
+    investigator, provider, _ = make_investigator([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        json.dumps(invalid_top_level),
+        json.dumps(invalid_missing_root_refs),
+        json.dumps(invalid_line),
+        final_action(evidence_id="E0002", source_reference=True),
+    ], limits=InvestigationLimits(max_invalid_final_attempts=3, max_rounds=8))
+
+    report = investigator.run("Investigate a failed workflow")
+    rejected = [event for event in report["errors"] if event.get("event") == "final_diagnosis_rejected"]
+    assert len(rejected) == 2
+    assert sum(item.get("action") == "final_rejected" for item in report["model_actions"]) == 3
+    assert report["diagnosis"] is not None
+    assert any(item.get("action") == "final_accepted" for item in report["model_actions"])
+    assert len(provider.messages) == 5
+
+
+def test_missing_anchor_feedback_supplies_exact_root_cause_citation_candidate():
+    class FullReadEvidenceTools(FakeEvidenceTools):
+        def __init__(self):
+            super().__init__()
+            self.contents = {SOURCE: SOURCE_BYTES.decode("utf-8")}
+
+        def invoke(self, tool, arguments):
+            if tool == "read_source_file":
+                self.calls.append((tool, dict(arguments)))
+                return {
+                    "schema_version": "fake/v1",
+                    "tool": tool,
+                    "status": "ok",
+                    "provenance": dict(self.provenance),
+                    "result": {
+                        "path": SOURCE,
+                        "start_line": 1,
+                        "end_line": 2,
+                        "total_lines": 2,
+                        "content": "1: def run():\n2:     return 'observed'\n",
+                        "source_sha256": SOURCE_HASH,
+                        "truncated": False,
+                        "content_omitted": False,
+                        "source_range_complete": True,
+                    },
+                }
+            return super().invoke(tool, arguments)
+
+    bad = json.loads(final_action(evidence_id="E0002", source_reference=True))
+    bad["diagnosis"]["root_cause"]["confidence"] = "high"
+    bad["diagnosis"]["claims"][0]["confidence"] = "high"
+    bad["diagnosis"]["root_cause"]["source_references"][0]["line"] = 1
+    bad["diagnosis"]["claims"][0]["source_references"][0]["line"] = 1
+    good = json.loads(final_action(evidence_id="E0002", source_reference=True))
+    good["diagnosis"]["root_cause"]["confidence"] = "high"
+    good["diagnosis"]["claims"][0]["confidence"] = "high"
+
+    tools = FullReadEvidenceTools()
+    provider = FakeProvider([
+        action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
+        json.dumps(bad),
+        json.dumps(good),
+    ])
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        evidence_tools=tools,
+        required_source_paths=(SOURCE,),
+        required_source_anchors={SOURCE: ("return 'observed'",)},
+        limits=InvestigationLimits(max_invalid_final_attempts=3),
+        id_factory=lambda: "test-anchor-recovery",
+    )
+    report = investigator.run("Investigate a failed workflow.")
+    assert report["diagnosis"] is not None, json.dumps({"stop_reason": report.get("stop_reason"), "errors": report.get("errors"), "tool_calls": report.get("tool_calls")}, indent=2)
+    assert report["source_textual_support"]["status"] == "complete"
+
+    feedback = None
+    for turn in provider.messages:
+        if not turn:
+            continue
+        try:
+            envelope = json.loads(turn[-1].get("content", ""))
+        except (json.JSONDecodeError, AttributeError):
+            continue
+        if isinstance(envelope, dict) and isinstance(envelope.get("validation_feedback"), dict):
+            candidate = envelope["validation_feedback"]
+            if candidate.get("schema_version") == "ae32c/diagnosis-validation-feedback/v1":
+                feedback = candidate
+                break
+    assert feedback is not None
+    recovery = feedback["required_source_anchor_recovery"]
+    assert recovery[0]["required_anchor"] == "return 'observed'"
+    assert {
+        "evidence_id": "E0002",
+        "path": SOURCE,
+        "line": 2,
+        "source_sha256": SOURCE_HASH,
+    } in recovery[0]["exact_source_reference_candidates"]
 
 
 def test_unsupported_action_gets_safe_bounded_recovery_and_can_continue():
