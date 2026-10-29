@@ -250,6 +250,23 @@ jobs:
               --output-dir "$OUT" \
               2>&1 | tee "$OUT/live-evaluation.log"
 
+      - name: Stamp validated source and workflow revisions into report
+        if: always()
+        env:
+          OUT: ${{ runner.temp }}/ae32d-second-incident
+          SOURCE_REVISION: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+          VALIDATION_RUN_ID: ${{ needs.validation-gate.outputs.validation_run_id }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python tools/ae32d_stamp_execution_provenance.py \\
+            --output-dir "$OUT" \\
+            --source-revision "$SOURCE_REVISION" \\
+            --workflow-revision "$WORKFLOW_REVISION" \\
+            --validation-run-id "$VALIDATION_RUN_ID" \\
+            --workflow-run-id "$WORKFLOW_RUN_ID"
+
       - name: Publish result summary
         if: always()
         env:
@@ -303,11 +320,16 @@ jobs:
           comparison = json.loads(comparisons[0].read_text(encoding="utf-8"))
           graph = comparison.get("graph_assisted", {})
           summary = graph.get("summary", {}) if isinstance(graph, dict) else {}
+          provenance_path = out / "execution-provenance.json"
+          provenance = json.loads(provenance_path.read_text(encoding="utf-8")) if provenance_path.is_file() else {}
           checks = {
               "graph_status": summary.get("status") == "completed",
               "source_coverage": summary.get("required_source_coverage_status") == "complete",
               "citations": summary.get("final_citation_validation") == "references_resolved",
               "textual_witnesses": summary.get("source_textual_support_status") == "complete",
+              "source_revision_attested": provenance.get("source_revision_status") == "validated_checkout_commit",
+              "workflow_revision_attested": provenance.get("workflow_revision_status") == "github_actions_workflow_checkout_commit",
+              "comparison_stamped": provenance.get("reports_stamped") == 1,
           }
           print("AE-32D operational acceptance gates:", checks)
           if not all(checks.values()):
