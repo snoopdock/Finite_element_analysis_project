@@ -25,6 +25,14 @@ on:
         required: true
         default: 'laguna-s-2.1'
         options: ['laguna-s-2.1', 'agnes-2.5-flash']
+      openrouter_model:
+        description: "OpenRouter model to use for this run"
+        type: choice
+        required: true
+        default: 'google/gemma-4-31b-it:free'
+        options:
+          - 'nvidia/nemotron-3.5-super-vl:free'
+          - 'google/gemma-4-31b-it:free'
       confirm_live_provider_calls:
         description: "Authorize up to 11 model requests per trial, plus bounded transport retries; up to 12 trials"
         type: boolean
@@ -209,6 +217,7 @@ jobs:
           SELECTED_ROUNDS: ${{ inputs.rounds }}
           SELECTED_PAUSE: ${{ inputs.pause_seconds }}
           NARAROUTER_MODEL: ${{ inputs.nararouter_model }}
+          OPENROUTER_MODEL: ${{ inputs.openrouter_model }}
         run: |
           set -euo pipefail
           [[ "$(git -C source rev-parse HEAD)" == "$EXPECTED_SHA" ]]
@@ -223,7 +232,7 @@ jobs:
                   "validation_run_attempt":"VALIDATION_RUN_ATTEMPT", "validation_report_sha256":"VALIDATION_REPORT_SHA256",
                   "validation_bundle_sha256":"VALIDATION_BUNDLE_SHA256", "validation_engine_commit":"VALIDATION_ENGINE_COMMIT",
                   "rounds":"SELECTED_ROUNDS", "pause_seconds":"SELECTED_PAUSE",
-                  "nararouter_model":"NARAROUTER_MODEL"}
+                  "nararouter_model":"NARAROUTER_MODEL", "openrouter_model":"OPENROUTER_MODEL"}
           record = {key:os.environ[value] for key,value in keys.items()}
           record.update({"workflow_run_id": os.environ["GITHUB_RUN_ID"], "workflow_commit":os.environ["GITHUB_SHA"],
                          "validation_profile":"G9.42", "sequence":"round_robin", "human_review_required": True})
@@ -240,6 +249,7 @@ jobs:
           PAUSE_SECONDS: ${{ inputs.pause_seconds }}
           VALIDATED_SOURCE_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
           NARAROUTER_MODEL: ${{ inputs.nararouter_model }}
+          OPENROUTER_MODEL: ${{ inputs.openrouter_model }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
@@ -269,6 +279,7 @@ jobs:
                   export FEA_LLM_REQUEST_TIMEOUT_SECONDS=90 FEA_LLM_RETRY_ATTEMPTS=2 ;;
                 openrouter)
                   [[ -n "$OPENROUTER_TOKEN" ]] && ready=true || ready=false
+                  provider_model_env=("FEA_LLM_MODEL=$OPENROUTER_MODEL")
                   export FEA_LLM_REQUEST_TIMEOUT_SECONDS=30 FEA_LLM_RETRY_ATTEMPTS=1 ;;
               esac
               # Limit the child process to credentials for its own provider.
