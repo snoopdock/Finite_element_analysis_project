@@ -1,0 +1,28 @@
+{
+  "schema_version": "ae32d/expected-behavior/v1",
+  "case_id": "AE32D-CANDIDATE-BRANCH-UNBOUND-001",
+  "function": "work",
+  "input_cases": [
+    {
+      "arguments": [
+        true
+      ],
+      "expected": {
+        "kind": "return",
+        "value": 5
+      }
+    },
+    {
+      "arguments": [
+        false
+      ],
+      "expected": {
+        "kind": "return",
+        "value": 0
+      }
+    }
+  ],
+  "scope": "local synthetic control; bounded static diagnosis",
+  "runtime_reproduction_allowed_for_verification_action": true,
+  "primary_benchmark_eligible": false
+}
