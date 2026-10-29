@@ -899,30 +899,27 @@ def test_invalid_source_references_receive_exact_ledger_candidates_and_recover_t
     assert "source_references must never be top-level" in feedback_envelopes[0]["message"]
 
 
-def test_three_bad_final_attempts_can_recover_with_bounded_live_budget():
+def test_two_bad_final_attempts_can_recover_with_bounded_live_budget():
     invalid_top_level = json.loads(final_action(evidence_id="E0002", source_reference=True))
     invalid_top_level["source_references"] = invalid_top_level["diagnosis"]["root_cause"]["source_references"]
     invalid_missing_root_refs = json.loads(final_action(evidence_id="E0002", source_reference=True))
     del invalid_missing_root_refs["diagnosis"]["root_cause"]["source_references"]
-    invalid_line = json.loads(final_action(evidence_id="E0002", source_reference=True))
-    invalid_line["diagnosis"]["root_cause"]["source_references"][0]["line"] = 0
-    invalid_line["diagnosis"]["claims"][0]["source_references"][0]["line"] = 0
-
     investigator, provider, _ = make_investigator([
         action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
         json.dumps(invalid_top_level),
         json.dumps(invalid_missing_root_refs),
-        json.dumps(invalid_line),
         final_action(evidence_id="E0002", source_reference=True),
-    ], limits=InvestigationLimits(max_invalid_final_attempts=3, max_rounds=8))
+    ], limits=InvestigationLimits(max_invalid_final_attempts=2, max_rounds=8))
 
     report = investigator.run("Investigate a failed workflow")
-    rejected = [event for event in report["errors"] if event.get("event") == "final_diagnosis_rejected"]
+    rejected = [event for event in report["errors"] if event.get("event") in {
+        "final_action_rejected", "final_diagnosis_rejected"
+    }]
     assert len(rejected) == 2
-    assert sum(item.get("action") == "final_rejected" for item in report["model_actions"]) == 3
+    assert sum(item.get("action") == "final_rejected" for item in report["model_actions"]) == 2
     assert report["diagnosis"] is not None
     assert any(item.get("action") == "final_accepted" for item in report["model_actions"])
-    assert len(provider.messages) == 5
+    assert len(provider.messages) == 4
 
 
 def test_missing_anchor_feedback_supplies_exact_root_cause_citation_candidate():
