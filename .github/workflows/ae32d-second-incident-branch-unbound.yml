@@ -260,12 +260,112 @@ jobs:
           WORKFLOW_RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
-          python tools/ae32d_stamp_execution_provenance.py \\
-            --output-dir "$OUT" \\
-            --source-revision "$SOURCE_REVISION" \\
-            --workflow-revision "$WORKFLOW_REVISION" \\
-            --validation-run-id "$VALIDATION_RUN_ID" \\
-            --workflow-run-id "$WORKFLOW_RUN_ID"
+          python - <<'PY'
+          import json, os, re
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          out = Path(os.environ["OUT"])
+          source_revision = os.environ["SOURCE_REVISION"]
+          workflow_revision = os.environ["WORKFLOW_REVISION"]
+          validation_run_id = os.environ["VALIDATION_RUN_ID"]
+          workflow_run_id = os.environ["WORKFLOW_RUN_ID"]
+          sha = re.compile(r"^[0-9a-f]{40}$")
+          if not sha.fullmatch(source_revision or ""):
+              raise SystemExit("Invalid validated source revision SHA.")
+          if not sha.fullmatch(workflow_revision or ""):
+              raise SystemExit("Invalid workflow revision SHA.")
+
+          comparisons = sorted(out.rglob("comparison.json"))
+          if len(comparisons) > 1:
+              raise SystemExit(f"Expected at most one comparison.json; found {len(comparisons)}.")
+
+          attestation = {
+              "schema_version": "ae32d/execution-provenance/v1",
+              "source_revision": source_revision,
+              "source_revision_status": "validated_checkout_commit",
+              "workflow_revision": workflow_revision,
+              "workflow_revision_status": "github_actions_workflow_checkout_commit",
+              "validation_run_id": str(validation_run_id),
+              "workflow_run_id": str(workflow_run_id),
+              "attested_at_utc": datetime.now(timezone.utc).isoformat(),
+              "attestation_source": "GitHub Actions validation-gate outputs and workflow checkout SHA",
+          }
+
+          if comparisons:
+              report_path = comparisons[0]
+              report = json.loads(report_path.read_text(encoding="utf-8"))
+              if not isinstance(report, dict):
+                  raise SystemExit("comparison.json must contain a JSON object.")
+
+              report["source_revision"] = source_revision
+              report["source_revision_status"] = "validated_checkout_commit"
+              report["workflow_revision"] = workflow_revision
+              report["workflow_revision_status"] = "github_actions_workflow_checkout_commit"
+              report["execution_provenance"] = dict(attestation)
+
+              graph = report.get("graph_assisted")
+              if isinstance(graph, dict):
+                  graph_report = graph.get("report")
+                  if isinstance(graph_report, dict):
+                      graph_report["source_revision"] = source_revision
+                      graph_report["source_revision_status"] = "validated_checkout_commit"
+                      graph_report["runner_revision"] = workflow_revision
+                      graph_report["runner_revision_status"] = "github_actions_workflow_checkout_commit"
+                      graph_report["validation_run_id"] = str(validation_run_id)
+                      graph_report["workflow_run_id"] = str(workflow_run_id)
+                      provenance = graph_report.get("provenance")
+                      if not isinstance(provenance, dict):
+                          provenance = {}
+                          graph_report["provenance"] = provenance
+                      provenance.update({
+                          "source_revision": source_revision,
+                          "source_revision_status": "validated_checkout_commit",
+                          "runner_revision": workflow_revision,
+                          "runner_revision_status": "github_actions_workflow_checkout_commit",
+                          "validation_run_id": str(validation_run_id),
+                          "workflow_run_id": str(workflow_run_id),
+                          "revision_attestation_source": "GitHub Actions validation-gate outputs and workflow checkout SHA",
+                      })
+              report_path.write_text(
+                  json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+                  encoding="utf-8",
+              )
+
+              markdown_path = report_path.with_name("comparison.md")
+              if markdown_path.is_file():
+                  markdown = markdown_path.read_text(encoding="utf-8")
+                  marker = "## Execution provenance"
+                  if marker in markdown:
+                      markdown = markdown.split(marker, 1)[0].rstrip()
+                  section = (
+                      marker + "\n\n"
+                      f"- Validated source revision: `{source_revision}` (`validated_checkout_commit`)\n"
+                      f"- Workflow revision: `{workflow_revision}` (`github_actions_workflow_checkout_commit`)\n"
+                      f"- G9.42 validation run: `{validation_run_id}`\n"
+                      f"- Investigation workflow run: `{workflow_run_id}`\n"
+                      "- These fields attest execution identity, not diagnostic correctness.\n"
+                  )
+                  markdown_path.write_text(markdown.rstrip() + "\n\n" + section, encoding="utf-8")
+
+          sidecar = {
+              **attestation,
+              "reports_stamped": len(comparisons),
+              "comparison_report": str(comparisons[0].relative_to(out)) if comparisons else None,
+          }
+          out.mkdir(parents=True, exist_ok=True)
+          (out / "execution-provenance.json").write_text(
+              json.dumps(sidecar, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps({
+              "reports_stamped": sidecar["reports_stamped"],
+              "source_revision": source_revision,
+              "workflow_revision": workflow_revision,
+              "validation_run_id": validation_run_id,
+              "workflow_run_id": workflow_run_id,
+          }, indent=2))
+          PY
 
       - name: Publish result summary
         if: always()
