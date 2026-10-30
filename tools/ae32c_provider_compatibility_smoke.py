@@ -86,6 +86,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--provider", choices=SUPPORTED_PROVIDERS,
                         default=os.environ.get("FEA_LLM_PROVIDER", "nararouter"))
     parser.add_argument("--model", default=os.environ.get("FEA_LLM_MODEL", ""))
+    parser.add_argument(
+        "--request-mode", choices=("plain", "json_object"), default="plain",
+        help="Use a plain marker request or explicitly probe API-enforced JSON-object mode.",
+    )
     args = parser.parse_args(argv)
     if args.provider not in SUPPORTED_PROVIDERS:
         parser.error("--provider must select a supported provider")
@@ -114,21 +118,59 @@ def main(argv: list[str] | None = None) -> int:
         }, sort_keys=True, indent=2, allow_nan=False))
         return 0
 
-    # The diagnostic is intentionally one HTTP attempt, not a retry experiment.
+    # The diagnostic is intentionally one logical call and one HTTP attempt,
+    # not a retry experiment. JSON-object mode is opt-in for this probe only.
     if hasattr(provider, "max_retries"):
         try:
             provider.max_retries = 1
         except Exception:
             pass
 
-    messages = [
-        {"role": "system", "content": "Return exactly the marker AE32_SMOKE_OK and no other text."},
-        {"role": "user", "content": "Reply with AE32_SMOKE_OK."},
-    ]
+    capability_declared = False
+    if hasattr(provider, "get_capabilities"):
+        try:
+            capabilities = provider.get_capabilities()
+            capability_declared = isinstance(capabilities, Mapping) and capabilities.get("json_object_mode") is True
+        except Exception:
+            capability_declared = False
+
+    if args.request_mode == "json_object" and not capability_declared:
+        print(json.dumps({
+            "schema_version": "ae32c/provider-compatibility-smoke/v1",
+            "provider": provider_name,
+            "model": model_name,
+            "status": "capability_not_declared",
+            "request_mode": args.request_mode,
+            "response_format_requested": False,
+            "capability_declared": False,
+            "request_count_limit": 1,
+            "logical_calls_reported": 0,
+            "http_attempts_reported": 0,
+            "live_provider_calls_made": False,
+            "raw_response_logged": False,
+            "raw_error_body_logged": False,
+        }, sort_keys=True, indent=2, allow_nan=False))
+        return 0
+
+    if args.request_mode == "json_object":
+        messages = [
+            {"role": "system", "content": 'Return exactly one JSON object with one key "marker" and string value "AE32_SMOKE_OK". Do not use markdown or additional keys.'},
+            {"role": "user", "content": 'Return the JSON object: {"marker":"AE32_SMOKE_OK"}.'},
+        ]
+    else:
+        messages = [
+            {"role": "system", "content": "Return exactly the marker AE32_SMOKE_OK and no other text."},
+            {"role": "user", "content": "Reply with AE32_SMOKE_OK."},
+        ]
+
+    stats: Mapping[str, Any] = {}
     try:
-        response, error = provider.chat(messages, temperature=0.0, max_tokens=128, model=model_name)
-        stats = provider.get_stats()
-        stats = stats if isinstance(stats, Mapping) else {}
+        call_kwargs = {"temperature": 0.0, "max_tokens": 128, "model": model_name}
+        if args.request_mode == "json_object":
+            call_kwargs["response_format"] = {"type": "json_object"}
+        response, error = provider.chat(messages, **call_kwargs)
+        raw_stats = provider.get_stats()
+        stats = raw_stats if isinstance(raw_stats, Mapping) else {}
         received = isinstance(response, str) and bool(response.strip()) and not error
         logical_calls = stats.get("logical_calls", stats.get("total_calls", 1))
         if isinstance(logical_calls, bool) or not isinstance(logical_calls, int) or not 0 <= logical_calls <= 10:
@@ -136,23 +178,50 @@ def main(argv: list[str] | None = None) -> int:
         http_attempts = stats.get("http_attempts", 1)
         if isinstance(http_attempts, bool) or not isinstance(http_attempts, int) or not 0 <= http_attempts <= 10:
             http_attempts = 1
+        response_is_json_object = False
+        response_marker_match = False
+        if received and args.request_mode == "json_object":
+            try:
+                parsed_response = json.loads(response)
+                response_is_json_object = isinstance(parsed_response, dict)
+                response_marker_match = bool(
+                    response_is_json_object and parsed_response.get("marker") == "AE32_SMOKE_OK"
+                )
+            except (json.JSONDecodeError, TypeError):
+                response_is_json_object = False
+        elif received:
+            response_marker_match = response.strip() == "AE32_SMOKE_OK"
+
+        structured_json_calls = stats.get("structured_json_calls", 0)
+        if isinstance(structured_json_calls, bool) or not isinstance(structured_json_calls, int) or not 0 <= structured_json_calls <= 1:
+            structured_json_calls = 0
         payload = {
             "schema_version": "ae32c/provider-compatibility-smoke/v1",
             "provider": provider_name,
             "model": model_name,
             "status": "completion_received" if received else "provider_rejected_or_failed",
+            "request_mode": args.request_mode,
+            "response_format_requested": args.request_mode == "json_object",
+            "capability_declared": capability_declared,
             "response_received": received,
-            "response_marker_match": bool(received and response.strip() == "AE32_SMOKE_OK"),
+            "response_is_json_object": response_is_json_object if args.request_mode == "json_object" else None,
+            "response_marker_match": response_marker_match,
             "response_chars": len(response) if isinstance(response, str) else 0,
             "request_count_limit": 1,
             "logical_calls_reported": logical_calls,
             "http_attempts_reported": http_attempts,
+            "structured_json_calls": structured_json_calls,
             "live_provider_calls_made": True,
             "raw_response_logged": False,
             "raw_error_body_logged": False,
             "diagnostics": _safe_diagnostics(stats),
         }
     except Exception as exc:
+        try:
+            raw_stats = provider.get_stats()
+            stats = raw_stats if isinstance(raw_stats, Mapping) else stats
+        except Exception:
+            pass
         logical_calls = stats.get("logical_calls", stats.get("total_calls", 1))
         if isinstance(logical_calls, bool) or not isinstance(logical_calls, int) or not 0 <= logical_calls <= 10:
             logical_calls = 1
@@ -164,10 +233,17 @@ def main(argv: list[str] | None = None) -> int:
             "provider": provider_name,
             "model": model_name,
             "status": "adapter_exception",
+            "request_mode": args.request_mode,
+            "response_format_requested": args.request_mode == "json_object",
+            "capability_declared": capability_declared,
             "error_type": type(exc).__name__,
+            "request_count_limit": 1,
+            "logical_calls_reported": logical_calls,
+            "http_attempts_reported": http_attempts,
             "live_provider_calls_made": True,
             "raw_response_logged": False,
             "raw_error_body_logged": False,
+            "diagnostics": _safe_diagnostics(stats),
         }
     print(json.dumps(payload, sort_keys=True, indent=2, allow_nan=False))
     # The process reports whether the diagnostic ran; provider failure is the
