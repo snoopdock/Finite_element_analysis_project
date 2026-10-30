@@ -275,7 +275,10 @@ jobs:
                   export FEA_LLM_REQUEST_TIMEOUT_SECONDS=45 FEA_LLM_RETRY_ATTEMPTS=2 ;;
                 nararouter)
                   [[ -n "$NARAROUTER_API_KEY" ]] && ready=true || ready=false
-                  provider_model_env=("FEA_LLM_MODEL=$NARAROUTER_MODEL")
+                  provider_model_env=(
+                    "FEA_LLM_MODEL=$NARAROUTER_MODEL"
+                    "FEA_NARAROUTER_JSON_OBJECT_MODE=1"
+                  )
                   export FEA_LLM_REQUEST_TIMEOUT_SECONDS=90 FEA_LLM_RETRY_ATTEMPTS=2 ;;
                 openrouter)
                   [[ -n "$OPENROUTER_TOKEN" ]] && ready=true || ready=false
