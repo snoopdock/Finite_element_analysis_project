@@ -342,20 +342,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Enforce complete batch gate after evidence publication
+      - name: Enforce complete AE-32C v3 batch gate after evidence publication
         if: always()
         env:
           BATCH_ROOT: ${{ runner.temp }}/ae32c-batch
+          BATCH_ROUNDS: ${{ inputs.rounds }}
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          path=Path(os.environ['BATCH_ROOT'])/'batch-summary.json'
-          if not path.is_file():
-              raise SystemExit('Batch summary missing; cannot claim success.')
-          result=json.loads(path.read_text(encoding='utf-8'))
-          if result.get('passed') is not True or result.get('evidence_complete') != result.get('expected_trials'):
-              raise SystemExit('One or more trials failed protocol or declared evidence-completeness checks; see uploaded artifacts.')
-          print('All declared source-coverage gates passed; causal accuracy still requires human review.')
-          PY
+          python tools/verify_ae32c_batch_acceptance.py \
+            --batch-summary "$BATCH_ROOT/batch-summary.json" \
+            --rounds "$BATCH_ROUNDS"

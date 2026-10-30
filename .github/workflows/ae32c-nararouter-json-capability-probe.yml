@@ -1,0 +1,258 @@
+name: AE-32C NaraRouter JSON Capability Probe (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      validation_run_id:
+        description: "Successful G9.42 run ID for the exact stage1/section-uuids source commit"
+        type: string
+        required: true
+      nararouter_model:
+        description: "NaraRouter model for the one-request JSON-object probe"
+        type: choice
+        required: true
+        default: "laguna-s-2.1"
+        options: ["laguna-s-2.1", "agnes-2.5-flash"]
+      confirm_live_provider_calls:
+        description: "Authorize exactly one NaraRouter Chat Completions request"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ae32c-nararouter-json-capability-probe
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Explicit consent and bounded inputs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Validate manual probe request
+        shell: bash
+        env:
+          REF: ${{ github.ref }}
+          EVENT_NAME: ${{ github.event_name }}
+          CONFIRMED: ${{ inputs.confirm_live_provider_calls }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          MODEL: ${{ inputs.nararouter_model }}
+        run: |
+          set -euo pipefail
+          [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF" == "refs/heads/main" ]] || { echo "::error::Run manually from main."; exit 1; }
+          [[ "$CONFIRMED" == "true" ]] || { echo "::error::Explicit one-request live-provider confirmation is required."; exit 1; }
+          [[ "$VALIDATION_RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::validation_run_id must be numeric."; exit 1; }
+          case "$MODEL" in "laguna-s-2.1"|"agnes-2.5-flash") ;; *) echo "::error::Unsupported NaraRouter model selection."; exit 1;; esac
+          echo "Authorized: one NaraRouter JSON-object capability request; no other provider will be called."
+
+  validation-gate:
+    name: Verify exact-commit G9.42 evidence before live request
+    needs: guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    outputs:
+      source_commit_sha: ${{ steps.verify_gate.outputs.source_commit_sha }}
+      validation_engine_commit_sha: ${{ steps.verify_gate.outputs.validation_engine_commit_sha }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout candidate development source
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install evidence-verifier dependency
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
+      - name: Retrieve and validate G9.42 run metadata
+        id: check_validation_run
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+        run: |
+          set -euo pipefail
+          metadata="$RUNNER_TEMP/ae32c-validation-run-metadata.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}" > "$metadata"
+          python audit_engine/semantic_audit/ae32c/validation_gate.py check-run \
+            --run-metadata "$metadata" --expected-run-id "$VALIDATION_RUN_ID" \
+            --expected-repository "$GITHUB_REPOSITORY" --github-output "$GITHUB_OUTPUT"
+      - name: Download exact validation evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ steps.check_validation_run.outputs.run_attempt }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ae32c-validation-evidence"
+          gh run download "$VALIDATION_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name "manual-validation-evidence-${VALIDATION_RUN_ID}-${VALIDATION_RUN_ATTEMPT}" \
+            --dir "$RUNNER_TEMP/ae32c-validation-evidence"
+      - name: Checkout validation-engine commit from the run
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.check_validation_run.outputs.engine_commit_sha }}
+          path: validation-engine
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Independently verify report, artifacts, provenance, and source commit
+        id: verify_gate
+        working-directory: source
+        env:
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          python audit_engine/semantic_audit/ae32c/validation_gate.py verify \
+            --evidence-dir "$RUNNER_TEMP/ae32c-validation-evidence" \
+            --run-metadata "$RUNNER_TEMP/ae32c-validation-run-metadata.json" \
+            --expected-run-id "$VALIDATION_RUN_ID" --expected-repository "$EXPECTED_REPOSITORY" \
+            --source-root . --engine-root ../validation-engine --github-output "$GITHUB_OUTPUT" \
+            | tee "$RUNNER_TEMP/ae32c-validation-gate.json"
+      - name: Upload validation-gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-nararouter-probe-validation-gate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ae32c-validation-gate.json
+            ${{ runner.temp }}/ae32c-validation-run-metadata.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  nararouter-json-probe:
+    name: One NaraRouter JSON-object request
+    needs: [guard, validation-gate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout exact G9.42-validated source commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install runtime dependencies
+        run: python -m pip install --disable-pip-version-check 'requests>=2.31.0,<3.0.0' 'PyYAML>=6.0,<7.0'
+      - name: Verify the diagnostic tool exists at the validated commit
+        working-directory: source
+        run: |
+          set -euo pipefail
+          [[ -f tools/ae32c_provider_compatibility_smoke.py ]] || { echo "::error::Validated source lacks the one-request diagnostic tool."; exit 1; }
+          PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" python tools/ae32c_provider_compatibility_smoke.py --help | grep -q -- '--request-mode'
+      - name: Make exactly one JSON-object request to NaraRouter
+        working-directory: source
+        env:
+          NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
+          MODEL: ${{ inputs.nararouter_model }}
+          FEA_NARAROUTER_JSON_OBJECT_MODE: "1"
+          FEA_LLM_REQUEST_TIMEOUT_SECONDS: "90"
+          FEA_LLM_RETRY_ATTEMPTS: "1"
+        run: |
+          set -u
+          out="$RUNNER_TEMP/ae32c-nararouter-json-probe"
+          mkdir -p "$out"
+          result="$out/nararouter-json-probe.json"
+          if [[ -z "${NARAROUTER_API_KEY:-}" ]]; then
+            printf '%s\n' '{"schema_version":"ae32c/provider-compatibility-smoke/v1","provider":"nararouter","status":"configuration_failed","reason_code":"NARAROUTER_API_KEY_missing","live_provider_calls_made":false}' > "$result"
+          else
+            set +e
+            PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" timeout --signal=TERM --kill-after=5s 180s \
+              python tools/ae32c_provider_compatibility_smoke.py \
+              --confirm-live-provider-calls --provider nararouter --model "$MODEL" --request-mode json_object \
+              > "$result" 2> "$out/diagnostic-stderr.txt"
+            rc=$?
+            set -e
+            printf '%s\n' "$rc" > "$out/runner-exit-code.txt"
+            if [[ ! -s "$result" ]]; then
+              printf '{"schema_version":"ae32c/provider-compatibility-smoke/v1","provider":"nararouter","model":"%s","status":"runner_timeout_or_no_output","runner_exit_code":%s,"live_provider_calls_may_have_started":true}\n' "$MODEL" "$rc" > "$result"
+            fi
+          fi
+      - name: Summarize safe diagnostic result
+        if: always()
+        env:
+          RESULT: ${{ runner.temp }}/ae32c-nararouter-json-probe/nararouter-json-probe.json
+        run: |
+          if [[ -f "$RESULT" ]]; then
+            python - "$RESULT" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1],encoding="utf-8"))
+          diag=d.get("diagnostics",{})
+          http=diag.get("last_http_error_diagnostic",{})
+          envelope=diag.get("last_envelope_diagnostic",{})
+          print("### NaraRouter JSON-object capability probe")
+          print("- Endpoint: `https://router.bynara.id/v1/chat/completions` (fixed)")
+          print(f"- Model: `{d.get('model','not reported')}`")
+          print(f"- Status: `{d.get('status','unknown')}`")
+          print(f"- Response format requested: `{d.get('response_format_requested',False)}`")
+          print(f"- Adapter capability declared for this opt-in probe: `{d.get('capability_declared',False)}`")
+          print(f"- HTTP status: `{http.get('http_status','not reported')}`")
+          print(f"- Error type/code/parameter/category: `{http.get('error_type','not reported')}` / `{http.get('error_code','not reported')}` / `{http.get('error_param','not reported')}` / `{http.get('error_message_category','not reported')}`")
+          print(f"- Envelope kind: `{envelope.get('envelope_kind','not reported')}`")
+          print(f"- JSON object returned: `{d.get('response_is_json_object','not reported')}`")
+          print(f"- Marker matched: `{d.get('response_marker_match',False)}`")
+          print(f"- Logical calls / HTTP attempts / structured calls: `{d.get('logical_calls_reported','?')}` / `{d.get('http_attempts_reported','?')}` / `{d.get('structured_json_calls','?')}`")
+          print("- Raw model response and free-form provider error are not printed.")
+          PY
+          fi
+      - name: Upload diagnostic artifacts, including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-nararouter-json-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ae32c-nararouter-json-probe/
+            ${{ runner.temp }}/ae32c-validation-gate.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Enforce one-request JSON-object probe after preserving artifacts
+        if: always()
+        env:
+          RESULT: ${{ runner.temp }}/ae32c-nararouter-json-probe/nararouter-json-probe.json
+        run: |
+          set -euo pipefail
+          python - "$RESULT" <<'PY'
+          import json,sys
+          from pathlib import Path
+          p=Path(sys.argv[1])
+          if not p.is_file(): raise SystemExit("NaraRouter diagnostic output missing; inspect uploaded artifacts.")
+          d=json.loads(p.read_text(encoding="utf-8"))
+          required = {
+              "status": "completion_received",
+              "request_mode": "json_object",
+              "response_format_requested": True,
+              "capability_declared": True,
+              "response_received": True,
+              "response_is_json_object": True,
+              "response_marker_match": True,
+              "request_count_limit": 1,
+              "logical_calls_reported": 1,
+              "http_attempts_reported": 1,
+              "structured_json_calls": 1,
+          }
+          mismatches = [key for key, expected in required.items() if d.get(key) != expected]
+          if mismatches:
+              diag=d.get("diagnostics",{}).get("last_http_error_diagnostic",{})
+              raise SystemExit("NaraRouter JSON-object probe did not pass: " + ", ".join(mismatches) +
+                               "; safe HTTP diagnostic=" + json.dumps(diag, sort_keys=True))
+          print("NaraRouter accepted the JSON-object request and returned the expected valid JSON marker.")
+          print("This is one-request compatibility evidence, not proof of reliable investigation behavior.")
+          PY
