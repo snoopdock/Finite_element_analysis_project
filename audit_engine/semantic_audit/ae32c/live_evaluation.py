@@ -31,7 +31,17 @@ from providers.safe_errors import sanitize_provider_error
 MAX_BASELINE_RESPONSE_CHARS = 16_000
 LIVE_BASELINE_MAX_TOKENS = 2_000
 LIVE_GRAPH_MAX_TOKENS = 8_000
+# Cloudflare's Llama 3.1 8B path exceeded the 40k-character response guard
+# in the latest live batch. Keep a smaller per-call output ceiling for this
+# provider; other providers retain the validated 8k ceiling.
+LIVE_GRAPH_MAX_TOKENS_BY_PROVIDER = {"cloudflare": 4_000}
 LIVE_GRAPH_MAX_ROUNDS = 10
+
+
+def live_graph_max_tokens(provider_name: str) -> int:
+    """Return the bounded graph output-token ceiling for the selected provider."""
+    name = str(provider_name or "").strip().lower()
+    return LIVE_GRAPH_MAX_TOKENS_BY_PROVIDER.get(name, LIVE_GRAPH_MAX_TOKENS)
 LIVE_GRAPH_MAX_CALLS = LIVE_GRAPH_MAX_ROUNDS
 DEFAULT_PROBLEM = (
     "A previous extraction workflow failed with AttributeError because the "
@@ -84,7 +94,7 @@ def build_live_investigation_limits(provider_name: str = "") -> InvestigationLim
         max_rounds=LIVE_GRAPH_MAX_ROUNDS,
         max_tool_calls=12,
         finalization_rounds_reserved=3,
-        max_tokens_per_call=LIVE_GRAPH_MAX_TOKENS,
+        max_tokens_per_call=live_graph_max_tokens(provider_name),
         max_total_tokens=180_000,
         max_response_chars=40_000,
         max_tool_response_bytes=100_000,
@@ -347,7 +357,12 @@ def main(argv: list[str] | None = None) -> int:
                     "limitations": ["The baseline and graph-assisted conditions did not use the same evidence snapshot."],
                 }
             else:
-                graph_provider = _build_provider(args.provider, model_name, max_calls=LIVE_GRAPH_MAX_CALLS, max_tokens=LIVE_GRAPH_MAX_TOKENS)
+                graph_provider = _build_provider(
+                    args.provider,
+                    model_name,
+                    max_calls=LIVE_GRAPH_MAX_CALLS,
+                    max_tokens=live_graph_max_tokens(args.provider),
+                )
                 limits = build_live_investigation_limits(args.provider)
                 investigator = RepositoryInvestigator(
                     repo_root,

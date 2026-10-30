@@ -774,6 +774,8 @@ class RepositoryInvestigator:
                 "max_response_chars": self.limits.max_response_chars,
             },
         }
+        if self.provider_name.strip().lower() in {"nararouter", "cloudflare"}:
+            user_payload["provider_protocol_guidance"] = self._provider_protocol_guidance()
         return [
             {"role": "system", "content": system},
             {"role": "user", "content": self._canonical_json(user_payload)},
@@ -808,31 +810,39 @@ class RepositoryInvestigator:
         return None
 
     def _provider_protocol_guidance(self) -> dict[str, Any]:
-        """Prompt-only adaptation; never alters strict JSON/evidence validators.
-
-        A provider identifier is an operational hint, not proof that the
-        selected model supports tool calling or JSON Schema.
-        """
+        """Provide compact, prompt-only protocol hints without changing validators."""
         name = self.provider_name.strip().lower()
         strategy = {
             "cloudflare": "minimal_strict_final_object",
             "nararouter": "explicit_action_envelope",
             "openrouter": "compact_evidence_bound_final",
         }.get(name, "generic_strict_final_object")
+        rules: list[str] = []
+        if name == "nararouter":
+            rules.append(
+                "NaraRouter JSON mode is not assumed: emit one strict JSON object with double-quoted keys/strings, "
+                "no prose or Markdown fences; tool_call keys are action, tool, arguments, reason."
+            )
+        elif name == "cloudflare":
+            rules.append(
+                "Keep responses concise; do not reproduce source/tool output; prefer one claim and cite one exact "
+                "supplied candidate for each required root-cause anchor."
+            )
         return {
-            "schema_version": "ae32c/protocol-guidance/v1",
+            "schema_version": "ae32c/protocol-guidance/v2",
             "strategy": strategy,
             "scope": "prompt_only_no_claim_of_provider_schema_enforcement",
+            "allowed_action_envelopes": {
+                "tool_call": ["action", "tool", "arguments", "reason"],
+                "final": ["action", "diagnosis"],
+            },
             "required_top_level_keys": ["action", "diagnosis"],
-            "required_diagnosis_keys": ["summary", "root_cause", "claims", "proposed_corrective_action", "limitations", "next_steps"],
+            "required_diagnosis_keys": [
+                "summary", "root_cause", "claims", "proposed_corrective_action", "limitations", "next_steps"
+            ],
             "required_claim_keys": ["statement", "kind", "confidence", "evidence_refs", "source_references"],
             "preferred_claim_count": 1,
-            "rules": [
-                "Return one complete strict JSON object and no extra prose.",
-                "Never leave mandatory keys out even if values are empty lists.",
-                "Use observed evidence IDs and exact source-reference candidates only.",
-                "If unsure, express a bounded hypothesis with limitations; never invent evidence.",
-            ],
+            "rules": rules,
         }
 
     def _finalization_context_messages(
@@ -1050,6 +1060,13 @@ class RepositoryInvestigator:
         }
         if self._required_source_anchors:
             notice["finalization_mode"]["required_source_line_witnesses"] = self._required_anchor_reference_candidates()
+        if self.provider_name.strip().lower() == "cloudflare":
+            notice["finalization_mode"]["response_constraints"] = [
+                "Return the complete required diagnosis schema, but keep all strings concise.",
+                "Do not quote or reproduce source code, tool responses, or large evidence excerpts.",
+                "Prefer one concise claim unless multiple distinct claims are necessary.",
+                "Cite one exact supplied source-reference candidate for each required root-cause anchor.",
+            ]
         # Rebuild on every finalization round so stale messages and rejected model
         # output cannot make later prompts exceed the remaining cumulative budget.
         self._compact_finalization_context(
@@ -1531,8 +1548,10 @@ class RepositoryInvestigator:
                            and any(e.evidence_id == c.get("evidence_id")
                                    and e.tool == "read_source_file" and e.status == "ok"
                                    for e in self._ledger)]
+                # One deterministic exact candidate per anchor reduces prompt
+                # ambiguity for small models without weakening the evidence gate.
                 witnesses.append({"path": path, "anchor": token,
-                                  "source_reference_candidates": matches[:4],
+                                  "source_reference_candidates": matches[:1],
                                   "witness_status": "observed" if matches else "not_observed"})
         return witnesses[:32]
 
@@ -2121,6 +2140,17 @@ class RepositoryInvestigator:
                     item = http_error.get(key)
                     if isinstance(item, str) and len(item) <= 100 and re.fullmatch(r"[A-Za-z0-9_.:/\-\[\]]+|present_unclassified", item):
                         safe_http_error[key] = item
+                message_category = http_error.get("error_message_category")
+                if isinstance(message_category, str) and message_category in {
+                    "model_identifier_rejected", "authentication_or_permission",
+                    "quota_or_rate_limit", "request_parameter_rejected",
+                    "endpoint_or_method_rejected", "request_schema_or_body_rejected",
+                    "provider_internal_error", "other_unclassified",
+                }:
+                    safe_http_error["error_message_category"] = message_category
+                request_id = http_error.get("error_request_id")
+                if isinstance(request_id, str) and len(request_id) <= 100 and re.fullmatch(r"[A-Za-z0-9_.:/-]{1,100}", request_id):
+                    safe_http_error["error_request_id"] = request_id
                 for key in ("error_fields", "top_level_error_fields"):
                     items = http_error.get(key)
                     if isinstance(items, list):
@@ -2137,7 +2167,33 @@ class RepositoryInvestigator:
                               "unrecognized_object", "non_object"}
                 kind = envelope.get("envelope_kind")
                 if isinstance(kind, str) and kind in safe_kinds:
+                    safe_envelope: dict[str, Any] = {"envelope_kind": kind}
+                    choices_shape = envelope.get("choices_shape")
+                    if isinstance(choices_shape, str) and choices_shape in {
+                        "nonempty_list", "empty_list", "absent", "wrong_type",
+                    }:
+                        safe_envelope["choices_shape"] = choices_shape
+                    has_error_object = envelope.get("has_error_object")
+                    if isinstance(has_error_object, bool):
+                        safe_envelope["has_error_object"] = has_error_object
                     report.setdefault("provider", {})["last_envelope_kind"] = kind
+                    report.setdefault("provider", {})["last_envelope_diagnostic"] = safe_envelope
+            diagnostic_counts = provider_stats.get("http_error_diagnostic_counts")
+            if isinstance(diagnostic_counts, Mapping):
+                report.setdefault("provider", {})["http_error_diagnostic_counts"] = {
+                    self._safe_text(key, 100): max(0, int(value))
+                    for key, value in list(diagnostic_counts.items())[:20]
+                    if isinstance(key, str) and isinstance(value, int) and not isinstance(value, bool)
+                }
+            finish_counts = provider_stats.get("finish_reason_counts")
+            if isinstance(finish_counts, Mapping):
+                report.setdefault("provider", {})["finish_reason_counts"] = {
+                    key: max(0, int(value))
+                    for key, value in list(finish_counts.items())[:10]
+                    if isinstance(key, str) and key in {
+                        "stop", "length", "max_tokens", "content_filter", "safety", "unknown",
+                    } and isinstance(value, int) and not isinstance(value, bool)
+                }
             error_counts = provider_stats.get("error_counts")
             if isinstance(error_counts, Mapping):
                 report.setdefault("provider", {})["error_counts"] = {
@@ -2320,6 +2376,16 @@ class RepositoryInvestigator:
                         "status": "rejected_before_dispatch",
                         "reason_code": "invalid_strict_json",
                         "parse_error_code": parse_error_code,
+                        **parse_error_metadata,
+                        "json_syntax_rules": [
+                            "Use double quotes for every JSON key and string value.",
+                            "Do not use single-quoted strings, comments, trailing commas, Markdown fences, or surrounding prose.",
+                            "Return exactly one complete JSON object.",
+                        ],
+                        "allowed_action_envelopes": {
+                            "tool_call": ["action", "tool", "arguments", "reason"],
+                            "final": ["action", "diagnosis"],
+                        },
                         "recovery_attempt": phase_recovery_attempt,
                         "total_recovery_attempts_used": self._invalid_json_retries,
                         "remaining_recovery_attempts": max(
@@ -2333,8 +2399,14 @@ class RepositoryInvestigator:
                         ),
                         "message": (
                             (
-                                "The reserved finalization phase is active. Your previous response was rejected "
-                                "because it was not exactly one valid strict JSON object. No action was executed, "
+                                "Your previous response failed strict JSON parsing"
+                                + (
+                                    f" at line {parse_error_metadata['parse_error_line']}, "
+                                    f"column {parse_error_metadata['parse_error_column']}"
+                                    if "parse_error_line" in parse_error_metadata
+                                    and "parse_error_column" in parse_error_metadata else ""
+                                )
+                                + ". The response was not exactly one valid strict JSON object. The reserved finalization phase is active. No action was executed, "
                                 "and the malformed response was omitted. Return exactly one JSON object for a final "
                                 "diagnosis, with only the top-level keys action and diagnosis and action set to final. "
                                 "Do not request tools, add Markdown fences, add commentary, or include trailing text. "
@@ -2343,8 +2415,14 @@ class RepositoryInvestigator:
                             )
                             if in_finalization else
                             (
-                                "Your previous response was rejected because it was not exactly one valid strict JSON object. "
-                                "No action was executed and the malformed response was omitted from the conversation. "
+                                "Your previous response failed strict JSON parsing"
+                                + (
+                                    f" at line {parse_error_metadata['parse_error_line']}, "
+                                    f"column {parse_error_metadata['parse_error_column']}"
+                                    if "parse_error_line" in parse_error_metadata
+                                    and "parse_error_column" in parse_error_metadata else ""
+                                )
+                                + ". The response was not exactly one valid strict JSON object. No action was executed and the malformed response was omitted from the conversation. "
                                 "Return exactly one JSON object with no Markdown fences, no commentary, no trailing text, "
                                 "no duplicate keys, and only the documented action schema. Use either a registered tool_call "
                                 "with its exact arguments schema or a final diagnosis action. This feedback is protocol guidance, "

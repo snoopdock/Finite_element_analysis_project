@@ -477,6 +477,37 @@ class OpenAICompatibleProvider:
             self.envelope_diagnostic_counts[kind] = self.envelope_diagnostic_counts.get(kind, 0) + 1
             choices = data.get("choices") if isinstance(data, dict) else None
             if not isinstance(choices, list) or not choices:
+                if isinstance(data, dict) and isinstance(data.get("error"), (dict, str)):
+                    # Some compatible gateways wrap an upstream error in HTTP 200.
+                    # Preserve only the same allowlisted diagnostic fields used for
+                    # non-2xx responses; never persist the raw error object/message.
+                    upstream_diagnostic = http_error_diagnostic(
+                        data, response.status_code, body_status="json"
+                    )
+                    self.last_http_error_diagnostic = upstream_diagnostic
+                    diagnostic_key = str(
+                        upstream_diagnostic.get("error_message_category")
+                        or upstream_diagnostic.get("error_code")
+                        or upstream_diagnostic.get("error_type")
+                        or "upstream_error_payload"
+                    )
+                    self.http_error_diagnostic_counts[diagnostic_key] = (
+                        self.http_error_diagnostic_counts.get(diagnostic_key, 0) + 1
+                    )
+                    # Retry one clearly classified provider-internal failure only.
+                    # Unknown, quota, authentication, model, and request errors are
+                    # not retried; the investigator's existing retry budget remains
+                    # the hard ceiling.
+                    retryable_internal = (
+                        upstream_diagnostic.get("error_message_category") == "provider_internal_error"
+                    )
+                    if retryable_internal and attempt == 0 and attempt + 1 < self.max_retries:
+                        time.sleep(min(2, 2 ** attempt))
+                        continue
+                    return self._error(
+                        f"{self.provider_name} returned an upstream error envelope (HTTP {response.status_code})",
+                        code="upstream_error_payload_http_200",
+                    )
                 return self._error(
                     f"{self.provider_name} malformed chat completion: missing choices (HTTP {response.status_code})",
                     code="malformed_completion_envelope",

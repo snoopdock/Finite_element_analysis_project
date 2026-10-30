@@ -286,11 +286,16 @@ def test_live_investigation_limits_allow_multiround_evidence_work():
     assert limits.max_invalid_final_attempts == 2
     assert limits.max_invalid_json_retries == 2
     assert limits.max_finalization_invalid_json_retries == 1
-    assert limits.max_tokens_per_call == 8_000
+    assert limits.max_tokens_per_call == 4_000
     assert limits.max_total_tokens == 180_000
     assert limits.max_total_prompt_chars == 200_000
     assert limits.max_elapsed_seconds == 300
     assert limits.max_response_chars == 40_000
+
+
+def test_non_cloudflare_providers_keep_existing_graph_output_token_ceiling():
+    assert build_live_investigation_limits("nararouter").max_tokens_per_call == 8_000
+    assert build_live_investigation_limits("openrouter").max_tokens_per_call == 8_000
 
 
 def test_nararouter_gets_provider_specific_elapsed_budget():

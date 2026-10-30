@@ -188,9 +188,12 @@ def test_anchor_guidance_lists_only_observed_source_line_candidates(tmp_path):
     candidates = [entry for m in messages for entry in m.get("required_source_line_witnesses", [])
                   if entry.get("witness_status") == "observed"]
     assert any(entry["anchor"] == "self.calls" and
-               any(ref["line"] == 3 for ref in entry["source_reference_candidates"])
+               len(entry["source_reference_candidates"]) == 1
+               and entry["source_reference_candidates"][0]["line"] == 3
                for entry in candidates)
-    assert any(entry["anchor"] == "provider.total_calls" for entry in candidates)
+    assert any(entry["anchor"] == "provider.total_calls" and
+               len(entry["source_reference_candidates"]) == 1
+               for entry in candidates)
 
 
 def test_envelope_diagnostics_are_allowlisted_and_not_content_leaks():
@@ -209,9 +212,11 @@ def test_nararouter_http_200_error_shape_stays_fail_closed(monkeypatch):
     provider = OpenAICompatibleProvider("nararouter", "secret-api-key", "agnes-2.5-flash", max_retries=1)
     result, error = provider.chat([{"role": "user", "content": "hello"}])
     stats = provider.get_stats()
-    assert result is None and "missing choices" in error
-    assert stats["last_error_code"] == "malformed_completion_envelope"
+    assert result is None and "upstream error envelope" in error
+    assert stats["last_error_code"] == "upstream_error_payload_http_200"
     assert stats["envelope_diagnostic_counts"] == {"upstream_error_object": 1}
     assert stats["last_envelope_diagnostic"]["has_error_object"] is True
+    assert stats["last_http_error_diagnostic"]["http_status"] == 200
+    assert stats["last_http_error_diagnostic"]["error_message_category"] == "other_unclassified"
     assert "sensitive-info" not in repr(stats)
     assert "secret-api-key" not in repr(stats)

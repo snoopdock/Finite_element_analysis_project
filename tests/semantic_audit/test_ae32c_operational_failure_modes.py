@@ -137,6 +137,12 @@ def test_investigator_report_exposes_only_allowlisted_http_diagnostics(tmp_path)
                 "usage": {},
                 "last_error_code": "provider_api_error_payload",
                 "last_http_status": 400,
+                "last_envelope_diagnostic": {
+                    "envelope_kind": "upstream_error_object",
+                    "choices_shape": "absent",
+                    "has_error_object": True,
+                    "message": "must-not-be-copied",
+                },
                 "last_http_error_diagnostic": {
                     "http_status": 400,
                     "body_status": "json",
@@ -145,6 +151,8 @@ def test_investigator_report_exposes_only_allowlisted_http_diagnostics(tmp_path)
                     "error_type": "invalid_request_error",
                     "error_code": "model_not_found",
                     "error_param": "model",
+                    "error_message_category": "provider_internal_error",
+                    "error_request_id": "req-12345",
                     "error_fields": ["type", "code", "param", "message"],
                     "top_level_error_fields": [],
                     "message": "must-not-be-copied",
@@ -157,7 +165,15 @@ def test_investigator_report_exposes_only_allowlisted_http_diagnostics(tmp_path)
     report = engine._finalize_report(engine._base_report("safe diagnostics"), "incomplete", "provider_failure")
     safe = report["provider"]["last_http_error_diagnostic"]
     assert report["provider"]["last_http_status"] == 400
+    assert report["provider"]["last_envelope_kind"] == "upstream_error_object"
+    assert report["provider"]["last_envelope_diagnostic"] == {
+        "envelope_kind": "upstream_error_object",
+        "choices_shape": "absent",
+        "has_error_object": True,
+    }
     assert safe["error_code"] == "model_not_found"
+    assert safe["error_message_category"] == "provider_internal_error"
+    assert safe["error_request_id"] == "req-12345"
     assert "message" not in safe
     assert "api_key" not in safe
 

@@ -167,6 +167,106 @@ def make_investigator(responses, *, evidence=None, limits=None, cost_estimator=N
     return investigator, provider, tools
 
 
+def test_nararouter_prompt_and_invalid_json_recovery_include_explicit_action_contract():
+    provider = FakeProvider([
+        "not-json",
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    provider.provider_name = "nararouter"
+    provider.model = "laguna-s-2.1"
+    tools = FakeEvidenceTools()
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        provider_name="nararouter",
+        model_name="laguna-s-2.1",
+        evidence_tools=tools,
+        limits=InvestigationLimits(max_rounds=5, finalization_rounds_reserved=1),
+        id_factory=lambda: "nararouter-json-contract",
+    )
+
+    report = investigator.run("Investigate the observed provider interface issue")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    initial_user = next(
+        json.loads(message["content"])
+        for message in provider.messages[0]
+        if message.get("role") == "user" and '"provider_protocol_guidance"' in message.get("content", "")
+    )
+    guidance = initial_user["provider_protocol_guidance"]
+    assert guidance["allowed_action_envelopes"]["tool_call"] == ["action", "tool", "arguments", "reason"]
+    assert guidance["allowed_action_envelopes"]["final"] == ["action", "diagnosis"]
+    assert any("NaraRouter JSON mode is not assumed" in rule for rule in guidance["rules"])
+
+    recovery_feedback = []
+    for batch in provider.messages:
+        for message in batch:
+            if message.get("role") != "user":
+                continue
+            try:
+                envelope = json.loads(message.get("content", ""))
+            except (TypeError, json.JSONDecodeError):
+                continue
+            feedback = envelope.get("validation_feedback") if isinstance(envelope, dict) else None
+            if isinstance(feedback, dict) and feedback.get("schema_version") == "ae32c/json-validation-feedback/v1":
+                recovery_feedback.append(feedback)
+    assert recovery_feedback
+    feedback = recovery_feedback[0]
+    assert feedback["parse_error_code"] == "json_syntax_error"
+    assert feedback["parse_error_line"] == 1
+    assert feedback["parse_error_column"] == 1
+    assert "double quotes" in feedback["json_syntax_rules"][0]
+    assert feedback["allowed_action_envelopes"]["tool_call"] == [
+        "action", "tool", "arguments", "reason"
+    ]
+
+
+def test_cloudflare_prompt_receives_compact_finalization_and_anchor_guidance():
+    provider = FakeProvider([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        action_tool("search_repository", {"query": "additional", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    provider.provider_name = "cloudflare"
+    provider.model = "@cf/meta/llama-3.1-8b-instruct-fast"
+    tools = FakeEvidenceTools()
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        provider_name="cloudflare",
+        model_name="@cf/meta/llama-3.1-8b-instruct-fast",
+        evidence_tools=tools,
+        limits=InvestigationLimits(max_rounds=3, finalization_rounds_reserved=1),
+        id_factory=lambda: "cloudflare-compact-guidance",
+    )
+
+    report = investigator.run("Investigate the observed provider interface issue")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    finalization_payloads = []
+    for batch in provider.messages:
+        for message in batch:
+            if message.get("role") != "user":
+                continue
+            try:
+                envelope = json.loads(message.get("content", ""))
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if isinstance(envelope, dict) and "finalization_mode" in envelope:
+                finalization_payloads.append(envelope["finalization_mode"])
+    assert finalization_payloads
+    assert "Do not quote or reproduce source code" in finalization_payloads[0]["response_constraints"][1]
+    initial_context = [
+        json.loads(message["content"])
+        for message in provider.messages[0]
+        if message.get("role") == "user"
+        and '"provider_protocol_guidance"' in message.get("content", "")
+    ]
+    assert initial_context
+    assert any("Keep responses concise" in rule for rule in initial_context[0]["provider_protocol_guidance"]["rules"])
+
+
 def test_multiple_rounds_consume_actual_tool_results_and_resolve_citations():
     investigator, provider, tools = make_investigator([
         action_tool("search_repository", {"query": "total_calls", "mode": "content", "max_results": 5}),
