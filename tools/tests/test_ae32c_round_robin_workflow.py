@@ -38,7 +38,7 @@ class BatchWorkflowContracts(unittest.TestCase):
         self.assertIn('runner-exit-code.txt',self.workflow)
         self.assertIn('timeout --signal=TERM',self.workflow)
         self.assertIn('if: always()',self.workflow)
-        self.assertIn('Enforce complete batch gate after evidence publication',self.workflow)
+        self.assertIn('Enforce complete AE-32C v3 batch gate after evidence publication',self.workflow)
 
 if __name__=='__main__':
     unittest.main()
@@ -51,7 +51,7 @@ def test_phase_e4_retains_one_dispatch_and_machine_readable_batch_summary():
     assert '--batch-dir "$RUNNER_TEMP/ae32c-batch"' in workflow
     assert 'batch-summary.md" >> "$GITHUB_STEP_SUMMARY"' in workflow
     assert 'name: ae32c-round-robin-${{ github.run_id }}-${{ github.run_attempt }}' in workflow
-    assert 'Enforce complete batch gate after evidence publication' in workflow
+    assert 'Enforce complete AE-32C v3 batch gate after evidence publication' in workflow
 
 
 def test_e5_round_robin_retains_single_manual_dispatch_and_independent_trials():
@@ -63,12 +63,12 @@ def test_e5_round_robin_retains_single_manual_dispatch_and_independent_trials():
     assert 'validation_gate.py verify' in workflow
     assert 'runner-exit-code.txt' in workflow
     assert '--confirm-live-provider-calls' in workflow
-    assert 'Enforce complete batch gate after evidence publication' in workflow
+    assert 'Enforce complete AE-32C v3 batch gate after evidence publication' in workflow
     assert not __import__('re').search(r'(?m)^  (?:schedule|push|pull_request):', workflow)
 
 
-def test_e5_report_schema_and_historical_pause_default_are_explicit():
+def test_round_robin_gate_uses_v3_overall_acceptance_contract():
     workflow = (ROOT/'.github/workflows/ae32c-round-robin-evaluation.yml').read_text(encoding='utf-8')
-    assert "default: '120'" in workflow
-    assert "ae32c/batch-evaluation/v3" in workflow
-    assert "ae32c/batch-evaluation/v2" not in workflow
+    assert 'tools/verify_ae32c_batch_acceptance.py' in workflow
+    assert 'evidence_complete' not in workflow
+    assert 'overall_accepted_trials' in (ROOT/'tools/verify_ae32c_batch_acceptance.py').read_text(encoding='utf-8')
