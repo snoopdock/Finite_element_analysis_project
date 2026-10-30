@@ -40,9 +40,11 @@ def scripted(tools, *, confidence="high", cited_line=3, cite_search=False):
                     "evidence_refs": ["E0002", "E0003"], "source_references": refs}],
         "proposed_corrective_action": "Review the interface", "limitations": ["No runtime experiment"],
         "next_steps": ["Run an isolated reproduction"]}
+    final_response = json.dumps({"action":"final","diagnosis":diag})
     outputs = [action_tool("read_source_file", {"path": CALLER, "start_line": 1, "end_line": 20}),
                action_tool("read_source_file", {"path": ADAPTER, "start_line": 1, "end_line": 20}),
-               json.dumps({"action":"final","diagnosis":diag})]
+               final_response,
+               final_response]
     return FakeProvider(outputs)
 
 
@@ -116,8 +118,8 @@ def test_per_provider_batch_denominators_include_failed_trials(tmp_path):
         _make_trial(tmp_path, 1, provider, exit_code=1 if provider == "cloudflare" else 0)
     report = build_summary(tmp_path, 1)
     assert report["provider_breakdown"]["cloudflare"]["trials"] == 1
-    assert report["provider_breakdown"]["cloudflare"]["graph_evidence_complete"] == 0
-    assert report["provider_breakdown"]["openrouter"]["graph_evidence_complete"] == 1
+    assert report["provider_breakdown"]["cloudflare"]["evidence_complete"] == 0
+    assert report["provider_breakdown"]["openrouter"]["evidence_complete"] == 1
     assert report["diagnostic_accuracy"] == "not_assessed"
 
 @pytest.mark.parametrize("provider_name,expected", [

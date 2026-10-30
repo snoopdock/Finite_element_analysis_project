@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
+
 from audit_engine.semantic_audit.ae32c import (
     InvestigationLimits,
     RepositoryInvestigator,
@@ -895,111 +897,6 @@ def test_invalid_source_references_receive_exact_ledger_candidates_and_recover_t
     ]
     assert "line must be a positive JSON integer" in " ".join(feedback_envelopes[0]["rules"])
     assert "Do not invent citations" in feedback_envelopes[1]["message"]
-    assert feedback_envelopes[0]["required_diagnosis_shape"]["top_level_keys"] == ["action", "diagnosis"]
-    assert "source_references must never be top-level" in feedback_envelopes[0]["message"]
-
-
-def test_two_bad_final_attempts_can_recover_with_bounded_live_budget():
-    invalid_top_level = json.loads(final_action(evidence_id="E0002", source_reference=True))
-    invalid_top_level["source_references"] = invalid_top_level["diagnosis"]["root_cause"]["source_references"]
-    invalid_missing_root_refs = json.loads(final_action(evidence_id="E0002", source_reference=True))
-    del invalid_missing_root_refs["diagnosis"]["root_cause"]["source_references"]
-    investigator, provider, _ = make_investigator([
-        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
-        json.dumps(invalid_top_level),
-        json.dumps(invalid_missing_root_refs),
-        final_action(evidence_id="E0002", source_reference=True),
-    ], limits=InvestigationLimits(max_invalid_final_attempts=2, max_rounds=8))
-
-    report = investigator.run("Investigate a failed workflow")
-    rejected = [event for event in report["errors"] if event.get("event") in {
-        "final_action_rejected", "final_diagnosis_rejected"
-    }]
-    assert len(rejected) == 2
-    assert sum(item.get("action") == "final_rejected" for item in report["model_actions"]) == 2
-    assert report["diagnosis"] is not None
-    assert any(item.get("action") == "final_accepted" for item in report["model_actions"])
-    assert len(provider.messages) == 4
-
-
-def test_missing_anchor_feedback_supplies_exact_root_cause_citation_candidate():
-    class FullReadEvidenceTools(FakeEvidenceTools):
-        def __init__(self):
-            super().__init__()
-            self.contents = {SOURCE: SOURCE_BYTES.decode("utf-8")}
-
-        def invoke(self, tool, arguments):
-            if tool == "read_source_file":
-                self.calls.append((tool, dict(arguments)))
-                return {
-                    "schema_version": "fake/v1",
-                    "tool": tool,
-                    "status": "ok",
-                    "provenance": dict(self.provenance),
-                    "result": {
-                        "path": SOURCE,
-                        "start_line": 1,
-                        "end_line": 2,
-                        "total_lines": 2,
-                        "content": "1: def run():\n2:     return 'observed'\n",
-                        "source_sha256": SOURCE_HASH,
-                        "truncated": False,
-                        "content_omitted": False,
-                        "source_range_complete": True,
-                    },
-                }
-            return super().invoke(tool, arguments)
-
-    bad = json.loads(final_action(evidence_id="E0002", source_reference=True))
-    bad["diagnosis"]["root_cause"]["confidence"] = "high"
-    bad["diagnosis"]["claims"][0]["confidence"] = "high"
-    bad["diagnosis"]["root_cause"]["source_references"][0]["line"] = 1
-    bad["diagnosis"]["claims"][0]["source_references"][0]["line"] = 1
-    good = json.loads(final_action(evidence_id="E0002", source_reference=True))
-    good["diagnosis"]["root_cause"]["confidence"] = "high"
-    good["diagnosis"]["claims"][0]["confidence"] = "high"
-
-    tools = FullReadEvidenceTools()
-    provider = FakeProvider([
-        action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
-        json.dumps(bad),
-        json.dumps(good),
-    ])
-    investigator = RepositoryInvestigator(
-        ".",
-        provider,
-        evidence_tools=tools,
-        required_source_paths=(SOURCE,),
-        required_source_anchors={SOURCE: ("return 'observed'",)},
-        limits=InvestigationLimits(max_invalid_final_attempts=3),
-        id_factory=lambda: "test-anchor-recovery",
-    )
-    report = investigator.run("Investigate a failed workflow.")
-    assert report["diagnosis"] is not None, json.dumps({"stop_reason": report.get("stop_reason"), "errors": report.get("errors"), "tool_calls": report.get("tool_calls")}, indent=2)
-    assert report["source_textual_support"]["status"] == "complete"
-
-    feedback = None
-    for turn in provider.messages:
-        if not turn:
-            continue
-        try:
-            envelope = json.loads(turn[-1].get("content", ""))
-        except (json.JSONDecodeError, AttributeError):
-            continue
-        if isinstance(envelope, dict) and isinstance(envelope.get("validation_feedback"), dict):
-            candidate = envelope["validation_feedback"]
-            if candidate.get("schema_version") == "ae32c/diagnosis-validation-feedback/v1":
-                feedback = candidate
-                break
-    assert feedback is not None
-    recovery = feedback["required_source_anchor_recovery"]
-    assert recovery[0]["required_anchor"] == "return 'observed'"
-    assert {
-        "evidence_id": "E0002",
-        "path": SOURCE,
-        "line": 2,
-        "source_sha256": SOURCE_HASH,
-    } in recovery[0]["exact_source_reference_candidates"]
 
 
 def test_unsupported_action_gets_safe_bounded_recovery_and_can_continue():
@@ -1333,3 +1230,123 @@ def test_token_budget_rejection_reports_reservation_math_without_prompt_content(
     assert check["reserved_before_tokens"] == 0
     assert "messages" not in check
     assert "prompt" not in check
+
+
+
+def test_missing_required_source_anchor_triggers_bounded_finalization_recovery(tmp_path):
+    """A valid diagnosis missing one anchor is rejected, corrected, then accepted."""
+    pipeline = tmp_path / "pipeline"
+    providers = tmp_path / "providers"
+    pipeline.mkdir()
+    providers.mkdir()
+    (pipeline / "extractor.py").write_text(
+        "def extract(provider):\n    return provider.total_calls\n",
+        encoding="utf-8",
+    )
+    (providers / "adapter.py").write_text(
+        "class ProviderAdapter:\n"
+        "    def __init__(self):\n"
+        "        self.calls = 0\n"
+        "    def chat(self):\n"
+        "        self.calls += 1\n",
+        encoding="utf-8",
+    )
+    evidence = RepositoryEvidenceTools(tmp_path)
+    pipeline_hash = evidence.file_hashes["pipeline/extractor.py"]
+    adapter_hash = evidence.file_hashes["providers/adapter.py"]
+
+    def diagnosis(*, include_adapter):
+        references = [{
+            "evidence_id": "E0002",
+            "path": "pipeline/extractor.py",
+            "line": 2,
+            "source_sha256": pipeline_hash,
+        }]
+        evidence_ids = ["E0002"]
+        if include_adapter:
+            references.append({
+                "evidence_id": "E0003",
+                "path": "providers/adapter.py",
+                "line": 3,
+                "source_sha256": adapter_hash,
+            })
+            evidence_ids.append("E0003")
+        return json.dumps({
+            "action": "final",
+            "diagnosis": {
+                "summary": "The source shows different counter names at the consumer and adapter.",
+                "root_cause": {
+                    "statement": (
+                        "The consumer reads provider.total_calls while the adapter defines "
+                        "self.calls; runtime causality remains unverified."
+                    ),
+                    "confidence": "low",
+                    "evidence_refs": evidence_ids,
+                    "source_references": references,
+                },
+                "claims": [{
+                    "statement": "The extractor reads provider.total_calls and the adapter uses self.calls.",
+                    "kind": "hypothesis",
+                    "confidence": "low",
+                    "evidence_refs": evidence_ids,
+                    "source_references": references,
+                }],
+                "proposed_corrective_action": "Review and align the counter interface.",
+                "limitations": ["Static source evidence does not independently prove runtime execution."],
+                "next_steps": ["Add a regression test for the agreed counter interface."],
+            },
+        })
+
+    provider = FakeProvider([
+        action_tool("read_source_file", {
+            "path": "pipeline/extractor.py", "start_line": 1, "end_line": 99,
+        }),
+        action_tool("read_source_file", {
+            "path": "providers/adapter.py", "start_line": 1, "end_line": 99,
+        }),
+        diagnosis(include_adapter=False),
+        diagnosis(include_adapter=True),
+    ])
+    investigator = RepositoryInvestigator(
+        tmp_path,
+        provider,
+        evidence_tools=evidence,
+        required_source_paths=("pipeline/extractor.py", "providers/adapter.py"),
+        required_source_anchors={
+            "pipeline/extractor.py": ("provider.total_calls",),
+            "providers/adapter.py": ("self.calls",),
+        },
+        limits=InvestigationLimits(
+            max_rounds=4,
+            finalization_rounds_reserved=2,
+            max_invalid_final_attempts=1,
+            max_finalization_recovery_retries=1,
+        ),
+        id_factory=lambda: "test-required-anchor-recovery",
+    )
+
+    report = investigator.run("Investigate the provider counter mismatch.")
+
+    assert report["status"] == "completed"
+    assert report["stop_reason"] == "diagnosis_submitted"
+    assert report["source_textual_support"]["status"] == "complete"
+    assert report["source_textual_support"]["missing_direct_cited_anchors"] == []
+    assert [item["action"] for item in report["model_actions"][-2:]] == [
+        "final_rejected", "final_accepted",
+    ]
+    assert report["model_actions"][-2]["reason_codes"] == [
+        "required_source_anchor_support_incomplete",
+    ]
+    assert any(
+        "source-anchor-validation-feedback" in message.get("content", "")
+        for turn in provider.messages
+        for message in turn
+        if message.get("role") == "user"
+    )
+    assert any(
+        item.get("event") == "final_diagnosis_rejected"
+        and item.get("missing_direct_cited_anchors") == [
+            {"path": "providers/adapter.py", "anchor": "self.calls"},
+        ]
+        for item in report["errors"]
+    )

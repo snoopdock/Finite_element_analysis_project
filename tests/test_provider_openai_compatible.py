@@ -197,3 +197,78 @@ def test_absent_finish_reason_keeps_legacy_success_behavior(monkeypatch):
     assert error is None
     assert content == "plain response without a finish reason"
     assert provider.get_stats()["finish_reason_counts"] == {"unknown": 1}
+
+
+
+def test_openrouter_documented_model_uses_json_object_mode_and_requires_parameter(monkeypatch):
+    calls = []
+
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return FakeResponse(payload=success_payload("{}", "nvidia/nemotron-3.5-super-vl:free"))
+
+    monkeypatch.setattr("providers.openai_compatible.requests.post", fake_post)
+    provider = OpenAICompatibleProvider(
+        "openrouter", "key", "nvidia/nemotron-3.5-super-vl:free", max_retries=1
+    )
+
+    assert provider.get_capabilities()["json_object_mode"] is True
+    content, error = provider.chat_structured([{"role": "user", "content": "Return JSON."}])
+
+    assert error is None
+    assert content == "{}"
+    payload = calls[0][1]["json"]
+    assert payload["response_format"] == {"type": "json_object"}
+    assert payload["provider"] == {"require_parameters": True}
+    assert provider.get_stats()["structured_json_calls"] == 1
+
+
+def test_openrouter_gemma_free_model_is_declared_json_object_compatible():
+    provider = OpenAICompatibleProvider(
+        "openrouter", "key", "google/gemma-4-31b-it:free"
+    )
+    assert provider.get_capabilities()["json_object_mode"] is True
+
+
+def test_openrouter_unknown_model_does_not_claim_json_object_support():
+    provider = OpenAICompatibleProvider("openrouter", "key", "unverified/model")
+    assert provider.get_capabilities()["json_object_mode"] is False
+
+
+def test_nararouter_json_object_mode_is_fail_closed_and_requires_opt_in(monkeypatch):
+    monkeypatch.delenv("FEA_NARAROUTER_JSON_OBJECT_MODE", raising=False)
+    provider = OpenAICompatibleProvider("nararouter", "key", "laguna-s-2.1")
+    assert provider.get_capabilities()["json_object_mode"] is False
+
+    calls = []
+
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return FakeResponse(payload=success_payload("{}", "laguna-s-2.1"))
+
+    monkeypatch.setattr("providers.openai_compatible.requests.post", fake_post)
+    monkeypatch.setenv("FEA_NARAROUTER_JSON_OBJECT_MODE", "1")
+    assert provider.get_capabilities()["json_object_mode"] is True
+    content, error = provider.chat_structured([{"role": "user", "content": "Return JSON."}])
+
+    assert error is None
+    assert content == "{}"
+    assert calls[0][1]["json"]["response_format"] == {"type": "json_object"}
+    assert "provider" not in calls[0][1]["json"]
+
+
+def test_unsupported_response_format_is_rejected_without_http_call(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        "providers.openai_compatible.requests.post",
+        lambda *args, **kwargs: calls.append(1),
+    )
+    provider = OpenAICompatibleProvider("openrouter", "key", "test-model", max_retries=1)
+    content, error = provider.chat(
+        [{"role": "user", "content": "hello"}],
+        response_format={"type": "json_schema"},
+    )
+    assert content is None
+    assert error is not None
+    assert provider.get_stats()["last_error_code"] == "unsupported_response_format"
+    assert calls == []
