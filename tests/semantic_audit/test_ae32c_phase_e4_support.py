@@ -118,8 +118,11 @@ def test_per_provider_batch_denominators_include_failed_trials(tmp_path):
         _make_trial(tmp_path, 1, provider, exit_code=1 if provider == "cloudflare" else 0)
     report = build_summary(tmp_path, 1)
     assert report["provider_breakdown"]["cloudflare"]["trials"] == 1
-    assert report["provider_breakdown"]["cloudflare"]["evidence_complete"] == 0
-    assert report["provider_breakdown"]["openrouter"]["evidence_complete"] == 1
+    # Batch schema v3 deliberately uses graph_evidence_complete to distinguish
+    # graph-only source evidence from the overall accepted-trial condition.
+    assert report["provider_breakdown"]["cloudflare"]["graph_evidence_complete"] == 0
+    assert report["provider_breakdown"]["openrouter"]["graph_evidence_complete"] == 1
+    assert "evidence_complete" not in report["provider_breakdown"]["cloudflare"]
     assert report["diagnostic_accuracy"] == "not_assessed"
 
 @pytest.mark.parametrize("provider_name,expected", [
