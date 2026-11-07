@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
-PROVIDERS = ("cloudflare", "nararouter", "openrouter")
+PROVIDERS = ("cloudflare", "openrouter")
 
 
 def trial_sequence(rounds: int) -> list[tuple[int, str]]:

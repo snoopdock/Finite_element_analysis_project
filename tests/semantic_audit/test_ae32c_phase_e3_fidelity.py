@@ -108,6 +108,9 @@ def _make_trial(root: Path, round_number: int, provider: str, *, coverage="compl
 
 
 def test_batch_round_robin_order_is_deterministic():
+    assert PROVIDERS == ("cloudflare", "openrouter")
+    assert trial_sequence(1) == [(1, "cloudflare"), (1, "openrouter")]
+    assert len(trial_sequence(4)) == 8
     assert trial_sequence(2) == [(1, provider) for provider in PROVIDERS] + [(2, provider) for provider in PROVIDERS]
     with pytest.raises(ValueError):
         trial_sequence(5)
@@ -120,10 +123,10 @@ def test_batch_full_coverage_requires_every_trial(tmp_path: Path):
         _make_trial(tmp_path, round_number, provider)
     summary = build_summary(tmp_path, 2)
     assert summary["passed"] is True
-    assert summary["expected_trials"] == 6
-    assert summary["protocol_completed"] == 6
-    assert summary["graph_evidence_complete"] == 6
-    assert summary["overall_accepted_trials"] == 6
+    assert summary["expected_trials"] == 4
+    assert summary["protocol_completed"] == 4
+    assert summary["graph_evidence_complete"] == 4
+    assert summary["overall_accepted_trials"] == 4
     assert [(r["round"],r["provider"]) for r in summary["trials"]] == trial_sequence(2)
 
 
@@ -138,19 +141,20 @@ def test_batch_never_counts_incomplete_accepted_diagnosis_as_graph_evidence_comp
 
 def test_batch_preserves_other_trials_after_one_failure(tmp_path: Path):
     for round_number, provider in trial_sequence(1):
-        _make_trial(tmp_path, round_number, provider, exit_code=1 if provider == "nararouter" else 0)
+        _make_trial(tmp_path, round_number, provider, exit_code=1 if provider == "openrouter" else 0)
     summary = build_summary(tmp_path, 1)
-    assert summary["expected_trials"] == 3
-    assert summary["observed_trials"] == 3
-    assert summary["graph_evidence_complete"] == 2
-    assert summary["overall_accepted_trials"] == 2
+    assert summary["expected_trials"] == 2
+    assert summary["observed_trials"] == 2
+    assert summary["graph_evidence_complete"] == 1
+    assert summary["overall_accepted_trials"] == 1
     assert summary["passed"] is False
-    assert summary["trials"][2]["passed"] is True
+    assert summary["trials"][0]["passed"] is True
+    assert summary["trials"][1]["passed"] is False
 
 
 def test_batch_missing_expected_trial_fails_closed(tmp_path: Path):
     _make_trial(tmp_path, 1, "cloudflare")
     summary = build_summary(tmp_path, 1)
-    assert summary["expected_trials"] == 3
+    assert summary["expected_trials"] == 2
     assert summary["observed_trials"] == 1
     assert summary["passed"] is False
