@@ -14,7 +14,6 @@ on:
         default: cloudflare
         options:
           - cloudflare
-          - nararouter
           - openrouter
       model:
         description: "Optional provider-specific model override; leave blank to use the provider default"
@@ -22,7 +21,7 @@ on:
         type: string
         default: ""
       confirm_live_provider_calls:
-        description: "Authorize one baseline request and up to ten graph-assisted model calls; Cloudflare or NaraRouter may use one bounded transport retry across the investigation"
+        description: "Authorize one baseline request and up to ten graph-assisted model calls; Cloudflare may use one bounded transport retry across the investigation"
         required: true
         type: boolean
         default: false
@@ -63,7 +62,7 @@ jobs:
             exit 1
           fi
           case "$SELECTED_PROVIDER" in
-            cloudflare|nararouter|openrouter) ;;
+            cloudflare|openrouter) ;;
             *) echo "::error::Unsupported provider selection."; exit 1 ;;
           esac
           echo "Manual live evaluation authorized for provider: $SELECTED_PROVIDER."
@@ -259,11 +258,10 @@ jobs:
         env:
           FEA_LLM_PROVIDER: ${{ inputs.provider }}
           FEA_LLM_MODEL: ${{ inputs.model }}
-          FEA_LLM_REQUEST_TIMEOUT_SECONDS: ${{ inputs.provider == 'nararouter' && '90' || inputs.provider == 'cloudflare' && '45' || '30' }}
-          FEA_LLM_RETRY_ATTEMPTS: ${{ inputs.provider == 'nararouter' && '2' || inputs.provider == 'cloudflare' && '2' || '1' }}
+          FEA_LLM_REQUEST_TIMEOUT_SECONDS: ${{ inputs.provider == 'cloudflare' && '45' || '30' }}
+          FEA_LLM_RETRY_ATTEMPTS: ${{ inputs.provider == 'cloudflare' && '2' || '1' }}
           CLOUDFLARE_ACCOUNT_ID: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
           CLOUDFLARE_API_TOKEN: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_API_TOKEN || '' }}
-          NARAROUTER_API_KEY: ${{ inputs.provider == 'nararouter' && secrets.NARAROUTER_API_KEY || '' }}
           OPENROUTER_TOKEN: ${{ inputs.provider == 'openrouter' && secrets.OPENROUTER_TOKEN || '' }}
         run: |
           set -euo pipefail
@@ -271,9 +269,6 @@ jobs:
             cloudflare)
               test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::CLOUDFLARE_ACCOUNT_ID is missing"; exit 2; }
               test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::CLOUDFLARE_API_TOKEN is missing"; exit 2; }
-              ;;
-            nararouter)
-              test -n "$NARAROUTER_API_KEY" || { echo "::error::NARAROUTER_API_KEY is missing"; exit 2; }
               ;;
             openrouter)
               test -n "$OPENROUTER_TOKEN" || { echo "::error::OPENROUTER_TOKEN is missing"; exit 2; }

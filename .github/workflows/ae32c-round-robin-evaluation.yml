@@ -8,7 +8,7 @@ on:
         type: string
         required: true
       rounds:
-        description: "Complete rounds: Cloudflare, NaraRouter, OpenRouter per round (1-4)"
+        description: "Complete rounds: Cloudflare, OpenRouter per round (1-4)"
         type: choice
         required: true
         default: '4'
@@ -17,24 +17,10 @@ on:
         description: "Pause between consecutive trials, including between rounds"
         type: choice
         required: true
-        default: '60'
+        default: '120'
         options: ['30', '60', '120']
-      nararouter_model:
-        description: "NaraRouter model to use for this run"
-        type: choice
-        required: true
-        default: 'laguna-s-2.1'
-        options: ['laguna-s-2.1', 'agnes-2.5-flash']
-      openrouter_model:
-        description: "OpenRouter model to use for this run"
-        type: choice
-        required: true
-        default: 'google/gemma-4-31b-it:free'
-        options:
-          - 'nvidia/nemotron-3.5-super-vl:free'
-          - 'google/gemma-4-31b-it:free'
       confirm_live_provider_calls:
-        description: "Authorize up to 11 model requests per trial, plus bounded transport retries; up to 12 trials"
+        description: "Authorize up to 11 model requests per trial, plus bounded transport retries; up to 8 trials"
         type: boolean
         required: true
         default: false
@@ -69,7 +55,7 @@ jobs:
           [[ "$RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::G9.42 validation run ID must be numeric"; exit 1; }
           case "$ROUNDS" in 1|2|3|4) ;; *) exit 1;; esac
           case "$PAUSE" in 30|60|120) ;; *) exit 1;; esac
-          echo "Authorized $ROUNDS rounds × 3 providers with $PAUSE second pauses."
+          echo "Authorized $ROUNDS rounds × 2 providers with $PAUSE second pauses."
 
   validation-gate:
     name: Verify exact-commit G9.42 evidence before any live calls
@@ -195,14 +181,6 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
 
-      - name: Checkout main-branch workflow support at this dispatch commit
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
-          path: workflow-support
-          persist-credentials: false
-          fetch-depth: 1
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -224,8 +202,6 @@ jobs:
           VALIDATION_ENGINE_COMMIT: ${{ needs.validation-gate.outputs.validation_engine_commit_sha }}
           SELECTED_ROUNDS: ${{ inputs.rounds }}
           SELECTED_PAUSE: ${{ inputs.pause_seconds }}
-          NARAROUTER_MODEL: ${{ inputs.nararouter_model }}
-          OPENROUTER_MODEL: ${{ inputs.openrouter_model }}
         run: |
           set -euo pipefail
           [[ "$(git -C source rev-parse HEAD)" == "$EXPECTED_SHA" ]]
@@ -239,8 +215,7 @@ jobs:
           keys = {"source_commit":"EXPECTED_SHA", "validation_run_id":"VALIDATION_RUN_ID",
                   "validation_run_attempt":"VALIDATION_RUN_ATTEMPT", "validation_report_sha256":"VALIDATION_REPORT_SHA256",
                   "validation_bundle_sha256":"VALIDATION_BUNDLE_SHA256", "validation_engine_commit":"VALIDATION_ENGINE_COMMIT",
-                  "rounds":"SELECTED_ROUNDS", "pause_seconds":"SELECTED_PAUSE",
-                  "nararouter_model":"NARAROUTER_MODEL", "openrouter_model":"OPENROUTER_MODEL"}
+                  "rounds":"SELECTED_ROUNDS", "pause_seconds":"SELECTED_PAUSE"}
           record = {key:os.environ[value] for key,value in keys.items()}
           record.update({"workflow_run_id": os.environ["GITHUB_RUN_ID"], "workflow_commit":os.environ["GITHUB_SHA"],
                          "validation_profile":"G9.42", "sequence":"round_robin", "human_review_required": True})
@@ -256,17 +231,14 @@ jobs:
           BATCH_ROUNDS: ${{ inputs.rounds }}
           PAUSE_SECONDS: ${{ inputs.pause_seconds }}
           VALIDATED_SOURCE_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
-          NARAROUTER_MODEL: ${{ inputs.nararouter_model }}
-          OPENROUTER_MODEL: ${{ inputs.openrouter_model }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
           OPENROUTER_TOKEN: ${{ secrets.OPENROUTER_TOKEN }}
         run: |
           set -euo pipefail
           batch="$RUNNER_TEMP/ae32c-batch"
           [[ "$(git rev-parse HEAD)" == "$VALIDATED_SOURCE_SHA" ]] || { echo "::error::Validated source changed"; exit 1; }
-          providers=(cloudflare nararouter openrouter)
+          providers=(cloudflare openrouter)
           total=$((BATCH_ROUNDS * ${#providers[@]}))
           count=0
           for (( round=1; round<=BATCH_ROUNDS; round++ )); do
@@ -276,35 +248,25 @@ jobs:
               trial="$batch/$round_id/$provider"
               mkdir -p "$trial"
               echo "::group::Round $round/$BATCH_ROUNDS · $provider ($count/$total)"
-              provider_model_env=()
               case "$provider" in
                 cloudflare)
                   [[ -n "$CLOUDFLARE_ACCOUNT_ID" && -n "$CLOUDFLARE_API_TOKEN" ]] && ready=true || ready=false
                   export FEA_LLM_REQUEST_TIMEOUT_SECONDS=45 FEA_LLM_RETRY_ATTEMPTS=2 ;;
-                nararouter)
-                  [[ -n "$NARAROUTER_API_KEY" ]] && ready=true || ready=false
-                  provider_model_env=(
-                    "FEA_LLM_MODEL=$NARAROUTER_MODEL"
-                    "FEA_NARAROUTER_JSON_OBJECT_MODE=1"
-                  )
-                  export FEA_LLM_REQUEST_TIMEOUT_SECONDS=90 FEA_LLM_RETRY_ATTEMPTS=2 ;;
                 openrouter)
                   [[ -n "$OPENROUTER_TOKEN" ]] && ready=true || ready=false
-                  provider_model_env=("FEA_LLM_MODEL=$OPENROUTER_MODEL")
                   export FEA_LLM_REQUEST_TIMEOUT_SECONDS=30 FEA_LLM_RETRY_ATTEMPTS=1 ;;
               esac
               # Limit the child process to credentials for its own provider.
               case "$provider" in
-                cloudflare) env_without_other_secrets=(-u NARAROUTER_API_KEY -u OPENROUTER_TOKEN) ;;
-                nararouter) env_without_other_secrets=(-u CLOUDFLARE_ACCOUNT_ID -u CLOUDFLARE_API_TOKEN -u OPENROUTER_TOKEN) ;;
-                openrouter) env_without_other_secrets=(-u CLOUDFLARE_ACCOUNT_ID -u CLOUDFLARE_API_TOKEN -u NARAROUTER_API_KEY) ;;
+                cloudflare) env_without_other_secrets=(-u OPENROUTER_TOKEN) ;;
+                openrouter) env_without_other_secrets=(-u CLOUDFLARE_ACCOUNT_ID -u CLOUDFLARE_API_TOKEN) ;;
               esac
               if [[ "$ready" == false ]]; then
                 printf '2\n' > "$trial/runner-exit-code.txt"
                 printf 'Missing required provider secret for %s\n' "$provider" > "$trial/live-evaluation.log"
               else
                 set +e
-                env "${env_without_other_secrets[@]}" "${provider_model_env[@]}" timeout --signal=TERM --kill-after=15s 1100s \
+                env "${env_without_other_secrets[@]}" timeout --signal=TERM --kill-after=15s 1100s \
                   python -m audit_engine.semantic_audit.ae32c.live_evaluation \
                   --confirm-live-provider-calls \
                   --provider "$provider" \
@@ -353,21 +315,20 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Enforce complete AE-32C v3 batch gate after evidence publication
+      - name: Enforce complete batch gate after evidence publication
         if: always()
         env:
           BATCH_ROOT: ${{ runner.temp }}/ae32c-batch
-          BATCH_ROUNDS: ${{ inputs.rounds }}
         run: |
           set -euo pipefail
-          [[ "$(git -C workflow-support rev-parse HEAD)" == "$GITHUB_SHA" ]] || {
-            echo "::error::Workflow-support checkout is not pinned to the dispatch commit."
-            exit 1
-          }
-          [[ -f workflow-support/tools/verify_ae32c_batch_acceptance.py ]] || {
-            echo "::error::Pinned workflow-support checkout lacks the batch verifier."
-            exit 1
-          }
-          python workflow-support/tools/verify_ae32c_batch_acceptance.py \
-            --batch-summary "$BATCH_ROOT/batch-summary.json" \
-            --rounds "$BATCH_ROUNDS"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          path=Path(os.environ['BATCH_ROOT'])/'batch-summary.json'
+          if not path.is_file():
+              raise SystemExit('Batch summary missing; cannot claim success.')
+          result=json.loads(path.read_text(encoding='utf-8'))
+          if result.get('passed') is not True or result.get('evidence_complete') != result.get('expected_trials'):
+              raise SystemExit('One or more trials failed protocol or declared evidence-completeness checks; see uploaded artifacts.')
+          print('All declared source-coverage gates passed; causal accuracy still requires human review.')
+          PY
