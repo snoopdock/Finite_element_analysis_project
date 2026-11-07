@@ -13,3 +13,16 @@ def test_nararouter_json_probe_is_manual_explicit_and_single_request():
     assert 'providers=(cloudflare nararouter openrouter)' not in workflow
     assert 'schedule:' not in workflow
     assert 'push:' not in workflow
+
+
+def test_nararouter_probe_offers_representative_final_action_schema_profile():
+    workflow = (ROOT/'.github/workflows/ae32c-nararouter-json-capability-probe.yml').read_text(encoding='utf-8')
+    assert 'request_profile:' in workflow
+    assert 'default: "ae32c_final_action"' in workflow
+    assert 'options: ["ae32c_final_action", "marker"]' in workflow
+    assert '--request-profile "$REQUEST_PROFILE"' in workflow
+    assert '"action_schema_shape_valid"' in workflow
+    assert '"schema_shape_valid": True' in workflow
+    assert 'semantic_evidence_validation_performed' in workflow
+    assert 'schedule:' not in workflow
+    assert 'push:' not in workflow

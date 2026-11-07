@@ -24,7 +24,10 @@ def test_round_robin_workflow_enables_json_object_mode_for_nararouter_only():
 
 def test_round_robin_workflow_calls_the_installed_v3_verifier():
     workflow = WORKFLOW.read_text(encoding="utf-8")
-    assert "python tools/verify_ae32c_batch_acceptance.py" in workflow
+    assert "path: workflow-support" in workflow
+    assert "ref: ${{ github.sha }}" in workflow
+    assert "git -C workflow-support rev-parse HEAD" in workflow
+    assert "python workflow-support/tools/verify_ae32c_batch_acceptance.py" in workflow
     assert VERIFIER.is_file()
 
 
