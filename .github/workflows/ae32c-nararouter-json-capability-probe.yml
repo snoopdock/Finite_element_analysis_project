@@ -13,6 +13,12 @@ on:
         required: true
         default: "laguna-s-2.1"
         options: ["laguna-s-2.1", "agnes-2.5-flash"]
+      request_profile:
+        description: "One-request response profile: simple marker or representative AE-32C final-action schema"
+        type: choice
+        required: true
+        default: "ae32c_final_action"
+        options: ["ae32c_final_action", "marker"]
       confirm_live_provider_calls:
         description: "Authorize exactly one NaraRouter Chat Completions request"
         type: boolean
@@ -41,13 +47,15 @@ jobs:
           CONFIRMED: ${{ inputs.confirm_live_provider_calls }}
           VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
           MODEL: ${{ inputs.nararouter_model }}
+          PROFILE: ${{ inputs.request_profile }}
         run: |
           set -euo pipefail
           [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF" == "refs/heads/main" ]] || { echo "::error::Run manually from main."; exit 1; }
           [[ "$CONFIRMED" == "true" ]] || { echo "::error::Explicit one-request live-provider confirmation is required."; exit 1; }
           [[ "$VALIDATION_RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::validation_run_id must be numeric."; exit 1; }
           case "$MODEL" in "laguna-s-2.1"|"agnes-2.5-flash") ;; *) echo "::error::Unsupported NaraRouter model selection."; exit 1;; esac
-          echo "Authorized: one NaraRouter JSON-object capability request; no other provider will be called."
+          case "$PROFILE" in "ae32c_final_action"|"marker") ;; *) echo "::error::Unsupported request profile."; exit 1;; esac
+          echo "Authorized: one NaraRouter JSON-object request using profile $PROFILE; no other provider will be called."
 
   validation-gate:
     name: Verify exact-commit G9.42 evidence before live request
@@ -157,12 +165,13 @@ jobs:
         run: |
           set -euo pipefail
           [[ -f tools/ae32c_provider_compatibility_smoke.py ]] || { echo "::error::Validated source lacks the one-request diagnostic tool."; exit 1; }
-          PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" python tools/ae32c_provider_compatibility_smoke.py --help | grep -q -- '--request-mode'
+          PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" python tools/ae32c_provider_compatibility_smoke.py --help | grep -q -- '--request-profile'
       - name: Make exactly one JSON-object request to NaraRouter
         working-directory: source
         env:
           NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
           MODEL: ${{ inputs.nararouter_model }}
+          REQUEST_PROFILE: ${{ inputs.request_profile }}
           FEA_NARAROUTER_JSON_OBJECT_MODE: "1"
           FEA_LLM_REQUEST_TIMEOUT_SECONDS: "90"
           FEA_LLM_RETRY_ATTEMPTS: "1"
@@ -178,6 +187,7 @@ jobs:
             PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" timeout --signal=TERM --kill-after=5s 180s \
               python tools/ae32c_provider_compatibility_smoke.py \
               --confirm-live-provider-calls --provider nararouter --model "$MODEL" --request-mode json_object \
+              --request-profile "$REQUEST_PROFILE" \
               > "$result" 2> "$out/diagnostic-stderr.txt"
             rc=$?
             set -e
@@ -201,6 +211,7 @@ jobs:
           print("### NaraRouter JSON-object capability probe")
           print("- Endpoint: `https://router.bynara.id/v1/chat/completions` (fixed)")
           print(f"- Model: `{d.get('model','not reported')}`")
+          print(f"- Request profile: `{d.get('request_profile','not reported')}`")
           print(f"- Status: `{d.get('status','unknown')}`")
           print(f"- Response format requested: `{d.get('response_format_requested',False)}`")
           print(f"- Adapter capability declared for this opt-in probe: `{d.get('capability_declared',False)}`")
@@ -209,6 +220,9 @@ jobs:
           print(f"- Envelope kind: `{envelope.get('envelope_kind','not reported')}`")
           print(f"- JSON object returned: `{d.get('response_is_json_object','not reported')}`")
           print(f"- Marker matched: `{d.get('response_marker_match',False)}`")
+          print(f"- JSON parse success: `{d.get('json_parse_success','not applicable')}`")
+          print(f"- AE-32C action-schema shape valid: `{d.get('schema_shape_valid','not applicable')}`")
+          print(f"- Schema errors: `{d.get('schema_errors',[])}`")
           print(f"- Logical calls / HTTP attempts / structured calls: `{d.get('logical_calls_reported','?')}` / `{d.get('http_attempts_reported','?')}` / `{d.get('structured_json_calls','?')}`")
           print("- Raw model response and free-form provider error are not printed.")
           PY
@@ -235,24 +249,43 @@ jobs:
           p=Path(sys.argv[1])
           if not p.is_file(): raise SystemExit("NaraRouter diagnostic output missing; inspect uploaded artifacts.")
           d=json.loads(p.read_text(encoding="utf-8"))
-          required = {
-              "status": "completion_received",
+          common = {
               "request_mode": "json_object",
               "response_format_requested": True,
               "capability_declared": True,
               "response_received": True,
               "response_is_json_object": True,
-              "response_marker_match": True,
               "request_count_limit": 1,
               "logical_calls_reported": 1,
               "http_attempts_reported": 1,
               "structured_json_calls": 1,
           }
+          if d.get("request_profile") == "ae32c_final_action":
+              required = {
+                  **common,
+                  "status": "action_schema_shape_valid",
+                  "json_parse_success": True,
+                  "schema_shape_valid": True,
+                  "top_level_keys_exact": True,
+                  "action_final": True,
+                  "diagnosis_keys_exact": True,
+                  "root_cause_keys_exact": True,
+                  "claim_shapes_valid": True,
+                  "required_value_types_valid": True,
+                  "source_reference_items_shape_valid": True,
+                  "synthetic_evidence_ids_only": True,
+                  "semantic_evidence_validation_performed": False,
+                  "source_reference_resolution_performed": False,
+              }
+          elif d.get("request_profile") == "marker":
+              required = {**common, "status": "completion_received", "response_marker_match": True}
+          else:
+              raise SystemExit("Unknown request profile in diagnostic result.")
           mismatches = [key for key, expected in required.items() if d.get(key) != expected]
           if mismatches:
               diag=d.get("diagnostics",{}).get("last_http_error_diagnostic",{})
               raise SystemExit("NaraRouter JSON-object probe did not pass: " + ", ".join(mismatches) +
                                "; safe HTTP diagnostic=" + json.dumps(diag, sort_keys=True))
-          print("NaraRouter accepted the JSON-object request and returned the expected valid JSON marker.")
-          print("This is one-request compatibility evidence, not proof of reliable investigation behavior.")
+          print("NaraRouter passed the selected one-request JSON-object response profile.")
+          print("This is one-request syntax/schema-shape evidence, not proof of evidence resolution or reliable investigation behavior.")
           PY

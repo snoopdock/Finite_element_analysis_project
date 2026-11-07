@@ -195,6 +195,14 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
 
+      - name: Checkout main-branch workflow support at this dispatch commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: workflow-support
+          persist-credentials: false
+          fetch-depth: 1
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -352,6 +360,14 @@ jobs:
           BATCH_ROUNDS: ${{ inputs.rounds }}
         run: |
           set -euo pipefail
-          python tools/verify_ae32c_batch_acceptance.py \
+          [[ "$(git -C workflow-support rev-parse HEAD)" == "$GITHUB_SHA" ]] || {
+            echo "::error::Workflow-support checkout is not pinned to the dispatch commit."
+            exit 1
+          }
+          [[ -f workflow-support/tools/verify_ae32c_batch_acceptance.py ]] || {
+            echo "::error::Pinned workflow-support checkout lacks the batch verifier."
+            exit 1
+          }
+          python workflow-support/tools/verify_ae32c_batch_acceptance.py \
             --batch-summary "$BATCH_ROOT/batch-summary.json" \
             --rounds "$BATCH_ROUNDS"
