@@ -30,7 +30,11 @@ class BatchWorkflowContracts(unittest.TestCase):
         self.assertIn('ref: ${{ needs.validation-gate.outputs.source_commit_sha }}', provider_job.group(1))
 
     def test_round_order_serial_delay_and_failures_preserved(self):
-        self.assertIn('providers=(cloudflare nararouter openrouter)',self.workflow)
+        self.assertIn('providers=(cloudflare openrouter)',self.workflow)
+        self.assertIn("default: '120'",self.workflow)
+        self.assertIn('rounds × 2 providers',self.workflow)
+        self.assertNotIn('NARAROUTER_API_KEY',self.workflow)
+        self.assertNotIn('nararouter',self.workflow.lower())
         self.assertIn('for (( round=1; round<=BATCH_ROUNDS; round++ ))',self.workflow)
         self.assertIn('for provider in "${providers[@]}"',self.workflow)
         self.assertIn('sleep "$PAUSE_SECONDS"',self.workflow)
@@ -38,7 +42,7 @@ class BatchWorkflowContracts(unittest.TestCase):
         self.assertIn('runner-exit-code.txt',self.workflow)
         self.assertIn('timeout --signal=TERM',self.workflow)
         self.assertIn('if: always()',self.workflow)
-        self.assertIn('Enforce complete AE-32C v3 batch gate after evidence publication',self.workflow)
+        self.assertIn('Enforce complete batch gate after evidence publication',self.workflow)
 
 if __name__=='__main__':
     unittest.main()
@@ -51,24 +55,18 @@ def test_phase_e4_retains_one_dispatch_and_machine_readable_batch_summary():
     assert '--batch-dir "$RUNNER_TEMP/ae32c-batch"' in workflow
     assert 'batch-summary.md" >> "$GITHUB_STEP_SUMMARY"' in workflow
     assert 'name: ae32c-round-robin-${{ github.run_id }}-${{ github.run_attempt }}' in workflow
-    assert 'Enforce complete AE-32C v3 batch gate after evidence publication' in workflow
+    assert 'Enforce complete batch gate after evidence publication' in workflow
 
 
 def test_e5_round_robin_retains_single_manual_dispatch_and_independent_trials():
     workflow = (ROOT/'.github/workflows/ae32c-round-robin-evaluation.yml').read_text(encoding='utf-8')
     assert workflow.count('workflow_dispatch:') == 1
-    assert 'providers=(cloudflare nararouter openrouter)' in workflow
+    assert 'providers=(cloudflare openrouter)' in workflow
+    assert 'nararouter' not in workflow.lower()
     assert 'for provider in "${providers[@]}"' in workflow
     assert 'sleep "$PAUSE_SECONDS"' in workflow
     assert 'validation_gate.py verify' in workflow
     assert 'runner-exit-code.txt' in workflow
     assert '--confirm-live-provider-calls' in workflow
-    assert 'Enforce complete AE-32C v3 batch gate after evidence publication' in workflow
+    assert 'Enforce complete batch gate after evidence publication' in workflow
     assert not __import__('re').search(r'(?m)^  (?:schedule|push|pull_request):', workflow)
-
-
-def test_round_robin_gate_uses_v3_overall_acceptance_contract():
-    workflow = (ROOT/'.github/workflows/ae32c-round-robin-evaluation.yml').read_text(encoding='utf-8')
-    assert 'tools/verify_ae32c_batch_acceptance.py' in workflow
-    assert 'evidence_complete' not in workflow
-    assert 'overall_accepted_trials' in (ROOT/'tools/verify_ae32c_batch_acceptance.py').read_text(encoding='utf-8')

@@ -53,6 +53,17 @@ class AE32CValidationGateWorkflowTests(unittest.TestCase):
                 self.assertIsNotNone(gate)
                 self.assertNotIn("secrets.", gate.group(1))
 
+    def test_active_live_workflows_offer_only_cloudflare_and_openrouter(self):
+        for relative, _ in WORKFLOWS.items():
+            with self.subTest(workflow=relative):
+                text = (ROOT / relative).read_text(encoding="utf-8")
+                self.assertIn("cloudflare", text)
+                self.assertIn("openrouter", text)
+                self.assertNotIn("NARAROUTER_API_KEY", text)
+                self.assertNotIn("nararouter", text.lower())
+                self.assertNotRegex(text, r"(?m)^\s+- nararouter\s*$")
+                self.assertNotRegex(text, r"cloudflare\|nararouter\|openrouter")
+
 
 if __name__ == "__main__":
     unittest.main()
