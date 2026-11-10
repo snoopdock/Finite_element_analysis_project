@@ -203,13 +203,15 @@ def test_envelope_diagnostics_are_allowlisted_and_not_content_leaks():
     assert completion_envelope_diagnostic([])["envelope_kind"] == "non_object"
 
 
-def test_nararouter_http_200_error_shape_stays_fail_closed(monkeypatch):
+def test_http_200_upstream_error_envelope_stays_fail_closed(monkeypatch):
     monkeypatch.setattr("providers.openai_compatible.requests.post", lambda *args, **kwargs:
                         FakeResponse(status_code=200, payload={"error": {"message": "sensitive-info"}}))
-    provider = OpenAICompatibleProvider("nararouter", "secret-api-key", "agnes-2.5-flash", max_retries=1)
+    provider = OpenAICompatibleProvider("test-provider", "secret-api-key", "test-model", max_retries=1)
     result, error = provider.chat([{"role": "user", "content": "hello"}])
     stats = provider.get_stats()
-    assert result is None and "missing choices" in error
+    assert result is None
+    assert "upstream error envelope" in error.lower()
+    assert "http 200" in error.lower()
     assert stats["last_error_code"] == "malformed_completion_envelope"
     assert stats["envelope_diagnostic_counts"] == {"upstream_error_object": 1}
     assert stats["last_envelope_diagnostic"]["has_error_object"] is True
