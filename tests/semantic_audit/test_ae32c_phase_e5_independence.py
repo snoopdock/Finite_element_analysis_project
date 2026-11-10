@@ -206,7 +206,7 @@ def test_envelope_diagnostics_are_allowlisted_and_not_content_leaks():
 def test_http_200_upstream_error_envelope_stays_fail_closed(monkeypatch):
     monkeypatch.setattr("providers.openai_compatible.requests.post", lambda *args, **kwargs:
                         FakeResponse(status_code=200, payload={"error": {"message": "sensitive-info"}}))
-    provider = OpenAICompatibleProvider("test-provider", "secret-api-key", "test-model", max_retries=1)
+    provider = OpenAICompatibleProvider("openrouter", "secret-api-key", "test-model", max_retries=1)
     result, error = provider.chat([{"role": "user", "content": "hello"}])
     stats = provider.get_stats()
     assert result is None
