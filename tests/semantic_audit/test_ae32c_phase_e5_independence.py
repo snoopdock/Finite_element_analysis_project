@@ -212,7 +212,7 @@ def test_http_200_upstream_error_envelope_stays_fail_closed(monkeypatch):
     assert result is None
     assert "upstream error envelope" in error.lower()
     assert "http 200" in error.lower()
-    assert stats["last_error_code"] == "malformed_completion_envelope"
+    assert stats["last_error_code"] == "upstream_error_payload_http_200"
     assert stats["envelope_diagnostic_counts"] == {"upstream_error_object": 1}
     assert stats["last_envelope_diagnostic"]["has_error_object"] is True
     assert "sensitive-info" not in repr(stats)
