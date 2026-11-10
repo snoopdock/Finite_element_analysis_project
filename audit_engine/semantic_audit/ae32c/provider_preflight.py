@@ -1,10 +1,11 @@
 """Manual, bounded provider compatibility preflight for AE-32C.
 
 This command makes no repository-tool calls and never executes the incident fixture.
-It first checks that the selected provider returns non-empty content. For Cloudflare
-only, it then requests API-level JSON-object mode and validates the returned strict JSON
-action envelope locally. JSON mode constrains syntax but does not guarantee that every
-model response satisfies the investigator's full action schema.
+It first checks that the selected provider returns non-empty content. It then checks
+that active investigation providers can produce the strict JSON action envelope:
+Cloudflare uses API-level JSON-object mode; OpenRouter uses ordinary chat because the
+selected free Nemotron model does not document response_format. Both responses are
+validated locally against the same action schema.
 
 Live calls require an explicit confirmation flag. Artifacts intentionally omit raw
 model response bodies and credentials.
@@ -174,11 +175,13 @@ def run_preflight(
         "effective_model": "provider-default-not-reported",
         "status": "not_run",
         "transport_probe": {"status": "not_run"},
-        "json_action_probe": {"status": "not_applicable" if provider_name != "cloudflare" else "not_run"},
+        "json_action_probe": {
+            "status": "not_applicable" if provider_name not in {"cloudflare", "openrouter"} else "not_run"
+        },
         "runtime_settings": {},
         "notes": [
             "No repository evidence tools are called by this preflight.",
-            "The Cloudflare JSON action probe requests API-level response_format json_object; local schema validation still applies and JSON mode does not guarantee action-schema compliance.",
+            "Cloudflare uses API-level response_format json_object for its documented model; OpenRouter uses ordinary chat and local strict-JSON/action-schema validation because the selected Nemotron free model does not document response_format.",
             "Raw model response bodies and provider credentials are not included in artifacts.",
         ],
     }
@@ -190,7 +193,7 @@ def run_preflight(
         return report
 
     builder = provider_builder or _build_provider
-    max_calls = 2 if provider_name == "cloudflare" else 1
+    max_calls = 2 if provider_name in {"cloudflare", "openrouter"} else 1
     try:
         if provider_builder is None:
             provider = builder(
@@ -236,9 +239,9 @@ def run_preflight(
         report["status"] = "provider_failed"
         return report
 
-    if provider_name != "cloudflare":
+    if provider_name == "nararouter":
         report["status"] = "passed"
-        report["notes"].append("A non-empty response was received; sentinel_match is informational and is not treated as a transport failure.")
+        report["notes"].append("A non-empty response was received; sentinel_match is informational. NaraRouter is historical-only and no action-schema probe is performed.")
         return report
 
     json_messages = [
@@ -253,15 +256,21 @@ def run_preflight(
         },
         {"role": "user", "content": "Return the required JSON action object now."},
     ]
+    # Cloudflare's selected model has a documented API JSON-object mode.
+    # OpenRouter's selected Nemotron Lightning Free model does not: use plain
+    # chat and enforce strict JSON/action-schema validation locally instead.
+    use_api_json_mode = provider_name == "cloudflare"
     json_response, json_error, json_elapsed = _call(
-        provider, json_messages, model_name, structured_json=True
+        provider, json_messages, model_name, structured_json=use_api_json_mode
     )
     if json_response is None:
         report["json_action_probe"] = {
             "status": "provider_failed",
             "request_mode": (
                 "api_response_format_json_object"
-                if callable(getattr(provider, "chat_structured", None))
+                if use_api_json_mode and callable(getattr(provider, "chat_structured", None))
+                else "plain_chat_local_json_validation"
+                if provider_name == "openrouter"
                 else "unavailable"
             ),
             "elapsed_seconds": json_elapsed,
@@ -275,7 +284,11 @@ def run_preflight(
         return report
 
     json_probe = _json_action_probe(json_response)
-    json_probe["request_mode"] = "api_response_format_json_object"
+    json_probe["request_mode"] = (
+        "api_response_format_json_object"
+        if use_api_json_mode
+        else "plain_chat_local_json_validation"
+    )
     json_probe["elapsed_seconds"] = json_elapsed
     json_probe["error"] = "" if json_probe["action_schema_valid"] else str(json_probe.get("parse_error_code") or json_probe["status"])
     report["json_action_probe"] = json_probe
@@ -315,11 +328,11 @@ def write_preflight_artifacts(report: dict[str, Any], output_dir: Path) -> tuple
         f"- HTTP status counts: `{json.dumps(report.get('runtime_settings', {}).get('http_status_counts', {}), sort_keys=True)}`",
         f"- Effective timeout/retries: `{report.get('runtime_settings', {}).get('timeout_seconds', 'unknown')}s / {report.get('runtime_settings', {}).get('max_retries', 'unknown')}`",
     ]
-    if report.get("provider") == "cloudflare":
+    if report.get("provider") in {"cloudflare", "openrouter"}:
         probe = report.get("json_action_probe", {})
         lines.extend([
             f"- JSON action probe: `{probe.get('status', 'unknown')}`",
-            f"- Request mode: `{probe.get('request_mode', 'api_response_format_json_object' if probe.get('status') == 'passed' else 'not_confirmed')}`",
+            f"- Request mode: `{probe.get('request_mode', 'not_confirmed')}`",
             f"- Strict JSON valid: `{probe.get('strict_json_valid', False)}`",
             f"- Action schema valid: `{probe.get('action_schema_valid', False)}`",
             f"- JSON response characters: `{probe.get('response_chars', 0)}`",

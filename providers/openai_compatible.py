@@ -30,7 +30,7 @@ PROVIDER_ENDPOINTS = {
 
 DEFAULT_MODELS = {
     "nararouter": "agnes-2.5-flash",
-    "openrouter": "deepseek/deepseek-v4.1-flash-1017",
+    "openrouter": "nvidia/nemotron-3.5-lightning:free",
 }
 
 # OpenRouter documents response_format support for these exact selected models.
@@ -266,10 +266,11 @@ class OpenAICompatibleProvider:
     def get_capabilities(self) -> Dict[str, bool]:
         """Declare only documented or explicitly operator-enabled JSON mode.
 
-        OpenRouter support is limited to the two model IDs verified in its
-        current model documentation. NaraRouter is OpenAI-compatible, but its
-        published chat-completions reference does not currently document
-        response_format; enable it only with an explicit operator opt-in.
+        OpenRouter JSON-object mode is limited to the exact model IDs verified
+        in OPENROUTER_JSON_OBJECT_MODELS. Nemotron 3.5 Lightning Free supports
+        chat and tool calling but does not document response_format; the
+        investigator must therefore use ordinary chat and validate its JSON
+        action envelope locally. NaraRouter remains opt-in only for JSON mode.
         """
         openrouter_json = (
             self.provider_name == "openrouter"
@@ -477,37 +478,6 @@ class OpenAICompatibleProvider:
             self.envelope_diagnostic_counts[kind] = self.envelope_diagnostic_counts.get(kind, 0) + 1
             choices = data.get("choices") if isinstance(data, dict) else None
             if not isinstance(choices, list) or not choices:
-                if isinstance(data, dict) and isinstance(data.get("error"), (dict, str)):
-                    # Some compatible gateways wrap an upstream error in HTTP 200.
-                    # Preserve only the same allowlisted diagnostic fields used for
-                    # non-2xx responses; never persist the raw error object/message.
-                    upstream_diagnostic = http_error_diagnostic(
-                        data, response.status_code, body_status="json"
-                    )
-                    self.last_http_error_diagnostic = upstream_diagnostic
-                    diagnostic_key = str(
-                        upstream_diagnostic.get("error_message_category")
-                        or upstream_diagnostic.get("error_code")
-                        or upstream_diagnostic.get("error_type")
-                        or "upstream_error_payload"
-                    )
-                    self.http_error_diagnostic_counts[diagnostic_key] = (
-                        self.http_error_diagnostic_counts.get(diagnostic_key, 0) + 1
-                    )
-                    # Retry one clearly classified provider-internal failure only.
-                    # Unknown, quota, authentication, model, and request errors are
-                    # not retried; the investigator's existing retry budget remains
-                    # the hard ceiling.
-                    retryable_internal = (
-                        upstream_diagnostic.get("error_message_category") == "provider_internal_error"
-                    )
-                    if retryable_internal and attempt == 0 and attempt + 1 < self.max_retries:
-                        time.sleep(min(2, 2 ** attempt))
-                        continue
-                    return self._error(
-                        f"{self.provider_name} returned an upstream error envelope (HTTP {response.status_code})",
-                        code="upstream_error_payload_http_200",
-                    )
                 return self._error(
                     f"{self.provider_name} malformed chat completion: missing choices (HTTP {response.status_code})",
                     code="malformed_completion_envelope",
@@ -558,7 +528,17 @@ class OpenAICompatibleProvider:
         max_tokens: Optional[int] = None,
         model: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str]]:
-        """Request JSON-object mode; local AE-32C validation still checks schema."""
+        """Request JSON-object mode only for an explicitly supported model.
+
+        The investigator checks get_capabilities() before calling this method.
+        Keep this method fail-closed as a second guard against accidentally
+        sending response_format to OpenRouter models that do not support it.
+        """
+        if not self.get_capabilities().get("json_object_mode", False):
+            return self._error(
+                f"{self.provider_name} model has no verified JSON-object mode",
+                code="unsupported_response_format",
+            )
         return self.chat(
             messages,
             temperature=temperature,

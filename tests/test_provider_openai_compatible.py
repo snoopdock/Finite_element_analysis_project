@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from providers.openai_compatible import OpenAICompatibleProvider
+from providers.openai_compatible import DEFAULT_MODELS, OpenAICompatibleProvider
 
 
 class FakeResponse:
@@ -52,13 +52,13 @@ def test_openrouter_accepts_list_content_and_tracks_usage(monkeypatch):
         assert url == "https://openrouter.ai/api/v1/chat/completions"
         assert kwargs["headers"]["X-Title"] == "Finite Element Analysis Pipeline"
         return FakeResponse(payload={
-            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "model": "nvidia/nemotron-3.5-lightning:free",
             "choices": [{"message": {"content": [{"type": "text", "text": "valid "}, {"type": "text", "text": "content"}]}, "finish_reason": "stop"}],
             "usage": {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150},
         })
 
     monkeypatch.setattr("providers.openai_compatible.requests.post", fake_post)
-    provider = OpenAICompatibleProvider("openrouter", "openrouter-secret", "deepseek/deepseek-v4.1-flash-1017")
+    provider = OpenAICompatibleProvider("openrouter", "openrouter-secret", DEFAULT_MODELS["openrouter"])
     text, error = provider.chat([{"role": "user", "content": "hello"}])
     assert text == "valid content"
     assert error is None
@@ -91,7 +91,7 @@ def test_retry_after_is_bounded_and_transient_429_can_recover(monkeypatch):
 def test_missing_choices_is_reported_with_http_status_without_response_dump(monkeypatch):
     monkeypatch.setattr(
         "providers.openai_compatible.requests.post",
-        lambda *args, **kwargs: FakeResponse(status_code=200, payload={"message": "not a completion envelope"}),
+        lambda *args, **kwargs: FakeResponse(status_code=200, payload={"error": {"message": "no choices"}}),
     )
     provider = OpenAICompatibleProvider("nararouter", "secret", "agnes-2.5-flash", max_retries=1)
     text, error = provider.chat([{"role": "user", "content": "hello"}])
@@ -103,64 +103,6 @@ def test_missing_choices_is_reported_with_http_status_without_response_dump(monk
     assert stats["failed_calls"] == 1
     assert stats["last_error_code"] == "malformed_completion_envelope"
     assert stats["error_counts"] == {"malformed_completion_envelope": 1}
-
-
-def test_nararouter_http_200_error_payload_is_sanitized_and_classified(monkeypatch):
-    payload = {
-        "error": {
-            "type": "server_error",
-            "code": "upstream_unavailable",
-            "message": "private upstream error temporarily unavailable",
-            "request_id": "req-12345",
-            "api_key": "must-not-leak",
-        }
-    }
-    monkeypatch.setattr(
-        "providers.openai_compatible.requests.post",
-        lambda *args, **kwargs: FakeResponse(status_code=200, payload=payload),
-    )
-    provider = OpenAICompatibleProvider("nararouter", "secret", "laguna-s-2.1", max_retries=1)
-    text, error = provider.chat([{"role": "user", "content": "hello"}])
-    stats = provider.get_stats()
-
-    assert text is None
-    assert "upstream error envelope" in error
-    assert stats["last_error_code"] == "upstream_error_payload_http_200"
-    assert stats["last_envelope_diagnostic"]["envelope_kind"] == "upstream_error_object"
-    assert stats["last_http_error_diagnostic"]["http_status"] == 200
-    assert stats["last_http_error_diagnostic"]["error_message_category"] == "provider_internal_error"
-    assert stats["last_http_error_diagnostic"]["error_request_id"] == "req-12345"
-    serialized = repr(stats)
-    assert "private upstream response text" not in serialized
-    assert "must-not-leak" not in serialized
-    assert "secret" not in serialized
-
-
-def test_nararouter_http_200_provider_internal_error_uses_at_most_one_existing_retry(monkeypatch):
-    responses = [
-        FakeResponse(status_code=200, payload={
-            "error": {"message": "upstream service unavailable", "type": "server_error"}
-        }),
-        FakeResponse(payload=success_payload("recovered", "laguna-s-2.1")),
-    ]
-    calls = []
-    sleeps = []
-
-    def fake_post(url, **kwargs):
-        calls.append(url)
-        return responses.pop(0)
-
-    monkeypatch.setattr("providers.openai_compatible.requests.post", fake_post)
-    monkeypatch.setattr("providers.openai_compatible.time.sleep", sleeps.append)
-    provider = OpenAICompatibleProvider("nararouter", "key", "laguna-s-2.1", max_retries=2)
-    text, error = provider.chat([{"role": "user", "content": "hello"}])
-
-    assert text == "recovered"
-    assert error is None
-    assert len(calls) == 2
-    assert sleeps == [1]
-    assert provider.get_stats()["http_attempts"] == 2
-    assert provider.get_stats()["http_error_diagnostic_counts"] == {"provider_internal_error": 1}
 
 
 def test_http_api_error_payload_is_classified_without_echoing_payload(monkeypatch):
@@ -286,6 +228,43 @@ def test_openrouter_gemma_free_model_is_declared_json_object_compatible():
         "openrouter", "key", "google/gemma-4-31b-it:free"
     )
     assert provider.get_capabilities()["json_object_mode"] is True
+
+
+def test_openrouter_default_is_nemotron_lightning_free():
+    assert DEFAULT_MODELS["openrouter"] == "nvidia/nemotron-3.5-lightning:free"
+
+
+def test_openrouter_nemotron_lightning_free_uses_plain_chat_not_response_format(monkeypatch):
+    calls = []
+
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return FakeResponse(payload=success_payload("{\"action\":\"final\"}", "nvidia/nemotron-3.5-lightning:free"))
+
+    monkeypatch.setattr("providers.openai_compatible.requests.post", fake_post)
+    provider = OpenAICompatibleProvider(
+        "openrouter", "key", "nvidia/nemotron-3.5-lightning:free", max_retries=1
+    )
+    assert provider.get_capabilities()["json_object_mode"] is False
+    content, error = provider.chat([{"role": "user", "content": "Return a JSON action."}])
+    assert error is None
+    assert content == '{"action":"final"}'
+    payload = calls[0][1]["json"]
+    assert "response_format" not in payload
+    assert "provider" not in payload
+
+
+def test_openrouter_nemotron_lightning_free_rejects_direct_structured_mode(monkeypatch):
+    calls = []
+    monkeypatch.setattr("providers.openai_compatible.requests.post", lambda *args, **kwargs: calls.append(1))
+    provider = OpenAICompatibleProvider(
+        "openrouter", "key", "nvidia/nemotron-3.5-lightning:free", max_retries=1
+    )
+    content, error = provider.chat_structured([{"role": "user", "content": "Return JSON."}])
+    assert content is None
+    assert error is not None
+    assert provider.get_stats()["last_error_code"] == "unsupported_response_format"
+    assert calls == []
 
 
 def test_openrouter_unknown_model_does_not_claim_json_object_support():

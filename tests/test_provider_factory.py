@@ -2,21 +2,21 @@ import pytest
 
 from providers.factory import apply_runtime_overrides, build_provider
 from providers.cloudflare import CloudflareProvider
-from providers.openai_compatible import OpenAICompatibleProvider
+from providers.openai_compatible import DEFAULT_MODELS, OpenAICompatibleProvider
 
 
 def test_provider_selection_applies_large_benchmark_budgets_and_model():
     config = {"budget": {"max_llm_calls_per_run": 20, "max_tokens_per_call": 2500}, "cloudflare_models": ["old-model"]}
     env = {
         "FEA_LLM_PROVIDER": "openrouter",
-        "FEA_LLM_MODEL": "deepseek/deepseek-v4.1-flash-1017",
+        "FEA_LLM_MODEL": "nvidia/nemotron-3.5-lightning:free",
         "FEA_BENCHMARK_MODE": "1",
         "FEA_MAX_LLM_CALLS": "80",
         "FEA_MAX_TOKENS_PER_CALL": "8000",
     }
     provider_name, model = apply_runtime_overrides(config, env)
     assert provider_name == "openrouter"
-    assert model == "deepseek/deepseek-v4.1-flash-1017"
+    assert model == "nvidia/nemotron-3.5-lightning:free"
     assert config["cloudflare_models"] == [model]
     assert config["budget"] == {"max_llm_calls_per_run": 80, "max_tokens_per_call": 8000}
     assert env["FEA_MAX_LLM_CALLS"] == "80"
@@ -35,11 +35,25 @@ def test_openrouter_factory_requires_only_openrouter_secret():
         config,
         config["budget"],
         "openrouter",
-        "deepseek/deepseek-v4.1-flash-1017",
+        "nvidia/nemotron-3.5-lightning:free",
         {"OPENROUTER_TOKEN": "openrouter-only"},
     )
     assert isinstance(provider, OpenAICompatibleProvider)
     assert provider.provider_name == "openrouter"
+
+
+def test_openrouter_factory_uses_nemotron_free_model_when_no_override():
+    config = {"budget": {"max_llm_calls_per_run": 10, "max_tokens_per_call": 4000}}
+    provider = build_provider(
+        config,
+        config["budget"],
+        "openrouter",
+        "",
+        {"OPENROUTER_TOKEN": "openrouter-only"},
+    )
+    assert isinstance(provider, OpenAICompatibleProvider)
+    assert provider.provider_name == "openrouter"
+    assert provider.model == DEFAULT_MODELS["openrouter"] == "nvidia/nemotron-3.5-lightning:free"
 
 
 def test_nararouter_factory_uses_user_model_and_key():

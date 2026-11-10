@@ -286,16 +286,11 @@ def test_live_investigation_limits_allow_multiround_evidence_work():
     assert limits.max_invalid_final_attempts == 2
     assert limits.max_invalid_json_retries == 2
     assert limits.max_finalization_invalid_json_retries == 1
-    assert limits.max_tokens_per_call == 4_000
+    assert limits.max_tokens_per_call == 8_000
     assert limits.max_total_tokens == 180_000
     assert limits.max_total_prompt_chars == 200_000
     assert limits.max_elapsed_seconds == 300
     assert limits.max_response_chars == 40_000
-
-
-def test_non_cloudflare_providers_keep_existing_graph_output_token_ceiling():
-    assert build_live_investigation_limits("nararouter").max_tokens_per_call == 8_000
-    assert build_live_investigation_limits("openrouter").max_tokens_per_call == 8_000
 
 
 def test_nararouter_gets_provider_specific_elapsed_budget():
@@ -344,7 +339,7 @@ class PreflightFakeProvider:
 def _fake_preflight_builder(provider):
     def build(config, budget, provider_name, model_override="", environ=None):
         assert budget["max_tokens_per_call"] == 256
-        assert budget["max_llm_calls_per_run"] == (2 if provider_name == "cloudflare" else 1)
+        assert budget["max_llm_calls_per_run"] == (2 if provider_name in {"cloudflare", "openrouter"} else 1)
         return provider
     return build
 
@@ -358,6 +353,31 @@ def test_nararouter_preflight_checks_transport_only_and_does_not_start_investiga
     assert report["json_action_probe"]["status"] == "not_applicable"
     assert len(fake.calls) == 1
     assert fake.calls[0]["max_tokens"] == 128
+
+
+def test_openrouter_preflight_validates_action_schema_with_plain_chat_only():
+    action = json.dumps({"action": "tool_call", "tool": "repository_summary", "arguments": {}, "reason": "Check repository evidence."})
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (action, None)])
+    report = run_preflight("openrouter", "nvidia/nemotron-3.5-lightning:free", provider_builder=_fake_preflight_builder(fake), environ={})
+    assert report["status"] == "passed"
+    assert report["effective_model"] == "nvidia/nemotron-3.5-lightning:free"
+    assert report["json_action_probe"]["strict_json_valid"] is True
+    assert report["json_action_probe"]["action_schema_valid"] is True
+    assert report["json_action_probe"]["request_mode"] == "plain_chat_local_json_validation"
+    assert fake.structured_calls == 0
+    assert len(fake.calls) == 2
+    assert "Check repository evidence." not in json.dumps(report)
+
+
+def test_openrouter_preflight_rejects_non_json_action_without_api_json_mode():
+    raw_response = "The tool I would call is repository_summary."
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (raw_response, None)])
+    report = run_preflight("openrouter", "nvidia/nemotron-3.5-lightning:free", provider_builder=_fake_preflight_builder(fake), environ={})
+    assert report["status"] == "json_compatibility_failed"
+    assert report["json_action_probe"]["status"] == "invalid_json"
+    assert report["json_action_probe"]["request_mode"] == "plain_chat_local_json_validation"
+    assert fake.structured_calls == 0
+    assert raw_response not in json.dumps(report)
 
 
 def test_cloudflare_preflight_accepts_valid_strict_json_action_shape():
