@@ -21,7 +21,7 @@ on:
         type: string
         default: ""
       confirm_live_provider_calls:
-        description: "Authorize one transport probe and, for Cloudflare, one strict-JSON probe"
+        description: "Authorize two bounded requests: transport plus locally validated action-schema probe"
         required: true
         type: boolean
         default: false
