@@ -23,6 +23,10 @@ from audit_engine.semantic_audit.ae32b.evidence_tools import (
 )
 from providers.safe_errors import sanitize_provider_error
 from providers.capabilities import get_provider_capabilities
+from audit_engine.semantic_audit.ae32c.response_normalizer import (
+    ResponseNormalizationError,
+    normalize_response,
+)
 
 SCHEMA_VERSION = "ae32c/interactive-investigation/v1"
 MAX_PROBLEM_CHARS = 8_000
@@ -833,7 +837,8 @@ class RepositoryInvestigator:
         }.get(name, "generic_strict_final_object")
         rules = [
             "Keep responses concise and focused on the current investigation step.",
-            "Return one complete strict JSON object and no extra prose.",
+            "Prefer one complete strict JSON object and no extra prose.",
+            "If strict JSON is not possible, use the explicit labelled response contract supplied in the protocol guidance; do not describe an action only in unlabelled prose.",
             "Never leave mandatory keys out even if values are empty lists.",
             "Use observed evidence IDs and exact source-reference candidates only.",
             "If unsure, express a bounded hypothesis with limitations; never invent evidence.",
@@ -851,6 +856,18 @@ class RepositoryInvestigator:
             "allowed_action_envelopes": {
                 "tool_call": ["action", "tool", "arguments", "reason"],
                 "final": ["action", "diagnosis"],
+            },
+            "labelled_text_contract": {
+                "tool_call": [
+                    "ACTION: tool_call",
+                    "TOOL: exact registered tool name",
+                    "ARGUMENTS: one strict JSON object",
+                    "REASON: concise explanation",
+                ],
+                "final": [
+                    "ACTION: final",
+                    "DIAGNOSIS: one strict JSON object matching the diagnosis schema",
+                ],
             },
             "required_diagnosis_keys": ["summary", "root_cause", "claims", "proposed_corrective_action", "limitations", "next_steps"],
             "required_claim_keys": ["statement", "kind", "confidence", "evidence_refs", "source_references"],
@@ -2362,21 +2379,24 @@ class RepositoryInvestigator:
                     return self._finalize_report(report, "incomplete", "provider_response_too_large")
                 parse_error_metadata: dict[str, int] = {}
                 try:
-                    parsed = self._strict_json_loads(response)
-                except json.JSONDecodeError as exc:
-                    parse_error_code = "json_syntax_error"
-                    # Record position only; never persist or echo the raw model response.
-                    parse_error_metadata = {
-                        "parse_error_line": int(exc.lineno),
-                        "parse_error_column": int(exc.colno),
-                    }
-                except ValueError as exc:
-                    known_parse_errors = {"duplicate_json_key", "non_standard_json_constant"}
-                    parse_error_code = str(exc) if str(exc) in known_parse_errors else "invalid_json_value"
-                except TypeError:
-                    parse_error_code = "invalid_json_type"
-                else:
+                    normalized = normalize_response(
+                        response,
+                        max_chars=self.limits.max_response_chars,
+                    )
+                    parsed = normalized.payload
+                    self._events.append({
+                        "event": "provider_response_normalized",
+                        "round": self._model_rounds,
+                        "strategy": normalized.strategy,
+                        "surrounding_text": bool(normalized.surrounding_text),
+                    })
                     parse_error_code = None
+                except ResponseNormalizationError as exc:
+                    parse_error_code = exc.code
+                    if exc.line is not None:
+                        parse_error_metadata["parse_error_line"] = int(exc.line)
+                    if exc.column is not None:
+                        parse_error_metadata["parse_error_column"] = int(exc.column)
 
                 if parse_error_code is not None:
                     self._model_action_trace.append({
@@ -2481,6 +2501,24 @@ class RepositoryInvestigator:
                             if parse_error_code == "json_syntax_error"
                             else {}
                         ),
+                        **(
+                            {
+                                "accepted_response_formats": [
+                                    "one strict JSON object",
+                                    "one JSON object inside a single Markdown code fence",
+                                    "one unambiguous JSON object embedded in explanatory text",
+                                    "explicit labelled text: ACTION, TOOL, ARGUMENTS, REASON; or ACTION and DIAGNOSIS",
+                                ]
+                            }
+                            if parse_error_code in {
+                                "json_syntax_error",
+                                "unrecognized_response_format",
+                                "ambiguous_multiple_json_objects",
+                                "labelled_tool_envelope_incomplete",
+                                "labelled_final_envelope_incomplete",
+                            }
+                            else {}
+                        ),
                         "recovery_attempt": phase_recovery_attempt,
                         "total_recovery_attempts_used": self._invalid_json_retries,
                         "remaining_recovery_attempts": max(
@@ -2501,6 +2539,8 @@ class RepositoryInvestigator:
                                 "Do not request tools, add Markdown fences, add commentary, or include trailing text. "
                                 "Use only evidence IDs and source references already returned; if evidence is "
                                 "insufficient, say so explicitly and cite the available evidence and limitations. "
+                                "If strict JSON is not feasible, use ACTION: final followed by DIAGNOSIS: and one "
+                                "strict JSON diagnosis object. "
                             )
                             if in_finalization else
                             (
@@ -2508,8 +2548,10 @@ class RepositoryInvestigator:
                                 "No action was executed and the malformed response was omitted from the conversation. "
                                 "Return exactly one JSON object with no Markdown fences, no commentary, no trailing text, "
                                 "no duplicate keys, and only the documented action schema. Use either a registered tool_call "
-                                "with its exact arguments schema or a final diagnosis action. This feedback is protocol guidance, "
-                                "not repository evidence."
+                                "with its exact arguments schema or a final diagnosis action. If strict JSON is not "
+                                "feasible, use ACTION: tool_call, TOOL:, ARGUMENTS: with one strict JSON object, "
+                                "and REASON:; for a final answer use ACTION: final and DIAGNOSIS: with one strict "
+                                "JSON diagnosis object. This feedback is protocol guidance, not repository evidence."
                             )
                         ),
                     }
