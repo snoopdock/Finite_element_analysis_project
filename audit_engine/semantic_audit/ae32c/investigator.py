@@ -825,6 +825,18 @@ class RepositoryInvestigator:
             "nararouter": "explicit_action_envelope",
             "openrouter": "compact_evidence_bound_final",
         }.get(name, "generic_strict_final_object")
+        rules = [
+            "Keep responses concise and focused on the current investigation step.",
+            "Return one complete strict JSON object and no extra prose.",
+            "Never leave mandatory keys out even if values are empty lists.",
+            "Use observed evidence IDs and exact source-reference candidates only.",
+            "If unsure, express a bounded hypothesis with limitations; never invent evidence.",
+        ]
+        if name == "nararouter":
+            rules.append(
+                "NaraRouter JSON mode is not assumed; use the explicit action envelope "
+                "and validate JSON locally."
+            )
         return {
             "schema_version": "ae32c/protocol-guidance/v1",
             "strategy": strategy,
@@ -837,13 +849,7 @@ class RepositoryInvestigator:
             "required_diagnosis_keys": ["summary", "root_cause", "claims", "proposed_corrective_action", "limitations", "next_steps"],
             "required_claim_keys": ["statement", "kind", "confidence", "evidence_refs", "source_references"],
             "preferred_claim_count": 1,
-            "rules": [
-                "Keep responses concise and focused on the current investigation step.",
-                "Return one complete strict JSON object and no extra prose.",
-                "Never leave mandatory keys out even if values are empty lists.",
-                "Use observed evidence IDs and exact source-reference candidates only.",
-                "If unsure, express a bounded hypothesis with limitations; never invent evidence.",
-            ],
+            "rules": rules,
         }
 
     def _finalization_context_messages(

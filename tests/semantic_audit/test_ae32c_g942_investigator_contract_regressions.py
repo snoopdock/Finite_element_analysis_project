@@ -3,8 +3,13 @@ from __future__ import annotations
 
 import json
 
-from audit_engine.semantic_audit.ae32c import RepositoryInvestigator
-from tests.semantic_audit.test_ae32c_investigator import FakeEvidenceTools, FakeProvider
+from audit_engine.semantic_audit.ae32c import InvestigationLimits, RepositoryInvestigator
+from tests.semantic_audit.test_ae32c_investigator import (
+    FakeEvidenceTools,
+    FakeProvider,
+    action_tool,
+    final_action,
+)
 
 
 def _initial_payload(provider):
@@ -93,3 +98,86 @@ def test_http_error_report_keeps_safe_category_and_request_id_only():
     serialized = json.dumps(report)
     assert "must-not-be-copied" not in serialized
     assert "must-not-be-copied-either" not in serialized
+
+
+def test_nararouter_guidance_explicitly_does_not_assume_json_mode():
+    provider = FakeProvider(["{}"])
+    provider.provider_name = "nararouter"
+    provider.model = "fixture-model"
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        provider_name="nararouter",
+        model_name="fixture-model",
+        evidence_tools=FakeEvidenceTools(),
+    )
+    investigator.run("Inspect the provider interface.")
+    guidance = _initial_payload(provider)["provider_protocol_guidance"]
+    assert any(
+        "NaraRouter JSON mode is not assumed" in rule
+        for rule in guidance["rules"]
+    )
+    assert any(
+        "validate JSON locally" in rule
+        for rule in guidance["rules"]
+    )
+
+
+def test_non_nararouter_guidance_does_not_include_nararouter_specific_rule():
+    provider = FakeProvider(["{}"])
+    provider.provider_name = "cloudflare"
+    provider.model = "fixture-model"
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        provider_name="cloudflare",
+        model_name="fixture-model",
+        evidence_tools=FakeEvidenceTools(),
+    )
+    investigator.run("Inspect the provider interface.")
+    guidance = _initial_payload(provider)["provider_protocol_guidance"]
+    assert not any(
+        "NaraRouter JSON mode is not assumed" in rule
+        for rule in guidance["rules"]
+    )
+
+
+def test_nararouter_invalid_json_recovery_includes_explicit_non_assumed_json_mode_contract():
+    provider = FakeProvider([
+        "not-json",
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    provider.provider_name = "nararouter"
+    provider.model = "laguna-s-2.1"
+    tools = FakeEvidenceTools()
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        provider_name="nararouter",
+        model_name="laguna-s-2.1",
+        evidence_tools=tools,
+        limits=InvestigationLimits(max_rounds=5, finalization_rounds_reserved=1),
+        id_factory=lambda: "nararouter-json-contract-regression",
+    )
+
+    report = investigator.run("Investigate the observed provider interface issue")
+    assert report["status"] == "completed_with_incomplete_evidence"
+    initial_user = next(
+        json.loads(message["content"])
+        for message in provider.messages[0]
+        if message.get("role") == "user"
+        and '"provider_protocol_guidance"' in message.get("content", "")
+    )
+    guidance = initial_user["provider_protocol_guidance"]
+    assert guidance["allowed_action_envelopes"]["tool_call"] == [
+        "action", "tool", "arguments", "reason"
+    ]
+    assert guidance["allowed_action_envelopes"]["final"] == [
+        "action", "diagnosis"
+    ]
+    assert any(
+        "NaraRouter JSON mode is not assumed" in rule
+        for rule in guidance["rules"]
+    )
+
