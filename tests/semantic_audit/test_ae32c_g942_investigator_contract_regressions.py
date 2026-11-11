@@ -9,6 +9,7 @@ from tests.semantic_audit.test_ae32c_investigator import (
     FakeProvider,
     action_tool,
     final_action,
+    make_investigator,
 )
 
 
@@ -199,6 +200,10 @@ def test_nararouter_invalid_json_recovery_includes_explicit_non_assumed_json_mod
 
     assert recovery_feedback
     feedback = recovery_feedback[0]
+    assert feedback["allowed_action_envelopes"] == {
+        "tool_call": ["action", "tool", "arguments", "reason"],
+        "final": ["action", "diagnosis"],
+    }
     assert feedback["parse_error_code"] == "json_syntax_error"
     assert feedback["parse_error_line"] == 1
     assert feedback["parse_error_column"] == 1
@@ -207,4 +212,52 @@ def test_nararouter_invalid_json_recovery_includes_explicit_non_assumed_json_mod
     assert all(isinstance(rule, str) and rule for rule in feedback["json_syntax_rules"])
     # Recovery feedback may expose parser position and static rules, never malformed output.
     assert "not-json" not in json.dumps(feedback)
+
+
+def test_finalization_json_recovery_only_advertises_final_action_envelope():
+    limits = InvestigationLimits(
+        max_rounds=4,
+        finalization_rounds_reserved=3,
+        max_invalid_json_retries=2,
+        max_finalization_invalid_json_retries=2,
+        max_tool_calls=5,
+        max_tokens_per_call=1_000,
+        max_total_tokens=32_000,
+        max_total_prompt_chars=500_000,
+        max_elapsed_seconds=30,
+    )
+    investigator, provider, _ = make_investigator(
+        [
+            action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+            "not-json finalization response",
+            final_action(evidence_id="E0002", source_reference=True),
+        ],
+        limits=limits,
+    )
+    report = investigator.run("Investigate a failed workflow")
+    assert report["diagnosis"] is not None
+
+    feedback_items = []
+    for turn in provider.messages:
+        for message in turn:
+            if message.get("role") != "user":
+                continue
+            try:
+                envelope = json.loads(message.get("content", ""))
+            except (TypeError, json.JSONDecodeError):
+                continue
+            feedback = envelope.get("validation_feedback") if isinstance(envelope, dict) else None
+            if (
+                isinstance(feedback, dict)
+                and feedback.get("schema_version") == "ae32c/json-validation-feedback/v1"
+                and feedback.get("phase") == "finalization"
+            ):
+                feedback_items.append(feedback)
+
+    assert feedback_items
+    assert feedback_items[0]["allowed_action_envelopes"] == {
+        "final": ["action", "diagnosis"]
+    }
+    assert "tool_call" not in feedback_items[0]["allowed_action_envelopes"]
+    assert "not-json finalization response" not in json.dumps(feedback_items)
 

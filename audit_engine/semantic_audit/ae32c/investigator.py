@@ -2464,6 +2464,14 @@ class RepositoryInvestigator:
                         "status": "rejected_before_dispatch",
                         "reason_code": "invalid_strict_json",
                         "parse_error_code": parse_error_code,
+                        # Repeat the exact action contract in recovery feedback.
+                        # Once finalization starts, explicitly remove tool_call
+                        # from the allowed envelope set.
+                        "allowed_action_envelopes": (
+                            {"final": ["action", "diagnosis"]}
+                            if in_finalization
+                            else self._provider_protocol_guidance()["allowed_action_envelopes"]
+                        ),
                         # Expose only parser position metadata and static
                         # syntax guidance. The rejected model response itself
                         # is deliberately never echoed.
