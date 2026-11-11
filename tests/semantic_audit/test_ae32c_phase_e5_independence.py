@@ -67,7 +67,9 @@ def test_baseline_failure_does_not_skip_graph_condition(tmp_path, monkeypatch):
 
 
 def test_batch_tracks_baseline_separately_from_graph_gate(tmp_path):
-    root = _make_trial(tmp_path, 1, "nararouter")
+    # Cloudflare is an active provider. Its baseline fails while its graph
+    # condition remains independently complete.
+    root = _make_trial(tmp_path, 1, "cloudflare")
     comparison = next(root.rglob("comparison.json"))
     record = json.loads(comparison.read_text())
     record["baseline"]["status"] = "provider_failed"
@@ -78,32 +80,30 @@ def test_batch_tracks_baseline_separately_from_graph_gate(tmp_path):
     md = comparison.parent / "comparison.md"
     manifest.write_text(hashlib.sha256(comparison.read_bytes()).hexdigest()+"  comparison.json\n"+
                         hashlib.sha256(md.read_bytes()).hexdigest()+"  comparison.md\n")
-    result = evaluate_trial(root, round_number=1, provider="nararouter")
+    result = evaluate_trial(root, round_number=1, provider="cloudflare")
     assert result["baseline_complete"] is False
     assert result["graph_protocol_complete"] is True
     assert result["graph_evidence_complete"] is True
     assert result["passed"] is False
     assert result["issues"] == ["baseline_not_completed"]
-    # Overall batch fails even though the graph condition independently passed.
-    for name in ("cloudflare", "openrouter"):
-        _make_trial(tmp_path, 1, name)
+    # The second active provider remains independently represented in the batch.
+    _make_trial(tmp_path, 1, "openrouter")
     summary = build_summary(tmp_path, 1)
     assert summary["schema_version"] == "ae32c/batch-evaluation/v3"
-    assert summary["baseline_completed"] == 2
-    assert summary["graph_protocol_completed"] == 3
-    assert summary["graph_evidence_complete"] == 3
-    assert summary["overall_accepted_trials"] == 2
+    assert summary["baseline_completed"] == 1
+    assert summary["graph_protocol_completed"] == 2
+    assert summary["graph_evidence_complete"] == 2
+    assert summary["overall_accepted_trials"] == 1
     assert summary["passed"] is False
-    assert summary["trials"][1]["schema_version"] == "ae32c/trial-gate/v3"
-    assert summary["trials"][1]["graph_evidence_complete"] is True
-    assert summary["trials"][1]["passed"] is False
-    assert summary["provider_breakdown"]["nararouter"]["graph_evidence_complete"] == 1
-    assert summary["provider_breakdown"]["nararouter"]["overall_accepted_trials"] == 0
+    assert summary["trials"][0]["schema_version"] == "ae32c/trial-gate/v3"
+    assert summary["trials"][0]["graph_evidence_complete"] is True
+    assert summary["trials"][0]["passed"] is False
+    assert summary["provider_breakdown"]["cloudflare"]["graph_evidence_complete"] == 1
+    assert summary["provider_breakdown"]["cloudflare"]["overall_accepted_trials"] == 0
     assert sum(row["graph_evidence_complete"] for row in summary["trials"]) == summary["graph_evidence_complete"]
     assert sum(row["passed"] for row in summary["trials"]) == summary["overall_accepted_trials"]
     assert sum(row["graph_evidence_complete"] for row in summary["provider_breakdown"].values()) == summary["graph_evidence_complete"]
     assert sum(row["overall_accepted_trials"] for row in summary["provider_breakdown"].values()) == summary["overall_accepted_trials"]
-
 
 
 def test_batch_markdown_uses_unambiguous_v3_metric_names(tmp_path, capsys):
@@ -116,8 +116,9 @@ def test_batch_markdown_uses_unambiguous_v3_metric_names(tmp_path, capsys):
     assert summary["schema_version"] == "ae32c/batch-evaluation/v3"
     assert "Graph evidence" in markdown
     assert "Overall accepted" in markdown
-    assert "Graph evidence complete (independent graph condition): **3/3**" in markdown
-    assert "Overall accepted trials (baseline + graph + evidence/integrity gates): **3/3**" in markdown
+    expected_trials = len(trial_sequence(1))
+    assert f"Graph evidence complete (independent graph condition): **{expected_trials}/{expected_trials}**" in markdown
+    assert f"Overall accepted trials (baseline + graph + evidence/integrity gates): **{expected_trials}/{expected_trials}**" in markdown
     assert "Both conditions passing" not in markdown
     assert "Failure attribution" in markdown
     assert "Graph protocol failure classes" in markdown
@@ -125,19 +126,18 @@ def test_batch_markdown_uses_unambiguous_v3_metric_names(tmp_path, capsys):
 def test_batch_separates_graph_protocol_failures_from_evidence_failures(tmp_path):
     import hashlib
 
-    # Cloudflare: protocol completed, but the required source evidence was incomplete.
+    # Cloudflare: protocol completed, but required source evidence was incomplete.
     cloudflare = _make_trial(
         tmp_path, 1, "cloudflare",
         status="completed_with_incomplete_evidence",
         coverage="incomplete",
     )
-    # NaraRouter: graph protocol did not complete because final model JSON was invalid.
-    nararouter = _make_trial(tmp_path, 1, "nararouter", status="incomplete")
-    openrouter = _make_trial(tmp_path, 1, "openrouter")
+    # OpenRouter: graph protocol did not complete because final model JSON was invalid.
+    openrouter = _make_trial(tmp_path, 1, "openrouter", status="incomplete")
 
     for path, stop_reason, citation_status in (
         (cloudflare, "diagnosis_submitted_with_required_source_coverage_gap", "references_resolved"),
-        (nararouter, "invalid_model_json", "not_accepted"),
+        (openrouter, "invalid_model_json", "not_accepted"),
     ):
         comparison = next(path.rglob("comparison.json"))
         record = json.loads(comparison.read_text(encoding="utf-8"))
@@ -156,19 +156,19 @@ def test_batch_separates_graph_protocol_failures_from_evidence_failures(tmp_path
     assert summary["schema_version"] == "ae32c/batch-evaluation/v3"
     assert summary["graph_protocol_failure_classes"] == {"model_protocol_or_budget": 1}
     assert summary["graph_evidence_failure_classes"] == {"source_or_evidence": 1}
-    assert summary["provider_breakdown"]["nararouter"]["graph_protocol_failure_classes"] == {
+    assert summary["provider_breakdown"]["openrouter"]["graph_protocol_failure_classes"] == {
         "model_protocol_or_budget": 1
     }
     assert summary["provider_breakdown"]["cloudflare"]["graph_evidence_failure_classes"] == {
         "source_or_evidence": 1
     }
     # Error codes are retained separately and are not mislabeled as failure classes.
-    assert summary["provider_breakdown"]["nararouter"]["graph_provider_error_codes"] == {
+    assert summary["provider_breakdown"]["openrouter"]["graph_provider_error_codes"] == {
         "unclassified_or_none": 1
     }
-    assert summary["graph_protocol_completed"] == 2
-    assert summary["graph_evidence_complete"] == 1
-    assert summary["overall_accepted_trials"] == 1
+    assert summary["graph_protocol_completed"] == 1
+    assert summary["graph_evidence_complete"] == 0
+    assert summary["overall_accepted_trials"] == 0
 
 
 def test_anchor_guidance_lists_only_observed_source_line_candidates(tmp_path):
