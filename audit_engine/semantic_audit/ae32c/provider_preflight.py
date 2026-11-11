@@ -24,6 +24,16 @@ from providers.factory import SUPPORTED_PROVIDERS, build_provider
 from providers.safe_errors import sanitize_provider_error
 
 DEFAULT_CLOUDFLARE_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
+# Keep this allowlist aligned with Cloudflare's published JSON Mode model list.
+# Models not listed here use ordinary chat plus strict local JSON/action validation.
+CLOUDFLARE_JSON_MODE_MODELS = frozenset({
+    "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "@cf/meta/llama-3-8b-instruct",
+    "@cf/meta/llama-3.1-8b-instruct",
+    "@hf/nousresearch/hermes-2-pro-mistral-7b",
+    "@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
+    "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
+})
 BASELINE_SENTINEL = "AE32C_PREFLIGHT_OK"
 
 
@@ -181,7 +191,7 @@ def run_preflight(
         "runtime_settings": {},
         "notes": [
             "No repository evidence tools are called by this preflight.",
-            "Cloudflare uses API-level response_format json_object for its documented model; OpenRouter uses ordinary chat and local strict-JSON/action-schema validation because the selected Nemotron free model does not document response_format.",
+            "API-level JSON Mode is used only for Cloudflare models in the published JSON Mode allowlist. Other Cloudflare models, including Qwen 3.8 27B, use ordinary chat with strict local JSON/action-schema validation. OpenRouter Nemotron Free also uses ordinary chat with strict local validation.",
             "Raw model response bodies and provider credentials are not included in artifacts.",
         ],
     }
@@ -256,10 +266,14 @@ def run_preflight(
         },
         {"role": "user", "content": "Return the required JSON action object now."},
     ]
-    # Cloudflare's selected model has a documented API JSON-object mode.
-    # OpenRouter's selected Nemotron Lightning Free model does not: use plain
-    # chat and enforce strict JSON/action-schema validation locally instead.
-    use_api_json_mode = provider_name == "cloudflare"
+    # Model capabilities differ within a provider. Cloudflare's published
+    # JSON Mode list does not include Qwen 3.8 27B, so Qwen must use ordinary
+    # chat and strict local JSON/action-schema validation. Do not infer JSON
+    # Mode support from the generic presence of a response_format parameter.
+    use_api_json_mode = (
+        provider_name == "cloudflare"
+        and effective_model in CLOUDFLARE_JSON_MODE_MODELS
+    )
     json_response, json_error, json_elapsed = _call(
         provider, json_messages, model_name, structured_json=use_api_json_mode
     )
@@ -270,13 +284,18 @@ def run_preflight(
                 "api_response_format_json_object"
                 if use_api_json_mode and callable(getattr(provider, "chat_structured", None))
                 else "plain_chat_local_json_validation"
-                if provider_name == "openrouter"
+                if provider_name in {"cloudflare", "openrouter"}
                 else "unavailable"
             ),
             "elapsed_seconds": json_elapsed,
             "response_chars": 0,
             "strict_json_valid": False,
             "action_schema_valid": False,
+            "capability_basis": (
+                "cloudflare_published_json_mode_model_allowlist"
+                if use_api_json_mode
+                else "model_not_confirmed_for_api_json_mode"
+            ),
             "error": json_error or "provider_returned_empty_response",
         }
         report["runtime_settings"] = _provider_runtime_settings(provider)
@@ -288,6 +307,11 @@ def run_preflight(
         "api_response_format_json_object"
         if use_api_json_mode
         else "plain_chat_local_json_validation"
+    )
+    json_probe["capability_basis"] = (
+        "cloudflare_published_json_mode_model_allowlist"
+        if use_api_json_mode
+        else "model_not_confirmed_for_api_json_mode"
     )
     json_probe["elapsed_seconds"] = json_elapsed
     json_probe["error"] = "" if json_probe["action_schema_valid"] else str(json_probe.get("parse_error_code") or json_probe["status"])

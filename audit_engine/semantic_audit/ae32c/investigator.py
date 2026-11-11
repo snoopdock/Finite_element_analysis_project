@@ -243,6 +243,7 @@ class RepositoryInvestigator:
         self._messages: list[dict[str, str]] = []
         self._tool_calls = 0
         self._model_rounds = 0
+        self._tool_calls_before_first_model_turn: int | None = None
         self._reserved_token_estimate = 0
         self._last_provider_reservation_check: dict[str, Any] | None = None
         self._reported_tokens = 0
@@ -774,8 +775,6 @@ class RepositoryInvestigator:
                 "max_response_chars": self.limits.max_response_chars,
             },
         }
-        if self.provider_name.strip().lower() in {"nararouter", "cloudflare"}:
-            user_payload["provider_protocol_guidance"] = self._provider_protocol_guidance()
         return [
             {"role": "system", "content": system},
             {"role": "user", "content": self._canonical_json(user_payload)},
@@ -810,39 +809,31 @@ class RepositoryInvestigator:
         return None
 
     def _provider_protocol_guidance(self) -> dict[str, Any]:
-        """Provide compact, prompt-only protocol hints without changing validators."""
+        """Prompt-only adaptation; never alters strict JSON/evidence validators.
+
+        A provider identifier is an operational hint, not proof that the
+        selected model supports tool calling or JSON Schema.
+        """
         name = self.provider_name.strip().lower()
         strategy = {
             "cloudflare": "minimal_strict_final_object",
             "nararouter": "explicit_action_envelope",
             "openrouter": "compact_evidence_bound_final",
         }.get(name, "generic_strict_final_object")
-        rules: list[str] = []
-        if name == "nararouter":
-            rules.append(
-                "NaraRouter JSON mode is not assumed: emit one strict JSON object with double-quoted keys/strings, "
-                "no prose or Markdown fences; tool_call keys are action, tool, arguments, reason."
-            )
-        elif name == "cloudflare":
-            rules.append(
-                "Keep responses concise; do not reproduce source/tool output; prefer one claim and cite one exact "
-                "supplied candidate for each required root-cause anchor."
-            )
         return {
-            "schema_version": "ae32c/protocol-guidance/v2",
+            "schema_version": "ae32c/protocol-guidance/v1",
             "strategy": strategy,
             "scope": "prompt_only_no_claim_of_provider_schema_enforcement",
-            "allowed_action_envelopes": {
-                "tool_call": ["action", "tool", "arguments", "reason"],
-                "final": ["action", "diagnosis"],
-            },
             "required_top_level_keys": ["action", "diagnosis"],
-            "required_diagnosis_keys": [
-                "summary", "root_cause", "claims", "proposed_corrective_action", "limitations", "next_steps"
-            ],
+            "required_diagnosis_keys": ["summary", "root_cause", "claims", "proposed_corrective_action", "limitations", "next_steps"],
             "required_claim_keys": ["statement", "kind", "confidence", "evidence_refs", "source_references"],
             "preferred_claim_count": 1,
-            "rules": rules,
+            "rules": [
+                "Return one complete strict JSON object and no extra prose.",
+                "Never leave mandatory keys out even if values are empty lists.",
+                "Use observed evidence IDs and exact source-reference candidates only.",
+                "If unsure, express a bounded hypothesis with limitations; never invent evidence.",
+            ],
         }
 
     def _finalization_context_messages(
@@ -1060,13 +1051,6 @@ class RepositoryInvestigator:
         }
         if self._required_source_anchors:
             notice["finalization_mode"]["required_source_line_witnesses"] = self._required_anchor_reference_candidates()
-        if self.provider_name.strip().lower() == "cloudflare":
-            notice["finalization_mode"]["response_constraints"] = [
-                "Return the complete required diagnosis schema, but keep all strings concise.",
-                "Do not quote or reproduce source code, tool responses, or large evidence excerpts.",
-                "Prefer one concise claim unless multiple distinct claims are necessary.",
-                "Cite one exact supplied source-reference candidate for each required root-cause anchor.",
-            ]
         # Rebuild on every finalization round so stale messages and rejected model
         # output cannot make later prompts exceed the remaining cumulative budget.
         self._compact_finalization_context(
@@ -1548,10 +1532,8 @@ class RepositoryInvestigator:
                            and any(e.evidence_id == c.get("evidence_id")
                                    and e.tool == "read_source_file" and e.status == "ok"
                                    for e in self._ledger)]
-                # One deterministic exact candidate per anchor reduces prompt
-                # ambiguity for small models without weakening the evidence gate.
                 witnesses.append({"path": path, "anchor": token,
-                                  "source_reference_candidates": matches[:1],
+                                  "source_reference_candidates": matches[:4],
                                   "witness_status": "observed" if matches else "not_observed"})
         return witnesses[:32]
 
@@ -2021,6 +2003,84 @@ class RepositoryInvestigator:
             raise _BudgetStop("reported_cost_budget_exhausted")
         return response, error, reserve
 
+    def _interaction_diagnostics(self) -> dict[str, Any]:
+        """Expose bounded turn/prefetch telemetry without changing acceptance."""
+        prefetch_events = [
+            event for event in self._events
+            if event.get("event") in {
+                "required_source_prefetched",
+                "required_source_prefetch_incomplete",
+                "required_source_prefetch_skipped",
+            }
+        ]
+        completed_prefetches = sum(
+            event.get("event") == "required_source_prefetched"
+            for event in prefetch_events
+        )
+        incomplete_prefetches = sum(
+            event.get("event") == "required_source_prefetch_incomplete"
+            for event in prefetch_events
+        )
+        skipped_prefetches = sum(
+            event.get("event") == "required_source_prefetch_skipped"
+            for event in prefetch_events
+        )
+        actions = self._model_action_trace
+        first_action = actions[0] if actions else {}
+        terminal_action = actions[-1] if actions else {}
+        accepted_final_rounds = [
+            item.get("round") for item in actions
+            if item.get("action") == "final_accepted"
+            and isinstance(item.get("round"), int)
+            and not isinstance(item.get("round"), bool)
+        ]
+        accepted_final_round = accepted_final_rounds[-1] if accepted_final_rounds else None
+        required_path_count = len(self._required_source_paths)
+        all_required_paths_prefetched = (
+            required_path_count > 0
+            and completed_prefetches == required_path_count
+            and incomplete_prefetches == 0
+            and skipped_prefetches == 0
+        )
+        if accepted_final_round is None:
+            early_finalization_classification = "no_final_accepted"
+        elif accepted_final_round == 1 and all_required_paths_prefetched:
+            early_finalization_classification = "first_turn_final_after_complete_required_source_prefetch"
+        elif accepted_final_round == 1:
+            early_finalization_classification = "first_turn_final_without_complete_required_source_prefetch"
+        else:
+            early_finalization_classification = "final_accepted_after_multiple_model_turns"
+
+        return {
+            "schema_version": "ae32c/model-interaction-diagnostics/v1",
+            "initial_evidence_prefetch": {
+                "required_source_path_count": required_path_count,
+                "required_source_reads_completed": completed_prefetches,
+                "required_source_reads_incomplete": incomplete_prefetches,
+                "required_source_reads_skipped": skipped_prefetches,
+                "all_required_paths_prefetched_before_first_model_turn": all_required_paths_prefetched,
+                "tool_calls_before_first_model_turn": self._tool_calls_before_first_model_turn,
+            },
+            "model_turns": {
+                "count": self._model_rounds,
+                "model_action_trace_count": len(actions),
+                "first_recorded_action": first_action.get("action") if first_action else None,
+                "first_recorded_action_round": first_action.get("round") if first_action else None,
+                "terminal_recorded_action": terminal_action.get("action") if terminal_action else None,
+                "terminal_recorded_action_round": terminal_action.get("round") if terminal_action else None,
+                "model_requested_tool_action_count": sum(
+                    item.get("action") == "tool_call" for item in actions
+                ),
+                "accepted_final_round": accepted_final_round,
+                "final_accepted_on_first_model_turn": accepted_final_round == 1,
+                "early_finalization_classification": early_finalization_classification,
+            },
+            "interpretation": (
+                "Diagnostics describe orchestration and model-turn timing only; "
+                "they do not establish diagnosis accuracy or justify changing acceptance gates."
+            ),
+        }
+
     def _report_budget(self) -> dict[str, Any]:
         return {
             "max_rounds": self.limits.max_rounds,
@@ -2140,17 +2200,6 @@ class RepositoryInvestigator:
                     item = http_error.get(key)
                     if isinstance(item, str) and len(item) <= 100 and re.fullmatch(r"[A-Za-z0-9_.:/\-\[\]]+|present_unclassified", item):
                         safe_http_error[key] = item
-                message_category = http_error.get("error_message_category")
-                if isinstance(message_category, str) and message_category in {
-                    "model_identifier_rejected", "authentication_or_permission",
-                    "quota_or_rate_limit", "request_parameter_rejected",
-                    "endpoint_or_method_rejected", "request_schema_or_body_rejected",
-                    "provider_internal_error", "other_unclassified",
-                }:
-                    safe_http_error["error_message_category"] = message_category
-                request_id = http_error.get("error_request_id")
-                if isinstance(request_id, str) and len(request_id) <= 100 and re.fullmatch(r"[A-Za-z0-9_.:/-]{1,100}", request_id):
-                    safe_http_error["error_request_id"] = request_id
                 for key in ("error_fields", "top_level_error_fields"):
                     items = http_error.get(key)
                     if isinstance(items, list):
@@ -2167,33 +2216,7 @@ class RepositoryInvestigator:
                               "unrecognized_object", "non_object"}
                 kind = envelope.get("envelope_kind")
                 if isinstance(kind, str) and kind in safe_kinds:
-                    safe_envelope: dict[str, Any] = {"envelope_kind": kind}
-                    choices_shape = envelope.get("choices_shape")
-                    if isinstance(choices_shape, str) and choices_shape in {
-                        "nonempty_list", "empty_list", "absent", "wrong_type",
-                    }:
-                        safe_envelope["choices_shape"] = choices_shape
-                    has_error_object = envelope.get("has_error_object")
-                    if isinstance(has_error_object, bool):
-                        safe_envelope["has_error_object"] = has_error_object
                     report.setdefault("provider", {})["last_envelope_kind"] = kind
-                    report.setdefault("provider", {})["last_envelope_diagnostic"] = safe_envelope
-            diagnostic_counts = provider_stats.get("http_error_diagnostic_counts")
-            if isinstance(diagnostic_counts, Mapping):
-                report.setdefault("provider", {})["http_error_diagnostic_counts"] = {
-                    self._safe_text(key, 100): max(0, int(value))
-                    for key, value in list(diagnostic_counts.items())[:20]
-                    if isinstance(key, str) and isinstance(value, int) and not isinstance(value, bool)
-                }
-            finish_counts = provider_stats.get("finish_reason_counts")
-            if isinstance(finish_counts, Mapping):
-                report.setdefault("provider", {})["finish_reason_counts"] = {
-                    key: max(0, int(value))
-                    for key, value in list(finish_counts.items())[:10]
-                    if isinstance(key, str) and key in {
-                        "stop", "length", "max_tokens", "content_filter", "safety", "unknown",
-                    } and isinstance(value, int) and not isinstance(value, bool)
-                }
             error_counts = provider_stats.get("error_counts")
             if isinstance(error_counts, Mapping):
                 report.setdefault("provider", {})["error_counts"] = {
@@ -2202,6 +2225,7 @@ class RepositoryInvestigator:
                     if isinstance(key, str) and isinstance(value, int) and not isinstance(value, bool)
                 }
         report["budget"] = self._report_budget()
+        report["interaction_diagnostics"] = self._interaction_diagnostics()
         report["errors"] = self._events[-100:]
         return self._safe_value(report)
 
@@ -2233,6 +2257,7 @@ class RepositoryInvestigator:
                 return self._finalize_report(report, "incomplete", "initial_evidence_unavailable")
             self._prefetch_required_source_evidence()
             self._messages = self._initial_messages(problem, summary)
+            self._tool_calls_before_first_model_turn = self._tool_calls
 
             while self._model_rounds < self.limits.max_rounds:
                 # One evidence-phase reminder before tool access closes. The
@@ -2376,16 +2401,6 @@ class RepositoryInvestigator:
                         "status": "rejected_before_dispatch",
                         "reason_code": "invalid_strict_json",
                         "parse_error_code": parse_error_code,
-                        **parse_error_metadata,
-                        "json_syntax_rules": [
-                            "Use double quotes for every JSON key and string value.",
-                            "Do not use single-quoted strings, comments, trailing commas, Markdown fences, or surrounding prose.",
-                            "Return exactly one complete JSON object.",
-                        ],
-                        "allowed_action_envelopes": {
-                            "tool_call": ["action", "tool", "arguments", "reason"],
-                            "final": ["action", "diagnosis"],
-                        },
                         "recovery_attempt": phase_recovery_attempt,
                         "total_recovery_attempts_used": self._invalid_json_retries,
                         "remaining_recovery_attempts": max(
@@ -2399,14 +2414,8 @@ class RepositoryInvestigator:
                         ),
                         "message": (
                             (
-                                "Your previous response failed strict JSON parsing"
-                                + (
-                                    f" at line {parse_error_metadata['parse_error_line']}, "
-                                    f"column {parse_error_metadata['parse_error_column']}"
-                                    if "parse_error_line" in parse_error_metadata
-                                    and "parse_error_column" in parse_error_metadata else ""
-                                )
-                                + ". The response was not exactly one valid strict JSON object. The reserved finalization phase is active. No action was executed, "
+                                "The reserved finalization phase is active. Your previous response was rejected "
+                                "because it was not exactly one valid strict JSON object. No action was executed, "
                                 "and the malformed response was omitted. Return exactly one JSON object for a final "
                                 "diagnosis, with only the top-level keys action and diagnosis and action set to final. "
                                 "Do not request tools, add Markdown fences, add commentary, or include trailing text. "
@@ -2415,14 +2424,8 @@ class RepositoryInvestigator:
                             )
                             if in_finalization else
                             (
-                                "Your previous response failed strict JSON parsing"
-                                + (
-                                    f" at line {parse_error_metadata['parse_error_line']}, "
-                                    f"column {parse_error_metadata['parse_error_column']}"
-                                    if "parse_error_line" in parse_error_metadata
-                                    and "parse_error_column" in parse_error_metadata else ""
-                                )
-                                + ". The response was not exactly one valid strict JSON object. No action was executed and the malformed response was omitted from the conversation. "
+                                "Your previous response was rejected because it was not exactly one valid strict JSON object. "
+                                "No action was executed and the malformed response was omitted from the conversation. "
                                 "Return exactly one JSON object with no Markdown fences, no commentary, no trailing text, "
                                 "no duplicate keys, and only the documented action schema. Use either a registered tool_call "
                                 "with its exact arguments schema or a final diagnosis action. This feedback is protocol guidance, "

@@ -150,6 +150,82 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
     assert "E0002" in provider.messages[1][-1]["content"]
     assert "E0005" in provider.messages[4][-1]["content"]
     assert "references_resolved_not_independently_proven" == report["diagnosis_assurance"]
+    interaction = report["interaction_diagnostics"]
+    assert interaction["model_turns"]["count"] == 6
+    assert interaction["model_turns"]["first_recorded_action"] == "tool_call"
+    assert interaction["model_turns"]["model_requested_tool_action_count"] == 5
+    assert interaction["model_turns"]["final_accepted_on_first_model_turn"] is False
+    assert interaction["model_turns"]["early_finalization_classification"] == "final_accepted_after_multiple_model_turns"
+
+
+def test_first_turn_final_after_required_prefetch_is_reported_without_changing_outcome():
+    tools = RepositoryEvidenceTools(FIXTURE_ROOT)
+    extractor_hash = tools.file_hashes["pipeline/extractor.py"]
+    adapter_hash = tools.file_hashes["providers/adapter.py"]
+    final_action = {
+        "action": "final",
+        "diagnosis": {
+            "summary": "Static source lines show a consumer/provider counter-name mismatch.",
+            "root_cause": {
+                "statement": "The consumer accesses total_calls while the adapter source exposes self.calls.",
+                "confidence": "medium",
+                "evidence_refs": ["E0002", "E0003"],
+                "source_references": [
+                    {"evidence_id": "E0002", "path": "pipeline/extractor.py", "line": 6, "source_sha256": extractor_hash},
+                    {"evidence_id": "E0003", "path": "providers/adapter.py", "line": 6, "source_sha256": adapter_hash},
+                ],
+            },
+            "claims": [{
+                "statement": "The extractor source contains the total_calls access.",
+                "kind": "observation",
+                "confidence": "high",
+                "evidence_refs": ["E0002"],
+                "source_references": [
+                    {"evidence_id": "E0002", "path": "pipeline/extractor.py", "line": 6, "source_sha256": extractor_hash},
+                ],
+            }],
+            "proposed_corrective_action": "Review the interface contract before proposing a change.",
+            "limitations": ["Static source inspection does not prove runtime causality."],
+            "next_steps": ["Inspect the related tests and runtime traceback."],
+        },
+    }
+    provider = ScriptedProvider([json.dumps(final_action)])
+    investigator = RepositoryInvestigator(
+        FIXTURE_ROOT,
+        provider,
+        provider_name=provider.provider_name,
+        model_name=provider.model,
+        evidence_tools=tools,
+        required_source_paths=("pipeline/extractor.py", "providers/adapter.py"),
+        limits=InvestigationLimits(
+            max_rounds=6,
+            max_tool_calls=7,
+            max_tokens_per_call=500,
+            max_total_tokens=32_000,
+            max_total_prompt_chars=120_000,
+            max_elapsed_seconds=120,
+            max_snapshot_files=100,
+            max_snapshot_bytes=2_000_000,
+        ),
+        id_factory=lambda: "ae32c-first-turn-final-prefetch-test",
+    )
+    report = investigator.run(PROBLEM)
+    assert report["status"] == "completed"
+    assert report["budget"]["model_rounds_used"] == 1
+    interaction = report["interaction_diagnostics"]
+    prefetch = interaction["initial_evidence_prefetch"]
+    turns = interaction["model_turns"]
+    assert prefetch["required_source_path_count"] == 2
+    assert prefetch["required_source_reads_completed"] == 2
+    assert prefetch["all_required_paths_prefetched_before_first_model_turn"] is True
+    assert prefetch["tool_calls_before_first_model_turn"] == 3
+    assert turns["first_recorded_action"] == "final_accepted"
+    assert turns["final_accepted_on_first_model_turn"] is True
+    assert turns["model_requested_tool_action_count"] == 0
+    assert turns["early_finalization_classification"] == "first_turn_final_after_complete_required_source_prefetch"
+
+
+    assert "references_resolved_not_independently_proven" == report["diagnosis_assurance"]
 
 
 def test_comparison_metrics_describe_behavior_without_claiming_accuracy():
@@ -383,7 +459,7 @@ def test_openrouter_preflight_rejects_non_json_action_without_api_json_mode():
 def test_cloudflare_preflight_accepts_valid_strict_json_action_shape():
     action = json.dumps({"action": "tool_call", "tool": "repository_summary", "arguments": {}, "reason": "Check available repository evidence."})
     fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (action, None)])
-    report = run_preflight("cloudflare", provider_builder=_fake_preflight_builder(fake), environ={})
+    report = run_preflight("cloudflare", "@cf/meta/llama-3.1-8b-instruct", provider_builder=_fake_preflight_builder(fake), environ={})
     assert report["status"] == "passed"
     assert report["json_action_probe"]["strict_json_valid"] is True
     assert report["json_action_probe"]["action_schema_valid"] is True
@@ -396,13 +472,57 @@ def test_cloudflare_preflight_accepts_valid_strict_json_action_shape():
 def test_cloudflare_preflight_classifies_malformed_json_without_storing_response():
     raw_response = "```json\n{ action: tool_call }\n```"
     fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (raw_response, None)])
-    report = run_preflight("cloudflare", provider_builder=_fake_preflight_builder(fake), environ={})
+    report = run_preflight("cloudflare", "@cf/meta/llama-3.1-8b-instruct", provider_builder=_fake_preflight_builder(fake), environ={})
     assert report["status"] == "json_compatibility_failed"
     assert report["json_action_probe"]["status"] == "invalid_json"
     assert report["json_action_probe"]["parse_error_code"] == "json_syntax_error"
     assert fake.structured_calls == 1
     assert raw_response not in json.dumps(report)
 
+
+
+
+def test_cloudflare_qwen_preflight_uses_plain_chat_and_local_json_validation():
+    model = "@cf/qwen/qwen3.8-27b"
+    action = json.dumps({
+        "action": "tool_call",
+        "tool": "repository_summary",
+        "arguments": {},
+        "reason": "Check repository evidence.",
+    })
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (action, None)])
+    report = run_preflight(
+        "cloudflare",
+        model,
+        provider_builder=_fake_preflight_builder(fake),
+        environ={},
+    )
+    assert report["status"] == "passed"
+    assert report["effective_model"] == model
+    assert report["json_action_probe"]["strict_json_valid"] is True
+    assert report["json_action_probe"]["action_schema_valid"] is True
+    assert report["json_action_probe"]["request_mode"] == "plain_chat_local_json_validation"
+    assert report["json_action_probe"]["capability_basis"] == "model_not_confirmed_for_api_json_mode"
+    assert fake.structured_calls == 0
+    assert len(fake.calls) == 2
+    assert "Check repository evidence." not in json.dumps(report)
+
+
+def test_cloudflare_qwen_preflight_rejects_non_json_action_without_api_json_mode():
+    model = "@cf/qwen/qwen3.8-27b"
+    raw_response = "The tool I would call is repository_summary."
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (raw_response, None)])
+    report = run_preflight(
+        "cloudflare",
+        model,
+        provider_builder=_fake_preflight_builder(fake),
+        environ={},
+    )
+    assert report["status"] == "json_compatibility_failed"
+    assert report["json_action_probe"]["status"] == "invalid_json"
+    assert report["json_action_probe"]["request_mode"] == "plain_chat_local_json_validation"
+    assert fake.structured_calls == 0
+    assert raw_response not in json.dumps(report)
 
 def test_provider_preflight_failure_stops_before_json_probe():
     fake = PreflightFakeProvider([(None, "nararouter transport error: ReadTimeout")])
@@ -416,7 +536,7 @@ def test_provider_preflight_failure_stops_before_json_probe():
 def test_cloudflare_json_probe_rejects_duplicate_keys_and_wrong_action_schema():
     duplicate = '{"action":"tool_call","action":"final","tool":"repository_summary","arguments":{},"reason":"probe"}'
     fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (duplicate, None)])
-    report = run_preflight("cloudflare", provider_builder=_fake_preflight_builder(fake), environ={})
+    report = run_preflight("cloudflare", "@cf/meta/llama-3.1-8b-instruct", provider_builder=_fake_preflight_builder(fake), environ={})
     assert report["status"] == "json_compatibility_failed"
     assert report["json_action_probe"]["strict_json_valid"] is False
     assert report["json_action_probe"]["parse_error_code"] == "json_syntax_error"
