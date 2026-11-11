@@ -820,7 +820,17 @@ class RepositoryInvestigator:
                     feedback.get("phase") == "finalization"
                     or (isinstance(schema_version, str) and "finalization" in schema_version)
                 ):
-                    return self._safe_value(feedback)
+                    compact_feedback = self._safe_value(feedback)
+                    message = compact_feedback.get("message")
+                    if isinstance(message, str) and len(message) > 240:
+                        # The finalization-mode notice already carries the operative
+                        # instructions. Keep structured diagnostics and replace
+                        # duplicated prose with a bounded, phase-safe summary.
+                        compact_feedback["message"] = (
+                            "Do not request tools during finalization. The previous response was rejected "
+                            "before dispatch; follow the required action and structured constraints below."
+                        )
+                    return compact_feedback
         return None
 
     def _provider_protocol_guidance(self) -> dict[str, Any]:
@@ -984,6 +994,9 @@ class RepositoryInvestigator:
         # context while retaining every evidence ID/hash and exact source-reference
         # candidates. The final metadata-only fallback still permits an explicitly
         # inconclusive diagnosis instead of forcing the model to invent citations.
+        # Keep at least the bounded candidate set in the final fallback. If
+        # even that cannot fit, expose target_exceeded rather than silently
+        # removing exact source-reference candidates from the model context.
         variants = [
             (120, 3, 80, True),
             (80, 2, 60, True),
@@ -991,7 +1004,6 @@ class RepositoryInvestigator:
             (24, 1, 20, True),
             (12, 1, 10, True),
             (0, 0, 5, False),
-            (0, 0, 0, False),
         ]
         chosen: list[dict[str, str]] | None = None
         chosen_meta: tuple[int, int, int, bool] = variants[-1]
