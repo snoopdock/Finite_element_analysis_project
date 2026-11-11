@@ -759,6 +759,9 @@ class RepositoryInvestigator:
                     "read_source_file or state the limitation. Never invent a source line or hash."
                 ) if self._required_source_paths else "not_configured",
             },
+            # Backward-compatible prompt key retained for callers and
+            # regression checks that consume the original protocol contract.
+            "provider_protocol_guidance": self._provider_protocol_guidance(),
             "required_source_evidence": [
                 self._required_source_evidence_view(entry)
                 for entry in self._ledger
@@ -1041,6 +1044,10 @@ class RepositoryInvestigator:
                 "finalization_rejections_used": self._finalization_rejections,
                 "required_action": "final",
                 "required_source_coverage": self._required_source_coverage(),
+                "response_constraints": [
+                    "Return a concise, evidence-bound diagnosis in the required JSON action envelope.",
+                    "Do not quote or reproduce source code; describe relevant code behaviour in your own words.",
+                ],
                 "instructions": (
                     "Evidence gathering is closed. Do not request another tool. Submit a final diagnosis "
                     "using only the source-bound evidence ledger and exact source-reference candidates in "
@@ -2216,7 +2223,24 @@ class RepositoryInvestigator:
                               "unrecognized_object", "non_object"}
                 kind = envelope.get("envelope_kind")
                 if isinstance(kind, str) and kind in safe_kinds:
-                    report.setdefault("provider", {})["last_envelope_kind"] = kind
+                    provider_report = report.setdefault("provider", {})
+                    provider_report["last_envelope_kind"] = kind
+                    # Preserve the small historical diagnostic contract while
+                    # explicitly allowlisting every persisted field. Never copy
+                    # upstream messages, arbitrary keys, credentials or payloads.
+                    choices_shape = envelope.get("choices_shape")
+                    safe_choices_shapes = {
+                        "absent", "list", "empty_list", "non_list", "unknown"
+                    }
+                    safe_envelope = {"envelope_kind": kind}
+                    if isinstance(choices_shape, str):
+                        safe_envelope["choices_shape"] = (
+                            choices_shape if choices_shape in safe_choices_shapes else "unknown"
+                        )
+                    has_error_object = envelope.get("has_error_object")
+                    if isinstance(has_error_object, bool):
+                        safe_envelope["has_error_object"] = has_error_object
+                    provider_report["last_envelope_diagnostic"] = safe_envelope
             error_counts = provider_stats.get("error_counts")
             if isinstance(error_counts, Mapping):
                 report.setdefault("provider", {})["error_counts"] = {
