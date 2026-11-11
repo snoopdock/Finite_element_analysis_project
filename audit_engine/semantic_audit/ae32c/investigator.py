@@ -2458,6 +2458,9 @@ class RepositoryInvestigator:
                         "status": "rejected_before_dispatch",
                         "reason_code": "invalid_strict_json",
                         "parse_error_code": parse_error_code,
+                        # Expose only parser position metadata. The rejected
+                        # model response itself is deliberately never echoed.
+                        **parse_error_metadata,
                         "recovery_attempt": phase_recovery_attempt,
                         "total_recovery_attempts_used": self._invalid_json_retries,
                         "remaining_recovery_attempts": max(

@@ -181,3 +181,27 @@ def test_nararouter_invalid_json_recovery_includes_explicit_non_assumed_json_mod
         for rule in guidance["rules"]
     )
 
+    recovery_feedback = []
+    for batch in provider.messages:
+        for message in batch:
+            if message.get("role") != "user":
+                continue
+            try:
+                envelope = json.loads(message.get("content", ""))
+            except (TypeError, json.JSONDecodeError):
+                continue
+            feedback = envelope.get("validation_feedback") if isinstance(envelope, dict) else None
+            if (
+                isinstance(feedback, dict)
+                and feedback.get("schema_version") == "ae32c/json-validation-feedback/v1"
+            ):
+                recovery_feedback.append(feedback)
+
+    assert recovery_feedback
+    feedback = recovery_feedback[0]
+    assert feedback["parse_error_code"] == "json_syntax_error"
+    assert feedback["parse_error_line"] == 1
+    assert feedback["parse_error_column"] == 1
+    # Recovery feedback may expose the parser position, never malformed output.
+    assert "not-json" not in json.dumps(feedback)
+
