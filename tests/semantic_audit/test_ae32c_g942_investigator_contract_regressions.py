@@ -202,6 +202,9 @@ def test_nararouter_invalid_json_recovery_includes_explicit_non_assumed_json_mod
     assert feedback["parse_error_code"] == "json_syntax_error"
     assert feedback["parse_error_line"] == 1
     assert feedback["parse_error_column"] == 1
-    # Recovery feedback may expose the parser position, never malformed output.
+    assert feedback["json_syntax_rules"]
+    assert "double quotes" in feedback["json_syntax_rules"][0]
+    assert all(isinstance(rule, str) and rule for rule in feedback["json_syntax_rules"])
+    # Recovery feedback may expose parser position and static rules, never malformed output.
     assert "not-json" not in json.dumps(feedback)
 

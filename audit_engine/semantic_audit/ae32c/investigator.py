@@ -32,6 +32,12 @@ MAX_DIAGNOSIS_LIST_ITEMS = 20
 _REVISION_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _EVIDENCE_ID = re.compile(r"^E[0-9]{4,6}$")
 _SENSITIVE_FIELD_NAME = re.compile(r"(?i)(?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth(?:orization)?|password|client[_-]?secret|secret|credential)")
+_JSON_SYNTAX_RULES = (
+    "Use double quotes for all JSON object keys and string values; single quotes are invalid JSON.",
+    "Do not use trailing commas, comments, Markdown fences, or explanatory text outside the JSON object.",
+    "Use only the JSON literals true, false, and null; Python-style True, False, and None are invalid JSON.",
+    "Escape backslashes and control characters inside JSON strings according to the JSON standard.",
+)
 
 SYSTEM_INSTRUCTIONS = """You are the reasoning component of a read-only software repository auditor.
 
@@ -2458,9 +2464,15 @@ class RepositoryInvestigator:
                         "status": "rejected_before_dispatch",
                         "reason_code": "invalid_strict_json",
                         "parse_error_code": parse_error_code,
-                        # Expose only parser position metadata. The rejected
-                        # model response itself is deliberately never echoed.
+                        # Expose only parser position metadata and static
+                        # syntax guidance. The rejected model response itself
+                        # is deliberately never echoed.
                         **parse_error_metadata,
+                        **(
+                            {"json_syntax_rules": list(_JSON_SYNTAX_RULES)}
+                            if parse_error_code == "json_syntax_error"
+                            else {}
+                        ),
                         "recovery_attempt": phase_recovery_attempt,
                         "total_recovery_attempts_used": self._invalid_json_retries,
                         "remaining_recovery_attempts": max(
