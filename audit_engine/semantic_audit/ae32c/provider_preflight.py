@@ -70,6 +70,8 @@ def _provider_runtime_settings(provider: Any) -> dict[str, Any]:
         "last_http_status", "last_returned_model", "finish_reason_counts",
         "structured_json_calls", "native_tool_call_requests",
         "native_tool_call_responses", "native_tool_call_failures",
+        "last_http_status", "last_error_category", "last_error_codes",
+        "last_request_id", "last_endpoint_mode", "last_finish_reason",
     )
     return {key: stats[key] for key in allowed if key in stats}
 
@@ -180,7 +182,7 @@ def _native_tool_call_probe(
     if not callable(method):
         return {
             "status": "adapter_method_unavailable",
-            "request_mode": "cloudflare_ai_run_native_tool_call",
+            "request_mode": "cloudflare_ai_run_named_function_tool_call",
             "function_name": RESPONSE_TOOL_NAME,
             "action_schema_valid": False,
             "error": "native_response_tool_method_unavailable",
@@ -212,9 +214,9 @@ def _native_tool_call_probe(
     elapsed = round(max(0.0, time.monotonic() - started), 3)
 
     base = {
-        "request_mode": "cloudflare_ai_run_native_tool_call",
+        "request_mode": "cloudflare_ai_run_named_function_tool_call",
         "function_name": RESPONSE_TOOL_NAME,
-        "capability_basis": "cloudflare_qwen_model_documentation",
+        "capability_basis": "cloudflare_qwen_model_documentation_and_workers_ai_sdk_request_pattern",
         "elapsed_seconds": elapsed,
         "action_schema_valid": False,
         "tool_executed": False,
@@ -294,7 +296,7 @@ def run_preflight(
         "runtime_settings": {},
         "notes": [
             "No repository evidence tools are called by this preflight.",
-            "API-level JSON Mode is used only for Cloudflare models in the published JSON Mode allowlist. Cloudflare Qwen 3.8 27B uses the documented /ai/run native function-calling interface with one virtual response function; no repository tool is executed by preflight.",
+            "API-level JSON Mode is used only for Cloudflare models in the published JSON Mode allowlist. Cloudflare Qwen 3.8 27B uses the /ai/run named-function interface with the OpenAI-style function schema and explicit named tool_choice used by Cloudflare's maintained Workers AI SDK; no repository tool is executed by preflight.",
             "OpenRouter Nemotron Free continues to use ordinary chat with strict local validation.",
             "Raw model response bodies and provider credentials are not included in artifacts.",
         ],

@@ -519,7 +519,7 @@ def test_cloudflare_qwen_preflight_uses_native_response_tool_without_json_mode()
     assert report["effective_model"] == model
     assert report["json_action_probe"]["status"] == "not_applicable_native_tool_call"
     assert report["native_tool_call_probe"]["status"] == "passed"
-    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_ai_run_native_tool_call"
+    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_ai_run_named_function_tool_call"
     assert report["native_tool_call_probe"]["action_schema_valid"] is True
     assert report["native_tool_call_probe"]["tool_executed"] is False
     assert fake.structured_calls == 0
@@ -542,7 +542,7 @@ def test_cloudflare_qwen_preflight_fails_if_native_call_is_not_returned():
     assert report["status"] == "native_tool_call_compatibility_failed"
     assert report["native_tool_call_probe"]["status"] == "native_tool_call_not_returned"
     assert report["native_tool_call_probe"]["response_type"] == "text"
-    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_ai_run_native_tool_call"
+    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_ai_run_named_function_tool_call"
     assert raw_response not in json.dumps(report)
     assert fake.structured_calls == 0
     assert len(fake.native_tool_calls) == 1

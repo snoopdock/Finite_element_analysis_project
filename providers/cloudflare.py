@@ -3,6 +3,7 @@
 
 import json
 import os
+import re
 import sys
 import time
 
@@ -40,6 +41,53 @@ def _reject_duplicate_tool_keys(pairs):
 
 def _reject_tool_constant(_value):
     raise ValueError("nonstandard_json_constant")
+
+
+def _safe_cloudflare_error_diagnostics(response):
+    """Extract only bounded, non-sensitive Cloudflare error metadata."""
+    status = getattr(response, "status_code", None)
+    headers = getattr(response, "headers", {}) or {}
+    request_id = ""
+    try:
+        candidate = headers.get("cf-ray") or headers.get("CF-Ray") or headers.get("cf-request-id") or ""
+        if isinstance(candidate, str) and re.fullmatch(r"[A-Za-z0-9-]{8,80}", candidate):
+            request_id = candidate
+    except Exception:
+        request_id = ""
+
+    codes = []
+    category = "provider_request_rejected"
+    try:
+        body = response.json()
+    except Exception:
+        body = None
+
+    errors = body.get("errors") if isinstance(body, dict) else None
+    if isinstance(errors, list):
+        for item in errors[:5]:
+            if not isinstance(item, dict):
+                continue
+            code = item.get("code")
+            if isinstance(code, int) and not isinstance(code, bool) and 0 <= code <= 9_999_999:
+                codes.append(code)
+            message = item.get("message")
+            if isinstance(message, str):
+                lowered = message.lower()[:1000]
+                if any(term in lowered for term in ("tool", "function", "schema", "parameter", "json")):
+                    category = "request_schema_rejected"
+                elif any(term in lowered for term in ("permission", "unauthorized", "forbidden")):
+                    category = "permission_denied"
+                elif any(term in lowered for term in ("model not found", "unknown model", "model unavailable")):
+                    category = "model_unavailable"
+                elif any(term in lowered for term in ("quota", "capacity", "rate limit", "budget")):
+                    category = "capacity_or_quota"
+
+    return {
+        "http_status": status if isinstance(status, int) else None,
+        "error_category": category,
+        "error_codes": sorted(set(codes))[:5],
+        "request_id": request_id,
+    }
 
 
 class CloudflareProvider:
@@ -107,6 +155,12 @@ class CloudflareProvider:
         self.native_tool_call_requests = 0
         self.native_tool_call_responses = 0
         self.native_tool_call_failures = 0
+        self.last_http_status = None
+        self.last_error_category = ""
+        self.last_error_codes = []
+        self.last_request_id = ""
+        self.last_endpoint_mode = ""
+        self.last_finish_reason = ""
 
         env_limit = os.environ.get("FEA_MAX_LLM_CALLS")
         if env_limit:
@@ -131,7 +185,7 @@ class CloudflareProvider:
             and self.logical_calls >= self.max_logical_calls
         )
 
-    def chat(self, messages, temperature=0.2, max_tokens=None, model=None, response_format=None, tools=None):
+    def chat(self, messages, temperature=0.2, max_tokens=None, model=None, response_format=None, tools=None, tool_choice=None):
         """Send one logical LLM call; HTTP retries do not count as new calls.
 
         ``response_format`` is intentionally restricted to the JSON-object mode
@@ -164,6 +218,12 @@ class CloudflareProvider:
 
         url = f"{CF_BASE}/accounts/{self.account_id}/ai/run/{model}"
         headers = {"Authorization": "Bearer " + self.api_token}
+        self.last_endpoint_mode = "workers_ai_run_chat"
+        self.last_http_status = None
+        self.last_error_category = ""
+        self.last_error_codes = []
+        self.last_request_id = ""
+        self.last_finish_reason = ""
         payload = {
             "messages": messages,
             "max_tokens": max_tokens,
@@ -180,15 +240,34 @@ class CloudflareProvider:
                 not isinstance(tools, list)
                 or len(tools) != 1
                 or not isinstance(tools[0], dict)
-                or not isinstance(tools[0].get("name"), str)
-                or not isinstance(tools[0].get("description"), str)
-                or not isinstance(tools[0].get("parameters"), dict)
+                or tools[0].get("type") != "function"
+                or not isinstance(tools[0].get("function"), dict)
+                or not isinstance(tools[0]["function"].get("name"), str)
+                or not isinstance(tools[0]["function"].get("description"), str)
+                or not isinstance(tools[0]["function"].get("parameters"), dict)
             ):
                 self.failed_calls += 1
                 self.native_tool_call_failures += 1
                 return None, "Invalid native response-tool definition"
+            function_name = tools[0]["function"]["name"]
+            expected_tool_choice = {
+                "type": "function",
+                "function": {"name": function_name},
+            }
+            if tool_choice is not None and tool_choice != expected_tool_choice:
+                self.failed_calls += 1
+                self.native_tool_call_failures += 1
+                return None, "Invalid native response-tool choice"
             payload["tools"] = tools
+            payload["tool_choice"] = tool_choice or expected_tool_choice
+            payload["parallel_tool_calls"] = False
+            # Cloudflare's current model API prefers max_completion_tokens.
+            # Keep the provider-wide budget value but use the current field for
+            # the Qwen native function-call path.
+            payload.pop("max_tokens", None)
+            payload["max_completion_tokens"] = max_tokens
             self.native_tool_call_requests += 1
+            self.last_endpoint_mode = "workers_ai_run_named_function_tool"
 
         for attempt in range(self.max_retries):
             self.http_attempts += 1
@@ -201,8 +280,10 @@ class CloudflareProvider:
                     timeout=self.timeout_seconds,
                 )
 
+                self.last_http_status = int(resp.status_code)
                 self.http_status_counts[str(resp.status_code)] = self.http_status_counts.get(str(resp.status_code), 0) + 1
                 if resp.status_code == 429:
+                    self.last_error_category = "rate_limited"
                     wait = min(120, 30 * (2 ** attempt))
                     print(
                         f"  [Cloudflare] Rate limited, waiting {wait}s...",
@@ -212,18 +293,42 @@ class CloudflareProvider:
                         time.sleep(wait)
                         continue
                     self.failed_calls += 1
+                    if tools is not None:
+                        self.native_tool_call_failures += 1
                     return None, "HTTP 429: rate limit after retries"
 
                 if resp.status_code == 402:
+                    self.last_error_category = "budget_exhausted"
                     self.failed_calls += 1
-                    return None, "HTTP 402: Budget exhausted"
+                    if tools is not None:
+                        self.native_tool_call_failures += 1
+                    return None, "HTTP 402: budget_exhausted"
 
                 if resp.status_code >= 400:
-                    # Never echo provider-controlled HTTP error bodies into logs or
-                    # reports: they may contain credentials, request fragments, or
-                    # other sensitive diagnostic data. Do not require response.text.
+                    # Do not expose provider-controlled messages. Retain only a
+                    # bounded category, numeric error codes and validated request ID.
+                    diagnostics = _safe_cloudflare_error_diagnostics(resp)
+                    self.last_error_category = diagnostics["error_category"]
+                    self.last_error_codes = diagnostics["error_codes"]
+                    self.last_request_id = diagnostics["request_id"]
                     self.failed_calls += 1
-                    return None, f"HTTP {resp.status_code}: upstream error body omitted"
+                    if tools is not None:
+                        self.native_tool_call_failures += 1
+                    code_text = (
+                        "; cloudflare_codes=" + ",".join(str(code) for code in self.last_error_codes)
+                        if self.last_error_codes else ""
+                    )
+                    request_text = (
+                        "; request_id=" + self.last_request_id
+                        if self.last_request_id else ""
+                    )
+                    if tools is None:
+                        return None, f"HTTP {resp.status_code}: upstream error body omitted"
+                    return None, (
+                        f"HTTP {resp.status_code}: upstream error body omitted"
+                        f"; category={self.last_error_category}"
+                        f"{code_text}{request_text}"
+                    )
 
                 data = resp.json()
                 usage = data.get("usage") if isinstance(data, dict) else None
@@ -248,8 +353,18 @@ class CloudflareProvider:
                     raw_tool_calls = (
                         result_block.get("tool_calls")
                         if isinstance(result_block, dict)
-                        else None
+                        else data.get("tool_calls")
                     )
+                    choices = data.get("choices")
+                    if raw_tool_calls in (None, []) and isinstance(choices, list) and choices:
+                        first_choice = choices[0]
+                        message = first_choice.get("message") if isinstance(first_choice, dict) else None
+                        if isinstance(message, dict):
+                            raw_tool_calls = message.get("tool_calls")
+                            finish_reason = first_choice.get("finish_reason")
+                            self.last_finish_reason = (
+                                finish_reason[:80] if isinstance(finish_reason, str) else ""
+                            )
                     if raw_tool_calls not in (None, []):
                         if not isinstance(raw_tool_calls, list) or len(raw_tool_calls) != 1:
                             self.failed_calls += 1
@@ -260,8 +375,13 @@ class CloudflareProvider:
                             self.failed_calls += 1
                             self.native_tool_call_failures += 1
                             return None, "Native response-tool envelope invalid"
-                        call_name = raw_call.get("name")
-                        call_arguments = raw_call.get("arguments")
+                        function_block = raw_call.get("function")
+                        if isinstance(function_block, dict):
+                            call_name = function_block.get("name")
+                            call_arguments = function_block.get("arguments")
+                        else:
+                            call_name = raw_call.get("name")
+                            call_arguments = raw_call.get("arguments")
                         if isinstance(call_arguments, str):
                             try:
                                 call_arguments = json.loads(
@@ -304,6 +424,8 @@ class CloudflareProvider:
                         self.response_chars_total += len(encoded_call)
                         self.response_chars_max = max(self.response_chars_max, len(encoded_call))
                         return ProviderToolCall(call_name, call_arguments), None
+                    if tools is not None:
+                        self.native_tool_call_failures += 1
 
                 try:
                     text = self.extractor.extract(
@@ -314,6 +436,8 @@ class CloudflareProvider:
                     )
                 except LLMResponseExtractionError as exc:
                     self.failed_calls += 1
+                    if tools is not None:
+                        self.native_tool_call_failures += 1
                     return None, f"Extraction failed: {exc.message}"
 
                 if len(text) > self.max_response_chars:
@@ -335,11 +459,17 @@ class CloudflareProvider:
             except requests.exceptions.RequestException as exc:
                 if attempt + 1 >= self.max_retries:
                     self.failed_calls += 1
+                    if tools is not None:
+                        self.native_tool_call_failures += 1
+                    self.last_error_category = "transport_error"
                     return None, str(exc)
                 time.sleep(10 * (attempt + 1))
 
             except ValueError as exc:
                 self.failed_calls += 1
+                if tools is not None:
+                    self.native_tool_call_failures += 1
+                self.last_error_category = "invalid_provider_json"
                 return None, f"Invalid JSON response: {exc}"
             finally:
                 # Close every obtained HTTP response, including status errors,
@@ -380,7 +510,7 @@ class CloudflareProvider:
         max_tokens=None,
         model=None,
     ):
-        """Return one native function call as data; never execute the function."""
+        """Return one named native function call as data; never execute it."""
         selected_model = model or (
             self.models[0] if len(self.models) == 1 else None
         )
@@ -397,20 +527,21 @@ class CloudflareProvider:
             or not isinstance(function.get("parameters"), dict)
         ):
             return None, "Invalid response-tool definition"
-        # The /ai/run REST API documents the native {name, description,
-        # parameters} tool shape and returns result.tool_calls[]. This avoids
-        # introducing a second transport path just for Qwen.
-        native_tool = {
-            "name": function["name"],
-            "description": function["description"],
-            "parameters": function["parameters"],
+
+        # Match Cloudflare's maintained Workers AI SDK: send the OpenAI-style
+        # function envelope and force this named function. The prior adapter
+        # downgraded the schema to the legacy flat shape and omitted tool_choice.
+        named_choice = {
+            "type": "function",
+            "function": {"name": function["name"]},
         }
         return self.chat(
             messages,
             temperature=temperature,
             max_tokens=max_tokens,
             model=selected_model,
-            tools=[native_tool],
+            tools=[tool_definition],
+            tool_choice=named_choice,
         )
 
     def chat_structured(self, messages, temperature=0.2, max_tokens=None, model=None):
@@ -448,6 +579,12 @@ class CloudflareProvider:
             "native_tool_call_requests": self.native_tool_call_requests,
             "native_tool_call_responses": self.native_tool_call_responses,
             "native_tool_call_failures": self.native_tool_call_failures,
+            "last_http_status": self.last_http_status,
+            "last_error_category": self.last_error_category,
+            "last_error_codes": list(self.last_error_codes),
+            "last_request_id": self.last_request_id,
+            "last_endpoint_mode": self.last_endpoint_mode,
+            "last_finish_reason": self.last_finish_reason,
             "extraction_stats": self.extractor.get_stats(),
             "learned_paths": self.extractor.get_learned_paths(),
         }

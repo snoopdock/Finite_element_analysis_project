@@ -53,7 +53,7 @@ class NativeCloudflareFakeProvider(FakeProvider):
 
     def get_capabilities(self):
         return {
-            "json_object_mode": True,
+            "json_object_mode": False,
             "json_schema_mode": False,
             "native_tool_calls": True,
             "finish_reason_reporting": False,
