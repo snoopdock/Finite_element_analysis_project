@@ -1,11 +1,11 @@
 """Manual, bounded provider compatibility preflight for AE-32C.
 
 This command makes no repository-tool calls and never executes the incident fixture.
-It first checks that the selected provider returns non-empty content. It then checks
-that active investigation providers can produce the strict JSON action envelope:
-Cloudflare uses API-level JSON-object mode; OpenRouter uses ordinary chat because the
-selected free Nemotron model does not document response_format. Both responses are
-validated locally against the same action schema.
+It first checks that the selected provider returns non-empty content. Cloudflare Qwen
+uses its documented native function-calling response channel; other Cloudflare models
+use JSON-object mode only when present in the published model allowlist. OpenRouter
+uses ordinary chat unless the selected model has a documented structured mode. All
+responses are validated locally against the canonical AE-32C action protocol.
 
 Live calls require an explicit confirmation flag. Artifacts intentionally omit raw
 model response bodies and credentials.
@@ -21,20 +21,22 @@ import time
 from typing import Any, Callable, Mapping
 
 from providers.factory import SUPPORTED_PROVIDERS, build_provider
+from providers.cloudflare import CLOUDFLARE_JSON_MODE_MODELS, QWEN_NATIVE_TOOL_MODEL
+from providers.base import ProviderToolCall
 from providers.safe_errors import sanitize_provider_error
+from audit_engine.semantic_audit.ae32c.response_normalizer import (
+    ResponseNormalizationError,
+    normalize_provider_tool_call,
+)
+from audit_engine.semantic_audit.ae32c.response_protocol import (
+    RESPONSE_TOOL_NAME,
+    build_response_tool_definition,
+    response_tool_instruction,
+)
 
 DEFAULT_CLOUDFLARE_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
-# Keep this allowlist aligned with Cloudflare's published JSON Mode model list.
-# Models not listed here use ordinary chat plus strict local JSON/action validation.
-CLOUDFLARE_JSON_MODE_MODELS = frozenset({
-    "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-    "@cf/meta/llama-3-8b-instruct",
-    "@cf/meta/llama-3.1-8b-instruct",
-    "@hf/nousresearch/hermes-2-pro-mistral-7b",
-    "@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
-    "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
-})
 BASELINE_SENTINEL = "AE32C_PREFLIGHT_OK"
+CLOUDFLARE_NATIVE_TOOL_MODELS = frozenset({QWEN_NATIVE_TOOL_MODEL})
 
 
 def _effective_model(provider: Any, requested: str) -> str:
@@ -66,7 +68,8 @@ def _provider_runtime_settings(provider: Any) -> dict[str, Any]:
         "timeout_seconds", "max_retries", "http_attempts", "http_status_counts",
         "successful_calls", "failed_calls", "logical_calls", "total_calls",
         "last_http_status", "last_returned_model", "finish_reason_counts",
-        "structured_json_calls",
+        "structured_json_calls", "native_tool_call_requests",
+        "native_tool_call_responses", "native_tool_call_failures",
     )
     return {key: stats[key] for key in allowed if key in stats}
 
@@ -168,6 +171,103 @@ def _json_action_probe(response: str) -> dict[str, Any]:
     return result
 
 
+def _native_tool_call_probe(
+    provider: Any,
+    model_name: str,
+) -> dict[str, Any]:
+    """Verify one Cloudflare-native virtual response function without dispatch."""
+    method = getattr(provider, "chat_with_response_tool", None)
+    if not callable(method):
+        return {
+            "status": "adapter_method_unavailable",
+            "request_mode": "cloudflare_ai_run_native_tool_call",
+            "function_name": RESPONSE_TOOL_NAME,
+            "action_schema_valid": False,
+            "error": "native_response_tool_method_unavailable",
+        }
+
+    messages = [
+        {"role": "system", "content": response_tool_instruction()},
+        {
+            "role": "system",
+            "content": (
+                "This is a dry-run compatibility probe. Call the response function exactly once. "
+                "Use action='tool_call', tool='repository_summary', arguments={}, provide a short "
+                "non-empty reason, and set diagnosis={}. No repository tool will be executed."
+            ),
+        },
+        {"role": "user", "content": "Submit the specified dry-run response now."},
+    ]
+    started = time.monotonic()
+    try:
+        response, error = method(
+            messages,
+            tool_definition=build_response_tool_definition(),
+            temperature=0.0,
+            max_tokens=256,
+            model=model_name or None,
+        )
+    except Exception as exc:
+        response, error = None, f"provider_call_exception:{type(exc).__name__}"
+    elapsed = round(max(0.0, time.monotonic() - started), 3)
+
+    base = {
+        "request_mode": "cloudflare_ai_run_native_tool_call",
+        "function_name": RESPONSE_TOOL_NAME,
+        "capability_basis": "cloudflare_qwen_model_documentation",
+        "elapsed_seconds": elapsed,
+        "action_schema_valid": False,
+        "tool_executed": False,
+    }
+    if isinstance(response, str):
+        base.update({
+            "status": "native_tool_call_not_returned",
+            "response_type": "text",
+            "response_chars": len(response),
+            "error": "native_tool_call_not_returned",
+        })
+        return base
+    if not isinstance(response, ProviderToolCall):
+        base.update({
+            "status": "provider_failed",
+            "response_type": "unavailable",
+            "response_chars": 0,
+            "error": _safe_error(error or "provider_returned_no_native_tool_call"),
+        })
+        return base
+
+    try:
+        normalized = normalize_provider_tool_call(response)
+    except ResponseNormalizationError as exc:
+        base.update({
+            "status": "invalid_native_tool_call",
+            "response_type": "native_tool_call",
+            "error": exc.code,
+        })
+        return base
+
+    payload = normalized.payload
+    valid = (
+        set(payload) == {"action", "tool", "arguments", "reason"}
+        and payload.get("action") == "tool_call"
+        and payload.get("tool") == "repository_summary"
+        and payload.get("arguments") == {}
+        and isinstance(payload.get("reason"), str)
+        and bool(payload["reason"].strip())
+        and len(payload["reason"]) <= 1000
+    )
+    base.update({
+        "status": "passed" if valid else "schema_mismatch",
+        "response_type": "native_tool_call",
+        "normalization_strategy": normalized.strategy,
+        "canonical_action_valid": valid,
+        "action_schema_valid": valid,
+        "response_chars": len(json.dumps(payload, ensure_ascii=False, separators=(",", ":"))),
+        "error": "" if valid else "canonical_action_schema_mismatch",
+    })
+    return base
+
+
 def run_preflight(
     provider_name: str,
     model_name: str = "",
@@ -188,10 +288,14 @@ def run_preflight(
         "json_action_probe": {
             "status": "not_applicable" if provider_name not in {"cloudflare", "openrouter"} else "not_run"
         },
+        "native_tool_call_probe": {
+            "status": "not_applicable"
+        },
         "runtime_settings": {},
         "notes": [
             "No repository evidence tools are called by this preflight.",
-            "API-level JSON Mode is used only for Cloudflare models in the published JSON Mode allowlist. Other Cloudflare models, including Qwen 3.8 27B, use ordinary chat with strict local JSON/action-schema validation. OpenRouter Nemotron Free also uses ordinary chat with strict local validation.",
+            "API-level JSON Mode is used only for Cloudflare models in the published JSON Mode allowlist. Cloudflare Qwen 3.8 27B uses the documented /ai/run native function-calling interface with one virtual response function; no repository tool is executed by preflight.",
+            "OpenRouter Nemotron Free continues to use ordinary chat with strict local validation.",
             "Raw model response bodies and provider credentials are not included in artifacts.",
         ],
     }
@@ -252,6 +356,23 @@ def run_preflight(
     if provider_name == "nararouter":
         report["status"] = "passed"
         report["notes"].append("A non-empty response was received; sentinel_match is informational. NaraRouter is historical-only and no action-schema probe is performed.")
+        return report
+
+    if provider_name == "cloudflare" and effective_model in CLOUDFLARE_NATIVE_TOOL_MODELS:
+        report["json_action_probe"] = {
+            "status": "not_applicable_native_tool_call",
+            "request_mode": "not_used",
+            "strict_json_valid": False,
+            "action_schema_valid": False,
+        }
+        native_probe = _native_tool_call_probe(provider, effective_model)
+        report["native_tool_call_probe"] = native_probe
+        report["runtime_settings"] = _provider_runtime_settings(provider)
+        report["status"] = (
+            "passed"
+            if native_probe.get("status") == "passed"
+            else "native_tool_call_compatibility_failed"
+        )
         return report
 
     json_messages = [
@@ -361,6 +482,15 @@ def write_preflight_artifacts(report: dict[str, Any], output_dir: Path) -> tuple
             f"- Action schema valid: `{probe.get('action_schema_valid', False)}`",
             f"- JSON response characters: `{probe.get('response_chars', 0)}`",
         ])
+        native_probe = report.get("native_tool_call_probe", {})
+        if native_probe.get("status") != "not_applicable":
+            lines.extend([
+                f"- Native response-tool probe: `{native_probe.get('status', 'unknown')}`",
+                f"- Native request mode: `{native_probe.get('request_mode', 'not_confirmed')}`",
+                f"- Function name: `{native_probe.get('function_name', 'unknown')}`",
+                f"- Canonical action valid: `{native_probe.get('canonical_action_valid', native_probe.get('action_schema_valid', False))}`",
+                f"- Tool executed: `{native_probe.get('tool_executed', False)}`",
+            ])
     error = report.get("transport_probe", {}).get("error") or report.get("json_action_probe", {}).get("error") or report.get("error")
     if error:
         lines.extend(["", f"- Safe error: `{str(error)[:300]}`"])

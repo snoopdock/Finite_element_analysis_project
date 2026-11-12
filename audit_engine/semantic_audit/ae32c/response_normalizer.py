@@ -12,6 +12,9 @@ import json
 import re
 from typing import Any
 
+from providers.base import ProviderToolCall
+from audit_engine.semantic_audit.ae32c.response_protocol import RESPONSE_TOOL_NAME
+
 
 @dataclass(frozen=True)
 class NormalizationResult:
@@ -52,6 +55,70 @@ def _strict_loads(value: str) -> Any:
         ) from None
     except (TypeError, ValueError):
         raise ResponseNormalizationError("invalid_json_value") from None
+
+
+def normalize_provider_tool_call(
+    tool_call: ProviderToolCall,
+    *,
+    max_chars: int = 100_000,
+) -> NormalizationResult:
+    """Convert one provider-native virtual response call to canonical AE-32C JSON.
+
+    The function call is data only. It is not dispatched. The investigator's
+    existing action/evidence validators remain authoritative.
+    """
+    if not isinstance(tool_call, ProviderToolCall):
+        raise ResponseNormalizationError("invalid_native_tool_call_type")
+    if tool_call.name != RESPONSE_TOOL_NAME:
+        raise ResponseNormalizationError("unexpected_native_tool_name")
+
+    arguments = tool_call.arguments
+    if isinstance(arguments, str):
+        if len(arguments) > max_chars:
+            raise ResponseNormalizationError("response_too_large")
+        arguments = _strict_loads(arguments)
+    if not isinstance(arguments, dict):
+        raise ResponseNormalizationError("native_tool_arguments_not_object")
+
+    try:
+        serialized = json.dumps(arguments, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+    except (TypeError, ValueError):
+        raise ResponseNormalizationError("native_tool_arguments_not_json_safe") from None
+    if len(serialized) > max_chars:
+        raise ResponseNormalizationError("response_too_large")
+
+    required = {"action", "tool", "arguments", "reason", "diagnosis"}
+    if set(arguments) != required:
+        raise ResponseNormalizationError("native_tool_envelope_shape_invalid")
+
+    action = arguments.get("action")
+    tool = arguments.get("tool")
+    action_arguments = arguments.get("arguments")
+    reason = arguments.get("reason")
+    diagnosis = arguments.get("diagnosis")
+
+    if not isinstance(tool, str) or not isinstance(action_arguments, dict):
+        raise ResponseNormalizationError("native_tool_action_fields_invalid")
+    if not isinstance(reason, str) or not isinstance(diagnosis, dict):
+        raise ResponseNormalizationError("native_tool_action_fields_invalid")
+
+    if action == "tool_call":
+        if not tool.strip() or not reason.strip() or diagnosis:
+            raise ResponseNormalizationError("native_tool_call_action_shape_invalid")
+        payload = {
+            "action": "tool_call",
+            "tool": tool,
+            "arguments": action_arguments,
+            "reason": reason,
+        }
+    elif action == "final":
+        if tool != "" or action_arguments != {} or reason != "":
+            raise ResponseNormalizationError("native_tool_final_action_shape_invalid")
+        payload = {"action": "final", "diagnosis": diagnosis}
+    else:
+        raise ResponseNormalizationError("native_tool_action_not_allowed")
+
+    return NormalizationResult(payload, "native_tool_call", False)
 
 
 def _one_object(value: Any) -> dict[str, Any]:

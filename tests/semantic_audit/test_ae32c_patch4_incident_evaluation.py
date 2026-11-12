@@ -19,6 +19,8 @@ from audit_engine.semantic_audit.ae32c.evaluation import (
 )
 from audit_engine.semantic_audit.ae32c.investigator import InvestigationLimits, RepositoryInvestigator
 from audit_engine.semantic_audit.ae32c.provider_preflight import run_preflight
+from providers.base import ProviderToolCall
+from audit_engine.semantic_audit.ae32c.response_protocol import RESPONSE_TOOL_NAME
 from audit_engine.semantic_audit.ae32c.live_evaluation import (
     LIVE_GRAPH_MAX_CALLS,
     build_live_investigation_limits,
@@ -388,6 +390,7 @@ class PreflightFakeProvider:
         self.responses = list(responses)
         self.calls = []
         self.structured_calls = 0
+        self.native_tool_calls = []
 
     def chat(self, messages, temperature=0.2, max_tokens=None, model=None):
         self.calls.append({"messages": [dict(item) for item in messages], "temperature": temperature, "max_tokens": max_tokens, "model": model})
@@ -399,13 +402,27 @@ class PreflightFakeProvider:
         self.structured_calls += 1
         return self.chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)
 
+    def chat_with_response_tool(
+        self, messages, *, tool_definition, temperature=0.2, max_tokens=None, model=None
+    ):
+        self.native_tool_calls.append({
+            "messages": [dict(item) for item in messages],
+            "tool_definition": tool_definition,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "model": model,
+        })
+        if not self.responses:
+            return None, "scripted response queue exhausted"
+        return self.responses.pop(0)
+
     def get_stats(self):
         return {
             "provider": self.provider_name,
             "model": self.model,
             "timeout_seconds": 90,
             "max_retries": 2,
-            "http_attempts": len(self.calls),
+            "http_attempts": len(self.calls) + len(self.native_tool_calls),
             "http_status_counts": {"200": len(self.calls)},
             "successful_calls": len(self.calls),
             "failed_calls": 0,
@@ -482,15 +499,16 @@ def test_cloudflare_preflight_classifies_malformed_json_without_storing_response
 
 
 
-def test_cloudflare_qwen_preflight_uses_plain_chat_and_local_json_validation():
+def test_cloudflare_qwen_preflight_uses_native_response_tool_without_json_mode():
     model = "@cf/qwen/qwen3.8-27b"
-    action = json.dumps({
+    native_call = ProviderToolCall(RESPONSE_TOOL_NAME, {
         "action": "tool_call",
         "tool": "repository_summary",
         "arguments": {},
         "reason": "Check repository evidence.",
+        "diagnosis": {},
     })
-    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (action, None)])
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (native_call, None)])
     report = run_preflight(
         "cloudflare",
         model,
@@ -499,16 +517,19 @@ def test_cloudflare_qwen_preflight_uses_plain_chat_and_local_json_validation():
     )
     assert report["status"] == "passed"
     assert report["effective_model"] == model
-    assert report["json_action_probe"]["strict_json_valid"] is True
-    assert report["json_action_probe"]["action_schema_valid"] is True
-    assert report["json_action_probe"]["request_mode"] == "plain_chat_local_json_validation"
-    assert report["json_action_probe"]["capability_basis"] == "model_not_confirmed_for_api_json_mode"
+    assert report["json_action_probe"]["status"] == "not_applicable_native_tool_call"
+    assert report["native_tool_call_probe"]["status"] == "passed"
+    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_ai_run_native_tool_call"
+    assert report["native_tool_call_probe"]["action_schema_valid"] is True
+    assert report["native_tool_call_probe"]["tool_executed"] is False
     assert fake.structured_calls == 0
-    assert len(fake.calls) == 2
+    assert len(fake.calls) == 1
+    assert len(fake.native_tool_calls) == 1
+    assert fake.native_tool_calls[0]["max_tokens"] == 256
     assert "Check repository evidence." not in json.dumps(report)
 
 
-def test_cloudflare_qwen_preflight_rejects_non_json_action_without_api_json_mode():
+def test_cloudflare_qwen_preflight_fails_if_native_call_is_not_returned():
     model = "@cf/qwen/qwen3.8-27b"
     raw_response = "The tool I would call is repository_summary."
     fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (raw_response, None)])
@@ -518,11 +539,14 @@ def test_cloudflare_qwen_preflight_rejects_non_json_action_without_api_json_mode
         provider_builder=_fake_preflight_builder(fake),
         environ={},
     )
-    assert report["status"] == "json_compatibility_failed"
-    assert report["json_action_probe"]["status"] == "invalid_json"
-    assert report["json_action_probe"]["request_mode"] == "plain_chat_local_json_validation"
-    assert fake.structured_calls == 0
+    assert report["status"] == "native_tool_call_compatibility_failed"
+    assert report["native_tool_call_probe"]["status"] == "native_tool_call_not_returned"
+    assert report["native_tool_call_probe"]["response_type"] == "text"
+    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_ai_run_native_tool_call"
     assert raw_response not in json.dumps(report)
+    assert fake.structured_calls == 0
+    assert len(fake.native_tool_calls) == 1
+
 
 def test_provider_preflight_failure_stops_before_json_probe():
     fake = PreflightFakeProvider([(None, "nararouter transport error: ReadTimeout")])

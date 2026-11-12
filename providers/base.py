@@ -2,7 +2,18 @@
 """Abstract base class for LLM providers."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
+
+
+
+@dataclass(frozen=True)
+class ProviderToolCall:
+    """A provider-native function call, preserved as data and never executed here."""
+
+    name: str
+    arguments: Any
+
 
 class BaseLLMProvider(ABC):
     """Interface that all LLM providers must implement."""

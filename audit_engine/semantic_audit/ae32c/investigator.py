@@ -22,10 +22,16 @@ from audit_engine.semantic_audit.ae32b.evidence_tools import (
     build_tool_definitions,
 )
 from providers.safe_errors import sanitize_provider_error
+from providers.base import ProviderToolCall
 from providers.capabilities import get_provider_capabilities
+from audit_engine.semantic_audit.ae32c.response_protocol import (
+    build_response_tool_definition,
+    response_tool_instruction,
+)
 from audit_engine.semantic_audit.ae32c.response_normalizer import (
     ResponseNormalizationError,
     normalize_response,
+    normalize_provider_tool_call,
 )
 
 SCHEMA_VERSION = "ae32c/interactive-investigation/v1"
@@ -1897,7 +1903,33 @@ class RepositoryInvestigator:
     def _provider_call(self, messages: list[dict[str, str]]) -> tuple[Any, Any, int]:
         if self._remaining_seconds() <= 0:
             raise _BudgetStop("elapsed_time_budget_exhausted")
-        serialized = self._canonical_json(messages)
+        capability_record = get_provider_capabilities(
+            self.provider,
+            provider_name=self.provider_name,
+            model_name=self.model_name,
+        )
+        capabilities = capability_record["capabilities"]
+        native_tool_chat = getattr(self.provider, "chat_with_response_tool", None)
+        use_native_tool_call = (
+            capabilities["native_tool_calls"] and callable(native_tool_chat)
+        )
+        request_messages = [dict(message) for message in messages]
+        if use_native_tool_call:
+            instruction = {
+                "role": "system",
+                "content": response_tool_instruction(),
+            }
+            insert_at = 1 if request_messages and request_messages[0].get("role") == "system" else 0
+            request_messages.insert(insert_at, instruction)
+        serialized_context: Any = request_messages
+        if use_native_tool_call:
+            # Function definitions are sent in the provider request too, so
+            # include their serialized size in the same prompt/token reservation.
+            serialized_context = {
+                "messages": request_messages,
+                "response_tool_definition": build_response_tool_definition(),
+            }
+        serialized = self._canonical_json(serialized_context)
         prompt_chars = len(serialized)
         estimated_prompt_tokens = max(1, math.ceil(prompt_chars / 4))
         reserve = estimated_prompt_tokens + self.limits.max_tokens_per_call
@@ -1986,14 +2018,23 @@ class RepositoryInvestigator:
                 "max_tokens": self.limits.max_tokens_per_call,
                 "model": self.model_name if self.model_name != "unknown" else None,
             }
-            capability_record = get_provider_capabilities(
-                self.provider,
-                provider_name=self.provider_name,
-                model_name=self.model_name,
-            )
-            capabilities = capability_record["capabilities"]
             structured_chat = getattr(self.provider, "chat_structured", None)
-            if capabilities["json_object_mode"] and callable(structured_chat):
+            if use_native_tool_call:
+                self._events.append({
+                    "event": "provider_native_tool_call_requested",
+                    "round": self._model_rounds,
+                    "provider": capability_record["provider"],
+                    "model": capability_record["model"],
+                    "tool_name": "submit_ae32c_response",
+                    "tool_execution": False,
+                    "capability_scope": capability_record["scope"],
+                })
+                response, error = native_tool_chat(
+                    request_messages,
+                    tool_definition=build_response_tool_definition(),
+                    **call_kwargs,
+                )
+            elif capabilities["json_object_mode"] and callable(structured_chat):
                 self._events.append({
                     "event": "provider_structured_json_mode_requested",
                     "round": self._model_rounds,
@@ -2002,7 +2043,7 @@ class RepositoryInvestigator:
                     "mode": "json_object",
                     "capability_scope": capability_record["scope"],
                 })
-                response, error = structured_chat(messages, **call_kwargs)
+                response, error = structured_chat(request_messages, **call_kwargs)
             else:
                 self._events.append({
                     "event": "provider_structured_json_mode_not_requested",
@@ -2011,7 +2052,7 @@ class RepositoryInvestigator:
                     "model": capability_record["model"],
                     "reason": "adapter_capability_unavailable_or_unverified",
                 })
-                response, error = self.provider.chat(messages, **call_kwargs)
+                response, error = self.provider.chat(request_messages, **call_kwargs)
         except Exception as exc:
             return None, self._safe_text(f"provider_exception:{type(exc).__name__}", 300), reserve
         finally:
@@ -2383,17 +2424,34 @@ class RepositoryInvestigator:
                 stable, reason = self._verify_snapshot()
                 if not stable:
                     raise _BudgetStop(reason)
-                if error or not isinstance(response, str):
-                    self._events.append({"event": "provider_failure", "round": self._model_rounds, "error": self._safe_text(error or "provider returned no text", 500)})
+                if error or not isinstance(response, (str, ProviderToolCall)):
+                    self._events.append({"event": "provider_failure", "round": self._model_rounds, "error": self._safe_text(error or "provider returned no usable response", 500)})
                     return self._finalize_report(report, "incomplete", "provider_failure")
-                if len(response) > self.limits.max_response_chars:
-                    self._events.append({"event": "provider_response_rejected", "round": self._model_rounds, "reason": "response_too_large", "response_chars": len(response)})
+                if isinstance(response, str):
+                    response_chars = len(response)
+                else:
+                    try:
+                        response_chars = len(self._canonical_json({
+                            "name": response.name,
+                            "arguments": response.arguments,
+                        }))
+                    except Exception:
+                        response_chars = self.limits.max_response_chars + 1
+                if response_chars > self.limits.max_response_chars:
+                    self._events.append({"event": "provider_response_rejected", "round": self._model_rounds, "reason": "response_too_large", "response_chars": response_chars})
                     return self._finalize_report(report, "incomplete", "provider_response_too_large")
                 parse_error_metadata: dict[str, int] = {}
                 try:
-                    normalized = normalize_response(
-                        response,
-                        max_chars=self.limits.max_response_chars,
+                    normalized = (
+                        normalize_provider_tool_call(
+                            response,
+                            max_chars=self.limits.max_response_chars,
+                        )
+                        if isinstance(response, ProviderToolCall)
+                        else normalize_response(
+                            response,
+                            max_chars=self.limits.max_response_chars,
+                        )
                     )
                     parsed = normalized.payload
                     self._events.append({
@@ -2416,7 +2474,7 @@ class RepositoryInvestigator:
                         "action": "rejected",
                         "reason": "invalid_strict_json",
                         "parse_error_code": parse_error_code,
-                        "response_chars": len(response),
+                        "response_chars": response_chars,
                         "recovery_attempts_used": self._invalid_json_retries,
                         **parse_error_metadata,
                     })
@@ -2425,7 +2483,7 @@ class RepositoryInvestigator:
                         "round": self._model_rounds,
                         "reason": "invalid_strict_json",
                         "parse_error_code": parse_error_code,
-                        "response_chars": len(response),
+                        "response_chars": response_chars,
                         **parse_error_metadata,
                     })
                     in_finalization = self._is_finalization_round(self._model_rounds)

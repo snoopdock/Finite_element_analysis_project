@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
+from providers.base import ProviderToolCall
+from audit_engine.semantic_audit.ae32c.response_protocol import RESPONSE_TOOL_NAME
 from audit_engine.semantic_audit.ae32c.response_normalizer import (
     ResponseNormalizationError,
     normalize_response,
@@ -150,3 +154,95 @@ REASON: Inspect the counter reference.
         "mode": "content",
         "max_results": 5,
     }
+
+
+
+def _native_tool_call(action="tool_call"):
+    if action == "tool_call":
+        arguments = {
+            "action": "tool_call",
+            "tool": "search_repository",
+            "arguments": {"query": "total_calls", "mode": "content", "max_results": 5},
+            "reason": "Locate the provider call counter.",
+            "diagnosis": {},
+        }
+    else:
+        arguments = {
+            "action": "final",
+            "tool": "",
+            "arguments": {},
+            "reason": "",
+            "diagnosis": {"summary": "bounded diagnosis"},
+        }
+    return ProviderToolCall(RESPONSE_TOOL_NAME, arguments)
+
+
+def test_native_provider_tool_call_normalizes_to_canonical_tool_action():
+    from audit_engine.semantic_audit.ae32c.response_normalizer import normalize_provider_tool_call
+
+    result = normalize_provider_tool_call(_native_tool_call())
+    assert result.strategy == "native_tool_call"
+    assert result.payload == {
+        "action": "tool_call",
+        "tool": "search_repository",
+        "arguments": {"query": "total_calls", "mode": "content", "max_results": 5},
+        "reason": "Locate the provider call counter.",
+    }
+
+
+def test_native_provider_tool_call_normalizes_final_action_without_tool_permission():
+    from audit_engine.semantic_audit.ae32c.response_normalizer import normalize_provider_tool_call
+
+    result = normalize_provider_tool_call(_native_tool_call("final"))
+    assert result.payload == {
+        "action": "final",
+        "diagnosis": {"summary": "bounded diagnosis"},
+    }
+
+
+@pytest.mark.parametrize("name,arguments,code", [
+    ("unregistered_response_function", {}, "unexpected_native_tool_name"),
+    (RESPONSE_TOOL_NAME, {"action": "tool_call"}, "native_tool_envelope_shape_invalid"),
+    (RESPONSE_TOOL_NAME, {
+        "action": "tool_call", "tool": "search_repository", "arguments": {},
+        "reason": "why", "diagnosis": {"unexpected": True},
+    }, "native_tool_call_action_shape_invalid"),
+    (RESPONSE_TOOL_NAME, {
+        "action": "final", "tool": "search_repository", "arguments": {},
+        "reason": "", "diagnosis": {"summary": "x"},
+    }, "native_tool_final_action_shape_invalid"),
+])
+def test_native_provider_tool_call_rejects_invalid_envelopes(name, arguments, code):
+    from audit_engine.semantic_audit.ae32c.response_normalizer import (
+        ResponseNormalizationError,
+        normalize_provider_tool_call,
+    )
+
+    with pytest.raises(ResponseNormalizationError) as exc:
+        normalize_provider_tool_call(ProviderToolCall(name, arguments))
+    assert exc.value.code == code
+
+
+def test_native_provider_tool_call_rejects_duplicate_keys_in_string_arguments():
+    from audit_engine.semantic_audit.ae32c.response_normalizer import (
+        ResponseNormalizationError,
+        normalize_provider_tool_call,
+    )
+
+    raw = '{"action":"tool_call","action":"final","tool":"","arguments":{},"reason":"","diagnosis":{}}'
+    with pytest.raises(ResponseNormalizationError) as exc:
+        normalize_provider_tool_call(ProviderToolCall(RESPONSE_TOOL_NAME, raw))
+    assert exc.value.code == "duplicate_json_key"
+
+
+
+def test_native_provider_tool_call_accepts_strict_json_string_arguments():
+    from audit_engine.semantic_audit.ae32c.response_normalizer import normalize_provider_tool_call
+
+    native = _native_tool_call()
+    result = normalize_provider_tool_call(ProviderToolCall(
+        native.name,
+        json.dumps(native.arguments),
+    ))
+    assert result.strategy == "native_tool_call"
+    assert result.payload["tool"] == "search_repository"

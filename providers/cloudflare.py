@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Cloudflare Workers AI provider implementation."""
 
+import json
 import os
 import sys
 import time
 
 import requests
 
+from providers.base import ProviderToolCall
 from processing.response_extractor import (
     LLMResponseExtractor,
     LLMResponseExtractionError,
@@ -16,6 +18,28 @@ CF_BASE = "https://api.cloudflare.com/client/v4"
 DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
 DEFAULT_MAX_RESPONSE_CHARS = 200_000
 MAX_ALLOWED_RESPONSE_CHARS = 2_000_000
+QWEN_NATIVE_TOOL_MODEL = "@cf/qwen/qwen3.8-27b"
+CLOUDFLARE_JSON_MODE_MODELS = frozenset({
+    "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "@cf/meta/llama-3-8b-instruct",
+    "@cf/meta/llama-3.1-8b-instruct",
+    "@hf/nousresearch/hermes-2-pro-mistral-7b",
+    "@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
+    "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
+})
+
+
+def _reject_duplicate_tool_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate_json_key")
+        result[key] = value
+    return result
+
+
+def _reject_tool_constant(_value):
+    raise ValueError("nonstandard_json_constant")
 
 
 class CloudflareProvider:
@@ -80,6 +104,9 @@ class CloudflareProvider:
             "responses_with_cost": 0,
         }
         self.structured_json_calls = 0
+        self.native_tool_call_requests = 0
+        self.native_tool_call_responses = 0
+        self.native_tool_call_failures = 0
 
         env_limit = os.environ.get("FEA_MAX_LLM_CALLS")
         if env_limit:
@@ -104,7 +131,7 @@ class CloudflareProvider:
             and self.logical_calls >= self.max_logical_calls
         )
 
-    def chat(self, messages, temperature=0.2, max_tokens=None, model=None, response_format=None):
+    def chat(self, messages, temperature=0.2, max_tokens=None, model=None, response_format=None, tools=None):
         """Send one logical LLM call; HTTP retries do not count as new calls.
 
         ``response_format`` is intentionally restricted to the JSON-object mode
@@ -143,11 +170,25 @@ class CloudflareProvider:
             "temperature": temperature,
         }
         if response_format is not None:
-            if response_format != {"type": "json_object"}:
+            if response_format != {"type": "json_object"} or tools is not None:
                 self.failed_calls += 1
                 return None, "Unsupported structured response format"
             payload["response_format"] = {"type": "json_object"}
             self.structured_json_calls += 1
+        if tools is not None:
+            if (
+                not isinstance(tools, list)
+                or len(tools) != 1
+                or not isinstance(tools[0], dict)
+                or not isinstance(tools[0].get("name"), str)
+                or not isinstance(tools[0].get("description"), str)
+                or not isinstance(tools[0].get("parameters"), dict)
+            ):
+                self.failed_calls += 1
+                self.native_tool_call_failures += 1
+                return None, "Invalid native response-tool definition"
+            payload["tools"] = tools
+            self.native_tool_call_requests += 1
 
         for attempt in range(self.max_retries):
             self.http_attempts += 1
@@ -201,6 +242,68 @@ class CloudflareProvider:
                     self.usage["completion_tokens"] += completion_tokens
                     self.usage["total_tokens"] += total_tokens
                     self.usage["responses_with_usage"] += 1
+
+                if tools is not None and isinstance(data, dict):
+                    result_block = data.get("result")
+                    raw_tool_calls = (
+                        result_block.get("tool_calls")
+                        if isinstance(result_block, dict)
+                        else None
+                    )
+                    if raw_tool_calls not in (None, []):
+                        if not isinstance(raw_tool_calls, list) or len(raw_tool_calls) != 1:
+                            self.failed_calls += 1
+                            self.native_tool_call_failures += 1
+                            return None, "Native response-tool call count invalid"
+                        raw_call = raw_tool_calls[0]
+                        if not isinstance(raw_call, dict):
+                            self.failed_calls += 1
+                            self.native_tool_call_failures += 1
+                            return None, "Native response-tool envelope invalid"
+                        call_name = raw_call.get("name")
+                        call_arguments = raw_call.get("arguments")
+                        if isinstance(call_arguments, str):
+                            try:
+                                call_arguments = json.loads(
+                                    call_arguments,
+                                    object_pairs_hook=_reject_duplicate_tool_keys,
+                                    parse_constant=_reject_tool_constant,
+                                )
+                            except (TypeError, ValueError, json.JSONDecodeError):
+                                self.failed_calls += 1
+                                self.native_tool_call_failures += 1
+                                return None, "Native response-tool arguments invalid"
+                        if not isinstance(call_name, str) or not isinstance(call_arguments, dict):
+                            self.failed_calls += 1
+                            self.native_tool_call_failures += 1
+                            return None, "Native response-tool arguments invalid"
+                        try:
+                            encoded_call = json.dumps(
+                                {"name": call_name, "arguments": call_arguments},
+                                ensure_ascii=False,
+                                separators=(",", ":"),
+                                allow_nan=False,
+                            )
+                        except (TypeError, ValueError):
+                            self.failed_calls += 1
+                            self.native_tool_call_failures += 1
+                            return None, "Native response-tool arguments invalid"
+                        if len(encoded_call) > self.max_response_chars:
+                            self.failed_calls += 1
+                            self.native_tool_call_failures += 1
+                            self.oversized_responses += 1
+                            self.response_chars_rejected_total += len(encoded_call)
+                            return None, (
+                                "Decoded response exceeds character limit "
+                                f"({len(encoded_call)} > {self.max_response_chars}; "
+                                f"max_response_chars={self.max_response_chars})"
+                            )
+                        self.native_tool_call_responses += 1
+                        self.call_counts[model] = self.call_counts.get(model, 0) + 1
+                        self.successful_calls += 1
+                        self.response_chars_total += len(encoded_call)
+                        self.response_chars_max = max(self.response_chars_max, len(encoded_call))
+                        return ProviderToolCall(call_name, call_arguments), None
 
                 try:
                     text = self.extractor.extract(
@@ -257,13 +360,58 @@ class CloudflareProvider:
         return None, "Max retries exceeded"
 
     def get_capabilities(self):
-        """Declare adapter-supported response modes; model compliance is unverified."""
+        """Declare model-scoped adapter support; live model behavior remains unverified."""
+        selected_model = self.models[0] if len(self.models) == 1 else None
+        native_tool_model = selected_model == QWEN_NATIVE_TOOL_MODEL
+        json_object_model = selected_model in CLOUDFLARE_JSON_MODE_MODELS
         return {
-            "json_object_mode": True,
+            "json_object_mode": json_object_model,
             "json_schema_mode": False,
-            "native_tool_calls": False,
+            "native_tool_calls": native_tool_model,
             "finish_reason_reporting": False,
         }
+
+    def chat_with_response_tool(
+        self,
+        messages,
+        *,
+        tool_definition,
+        temperature=0.2,
+        max_tokens=None,
+        model=None,
+    ):
+        """Return one native function call as data; never execute the function."""
+        selected_model = model or (
+            self.models[0] if len(self.models) == 1 else None
+        )
+        if selected_model != QWEN_NATIVE_TOOL_MODEL:
+            return None, "Native response-tool mode is not enabled for this model"
+        if not isinstance(tool_definition, dict):
+            return None, "Invalid response-tool definition"
+        function = tool_definition.get("function")
+        if (
+            tool_definition.get("type") != "function"
+            or not isinstance(function, dict)
+            or not isinstance(function.get("name"), str)
+            or not isinstance(function.get("description"), str)
+            or not isinstance(function.get("parameters"), dict)
+        ):
+            return None, "Invalid response-tool definition"
+        # The /ai/run REST API documents the native {name, description,
+        # parameters} tool shape and returns result.tool_calls[]. This avoids
+        # introducing a second transport path just for Qwen.
+        native_tool = {
+            "name": function["name"],
+            "description": function["description"],
+            "parameters": function["parameters"],
+        }
+        return self.chat(
+            messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            model=selected_model,
+            tools=[native_tool],
+        )
 
     def chat_structured(self, messages, temperature=0.2, max_tokens=None, model=None):
         """Request API-level JSON mode for a structured AE-32C action response."""
@@ -297,6 +445,9 @@ class CloudflareProvider:
             "timeout_seconds": self.timeout_seconds,
             "max_retries": self.max_retries,
             "structured_json_calls": self.structured_json_calls,
+            "native_tool_call_requests": self.native_tool_call_requests,
+            "native_tool_call_responses": self.native_tool_call_responses,
+            "native_tool_call_failures": self.native_tool_call_failures,
             "extraction_stats": self.extractor.get_stats(),
             "learned_paths": self.extractor.get_learned_paths(),
         }
