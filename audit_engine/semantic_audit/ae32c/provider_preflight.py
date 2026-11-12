@@ -2,7 +2,8 @@
 
 This command makes no repository-tool calls and never executes the incident fixture.
 It first checks that the selected provider returns non-empty content. Cloudflare Qwen
-uses its documented native function-calling response channel; other Cloudflare models
+uses the documented OpenAI-compatible Chat Completions endpoint for its native function
+response channel; other Cloudflare models
 use JSON-object mode only when present in the published model allowlist. OpenRouter
 uses ordinary chat unless the selected model has a documented structured mode. All
 responses are validated locally against the canonical AE-32C action protocol.
@@ -37,6 +38,7 @@ from audit_engine.semantic_audit.ae32c.response_protocol import (
 DEFAULT_CLOUDFLARE_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
 BASELINE_SENTINEL = "AE32C_PREFLIGHT_OK"
 CLOUDFLARE_NATIVE_TOOL_MODELS = frozenset({QWEN_NATIVE_TOOL_MODEL})
+QWEN_NATIVE_TOOL_PROBE_MAX_TOKENS = 2048
 
 
 def _effective_model(provider: Any, requested: str) -> str:
@@ -72,6 +74,7 @@ def _provider_runtime_settings(provider: Any) -> dict[str, Any]:
         "native_tool_call_responses", "native_tool_call_failures",
         "last_http_status", "last_error_category", "last_error_codes",
         "last_request_id", "last_endpoint_mode", "last_finish_reason",
+        "native_tool_endpoint",
     )
     return {key: stats[key] for key in allowed if key in stats}
 
@@ -83,7 +86,15 @@ def _build_provider(
     max_calls: int,
     environ: Mapping[str, str],
 ):
-    budget = {"max_llm_calls_per_run": max_calls, "max_tokens_per_call": 256}
+    probe_token_budget = (
+        QWEN_NATIVE_TOOL_PROBE_MAX_TOKENS
+        if provider_name == "cloudflare" and model_name == QWEN_NATIVE_TOOL_MODEL
+        else 256
+    )
+    budget = {
+        "max_llm_calls_per_run": max_calls,
+        "max_tokens_per_call": probe_token_budget,
+    }
     config = {
         "budget": dict(budget),
         "cloudflare_models": [model_name] if model_name else [DEFAULT_CLOUDFLARE_MODEL],
@@ -103,6 +114,7 @@ def _call(
     model_name: str,
     *,
     structured_json: bool = False,
+    openai_compatible: bool = False,
 ) -> tuple[str | None, str | None, float]:
     started = time.monotonic()
     try:
@@ -110,13 +122,25 @@ def _call(
         if structured_json and not callable(method):
             response, error = None, "provider_structured_json_mode_unavailable"
         else:
-            method = method if callable(method) else provider.chat
-            response, error = method(
-                messages,
-                temperature=0.0,
-                max_tokens=128,
-                model=model_name or None,
-            )
+            if openai_compatible:
+                method = getattr(provider, "chat_openai_compatible", None)
+                if not callable(method):
+                    response, error = None, "provider_openai_compatible_chat_method_unavailable"
+                else:
+                    response, error = method(
+                        messages,
+                        temperature=0.0,
+                        max_tokens=128,
+                        model=model_name or None,
+                    )
+            else:
+                method = method if callable(method) else provider.chat
+                response, error = method(
+                    messages,
+                    temperature=0.0,
+                    max_tokens=128,
+                    model=model_name or None,
+                )
     except Exception as exc:  # defensive: do not leak exception payloads
         response, error = None, f"provider_call_exception:{type(exc).__name__}"
     elapsed = round(max(0.0, time.monotonic() - started), 3)
@@ -182,7 +206,7 @@ def _native_tool_call_probe(
     if not callable(method):
         return {
             "status": "adapter_method_unavailable",
-            "request_mode": "cloudflare_ai_run_named_function_tool_call",
+            "request_mode": "cloudflare_openai_compatible_chat_completions_named_function",
             "function_name": RESPONSE_TOOL_NAME,
             "action_schema_valid": False,
             "error": "native_response_tool_method_unavailable",
@@ -206,7 +230,7 @@ def _native_tool_call_probe(
             messages,
             tool_definition=build_response_tool_definition(),
             temperature=0.0,
-            max_tokens=256,
+            max_tokens=QWEN_NATIVE_TOOL_PROBE_MAX_TOKENS,
             model=model_name or None,
         )
     except Exception as exc:
@@ -214,9 +238,10 @@ def _native_tool_call_probe(
     elapsed = round(max(0.0, time.monotonic() - started), 3)
 
     base = {
-        "request_mode": "cloudflare_ai_run_named_function_tool_call",
+        "request_mode": "cloudflare_openai_compatible_chat_completions_named_function",
         "function_name": RESPONSE_TOOL_NAME,
-        "capability_basis": "cloudflare_qwen_model_documentation_and_workers_ai_sdk_request_pattern",
+        "capability_basis": "cloudflare_qwen_model_page_openai_compatible_chat_completions_and_function_calling",
+        "max_completion_tokens": QWEN_NATIVE_TOOL_PROBE_MAX_TOKENS,
         "elapsed_seconds": elapsed,
         "action_schema_valid": False,
         "tool_executed": False,
@@ -296,7 +321,7 @@ def run_preflight(
         "runtime_settings": {},
         "notes": [
             "No repository evidence tools are called by this preflight.",
-            "API-level JSON Mode is used only for Cloudflare models in the published JSON Mode allowlist. Cloudflare Qwen 3.8 27B uses the /ai/run named-function interface with the OpenAI-style function schema and explicit named tool_choice used by Cloudflare's maintained Workers AI SDK; no repository tool is executed by preflight.",
+            "Cloudflare Qwen 3.8 27B native response calls use the documented /ai/v1/chat/completions endpoint and its OpenAI-compatible tools/tool_choice/max_completion_tokens contract. The ordinary /ai/run endpoint remains in use for non-Qwen baseline chat. No repository tool is executed by preflight.",
             "OpenRouter Nemotron Free continues to use ordinary chat with strict local validation.",
             "Raw model response bodies and provider credentials are not included in artifacts.",
         ],
@@ -320,7 +345,15 @@ def run_preflight(
             )
         else:
             # Test seam: keep the production builder's signature out of fake fixtures.
-            budget = {"max_llm_calls_per_run": max_calls, "max_tokens_per_call": 256}
+            probe_token_budget = (
+                QWEN_NATIVE_TOOL_PROBE_MAX_TOKENS
+                if provider_name == "cloudflare" and model_name == QWEN_NATIVE_TOOL_MODEL
+                else 256
+            )
+            budget = {
+                "max_llm_calls_per_run": max_calls,
+                "max_tokens_per_call": probe_token_budget,
+            }
             config = {
                 "budget": dict(budget),
                 "cloudflare_models": [model_name] if model_name else [DEFAULT_CLOUDFLARE_MODEL],
@@ -341,9 +374,21 @@ def run_preflight(
         },
         {"role": "user", "content": "Reply exactly: AE32C_PREFLIGHT_OK"},
     ]
-    baseline_response, baseline_error, baseline_elapsed = _call(provider, baseline_messages, model_name)
+    qwen_native_model = (
+        provider_name == "cloudflare" and effective_model in CLOUDFLARE_NATIVE_TOOL_MODELS
+    )
+    baseline_response, baseline_error, baseline_elapsed = _call(
+        provider,
+        baseline_messages,
+        model_name,
+        openai_compatible=qwen_native_model,
+    )
     transport = {
         "status": "completed" if baseline_response is not None else "provider_failed",
+        "request_mode": (
+            "cloudflare_openai_compatible_chat_completions"
+            if qwen_native_model else "provider_default_chat"
+        ),
         "elapsed_seconds": baseline_elapsed,
         "response_chars": len(baseline_response) if baseline_response is not None else 0,
         "sentinel_match": baseline_response.strip() == BASELINE_SENTINEL if baseline_response is not None else False,
@@ -470,6 +515,7 @@ def write_preflight_artifacts(report: dict[str, Any], output_dir: Path) -> tuple
         f"- Effective model: `{report.get('effective_model', 'unknown')}`",
         f"- Overall status: **{report.get('status', 'unknown')}**",
         f"- Transport probe: `{report.get('transport_probe', {}).get('status', 'unknown')}`",
+        f"- Transport request mode: `{report.get('transport_probe', {}).get('request_mode', 'provider_default_chat')}`",
         f"- Transport elapsed: {report.get('transport_probe', {}).get('elapsed_seconds', 'n/a')} seconds",
         f"- HTTP attempts: {report.get('runtime_settings', {}).get('http_attempts', 'not reported')}",
         f"- HTTP status counts: `{json.dumps(report.get('runtime_settings', {}).get('http_status_counts', {}), sort_keys=True)}`",
@@ -489,6 +535,7 @@ def write_preflight_artifacts(report: dict[str, Any], output_dir: Path) -> tuple
             lines.extend([
                 f"- Native response-tool probe: `{native_probe.get('status', 'unknown')}`",
                 f"- Native request mode: `{native_probe.get('request_mode', 'not_confirmed')}`",
+                f"- Native max completion tokens: `{native_probe.get('max_completion_tokens', 'not_reported')}`",
                 f"- Function name: `{native_probe.get('function_name', 'unknown')}`",
                 f"- Canonical action valid: `{native_probe.get('canonical_action_valid', native_probe.get('action_schema_valid', False))}`",
                 f"- Tool executed: `{native_probe.get('tool_executed', False)}`",

@@ -389,6 +389,7 @@ class PreflightFakeProvider:
     def __init__(self, responses):
         self.responses = list(responses)
         self.calls = []
+        self.openai_compatible_calls = []
         self.structured_calls = 0
         self.native_tool_calls = []
 
@@ -397,6 +398,20 @@ class PreflightFakeProvider:
         if not self.responses:
             return None, "scripted response queue exhausted"
         return self.responses.pop(0)
+
+    def chat_openai_compatible(self, messages, temperature=0.2, max_tokens=None, model=None):
+        self.openai_compatible_calls.append({
+            "messages": [dict(item) for item in messages],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "model": model,
+        })
+        return self.chat(
+            messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            model=model,
+        )
 
     def chat_structured(self, messages, temperature=0.2, max_tokens=None, model=None):
         self.structured_calls += 1
@@ -431,7 +446,12 @@ class PreflightFakeProvider:
 
 def _fake_preflight_builder(provider):
     def build(config, budget, provider_name, model_override="", environ=None):
-        assert budget["max_tokens_per_call"] == 256
+        expected_token_budget = (
+            2048
+            if provider_name == "cloudflare" and model_override == "@cf/qwen/qwen3.8-27b"
+            else 256
+        )
+        assert budget["max_tokens_per_call"] == expected_token_budget
         assert budget["max_llm_calls_per_run"] == (2 if provider_name in {"cloudflare", "openrouter"} else 1)
         return provider
     return build
@@ -443,6 +463,7 @@ def test_nararouter_preflight_checks_transport_only_and_does_not_start_investiga
     assert report["status"] == "passed"
     assert report["transport_probe"]["status"] == "completed"
     assert report["transport_probe"]["sentinel_match"] is True
+    assert report["transport_probe"]["request_mode"] == "provider_default_chat"
     assert report["json_action_probe"]["status"] == "not_applicable"
     assert len(fake.calls) == 1
     assert fake.calls[0]["max_tokens"] == 128
@@ -517,15 +538,18 @@ def test_cloudflare_qwen_preflight_uses_native_response_tool_without_json_mode()
     )
     assert report["status"] == "passed"
     assert report["effective_model"] == model
+    assert report["transport_probe"]["request_mode"] == "cloudflare_openai_compatible_chat_completions"
     assert report["json_action_probe"]["status"] == "not_applicable_native_tool_call"
     assert report["native_tool_call_probe"]["status"] == "passed"
-    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_ai_run_named_function_tool_call"
+    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_openai_compatible_chat_completions_named_function"
     assert report["native_tool_call_probe"]["action_schema_valid"] is True
     assert report["native_tool_call_probe"]["tool_executed"] is False
     assert fake.structured_calls == 0
     assert len(fake.calls) == 1
+    assert len(fake.openai_compatible_calls) == 1
     assert len(fake.native_tool_calls) == 1
-    assert fake.native_tool_calls[0]["max_tokens"] == 256
+    assert fake.openai_compatible_calls[0]["max_tokens"] == 128
+    assert fake.native_tool_calls[0]["max_tokens"] == 2048
     assert "Check repository evidence." not in json.dumps(report)
 
 
@@ -542,10 +566,27 @@ def test_cloudflare_qwen_preflight_fails_if_native_call_is_not_returned():
     assert report["status"] == "native_tool_call_compatibility_failed"
     assert report["native_tool_call_probe"]["status"] == "native_tool_call_not_returned"
     assert report["native_tool_call_probe"]["response_type"] == "text"
-    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_ai_run_named_function_tool_call"
+    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_openai_compatible_chat_completions_named_function"
     assert raw_response not in json.dumps(report)
     assert fake.structured_calls == 0
     assert len(fake.native_tool_calls) == 1
+
+
+def test_cloudflare_qwen_preflight_stops_if_chat_completions_transport_fails():
+    model = "@cf/qwen/qwen3.8-27b"
+    fake = PreflightFakeProvider([(None, "HTTP 400: provider_request_rejected")])
+    report = run_preflight(
+        "cloudflare",
+        model,
+        provider_builder=_fake_preflight_builder(fake),
+        environ={},
+    )
+    assert report["status"] == "provider_failed"
+    assert report["transport_probe"]["status"] == "provider_failed"
+    assert report["transport_probe"]["request_mode"] == "cloudflare_openai_compatible_chat_completions"
+    assert fake.openai_compatible_calls
+    assert fake.native_tool_calls == []
+    assert len(fake.calls) == 1
 
 
 def test_provider_preflight_failure_stops_before_json_probe():

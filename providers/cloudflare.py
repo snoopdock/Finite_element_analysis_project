@@ -63,24 +63,31 @@ def _safe_cloudflare_error_diagnostics(response):
         body = None
 
     errors = body.get("errors") if isinstance(body, dict) else None
-    if isinstance(errors, list):
-        for item in errors[:5]:
-            if not isinstance(item, dict):
-                continue
-            code = item.get("code")
-            if isinstance(code, int) and not isinstance(code, bool) and 0 <= code <= 9_999_999:
-                codes.append(code)
-            message = item.get("message")
-            if isinstance(message, str):
-                lowered = message.lower()[:1000]
-                if any(term in lowered for term in ("tool", "function", "schema", "parameter", "json")):
-                    category = "request_schema_rejected"
-                elif any(term in lowered for term in ("permission", "unauthorized", "forbidden")):
-                    category = "permission_denied"
-                elif any(term in lowered for term in ("model not found", "unknown model", "model unavailable")):
-                    category = "model_unavailable"
-                elif any(term in lowered for term in ("quota", "capacity", "rate limit", "budget")):
-                    category = "capacity_or_quota"
+    error_items = list(errors[:5]) if isinstance(errors, list) else []
+    openai_error = body.get("error") if isinstance(body, dict) else None
+    if isinstance(openai_error, dict):
+        error_items.append(openai_error)
+    for item in error_items[:6]:
+        if not isinstance(item, dict):
+            continue
+        code = item.get("code")
+        if isinstance(code, str) and re.fullmatch(r"[0-9]{1,7}", code):
+            code = int(code)
+        if isinstance(code, int) and not isinstance(code, bool) and 0 <= code <= 9_999_999:
+            codes.append(code)
+        message = item.get("message")
+        error_type = item.get("type")
+        diagnostic_text = " ".join(
+            value for value in (message, error_type) if isinstance(value, str)
+        ).lower()[:1000]
+        if any(term in diagnostic_text for term in ("tool", "function", "schema", "parameter", "json", "invalid_request")):
+            category = "request_schema_rejected"
+        elif any(term in diagnostic_text for term in ("permission", "unauthorized", "forbidden")):
+            category = "permission_denied"
+        elif any(term in diagnostic_text for term in ("model not found", "unknown model", "model unavailable")):
+            category = "model_unavailable"
+        elif any(term in diagnostic_text for term in ("quota", "capacity", "rate limit", "budget")):
+            category = "capacity_or_quota"
 
     return {
         "http_status": status if isinstance(status, int) else None,
@@ -185,7 +192,17 @@ class CloudflareProvider:
             and self.logical_calls >= self.max_logical_calls
         )
 
-    def chat(self, messages, temperature=0.2, max_tokens=None, model=None, response_format=None, tools=None, tool_choice=None):
+    def chat(
+        self,
+        messages,
+        temperature=0.2,
+        max_tokens=None,
+        model=None,
+        response_format=None,
+        tools=None,
+        tool_choice=None,
+        _openai_compatible=False,
+    ):
         """Send one logical LLM call; HTTP retries do not count as new calls.
 
         ``response_format`` is intentionally restricted to the JSON-object mode
@@ -216,21 +233,44 @@ class CloudflareProvider:
             self.failed_calls += 1
             return None, "No models available"
 
-        url = f"{CF_BASE}/accounts/{self.account_id}/ai/run/{model}"
-        headers = {"Authorization": "Bearer " + self.api_token}
-        self.last_endpoint_mode = "workers_ai_run_chat"
+        headers = {
+            "Authorization": "Bearer " + self.api_token,
+            "Content-Type": "application/json",
+        }
         self.last_http_status = None
         self.last_error_category = ""
         self.last_error_codes = []
         self.last_request_id = ""
         self.last_finish_reason = ""
-        payload = {
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-        }
+        if _openai_compatible:
+            # Qwen's model page documents the OpenAI-compatible Chat Completions
+            # contract for max_completion_tokens, tools, tool_choice and
+            # parallel_tool_calls. Do not send these fields to /ai/run.
+            url = (
+                f"{CF_BASE}/accounts/{self.account_id}/ai/v1/chat/completions"
+            )
+            self.last_endpoint_mode = "workers_ai_openai_compatible_chat_completions"
+            payload = {
+                "model": model,
+                "messages": messages,
+                "max_completion_tokens": max_tokens,
+                "temperature": temperature,
+                "stream": False,
+            }
+        else:
+            url = f"{CF_BASE}/accounts/{self.account_id}/ai/run/{model}"
+            self.last_endpoint_mode = "workers_ai_run_chat"
+            payload = {
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
         if response_format is not None:
-            if response_format != {"type": "json_object"} or tools is not None:
+            if (
+                _openai_compatible
+                or response_format != {"type": "json_object"}
+                or tools is not None
+            ):
                 self.failed_calls += 1
                 return None, "Unsupported structured response format"
             payload["response_format"] = {"type": "json_object"}
@@ -258,16 +298,17 @@ class CloudflareProvider:
                 self.failed_calls += 1
                 self.native_tool_call_failures += 1
                 return None, "Invalid native response-tool choice"
+            if not _openai_compatible:
+                self.failed_calls += 1
+                self.native_tool_call_failures += 1
+                return None, "Native response tools require the OpenAI-compatible Chat Completions endpoint"
             payload["tools"] = tools
             payload["tool_choice"] = tool_choice or expected_tool_choice
             payload["parallel_tool_calls"] = False
-            # Cloudflare's current model API prefers max_completion_tokens.
-            # Keep the provider-wide budget value but use the current field for
-            # the Qwen native function-call path.
-            payload.pop("max_tokens", None)
-            payload["max_completion_tokens"] = max_tokens
             self.native_tool_call_requests += 1
-            self.last_endpoint_mode = "workers_ai_run_named_function_tool"
+            self.last_endpoint_mode = (
+                "workers_ai_openai_compatible_chat_completions_native_tool"
+            )
 
         for attempt in range(self.max_retries):
             self.http_attempts += 1
@@ -542,6 +583,19 @@ class CloudflareProvider:
             model=selected_model,
             tools=[tool_definition],
             tool_choice=named_choice,
+            _openai_compatible=True,
+        )
+
+    def chat_openai_compatible(
+        self, messages, temperature=0.2, max_tokens=None, model=None
+    ):
+        """Call the documented OpenAI-compatible Chat Completions endpoint."""
+        return self.chat(
+            messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            model=model,
+            _openai_compatible=True,
         )
 
     def chat_structured(self, messages, temperature=0.2, max_tokens=None, model=None):
@@ -558,6 +612,7 @@ class CloudflareProvider:
         return {
             "provider": self.provider_name,
             "endpoint": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}",
+            "native_tool_endpoint": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1/chat/completions",
             "total_calls": self.logical_calls,
             "logical_calls": self.logical_calls,
             "successful_calls": self.successful_calls,

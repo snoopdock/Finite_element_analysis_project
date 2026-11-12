@@ -46,18 +46,26 @@ def test_qwen_adapter_declares_native_tool_support_only_for_single_exact_model()
     assert mixed.get_capabilities()["native_tool_calls"] is False
 
 
-def test_qwen_native_tool_call_uses_openai_schema_and_named_tool_choice_on_ai_run(monkeypatch):
+def test_qwen_native_tool_call_uses_openai_compatible_chat_completions_contract(monkeypatch):
     calls = []
     response = FakeResponse({
-        "success": True,
-        "result": {
-            "response": "",
-            "tool_calls": [{
-                "name": RESPONSE_TOOL_NAME,
-                "arguments": _call_arguments(),
-            }],
-            "usage": {"prompt_tokens": 30, "completion_tokens": 20, "total_tokens": 50},
-        },
+        "id": "chatcmpl-native-test",
+        "choices": [{
+            "finish_reason": "tool_calls",
+            "message": {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [{
+                    "id": "call-native-test",
+                    "type": "function",
+                    "function": {
+                        "name": RESPONSE_TOOL_NAME,
+                        "arguments": json.dumps(_call_arguments()),
+                    },
+                }],
+            },
+        }],
+        "usage": {"prompt_tokens": 30, "completion_tokens": 20, "total_tokens": 50},
     })
     monkeypatch.setattr(
         "providers.cloudflare.requests.post",
@@ -70,7 +78,7 @@ def test_qwen_native_tool_call_uses_openai_schema_and_named_tool_choice_on_ai_ru
         [{"role": "system", "content": "Use the response function."}],
         tool_definition=build_response_tool_definition(),
         temperature=0.0,
-        max_tokens=256,
+        max_tokens=2048,
         model=MODEL,
     )
 
@@ -79,14 +87,19 @@ def test_qwen_native_tool_call_uses_openai_schema_and_named_tool_choice_on_ai_ru
     assert result.name == RESPONSE_TOOL_NAME
     assert result.arguments == _call_arguments()
     url, kwargs = calls[0]
-    assert url.endswith("/ai/run/" + MODEL)
+    assert url.endswith("/ai/v1/chat/completions")
+    assert kwargs["json"]["model"] == MODEL
+    assert kwargs["json"]["messages"] == [
+        {"role": "system", "content": "Use the response function."}
+    ]
     assert kwargs["json"]["tools"] == [build_response_tool_definition()]
     assert kwargs["json"]["tool_choice"] == {
         "type": "function",
         "function": {"name": RESPONSE_TOOL_NAME},
     }
     assert kwargs["json"]["parallel_tool_calls"] is False
-    assert kwargs["json"]["max_completion_tokens"] == 256
+    assert kwargs["json"]["max_completion_tokens"] == 2048
+    assert kwargs["json"]["stream"] is False
     assert "max_tokens" not in kwargs["json"]
     assert "response_format" not in kwargs["json"]
     assert response.closed
@@ -96,6 +109,67 @@ def test_qwen_native_tool_call_uses_openai_schema_and_named_tool_choice_on_ai_ru
     assert stats["successful_calls"] == 1
     assert stats["usage"]["total_tokens"] == 50
     assert "private-secret-value" not in repr(stats)
+
+
+def test_qwen_openai_compatible_transport_probe_uses_chat_completions_endpoint(monkeypatch):
+    calls = []
+    response = FakeResponse({
+        "id": "chatcmpl-transport-test",
+        "choices": [{
+            "finish_reason": "stop",
+            "message": {"role": "assistant", "content": "AE32C_PREFLIGHT_OK"},
+        }],
+        "usage": {"prompt_tokens": 12, "completion_tokens": 5, "total_tokens": 17},
+    })
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "private-secret-value", [MODEL])
+
+    text, error = provider.chat_openai_compatible(
+        [{"role": "user", "content": "Reply exactly AE32C_PREFLIGHT_OK"}],
+        temperature=0.0,
+        max_tokens=128,
+        model=MODEL,
+    )
+
+    assert error is None
+    assert text == "AE32C_PREFLIGHT_OK"
+    url, kwargs = calls[0]
+    assert url.endswith("/ai/v1/chat/completions")
+    assert kwargs["json"]["model"] == MODEL
+    assert kwargs["json"]["max_completion_tokens"] == 128
+    assert kwargs["json"]["stream"] is False
+    assert "max_tokens" not in kwargs["json"]
+    assert "tools" not in kwargs["json"]
+    assert provider.get_stats()["last_endpoint_mode"] == "workers_ai_openai_compatible_chat_completions"
+
+
+def test_ordinary_cloudflare_chat_keeps_workers_ai_run_contract(monkeypatch):
+    calls = []
+    response = FakeResponse({
+        "success": True,
+        "result": {"response": "ordinary response"},
+    })
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", ["@cf/meta/llama-3.1-8b-instruct-fast"])
+    text, error = provider.chat(
+        [{"role": "user", "content": "hello"}],
+        max_tokens=64,
+        model="@cf/meta/llama-3.1-8b-instruct-fast",
+    )
+    assert error is None
+    assert text == "ordinary response"
+    url, kwargs = calls[0]
+    assert url.endswith("/ai/run/@cf/meta/llama-3.1-8b-instruct-fast")
+    assert kwargs["json"]["max_tokens"] == 64
+    assert "max_completion_tokens" not in kwargs["json"]
 
 
 def test_qwen_native_tool_call_rejects_multiple_calls_before_returning(monkeypatch):
@@ -268,7 +342,44 @@ def test_native_tool_http_error_exposes_only_safe_cloudflare_diagnostics(monkeyp
     assert stats["last_error_category"] == "request_schema_rejected"
     assert stats["last_error_codes"] == [12345]
     assert stats["last_request_id"] == "a1b2c3d4e5f67890"
-    assert stats["last_endpoint_mode"] == "workers_ai_run_named_function_tool"
+    assert stats["last_endpoint_mode"] == "workers_ai_openai_compatible_chat_completions_native_tool"
+    assert response.closed
+
+
+def test_native_tool_openai_error_envelope_exposes_safe_numeric_code(monkeypatch):
+    secret_fragment = "Bearer never-log-this"
+    response = FakeResponse(
+        {
+            "error": {
+                "message": f"Invalid function tool schema: {secret_fragment}",
+                "type": "invalid_request_error",
+                "code": 8007,
+            }
+        },
+        status_code=400,
+        headers={"cf-ray": "aabbccddeeff0011"},
+    )
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: response)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "private-secret-value", [MODEL])
+
+    result, error = provider.chat_with_response_tool(
+        [{"role": "user", "content": "probe"}],
+        tool_definition=build_response_tool_definition(),
+        model=MODEL,
+    )
+
+    stats = provider.get_stats()
+    assert result is None
+    assert "HTTP 400" in error
+    assert "request_schema_rejected" in error
+    assert "8007" in error
+    assert "aabbccddeeff0011" in error
+    assert secret_fragment not in error
+    assert secret_fragment not in repr(stats)
+    assert stats["last_error_codes"] == [8007]
+    assert stats["last_error_category"] == "request_schema_rejected"
+    assert stats["last_endpoint_mode"] == "workers_ai_openai_compatible_chat_completions_native_tool"
     assert response.closed
 
 
