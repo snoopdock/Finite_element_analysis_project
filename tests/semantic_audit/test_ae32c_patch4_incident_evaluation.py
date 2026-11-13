@@ -452,26 +452,40 @@ def _fake_preflight_builder(provider):
             else 256
         )
         assert budget["max_tokens_per_call"] == expected_token_budget
-        assert budget["max_llm_calls_per_run"] == (2 if provider_name in {"cloudflare", "openrouter"} else 1)
+        assert budget["max_llm_calls_per_run"] == (3 if provider_name in {"cloudflare", "openrouter"} else 2)
         return provider
     return build
 
 
+def _labelled_text_probe_action():
+    return (
+        "ACTION: tool_call\n"
+        "TOOL: search_repository\n"
+        "ARGUMENTS:\n"
+        "query: AE32C_PREFLIGHT_QUERY\n"
+        "mode: content\n"
+        "max_results: 3\n"
+        "REASON: bounded plain-text compatibility probe."
+    )
+
 def test_nararouter_preflight_checks_transport_only_and_does_not_start_investigation():
-    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None)])
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (_labelled_text_probe_action(), None)])
     report = run_preflight("nararouter", provider_builder=_fake_preflight_builder(fake), environ={})
     assert report["status"] == "passed"
     assert report["transport_probe"]["status"] == "completed"
     assert report["transport_probe"]["sentinel_match"] is True
     assert report["transport_probe"]["request_mode"] == "provider_default_chat"
     assert report["json_action_probe"]["status"] == "not_applicable"
-    assert len(fake.calls) == 1
+    assert report["text_response_probe"]["status"] == "passed"
+    assert report["text_response_probe"]["normalization_strategy"] == "labelled_text"
+    assert report["usable_response_modes"] == ["plain_text_envelope"]
+    assert len(fake.calls) == 2
     assert fake.calls[0]["max_tokens"] == 128
 
 
 def test_openrouter_preflight_validates_action_schema_with_plain_chat_only():
     action = json.dumps({"action": "tool_call", "tool": "repository_summary", "arguments": {}, "reason": "Check repository evidence."})
-    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (action, None)])
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (action, None), (_labelled_text_probe_action(), None)])
     report = run_preflight("openrouter", "nvidia/nemotron-3.5-lightning:free", provider_builder=_fake_preflight_builder(fake), environ={})
     assert report["status"] == "passed"
     assert report["effective_model"] == "nvidia/nemotron-3.5-lightning:free"
@@ -479,13 +493,13 @@ def test_openrouter_preflight_validates_action_schema_with_plain_chat_only():
     assert report["json_action_probe"]["action_schema_valid"] is True
     assert report["json_action_probe"]["request_mode"] == "plain_chat_local_json_validation"
     assert fake.structured_calls == 0
-    assert len(fake.calls) == 2
+    assert len(fake.calls) == 3
     assert "Check repository evidence." not in json.dumps(report)
 
 
 def test_openrouter_preflight_rejects_non_json_action_without_api_json_mode():
     raw_response = "The tool I would call is repository_summary."
-    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (raw_response, None)])
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (raw_response, None), (raw_response, None)])
     report = run_preflight("openrouter", "nvidia/nemotron-3.5-lightning:free", provider_builder=_fake_preflight_builder(fake), environ={})
     assert report["status"] == "json_compatibility_failed"
     assert report["json_action_probe"]["status"] == "invalid_json"
@@ -496,20 +510,20 @@ def test_openrouter_preflight_rejects_non_json_action_without_api_json_mode():
 
 def test_cloudflare_preflight_accepts_valid_strict_json_action_shape():
     action = json.dumps({"action": "tool_call", "tool": "repository_summary", "arguments": {}, "reason": "Check available repository evidence."})
-    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (action, None)])
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (action, None), (_labelled_text_probe_action(), None)])
     report = run_preflight("cloudflare", "@cf/meta/llama-3.1-8b-instruct", provider_builder=_fake_preflight_builder(fake), environ={})
     assert report["status"] == "passed"
     assert report["json_action_probe"]["strict_json_valid"] is True
     assert report["json_action_probe"]["action_schema_valid"] is True
     assert report["json_action_probe"]["request_mode"] == "api_response_format_json_object"
     assert fake.structured_calls == 1
-    assert len(fake.calls) == 2
+    assert len(fake.calls) == 3
     assert "Check available repository evidence." not in json.dumps(report)
 
 
 def test_cloudflare_preflight_classifies_malformed_json_without_storing_response():
     raw_response = "```json\n{ action: tool_call }\n```"
-    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (raw_response, None)])
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (raw_response, None), (raw_response, None)])
     report = run_preflight("cloudflare", "@cf/meta/llama-3.1-8b-instruct", provider_builder=_fake_preflight_builder(fake), environ={})
     assert report["status"] == "json_compatibility_failed"
     assert report["json_action_probe"]["status"] == "invalid_json"
@@ -529,7 +543,7 @@ def test_cloudflare_qwen_preflight_uses_native_response_tool_without_json_mode()
         "reason": "Check repository evidence.",
         "diagnosis": {},
     })
-    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (native_call, None)])
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (native_call, None), (_labelled_text_probe_action(), None)])
     report = run_preflight(
         "cloudflare",
         model,
@@ -539,13 +553,16 @@ def test_cloudflare_qwen_preflight_uses_native_response_tool_without_json_mode()
     assert report["status"] == "passed"
     assert report["effective_model"] == model
     assert report["transport_probe"]["request_mode"] == "cloudflare_openai_compatible_chat_completions"
-    assert report["json_action_probe"]["status"] == "not_applicable_native_tool_call"
+    assert report["json_action_probe"]["status"] == "not_applicable_optional_mode"
     assert report["native_tool_call_probe"]["status"] == "passed"
-    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_openai_compatible_chat_completions_named_function"
+    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_openai_compatible_chat_completions_auto_tool_choice"
+    assert report["native_tool_call_probe"]["tool_choice_policy"] == "auto"
     assert report["native_tool_call_probe"]["action_schema_valid"] is True
     assert report["native_tool_call_probe"]["tool_executed"] is False
     assert fake.structured_calls == 0
-    assert len(fake.calls) == 1
+    assert report["text_response_probe"]["status"] == "passed"
+    assert report["usable_response_modes"] == ["native_tool_call", "plain_text_envelope"]
+    assert len(fake.calls) == 2
     assert len(fake.openai_compatible_calls) == 1
     assert len(fake.native_tool_calls) == 1
     assert fake.openai_compatible_calls[0]["max_tokens"] == 128
@@ -553,20 +570,22 @@ def test_cloudflare_qwen_preflight_uses_native_response_tool_without_json_mode()
     assert "Check repository evidence." not in json.dumps(report)
 
 
-def test_cloudflare_qwen_preflight_fails_if_native_call_is_not_returned():
+def test_cloudflare_qwen_preflight_uses_text_fallback_if_native_call_is_not_returned():
     model = "@cf/qwen/qwen3.8-27b"
     raw_response = "The tool I would call is repository_summary."
-    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (raw_response, None)])
+    fake = PreflightFakeProvider([("AE32C_PREFLIGHT_OK", None), (raw_response, None), (_labelled_text_probe_action(), None)])
     report = run_preflight(
         "cloudflare",
         model,
         provider_builder=_fake_preflight_builder(fake),
         environ={},
     )
-    assert report["status"] == "native_tool_call_compatibility_failed"
+    assert report["status"] == "passed"
     assert report["native_tool_call_probe"]["status"] == "native_tool_call_not_returned"
     assert report["native_tool_call_probe"]["response_type"] == "text"
-    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_openai_compatible_chat_completions_named_function"
+    assert report["native_tool_call_probe"]["request_mode"] == "cloudflare_openai_compatible_chat_completions_auto_tool_choice"
+    assert report["text_response_probe"]["status"] == "passed"
+    assert report["response_mode_status"] == "text_fallback_only"
     assert raw_response not in json.dumps(report)
     assert fake.structured_calls == 0
     assert len(fake.native_tool_calls) == 1

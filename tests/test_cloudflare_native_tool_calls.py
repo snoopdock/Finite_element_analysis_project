@@ -93,10 +93,7 @@ def test_qwen_native_tool_call_uses_openai_compatible_chat_completions_contract(
         {"role": "system", "content": "Use the response function."}
     ]
     assert kwargs["json"]["tools"] == [build_response_tool_definition()]
-    assert kwargs["json"]["tool_choice"] == {
-        "type": "function",
-        "function": {"name": RESPONSE_TOOL_NAME},
-    }
+    assert kwargs["json"]["tool_choice"] == "auto"
     assert kwargs["json"]["parallel_tool_calls"] is False
     assert kwargs["json"]["max_completion_tokens"] == 2048
     assert kwargs["json"]["stream"] is False
@@ -342,7 +339,7 @@ def test_native_tool_http_error_exposes_only_safe_cloudflare_diagnostics(monkeyp
     assert stats["last_error_category"] == "request_schema_rejected"
     assert stats["last_error_codes"] == [12345]
     assert stats["last_request_id"] == "a1b2c3d4e5f67890"
-    assert stats["last_endpoint_mode"] == "workers_ai_openai_compatible_chat_completions_native_tool"
+    assert stats["last_endpoint_mode"] == "workers_ai_openai_compatible_chat_completions_auto_tool_choice"
     assert response.closed
 
 
@@ -379,8 +376,56 @@ def test_native_tool_openai_error_envelope_exposes_safe_numeric_code(monkeypatch
     assert secret_fragment not in repr(stats)
     assert stats["last_error_codes"] == [8007]
     assert stats["last_error_category"] == "request_schema_rejected"
-    assert stats["last_endpoint_mode"] == "workers_ai_openai_compatible_chat_completions_native_tool"
+    assert stats["last_endpoint_mode"] == "workers_ai_openai_compatible_chat_completions_auto_tool_choice"
     assert response.closed
+
+
+def test_native_tool_http_8007_without_message_is_not_given_a_guessed_meaning(monkeypatch):
+    response = FakeResponse(
+        {"success": False, "errors": [{"code": 8007}]},
+        status_code=400,
+        headers={"cf-ray": "c0ffee1234567890"},
+    )
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: response)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "private-secret-value", [MODEL])
+
+    result, error = provider.chat_with_response_tool(
+        [{"role": "user", "content": "probe"}],
+        tool_definition=build_response_tool_definition(),
+        model=MODEL,
+    )
+
+    stats = provider.get_stats()
+    assert result is None
+    assert "HTTP 400" in error
+    assert "8007" in error
+    assert "c0ffee1234567890" in error
+    assert stats["last_error_category"] == "provider_request_rejected"
+    assert stats["last_error_codes"] == [8007]
+    assert response.closed
+
+
+def test_qwen_native_tool_call_rejects_forced_named_tool_choice(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda *a, **k: calls.append(1),
+    )
+    provider = CloudflareProvider("account", "token", [MODEL])
+    result, error = provider.chat(
+        [{"role": "user", "content": "probe"}],
+        model=MODEL,
+        tools=[build_response_tool_definition()],
+        tool_choice={
+            "type": "function",
+            "function": {"name": RESPONSE_TOOL_NAME},
+        },
+        _openai_compatible=True,
+    )
+    assert result is None
+    assert error == "Qwen native response tools require auto tool choice"
+    assert calls == []
 
 
 def test_native_tool_request_rejects_legacy_flat_definition(monkeypatch):
@@ -403,3 +448,39 @@ def test_native_tool_request_rejects_legacy_flat_definition(monkeypatch):
     assert error == "Invalid response-tool definition"
     assert calls == []
 
+
+
+
+def test_cloudflare_chat_text_uses_plain_openai_compatible_request(monkeypatch):
+    calls = []
+    response = FakeResponse({
+        "id": "chatcmpl-text-fallback",
+        "choices": [{
+            "finish_reason": "stop",
+            "message": {"role": "assistant", "content": "ACTION: tool_call"},
+        }],
+    })
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "private-secret-value", [MODEL])
+
+    text, error = provider.chat_text(
+        [{"role": "user", "content": "Return a labelled action."}],
+        temperature=0.0,
+        max_tokens=512,
+        model=MODEL,
+    )
+
+    assert error is None
+    assert text == "ACTION: tool_call"
+    url, kwargs = calls[0]
+    assert url.endswith("/ai/v1/chat/completions")
+    assert kwargs["json"]["model"] == MODEL
+    assert "tools" not in kwargs["json"]
+    assert "tool_choice" not in kwargs["json"]
+    assert "response_format" not in kwargs["json"]
+    assert kwargs["json"]["stream"] is False
+    assert provider.get_stats()["last_endpoint_mode"] == "workers_ai_openai_compatible_chat_completions"

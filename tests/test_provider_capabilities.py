@@ -28,6 +28,7 @@ def test_unknown_adapter_capabilities_fail_closed():
         "json_schema_mode": False,
         "native_tool_calls": False,
         "finish_reason_reporting": False,
+        "plain_text_mode": True,
     }
 
 

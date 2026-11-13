@@ -10,9 +10,18 @@ from __future__ import annotations
 import os
 import re
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
+
+from providers.base import ProviderResponse, ProviderToolCall
+from providers.response_negotiation import (
+    OpenRouterCapabilityCache, select_response_mode, unknown_capabilities,
+)
+from audit_engine.semantic_audit.ae32c.response_protocol import (
+    RESPONSE_TOOL_NAME, build_portable_response_tool_definition,
+    build_portable_json_schema_format,
+)
 
 from providers.safe_errors import sanitize_provider_error
 from providers.response_limits import (
@@ -75,6 +84,9 @@ def _classify_error_message(message: object) -> str | None:
         or re.search(r"\b(extra inputs are not permitted|unknown field|unexpected field)\b", text)
     ):
         return "request_parameter_rejected"
+
+    if re.search(r"\b(no endpoints found supporting|no providers available supporting)\b.{0,120}\b(parameters|parameter|requested)\b", text):
+        return "required_parameters_no_endpoint"
 
     if re.search(r"\b(endpoint|route|url path|http method)\b.{0,80}\b(not found|unsupported|not allowed|invalid)\b", text):
         return "endpoint_or_method_rejected"
@@ -262,6 +274,14 @@ class OpenAICompatibleProvider:
         self.last_http_error_diagnostic: dict[str, object] | None = None
         self.http_error_diagnostic_counts: Dict[str, int] = {}
         self.structured_json_calls = 0
+        # Endpoint discovery is opt-in because it adds a separate metadata GET.
+        # No source code or investigation text is ever sent to metadata APIs.
+        self.supports_negotiated_responses = name == "openrouter"
+        self._endpoint_capability_cache = OpenRouterCapabilityCache()
+        self._last_capability_snapshot = unknown_capabilities(self.model, "not_queried")
+        self.last_response_strategy = "unselected"
+        self.native_tool_call_requests = 0
+        self.native_tool_call_responses = 0
 
     def get_capabilities(self) -> Dict[str, bool]:
         """Declare only documented or explicitly operator-enabled JSON mode.
@@ -280,12 +300,62 @@ class OpenAICompatibleProvider:
             self.provider_name == "nararouter"
             and os.environ.get("FEA_NARAROUTER_JSON_OBJECT_MODE", "").strip() == "1"
         )
+        endpoint = self._last_capability_snapshot
+        has_current_metadata = endpoint.model == self.model and endpoint.endpoint_count > 0
         return {
-            "json_object_mode": bool(openrouter_json or nararouter_json),
-            "json_schema_mode": False,
-            "native_tool_calls": False,
+            "json_object_mode": bool((has_current_metadata and endpoint.json_object) or openrouter_json or nararouter_json),
+            "json_schema_mode": bool(has_current_metadata and endpoint.json_schema),
+            "native_tool_calls": bool(has_current_metadata and endpoint.native_tools),
             "finish_reason_reporting": True,
         }
+
+    def discover_endpoint_capabilities(self, *, model: str | None = None):
+        """Optional bounded OpenRouter metadata lookup; no inference calls.
+
+        A missing, malformed or unavailable metadata record cannot authorize a
+        structured request. Each selected request still uses require_parameters.
+        """
+        selected = str(model or self.model)
+        if self.provider_name != "openrouter":
+            return unknown_capabilities(selected, "provider_has_no_discovery")
+        if os.environ.get("FEA_OPENROUTER_CAPABILITY_DISCOVERY", "0") != "1":
+            return unknown_capabilities(selected, "discovery_not_enabled")
+        result = self._endpoint_capability_cache.get(
+            model=selected, api_key=self.api_key, timeout_seconds=min(self.timeout_seconds, 4)
+        )
+        self._last_capability_snapshot = result
+        return result
+
+    def chat_negotiated(self, messages, temperature=0.2, max_tokens=None, model=None):
+        """Make exactly one inference request using endpoint-scoped capabilities.
+
+        It never retries with a new strategy. The investigator alone may reserve
+        and authorize one plain-text fallback after a classified rejection.
+        """
+        selected = str(model or self.model)
+        if self.provider_name != "openrouter":
+            return self.chat_text(messages, temperature=temperature, max_tokens=max_tokens, model=selected)
+        caps = self.discover_endpoint_capabilities(model=selected)
+        if caps.endpoint_count:
+            mode = caps.select_mode()
+        elif (os.environ.get("FEA_OPENROUTER_CAPABILITY_DISCOVERY", "0") != "1"
+              and selected in OPENROUTER_JSON_OBJECT_MODELS):
+            # The old exact-model declaration applies only when discovery is
+            # deliberately disabled; metadata failures must not strengthen it.
+            mode = "json_object"
+        else:
+            mode = "plain_text"
+        self.last_response_strategy = mode
+        if mode == "json_schema":
+            return self.chat(messages, temperature=temperature, max_tokens=max_tokens,
+                             model=selected, response_format=build_portable_json_schema_format())
+        if mode == "native_tool_call":
+            return self.chat(messages, temperature=temperature, max_tokens=max_tokens,
+                             model=selected, _native_response=True)
+        if mode == "json_object":
+            return self.chat(messages, temperature=temperature, max_tokens=max_tokens,
+                             model=selected, response_format={"type": "json_object"})
+        return self.chat_text(messages, temperature=temperature, max_tokens=max_tokens, model=selected)
 
     @property
     def total_calls(self) -> int:
@@ -355,7 +425,8 @@ class OpenAICompatibleProvider:
         temperature: float = 0.2,
         max_tokens: Optional[int] = None,
         model: Optional[str] = None,
-        response_format: Optional[Dict[str, str]] = None,
+        response_format: Optional[Dict[str, Any]] = None,
+        _native_response: bool = False,
     ) -> Tuple[Optional[str], Optional[str]]:
         self.last_error_code = None
         self.last_http_error_diagnostic = None
@@ -372,17 +443,27 @@ class OpenAICompatibleProvider:
             "max_tokens": token_cap,
         }
         if response_format is not None:
-            if response_format != {"type": "json_object"}:
+            if response_format not in ({"type": "json_object"}, build_portable_json_schema_format()):
                 return self._error(
                     f"{self.provider_name} unsupported structured response format",
                     code="unsupported_response_format",
                 )
-            payload["response_format"] = {"type": "json_object"}
+            payload["response_format"] = response_format
             self.structured_json_calls += 1
             if self.provider_name == "openrouter":
                 # Do not silently route to an endpoint that drops the requested
                 # format. OpenRouter documents this provider preference.
                 payload["provider"] = {"require_parameters": True}
+            if self.provider_name == "openrouter" and os.environ.get("FEA_OPENROUTER_RESPONSE_HEALING", "0") == "1":
+                payload["plugins"] = [{"id": "response-healing"}]
+        if _native_response:
+            if self.provider_name != "openrouter" or response_format is not None:
+                return self._error("Native response tool not enabled for this adapter", code="unsupported_response_format")
+            payload["tools"] = [build_portable_response_tool_definition()]
+            payload["tool_choice"] = "auto"  # Not every reasoning model accepts named/required choice.
+            payload["parallel_tool_calls"] = False
+            payload["provider"] = {"require_parameters": True}
+            self.native_tool_call_requests += 1
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -497,6 +578,34 @@ class OpenAICompatibleProvider:
             if not text:
                 # Some OpenAI-compatible services return a refusal or legacy text field.
                 text = first.get("text") if isinstance(first.get("text"), str) else None
+            message = first.get("message") if isinstance(first, dict) else None
+            native_calls = message.get("tool_calls") if isinstance(message, dict) else None
+            if _native_response and native_calls is not None:
+                # Never accept an untrusted function invocation as executable.
+                # The investigator independently validates its virtual name and
+                # serialized action; do not silently fall back on malformed calls.
+                if not isinstance(native_calls, list) or len(native_calls) != 1:
+                    return self._error("Invalid number of native response calls", code="invalid_native_tool_envelope")
+                item = native_calls[0]
+                func = item.get("function") if isinstance(item, dict) else None
+                if not isinstance(func, dict) or not isinstance(func.get("name"), str) or not isinstance(func.get("arguments"), (str, dict)):
+                    return self._error("Malformed native response call", code="invalid_native_tool_envelope")
+                args = func["arguments"]
+                if isinstance(args, str) and len(args) > self.max_response_chars:
+                    return self._error("Native response arguments exceed size ceiling", code="response_text_too_large")
+                if text and text.strip():
+                    return self._error("Mixed text and native calls", code="ambiguous_native_tool_envelope")
+                if len(func["name"]) > 100:
+                    return self._error("Invalid native response function name", code="invalid_native_tool_envelope")
+                response_object = ProviderResponse(tool_calls=(ProviderToolCall(func["name"], args),), finish_reason=finish_reason)
+                self._record_usage(data, selected_model)
+                self.successful_calls += 1
+                self.native_tool_call_responses += 1
+                self.last_returned_model = str(data.get("model", selected_model))
+                self.finish_reason_counts[finish_reason] = self.finish_reason_counts.get(finish_reason, 0) + 1
+                return response_object, None
+            if _native_response and finish_reason == "tool_calls":
+                return self._error("Tool-call finish reason without one native response", code="invalid_native_tool_envelope")
             if not text or not text.strip():
                 finish_reason = first.get("finish_reason", "unknown")
                 return self._error(
@@ -520,6 +629,21 @@ class OpenAICompatibleProvider:
             return text, None
 
         return self._error(f"{self.provider_name} request exhausted retry budget", code="retry_budget_exhausted")
+
+    def chat_text(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.2,
+        max_tokens: Optional[int] = None,
+        model: Optional[str] = None,
+    ):
+        """Return ordinary text without requesting provider-enforced structure."""
+        return self.chat(
+            messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            model=model,
+        )
 
     def chat_structured(
         self,
@@ -582,4 +706,10 @@ class OpenAICompatibleProvider:
             ),
             "http_error_diagnostic_counts": dict(self.http_error_diagnostic_counts),
             "structured_json_calls": self.structured_json_calls,
+            "native_tool_call_requests": self.native_tool_call_requests,
+            "native_tool_call_responses": self.native_tool_call_responses,
+            "metadata_requests": self._endpoint_capability_cache.http_requests,
+            "response_strategy": self.last_response_strategy,
+            "endpoint_capability_source": self._last_capability_snapshot.source,
+            "endpoint_capability_count": self._last_capability_snapshot.endpoint_count,
         }

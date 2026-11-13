@@ -101,7 +101,7 @@ def test_http_error_report_keeps_safe_category_and_request_id_only():
     assert "must-not-be-copied-either" not in serialized
 
 
-def test_nararouter_guidance_explicitly_does_not_assume_json_mode():
+def test_provider_guidance_does_not_assume_provider_enforced_json_mode():
     provider = FakeProvider(["{}"])
     provider.provider_name = "nararouter"
     provider.model = "fixture-model"
@@ -115,16 +115,16 @@ def test_nararouter_guidance_explicitly_does_not_assume_json_mode():
     investigator.run("Inspect the provider interface.")
     guidance = _initial_payload(provider)["provider_protocol_guidance"]
     assert any(
-        "NaraRouter JSON mode is not assumed" in rule
+        "Provider-enforced JSON mode is not assumed" in rule
         for rule in guidance["rules"]
     )
     assert any(
-        "validate JSON locally" in rule
+        "validated locally" in rule
         for rule in guidance["rules"]
     )
 
 
-def test_non_nararouter_guidance_does_not_include_nararouter_specific_rule():
+def test_provider_independent_guidance_is_shared_across_adapters():
     provider = FakeProvider(["{}"])
     provider.provider_name = "cloudflare"
     provider.model = "fixture-model"
@@ -137,8 +137,8 @@ def test_non_nararouter_guidance_does_not_include_nararouter_specific_rule():
     )
     investigator.run("Inspect the provider interface.")
     guidance = _initial_payload(provider)["provider_protocol_guidance"]
-    assert not any(
-        "NaraRouter JSON mode is not assumed" in rule
+    assert any(
+        "Provider-enforced JSON mode is not assumed" in rule
         for rule in guidance["rules"]
     )
 
@@ -178,7 +178,7 @@ def test_nararouter_invalid_json_recovery_includes_explicit_non_assumed_json_mod
         "action", "diagnosis"
     ]
     assert any(
-        "NaraRouter JSON mode is not assumed" in rule
+        "Provider-enforced JSON mode is not assumed" in rule
         for rule in guidance["rules"]
     )
 

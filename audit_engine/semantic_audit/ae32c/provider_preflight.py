@@ -1,12 +1,9 @@
 """Manual, bounded provider compatibility preflight for AE-32C.
 
 This command makes no repository-tool calls and never executes the incident fixture.
-It first checks that the selected provider returns non-empty content. Cloudflare Qwen
-uses the documented OpenAI-compatible Chat Completions endpoint for its native function
-response channel; other Cloudflare models
-use JSON-object mode only when present in the published model allowlist. OpenRouter
-uses ordinary chat unless the selected model has a documented structured mode. All
-responses are validated locally against the canonical AE-32C action protocol.
+It tests provider transport and one or more response representations. Native function
+calls and API-enforced JSON are optional optimizations; provider-independent plain-text
+responses are always tested and normalized locally against the canonical AE-32C protocol.
 
 Live calls require an explicit confirmation flag. Artifacts intentionally omit raw
 model response bodies and credentials.
@@ -23,16 +20,18 @@ from typing import Any, Callable, Mapping
 
 from providers.factory import SUPPORTED_PROVIDERS, build_provider
 from providers.cloudflare import CLOUDFLARE_JSON_MODE_MODELS, QWEN_NATIVE_TOOL_MODEL
-from providers.base import ProviderToolCall
+from providers.base import ProviderResponse, ProviderToolCall
 from providers.safe_errors import sanitize_provider_error
 from audit_engine.semantic_audit.ae32c.response_normalizer import (
     ResponseNormalizationError,
     normalize_provider_tool_call,
+    normalize_provider_response,
 )
 from audit_engine.semantic_audit.ae32c.response_protocol import (
     RESPONSE_TOOL_NAME,
     build_response_tool_definition,
     response_tool_instruction,
+    response_text_instruction,
 )
 
 DEFAULT_CLOUDFLARE_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
@@ -206,7 +205,8 @@ def _native_tool_call_probe(
     if not callable(method):
         return {
             "status": "adapter_method_unavailable",
-            "request_mode": "cloudflare_openai_compatible_chat_completions_named_function",
+            "request_mode": "cloudflare_openai_compatible_chat_completions_auto_tool_choice",
+            "tool_choice_policy": "auto",
             "function_name": RESPONSE_TOOL_NAME,
             "action_schema_valid": False,
             "error": "native_response_tool_method_unavailable",
@@ -238,9 +238,10 @@ def _native_tool_call_probe(
     elapsed = round(max(0.0, time.monotonic() - started), 3)
 
     base = {
-        "request_mode": "cloudflare_openai_compatible_chat_completions_named_function",
+        "request_mode": "cloudflare_openai_compatible_chat_completions_auto_tool_choice",
+        "tool_choice_policy": "auto",
         "function_name": RESPONSE_TOOL_NAME,
-        "capability_basis": "cloudflare_qwen_model_page_openai_compatible_chat_completions_and_function_calling",
+        "capability_basis": "cloudflare_qwen_function_calling_and_thinking_mode_tool_choice_constraints",
         "max_completion_tokens": QWEN_NATIVE_TOOL_PROBE_MAX_TOKENS,
         "elapsed_seconds": elapsed,
         "action_schema_valid": False,
@@ -295,6 +296,169 @@ def _native_tool_call_probe(
     return base
 
 
+def _text_response_probe(provider: Any, model_name: str) -> dict[str, Any]:
+    """Test the provider-independent labelled text path without dispatching tools."""
+    method = getattr(provider, "chat_text", None)
+    if not callable(method):
+        method = getattr(provider, "chat", None)
+    base: dict[str, Any] = {
+        "status": "not_run",
+        "request_mode": "provider_plain_text_chat",
+        "action_schema_valid": False,
+        "tool_executed": False,
+    }
+    if not callable(method):
+        base.update(status="adapter_method_unavailable", error="plain_text_chat_method_unavailable")
+        return base
+
+    messages = [
+        {"role": "system", "content": response_text_instruction()},
+        {
+            "role": "system",
+            "content": (
+                "This is a provider-independent text-envelope probe. Do not use JSON mode "
+                "or native function calling. Return exactly these labelled lines, one per line:\n"
+                "ACTION: tool_call\nTOOL: search_repository\nARGUMENTS:\n"
+                "query: AE32C_PREFLIGHT_QUERY\nmode: content\nmax_results: 3\n"
+            ),
+        },
+        {"role": "user", "content": "Return the labelled text envelope now."},
+    ]
+    started = time.monotonic()
+    try:
+        response, error = method(
+            messages,
+            temperature=0.0,
+            max_tokens=512,
+            model=model_name or None,
+        )
+    except Exception as exc:
+        response, error = None, f"provider_call_exception:{type(exc).__name__}"
+    elapsed = round(max(0.0, time.monotonic() - started), 3)
+    base["elapsed_seconds"] = elapsed
+    if response is None:
+        base.update(
+            status="provider_failed",
+            response_type="unavailable",
+            response_chars=0,
+            error=_safe_error(error or "provider_returned_no_response"),
+        )
+        return base
+
+    response_type = (
+        "provider_response" if hasattr(response, "tool_calls")
+        else "native_tool_call" if isinstance(response, ProviderToolCall)
+        else "text" if isinstance(response, str)
+        else "unavailable"
+    )
+    try:
+        normalized = normalize_provider_response(response, max_chars=20_000)
+    except ResponseNormalizationError as exc:
+        base.update(
+            status="normalization_failed",
+            response_type=response_type,
+            response_chars=len(response) if isinstance(response, str) else 0,
+            normalization_error=exc.code,
+            error=exc.code,
+        )
+        return base
+
+    payload = normalized.payload
+    valid = (
+        set(payload) == {"action", "tool", "arguments", "reason"}
+        and payload.get("action") == "tool_call"
+        and payload.get("tool") == "search_repository"
+        and payload.get("arguments") == {
+            "query": "AE32C_PREFLIGHT_QUERY",
+            "mode": "content",
+            "max_results": 3,
+        }
+        and isinstance(payload.get("reason"), str)
+        and bool(payload["reason"].strip())
+        and len(payload["reason"]) <= 1000
+    )
+    base.update(
+        status="passed" if valid else "schema_mismatch",
+        response_type=response_type,
+        normalization_strategy=normalized.strategy,
+        response_chars=(
+            len(response) if isinstance(response, str)
+            else len(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+        ),
+        action_schema_valid=valid,
+        error="" if valid else "canonical_action_schema_mismatch",
+    )
+    try:
+        stats = provider.get_stats()
+        if isinstance(stats, dict):
+            base["endpoint_mode"] = stats.get("last_endpoint_mode")
+    except Exception:
+        pass
+    return base
+
+
+
+def _negotiated_response_probe(provider: Any, model_name: str) -> dict[str, Any]:
+    """Exercise endpoint negotiation with one inert canonical action (no repo tool)."""
+    method = getattr(provider, "chat_negotiated", None)
+    result: dict[str, Any] = {
+        "status": "not_run", "tool_executed": False, "action_schema_valid": False,
+        "request_mode": "provider_negotiated_response",
+    }
+    if not callable(method):
+        result.update(status="adapter_method_unavailable", error="negotiated_chat_unavailable")
+        return result
+    messages = [
+        {"role": "system", "content": (
+            "This is an AE-32C endpoint compatibility probe. Return one canonical "
+            "JSON action with exactly action, tool, arguments, reason, or if a "
+            "strict schema/response function is provided, place the serialized "
+            "action JSON in action_json. The action must be tool_call, the tool "
+            "repository_summary, arguments {}, and a nonempty reason. This "
+            "response is inspected locally; no repository tool will execute."
+        )},
+        {"role": "user", "content": "Provide the inert repository_summary action now."},
+    ]
+    started = time.monotonic()
+    try:
+        response, error = method(messages, temperature=0.0, max_tokens=512, model=model_name or None)
+    except Exception as exc:
+        response, error = None, f"provider_call_exception:{type(exc).__name__}"
+    result["elapsed_seconds"] = round(max(0.0, time.monotonic() - started), 3)
+    stats = {}
+    try:
+        candidate = provider.get_stats()
+        if isinstance(candidate, dict):
+            stats = candidate
+    except Exception:
+        pass
+    mode = stats.get("response_strategy")
+    if mode in {"json_schema", "native_tool_call", "json_object", "plain_text"}:
+        result["request_mode"] = mode
+    result["capability_source"] = str(stats.get("endpoint_capability_source", "unknown"))[:80]
+    result["endpoint_capability_count"] = stats.get("endpoint_capability_count", 0)
+    if response is None or error:
+        result.update(status="provider_failed", error=_safe_error(error or "empty_response"))
+        return result
+    try:
+        normalized = normalize_provider_response(response, max_chars=20_000)
+    except ResponseNormalizationError as exc:
+        result.update(status="normalization_failed", normalization_error=exc.code, error=exc.code)
+        return result
+    action = normalized.payload
+    valid = (isinstance(action, dict) and set(action) == {"action", "tool", "arguments", "reason"}
+        and action.get("action") == "tool_call" and action.get("tool") == "repository_summary"
+        and action.get("arguments") == {} and isinstance(action.get("reason"), str)
+        and bool(action["reason"].strip()) and len(action["reason"]) <= 1000)
+    result.update(
+        status="passed" if valid else "schema_mismatch",
+        action_schema_valid=valid,
+        normalization_strategy=normalized.strategy,
+        response_type="native" if isinstance(response, (ProviderResponse, ProviderToolCall)) else "text",
+        error="" if valid else "canonical_action_schema_mismatch",
+    )
+    return result
+
 def run_preflight(
     provider_name: str,
     model_name: str = "",
@@ -306,7 +470,7 @@ def run_preflight(
     env: Mapping[str, str] = os.environ if environ is None else environ
     model_name = model_name.strip() if isinstance(model_name, str) else ""
     report: dict[str, Any] = {
-        "schema_version": "ae32c/provider-compatibility-preflight/v1",
+        "schema_version": "ae32c/provider-compatibility-preflight/v2",
         "provider": provider_name,
         "requested_model": model_name[:200],
         "effective_model": "provider-default-not-reported",
@@ -318,11 +482,14 @@ def run_preflight(
         "native_tool_call_probe": {
             "status": "not_applicable"
         },
+        "text_response_probe": {
+            "status": "not_run"
+        },
         "runtime_settings": {},
         "notes": [
             "No repository evidence tools are called by this preflight.",
-            "Cloudflare Qwen 3.8 27B native response calls use the documented /ai/v1/chat/completions endpoint and its OpenAI-compatible tools/tool_choice/max_completion_tokens contract. The ordinary /ai/run endpoint remains in use for non-Qwen baseline chat. No repository tool is executed by preflight.",
-            "OpenRouter Nemotron Free continues to use ordinary chat with strict local validation.",
+            "Native function calling and provider-enforced JSON are optional response modes, not prerequisites for AE-32C.",
+            "The plain-text response probe exercises the same provider-independent normalization contract used by the investigator; no repository tool is executed.",
             "Raw model response bodies and provider credentials are not included in artifacts.",
         ],
     }
@@ -334,7 +501,7 @@ def run_preflight(
         return report
 
     builder = provider_builder or _build_provider
-    max_calls = 2 if provider_name in {"cloudflare", "openrouter"} else 1
+    max_calls = 3 if provider_name in {"cloudflare", "openrouter"} else 2
     try:
         if provider_builder is None:
             provider = builder(
@@ -401,25 +568,81 @@ def run_preflight(
         return report
 
     if provider_name == "nararouter":
-        report["status"] = "passed"
-        report["notes"].append("A non-empty response was received; sentinel_match is informational. NaraRouter is historical-only and no action-schema probe is performed.")
+        text_probe = _text_response_probe(provider, effective_model)
+        report["text_response_probe"] = text_probe
+        text_ok = text_probe.get("status") == "passed"
+        report["usable_response_modes"] = ["plain_text_envelope"] if text_ok else []
+        report["response_mode_status"] = "text_fallback_only" if text_ok else "no_usable_response_mode"
+        report["status"] = "passed" if text_ok else "response_compatibility_failed"
+        report["notes"].append(
+            "NaraRouter is evaluated through the same provider-independent plain-text response contract; "
+            "no repository tool is executed during this probe."
+        )
+        report["runtime_settings"] = _provider_runtime_settings(provider)
         return report
 
     if provider_name == "cloudflare" and effective_model in CLOUDFLARE_NATIVE_TOOL_MODELS:
         report["json_action_probe"] = {
-            "status": "not_applicable_native_tool_call",
-            "request_mode": "not_used",
+            "status": "not_applicable_optional_mode",
+            "request_mode": "not_requested",
             "strict_json_valid": False,
             "action_schema_valid": False,
         }
         native_probe = _native_tool_call_probe(provider, effective_model)
+        text_probe = _text_response_probe(provider, effective_model)
         report["native_tool_call_probe"] = native_probe
-        report["runtime_settings"] = _provider_runtime_settings(provider)
-        report["status"] = (
-            "passed"
-            if native_probe.get("status") == "passed"
-            else "native_tool_call_compatibility_failed"
+        report["text_response_probe"] = text_probe
+        native_ok = native_probe.get("status") == "passed"
+        text_ok = text_probe.get("status") == "passed"
+        report["usable_response_modes"] = [
+            mode for mode, ok in (
+                ("native_tool_call", native_ok),
+                ("plain_text_envelope", text_ok),
+            ) if ok
+        ]
+        report["response_mode_status"] = (
+            "native_and_text"
+            if native_ok and text_ok
+            else "native_only"
+            if native_ok
+            else "text_fallback_only"
+            if text_ok
+            else "no_usable_response_mode"
         )
+        report["runtime_settings"] = _provider_runtime_settings(provider)
+        report["status"] = "passed" if native_ok or text_ok else "response_compatibility_failed"
+        return report
+
+    # One negotiated probe replaces the legacy JSON-only probe for modern
+    # adapters; total live model requests remain unchanged. Metadata requests
+    # are bounded separately and contain only the selected model ID.
+    if (getattr(provider, "supports_negotiated_responses", False) is True
+        and callable(getattr(provider, "chat_negotiated", None))):
+        negotiated_probe = _negotiated_response_probe(provider, effective_model)
+        text_probe = _text_response_probe(provider, effective_model)
+        report["negotiated_response_probe"] = negotiated_probe
+        report["json_action_probe"] = {
+            "status": "superseded_by_negotiated_probe",
+            "request_mode": "not_requested",
+            "action_schema_valid": False,
+        }
+        report["text_response_probe"] = text_probe
+        negotiated_ok = negotiated_probe.get("status") == "passed"
+        text_ok = text_probe.get("status") == "passed"
+        report["usable_response_modes"] = [
+            mode for mode, ok in (
+                ("negotiated_response", negotiated_ok),
+                ("plain_text_envelope", text_ok),
+            ) if ok
+        ]
+        report["response_mode_status"] = (
+            "negotiated_and_text" if negotiated_ok and text_ok
+            else "negotiated_only" if negotiated_ok
+            else "text_fallback_only" if text_ok
+            else "no_usable_response_mode"
+        )
+        report["status"] = "passed" if negotiated_ok or text_ok else "response_compatibility_failed"
+        report["runtime_settings"] = _provider_runtime_settings(provider)
         return report
 
     json_messages = [
@@ -446,7 +669,7 @@ def run_preflight(
         provider, json_messages, model_name, structured_json=use_api_json_mode
     )
     if json_response is None:
-        report["json_action_probe"] = {
+        json_probe = {
             "status": "provider_failed",
             "request_mode": (
                 "api_response_format_json_object"
@@ -466,26 +689,49 @@ def run_preflight(
             ),
             "error": json_error or "provider_returned_empty_response",
         }
-        report["runtime_settings"] = _provider_runtime_settings(provider)
-        report["status"] = "json_probe_provider_failed"
-        return report
-
-    json_probe = _json_action_probe(json_response)
-    json_probe["request_mode"] = (
-        "api_response_format_json_object"
-        if use_api_json_mode
-        else "plain_chat_local_json_validation"
-    )
-    json_probe["capability_basis"] = (
-        "cloudflare_published_json_mode_model_allowlist"
-        if use_api_json_mode
-        else "model_not_confirmed_for_api_json_mode"
-    )
-    json_probe["elapsed_seconds"] = json_elapsed
-    json_probe["error"] = "" if json_probe["action_schema_valid"] else str(json_probe.get("parse_error_code") or json_probe["status"])
+    else:
+        json_probe = _json_action_probe(json_response)
+        json_probe["request_mode"] = (
+            "api_response_format_json_object"
+            if use_api_json_mode
+            else "plain_chat_local_json_validation"
+        )
+        json_probe["capability_basis"] = (
+            "cloudflare_published_json_mode_model_allowlist"
+            if use_api_json_mode
+            else "model_not_confirmed_for_api_json_mode"
+        )
+        json_probe["elapsed_seconds"] = json_elapsed
+        json_probe["error"] = "" if json_probe["action_schema_valid"] else str(
+            json_probe.get("parse_error_code") or json_probe["status"]
+        )
     report["json_action_probe"] = json_probe
+
+    text_probe = _text_response_probe(provider, effective_model)
+    report["text_response_probe"] = text_probe
+    json_ok = json_probe.get("action_schema_valid") is True
+    text_ok = text_probe.get("action_schema_valid") is True
+    report["usable_response_modes"] = [
+        mode for mode, ok in (
+            ("json_action", json_ok),
+            ("plain_text_envelope", text_ok),
+        ) if ok
+    ]
+    report["response_mode_status"] = (
+        "json_and_text"
+        if json_ok and text_ok
+        else "json_only"
+        if json_ok
+        else "text_fallback_only"
+        if text_ok
+        else "no_usable_response_mode"
+    )
     report["runtime_settings"] = _provider_runtime_settings(provider)
-    report["status"] = "passed" if json_probe["action_schema_valid"] else "json_compatibility_failed"
+    report["status"] = "passed" if json_ok or text_ok else (
+        "json_probe_provider_failed"
+        if json_probe.get("status") == "provider_failed"
+        else "json_compatibility_failed"
+    )
     return report
 
 
@@ -540,7 +786,21 @@ def write_preflight_artifacts(report: dict[str, Any], output_dir: Path) -> tuple
                 f"- Canonical action valid: `{native_probe.get('canonical_action_valid', native_probe.get('action_schema_valid', False))}`",
                 f"- Tool executed: `{native_probe.get('tool_executed', False)}`",
             ])
-    error = report.get("transport_probe", {}).get("error") or report.get("json_action_probe", {}).get("error") or report.get("error")
+    text_probe = report.get("text_response_probe", {})
+    if text_probe.get("status") != "not_run":
+        lines.extend([
+            f"- Plain-text response probe: `{text_probe.get('status', 'unknown')}`",
+            f"- Text normalization strategy: `{text_probe.get('normalization_strategy', 'not_reported')}`",
+            f"- Text action schema valid: `{text_probe.get('action_schema_valid', False)}`",
+            f"- Usable response modes: `{', '.join(report.get('usable_response_modes', [])) or 'none'}`",
+        ])
+    error = (
+        report.get("transport_probe", {}).get("error")
+        or report.get("json_action_probe", {}).get("error")
+        or report.get("native_tool_call_probe", {}).get("error")
+        or report.get("text_response_probe", {}).get("error")
+        or report.get("error")
+    )
     if error:
         lines.extend(["", f"- Safe error: `{str(error)[:300]}`"])
     lines.extend(["", "No raw model response body or provider credential is included.", ""])

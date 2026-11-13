@@ -289,25 +289,25 @@ class CloudflareProvider:
                 self.failed_calls += 1
                 self.native_tool_call_failures += 1
                 return None, "Invalid native response-tool definition"
-            function_name = tools[0]["function"]["name"]
-            expected_tool_choice = {
-                "type": "function",
-                "function": {"name": function_name},
-            }
-            if tool_choice is not None and tool_choice != expected_tool_choice:
+            # Qwen 3.8 defaults to thinking mode. Its published guidance
+            # restricts thinking-mode tool selection to "auto" or "none";
+            # forcing a named function is only supported with thinking disabled.
+            # Keep thinking enabled and expose exactly one virtual response
+            # function, so "auto" cannot select any other function.
+            if tool_choice not in (None, "auto"):
                 self.failed_calls += 1
                 self.native_tool_call_failures += 1
-                return None, "Invalid native response-tool choice"
+                return None, "Qwen native response tools require auto tool choice"
             if not _openai_compatible:
                 self.failed_calls += 1
                 self.native_tool_call_failures += 1
                 return None, "Native response tools require the OpenAI-compatible Chat Completions endpoint"
             payload["tools"] = tools
-            payload["tool_choice"] = tool_choice or expected_tool_choice
+            payload["tool_choice"] = "auto"
             payload["parallel_tool_calls"] = False
             self.native_tool_call_requests += 1
             self.last_endpoint_mode = (
-                "workers_ai_openai_compatible_chat_completions_native_tool"
+                "workers_ai_openai_compatible_chat_completions_auto_tool_choice"
             )
 
         for attempt in range(self.max_retries):
@@ -569,20 +569,18 @@ class CloudflareProvider:
         ):
             return None, "Invalid response-tool definition"
 
-        # Match Cloudflare's maintained Workers AI SDK: send the OpenAI-style
-        # function envelope and force this named function. The prior adapter
-        # downgraded the schema to the legacy flat shape and omitted tool_choice.
-        named_choice = {
-            "type": "function",
-            "function": {"name": function["name"]},
-        }
+        # Qwen 3.8 defaults to thinking mode. Its published tool-selection
+        # guidance permits "auto"/"none" while thinking is enabled, but not a
+        # forced named-function choice. Supply exactly one virtual response
+        # function and use "auto"; the investigator still validates every
+        # returned action before any evidence tool can be dispatched.
         return self.chat(
             messages,
             temperature=temperature,
             max_tokens=max_tokens,
             model=selected_model,
             tools=[tool_definition],
-            tool_choice=named_choice,
+            tool_choice="auto",
             _openai_compatible=True,
         )
 
@@ -596,6 +594,19 @@ class CloudflareProvider:
             max_tokens=max_tokens,
             model=model,
             _openai_compatible=True,
+        )
+
+    def chat_text(self, messages, temperature=0.2, max_tokens=None, model=None):
+        """Request unconstrained text through the OpenAI-compatible chat endpoint.
+
+        This is the provider adapter's universal fallback path when a selected
+        model or account rejects structured response parameters.
+        """
+        return self.chat_openai_compatible(
+            messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            model=model,
         )
 
     def chat_structured(self, messages, temperature=0.2, max_tokens=None, model=None):

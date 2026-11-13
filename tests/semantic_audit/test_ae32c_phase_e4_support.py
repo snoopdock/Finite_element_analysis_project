@@ -122,12 +122,8 @@ def test_per_provider_batch_denominators_include_failed_trials(tmp_path):
     assert report["provider_breakdown"]["openrouter"]["graph_evidence_complete"] == 1
     assert report["diagnostic_accuracy"] == "not_assessed"
 
-@pytest.mark.parametrize("provider_name,expected", [
-    ("cloudflare", "minimal_strict_final_object"),
-    ("nararouter", "explicit_action_envelope"),
-    ("openrouter", "compact_evidence_bound_final"),
-])
-def test_provider_specific_guidance_never_changes_required_schema(tmp_path, provider_name, expected):
+@pytest.mark.parametrize("provider_name", ["cloudflare", "nararouter", "openrouter"])
+def test_provider_independent_guidance_preserves_one_canonical_schema(tmp_path, provider_name):
     tools = corpus(tmp_path)
     scripted_provider = scripted(tools)
     investigator = RepositoryInvestigator(tmp_path, scripted_provider, provider_name=provider_name,
@@ -135,7 +131,10 @@ def test_provider_specific_guidance_never_changes_required_schema(tmp_path, prov
         required_source_paths=(CALLER, ADAPTER),
         required_source_anchors={CALLER: ("provider.total_calls",), ADAPTER: ("self.calls",)})
     guidance = investigator._provider_protocol_guidance()
-    assert guidance["strategy"] == expected
-    assert guidance["scope"] == "prompt_only_no_claim_of_provider_schema_enforcement"
-    assert guidance["required_top_level_keys"] == ["action", "diagnosis"]
+    assert guidance["strategy"] == "provider_independent_multi_representation"
+    assert guidance["scope"] == "local_normalization_and_validation"
+    assert guidance["allowed_action_envelopes"] == {
+        "tool_call": ["action", "tool", "arguments", "reason"],
+        "final": ["action", "diagnosis"],
+    }
     assert "source_references" in guidance["required_claim_keys"]

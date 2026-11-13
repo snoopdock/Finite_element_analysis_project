@@ -197,7 +197,7 @@ def test_nararouter_prompt_and_invalid_json_recovery_include_explicit_action_con
     guidance = initial_user["provider_protocol_guidance"]
     assert guidance["allowed_action_envelopes"]["tool_call"] == ["action", "tool", "arguments", "reason"]
     assert guidance["allowed_action_envelopes"]["final"] == ["action", "diagnosis"]
-    assert any("NaraRouter JSON mode is not assumed" in rule for rule in guidance["rules"])
+    assert any("Provider-enforced JSON mode is not assumed" in rule for rule in guidance["rules"])
 
     recovery_feedback = []
     for batch in provider.messages:

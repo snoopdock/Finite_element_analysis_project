@@ -12,7 +12,7 @@ import json
 import re
 from typing import Any
 
-from providers.base import ProviderToolCall
+from providers.base import ProviderResponse, ProviderToolCall
 from audit_engine.semantic_audit.ae32c.response_protocol import RESPONSE_TOOL_NAME
 
 
@@ -86,6 +86,15 @@ def normalize_provider_tool_call(
         raise ResponseNormalizationError("native_tool_arguments_not_json_safe") from None
     if len(serialized) > max_chars:
         raise ResponseNormalizationError("response_too_large")
+
+    if set(arguments) == {"action_json"}:
+        inner = arguments["action_json"]
+        if not isinstance(inner, str) or len(inner) > max_chars:
+            raise ResponseNormalizationError("portable_action_json_invalid")
+        decoded = _strict_loads(inner)
+        return NormalizationResult(
+            _one_object(decoded), "native_portable_wire", False
+        )
 
     required = {"action", "tool", "arguments", "reason", "diagnosis"}
     if set(arguments) != required:
@@ -192,8 +201,205 @@ def _parse_labelled_arguments(value: str) -> dict[str, Any]:
     return result
 
 
+
+
+_TEXT_EVIDENCE_ID = re.compile(r"^E[0-9]{4,6}$")
+_TEXT_SOURCE_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _parse_text_evidence_refs(value: str) -> list[str]:
+    token = value.strip()
+    if token.lower() in {"", "none", "(none)", "[]"}:
+        return []
+    refs = [item.strip() for item in token.split(",")]
+    if not refs or any(not _TEXT_EVIDENCE_ID.fullmatch(item) for item in refs):
+        raise ResponseNormalizationError("labelled_final_evidence_refs_invalid")
+    if len(set(refs)) != len(refs):
+        raise ResponseNormalizationError("labelled_final_evidence_refs_duplicate")
+    return refs
+
+
+def _parse_text_source_reference(value: str) -> dict[str, Any]:
+    parts = [part.strip() for part in value.split("|")]
+    if len(parts) != 4:
+        raise ResponseNormalizationError("labelled_final_source_reference_invalid")
+    evidence_id, path, raw_line, digest = parts
+    if not _TEXT_EVIDENCE_ID.fullmatch(evidence_id):
+        raise ResponseNormalizationError("labelled_final_source_reference_invalid")
+    if not path or len(path) > 500 or path.startswith("/") or "\\" in path:
+        raise ResponseNormalizationError("labelled_final_source_reference_invalid")
+    if not raw_line.isdigit() or int(raw_line) < 1:
+        raise ResponseNormalizationError("labelled_final_source_reference_invalid")
+    if not _TEXT_SOURCE_SHA256.fullmatch(digest):
+        raise ResponseNormalizationError("labelled_final_source_reference_invalid")
+    return {
+        "evidence_id": evidence_id,
+        "path": path,
+        "line": int(raw_line),
+        "source_sha256": digest,
+    }
+
+
+def _parse_labelled_final_fields(text: str) -> dict[str, Any] | None:
+    """Parse the portable line-oriented final contract without JSON or inference.
+
+    This is intentionally a small grammar. Every field and citation is explicit;
+    arbitrary prose is never promoted into a diagnosis or action.
+    """
+    lines = text.strip().splitlines()
+    action_index = next(
+        (
+            index for index, line in enumerate(lines)
+            if re.fullmatch(r"\s*ACTION\s*:\s*final\s*", line, flags=re.I)
+        ),
+        None,
+    )
+    if action_index is None:
+        return None
+
+    fields: dict[str, str] = {}
+    root_sources: list[dict[str, Any]] = []
+    limitations: list[str] = []
+    next_steps: list[str] = []
+    claims: list[dict[str, Any]] = []
+    current_claim: dict[str, Any] | None = None
+    current_claim_sources: list[dict[str, Any]] = []
+    claim_singletons = {
+        "CLAIM_STATEMENT",
+        "CLAIM_KIND",
+        "CLAIM_CONFIDENCE",
+        "CLAIM_EVIDENCE_REFS",
+    }
+    root_singletons = {
+        "SUMMARY",
+        "ROOT_CAUSE_STATEMENT",
+        "ROOT_CAUSE_CONFIDENCE",
+        "ROOT_CAUSE_EVIDENCE_REFS",
+        "PROPOSED_CORRECTIVE_ACTION",
+    }
+
+    for raw_line in lines[action_index + 1:]:
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        if stripped == "CLAIM_BEGIN":
+            if current_claim is not None:
+                raise ResponseNormalizationError("labelled_final_claim_nested")
+            current_claim = {}
+            current_claim_sources = []
+            continue
+        if stripped == "CLAIM_END":
+            if current_claim is None:
+                raise ResponseNormalizationError("labelled_final_claim_end_unmatched")
+            required_claim = claim_singletons
+            if set(current_claim) != required_claim:
+                raise ResponseNormalizationError("labelled_final_claim_incomplete")
+            statement = current_claim["CLAIM_STATEMENT"].strip()
+            kind = current_claim["CLAIM_KIND"].strip().lower()
+            confidence = current_claim["CLAIM_CONFIDENCE"].strip().lower()
+            evidence_refs = _parse_text_evidence_refs(current_claim["CLAIM_EVIDENCE_REFS"])
+            if not statement or kind not in {
+                "observation", "hypothesis", "conclusion", "limitation", "recommendation"
+            } or confidence not in {"low", "medium", "high"} or not evidence_refs:
+                raise ResponseNormalizationError("labelled_final_claim_invalid")
+            claims.append({
+                "statement": statement,
+                "kind": kind,
+                "confidence": confidence,
+                "evidence_refs": evidence_refs,
+                "source_references": current_claim_sources,
+            })
+            current_claim = None
+            current_claim_sources = []
+            continue
+
+        match = re.fullmatch(r"([A-Z][A-Z0-9_ ]{1,60})\s*:\s*(.*)", stripped)
+        if not match:
+            raise ResponseNormalizationError("labelled_final_line_invalid")
+        key = re.sub(r"\\s+", "_", match.group(1).strip().upper())
+        value = match.group(2).strip()
+
+        if current_claim is not None:
+            if key in claim_singletons:
+                if key in current_claim:
+                    raise ResponseNormalizationError("labelled_final_claim_duplicate_field")
+                current_claim[key] = value
+            elif key == "CLAIM_SOURCE_REFERENCE":
+                if value.lower() not in {"none", "(none)"}:
+                    current_claim_sources.append(_parse_text_source_reference(value))
+            else:
+                raise ResponseNormalizationError("labelled_final_claim_unknown_field")
+            continue
+
+        if key in root_singletons:
+            if key in fields:
+                raise ResponseNormalizationError("labelled_final_duplicate_field")
+            fields[key] = value
+        elif key == "ROOT_CAUSE_SOURCE_REFERENCE":
+            if value.lower() not in {"none", "(none)"}:
+                root_sources.append(_parse_text_source_reference(value))
+        elif key == "LIMITATION":
+            if value.lower() not in {"none", "(none)"}:
+                limitations.append(value)
+        elif key == "NEXT_STEP":
+            if value.lower() not in {"none", "(none)"}:
+                next_steps.append(value)
+        else:
+            raise ResponseNormalizationError("labelled_final_unknown_field")
+
+    if current_claim is not None:
+        raise ResponseNormalizationError("labelled_final_claim_unclosed")
+    if set(fields) != root_singletons:
+        raise ResponseNormalizationError("labelled_final_envelope_incomplete")
+    if not claims:
+        raise ResponseNormalizationError("labelled_final_claims_empty")
+
+    summary = fields["SUMMARY"].strip()
+    root_statement = fields["ROOT_CAUSE_STATEMENT"].strip()
+    root_confidence = fields["ROOT_CAUSE_CONFIDENCE"].strip().lower()
+    corrective_action = fields["PROPOSED_CORRECTIVE_ACTION"].strip()
+    root_evidence_refs = _parse_text_evidence_refs(fields["ROOT_CAUSE_EVIDENCE_REFS"])
+    if (
+        not summary
+        or not root_statement
+        or not corrective_action
+        or root_confidence not in {"low", "medium", "high"}
+        or not root_evidence_refs
+    ):
+        raise ResponseNormalizationError("labelled_final_root_cause_invalid")
+
+    return {
+        "action": "final",
+        "diagnosis": {
+            "summary": summary,
+            "root_cause": {
+                "statement": root_statement,
+                "confidence": root_confidence,
+                "evidence_refs": root_evidence_refs,
+                "source_references": root_sources,
+            },
+            "claims": claims,
+            "proposed_corrective_action": corrective_action,
+            "limitations": limitations,
+            "next_steps": next_steps,
+        },
+    }
+
+
 def _parse_labelled(text: str) -> dict[str, Any] | None:
-    """Parse only explicit ACTION/TOOL/ARGUMENTS or ACTION/DIAGNOSIS labels."""
+    """Parse explicit tool labels, JSON diagnosis labels, or fielded final text."""
+    action_lines = [
+        match.group(1).strip().lower()
+        for line in text.splitlines()
+        if (match := re.fullmatch(r"\s*ACTION\s*:\s*([^\s]+)\s*", line, flags=re.I))
+    ]
+    has_final_action = action_lines == ["final"]
+    has_diagnosis_json = any(
+        re.match(r"^\s*DIAGNOSIS\s*:", line, flags=re.I)
+        for line in text.splitlines()
+    )
+    if has_final_action and not has_diagnosis_json:
+        return _parse_labelled_final_fields(text)
     lines = text.strip().splitlines()
     labels: dict[str, list[str]] = {}
     declared: dict[str, int] = {}
@@ -253,7 +459,13 @@ def normalize_response(text: str, *, max_chars: int = 100_000) -> NormalizationR
     # Strategy 1: exact strict JSON.
     exact_error: ResponseNormalizationError | None = None
     try:
-        return NormalizationResult(_one_object(_strict_loads(text)), "strict_json")
+        exact = _one_object(_strict_loads(text))
+        if set(exact) == {"action_json"}:
+            inner = exact["action_json"]
+            if not isinstance(inner, str) or len(inner) > max_chars:
+                raise ResponseNormalizationError("portable_action_json_invalid")
+            return NormalizationResult(_one_object(_strict_loads(inner)), "portable_wire_json")
+        return NormalizationResult(exact, "strict_json")
     except ResponseNormalizationError as exc:
         exact_error = exc
         # Duplicate-key and non-standard constants are security-relevant and
@@ -280,7 +492,15 @@ def normalize_response(text: str, *, max_chars: int = 100_000) -> NormalizationR
     # Strategy 3: deterministic, explicitly labelled text envelope.
     labelled = _parse_labelled(text)
     if labelled is not None:
-        return NormalizationResult(labelled, "labelled_text", True)
+        fielded_final = bool(
+            re.search(r"^\s*ROOT_CAUSE_STATEMENT\s*:", text, flags=re.I | re.M)
+            and re.search(r"^\s*CLAIM_BEGIN\s*$", text, flags=re.I | re.M)
+        )
+        return NormalizationResult(
+            labelled,
+            "labelled_final_text" if fielded_final else "labelled_text",
+            True,
+        )
 
     # Strategy 4: one unambiguous balanced JSON object embedded in prose.
     candidates = _balanced_objects(text)
@@ -302,3 +522,47 @@ def normalize_response(text: str, *, max_chars: int = 100_000) -> NormalizationR
     if exact_error is not None:
         raise exact_error
     raise ResponseNormalizationError("unrecognized_response_format")
+
+
+
+def normalize_provider_response(
+    response: Any,
+    *,
+    max_chars: int = 100_000,
+) -> NormalizationResult:
+    """Normalize a provider-neutral response envelope or legacy provider value.
+
+    Native calls take precedence over accompanying text. Multiple native calls,
+    unknown function names, and malformed native payloads fail closed rather than
+    falling through to potentially conflicting text.
+    """
+    if isinstance(response, ProviderResponse):
+        encoded_parts: list[str] = []
+        if response.text is not None:
+            encoded_parts.append(response.text)
+        for call in response.tool_calls:
+            try:
+                encoded_parts.append(json.dumps(
+                    {"name": call.name, "arguments": call.arguments},
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    allow_nan=False,
+                ))
+            except (TypeError, ValueError):
+                raise ResponseNormalizationError("provider_response_not_json_safe") from None
+        if sum(len(part) for part in encoded_parts) > max_chars:
+            raise ResponseNormalizationError("response_too_large")
+        if response.tool_calls:
+            if len(response.tool_calls) != 1:
+                raise ResponseNormalizationError("multiple_native_tool_calls")
+            if response.text is not None and response.text.strip():
+                raise ResponseNormalizationError("ambiguous_provider_response_content")
+            return normalize_provider_tool_call(response.tool_calls[0], max_chars=max_chars)
+        if response.text is None:
+            raise ResponseNormalizationError("empty_response")
+        return normalize_response(response.text, max_chars=max_chars)
+    if isinstance(response, ProviderToolCall):
+        return normalize_provider_tool_call(response, max_chars=max_chars)
+    if isinstance(response, str):
+        return normalize_response(response, max_chars=max_chars)
+    raise ResponseNormalizationError("invalid_response_type")
