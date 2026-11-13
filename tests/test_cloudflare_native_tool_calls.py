@@ -484,3 +484,178 @@ def test_cloudflare_chat_text_uses_plain_openai_compatible_request(monkeypatch):
     assert "response_format" not in kwargs["json"]
     assert kwargs["json"]["stream"] is False
     assert provider.get_stats()["last_endpoint_mode"] == "workers_ai_openai_compatible_chat_completions"
+
+
+def test_qwen_native_request_coalesces_initial_system_messages_without_reordering(monkeypatch):
+    """Regression for the live 400: both failing preflights had two systems."""
+    captured = []
+    response = FakeResponse({"choices": [{"message": {"role": "assistant", "content": None,
+        "tool_calls": [{"function": {"name": RESPONSE_TOOL_NAME,
+                                   "arguments": json.dumps(_call_arguments())}}]}}]})
+    monkeypatch.setattr("providers.cloudflare.requests.post",
+                        lambda url, **kw: captured.append(kw["json"]) or response)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "secret-do-not-leak", [MODEL])
+    messages = [{"role": "system", "content": "Original safety policy."},
+                {"role": "system", "content": "Virtual response instruction."},
+                {"role": "user", "content": "Read-only response please."}]
+    snapshot = [dict(m) for m in messages]
+    result, error = provider.chat_with_response_tool(
+        messages, tool_definition=build_response_tool_definition(), model=MODEL)
+    assert error is None and isinstance(result, ProviderToolCall)
+    assert messages == snapshot  # caller context is never modified
+    assert captured[0]["messages"] == [
+        {"role": "system", "content": "Original safety policy.\n\nVirtual response instruction."},
+        {"role": "user", "content": "Read-only response please."},
+    ]
+    stats = provider.get_stats()
+    assert stats["last_system_messages_coalesced"] == 1
+    assert stats["last_message_compatibility"] == "qwen_single_initial_system"
+    assert "secret-do-not-leak" not in repr(stats)
+    assert response.closed
+
+
+def test_qwen_plain_text_request_coalesces_same_leading_system_sequence(monkeypatch):
+    captured = []
+    response = FakeResponse({"choices": [{"message": {"role": "assistant", "content":
+         "ACTION: tool_call\nTOOL: search_repository\nARGUMENTS:\nquery: AE32C_PREFLIGHT_QUERY\nmode: content\nmax_results: 3\nREASON: read-only check"}}]})
+    monkeypatch.setattr("providers.cloudflare.requests.post",
+                        lambda url, **kw: captured.append(kw["json"]) or response)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+    result, error = provider.chat_text([
+        {"role": "system", "content": "Plain-text protocol."},
+        {"role": "system", "content": "Probe text format."},
+        {"role": "user", "content": "Return labelled action."},
+    ], model=MODEL, max_tokens=512)
+    assert error is None and isinstance(result, str)
+    assert captured[0]["messages"][0] == {
+        "role": "system", "content": "Plain-text protocol.\n\nProbe text format."}
+    assert [m["role"] for m in captured[0]["messages"]] == ["system", "user"]
+    assert not {"tools", "tool_choice", "response_format"} & set(captured[0])
+    assert provider.get_stats()["last_system_messages_coalesced"] == 1
+    assert response.closed
+
+
+def test_qwen_mid_conversation_system_role_is_rejected_before_http(monkeypatch):
+    requests_made = []
+    monkeypatch.setattr("providers.cloudflare.requests.post",
+                        lambda *a, **kw: requests_made.append(kw) or FakeResponse({}))
+    provider = CloudflareProvider("account", "token", [MODEL])
+    result, error = provider.chat_text([
+        {"role": "system", "content": "Do not change this policy."},
+        {"role": "user", "content": "hello"},
+        {"role": "system", "content": "Late policy injection"},
+    ], model=MODEL)
+    assert result is None and "noninitial_system_message" in error
+    assert requests_made == []
+    stats = provider.get_stats()
+    assert stats["http_attempts"] == 0
+    assert stats["last_error_category"] == "message_role_sequence_rejected"
+    assert stats["last_message_compatibility"] == "rejected"
+
+
+def test_qwen_system_extension_is_not_silently_discarded(monkeypatch):
+    requests_made = []
+    monkeypatch.setattr("providers.cloudflare.requests.post",
+                        lambda *a, **kw: requests_made.append(kw) or FakeResponse({}))
+    provider = CloudflareProvider("account", "token", [MODEL])
+    result, error = provider.chat_text([
+        {"role": "system", "content": "First"},
+        {"role": "system", "content": "Second", "provider_metadata": "security sensitive"},
+        {"role": "user", "content": "hello"},
+    ], model=MODEL)
+    assert result is None and "nonmergeable_system_message" in error
+    assert requests_made == []
+
+
+def test_non_qwen_cloudflare_requests_are_unchanged(monkeypatch):
+    captured = []
+    response = FakeResponse({"success": True, "result": {"response": "ok"}})
+    monkeypatch.setattr("providers.cloudflare.requests.post",
+                        lambda url, **kw: captured.append(kw["json"]) or response)
+    provider = CloudflareProvider("account", "token", ["@cf/meta/llama-3.1-8b-instruct-fast"])
+    messages = [{"role": "system", "content": "One"},
+                {"role": "system", "content": "Two"},
+                {"role": "user", "content": "Hello"}]
+    result, error = provider.chat(messages)
+    assert (result, error) == ("ok", None)
+    assert captured[0]["messages"] == messages
+    assert provider.get_stats()["last_system_messages_coalesced"] == 0
+
+
+def test_cloudflare_safe_error_classifies_explicit_system_template_error(monkeypatch):
+    response = FakeResponse({"errors": [{"code": 8007,
+        "message": "System message must be at the beginning. bearer-leak"}]}, 400)
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: response)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+    output, error = provider.chat_text([{"role": "user", "content": "hello"}], model=MODEL)
+    assert output is None
+    assert "bearer-leak" not in error
+    assert provider.get_stats()["last_error_category"] == "message_role_sequence_rejected"
+    # Error code 8007 alone is still not given a guessed meaning.
+    assert provider.get_stats()["last_error_codes"] == [8007]
+    assert response.closed
+
+
+def test_portable_message_coalescer_does_not_move_untrusted_later_messages():
+    from providers.message_compatibility import (
+        coalesce_leading_system_messages, MessageCompatibilityError,
+    )
+    original = [{"role": "system", "content": "A"},
+                {"role": "system", "content": "B"},
+                {"role": "user", "content": "C"}]
+    folded, count = coalesce_leading_system_messages(original)
+    assert count == 1 and folded[0]["content"] == "A\n\nB"
+    assert original[0]["content"] == "A"
+    try:
+        coalesce_leading_system_messages([
+            {"role": "user", "content": "C"},
+            {"role": "system", "content": "Must not hoist"},
+        ])
+    except MessageCompatibilityError as exc:
+        assert str(exc) == "noninitial_system_message"
+    else:
+        raise AssertionError("noninitial system instruction was accepted")
+
+
+def test_live_preflight_shape_single_system_fallback_success_after_native_400(monkeypatch):
+    """Offline replay of the three latest live probe outcomes and a fixed text path."""
+    from audit_engine.semantic_audit.ae32c.provider_preflight import run_preflight
+
+    replies = [
+        FakeResponse({"choices": [{"message": {"role": "assistant", "content":
+                     "AE32C_PREFLIGHT_OK"}}]}),
+        FakeResponse({"errors": [{"code": 8007}]}, 400),
+        FakeResponse({"choices": [{"message": {"role": "assistant", "content":
+                     "ACTION: tool_call\nTOOL: search_repository\nARGUMENTS:\n"
+                     "query: AE32C_PREFLIGHT_QUERY\nmode: content\nmax_results: 3\n"
+                     "REASON: bounded read-only probe"}}]}),
+    ]
+    requests_seen = []
+
+    def post(url, **kwargs):
+        requests_seen.append((url, kwargs["json"]))
+        return replies.pop(0)
+
+    monkeypatch.setattr("providers.cloudflare.requests.post", post)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "private-token", [MODEL], max_logical_calls=3)
+    report = run_preflight("cloudflare", MODEL,
+                           provider_builder=lambda *a, **k: provider, environ={})
+    assert not replies
+    assert report["status"] == "passed"
+    assert report["transport_probe"]["status"] == "completed"
+    assert report["native_tool_call_probe"]["status"] == "provider_failed"
+    assert report["text_response_probe"]["status"] == "passed"
+    assert report["usable_response_modes"] == ["plain_text_envelope"]
+    assert report["response_mode_status"] == "text_fallback_only"
+    assert report["text_response_probe"]["system_messages_coalesced"] == 1
+    assert report["runtime_settings"]["last_system_messages_coalesced"] == 1
+    assert [len([m for m in body["messages"] if m["role"] == "system"])
+            for _, body in requests_seen] == [1, 1, 1]
+    assert all(url.endswith("/ai/v1/chat/completions") for url, _ in requests_seen)
+    assert "tools" not in requests_seen[2][1]
+    assert "private-token" not in repr(report)
+    assert "bounded read-only probe" not in repr(report)

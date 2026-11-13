@@ -73,6 +73,7 @@ def _provider_runtime_settings(provider: Any) -> dict[str, Any]:
         "native_tool_call_responses", "native_tool_call_failures",
         "last_http_status", "last_error_category", "last_error_codes",
         "last_request_id", "last_endpoint_mode", "last_finish_reason",
+        "last_system_messages_coalesced", "last_message_compatibility",
         "native_tool_endpoint",
     )
     return {key: stats[key] for key in allowed if key in stats}
@@ -343,6 +344,21 @@ def _text_response_probe(provider: Any, model_name: str) -> dict[str, Any]:
             response_chars=0,
             error=_safe_error(error or "provider_returned_no_response"),
         )
+        # Report only bounded adapter-owned topology and error categories;
+        # never persist prompts, provider error bodies, or credentials.
+        try:
+            stats = provider.get_stats()
+            if isinstance(stats, dict):
+                for source, target in (
+                    ("last_endpoint_mode", "endpoint_mode"),
+                    ("last_error_category", "error_category"),
+                    ("last_message_compatibility", "message_compatibility"),
+                    ("last_system_messages_coalesced", "system_messages_coalesced"),
+                ):
+                    if source in stats:
+                        base[target] = stats[source]
+        except Exception:
+            pass
         return base
 
     response_type = (
@@ -392,6 +408,10 @@ def _text_response_probe(provider: Any, model_name: str) -> dict[str, Any]:
         stats = provider.get_stats()
         if isinstance(stats, dict):
             base["endpoint_mode"] = stats.get("last_endpoint_mode")
+            if "last_message_compatibility" in stats:
+                base["message_compatibility"] = stats["last_message_compatibility"]
+            if "last_system_messages_coalesced" in stats:
+                base["system_messages_coalesced"] = stats["last_system_messages_coalesced"]
     except Exception:
         pass
     return base

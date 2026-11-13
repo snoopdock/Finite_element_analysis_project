@@ -10,6 +10,9 @@ import time
 import requests
 
 from providers.base import ProviderToolCall
+from providers.message_compatibility import (
+    MessageCompatibilityError, coalesce_leading_system_messages,
+)
 from processing.response_extractor import (
     LLMResponseExtractor,
     LLMResponseExtractionError,
@@ -80,7 +83,9 @@ def _safe_cloudflare_error_diagnostics(response):
         diagnostic_text = " ".join(
             value for value in (message, error_type) if isinstance(value, str)
         ).lower()[:1000]
-        if any(term in diagnostic_text for term in ("tool", "function", "schema", "parameter", "json", "invalid_request")):
+        if "system message must be at the beginning" in diagnostic_text:
+            category = "message_role_sequence_rejected"
+        elif any(term in diagnostic_text for term in ("tool", "function", "schema", "parameter", "json", "invalid_request")):
             category = "request_schema_rejected"
         elif any(term in diagnostic_text for term in ("permission", "unauthorized", "forbidden")):
             category = "permission_denied"
@@ -168,6 +173,8 @@ class CloudflareProvider:
         self.last_request_id = ""
         self.last_endpoint_mode = ""
         self.last_finish_reason = ""
+        self.last_system_messages_coalesced = 0
+        self.last_message_compatibility = "not_applied"
 
         env_limit = os.environ.get("FEA_MAX_LLM_CALLS")
         if env_limit:
@@ -242,6 +249,25 @@ class CloudflareProvider:
         self.last_error_codes = []
         self.last_request_id = ""
         self.last_finish_reason = ""
+        self.last_system_messages_coalesced = 0
+        self.last_message_compatibility = "not_applied"
+        if model == QWEN_NATIVE_TOOL_MODEL:
+            # Qwen 3.8's chat template accepts only the first system role.
+            # AE-32C adds an initial response instruction for native/text
+            # output, and the preflight adds an initial probe instruction.
+            # Preserve their ordered contents in a single system envelope.
+            # Do not silently hoist a later system instruction into higher
+            # priority context or modify the original caller's messages.
+            try:
+                messages, self.last_system_messages_coalesced = (
+                    coalesce_leading_system_messages(messages)
+                )
+                self.last_message_compatibility = "qwen_single_initial_system"
+            except MessageCompatibilityError as exc:
+                self.last_message_compatibility = "rejected"
+                self.last_error_category = "message_role_sequence_rejected"
+                self.failed_calls += 1
+                return None, f"Invalid Qwen message sequence: {exc}"
         if _openai_compatible:
             # Qwen's model page documents the OpenAI-compatible Chat Completions
             # contract for max_completion_tokens, tools, tool_choice and
@@ -651,6 +677,8 @@ class CloudflareProvider:
             "last_request_id": self.last_request_id,
             "last_endpoint_mode": self.last_endpoint_mode,
             "last_finish_reason": self.last_finish_reason,
+            "last_system_messages_coalesced": self.last_system_messages_coalesced,
+            "last_message_compatibility": self.last_message_compatibility,
             "extraction_stats": self.extractor.get_stats(),
             "learned_paths": self.extractor.get_learned_paths(),
         }
