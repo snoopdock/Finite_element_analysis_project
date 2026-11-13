@@ -11,6 +11,7 @@ target_tests:
   - tests/semantic_audit/test_ae32c_phase_e3_fidelity.py
   - tests/semantic_audit/test_ae32c_phase_e4_support.py
   - tests/semantic_audit/test_ae32c_phase_e5_independence.py
+  - tests/semantic_audit/test_ae32c_e6_prompt_contract_compatibility.py
   - tests/semantic_audit/test_ae32c_patch4_incident_evaluation.py
   - tests/semantic_audit/test_ae32c_response_normalizer.py
   - tests/semantic_audit/test_ae32c_native_response_tool_integration.py

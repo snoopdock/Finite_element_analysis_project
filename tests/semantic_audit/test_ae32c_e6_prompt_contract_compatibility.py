@@ -14,14 +14,32 @@ from tests.semantic_audit.test_ae32c_investigator import (
 from audit_engine.semantic_audit.ae32c import InvestigationLimits
 
 
-def test_initial_prompt_retains_provider_protocol_guidance_key():
+def test_initial_prompt_retains_versioned_provider_independent_protocol_guidance():
+    """The E.6 prompt key remains, but E.7 uses the v2 multi-format contract.
+
+    The v1 ``required_top_level_keys`` field described only final actions;
+    requiring ``diagnosis`` for tool calls would contradict the actual v2
+    action envelopes and reject otherwise valid read-only tool requests.
+    """
     investigator, provider, _ = make_investigator([final_action()])
     investigator.run("Inspect the provider interface.")
     assert provider.messages
     initial_user = json.loads(provider.messages[0][1]["content"])
     guidance = initial_user["provider_protocol_guidance"]
-    assert guidance["schema_version"] == "ae32c/protocol-guidance/v1"
-    assert guidance["required_top_level_keys"] == ["action", "diagnosis"]
+    assert guidance["schema_version"] == "ae32c/protocol-guidance/v2"
+    assert guidance["strategy"] == "provider_independent_multi_representation"
+    assert guidance["scope"] == "local_normalization_and_validation"
+    assert guidance["allowed_action_envelopes"] == {
+        "tool_call": ["action", "tool", "arguments", "reason"],
+        "final": ["action", "diagnosis"],
+    }
+    assert guidance["fallback_representation"] == "explicit_labelled_text"
+    assert "tool_call" in guidance["labelled_text_contract"]
+    assert "final" in guidance["labelled_text_contract"]
+    assert guidance["required_diagnosis_keys"] == [
+        "summary", "root_cause", "claims", "proposed_corrective_action", "limitations", "next_steps"
+    ]
+    assert "required_top_level_keys" not in guidance
 
 
 def test_finalization_mode_retains_response_constraints():
