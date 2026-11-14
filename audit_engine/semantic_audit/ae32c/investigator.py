@@ -2100,16 +2100,23 @@ class RepositoryInvestigator:
         remaining = max(1, int(math.ceil(self._remaining_seconds())))
         provider_name_normalized = self.provider_name.strip().lower()
         http_attempts_before = self._provider_http_attempt_count()
+        cloudflare_streaming = (
+            provider_name_normalized == "cloudflare"
+            and getattr(self.provider, "streaming_enabled", False) is True
+        )
         retry_available = (
             provider_name_normalized == "nararouter"
             and self._nararouter_transport_retries_used < 1
         ) or (
             provider_name_normalized == "cloudflare"
+            and not cloudflare_streaming
             and self._cloudflare_transport_retries_used < 1
         )
         # Provider adapters interpret max_retries as total HTTP attempts.
-        # Two attempts permit one retry; after telemetry confirms it was used,
-        # subsequent logical model calls are restricted to one attempt.
+        # Non-streaming Cloudflare and NaraRouter retain one investigation-wide
+        # bounded retry. Streamed Cloudflare calls use one attempt in both
+        # baseline and graph conditions so a partial/ambiguous SSE response is
+        # never replayed and the comparison has matching retry policy.
         retry_limit = 2 if retry_available else 1
         restored: list[tuple[str, Any]] = []
         native_attempts_for_retry_accounting: int | None = None
@@ -2595,6 +2602,52 @@ class RepositoryInvestigator:
         except Exception:
             provider_stats = {}
         if isinstance(provider_stats, Mapping):
+            raw_request_diagnostics = provider_stats.get("request_diagnostics")
+            if isinstance(raw_request_diagnostics, Mapping):
+                safe_request_diagnostics: dict[str, Any] = {}
+                for key in (
+                    "elapsed_seconds",
+                    "time_to_first_event_seconds",
+                    "time_to_first_output_seconds",
+                    "connect_timeout_seconds",
+                    "read_timeout_seconds",
+                ):
+                    value = raw_request_diagnostics.get(key)
+                    if (
+                        isinstance(value, (int, float))
+                        and not isinstance(value, bool)
+                        and math.isfinite(float(value))
+                        and 0 <= float(value) <= 3600
+                    ):
+                        safe_request_diagnostics[key] = round(float(value), 3)
+                for key in (
+                    "attempt_count",
+                    "stream_event_count",
+                    "output_chars",
+                    "partial_output_chars",
+                    "max_completion_tokens",
+                ):
+                    value = raw_request_diagnostics.get(key)
+                    if isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= 2_000_000:
+                        safe_request_diagnostics[key] = value
+                streaming = raw_request_diagnostics.get("streaming")
+                if isinstance(streaming, bool):
+                    safe_request_diagnostics["streaming"] = streaming
+                reasoning_effort = raw_request_diagnostics.get("reasoning_effort")
+                if isinstance(reasoning_effort, str) and reasoning_effort in {"low", "medium", "high"}:
+                    safe_request_diagnostics["reasoning_effort"] = reasoning_effort
+                finish_reason = raw_request_diagnostics.get("finish_reason")
+                if isinstance(finish_reason, str) and finish_reason in {"", "stop", "tool_calls", "length", "content_filter", "function_call"}:
+                    safe_request_diagnostics["finish_reason"] = finish_reason
+                for key, allowed in {
+                    "error_type": {"", "ReadTimeout", "ConnectTimeout", "ConnectionError", "Timeout", "ChunkedEncodingError", "StreamProtocolError"},
+                    "error_category": {"none", "read_timeout", "connect_timeout", "transport_error", "stream_interrupted", "provider_request_rejected", "invalid_provider_json", "invalid_stream"},
+                }.items():
+                    value = raw_request_diagnostics.get(key)
+                    if isinstance(value, str) and value in allowed:
+                        safe_request_diagnostics[key] = value
+                if safe_request_diagnostics:
+                    report.setdefault("provider", {})["request_diagnostics"] = safe_request_diagnostics
             returned_model = provider_stats.get("last_returned_model")
             if isinstance(returned_model, str) and returned_model.strip():
                 report.setdefault("provider", {})["returned_model"] = self._safe_text(returned_model, 200)

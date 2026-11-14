@@ -338,6 +338,7 @@ def test_comparison_record_reports_baseline_transport_interface_and_endpoint():
     assert record["baseline"]["transport"] == {
         "call_interface": "chat_text",
         "endpoint_mode": "workers_ai_openai_compatible_chat_completions",
+        "request_diagnostics": {},
     }
     markdown = render_comparison_markdown(record)
     assert "Request interface: `chat_text`" in markdown
@@ -449,10 +450,10 @@ def test_live_investigation_limits_allow_multiround_evidence_work():
     assert limits.max_invalid_final_attempts == 2
     assert limits.max_invalid_json_retries == 2
     assert limits.max_finalization_invalid_json_retries == 1
-    assert limits.max_tokens_per_call == 8_000
+    assert limits.max_tokens_per_call == 2_048
     assert limits.max_total_tokens == 180_000
     assert limits.max_total_prompt_chars == 200_000
-    assert limits.max_elapsed_seconds == 300
+    assert limits.max_elapsed_seconds == 900
     assert limits.max_response_chars == 40_000
 
 
@@ -725,3 +726,78 @@ def test_provider_preflight_rejects_unsafe_model_override_before_provider_initia
     assert report["status"] == "configuration_failed"
     assert report["error"] == "invalid_model_override"
     assert builder_called is False
+
+
+
+def test_cloudflare_live_budget_is_bounded_for_streaming_qwen():
+    limits = build_live_investigation_limits("cloudflare")
+    assert limits.max_elapsed_seconds == 900
+    assert limits.max_tokens_per_call == 2_048
+    assert limits.max_rounds == 10
+    assert limits.max_tool_calls == 12
+
+
+def test_other_provider_live_budget_remains_unchanged():
+    limits = build_live_investigation_limits("openrouter")
+    assert limits.max_elapsed_seconds == 300
+
+
+
+def test_comparison_record_preserves_bounded_stream_latency_and_finish_reason():
+    diagnostics = {
+        "baseline_call_interface": "chat_text",
+        "last_endpoint_mode": "workers_ai_openai_compatible_chat_completions",
+        "last_finish_reason": "length",
+        "request_diagnostics": {
+            "elapsed_seconds": 42.1254,
+            "time_to_first_event_seconds": 3.25,
+            "time_to_first_output_seconds": 4.5,
+            "attempt_count": 1,
+            "stream_event_count": 19,
+            "output_chars": 240,
+            "partial_output_chars": 240,
+            "max_completion_tokens": 2048,
+            "streaming": True,
+            "reasoning_effort": "medium",
+            "finish_reason": "length",
+            "error_type": "",
+            "error_category": "none",
+            "raw_body": "must-not-be-copied",
+        },
+    }
+    graph_report = {
+        "status": "incomplete",
+        "stop_reason": "invalid_model_json",
+        "provider": {
+            "request_diagnostics": diagnostics["request_diagnostics"],
+        },
+        "tool_calls": [],
+        "evidence_ledger": [],
+        "model_actions": [],
+    }
+    record = build_comparison_record(
+        problem_statement=PROBLEM,
+        provider_name="cloudflare",
+        model_name="@cf/qwen/qwen3.8-27b",
+        source_manifest_sha256="a" * 64,
+        baseline_status="response_truncated",
+        baseline_response="partial response",
+        baseline_error="completion_truncated",
+        baseline_source_path="pipeline/extractor.py",
+        baseline_source_sha256="b" * 64,
+        graph_report=graph_report,
+        baseline_provider_diagnostics=diagnostics,
+    )
+
+    baseline_transport = record["baseline"]["transport"]
+    assert baseline_transport["finish_reason"] == "length"
+    assert baseline_transport["request_diagnostics"]["time_to_first_output_seconds"] == 4.5
+    assert baseline_transport["request_diagnostics"]["streaming"] is True
+    assert "raw_body" not in baseline_transport["request_diagnostics"]
+
+    graph_summary = record["graph_assisted"]["summary"]
+    assert graph_summary["provider_request_diagnostics"]["finish_reason"] == "length"
+    assert graph_summary["provider_request_diagnostics"]["time_to_first_event_seconds"] == 3.25
+    markdown = render_comparison_markdown(record)
+    assert "Finish reason: `length`" in markdown
+    assert "Graph streaming: `True`" in markdown

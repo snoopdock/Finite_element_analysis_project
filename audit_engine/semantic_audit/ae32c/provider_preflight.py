@@ -58,6 +58,62 @@ def _safe_error(error: Any) -> str:
     return sanitize_provider_error(str(error), limit=300)
 
 
+def _safe_request_diagnostics(provider: Any) -> dict[str, Any]:
+    """Expose only bounded adapter-owned timing/configuration telemetry."""
+    try:
+        stats = provider.get_stats()
+    except Exception:
+        return {}
+    if not isinstance(stats, Mapping):
+        return {}
+    raw = stats.get("request_diagnostics")
+    if not isinstance(raw, Mapping):
+        return {}
+    result: dict[str, Any] = {}
+    for key in (
+        "elapsed_seconds",
+        "time_to_first_event_seconds",
+        "time_to_first_output_seconds",
+        "connect_timeout_seconds",
+        "read_timeout_seconds",
+    ):
+        value = raw.get(key)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            number = float(value)
+            if 0 <= number <= 3600:
+                result[key] = round(number, 3)
+    for key in (
+        "attempt_count",
+        "stream_event_count",
+        "output_chars",
+        "partial_output_chars",
+        "max_completion_tokens",
+    ):
+        value = raw.get(key)
+        if isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= 2_000_000:
+            result[key] = value
+    if isinstance(raw.get("streaming"), bool):
+        result["streaming"] = raw["streaming"]
+    if isinstance(raw.get("reasoning_effort"), str) and raw["reasoning_effort"] in {"low", "medium", "high"}:
+        result["reasoning_effort"] = raw["reasoning_effort"]
+    if isinstance(raw.get("finish_reason"), str) and raw["finish_reason"] in {
+        "", "stop", "tool_calls", "length", "content_filter", "function_call",
+    }:
+        result["finish_reason"] = raw["finish_reason"]
+    if isinstance(raw.get("error_type"), str) and raw["error_type"] in {
+        "", "ReadTimeout", "ConnectTimeout", "ConnectionError", "Timeout",
+        "ChunkedEncodingError", "StreamProtocolError",
+    }:
+        result["error_type"] = raw["error_type"]
+    if isinstance(raw.get("error_category"), str) and raw["error_category"] in {
+        "none", "read_timeout", "connect_timeout", "transport_error",
+        "stream_interrupted", "provider_request_rejected",
+        "invalid_provider_json", "invalid_stream",
+    }:
+        result["error_category"] = raw["error_category"]
+    return result
+
+
 def _provider_runtime_settings(provider: Any) -> dict[str, Any]:
     try:
         stats = provider.get_stats()
@@ -74,9 +130,13 @@ def _provider_runtime_settings(provider: Any) -> dict[str, Any]:
         "last_http_status", "last_error_category", "last_error_codes",
         "last_request_id", "last_endpoint_mode", "last_finish_reason",
         "last_system_messages_coalesced", "last_message_compatibility",
-        "native_tool_endpoint",
+        "native_tool_endpoint", "connect_timeout_seconds",
     )
-    return {key: stats[key] for key in allowed if key in stats}
+    result = {key: stats[key] for key in allowed if key in stats}
+    request_diagnostics = _safe_request_diagnostics(provider)
+    if request_diagnostics:
+        result["request_diagnostics"] = request_diagnostics
+    return result
 
 
 def _build_provider(
@@ -248,6 +308,7 @@ def _native_tool_call_probe(
         "action_schema_valid": False,
         "tool_executed": False,
     }
+    base["request_diagnostics"] = _safe_request_diagnostics(provider)
     if isinstance(response, str):
         base.update({
             "status": "native_tool_call_not_returned",
@@ -321,7 +382,6 @@ def _text_response_probe(provider: Any, model_name: str) -> dict[str, Any]:
                 "or native function calling. Return exactly these labelled lines, one per line:\n"
                 "ACTION: tool_call\nTOOL: search_repository\nARGUMENTS:\n"
                 "query: AE32C_PREFLIGHT_QUERY\nmode: content\nmax_results: 3\n"
-                "REASON: Check the labelled text response contract; no tool is executed.\n"
             ),
         },
         {"role": "user", "content": "Return the labelled text envelope now."},
@@ -338,6 +398,7 @@ def _text_response_probe(provider: Any, model_name: str) -> dict[str, Any]:
         response, error = None, f"provider_call_exception:{type(exc).__name__}"
     elapsed = round(max(0.0, time.monotonic() - started), 3)
     base["elapsed_seconds"] = elapsed
+    base["request_diagnostics"] = _safe_request_diagnostics(provider)
     if response is None:
         base.update(
             status="provider_failed",
@@ -581,6 +642,7 @@ def run_preflight(
         "response_chars": len(baseline_response) if baseline_response is not None else 0,
         "sentinel_match": baseline_response.strip() == BASELINE_SENTINEL if baseline_response is not None else False,
         "error": baseline_error or "",
+        "request_diagnostics": _safe_request_diagnostics(provider),
     }
     report["transport_probe"] = transport
     report["runtime_settings"] = _provider_runtime_settings(provider)
@@ -788,6 +850,15 @@ def write_preflight_artifacts(report: dict[str, Any], output_dir: Path) -> tuple
         f"- HTTP status counts: `{json.dumps(report.get('runtime_settings', {}).get('http_status_counts', {}), sort_keys=True)}`",
         f"- Effective timeout/retries: `{report.get('runtime_settings', {}).get('timeout_seconds', 'unknown')}s / {report.get('runtime_settings', {}).get('max_retries', 'unknown')}`",
     ]
+    request_diag = report.get("runtime_settings", {}).get("request_diagnostics", {})
+    if isinstance(request_diag, Mapping):
+        lines.extend([
+            f"- Streaming: `{request_diag.get('streaming', 'not reported')}`",
+            f"- Time to first event/output: `{request_diag.get('time_to_first_event_seconds', 'n/a')}s / {request_diag.get('time_to_first_output_seconds', 'n/a')}s`",
+            f"- Partial/output characters: `{request_diag.get('partial_output_chars', 'n/a')} / {request_diag.get('output_chars', 'n/a')}`",
+            f"- Reasoning effort / completion cap: `{request_diag.get('reasoning_effort', 'not reported')} / {request_diag.get('max_completion_tokens', 'not reported')}`",
+            f"- Stream finish reason: `{request_diag.get('finish_reason', 'not reported')}`",
+        ])
     if report.get("provider") in {"cloudflare", "openrouter"}:
         probe = report.get("json_action_probe", {})
         lines.extend([

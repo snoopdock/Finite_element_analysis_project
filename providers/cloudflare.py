@@ -46,6 +46,202 @@ def _reject_tool_constant(_value):
     raise ValueError("nonstandard_json_constant")
 
 
+def _env_flag(name: str, default: bool = False) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _consume_openai_sse(
+    response,
+    *,
+    max_chars: int,
+    started_at: float,
+    progress_callback=None,
+    max_events: int = 20_000,
+):
+    """Consume OpenAI-compatible Chat Completions SSE into a normal envelope.
+
+    A stream must end with [DONE] or a terminal finish_reason. A terminal
+    ``length`` reason is preserved as metadata so the upper-level canonical
+    normalizer can reject an incomplete action and trigger the bounded response
+    mode downgrade. Output and wire-event sizes are bounded before the assembled
+    response reaches the existing local normalizers.
+    """
+    content_parts = []
+    tool_calls = {}
+    finish_reason = None
+    usage = None
+    event_count = 0
+    first_event_seconds = None
+    first_output_seconds = None
+    output_chars = 0
+    wire_chars = 0
+    saw_done = False
+    max_wire_chars = max_chars * 8 + 131_072
+
+    for raw_line in response.iter_lines(chunk_size=128, decode_unicode=True):
+        if raw_line is None:
+            continue
+        line = (
+            raw_line.decode("utf-8", errors="replace")
+            if isinstance(raw_line, bytes)
+            else str(raw_line)
+        )
+        if len(line) > max_wire_chars:
+            raise ValueError("stream_event_too_large")
+        line = line.strip()
+        if not line or line.startswith(":") or not line.startswith("data:"):
+            continue
+        payload = line[5:].strip()
+        wire_chars += len(payload)
+        if wire_chars > max_wire_chars:
+            raise ValueError("stream_wire_payload_too_large")
+        if payload == "[DONE]":
+            saw_done = True
+            break
+
+        try:
+            event = json.loads(payload)
+        except (TypeError, ValueError, json.JSONDecodeError) as exc:
+            raise ValueError("malformed_stream_event") from exc
+        if not isinstance(event, dict):
+            raise ValueError("invalid_stream_event_shape")
+        if "error" in event:
+            raise ValueError("provider_stream_error")
+
+        event_count += 1
+        if event_count > max_events:
+            raise ValueError("stream_event_count_exceeded")
+        if first_event_seconds is None:
+            first_event_seconds = max(0.0, time.monotonic() - started_at)
+        if isinstance(event.get("usage"), dict):
+            usage = event["usage"]
+
+        choices = event.get("choices")
+        if not isinstance(choices, list):
+            choices = []
+        for choice in choices:
+            if not isinstance(choice, dict):
+                continue
+            choice_index = choice.get("index", 0)
+            if isinstance(choice_index, bool) or not isinstance(choice_index, int) or choice_index != 0:
+                raise ValueError("unexpected_stream_choice_index")
+            delta = choice.get("delta")
+            if not isinstance(delta, dict):
+                delta = choice.get("message") if isinstance(choice.get("message"), dict) else {}
+
+            content = delta.get("content")
+            if isinstance(content, str):
+                if content and first_output_seconds is None:
+                    first_output_seconds = max(0.0, time.monotonic() - started_at)
+                content_parts.append(content)
+                output_chars += len(content)
+            elif isinstance(content, list):
+                for part in content:
+                    if isinstance(part, dict) and isinstance(part.get("text"), str):
+                        value = part["text"]
+                        if value and first_output_seconds is None:
+                            first_output_seconds = max(0.0, time.monotonic() - started_at)
+                        content_parts.append(value)
+                        output_chars += len(value)
+
+            raw_calls = delta.get("tool_calls")
+            if isinstance(raw_calls, list):
+                for raw_call in raw_calls:
+                    if not isinstance(raw_call, dict):
+                        raise ValueError("invalid_stream_tool_call_shape")
+                    index = raw_call.get("index", 0)
+                    if isinstance(index, bool) or not isinstance(index, int) or index != 0:
+                        raise ValueError("unexpected_stream_tool_call_index")
+                    target = tool_calls.setdefault(index, {
+                        "id": "", "type": "function",
+                        "function": {"name": "", "arguments": ""},
+                    })
+                    call_id = raw_call.get("id")
+                    if isinstance(call_id, str) and not target["id"]:
+                        target["id"] = call_id[:200]
+                    function = raw_call.get("function")
+                    if isinstance(function, dict):
+                        name = function.get("name")
+                        arguments = function.get("arguments")
+                        if isinstance(name, str):
+                            target["function"]["name"] = (
+                                target["function"]["name"] + name
+                            )[:200]
+                        if isinstance(arguments, str):
+                            if arguments and first_output_seconds is None:
+                                first_output_seconds = max(0.0, time.monotonic() - started_at)
+                            target["function"]["arguments"] += arguments
+                            output_chars += len(arguments)
+
+            reason = choice.get("finish_reason")
+            if isinstance(reason, str) and reason:
+                finish_reason = reason[:80]
+
+        if callable(progress_callback):
+            progress_callback({
+                "event_count": event_count,
+                "first_event_seconds": first_event_seconds,
+                "first_output_seconds": first_output_seconds,
+                "output_chars": output_chars,
+            })
+        if output_chars > max_chars:
+            raise ValueError("stream_response_too_large")
+
+    if not saw_done and finish_reason is None:
+        raise ValueError("incomplete_stream")
+    if output_chars > max_chars:
+        raise ValueError("stream_response_too_large")
+    if len(tool_calls) > 1:
+        raise ValueError("multiple_stream_tool_calls")
+
+    message = {"role": "assistant", "content": "".join(content_parts)}
+    if tool_calls:
+        message["tool_calls"] = [tool_calls[index] for index in sorted(tool_calls)]
+    normalized = {"choices": [{"message": message, "finish_reason": finish_reason}]}
+    if usage is not None:
+        normalized["usage"] = usage
+    return normalized, {
+        "event_count": event_count,
+        "first_event_seconds": first_event_seconds,
+        "first_output_seconds": first_output_seconds,
+        "output_chars": output_chars,
+        "wire_chars": wire_chars,
+    }
+
+
+def _is_read_timeout_exception(exc: BaseException) -> bool:
+    """Recognize requests' wrapped urllib3 read timeouts without parsing payloads."""
+    pending = [exc]
+    seen = set()
+    while pending:
+        current = pending.pop()
+        if id(current) in seen:
+            continue
+        seen.add(id(current))
+        if isinstance(current, requests.exceptions.ReadTimeout):
+            return True
+        if type(current).__name__ == "ReadTimeoutError":
+            return True
+        cause = getattr(current, "__cause__", None)
+        context = getattr(current, "__context__", None)
+        if isinstance(cause, BaseException):
+            pending.append(cause)
+        if isinstance(context, BaseException):
+            pending.append(context)
+        for item in getattr(current, "args", ()):
+            if isinstance(item, BaseException):
+                pending.append(item)
+    # requests.Response.iter_content wraps urllib3 ReadTimeoutError in a
+    # requests.ConnectionError; classify that wrapper as a read timeout.
+    return (
+        isinstance(exc, requests.exceptions.ConnectionError)
+        and "read timed out" in str(exc).lower()
+    )
+
+
 def _safe_cloudflare_error_diagnostics(response):
     """Extract only bounded, non-sensitive Cloudflare error metadata."""
     status = getattr(response, "status_code", None)
@@ -148,13 +344,20 @@ class CloudflareProvider:
             )
         self.max_response_chars = resolved_response_limit
         try:
-            self.timeout_seconds = max(10, min(600, int(os.environ.get("FEA_LLM_REQUEST_TIMEOUT_SECONDS", "180"))))
+            self.timeout_seconds = max(10, min(600, int(os.environ.get("FEA_LLM_REQUEST_TIMEOUT_SECONDS", "90"))))
         except (TypeError, ValueError):
-            self.timeout_seconds = 180
+            self.timeout_seconds = 90
         try:
-            self.max_retries = max(1, min(5, int(os.environ.get("FEA_LLM_RETRY_ATTEMPTS", "3"))))
+            self.connect_timeout_seconds = max(2, min(60, int(os.environ.get("FEA_LLM_CONNECT_TIMEOUT_SECONDS", "10"))))
         except (TypeError, ValueError):
-            self.max_retries = 3
+            self.connect_timeout_seconds = 10
+        try:
+            self.max_retries = max(1, min(5, int(os.environ.get("FEA_LLM_RETRY_ATTEMPTS", "1"))))
+        except (TypeError, ValueError):
+            self.max_retries = 1
+        self.streaming_enabled = _env_flag("FEA_LLM_STREAMING", False)
+        requested_effort = os.environ.get("FEA_LLM_REASONING_EFFORT", "").strip().lower()
+        self.reasoning_effort = requested_effort if requested_effort in {"low", "medium", "high"} else None
         self.usage = {
             "prompt_tokens": 0,
             "completion_tokens": 0,
@@ -175,6 +378,17 @@ class CloudflareProvider:
         self.last_finish_reason = ""
         self.last_system_messages_coalesced = 0
         self.last_message_compatibility = "not_applied"
+        self.last_request_elapsed_seconds = None
+        self.last_request_time_to_first_event_seconds = None
+        self.last_request_time_to_first_output_seconds = None
+        self.last_request_attempt_count = 0
+        self.last_request_stream_event_count = 0
+        self.last_request_output_chars = 0
+        self.last_request_partial_output_chars = 0
+        self.last_request_streaming = False
+        self.last_request_reasoning_effort = None
+        self.last_request_max_completion_tokens = None
+        self.last_request_error_type = ""
 
         env_limit = os.environ.get("FEA_MAX_LLM_CALLS")
         if env_limit:
@@ -198,6 +412,20 @@ class CloudflareProvider:
             self.max_logical_calls is not None
             and self.logical_calls >= self.max_logical_calls
         )
+
+    def _record_stream_progress(self, metrics):
+        if not isinstance(metrics, dict):
+            return
+        self.last_request_stream_event_count = int(metrics.get("event_count", 0) or 0)
+        first = metrics.get("first_event_seconds")
+        if isinstance(first, (int, float)) and not isinstance(first, bool):
+            self.last_request_time_to_first_event_seconds = round(max(0.0, float(first)), 3)
+        first_output = metrics.get("first_output_seconds")
+        if isinstance(first_output, (int, float)) and not isinstance(first_output, bool):
+            self.last_request_time_to_first_output_seconds = round(max(0.0, float(first_output)), 3)
+        chars = metrics.get("output_chars")
+        if isinstance(chars, int) and not isinstance(chars, bool) and chars >= 0:
+            self.last_request_partial_output_chars = chars
 
     def chat(
         self,
@@ -276,13 +504,16 @@ class CloudflareProvider:
                 f"{CF_BASE}/accounts/{self.account_id}/ai/v1/chat/completions"
             )
             self.last_endpoint_mode = "workers_ai_openai_compatible_chat_completions"
+            stream_this_request = self.streaming_enabled
             payload = {
                 "model": model,
                 "messages": messages,
                 "max_completion_tokens": max_tokens,
                 "temperature": temperature,
-                "stream": False,
+                "stream": stream_this_request,
             }
+            if model == QWEN_NATIVE_TOOL_MODEL and self.reasoning_effort:
+                payload["reasoning_effort"] = self.reasoning_effort
         else:
             url = f"{CF_BASE}/accounts/{self.account_id}/ai/run/{model}"
             self.last_endpoint_mode = "workers_ai_run_chat"
@@ -291,6 +522,24 @@ class CloudflareProvider:
                 "max_tokens": max_tokens,
                 "temperature": temperature,
             }
+        if not _openai_compatible:
+            stream_this_request = False
+        if stream_this_request:
+            headers["Accept"] = "text/event-stream"
+        request_started = time.monotonic()
+        self.last_request_elapsed_seconds = None
+        self.last_request_time_to_first_event_seconds = None
+        self.last_request_time_to_first_output_seconds = None
+        self.last_request_attempt_count = 0
+        self.last_request_stream_event_count = 0
+        self.last_request_output_chars = 0
+        self.last_request_partial_output_chars = 0
+        self.last_request_streaming = bool(stream_this_request)
+        self.last_request_reasoning_effort = (
+            self.reasoning_effort if model == QWEN_NATIVE_TOOL_MODEL else None
+        )
+        self.last_request_max_completion_tokens = max_tokens if isinstance(max_tokens, int) else None
+        self.last_request_error_type = ""
         if response_format is not None:
             if (
                 _openai_compatible
@@ -340,11 +589,13 @@ class CloudflareProvider:
             self.http_attempts += 1
             resp = None
             try:
+                self.last_request_attempt_count = attempt + 1
                 resp = requests.post(
                     url,
                     headers=headers,
                     json=payload,
-                    timeout=self.timeout_seconds,
+                    timeout=(self.connect_timeout_seconds, self.timeout_seconds),
+                    stream=bool(stream_this_request),
                 )
 
                 self.last_http_status = int(resp.status_code)
@@ -397,7 +648,20 @@ class CloudflareProvider:
                         f"{code_text}{request_text}"
                     )
 
-                data = resp.json()
+                if stream_this_request:
+                    data, stream_metrics = _consume_openai_sse(
+                        resp,
+                        max_chars=self.max_response_chars,
+                        started_at=request_started,
+                        progress_callback=self._record_stream_progress,
+                    )
+                    self.last_request_time_to_first_event_seconds = stream_metrics["first_event_seconds"]
+                    self.last_request_time_to_first_output_seconds = stream_metrics["first_output_seconds"]
+                    self.last_request_stream_event_count = stream_metrics["event_count"]
+                    self.last_request_output_chars = stream_metrics["output_chars"]
+                    self.last_request_partial_output_chars = stream_metrics["output_chars"]
+                else:
+                    data = resp.json()
                 usage = data.get("usage") if isinstance(data, dict) else None
                 if not isinstance(usage, dict) and isinstance(data, dict):
                     result_block = data.get("result")
@@ -414,6 +678,15 @@ class CloudflareProvider:
                     self.usage["completion_tokens"] += completion_tokens
                     self.usage["total_tokens"] += total_tokens
                     self.usage["responses_with_usage"] += 1
+
+                choices_for_finish = data.get("choices") if isinstance(data, dict) else None
+                if isinstance(choices_for_finish, list) and choices_for_finish:
+                    first_finish_choice = choices_for_finish[0]
+                    finish_reason = (
+                        first_finish_choice.get("finish_reason")
+                        if isinstance(first_finish_choice, dict) else None
+                    )
+                    self.last_finish_reason = finish_reason[:80] if isinstance(finish_reason, str) else ""
 
                 if tools is not None and isinstance(data, dict):
                     result_block = data.get("result")
@@ -457,6 +730,11 @@ class CloudflareProvider:
                                     parse_constant=_reject_tool_constant,
                                 )
                             except (TypeError, ValueError, json.JSONDecodeError):
+                                if self.last_finish_reason == "length":
+                                    # Preserve the truncated argument string as inert data.
+                                    # The AE-32C normalizer will reject it and trigger the
+                                    # bounded session downgrade; this adapter never executes it.
+                                    return ProviderToolCall(call_name, call_arguments), None
                                 self.failed_calls += 1
                                 self.native_tool_call_failures += 1
                                 return None, "Native response-tool arguments invalid"
@@ -486,6 +764,7 @@ class CloudflareProvider:
                                 f"max_response_chars={self.max_response_chars})"
                             )
                         self.native_tool_call_responses += 1
+                        self.last_request_output_chars = len(encoded_call)
                         self.call_counts[model] = self.call_counts.get(model, 0) + 1
                         self.successful_calls += 1
                         self.response_chars_total += len(encoded_call)
@@ -517,6 +796,7 @@ class CloudflareProvider:
                         f"max_response_chars={self.max_response_chars})"
                     )
 
+                self.last_request_output_chars = len(text)
                 self.call_counts[model] = self.call_counts.get(model, 0) + 1
                 self.successful_calls += 1
                 self.response_chars_total += len(text)
@@ -524,11 +804,40 @@ class CloudflareProvider:
                 return text, None
 
             except requests.exceptions.RequestException as exc:
+                # A read timeout is ambiguous: the provider may have completed
+                # generation after the client stopped waiting. requests wraps
+                # urllib3's streaming ReadTimeoutError as ConnectionError, so
+                # inspect the exception chain and never replay an ambiguous POST.
+                if _is_read_timeout_exception(exc):
+                    self.failed_calls += 1
+                    if tools is not None:
+                        self.native_tool_call_failures += 1
+                    self.last_error_category = "read_timeout"
+                    self.last_request_error_type = "ReadTimeout"
+                    return None, (
+                        f"Read timeout after {self.timeout_seconds}s; "
+                        f"partial_stream_chars={self.last_request_partial_output_chars}"
+                    )
+                # Once an SSE response exists, a broken body may follow provider
+                # execution. Do not replay it automatically and risk duplicate
+                # inference/cost or duplicate model actions.
+                if stream_this_request and resp is not None:
+                    self.failed_calls += 1
+                    if tools is not None:
+                        self.native_tool_call_failures += 1
+                    self.last_error_category = "stream_interrupted"
+                    self.last_request_error_type = type(exc).__name__[:80]
+                    return None, "Provider response stream was interrupted"
                 if attempt + 1 >= self.max_retries:
                     self.failed_calls += 1
                     if tools is not None:
                         self.native_tool_call_failures += 1
-                    self.last_error_category = "transport_error"
+                    self.last_error_category = (
+                        "connect_timeout"
+                        if isinstance(exc, requests.exceptions.ConnectTimeout)
+                        else "transport_error"
+                    )
+                    self.last_request_error_type = type(exc).__name__[:80]
                     return None, str(exc)
                 time.sleep(10 * (attempt + 1))
 
@@ -536,9 +845,27 @@ class CloudflareProvider:
                 self.failed_calls += 1
                 if tools is not None:
                     self.native_tool_call_failures += 1
-                self.last_error_category = "invalid_provider_json"
-                return None, f"Invalid JSON response: {exc}"
+                message = str(exc)
+                stream_codes = {
+                    "malformed_stream_event", "invalid_stream_event_shape",
+                    "provider_stream_error", "invalid_stream_tool_call_shape",
+                    "invalid_stream_tool_call_index", "unexpected_stream_choice_index",
+                    "unexpected_stream_tool_call_index", "multiple_stream_tool_calls",
+                    "incomplete_stream", "stream_response_too_large",
+                    "stream_event_too_large", "stream_wire_payload_too_large",
+                    "stream_event_count_exceeded",
+                }
+                is_stream_error = message in stream_codes
+                self.last_error_category = "invalid_stream" if is_stream_error else "invalid_provider_json"
+                self.last_request_error_type = "StreamProtocolError" if is_stream_error else "ValueError"
+                return None, (
+                    "Invalid or incomplete provider stream"
+                    if is_stream_error else "Invalid JSON response"
+                )
             finally:
+                self.last_request_elapsed_seconds = round(
+                    max(0.0, time.monotonic() - request_started), 3
+                )
                 # Close every obtained HTTP response, including status errors,
                 # retry/continue paths, parse failures, oversized payloads and
                 # successful returns. A minimal fake/adapter response may not
@@ -681,4 +1008,21 @@ class CloudflareProvider:
             "last_message_compatibility": self.last_message_compatibility,
             "extraction_stats": self.extractor.get_stats(),
             "learned_paths": self.extractor.get_learned_paths(),
+            "request_diagnostics": {
+                "elapsed_seconds": self.last_request_elapsed_seconds,
+                "time_to_first_event_seconds": self.last_request_time_to_first_event_seconds,
+                "time_to_first_output_seconds": self.last_request_time_to_first_output_seconds,
+                "attempt_count": self.last_request_attempt_count,
+                "stream_event_count": self.last_request_stream_event_count,
+                "output_chars": self.last_request_output_chars,
+                "partial_output_chars": self.last_request_partial_output_chars,
+                "streaming": self.last_request_streaming,
+                "connect_timeout_seconds": self.connect_timeout_seconds,
+                "read_timeout_seconds": self.timeout_seconds,
+                "reasoning_effort": self.last_request_reasoning_effort,
+                "max_completion_tokens": self.last_request_max_completion_tokens,
+                "finish_reason": self.last_finish_reason,
+                "error_type": self.last_request_error_type,
+                "error_category": self.last_error_category or "none",
+            },
         }

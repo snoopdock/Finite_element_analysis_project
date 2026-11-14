@@ -12,7 +12,7 @@ from audit_engine.semantic_audit.ae32c.response_normalizer import (
     normalize_provider_response,
     normalize_response,
 )
-from audit_engine.semantic_audit.ae32c.provider_preflight import run_preflight
+from audit_engine.semantic_audit.ae32c.provider_preflight import run_preflight, _provider_runtime_settings
 from audit_engine.semantic_audit.ae32c.response_protocol import RESPONSE_TOOL_NAME
 from audit_engine.semantic_audit.ae32c import InvestigationLimits, RepositoryInvestigator
 from tests.semantic_audit.test_ae32c_investigator import (
@@ -350,12 +350,28 @@ REASON: bounded plain-text compatibility probe.
 """, None
 
     def get_stats(self):
+        last_call = self.calls[-1] if self.calls else ""
         return {
             "last_http_status": self.last_http_status,
             "last_error_category": self.last_error_category,
             "last_error_codes": list(self.last_error_codes),
             "last_request_id": self.last_request_id,
             "http_attempts": len(self.calls),
+            "request_diagnostics": {
+                "elapsed_seconds": 0.25,
+                "time_to_first_event_seconds": 0.05,
+                "time_to_first_output_seconds": 0.08,
+                "attempt_count": 1,
+                "stream_event_count": 4,
+                "output_chars": 96,
+                "partial_output_chars": 96,
+                "max_completion_tokens": 2048,
+                "streaming": True,
+                "reasoning_effort": "medium",
+                "finish_reason": "tool_calls" if last_call == "native" else "stop",
+                "error_type": "",
+                "error_category": self.last_error_category or "none",
+            },
         }
 
 
@@ -377,6 +393,10 @@ def test_qwen_preflight_passes_when_native_mode_fails_but_text_mode_works():
     assert report["text_response_probe"]["status"] == "passed"
     assert report["text_response_probe"]["normalization_strategy"] == "labelled_text"
     assert report["text_response_probe"]["tool_executed"] is False
+    assert report["text_response_probe"]["request_diagnostics"]["streaming"] is True
+    assert report["text_response_probe"]["request_diagnostics"]["reasoning_effort"] == "medium"
+    assert report["native_tool_call_probe"]["request_diagnostics"]["error_category"] == "provider_request_rejected"
+    assert report["transport_probe"]["request_diagnostics"]["time_to_first_output_seconds"] == 0.08
     assert report["response_mode_status"] == "text_fallback_only"
     assert report["usable_response_modes"] == ["plain_text_envelope"]
     assert report["status"] == "passed"
@@ -400,3 +420,51 @@ def test_text_fallback_is_limited_to_non_transient_request_rejections():
     assert not should_fallback_to_plain_text(StatsProvider(401, "permission_denied"))
     assert not should_fallback_to_plain_text(StatsProvider(429, "rate_limited"))
     assert not should_fallback_to_plain_text(StatsProvider(503, "provider_internal_error"))
+
+
+
+def test_provider_preflight_reports_only_whitelisted_request_diagnostics():
+    class DiagnosticProvider:
+        def get_stats(self):
+            return {
+                "timeout_seconds": 90,
+                "max_retries": 1,
+                "request_diagnostics": {
+                    "elapsed_seconds": 12.3456,
+                    "time_to_first_event_seconds": 1.2345,
+                    "time_to_first_output_seconds": 2.3456,
+                    "connect_timeout_seconds": 10,
+                    "read_timeout_seconds": 90,
+                    "attempt_count": 1,
+                    "stream_event_count": 14,
+                    "output_chars": 120,
+                    "partial_output_chars": 120,
+                    "max_completion_tokens": 2048,
+                    "streaming": True,
+                    "reasoning_effort": "medium",
+                    "error_type": "",
+                    "error_category": "none",
+                    "api_token": "must-never-appear",
+                    "raw_response": "must-never-appear",
+                },
+                "raw_body": "must-never-appear",
+            }
+
+    result = _provider_runtime_settings(DiagnosticProvider())
+    assert result["request_diagnostics"] == {
+        "elapsed_seconds": 12.346,
+        "time_to_first_event_seconds": 1.234,
+        "time_to_first_output_seconds": 2.346,
+        "connect_timeout_seconds": 10.0,
+        "read_timeout_seconds": 90.0,
+        "attempt_count": 1,
+        "stream_event_count": 14,
+        "output_chars": 120,
+        "partial_output_chars": 120,
+        "max_completion_tokens": 2048,
+        "streaming": True,
+        "reasoning_effort": "medium",
+        "error_type": "",
+        "error_category": "none",
+    }
+    assert "must-never-appear" not in repr(result)

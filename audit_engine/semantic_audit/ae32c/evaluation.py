@@ -27,6 +27,46 @@ def _safe_text(value: Any, limit: int = 8_000) -> str:
     return sanitize_provider_error(text, limit=limit)
 
 
+def _safe_request_diagnostics(value: Any) -> dict[str, Any]:
+    """Copy only bounded, non-sensitive request timing/configuration telemetry."""
+    if not isinstance(value, Mapping):
+        return {}
+    result: dict[str, Any] = {}
+    for key in (
+        "elapsed_seconds",
+        "time_to_first_event_seconds",
+        "time_to_first_output_seconds",
+        "connect_timeout_seconds",
+        "read_timeout_seconds",
+    ):
+        item = value.get(key)
+        if isinstance(item, (int, float)) and not isinstance(item, bool):
+            number = float(item)
+            if math.isfinite(number) and 0 <= number <= 3600:
+                result[key] = round(number, 3)
+    for key in (
+        "attempt_count",
+        "stream_event_count",
+        "output_chars",
+        "partial_output_chars",
+        "max_completion_tokens",
+    ):
+        item = value.get(key)
+        if isinstance(item, int) and not isinstance(item, bool) and 0 <= item <= 2_000_000:
+            result[key] = item
+    if isinstance(value.get("streaming"), bool):
+        result["streaming"] = value["streaming"]
+    if isinstance(value.get("reasoning_effort"), str) and value["reasoning_effort"] in {"low", "medium", "high"}:
+        result["reasoning_effort"] = value["reasoning_effort"]
+    if isinstance(value.get("finish_reason"), str) and value["finish_reason"] in {"", "stop", "tool_calls", "length", "content_filter", "function_call"}:
+        result["finish_reason"] = value["finish_reason"]
+    if isinstance(value.get("error_type"), str) and value["error_type"] in {"", "ReadTimeout", "ConnectTimeout", "ConnectionError", "Timeout", "ChunkedEncodingError", "StreamProtocolError"}:
+        result["error_type"] = value["error_type"]
+    if isinstance(value.get("error_category"), str) and value["error_category"] in {"none", "read_timeout", "connect_timeout", "transport_error", "stream_interrupted", "provider_request_rejected", "invalid_provider_json", "invalid_stream"}:
+        result["error_category"] = value["error_category"]
+    return result
+
+
 def _source_reference_count(diagnosis: Any) -> int:
     if not isinstance(diagnosis, Mapping):
         return 0
@@ -89,6 +129,8 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
     ledger = report.get("evidence_ledger") if isinstance(report.get("evidence_ledger"), list) else []
     actions = report.get("model_actions") if isinstance(report.get("model_actions"), list) else []
     diagnosis = report.get("diagnosis") if isinstance(report.get("diagnosis"), Mapping) else None
+    provider_record = report.get("provider") if isinstance(report.get("provider"), Mapping) else {}
+    request_diagnostics = _safe_request_diagnostics(provider_record.get("request_diagnostics"))
     final_validation = "not_accepted"
     for action in actions:
         if isinstance(action, Mapping) and action.get("action") == "final_accepted":
@@ -120,6 +162,7 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
         ) if isinstance(report.get("required_source_coverage"), Mapping) else [],
         "final_citation_validation": final_validation,
         "response_mode_negotiation": mode_summary,
+        "provider_request_diagnostics": request_diagnostics,
     }
 
 
@@ -172,10 +215,14 @@ def build_comparison_record(
     baseline_call_interface = diagnostics.get("baseline_call_interface")
     if not isinstance(baseline_call_interface, str) or baseline_call_interface not in {"chat_text", "chat"}:
         baseline_call_interface = "not_reported"
+    baseline_request_diagnostics = _safe_request_diagnostics(diagnostics.get("request_diagnostics"))
     baseline_endpoint_mode = diagnostics.get("last_endpoint_mode")
     if (not isinstance(baseline_endpoint_mode, str)
             or re.fullmatch(r"[a-zA-Z0-9_.-]{1,120}", baseline_endpoint_mode) is None):
         baseline_endpoint_mode = "not_reported"
+    baseline_finish_reason = diagnostics.get("last_finish_reason")
+    if baseline_finish_reason not in {"stop", "tool_calls", "length", "content_filter", "function_call"}:
+        baseline_finish_reason = None
     error_code = diagnostics.get("last_error_code")
     error_code = error_code if isinstance(error_code, str) and error_code in known_errors else "unclassified_or_none"
     envelope = diagnostics.get("last_envelope_diagnostic")
@@ -202,6 +249,8 @@ def build_comparison_record(
         "transport": {
             "call_interface": baseline_call_interface,
             "endpoint_mode": baseline_endpoint_mode,
+            "request_diagnostics": baseline_request_diagnostics,
+            **({"finish_reason": baseline_finish_reason} if baseline_finish_reason is not None else {}),
         },
     }
     graph_summary = summarize_graph_report(graph_report)
@@ -279,6 +328,9 @@ def render_comparison_markdown(record: Mapping[str, Any]) -> str:
         f"- Context: `{_markdown_text((baseline.get('context') or {}).get('source_path', 'unknown'), 400)}`",
         f"- Request interface: `{_markdown_text((baseline.get('transport') or {}).get('call_interface', 'not_reported'), 80)}`",
         f"- Endpoint mode: `{_markdown_text((baseline.get('transport') or {}).get('endpoint_mode', 'not_reported'), 120)}`",
+        f"- Finish reason: `{_markdown_text((baseline.get('transport') or {}).get('finish_reason', 'not_reported'), 40)}`",
+        f"- Response streaming: `{bool(((baseline.get('transport') or {}).get('request_diagnostics') or {}).get('streaming'))}`",
+        f"- Time to first event/output: `{((baseline.get('transport') or {}).get('request_diagnostics') or {}).get('time_to_first_event_seconds', 'n/a')}s / {((baseline.get('transport') or {}).get('request_diagnostics') or {}).get('time_to_first_output_seconds', 'n/a')}s`",
         f"- Response characters: {metrics.get('baseline_response_chars', 0)}",
         f"- Reported tokens: {metrics.get('baseline_reported_tokens', 'not reported')}",
         f"- Elapsed seconds: {metrics.get('baseline_elapsed_seconds', 'not measured')}",
@@ -304,6 +356,9 @@ def render_comparison_markdown(record: Mapping[str, Any]) -> str:
         f"- Last response mode: `{_markdown_text((summary.get('response_mode_negotiation') or {}).get('last_mode', 'not_reported'), 80)}`",
         f"- Plain-text downgrade used: `{bool((summary.get('response_mode_negotiation') or {}).get('plain_text_downgrade_used'))}`",
         f"- Last endpoint mode: `{_markdown_text((summary.get('response_mode_negotiation') or {}).get('last_endpoint_mode', 'not_reported'), 120)}`",
+        f"- Graph streaming: `{bool((summary.get('provider_request_diagnostics') or {}).get('streaming'))}`",
+        f"- Graph time to first event/output: `{(summary.get('provider_request_diagnostics') or {}).get('time_to_first_event_seconds', 'n/a')}s / {(summary.get('provider_request_diagnostics') or {}).get('time_to_first_output_seconds', 'n/a')}s`",
+        f"- Graph finish reason: `{_markdown_text((summary.get('provider_request_diagnostics') or {}).get('finish_reason', 'not_reported'), 40)}`",
         "",
     ]
     report = assisted.get("report")

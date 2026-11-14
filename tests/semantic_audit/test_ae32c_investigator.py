@@ -1144,6 +1144,35 @@ def test_cloudflare_gets_one_investigation_wide_transport_retry_then_single_atte
     }]
 
 
+def test_streaming_cloudflare_does_not_receive_ambiguous_transport_retry_budget():
+    class StreamingCloudflareProvider(StructuredCloudflareFakeProvider):
+        streaming_enabled = True
+
+    provider = StreamingCloudflareProvider([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ], on_chat=None)
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        evidence_tools=FakeEvidenceTools(),
+        limits=InvestigationLimits(),
+        id_factory=lambda: "test-investigation-cloudflare-stream-no-retry",
+    )
+
+    report = investigator.run("Investigate a failed workflow")
+
+    assert report["diagnosis"] is not None
+    assert provider.max_retries_seen == [1, 1]
+    assert provider.max_retries == 3
+    assert report["budget"]["max_cloudflare_transport_retries"] == 1
+    assert report["budget"]["cloudflare_transport_retries_used"] == 0
+    assert not any(
+        event.get("event") == "cloudflare_transport_retry_budget_consumed"
+        for event in report["errors"]
+    )
+
+
 def test_nararouter_gets_one_global_transport_retry_then_returns_to_single_attempts():
     class RetryAwareNaraProvider(FakeProvider):
         provider_name = "nararouter"

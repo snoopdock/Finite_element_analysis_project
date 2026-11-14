@@ -30,7 +30,7 @@ from providers.safe_errors import sanitize_provider_error
 
 MAX_BASELINE_RESPONSE_CHARS = 16_000
 LIVE_BASELINE_MAX_TOKENS = 2_000
-LIVE_GRAPH_MAX_TOKENS = 8_000
+LIVE_GRAPH_MAX_TOKENS = 2_048
 LIVE_GRAPH_MAX_ROUNDS = 10
 LIVE_GRAPH_MAX_CALLS = LIVE_GRAPH_MAX_ROUNDS
 DEFAULT_PROBLEM = (
@@ -72,14 +72,17 @@ def _build_provider(provider_name: str, model_name: str, *, max_calls: int, max_
 
 
 def build_live_investigation_limits(provider_name: str = "") -> InvestigationLimits:
-    """Return finite live limits, allowing slower NaraRouter calls more wall time.
+    """Return finite live limits with provider-appropriate wall-clock budgets.
 
-    The NaraRouter preflight returned a valid response in 28.256 seconds, while
-    its full-context investigation exhausted the 300-second deadline. Other
-    providers retain the existing deadline; NaraRouter receives a 900-second
-    investigation budget, still bounded by the workflow job timeout.
+    Cloudflare Qwen's previous full-context requests timed out at the 45-second
+    read timeout while preflight requests completed. The live workflow now uses
+    SSE streaming, a 90-second read-inactivity timeout, one attempt, medium
+    reasoning, and a 2,048-token per-call cap. The graph condition receives a
+    900-second total investigation budget, bounded by the 22-minute workflow
+    job timeout. NaraRouter retains its separately bounded 900-second budget.
     """
-    elapsed_budget = 900 if str(provider_name).strip().lower() == "nararouter" else 300
+    provider_key = str(provider_name).strip().lower()
+    elapsed_budget = 900 if provider_key in {"nararouter", "cloudflare"} else 300
     return InvestigationLimits(
         max_rounds=LIVE_GRAPH_MAX_ROUNDS,
         max_tool_calls=12,
@@ -360,6 +363,9 @@ def main(argv: list[str] | None = None) -> int:
         else:
             baseline_provider_stats = dict(baseline_provider_stats)
         baseline_provider_stats["baseline_call_interface"] = baseline_call_interface
+        if baseline_status == "completed" and baseline_provider_stats.get("last_finish_reason") == "length":
+            baseline_status = "response_truncated"
+            baseline_error = "completion_truncated"
 
         graph_report: dict[str, Any] | None = None
         # E.5: run the graph condition independently of baseline transport and

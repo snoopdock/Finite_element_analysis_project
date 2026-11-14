@@ -1,5 +1,8 @@
 import json
 
+import requests
+import pytest
+
 from providers.base import ProviderToolCall
 from providers.cloudflare import CloudflareProvider
 from audit_engine.semantic_audit.ae32c.response_protocol import (
@@ -659,3 +662,256 @@ def test_live_preflight_shape_single_system_fallback_success_after_native_400(mo
     assert "tools" not in requests_seen[2][1]
     assert "private-token" not in repr(report)
     assert "bounded read-only probe" not in repr(report)
+
+
+class FakeStreamResponse(FakeResponse):
+    def __init__(self, lines, status_code=200, headers=None):
+        super().__init__({}, status_code=status_code, headers=headers or {"Content-Type": "text/event-stream"})
+        self._lines = list(lines)
+
+    def iter_lines(self, chunk_size=128, decode_unicode=True):
+        self.chunk_size = chunk_size
+        for line in self._lines:
+            yield line
+
+
+def _sse_event(value):
+    return "data: " + json.dumps(value, separators=(",", ":"))
+
+
+def test_qwen_streaming_text_response_is_normalized_and_reports_latency(monkeypatch):
+    calls = []
+    response = FakeStreamResponse([
+        _sse_event({"choices": [{"index": 0, "delta": {"role": "assistant"}}]}),
+        _sse_event({"choices": [{"index": 0, "delta": {"content": "AE32C "}}]}),
+        _sse_event({"choices": [{"index": 0, "delta": {"content": "STREAM_OK"}}]}),
+        _sse_event({"choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]}),
+        "data: [DONE]",
+    ])
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_REQUEST_TIMEOUT_SECONDS", "90")
+    monkeypatch.setenv("FEA_LLM_CONNECT_TIMEOUT_SECONDS", "10")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    monkeypatch.setenv("FEA_LLM_REASONING_EFFORT", "medium")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text(
+        [{"role": "system", "content": "Reply with a short sentinel."},
+         {"role": "user", "content": "Return AE32C STREAM_OK."}],
+        temperature=0.0,
+        max_tokens=2048,
+        model=MODEL,
+    )
+
+    assert error is None
+    assert text == "AE32C STREAM_OK"
+    url, kwargs = calls[0]
+    assert url.endswith("/ai/v1/chat/completions")
+    assert kwargs["stream"] is True
+    assert kwargs["headers"]["Accept"] == "text/event-stream"
+    assert kwargs["timeout"] == (10, 90)
+    assert kwargs["json"]["stream"] is True
+    assert response.chunk_size == 128
+    assert kwargs["json"]["reasoning_effort"] == "medium"
+    stats = provider.get_stats()
+    diag = stats["request_diagnostics"]
+    assert diag["streaming"] is True
+    assert diag["attempt_count"] == 1
+    assert diag["stream_event_count"] == 4
+    assert diag["output_chars"] == len("AE32C STREAM_OK")
+    assert diag["time_to_first_event_seconds"] is not None
+    assert diag["time_to_first_output_seconds"] is not None
+    assert diag["max_completion_tokens"] == 2048
+    assert diag["reasoning_effort"] == "medium"
+    assert response.closed
+
+
+def test_qwen_streaming_native_tool_call_reassembles_argument_deltas(monkeypatch):
+    calls = []
+    response = FakeStreamResponse([
+        _sse_event({"choices": [{
+            "index": 0,
+            "delta": {"tool_calls": [{
+                "index": 0,
+                "id": "call-stream-1",
+                "type": "function",
+                "function": {
+                    "name": RESPONSE_TOOL_NAME,
+                    "arguments": '{"action":"tool_call","tool":"repository_summary",',
+                },
+            }]},
+        }]}),
+        _sse_event({"choices": [{
+            "index": 0,
+            "delta": {"tool_calls": [{
+                "index": 0,
+                "function": {
+                    "arguments": '"arguments":{},"reason":"Check the evidence index."}',
+                },
+            }]},
+        }]}),
+        _sse_event({"choices": [{"index": 0, "delta": {}, "finish_reason": "tool_calls"}]}),
+        "data: [DONE]",
+    ])
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_with_response_tool(
+        [{"role": "system", "content": "Use the response function."},
+         {"role": "user", "content": "Inspect the evidence index."}],
+        tool_definition=build_response_tool_definition(),
+        temperature=0.0,
+        max_tokens=2048,
+        model=MODEL,
+    )
+
+    assert error is None
+    assert isinstance(result, ProviderToolCall)
+    assert result.name == RESPONSE_TOOL_NAME
+    assert result.arguments["action"] == "tool_call"
+    assert result.arguments["tool"] == "repository_summary"
+    assert result.arguments["reason"] == "Check the evidence index."
+    assert calls[0][1]["json"]["stream"] is True
+    assert response.closed
+
+
+def test_qwen_stream_read_timeout_wrapped_as_connection_error_is_not_replayed(monkeypatch):
+    calls = []
+
+    class ReadTimeoutStream(FakeStreamResponse):
+        def iter_lines(self, chunk_size=128, decode_unicode=True):
+            yield _sse_event({"choices": [{"index": 0, "delta": {"content": "partial"}}]})
+            raise requests.exceptions.ConnectionError("Read timed out.")
+
+    response = ReadTimeoutStream([])
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "3")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text(
+        [{"role": "user", "content": "Return a short answer."}],
+        temperature=0.0,
+        max_tokens=512,
+        model=MODEL,
+    )
+
+    assert text is None
+    assert "Read timeout" in error
+    assert len(calls) == 1
+    stats = provider.get_stats()
+    assert stats["last_error_category"] == "read_timeout"
+    assert stats["request_diagnostics"]["error_type"] == "ReadTimeout"
+    assert stats["request_diagnostics"]["partial_output_chars"] == len("partial")
+    assert stats["request_diagnostics"]["attempt_count"] == 1
+    assert response.closed
+
+
+def test_qwen_interrupted_stream_is_not_replayed_after_response_started(monkeypatch):
+    calls = []
+
+    class InterruptedStream(FakeStreamResponse):
+        def iter_lines(self, chunk_size=128, decode_unicode=True):
+            yield _sse_event({"choices": [{"index": 0, "delta": {"content": "partial"}}]})
+            raise requests.exceptions.ChunkedEncodingError("stream ended unexpectedly")
+
+    response = InterruptedStream([])
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "3")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text(
+        [{"role": "user", "content": "Return a short answer."}],
+        temperature=0.0,
+        max_tokens=512,
+        model=MODEL,
+    )
+
+    assert text is None
+    assert "interrupted" in error.lower()
+    assert len(calls) == 1
+    assert provider.get_stats()["last_error_category"] == "stream_interrupted"
+
+
+def test_qwen_stream_finish_reason_length_is_preserved_for_local_validation(monkeypatch):
+    response = FakeStreamResponse([
+        _sse_event({"choices": [{"index": 0, "delta": {"content": '{"action":'}}]}),
+        _sse_event({"choices": [{"index": 0, "delta": {}, "finish_reason": "length"}]}),
+        "data: [DONE]",
+    ])
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda url, **kwargs: response)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text(
+        [{"role": "user", "content": "Return a response."}],
+        temperature=0.0,
+        max_tokens=64,
+        model=MODEL,
+    )
+
+    assert error is None
+    assert text == '{"action":'
+    stats = provider.get_stats()
+    assert stats["last_finish_reason"] == "length"
+    assert stats["request_diagnostics"]["finish_reason"] == "length"
+
+
+def test_qwen_truncated_native_arguments_are_returned_as_inert_data_for_normalizer(monkeypatch):
+    from audit_engine.semantic_audit.ae32c.response_normalizer import (
+        ResponseNormalizationError,
+        normalize_provider_tool_call,
+    )
+
+    response = FakeStreamResponse([
+        _sse_event({"choices": [{
+            "index": 0,
+            "delta": {"tool_calls": [{
+                "index": 0,
+                "id": "call-truncated",
+                "type": "function",
+                "function": {
+                    "name": RESPONSE_TOOL_NAME,
+                    "arguments": '{"action":"tool_call","tool":"repository_summary"',
+                },
+            }]},
+        }]}),
+        _sse_event({"choices": [{"index": 0, "delta": {}, "finish_reason": "length"}]}),
+        "data: [DONE]",
+    ])
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda url, **kwargs: response)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_with_response_tool(
+        [{"role": "user", "content": "Use the response function."}],
+        tool_definition=build_response_tool_definition(),
+        temperature=0.0,
+        max_tokens=64,
+        model=MODEL,
+    )
+
+    assert error is None
+    assert isinstance(result, ProviderToolCall)
+    assert isinstance(result.arguments, str)
+    with pytest.raises(ResponseNormalizationError):
+        normalize_provider_tool_call(result)
+    assert provider.get_stats()["last_finish_reason"] == "length"
