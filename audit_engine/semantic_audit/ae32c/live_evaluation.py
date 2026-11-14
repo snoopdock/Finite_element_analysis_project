@@ -135,6 +135,31 @@ def _usage_summary(provider: Any) -> dict[str, int | float]:
     return result
 
 
+def _call_baseline_text(
+    provider: Any,
+    messages: list[dict[str, str]],
+    **kwargs: Any,
+) -> tuple[Any, Any, str]:
+    """Use the adapter's explicit plain-text interface for the baseline.
+
+    Providers may map ``chat_text`` to a different endpoint from their legacy
+    ``chat`` method. The graph condition uses the response-tool/negotiated chat
+    endpoint, so preferring ``chat_text`` keeps the baseline on the same
+    transport family while changing only the response/investigation strategy.
+    Older adapters without ``chat_text`` retain the ``chat`` compatibility
+    path. The selected interface is returned for auditable comparison metadata.
+    """
+    chat_text = getattr(provider, "chat_text", None)
+    if callable(chat_text):
+        response, error = chat_text(messages, **kwargs)
+        return response, error, "chat_text"
+    chat = getattr(provider, "chat", None)
+    if callable(chat):
+        response, error = chat(messages, **kwargs)
+        return response, error, "chat"
+    raise TypeError("provider_has_no_text_chat_interface")
+
+
 def _validate_paths(repo_root: Path, output_dir: Path, checkout_root: Path) -> tuple[Path, Path]:
     if repo_root.is_symlink():
         raise ValueError("repository_root_must_not_be_symlink")
@@ -300,9 +325,11 @@ def main(argv: list[str] | None = None) -> int:
         ]
         baseline_response: str | None = None
         baseline_error: str | None = None
+        baseline_call_interface = "unavailable"
         baseline_started = time.monotonic()
         try:
-            response, error = baseline_provider.chat(
+            response, error, baseline_call_interface = _call_baseline_text(
+                baseline_provider,
                 baseline_messages,
                 temperature=0.0,
                 max_tokens=LIVE_BASELINE_MAX_TOKENS,
@@ -330,6 +357,9 @@ def main(argv: list[str] | None = None) -> int:
             baseline_provider_stats = {}
         if not isinstance(baseline_provider_stats, dict):
             baseline_provider_stats = {}
+        else:
+            baseline_provider_stats = dict(baseline_provider_stats)
+        baseline_provider_stats["baseline_call_interface"] = baseline_call_interface
 
         graph_report: dict[str, Any] | None = None
         # E.5: run the graph condition independently of baseline transport and

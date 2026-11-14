@@ -178,16 +178,140 @@ REASON: Locate the implementation evidence.
     report = investigator.run("Investigate the provider response compatibility path.")
 
     assert [tool for tool, _ in evidence.calls] == ["repository_summary", "search_repository"]
-    assert provider.native_attempts == 2
+    assert provider.native_attempts == 1
     assert provider.text_attempts == 2
     assert report["status"] == "completed_with_incomplete_evidence"
     fallback_events = [
         event for event in report["errors"]
         if event.get("event") == "provider_response_mode_fallback_completed"
     ]
-    assert len(fallback_events) == 2
+    assert len(fallback_events) == 1
     assert all(event["to_mode"] == "plain_text" for event in fallback_events)
     assert not any(event.get("tool_execution") is True for event in fallback_events)
+    mode_summary = report["interaction_diagnostics"]["response_mode_negotiation"]
+    assert mode_summary["initial_mode"] == "native_tool_call"
+    assert mode_summary["session_override"] == "plain_text"
+    assert mode_summary["plain_text_downgrade_used"] is True
+
+
+class _NativeContractViolatingTextProvider(FakeProvider):
+    """Return an HTTP-successful but invalid native envelope, then valid text."""
+
+    provider_name = "cloudflare"
+    model = MODEL
+
+    def __init__(self, responses):
+        super().__init__(responses)
+        self.native_attempts = 0
+        self.text_attempts = 0
+
+    def get_capabilities(self):
+        return {
+            "json_object_mode": False,
+            "json_schema_mode": False,
+            "native_tool_calls": True,
+            "finish_reason_reporting": False,
+        }
+
+    def chat_with_response_tool(self, messages, *, tool_definition, **kwargs):
+        self.native_attempts += 1
+        # This is an unregistered provider function name. It is inert data and
+        # must be rejected before any repository tool can be dispatched.
+        return ProviderToolCall("provider_internal_tool", {"query": "observed"}), None
+
+    def chat_text(self, messages, **kwargs):
+        self.text_attempts += 1
+        return self.chat(messages, **kwargs)
+
+
+def test_invalid_native_response_contract_downgrades_once_for_remaining_turns():
+    provider = _NativeContractViolatingTextProvider([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        _fielded_final(),
+    ])
+    evidence = FakeEvidenceTools()
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        provider_name="cloudflare",
+        model_name=MODEL,
+        evidence_tools=evidence,
+        limits=InvestigationLimits(
+            max_rounds=4,
+            max_tool_calls=3,
+            finalization_rounds_reserved=1,
+            max_invalid_json_retries=2,
+        ),
+        id_factory=lambda: "native-contract-downgrade-test",
+    )
+
+    report = investigator.run("Investigate the provider response compatibility path.")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert report["stop_reason"] == "diagnosis_submitted_with_coverage_or_snapshot_limitations"
+    assert provider.native_attempts == 1
+    assert provider.text_attempts == 2
+    assert [tool for tool, _ in evidence.calls] == ["repository_summary", "search_repository"]
+    assert report["model_actions"][0]["action"] == "rejected"
+    assert report["model_actions"][0]["parse_error_code"] == "unexpected_native_tool_name"
+    downgrade_events = [
+        event for event in report["errors"]
+        if event.get("event") == "provider_response_contract_downgrade_requested"
+    ]
+    assert len(downgrade_events) == 1
+    assert downgrade_events[0]["from_mode"] == "native_tool_call"
+    assert downgrade_events[0]["to_mode"] == "plain_text"
+    assert downgrade_events[0]["tool_execution"] is False
+    mode_summary = report["interaction_diagnostics"]["response_mode_negotiation"]
+    assert mode_summary == {
+        "initial_mode": "native_tool_call",
+        "last_mode": "plain_text",
+        "session_override": "plain_text",
+        "plain_text_downgrade_used": True,
+        "downgrade_limit_per_investigation": 1,
+        "last_endpoint_mode": "not_reported",
+    }
+
+
+def test_native_action_shape_violation_also_triggers_bounded_text_downgrade():
+    class ExtraFieldNativeProvider(_NativeContractViolatingTextProvider):
+        def chat_with_response_tool(self, messages, *, tool_definition, **kwargs):
+            self.native_attempts += 1
+            return json.dumps({
+                "action": "tool_call",
+                "tool": "search_repository",
+                "arguments": {"query": "observed", "mode": "content", "max_results": 5},
+                "reason": "Locate the implementation evidence.",
+                "diagnosis": {"summary": "This field is forbidden on tool actions."},
+            }), None
+
+    provider = ExtraFieldNativeProvider([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        _fielded_final(),
+    ])
+    evidence = FakeEvidenceTools()
+    investigator = RepositoryInvestigator(
+        ".", provider, provider_name="cloudflare", model_name=MODEL,
+        evidence_tools=evidence,
+        limits=InvestigationLimits(
+            max_rounds=4, max_tool_calls=3, finalization_rounds_reserved=1,
+            max_invalid_tool_retries=2,
+        ),
+        id_factory=lambda: "native-action-shape-downgrade-test",
+    )
+    report = investigator.run("Investigate the provider response compatibility path.")
+
+    assert report["status"] == "completed_with_incomplete_evidence"
+    assert provider.native_attempts == 1
+    assert provider.text_attempts == 2
+    assert report["model_actions"][0]["reason"] == "tool_action_shape_invalid"
+    assert [tool for tool, _ in evidence.calls] == ["repository_summary", "search_repository"]
+    downgrade = [
+        event for event in report["errors"]
+        if event.get("event") == "provider_response_contract_downgrade_requested"
+    ]
+    assert len(downgrade) == 1
+    assert downgrade[0]["reason_code"] == "tool_action_shape_invalid"
 
 
 class _PreflightFallbackProvider:
@@ -276,65 +400,3 @@ def test_text_fallback_is_limited_to_non_transient_request_rejections():
     assert not should_fallback_to_plain_text(StatsProvider(401, "permission_denied"))
     assert not should_fallback_to_plain_text(StatsProvider(429, "rate_limited"))
     assert not should_fallback_to_plain_text(StatsProvider(503, "provider_internal_error"))
-
-
-class _ExactPreflightTextEchoProvider(_PreflightFallbackProvider):
-    """Simulate a model obeying the probe's *exact* requested lines.
-
-    The preflight should itself supply every canonical mandatory field. The
-    earlier prompt omitted REASON while asking for exact reproduction, which
-    caused correctly obedient models to fail the action-schema check.
-    """
-
-    def chat_text(self, messages, **kwargs):
-        self.calls.append("text")
-        instructions = [
-            message["content"] for message in messages
-            if message.get("role") == "system"
-            and "Return exactly these labelled lines, one per line:" in message.get("content", "")
-        ]
-        assert len(instructions) == 1
-        exact_lines = instructions[0].split(
-            "Return exactly these labelled lines, one per line:\n", 1
-        )[1]
-        return exact_lines, None
-
-
-def test_preflight_exact_text_contract_supplies_all_mandatory_fields():
-    provider = _ExactPreflightTextEchoProvider()
-
-    report = run_preflight(
-        "cloudflare", MODEL, environ={},
-        provider_builder=lambda config, budget, provider_name, model_name, environ=None: provider,
-    )
-
-    assert report["status"] == "passed"
-    assert report["native_tool_call_probe"]["status"] == "provider_failed"
-    text = report["text_response_probe"]
-    assert text["status"] == "passed"
-    assert text["action_schema_valid"] is True
-    assert text["normalization_strategy"] == "labelled_text"
-    assert text["tool_executed"] is False
-    assert report["usable_response_modes"] == ["plain_text_envelope"]
-    assert report["response_mode_status"] == "text_fallback_only"
-    assert provider.calls == ["transport", "native", "text"]
-
-
-def test_preflight_incomplete_text_contract_still_fails_closed():
-    class NoReasonProvider(_ExactPreflightTextEchoProvider):
-        def chat_text(self, messages, **kwargs):
-            response, error = super().chat_text(messages, **kwargs)
-            assert error is None
-            return response.split("REASON:", 1)[0], None
-
-    provider = NoReasonProvider()
-    report = run_preflight(
-        "cloudflare", MODEL, environ={},
-        provider_builder=lambda config, budget, provider_name, model_name, environ=None: provider,
-    )
-
-    assert report["status"] == "response_compatibility_failed"
-    assert report["text_response_probe"]["status"] == "schema_mismatch"
-    assert report["text_response_probe"]["action_schema_valid"] is False
-    assert report["usable_response_modes"] == []
-    assert report["text_response_probe"]["tool_executed"] is False

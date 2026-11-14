@@ -23,6 +23,7 @@ from providers.base import ProviderToolCall
 from audit_engine.semantic_audit.ae32c.response_protocol import RESPONSE_TOOL_NAME
 from audit_engine.semantic_audit.ae32c.live_evaluation import (
     LIVE_GRAPH_MAX_CALLS,
+    _call_baseline_text,
     build_live_investigation_limits,
     main as live_evaluation_main,
 )
@@ -280,6 +281,90 @@ def test_comparison_record_rejects_malformed_manifest_hash():
             baseline_source_sha256=None,
             graph_report=None,
         )
+
+
+def test_baseline_prefers_explicit_plain_text_provider_interface():
+    class Provider:
+        def __init__(self):
+            self.text_calls = 0
+
+        def chat_text(self, messages, **kwargs):
+            self.text_calls += 1
+            return "baseline text response", None
+
+        def chat(self, messages, **kwargs):
+            raise AssertionError("legacy chat path must not be used when chat_text exists")
+
+    provider = Provider()
+    response, error, interface = _call_baseline_text(
+        provider, [{"role": "user", "content": "test"}], temperature=0.0
+    )
+    assert response == "baseline text response"
+    assert error is None
+    assert interface == "chat_text"
+    assert provider.text_calls == 1
+
+
+def test_baseline_text_interface_falls_back_to_legacy_chat_when_needed():
+    class LegacyProvider:
+        def chat(self, messages, **kwargs):
+            return "legacy baseline response", None
+
+    response, error, interface = _call_baseline_text(
+        LegacyProvider(), [{"role": "user", "content": "test"}], temperature=0.0
+    )
+    assert response == "legacy baseline response"
+    assert error is None
+    assert interface == "chat"
+
+
+def test_comparison_record_reports_baseline_transport_interface_and_endpoint():
+    record = build_comparison_record(
+        problem_statement=PROBLEM,
+        provider_name="cloudflare",
+        model_name="@cf/qwen/qwen3.8-27b",
+        source_manifest_sha256="a" * 64,
+        baseline_status="completed",
+        baseline_response="limited-context response",
+        baseline_error=None,
+        baseline_source_path="pipeline/extractor.py",
+        baseline_source_sha256="b" * 64,
+        graph_report=None,
+        baseline_provider_diagnostics={
+            "baseline_call_interface": "chat_text",
+            "last_endpoint_mode": "workers_ai_openai_compatible_chat_completions",
+        },
+    )
+    assert record["baseline"]["transport"] == {
+        "call_interface": "chat_text",
+        "endpoint_mode": "workers_ai_openai_compatible_chat_completions",
+    }
+    markdown = render_comparison_markdown(record)
+    assert "Request interface: `chat_text`" in markdown
+    assert "workers_ai_openai_compatible_chat_completions" in markdown
+
+
+def test_comparison_summary_reports_graph_response_mode_downgrade_and_endpoint():
+    summary = summarize_graph_report({
+        "status": "incomplete",
+        "stop_reason": "invalid_model_json",
+        "interaction_diagnostics": {
+            "response_mode_negotiation": {
+                "initial_mode": "native_tool_call",
+                "last_mode": "plain_text",
+                "session_override": "plain_text",
+                "plain_text_downgrade_used": True,
+                "last_endpoint_mode": "workers_ai_openai_compatible_chat_completions",
+            },
+        },
+    })
+    assert summary["response_mode_negotiation"] == {
+        "initial_mode": "native_tool_call",
+        "last_mode": "plain_text",
+        "session_override": "plain_text",
+        "plain_text_downgrade_used": True,
+        "last_endpoint_mode": "workers_ai_openai_compatible_chat_completions",
+    }
 
 
 def test_live_evaluation_requires_explicit_opt_in_before_any_provider_call(tmp_path: Path):

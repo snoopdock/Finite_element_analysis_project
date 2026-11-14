@@ -216,7 +216,11 @@ def test_negotiated_404_required_parameters_rejection_falls_back_with_reservatio
     assert provider.fallbacks == 2
     assert report["status"] == "completed_with_incomplete_evidence"
     assert any(e.get("event") == "provider_response_strategy_selected" for e in report["errors"])
-    assert len([e for e in report["errors"] if e.get("event") == "provider_response_mode_fallback_completed"]) == 2
+    assert len([e for e in report["errors"] if e.get("event") == "provider_response_mode_fallback_completed"]) == 1
+    mode_summary = report["interaction_diagnostics"]["response_mode_negotiation"]
+    assert mode_summary["initial_mode"] == "json_schema"
+    assert mode_summary["session_override"] == "plain_text"
+    assert mode_summary["plain_text_downgrade_used"] is True
 
 
 def test_unclassified_or_model_not_found_404_does_not_fallback():

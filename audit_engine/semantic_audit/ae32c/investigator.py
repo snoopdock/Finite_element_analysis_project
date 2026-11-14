@@ -286,6 +286,17 @@ class RepositoryInvestigator:
         self._invalid_json_retries = 0
         self._invalid_json_evidence_retries = 0
         self._invalid_json_finalization_retries = 0
+        # A provider/model may advertise structured-response support without
+        # consistently honoring the response contract across a multi-turn
+        # conversation. Permit one bounded, session-wide downgrade to the
+        # provider's plain-text interface after a structured response is
+        # rejected. Local normalization and action/evidence validation remain
+        # authoritative in either mode.
+        self._response_mode_override: str | None = None
+        self._plain_text_downgrade_used = False
+        self._initial_provider_response_mode: str | None = None
+        self._last_provider_response_mode = "unknown"
+        self._last_provider_endpoint_mode = "not_reported"
         self._nararouter_transport_retries_used = 0
         self._cloudflare_transport_retries_used = 0
         self._source_path_guidance_used = 0
@@ -1922,9 +1933,57 @@ class RepositoryInvestigator:
         self._estimated_cost_usd += estimated_cost
         return True, "reserved"
 
+    def _record_provider_response_mode(self, mode: str) -> None:
+        allowed = {"json_schema", "native_tool_call", "json_object", "plain_text"}
+        normalized = mode if isinstance(mode, str) and mode in allowed else "unknown"
+        self._last_provider_response_mode = normalized
+        if self._initial_provider_response_mode is None:
+            self._initial_provider_response_mode = normalized
+
+    def _downgrade_structured_response_mode(self, reason_code: str) -> bool:
+        """Switch subsequent turns to plain text after a structured contract failure.
+
+        This is a response-representation fallback, not a retry of a failed
+        evidence action. The rejected response is never dispatched. The next
+        normal model turn receives the explicit text contract and consumes the
+        ordinary round/token/time budget. Only one downgrade is permitted per
+        investigation.
+        """
+        structured_modes = {"json_schema", "native_tool_call", "json_object"}
+        if self._last_provider_response_mode not in structured_modes:
+            return False
+        if self._response_mode_override == "plain_text" or self._plain_text_downgrade_used:
+            return False
+        capability_record = get_provider_capabilities(
+            self.provider,
+            provider_name=self.provider_name,
+            model_name=self.model_name,
+        )
+        if capability_record["capabilities"].get("plain_text_mode") is not True:
+            return False
+        if not callable(getattr(self.provider, "chat_text", None)) and not callable(
+            getattr(self.provider, "chat", None)
+        ):
+            return False
+        previous_mode = self._last_provider_response_mode
+        self._response_mode_override = "plain_text"
+        self._plain_text_downgrade_used = True
+        self._events.append({
+            "event": "provider_response_contract_downgrade_requested",
+            "round": self._model_rounds,
+            "from_mode": previous_mode,
+            "to_mode": "plain_text",
+            "reason_code": self._safe_text(reason_code, 120),
+            "trigger": "structured_response_contract_rejected",
+            "tool_execution": False,
+            "remaining_model_rounds": max(0, self.limits.max_rounds - self._model_rounds),
+        })
+        return True
+
     def _provider_call(self, messages: list[dict[str, str]]) -> tuple[Any, Any, int]:
         if self._remaining_seconds() <= 0:
             raise _BudgetStop("elapsed_time_budget_exhausted")
+        self._last_provider_endpoint_mode = "not_reported"
         capability_record = get_provider_capabilities(
             self.provider,
             provider_name=self.provider_name,
@@ -1933,16 +1992,23 @@ class RepositoryInvestigator:
         capabilities = capability_record["capabilities"]
         native_tool_chat = getattr(self.provider, "chat_with_response_tool", None)
         negotiated_chat = getattr(self.provider, "chat_negotiated", None)
+        force_plain_text = self._response_mode_override == "plain_text"
         use_negotiated = (
-            getattr(self.provider, "supports_negotiated_responses", False) is True
+            not force_plain_text
+            and getattr(self.provider, "supports_negotiated_responses", False) is True
             and callable(negotiated_chat)
         )
         use_native_tool_call = (
-            not use_negotiated
+            not force_plain_text
+            and not use_negotiated
             and capabilities["native_tool_calls"] and callable(native_tool_chat)
         )
         request_messages = [dict(message) for message in messages]
-        if use_negotiated:
+        if force_plain_text:
+            instruction = {"role": "system", "content": response_text_instruction()}
+            insert_at = 1 if request_messages and request_messages[0].get("role") == "system" else 0
+            request_messages.insert(insert_at, instruction)
+        elif use_negotiated:
             instruction = {"role": "system", "content": portable_wire_instruction()}
             insert_at = 1 if request_messages and request_messages[0].get("role") == "system" else 0
             request_messages.insert(insert_at, instruction)
@@ -2080,6 +2146,7 @@ class RepositoryInvestigator:
                 except Exception:
                     pass
                 selected_mode = stats.get("response_strategy", "unknown")
+                self._record_provider_response_mode(selected_mode)
                 self._events.append({
                     "event": "provider_response_strategy_selected",
                     "round": self._model_rounds,
@@ -2112,6 +2179,9 @@ class RepositoryInvestigator:
                             "tool_execution": False,
                         })
                     else:
+                        self._response_mode_override = "plain_text"
+                        self._plain_text_downgrade_used = True
+                        self._record_provider_response_mode("plain_text")
                         self._events.append({
                             "event": "provider_response_mode_fallback_requested",
                             "round": self._model_rounds,
@@ -2122,11 +2192,17 @@ class RepositoryInvestigator:
                             if isinstance(stats.get("last_http_error_diagnostic"), Mapping) else None,
                             "tool_execution": False,
                         })
+                        text_chat = getattr(self.provider, "chat_text", None)
+                        if not callable(text_chat):
+                            text_chat = getattr(self.provider, "chat", None)
                         old_retries = getattr(self.provider, "max_retries", None)
                         try:
                             if old_retries is not None:
                                 setattr(self.provider, "max_retries", 1)
-                            response, error = self.provider.chat_text(fallback_messages, **call_kwargs)
+                            if callable(text_chat):
+                                response, error = text_chat(fallback_messages, **call_kwargs)
+                            else:
+                                response, error = None, "plain_text_fallback_unavailable"
                         except Exception as exc:
                             response, error = None, f"text_fallback_exception:{type(exc).__name__}"
                         finally:
@@ -2143,6 +2219,7 @@ class RepositoryInvestigator:
                             "tool_execution": False,
                         })
             elif use_native_tool_call:
+                self._record_provider_response_mode("native_tool_call")
                 self._events.append({
                     "event": "provider_native_tool_call_requested",
                     "round": self._model_rounds,
@@ -2195,6 +2272,9 @@ class RepositoryInvestigator:
                             "tool_execution": False,
                         })
                     else:
+                        self._response_mode_override = "plain_text"
+                        self._plain_text_downgrade_used = True
+                        self._record_provider_response_mode("plain_text")
                         self._events.append({
                             "event": "provider_response_mode_fallback_requested",
                             "round": self._model_rounds,
@@ -2246,7 +2326,8 @@ class RepositoryInvestigator:
                             })
                         else:
                             response, error = None, "plain_text_fallback_unavailable"
-            elif capabilities["json_object_mode"] and callable(structured_chat):
+            elif not force_plain_text and capabilities["json_object_mode"] and callable(structured_chat):
+                self._record_provider_response_mode("json_object")
                 self._events.append({
                     "event": "provider_structured_json_mode_requested",
                     "round": self._model_rounds,
@@ -2257,6 +2338,7 @@ class RepositoryInvestigator:
                 })
                 response, error = structured_chat(request_messages, **call_kwargs)
             else:
+                self._record_provider_response_mode("plain_text")
                 self._events.append({
                     "event": "provider_structured_json_mode_not_requested",
                     "round": self._model_rounds,
@@ -2264,7 +2346,25 @@ class RepositoryInvestigator:
                     "model": capability_record["model"],
                     "reason": "adapter_capability_unavailable_or_unverified",
                 })
-                response, error = self.provider.chat(request_messages, **call_kwargs)
+                if force_plain_text:
+                    text_chat = getattr(self.provider, "chat_text", None)
+                    if not callable(text_chat):
+                        text_chat = getattr(self.provider, "chat", None)
+                    if callable(text_chat):
+                        response, error = text_chat(request_messages, **call_kwargs)
+                    else:
+                        response, error = None, "plain_text_fallback_unavailable"
+                else:
+                    response, error = self.provider.chat(request_messages, **call_kwargs)
+            try:
+                transport_stats = self.provider.get_stats()
+            except Exception:
+                transport_stats = {}
+            if isinstance(transport_stats, Mapping):
+                endpoint_mode = transport_stats.get("last_endpoint_mode")
+                if (isinstance(endpoint_mode, str)
+                        and re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", endpoint_mode)):
+                    self._last_provider_endpoint_mode = endpoint_mode
         except Exception as exc:
             return None, self._safe_text(f"provider_exception:{type(exc).__name__}", 300), reserve
         finally:
@@ -2386,6 +2486,14 @@ class RepositoryInvestigator:
                 "accepted_final_round": accepted_final_round,
                 "final_accepted_on_first_model_turn": accepted_final_round == 1,
                 "early_finalization_classification": early_finalization_classification,
+            },
+            "response_mode_negotiation": {
+                "initial_mode": self._initial_provider_response_mode or "not_observed",
+                "last_mode": self._last_provider_response_mode,
+                "session_override": self._response_mode_override or "none",
+                "plain_text_downgrade_used": self._plain_text_downgrade_used,
+                "downgrade_limit_per_investigation": 1,
+                "last_endpoint_mode": self._last_provider_endpoint_mode,
             },
             "interpretation": (
                 "Diagnostics describe orchestration and model-turn timing only; "
@@ -2866,6 +2974,13 @@ class RepositoryInvestigator:
                         "phase": phase_name,
                         **parse_error_metadata,
                     })
+                    # A structured-capable endpoint may return HTTP 200 while
+                    # the model violates the native/schema response contract.
+                    # Do not keep repeating that representation indefinitely:
+                    # after the first such rejection, the next bounded turn
+                    # uses the same provider's plain-text interface. The
+                    # malformed response remains untrusted and undispatched.
+                    self._downgrade_structured_response_mode(parse_error_code)
                     continue
 
                 action = self._safe_value(parsed)
@@ -3035,6 +3150,8 @@ class RepositoryInvestigator:
                             "missing_top_level_key_count": len(feedback.get("missing_top_level_keys", [])),
                             "unexpected_top_level_key_count": len(feedback.get("unexpected_top_level_keys", [])),
                         })
+                        if reason_code == "tool_action_shape_invalid":
+                            self._downgrade_structured_response_mode(reason_code)
                         continue
                     if self._tool_calls >= self.limits.max_tool_calls:
                         raise _BudgetStop("tool_call_budget_exhausted")

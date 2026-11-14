@@ -62,6 +62,29 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
         }
 
     budget = report.get("budget") if isinstance(report.get("budget"), Mapping) else {}
+    interaction = report.get("interaction_diagnostics") if isinstance(report.get("interaction_diagnostics"), Mapping) else {}
+    mode_record = interaction.get("response_mode_negotiation") if isinstance(interaction.get("response_mode_negotiation"), Mapping) else {}
+    initial_mode = mode_record.get("initial_mode")
+    last_mode = mode_record.get("last_mode")
+    session_override = mode_record.get("session_override")
+    if not isinstance(initial_mode, str) or initial_mode not in {"json_schema", "native_tool_call", "json_object", "plain_text", "not_observed"}:
+        initial_mode = "not_reported"
+    if not isinstance(last_mode, str) or last_mode not in {"json_schema", "native_tool_call", "json_object", "plain_text", "unknown"}:
+        last_mode = "not_reported"
+    if not isinstance(session_override, str) or session_override not in {"plain_text", "none"}:
+        session_override = "not_reported"
+    mode_summary = {
+        "initial_mode": initial_mode,
+        "last_mode": last_mode,
+        "session_override": session_override,
+        "plain_text_downgrade_used": mode_record.get("plain_text_downgrade_used") is True,
+        "last_endpoint_mode": (
+            mode_record.get("last_endpoint_mode")
+            if isinstance(mode_record.get("last_endpoint_mode"), str)
+            and re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", mode_record.get("last_endpoint_mode"))
+            else "not_reported"
+        ),
+    }
     calls = report.get("tool_calls") if isinstance(report.get("tool_calls"), list) else []
     ledger = report.get("evidence_ledger") if isinstance(report.get("evidence_ledger"), list) else []
     actions = report.get("model_actions") if isinstance(report.get("model_actions"), list) else []
@@ -96,6 +119,7 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
             (report.get("required_source_coverage") or {}).get("missing_root_cause_direct_citations", [])
         ) if isinstance(report.get("required_source_coverage"), Mapping) else [],
         "final_citation_validation": final_validation,
+        "response_mode_negotiation": mode_summary,
     }
 
 
@@ -145,6 +169,13 @@ def build_comparison_record(
         "unrecognized_object", "non_object"}
     known_shapes = {"nonempty_list", "empty_list", "absent", "wrong_type"}
     diagnostics = baseline_provider_diagnostics if isinstance(baseline_provider_diagnostics, Mapping) else {}
+    baseline_call_interface = diagnostics.get("baseline_call_interface")
+    if not isinstance(baseline_call_interface, str) or baseline_call_interface not in {"chat_text", "chat"}:
+        baseline_call_interface = "not_reported"
+    baseline_endpoint_mode = diagnostics.get("last_endpoint_mode")
+    if (not isinstance(baseline_endpoint_mode, str)
+            or re.fullmatch(r"[a-zA-Z0-9_.-]{1,120}", baseline_endpoint_mode) is None):
+        baseline_endpoint_mode = "not_reported"
     error_code = diagnostics.get("last_error_code")
     error_code = error_code if isinstance(error_code, str) and error_code in known_errors else "unclassified_or_none"
     envelope = diagnostics.get("last_envelope_diagnostic")
@@ -167,6 +198,10 @@ def build_comparison_record(
             "source_path": _safe_text(baseline_source_path, 400),
             "source_sha256": baseline_source_sha256,
             "mode": "single_response_without_evidence_tool_loop",
+        },
+        "transport": {
+            "call_interface": baseline_call_interface,
+            "endpoint_mode": baseline_endpoint_mode,
         },
     }
     graph_summary = summarize_graph_report(graph_report)
@@ -242,6 +277,8 @@ def render_comparison_markdown(record: Mapping[str, Any]) -> str:
         f"- Provider error category: `{_markdown_text(baseline.get('error_code', 'not_reported'), 100)}`",
         f"- Envelope shape category: `{_markdown_text((baseline.get('envelope_diagnostic') or {}).get('envelope_kind', 'not_observed'), 100)}`",
         f"- Context: `{_markdown_text((baseline.get('context') or {}).get('source_path', 'unknown'), 400)}`",
+        f"- Request interface: `{_markdown_text((baseline.get('transport') or {}).get('call_interface', 'not_reported'), 80)}`",
+        f"- Endpoint mode: `{_markdown_text((baseline.get('transport') or {}).get('endpoint_mode', 'not_reported'), 120)}`",
         f"- Response characters: {metrics.get('baseline_response_chars', 0)}",
         f"- Reported tokens: {metrics.get('baseline_reported_tokens', 'not reported')}",
         f"- Elapsed seconds: {metrics.get('baseline_elapsed_seconds', 'not measured')}",
@@ -263,6 +300,10 @@ def render_comparison_markdown(record: Mapping[str, Any]) -> str:
         f"- Declared source-inspection coverage: `{_markdown_text(summary.get('required_source_coverage_status', 'not assessed'), 80)}`",
         f"- Missing complete direct reads: {', '.join(_markdown_text(p, 400) for p in summary.get('required_source_missing_reads', [])) or 'none'}",
         f"- Missing direct root-cause citations: {', '.join(_markdown_text(p, 400) for p in summary.get('required_source_missing_root_citations', [])) or 'none'}",
+        f"- Initial response mode: `{_markdown_text((summary.get('response_mode_negotiation') or {}).get('initial_mode', 'not_reported'), 80)}`",
+        f"- Last response mode: `{_markdown_text((summary.get('response_mode_negotiation') or {}).get('last_mode', 'not_reported'), 80)}`",
+        f"- Plain-text downgrade used: `{bool((summary.get('response_mode_negotiation') or {}).get('plain_text_downgrade_used'))}`",
+        f"- Last endpoint mode: `{_markdown_text((summary.get('response_mode_negotiation') or {}).get('last_endpoint_mode', 'not_reported'), 120)}`",
         "",
     ]
     report = assisted.get("report")
