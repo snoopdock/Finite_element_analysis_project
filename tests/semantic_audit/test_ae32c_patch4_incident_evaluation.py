@@ -98,14 +98,85 @@ def _final_action(source_hash):
 
 def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
     tools = RepositoryEvidenceTools(FIXTURE_ROOT)
-    source_hash = tools.file_hashes["pipeline/extractor.py"]
+    extractor_hash = tools.file_hashes["pipeline/extractor.py"]
+    adapter_hash = tools.file_hashes["providers/adapter.py"]
+
+    final = {
+        "action": "final",
+        "diagnosis": {
+            "summary": (
+                "Static source inspection indicates that the extraction consumer reads total_calls while the "
+                "provider adapter exposes calls. Caller, factory, related-test, and historical fixture context "
+                "were inspected; runtime reproduction was not performed."
+            ),
+            "root_cause": {
+                "statement": (
+                    "The consumer accesses provider.total_calls, while the inspected adapter initializes and "
+                    "increments self.calls. The source-level interface mismatch is supported; runtime causality "
+                    "was not reproduced."
+                ),
+                "confidence": "medium",
+                "evidence_refs": ["E0002", "E0003"],
+                "source_references": [
+                    {"evidence_id": "E0002", "path": "pipeline/extractor.py", "line": 6, "source_sha256": extractor_hash},
+                    {"evidence_id": "E0003", "path": "providers/adapter.py", "line": 6, "source_sha256": adapter_hash},
+                ],
+            },
+            "claims": [
+                {
+                    "statement": "The static caller imports the extractor and factory, and the factory imports the adapter.",
+                    "kind": "observation",
+                    "confidence": "medium",
+                    "evidence_refs": ["E0004", "E0007", "E0008"],
+                    "source_references": [],
+                },
+                {
+                    "statement": (
+                        "The related tests/checks.py file is a helper-only source under the visible default pytest "
+                        "naming rules; static evidence does not show a collected or executed test."
+                    ),
+                    "kind": "observation",
+                    "confidence": "medium",
+                    "evidence_refs": ["E0005", "E0009"],
+                    "source_references": [],
+                },
+                {
+                    "statement": (
+                        "The incident record is historical context and the read-only investigation did not execute "
+                        "the fixture or reproduce the runtime exception."
+                    ),
+                    "kind": "limitation",
+                    "confidence": "high",
+                    "evidence_refs": ["E0006"],
+                    "source_references": [],
+                },
+            ],
+            "proposed_corrective_action": (
+                "Confirm the intended provider counter contract, align the consumer or adapter accordingly, and "
+                "add an actually collected regression test before changing production code."
+            ),
+            "limitations": [
+                "No active CI workflow invocation path was observed in this fixture snapshot.",
+                "The related test source is a helper, not evidence of a collected or executed test.",
+                "The fixture and historical incident metadata were not executed; runtime reproduction was not performed.",
+            ],
+            "next_steps": [
+                "Confirm the intended public counter name.",
+                "Add a pytest-collected regression test for the chosen contract.",
+                "Validate the call chain in an independently authorized runtime environment.",
+            ],
+        },
+    }
     provider = ScriptedProvider([
-        _tool_action("search_repository", {"query": "total_calls", "mode": "content", "max_results": 20}, "Locate the consumer's interface access."),
-        _tool_action("read_source_file", {"path": "providers/adapter.py", "start_line": 1}, "Inspect the adapter's actual counter interface."),
-        _tool_action("find_related_tests", {"target": "pipeline/extractor.py", "max_results": 10}, "Find tests that refer to the consumer."),
-        _tool_action("graph_path", {"source": "module:pipeline.extractor", "target": "module:providers.adapter", "max_depth": 4}, "Check the static dependency path."),
-        _tool_action("find_workflow_context", {"target": "main.py", "max_results": 10}, "Find workflow context for the entrypoint."),
-        _final_action(source_hash),
+        _tool_action("read_source_file", {"path": "pipeline/extractor.py", "start_line": 1, "end_line": 99}, "Read the consumer implementation."),
+        _tool_action("read_source_file", {"path": "providers/adapter.py", "start_line": 1, "end_line": 99}, "Read the provider interface implementation."),
+        _tool_action("trace_execution_context", {"target": "module:pipeline.extractor", "max_depth": 3, "max_results": 20}, "Trace static callers, dependencies, and CI workflow context."),
+        _tool_action("find_related_tests", {"target": "module:pipeline.extractor", "max_results": 10}, "Find and classify related test sources."),
+        _tool_action("discover_case_context", {"max_results": 20}, "Inspect fixture description and historical incident metadata."),
+        _tool_action("read_source_file", {"path": "main.py", "start_line": 1, "end_line": 99}, "Inspect the Python entry point."),
+        _tool_action("read_source_file", {"path": "providers/factory.py", "start_line": 1, "end_line": 99}, "Follow the provider factory relationship."),
+        _tool_action("read_source_file", {"path": "tests/checks.py", "start_line": 1, "end_line": 99}, "Inspect and classify the related test helper."),
+        json.dumps(final),
     ])
     investigator = RepositoryInvestigator(
         FIXTURE_ROOT,
@@ -114,51 +185,56 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
         model_name=provider.model,
         evidence_tools=tools,
         limits=InvestigationLimits(
-            max_rounds=6,
-            max_tool_calls=7,
-            max_tokens_per_call=500,
-            max_total_tokens=32_000,
-            max_total_prompt_chars=120_000,
+            max_rounds=10,
+            max_tool_calls=12,
+            finalization_rounds_reserved=2,
+            max_tokens_per_call=1_000,
+            max_total_tokens=60_000,
+            max_total_prompt_chars=220_000,
             max_elapsed_seconds=120,
             max_snapshot_files=100,
             max_snapshot_bytes=2_000_000,
         ),
-        id_factory=lambda: "ae32c-controlled-incident-test",
+        id_factory=lambda: "ae32c-controlled-incident-context-complete",
     )
 
     report = investigator.run(PROBLEM)
 
-    assert report["status"] in {"completed", "completed_with_incomplete_evidence"}, (
+    assert report["status"] == "completed", (
         f"controlled incident did not reach a diagnosis: stop_reason={report.get('stop_reason')!r}; "
         f"budget={report.get('budget')!r}; errors={report.get('errors')!r}"
     )
     assert report["diagnosis_assurance"] == "references_resolved_not_independently_proven"
-    assert report["diagnosis"]["root_cause"]["source_references"][0] == {
-        "evidence_id": "E0002",
-        "path": "pipeline/extractor.py",
-        "line": 6,
-        "source_sha256": source_hash,
-    }
     assert [item["tool"] for item in report["tool_calls"]] == [
         "repository_summary",
-        "search_repository",
         "read_source_file",
+        "read_source_file",
+        "trace_execution_context",
         "find_related_tests",
-        "graph_path",
-        "find_workflow_context",
+        "discover_case_context",
+        "read_source_file",
+        "read_source_file",
+        "read_source_file",
     ]
-    assert len(provider.messages) == 6
+    assert len(provider.messages) == 9
     assert all(item["status"] == "ok" for item in report["tool_calls"])
-    assert report["evidence_ledger"][1]["evidence_id"] == "E0002"
-    assert "E0002" in provider.messages[1][-1]["content"]
-    assert "E0005" in provider.messages[4][-1]["content"]
-    assert "references_resolved_not_independently_proven" == report["diagnosis_assurance"]
-    interaction = report["interaction_diagnostics"]
-    assert interaction["model_turns"]["count"] == 6
-    assert interaction["model_turns"]["first_recorded_action"] == "tool_call"
-    assert interaction["model_turns"]["model_requested_tool_action_count"] == 5
-    assert interaction["model_turns"]["final_accepted_on_first_model_turn"] is False
-    assert interaction["model_turns"]["early_finalization_classification"] == "final_accepted_after_multiple_model_turns"
+
+    context = report["investigation_context_coverage"]
+    assert context["status"] == "complete_for_available_static_context"
+    assert context["static_execution_context"]["workflow_status"] == "no_static_workflow_path_observed"
+    assert "main.py" in context["static_execution_context"]["caller_paths_directly_read"]
+    assert "providers/adapter.py" in context["static_execution_context"]["dependency_paths_directly_read"]
+    assert context["related_test_context"]["candidates"][0]["classification"] == "helper_only_not_default_collected"
+    assert context["related_test_context"]["candidate_paths_directly_read"] == ["tests/checks.py"]
+    assert {"README.md", "incident.json"}.issubset(
+        set(context["case_metadata_context"]["candidate_paths_directly_read"])
+    )
+    assert context["execution_assessment"]["runtime_reproduction_status"] == "not_performed_read_only"
+    assert report["execution_assessment"]["tests_executed_by_investigator"] is False
+    assert report["diagnosis"]["root_cause"]["source_references"] == [
+        {"evidence_id": "E0002", "path": "pipeline/extractor.py", "line": 6, "source_sha256": extractor_hash},
+        {"evidence_id": "E0003", "path": "providers/adapter.py", "line": 6, "source_sha256": adapter_hash},
+    ]
 
 
 def test_first_turn_final_after_required_prefetch_is_reported_without_changing_outcome():
@@ -265,6 +341,27 @@ def test_comparison_metrics_describe_behavior_without_claiming_accuracy():
     markdown = render_comparison_markdown(record)
     assert "Human review is required" in markdown
     assert "not assessed" in markdown.lower()
+
+
+def test_comparison_summary_surfaces_unread_context_candidates_and_test_classifications():
+    summary = summarize_graph_report({
+        "status": "completed", "budget": {}, "tool_calls": [], "evidence_ledger": [],
+        "model_actions": [], "diagnosis": {},
+        "investigation_context_coverage": {
+            "status": "partial_unread_candidates",
+            "candidate_context_path_count": 4,
+            "candidate_context_paths_read_count": 1,
+            "candidate_context_paths_not_read_count": 3,
+            "candidate_context_paths_not_read": ["main.py", "README.md", "tests/checks.py"],
+            "test_classification_counts": {"helper_only_not_default_collected": 1},
+        },
+    })
+    assert summary["investigation_context_coverage_status"] == "partial_unread_candidates"
+    assert summary["investigation_context_candidate_count"] == 4
+    assert summary["investigation_context_read_count"] == 1
+    assert summary["investigation_context_unread_count"] == 3
+    assert summary["investigation_context_unread_paths"] == ["main.py", "README.md", "tests/checks.py"]
+    assert summary["test_classification_counts"] == {"helper_only_not_default_collected": 1}
 
 
 def test_comparison_record_rejects_malformed_manifest_hash():

@@ -8,10 +8,12 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
+from audit_engine.semantic_audit.ae32c.investigator import SYSTEM_INSTRUCTIONS
 
 from audit_engine.semantic_audit.ae32c import (
     InvestigationLimits,
@@ -272,7 +274,7 @@ def test_multiple_rounds_consume_actual_tool_results_and_resolve_citations():
         action_tool("search_repository", {"query": "total_calls", "mode": "content", "max_results": 5}),
         action_tool("graph_path", {"source": "module:main", "target": "module:providers.factory", "max_depth": 3}),
         final_action(evidence_id="E0002", source_reference=True),
-    ])
+    ], limits=InvestigationLimits(max_total_tokens=32_000))
     report = investigator.run("Investigate the provider total_calls interface failure")
 
     assert report["status"] == "completed_with_incomplete_evidence"
@@ -587,7 +589,7 @@ def test_multiple_invalid_tool_actions_can_recover_within_global_bound():
         action_tool("read_source_file", {"query": "total_calls"}),
         action_tool("graph_path", {"source": "module:main", "target": "module:providers.factory", "max_depth": 3}),
         final_action(evidence_id="E0002", source_reference=True),
-    ])
+    ], limits=InvestigationLimits(max_total_tokens=32_000))
     report = investigator.run("Investigate the provider interface failure.")
     assert report["status"] == "completed_with_incomplete_evidence"
     assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository", "graph_path"]
@@ -1479,3 +1481,98 @@ def test_missing_required_source_anchor_triggers_bounded_finalization_recovery(t
         ]
         for item in report["errors"]
     )
+
+
+def test_investigation_prompt_requires_relationship_test_and_case_context_review():
+    assert "trace_execution_context" in SYSTEM_INSTRUCTIONS
+    assert "find_related_tests" in SYSTEM_INSTRUCTIONS
+    assert "discover_case_context" in SYSTEM_INSTRUCTIONS
+    assert "pytest_static_assessment is static candidacy only" in SYSTEM_INSTRUCTIONS
+    assert "Distinguish Python entry points from CI workflows" in SYSTEM_INSTRUCTIONS
+    assert "runtime reproduction is not performed" in SYSTEM_INSTRUCTIONS
+
+
+def test_context_coverage_reports_static_only_and_unread_context_paths():
+    investigator, _, _ = make_investigator([])
+    investigator._ledger = [
+        SimpleNamespace(
+            status="ok", tool="trace_execution_context",
+            response={"result": {
+                "static_caller_relationships": [{"predicate": "IMPORTS"}],
+                "static_dependency_relationships": [{"predicate": "IMPORTS"}],
+                "static_caller_paths": ["main.py", "providers/factory.py"],
+                "static_dependency_paths": ["providers/adapter.py"],
+                "active_workflow_paths": [],
+            }},
+        ),
+        SimpleNamespace(
+            status="ok", tool="find_related_tests",
+            response={"result": {"tests": [{
+                "path": "tests/checks.py",
+                "relationship": "static_import",
+                "pytest_static_assessment": {
+                    "classification": "helper_only_not_default_collected",
+                    "collection_status": "not_collected_by_default_filename_pattern",
+                    "execution_status": "not_executed_static_analysis_only",
+                },
+            }]}},
+        ),
+        SimpleNamespace(
+            status="ok", tool="discover_case_context",
+            response={"result": {"metadata_candidates": [
+                {"path": "README.md", "category": "readme_or_fixture_description"},
+                {"path": "incident.json", "category": "incident_or_case_metadata"},
+            ]}},
+        ),
+        SimpleNamespace(
+            status="ok", tool="read_source_file",
+            response={"result": {"path": "main.py"}},
+        ),
+    ]
+    coverage = investigator._investigation_context_coverage()
+    assert coverage["status"] == "partial_unread_candidates"
+    assert coverage["discovery_tools_complete"] is True
+    assert coverage["candidate_context_paths_not_read_count"] == 4
+    assert coverage["candidate_context_paths_not_read"] == [
+        "README.md", "incident.json", "providers/factory.py", "tests/checks.py"
+    ]
+    assert coverage["test_classification_counts"] == {"helper_only_not_default_collected": 1}
+    assert coverage["static_execution_context"]["workflow_status"] == "no_static_workflow_path_observed"
+    assert coverage["static_execution_context"]["caller_paths_directly_read"] == ["main.py"]
+    assert coverage["related_test_context"]["candidates"][0]["classification"] == "helper_only_not_default_collected"
+    assert coverage["related_test_context"]["candidate_paths_not_directly_read"] == ["tests/checks.py"]
+    assert coverage["case_metadata_context"]["candidate_paths_not_directly_read"] == ["README.md", "incident.json"]
+    assert coverage["execution_assessment"]["runtime_reproduction_status"] == "not_performed_read_only"
+
+
+def test_context_coverage_is_complete_only_when_discovered_candidates_are_read():
+    investigator, _, _ = make_investigator([])
+    investigator._ledger = [
+        SimpleNamespace(status="ok", tool="trace_execution_context", response={"result": {
+            "static_caller_relationships": [{"predicate": "IMPORTS"}],
+            "static_dependency_relationships": [],
+            "static_caller_paths": ["main.py"], "static_dependency_paths": [],
+            "active_workflow_paths": [],
+        }}),
+        SimpleNamespace(status="ok", tool="find_related_tests", response={"result": {"tests": [
+            {"path": "tests/test_extractor.py", "relationship": "static_import",
+             "pytest_static_assessment": {"classification": "pytest_collection_candidate"}}
+        ]}}),
+        SimpleNamespace(status="ok", tool="discover_case_context", response={"result": {
+            "metadata_candidates": [{"path": "README.md", "category": "readme_or_fixture_description"}]
+        }}),
+        *[SimpleNamespace(status="ok", tool="read_source_file", response={"result": {"path": path}})
+          for path in ("main.py", "tests/test_extractor.py", "README.md")],
+    ]
+    coverage = investigator._investigation_context_coverage()
+    assert coverage["status"] == "complete_for_available_static_context"
+    assert coverage["candidate_context_paths_read_count"] == 3
+    assert coverage["candidate_context_paths_not_read_count"] == 0
+
+
+def test_base_report_explicitly_separates_static_analysis_from_runtime_reproduction():
+    investigator, _, _ = make_investigator([])
+    report = investigator._base_report("Inspect a repository issue")
+    assert report["execution_assessment"]["repository_code_executed"] is False
+    assert report["execution_assessment"]["tests_executed_by_investigator"] is False
+    assert report["execution_assessment"]["runtime_reproduction_status"] == "not_performed_read_only"

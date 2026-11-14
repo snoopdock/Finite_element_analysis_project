@@ -99,6 +99,11 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
             "required_source_missing_reads": [],
             "required_source_missing_root_citations": [],
             "final_citation_validation": "not_run",
+            "investigation_context_coverage_status": "not_assessed",
+            "static_execution_context_status": "not_assessed",
+            "related_test_context_status": "not_assessed",
+            "case_metadata_context_status": "not_assessed",
+            "runtime_reproduction_status": "not_assessed",
         }
 
     budget = report.get("budget") if isinstance(report.get("budget"), Mapping) else {}
@@ -129,6 +134,11 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
     ledger = report.get("evidence_ledger") if isinstance(report.get("evidence_ledger"), list) else []
     actions = report.get("model_actions") if isinstance(report.get("model_actions"), list) else []
     diagnosis = report.get("diagnosis") if isinstance(report.get("diagnosis"), Mapping) else None
+    context = report.get("investigation_context_coverage") if isinstance(report.get("investigation_context_coverage"), Mapping) else {}
+    static_context = context.get("static_execution_context") if isinstance(context.get("static_execution_context"), Mapping) else {}
+    test_context = context.get("related_test_context") if isinstance(context.get("related_test_context"), Mapping) else {}
+    metadata_context = context.get("case_metadata_context") if isinstance(context.get("case_metadata_context"), Mapping) else {}
+    execution_assessment = report.get("execution_assessment") if isinstance(report.get("execution_assessment"), Mapping) else {}
     provider_record = report.get("provider") if isinstance(report.get("provider"), Mapping) else {}
     request_diagnostics = _safe_request_diagnostics(provider_record.get("request_diagnostics"))
     final_validation = "not_accepted"
@@ -161,6 +171,19 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
             (report.get("required_source_coverage") or {}).get("missing_root_cause_direct_citations", [])
         ) if isinstance(report.get("required_source_coverage"), Mapping) else [],
         "final_citation_validation": final_validation,
+        "investigation_context_coverage_status": _safe_text(context.get("status", "not_assessed"), 100),
+        "investigation_context_candidate_count": int(context.get("candidate_context_path_count", 0)) if isinstance(context.get("candidate_context_path_count", 0), int) and not isinstance(context.get("candidate_context_path_count", 0), bool) else 0,
+        "investigation_context_read_count": int(context.get("candidate_context_paths_read_count", 0)) if isinstance(context.get("candidate_context_paths_read_count", 0), int) and not isinstance(context.get("candidate_context_paths_read_count", 0), bool) else 0,
+        "investigation_context_unread_count": int(context.get("candidate_context_paths_not_read_count", 0)) if isinstance(context.get("candidate_context_paths_not_read_count", 0), int) and not isinstance(context.get("candidate_context_paths_not_read_count", 0), bool) else 0,
+        "investigation_context_unread_paths": [
+            _safe_text(path, 400) for path in context.get("candidate_context_paths_not_read", [])[:60]
+            if isinstance(path, str)
+        ] if isinstance(context.get("candidate_context_paths_not_read", []), list) else [],
+        "test_classification_counts": dict(context.get("test_classification_counts", {})) if isinstance(context.get("test_classification_counts", {}), Mapping) else {},
+        "static_execution_context_status": _safe_text(static_context.get("status", "not_assessed"), 100),
+        "related_test_context_status": _safe_text(test_context.get("status", "not_assessed"), 100),
+        "case_metadata_context_status": _safe_text(metadata_context.get("status", "not_assessed"), 100),
+        "runtime_reproduction_status": _safe_text(execution_assessment.get("runtime_reproduction_status", "not_assessed"), 100),
         "response_mode_negotiation": mode_summary,
         "provider_request_diagnostics": request_diagnostics,
     }
