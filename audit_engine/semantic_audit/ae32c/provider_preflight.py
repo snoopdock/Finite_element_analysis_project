@@ -321,6 +321,7 @@ def _text_response_probe(provider: Any, model_name: str) -> dict[str, Any]:
                 "or native function calling. Return exactly these labelled lines, one per line:\n"
                 "ACTION: tool_call\nTOOL: search_repository\nARGUMENTS:\n"
                 "query: AE32C_PREFLIGHT_QUERY\nmode: content\nmax_results: 3\n"
+                "REASON: Check the labelled text response contract; no tool is executed.\n"
             ),
         },
         {"role": "user", "content": "Return the labelled text envelope now."},
