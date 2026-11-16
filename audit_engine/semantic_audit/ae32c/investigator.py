@@ -187,6 +187,9 @@ class RepositoryInvestigator:
         evidence_tools: Any | None = None,
         required_source_paths: tuple[str, ...] = (),
         required_source_anchors: Mapping[str, tuple[str, ...]] | None = None,
+        required_context_paths: tuple[str, ...] = (),
+        required_context_target: str | None = None,
+        require_complete_investigation_context: bool = False,
         limits: InvestigationLimits | None = None,
         cost_estimator: Callable[[str, str, int, int], float] | None = None,
         clock: Callable[[], float] = time.monotonic,
@@ -257,6 +260,46 @@ class RepositoryInvestigator:
                     items.append(anchor)
             checked_anchors[path] = tuple(items)
         self._required_source_anchors = dict(sorted(checked_anchors.items()))
+
+        # A controlled benchmark may require one exact static-context trace and
+        # reads of the context paths that trace is expected to surface. These
+        # paths are not causal proof requirements and are kept separate from
+        # required_source_paths, which carry direct root-cause citation rules.
+        if type(require_complete_investigation_context) is not bool:
+            raise ValueError("require_complete_investigation_context must be a boolean")
+        if not isinstance(required_context_paths, (tuple, list)) or len(required_context_paths) > 12:
+            raise ValueError("required_context_paths must be a bounded list of paths")
+        checked_context_paths: list[str] = []
+        for path in required_context_paths:
+            if (not isinstance(path, str) or not path or len(path) > 400
+                    or "\\" in path or path.startswith("/")
+                    or any(part in {"", ".", ".."} for part in path.split("/"))):
+                raise ValueError("invalid required context path")
+            if path not in self._expected_file_hashes:
+                raise ValueError("required context path not indexed in the supplied evidence snapshot")
+            if path not in checked_context_paths:
+                checked_context_paths.append(path)
+        if require_complete_investigation_context:
+            if not isinstance(required_context_target, str) or not required_context_target.strip():
+                raise ValueError("required_context_target is required when complete investigation context is enforced")
+            if required_context_target not in self._expected_file_hashes:
+                raise ValueError("required_context_target not indexed in the supplied evidence snapshot")
+            if not checked_context_paths:
+                raise ValueError("required_context_paths are required when complete investigation context is enforced")
+        elif required_context_target is not None or checked_context_paths:
+            raise ValueError("required context target/paths require require_complete_investigation_context")
+        self._require_complete_investigation_context = require_complete_investigation_context
+        self._required_context_target = required_context_target.strip() if isinstance(required_context_target, str) else None
+        self._required_context_paths = tuple(sorted(checked_context_paths))
+        self._required_context_target_module = None
+        if self._required_context_target:
+            module_paths = getattr(self.evidence_tools, "module_paths", {})
+            if isinstance(module_paths, Mapping):
+                for module_name, paths in module_paths.items():
+                    if isinstance(paths, (list, tuple, set)) and self._required_context_target in paths:
+                        self._required_context_target_module = f"module:{module_name}"
+                        break
+
         self._tool_definitions = build_tool_definitions()
         self._tool_schemas = {
             item["function"]["name"]: item["function"]
@@ -822,6 +865,23 @@ class RepositoryInvestigator:
                 and isinstance(entry.response.get("result"), Mapping)
                 and entry.response["result"].get("path") in self._required_source_paths
             ],
+            **({
+                "required_investigation_context": {
+                    "enabled": True,
+                    "required_discovery_tool": "trace_execution_context",
+                    "required_discovery_target": self._required_context_target,
+                    "required_context_paths": list(self._required_context_paths),
+                    "instructions": (
+                        "This controlled evaluation has a mandatory context-discovery contract. Before submitting "
+                        "a final diagnosis, call trace_execution_context for the exact required_discovery_target. "
+                        "Then read every surfaced caller, dependency, Python entrypoint, entrypoint-context, and "
+                        "workflow path, including every required_context_path. Also complete find_related_tests "
+                        "and discover_case_context and inspect all surfaced candidates. A final diagnosis is rejected "
+                        "until discovery is complete, non-truncated, and all surfaced/required paths are inspected. "
+                        "Static relationships do not prove runtime execution."
+                    ),
+                }
+            } if self._require_complete_investigation_context else {}),
             "operating_limits": {
                 "max_rounds": self.limits.max_rounds,
                 "finalization_rounds_reserved": min(self.limits.finalization_rounds_reserved, self.limits.max_rounds),
@@ -1176,6 +1236,9 @@ class RepositoryInvestigator:
             "candidate_context_paths_read_count": coverage.get("candidate_context_paths_read_count", 0),
             "candidate_context_paths_not_read_count": coverage.get("candidate_context_paths_not_read_count", 0),
             "candidate_context_paths_not_read": coverage.get("candidate_context_paths_not_read", [])[:20],
+            **({
+                "required_context_contract": coverage.get("required_context_contract", {}),
+            } if self._require_complete_investigation_context else {}),
             "test_classification_counts": coverage.get("test_classification_counts", {}),
             "interpretation": "Static coverage only; no runtime execution or diagnosis-accuracy claim.",
         }
@@ -1976,6 +2039,13 @@ class RepositoryInvestigator:
             }})
             if anchor_support["status"] != "complete":
                 errors.append("high_confidence_direct_source_anchor_support_incomplete")
+        if self._require_complete_investigation_context:
+            context_coverage = self._investigation_context_coverage()
+            if (
+                context_coverage.get("status") != "complete_for_available_static_context"
+                or context_coverage.get("required_context_contract_complete") is not True
+            ):
+                errors.append("required_investigation_context_incomplete")
         if errors:
             return None, sorted(set(errors))[:30]
         normalized = {
@@ -2647,6 +2717,82 @@ class RepositoryInvestigator:
                 elif isinstance(item, Mapping) and isinstance(item.get("path"), str):
                     workflow_paths.add(item["path"])
 
+        required_context_contract: dict[str, Any]
+        if self._require_complete_investigation_context:
+            target_trace_entries = [
+                entry for entry in entries_by_tool["trace_execution_context"]
+                if entry.status == "ok"
+                and isinstance(entry.response.get("result"), Mapping)
+                and (
+                    entry.response["result"].get("target_path") == self._required_context_target
+                    or (
+                        self._required_context_target_module is not None
+                        and entry.response["result"].get("target_module") == self._required_context_target_module
+                    )
+                )
+            ]
+            target_trace_results = [
+                entry.response.get("result", {}) for entry in target_trace_entries
+                if entry.response["result"].get("coverage_status") == "complete_for_query"
+                and entry.response["result"].get("truncated") is False
+            ]
+            target_surface_paths: set[str] = set()
+            for result in target_trace_results:
+                target_surface_paths.update(string_paths(result.get("static_caller_paths")))
+                target_surface_paths.update(string_paths(result.get("static_dependency_paths")))
+                target_surface_paths.update(string_paths(result.get("python_entrypoint_paths")))
+                target_surface_paths.update(string_paths(result.get("entrypoint_context_paths")))
+                for item in result.get("active_workflow_paths", []):
+                    if isinstance(item, str) and item:
+                        target_surface_paths.add(item)
+                    elif isinstance(item, Mapping) and isinstance(item.get("path"), str):
+                        target_surface_paths.add(item["path"])
+            required_context_path_status = []
+            for path in self._required_context_paths:
+                surfaced = path in target_surface_paths
+                read = path in read_paths
+                required_context_path_status.append({
+                    "path": path,
+                    "surfaced": surfaced,
+                    "read": read,
+                    "status": "not_surfaced" if not surfaced else ("read" if read else "unread"),
+                })
+            if not target_trace_results:
+                contract_status = "trace_not_completed"
+            elif any(not item["surfaced"] for item in required_context_path_status):
+                contract_status = "required_context_path_not_surfaced"
+            elif any(not item["read"] for item in required_context_path_status):
+                contract_status = "required_context_path_unread"
+            else:
+                contract_status = "complete"
+            required_context_contract = {
+                "enabled": True,
+                "status": contract_status,
+                "required_discovery_tool": "trace_execution_context",
+                "required_discovery_target": self._required_context_target,
+                "resolved_target_module": self._required_context_target_module,
+                "target_trace_call_count": len(target_trace_entries),
+                "target_trace_completed_call_count": len(target_trace_results),
+                "required_paths": required_context_path_status,
+                "interpretation": (
+                    "This benchmark contract requires a successful, complete, non-truncated trace for the exact "
+                    "target and a complete direct read of every required context path. These reads are context "
+                    "coverage requirements, not causal-proof or runtime-execution claims."
+                ),
+            }
+        else:
+            required_context_contract = {
+                "enabled": False,
+                "status": "not_required",
+                "required_discovery_tool": None,
+                "required_discovery_target": None,
+                "resolved_target_module": None,
+                "target_trace_call_count": 0,
+                "target_trace_completed_call_count": 0,
+                "required_paths": [],
+                "interpretation": "No benchmark-specific required context contract was configured.",
+            }
+
         test_entries = entries_by_tool["find_related_tests"]
         test_records: dict[str, dict[str, Any]] = {}
         for entry in test_entries:
@@ -2715,6 +2861,7 @@ class RepositoryInvestigator:
             "active_ci_workflows": workflow_paths,
             "related_tests": related_test_paths,
             "case_metadata": set(metadata_candidates),
+            "required_context_paths": set(self._required_context_paths),
         }
         candidate_context_paths = set().union(*candidate_categories.values()) if candidate_categories else set()
         read_context_paths = candidate_context_paths.intersection(read_paths.union(metadata_preview_complete))
@@ -2738,7 +2885,10 @@ class RepositoryInvestigator:
         discovery_complete = all(
             discovery_tool_status[name]["status"] == "completed" for name in required_discovery
         )
-        if not discovery_complete:
+        required_context_discovery_complete = required_context_contract.get("status") not in {
+            "trace_not_completed", "required_context_path_not_surfaced",
+        }
+        if not discovery_complete or not required_context_discovery_complete:
             overall = "partial_discovery"
         elif unread_context_paths:
             overall = "partial_unread_candidates"
@@ -2756,6 +2906,8 @@ class RepositoryInvestigator:
             "discovery_tools_complete": discovery_complete,
             "discovery_tool_status": discovery_tool_status,
             "discovery_truncated_tools": discovery_truncated_tools,
+            "required_context_contract": required_context_contract,
+            "required_context_contract_complete": required_context_contract.get("status") in {"complete", "not_required"},
             "candidate_context_path_count": len(candidate_context_paths),
             "candidate_context_paths_read": sorted(read_context_paths)[:60],
             "candidate_context_paths_not_read": sorted(unread_context_paths)[:60],
@@ -3192,12 +3344,53 @@ class RepositoryInvestigator:
                         })})
                         self._events.append({"event": "required_source_read_reminder", "round": upcoming,
                                              "missing_path_count": len(missing)})
+                if (
+                    self._require_complete_investigation_context
+                    and upcoming == self._finalization_start_round() - 1
+                ):
+                    context = self._investigation_context_coverage()
+                    if context.get("status") != "complete_for_available_static_context":
+                        contract = context.get("required_context_contract", {})
+                        self._messages.append({"role": "user", "content": self._canonical_json({
+                            "required_investigation_context_reminder": {
+                                "round": upcoming,
+                                "coverage_status": context.get("status"),
+                                "required_context_contract": contract,
+                                "discovery_tool_status": context.get("discovery_tool_status", {}),
+                                "unread_candidate_paths": context.get("candidate_context_paths_not_read", [])[:30],
+                                "required_action": (
+                                    "Complete the exact required trace and inspect every surfaced/required path "
+                                    "before the reserved finalization phase begins. A final diagnosis will be "
+                                    "rejected while this controlled context contract is incomplete."
+                                ),
+                            }
+                        })})
+                        self._events.append({
+                            "event": "required_investigation_context_reminder",
+                            "round": upcoming,
+                            "coverage_status": context.get("status"),
+                        })
                 if self._remaining_seconds() <= 0:
                     raise _BudgetStop("elapsed_time_budget_exhausted")
                 stable, reason = self._verify_snapshot()
                 if not stable:
                     raise _BudgetStop(reason)
                 next_round = self._model_rounds + 1
+                if self._require_complete_investigation_context and self._is_finalization_round(next_round):
+                    context = self._investigation_context_coverage()
+                    if (
+                        context.get("status") != "complete_for_available_static_context"
+                        or context.get("required_context_contract_complete") is not True
+                    ):
+                        self._events.append({
+                            "event": "required_investigation_context_incomplete_before_finalization",
+                            "round": next_round,
+                            "coverage_status": context.get("status"),
+                            "required_context_contract": context.get("required_context_contract", {}),
+                        })
+                        return self._finalize_report(
+                            report, "incomplete", "required_investigation_context_incomplete_before_finalization"
+                        )
                 self._append_finalization_notice(next_round)
                 self._model_rounds = next_round
                 response, error, _ = self._provider_call(self._messages)
@@ -3808,6 +4001,28 @@ class RepositoryInvestigator:
                                 "required source lines. Use the exact candidate supplied for each item in "
                                 "required_source_anchor_recovery; citing the file generally is not sufficient."
                             )
+                        context_recovery = None
+                        if "required_investigation_context_incomplete" in errors:
+                            current_context = self._investigation_context_coverage()
+                            context_recovery = {
+                                "required_context_contract": current_context.get("required_context_contract", {}),
+                                "required_discovery_tools": current_context.get("required_discovery_tools", {}),
+                                "unread_candidate_paths": current_context.get("candidate_context_paths_not_read", [])[:30],
+                                "required_action": (
+                                    "Do not resubmit a final diagnosis yet. Call trace_execution_context with the "
+                                    "exact required target, complete find_related_tests and discover_case_context, "
+                                    "then read every surfaced candidate and every required context path. Continue "
+                                    "only while still in the evidence-gathering phase. If a path cannot be inspected, "
+                                    "do not claim complete context."
+                                ),
+                            }
+                            feedback_message += (
+                                " The controlled evaluation requires complete investigation context. The diagnosis "
+                                "is rejected until the exact trace target has been successfully traced, every required "
+                                "context path has been surfaced and read, all required discovery tools have complete "
+                                "non-truncated results, and all surfaced candidates have been inspected. Follow the "
+                                "required_context_recovery block before trying again."
+                            )
                         self._messages.append({"role": "user", "content": self._canonical_json({
                             "validation_feedback": {
                                 "schema_version": "ae32c/diagnosis-validation-feedback/v1",
@@ -3821,6 +4036,7 @@ class RepositoryInvestigator:
                                 "source_reference_candidates": self._available_source_reference_candidates(),
                                 "required_source_line_witnesses": anchor_candidates,
                                 "required_source_anchor_recovery": anchor_recovery,
+                                "required_context_recovery": context_recovery,
                                 "required_diagnosis_shape": {
                                     "top_level_keys": ["action", "diagnosis"],
                                     "diagnosis_keys": [

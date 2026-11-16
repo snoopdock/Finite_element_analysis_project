@@ -184,13 +184,16 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
         provider_name=provider.provider_name,
         model_name=provider.model,
         evidence_tools=tools,
+        required_context_paths=("main.py", "providers/factory.py"),
+        required_context_target="pipeline/extractor.py",
+        require_complete_investigation_context=True,
         limits=InvestigationLimits(
             max_rounds=10,
             max_tool_calls=12,
             finalization_rounds_reserved=2,
             max_tokens_per_call=1_000,
-            max_total_tokens=60_000,
-            max_total_prompt_chars=220_000,
+            max_total_tokens=180_000,
+            max_total_prompt_chars=350_000,
             max_elapsed_seconds=120,
             max_snapshot_files=100,
             max_snapshot_bytes=2_000_000,
@@ -202,7 +205,8 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
 
     assert report["status"] == "completed", (
         f"controlled incident did not reach a diagnosis: stop_reason={report.get('stop_reason')!r}; "
-        f"budget={report.get('budget')!r}; errors={report.get('errors')!r}"
+        f"budget={report.get('budget')!r}; tool_calls={report.get('tool_calls')!r}; "
+        f"model_actions={report.get('model_actions')!r}; errors={report.get('errors')!r}"
     )
     assert report["diagnosis_assurance"] == "references_resolved_not_independently_proven"
     assert [item["tool"] for item in report["tool_calls"]] == [
@@ -221,8 +225,18 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
 
     context = report["investigation_context_coverage"]
     assert context["status"] == "complete_for_available_static_context"
+    assert context["required_context_contract"]["status"] == "complete"
+    assert context["required_context_contract"]["required_discovery_target"] == "pipeline/extractor.py"
+    assert context["required_context_contract"]["resolved_target_module"] == "module:pipeline.extractor"
+    assert context["required_context_contract"]["required_paths"] == [
+        {"path": "main.py", "surfaced": True, "read": True, "status": "read"},
+        {"path": "providers/factory.py", "surfaced": True, "read": True, "status": "read"},
+    ]
     assert context["static_execution_context"]["workflow_status"] == "no_static_workflow_path_observed"
     assert "main.py" in context["static_execution_context"]["caller_paths_directly_read"]
+    assert "main.py" in context["static_execution_context"]["python_entrypoint_paths"]
+    assert "providers/factory.py" in context["static_execution_context"]["entrypoint_context_paths"]
+    assert "providers/factory.py" in context["candidate_context_paths_read"]
     assert "providers/adapter.py" in context["static_execution_context"]["dependency_paths_directly_read"]
     assert context["related_test_context"]["candidates"][0]["classification"] == "helper_only_not_default_collected"
     assert context["related_test_context"]["candidate_paths_directly_read"] == ["tests/checks.py"]
@@ -235,6 +249,124 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
         {"evidence_id": "E0002", "path": "pipeline/extractor.py", "line": 6, "source_sha256": extractor_hash},
         {"evidence_id": "E0003", "path": "providers/adapter.py", "line": 6, "source_sha256": adapter_hash},
     ]
+
+
+def test_strict_context_contract_rejects_early_final_then_requires_trace_and_candidate_reads():
+    tools = RepositoryEvidenceTools(FIXTURE_ROOT)
+    extractor_hash = tools.file_hashes["pipeline/extractor.py"]
+    adapter_hash = tools.file_hashes["providers/adapter.py"]
+    final = json.loads(_final_action(extractor_hash))
+    final["diagnosis"]["root_cause"]["source_references"].append({
+        "evidence_id": "E0003",
+        "path": "providers/adapter.py",
+        "line": 6,
+        "source_sha256": adapter_hash,
+    })
+    provider = ScriptedProvider([
+        json.dumps(final),
+        _tool_action("trace_execution_context", {"target": "pipeline/extractor.py", "max_depth": 3, "max_results": 20}, "Trace the exact controlled target."),
+        _tool_action("read_source_file", {"path": "main.py", "start_line": 1, "end_line": 99}, "Inspect the surfaced Python entrypoint."),
+        _tool_action("read_source_file", {"path": "providers/factory.py", "start_line": 1, "end_line": 99}, "Inspect the surfaced provider factory."),
+        _tool_action("find_related_tests", {"target": "pipeline/extractor.py", "max_results": 10}, "Find related test sources."),
+        _tool_action("read_source_file", {"path": "tests/checks.py", "start_line": 1, "end_line": 99}, "Inspect the surfaced test helper."),
+        _tool_action("discover_case_context", {"max_results": 10}, "Inspect the fixture description and incident metadata."),
+        json.dumps(final),
+    ])
+    investigator = RepositoryInvestigator(
+        FIXTURE_ROOT,
+        provider,
+        provider_name=provider.provider_name,
+        model_name=provider.model,
+        evidence_tools=tools,
+        required_source_paths=("pipeline/extractor.py", "providers/adapter.py"),
+        required_context_paths=("main.py", "providers/factory.py"),
+        required_context_target="pipeline/extractor.py",
+        require_complete_investigation_context=True,
+        limits=InvestigationLimits(
+            max_rounds=10,
+            max_tool_calls=12,
+            finalization_rounds_reserved=2,
+            max_tokens_per_call=1_000,
+            max_total_tokens=180_000,
+            max_total_prompt_chars=300_000,
+            max_elapsed_seconds=120,
+            max_snapshot_files=100,
+            max_snapshot_bytes=2_000_000,
+        ),
+        id_factory=lambda: "ae32c-strict-context-contract-recovery",
+    )
+
+    report = investigator.run(PROBLEM)
+
+    assert report["status"] == "completed", (
+        f"strict context contract did not complete: stop_reason={report.get('stop_reason')!r}; "
+        f"coverage={report.get('investigation_context_coverage')!r}"
+    )
+    rejected = [
+        item for item in report["model_actions"]
+        if item.get("action") == "final_rejected"
+    ]
+    assert len(rejected) == 1
+    assert "required_investigation_context_incomplete" in rejected[0]["reason_codes"]
+    feedback_messages = [
+        item["content"]
+        for conversation in provider.messages
+        for item in conversation
+        if item.get("role") == "user" and "required_context_recovery" in item.get("content", "")
+    ]
+    assert feedback_messages, "the first rejected final must give explicit context recovery guidance"
+    context = report["investigation_context_coverage"]
+    assert context["status"] == "complete_for_available_static_context"
+    assert context["required_context_contract"]["status"] == "complete"
+    assert context["required_context_contract"]["target_trace_completed_call_count"] == 1
+    assert all(item["surfaced"] and item["read"] for item in context["required_context_contract"]["required_paths"])
+    assert {"main.py", "providers/factory.py"}.issubset(set(context["candidate_context_paths_read"]))
+    assert context["discovery_tools_complete"] is True
+    assert report["required_source_coverage"]["status"] == "complete"
+
+
+def test_strict_context_contract_stops_before_tool_free_finalization_when_discovery_is_missing():
+    tools = RepositoryEvidenceTools(FIXTURE_ROOT)
+    extractor_hash = tools.file_hashes["pipeline/extractor.py"]
+    provider = ScriptedProvider([
+        _tool_action("read_source_file", {"path": "pipeline/extractor.py", "start_line": 1, "end_line": 99}, "Inspect the consumer."),
+        _tool_action("read_source_file", {"path": "providers/adapter.py", "start_line": 1, "end_line": 99}, "Inspect the provider."),
+        _final_action(extractor_hash),
+    ])
+    investigator = RepositoryInvestigator(
+        FIXTURE_ROOT,
+        provider,
+        provider_name=provider.provider_name,
+        model_name=provider.model,
+        evidence_tools=tools,
+        required_context_paths=("main.py", "providers/factory.py"),
+        required_context_target="pipeline/extractor.py",
+        require_complete_investigation_context=True,
+        limits=InvestigationLimits(
+            max_rounds=5,
+            max_tool_calls=8,
+            finalization_rounds_reserved=2,
+            max_tokens_per_call=1_000,
+            max_total_tokens=60_000,
+            max_total_prompt_chars=180_000,
+            max_elapsed_seconds=120,
+            max_snapshot_files=100,
+            max_snapshot_bytes=2_000_000,
+        ),
+        id_factory=lambda: "ae32c-strict-context-no-finalization",
+    )
+
+    report = investigator.run(PROBLEM)
+
+    assert report["status"] == "incomplete"
+    assert report["stop_reason"] == "required_investigation_context_incomplete_before_finalization"
+    assert report["budget"]["finalization_rounds_used"] == 0
+    assert len(provider.messages) == 3
+    assert any(
+        item.get("event") == "required_investigation_context_incomplete_before_finalization"
+        for item in report["errors"]
+    )
+    assert report["investigation_context_coverage"]["status"] == "partial_discovery"
 
 
 def test_first_turn_final_after_required_prefetch_is_reported_without_changing_outcome():
@@ -341,6 +473,44 @@ def test_comparison_metrics_describe_behavior_without_claiming_accuracy():
     markdown = render_comparison_markdown(record)
     assert "Human review is required" in markdown
     assert "not assessed" in markdown.lower()
+
+
+def test_comparison_summary_keeps_required_source_and_context_contracts_separate():
+    summary = summarize_graph_report({
+        "status": "completed",
+        "budget": {},
+        "tool_calls": [],
+        "evidence_ledger": [],
+        "model_actions": [],
+        "diagnosis": {},
+        "required_source_coverage": {
+            "status": "complete",
+            "missing_complete_reads": [],
+            "missing_root_cause_direct_citations": [],
+        },
+        "investigation_context_coverage": {
+            "schema_version": "ae32c/investigation-context-coverage/v3",
+            "status": "partial_discovery",
+            "required_context_contract": {
+                "enabled": True,
+                "status": "trace_not_completed",
+                "required_discovery_target": "pipeline/extractor.py",
+                "resolved_target_module": "module:pipeline.extractor",
+                "required_paths": [
+                    {"path": "main.py", "surfaced": False, "read": False, "status": "not_surfaced"},
+                    {"path": "providers/factory.py", "surfaced": False, "read": False, "status": "not_surfaced"},
+                ],
+            },
+        },
+    })
+    assert summary["required_source_coverage_status"] == "complete"
+    assert summary["investigation_context_coverage_status"] == "partial_discovery"
+    assert summary["required_context_contract_status"] == "trace_not_completed"
+    assert summary["required_context_contract_target"] == "pipeline/extractor.py"
+    assert summary["required_context_contract_resolved_module"] == "module:pipeline.extractor"
+    assert [item["path"] for item in summary["required_context_contract_paths"]] == [
+        "main.py", "providers/factory.py"
+    ]
 
 
 def test_comparison_summary_surfaces_unread_context_candidates_and_test_classifications():
@@ -562,7 +732,7 @@ def test_live_investigation_limits_allow_multiround_evidence_work():
     assert limits.max_finalization_invalid_json_retries == 1
     assert limits.max_tokens_per_call == 2_048
     assert limits.max_total_tokens == 180_000
-    assert limits.max_total_prompt_chars == 200_000
+    assert limits.max_total_prompt_chars == 350_000
     assert limits.max_elapsed_seconds == 900
     assert limits.max_response_chars == 40_000
 

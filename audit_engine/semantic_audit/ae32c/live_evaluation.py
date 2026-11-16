@@ -93,7 +93,9 @@ def build_live_investigation_limits(provider_name: str = "") -> InvestigationLim
         max_tool_response_bytes=100_000,
         max_tool_context_chars=10_000,
         max_total_evidence_bytes=300_000,
-        max_total_prompt_chars=200_000,
+        # The mandatory context-trace/read sequence adds bounded model turns;
+        # the token and elapsed-time budgets remain the primary hard ceilings.
+        max_total_prompt_chars=350_000,
         max_elapsed_seconds=elapsed_budget,
         max_invalid_final_attempts=2,
         max_invalid_json_retries=2,
@@ -258,6 +260,12 @@ def main(argv: list[str] | None = None) -> int:
                         help="Explicit fixture-relative source path that must be read and cited by the graph condition. Repeat for each path.")
     parser.add_argument("--required-source-anchor", action="append", default=[],
                         help="Explicit PATH::TEXT source-line witness bound to a required source path. Repeat for each anchor.")
+    parser.add_argument("--require-complete-investigation-context", action="store_true",
+                        help="Fail the controlled investigation unless the configured discovery contract and all required context reads are complete.")
+    parser.add_argument("--required-context-target", default="",
+                        help="Exact repository-relative target for mandatory trace_execution_context discovery.")
+    parser.add_argument("--required-context-path", action="append", default=[],
+                        help="Repository-relative context path that must be surfaced by the required trace and fully read. Repeat for each path.")
     parser.add_argument("--problem", default=DEFAULT_PROBLEM, help="Incident description; bounded and sanitized.")
     parser.add_argument("--provider", choices=SUPPORTED_PROVIDERS,
                         default=os.environ.get("FEA_LLM_PROVIDER", "cloudflare"))
@@ -271,6 +279,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.confirm_live_provider_calls:
         parser.error("live provider calls are disabled unless --confirm-live-provider-calls is supplied")
+    if type(args.require_complete_investigation_context) is not bool:
+        parser.error("--require-complete-investigation-context must be a boolean flag")
+    if args.require_complete_investigation_context:
+        if not args.required_context_target.strip():
+            parser.error("--required-context-target is required with --require-complete-investigation-context")
+        if not args.required_context_path or len(args.required_context_path) > 12:
+            parser.error("--require-complete-investigation-context requires 1 to 12 --required-context-path values")
+        if len(set(args.required_context_path)) != len(args.required_context_path):
+            parser.error("duplicate --required-context-path")
+    elif args.required_context_target.strip() or args.required_context_path:
+        parser.error("--required-context-target/--required-context-path require --require-complete-investigation-context")
     if not isinstance(args.problem, str) or not args.problem.strip() or len(args.problem) > 8_000:
         parser.error("--problem must be non-empty and at most 8000 characters")
 
@@ -279,12 +298,31 @@ def main(argv: list[str] | None = None) -> int:
         repo_root, output_dir = _validate_paths(Path(args.repo_root), Path(args.output_dir), checkout_root)
         # Capture one immutable evidence snapshot for the baseline context.
         baseline_tools = RepositoryEvidenceTools(repo_root)
+        indexed_paths = set(baseline_tools.contents)
         required_source_paths, required_source_anchors = _required_source_contract(
             repo_root,
             args.required_source_path,
             args.required_source_anchor,
-            set(baseline_tools.contents),
+            indexed_paths,
         )
+        required_context_paths: tuple[str, ...] = ()
+        required_context_target: str | None = None
+        if args.require_complete_investigation_context:
+            target = args.required_context_target.strip()
+            if target not in indexed_paths:
+                raise ValueError("required_context_target_not_in_snapshot")
+            checked_context_paths: list[str] = []
+            for path in args.required_context_path:
+                if (not isinstance(path, str) or not path or len(path) > 400
+                        or "\\" in path or path.startswith("/")
+                        or any(part in {"", ".", ".."} for part in path.split("/"))):
+                    raise ValueError("invalid_required_context_path")
+                if path not in indexed_paths:
+                    raise ValueError("required_context_path_not_in_snapshot")
+                if path not in checked_context_paths:
+                    checked_context_paths.append(path)
+            required_context_paths = tuple(checked_context_paths)
+            required_context_target = target
         indexed_source = baseline_tools.contents.get(args.baseline_context_path)
         if not isinstance(indexed_source, str):
             raise ValueError("baseline_source_context_unavailable")
@@ -393,6 +431,9 @@ def main(argv: list[str] | None = None) -> int:
                     evidence_tools=graph_tools,
                     required_source_paths=required_source_paths,
                     required_source_anchors=required_source_anchors,
+                    required_context_paths=required_context_paths,
+                    required_context_target=required_context_target,
+                    require_complete_investigation_context=args.require_complete_investigation_context,
                     limits=limits,
                 )
                 graph_report = investigator.run(baseline_problem)

@@ -104,6 +104,10 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
             "investigation_context_discovery_tool_status": {},
             "investigation_context_truncated_tools": [],
             "investigation_context_candidate_paths_by_category": {},
+            "required_context_contract_status": "not_assessed",
+            "required_context_contract_target": None,
+            "required_context_contract_resolved_module": None,
+            "required_context_contract_paths": [],
             "static_execution_context_status": "not_assessed",
             "related_test_context_status": "not_assessed",
             "case_metadata_context_status": "not_assessed",
@@ -142,6 +146,8 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
     static_context = context.get("static_execution_context") if isinstance(context.get("static_execution_context"), Mapping) else {}
     test_context = context.get("related_test_context") if isinstance(context.get("related_test_context"), Mapping) else {}
     metadata_context = context.get("case_metadata_context") if isinstance(context.get("case_metadata_context"), Mapping) else {}
+    required_context_contract = context.get("required_context_contract") if isinstance(context.get("required_context_contract"), Mapping) else {}
+    required_context_paths = required_context_contract.get("required_paths", [])
     execution_assessment = report.get("execution_assessment") if isinstance(report.get("execution_assessment"), Mapping) else {}
     provider_record = report.get("provider") if isinstance(report.get("provider"), Mapping) else {}
     request_diagnostics = _safe_request_diagnostics(provider_record.get("request_diagnostics"))
@@ -190,6 +196,25 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
             _safe_text(name, 100) for name in context.get("discovery_truncated_tools", [])[:10]
             if isinstance(name, str)
         ] if isinstance(context.get("discovery_truncated_tools", []), list) else [],
+        "required_context_contract_status": _safe_text(required_context_contract.get("status", "not_assessed"), 100),
+        "required_context_contract_target": (
+            _safe_text(required_context_contract.get("required_discovery_target"), 400)
+            if isinstance(required_context_contract.get("required_discovery_target"), str) else None
+        ),
+        "required_context_contract_resolved_module": (
+            _safe_text(required_context_contract.get("resolved_target_module"), 400)
+            if isinstance(required_context_contract.get("resolved_target_module"), str) else None
+        ),
+        "required_context_contract_paths": [
+            {
+                "path": _safe_text(item.get("path"), 400),
+                "surfaced": item.get("surfaced") is True,
+                "read": item.get("read") is True,
+                "status": _safe_text(item.get("status", "not_reported"), 80),
+            }
+            for item in required_context_paths[:20]
+            if isinstance(item, Mapping) and isinstance(item.get("path"), str)
+        ] if isinstance(required_context_paths, list) else [],
         "investigation_context_candidate_paths_by_category": {
             _safe_text(category, 100): {
                 "candidate_count": counts.get("candidate_count", 0) if isinstance(counts.get("candidate_count", 0), int) and not isinstance(counts.get("candidate_count", 0), bool) else 0,
@@ -333,6 +358,8 @@ def build_comparison_record(
             "graph_assisted_distinct_tool_count": len(graph_summary["tool_names"]),
             "graph_assisted_source_reference_count": graph_summary["source_reference_count"],
             "graph_assisted_required_source_coverage": graph_summary["required_source_coverage_status"],
+            "graph_assisted_investigation_context_coverage": graph_summary["investigation_context_coverage_status"],
+            "graph_assisted_required_context_contract": graph_summary["required_context_contract_status"],
         },
         "evaluation_policy": {
             "diagnostic_accuracy": "not_automatically_assessed",
@@ -402,6 +429,11 @@ def render_comparison_markdown(record: Mapping[str, Any]) -> str:
         f"- Declared source-inspection coverage: `{_markdown_text(summary.get('required_source_coverage_status', 'not assessed'), 80)}`",
         f"- Missing complete direct reads: {', '.join(_markdown_text(p, 400) for p in summary.get('required_source_missing_reads', [])) or 'none'}",
         f"- Missing direct root-cause citations: {', '.join(_markdown_text(p, 400) for p in summary.get('required_source_missing_root_citations', [])) or 'none'}",
+        f"- Investigation-context completeness: `{_markdown_text(summary.get('investigation_context_coverage_status', 'not assessed'), 100)}`",
+        f"- Required context contract: `{_markdown_text(summary.get('required_context_contract_status', 'not assessed'), 100)}`",
+        f"- Required context target: `{_markdown_text(summary.get('required_context_contract_target') or 'not configured', 400)}`",
+        f"- Resolved target module: `{_markdown_text(summary.get('required_context_contract_resolved_module') or 'not reported', 400)}`",
+        f"- Required context paths: {', '.join(_markdown_text(item.get('path'), 400) + '=' + _markdown_text(item.get('status'), 80) for item in summary.get('required_context_contract_paths', []) if isinstance(item, Mapping)) or 'none'}",
         f"- Initial response mode: `{_markdown_text((summary.get('response_mode_negotiation') or {}).get('initial_mode', 'not_reported'), 80)}`",
         f"- Last response mode: `{_markdown_text((summary.get('response_mode_negotiation') or {}).get('last_mode', 'not_reported'), 80)}`",
         f"- Plain-text downgrade used: `{bool((summary.get('response_mode_negotiation') or {}).get('plain_text_downgrade_used'))}`",
