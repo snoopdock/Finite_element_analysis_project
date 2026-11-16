@@ -378,13 +378,11 @@ jobs:
                       )
                   )
                   checks["execution_context_trace_invoked_for_required_target"] = (
-                      isinstance(trace_status, dict)
-                      and trace_status.get("status") == "completed"
-                      and isinstance(trace_status.get("call_count"), int)
-                      and not isinstance(trace_status.get("call_count"), bool)
-                      and trace_status.get("call_count", 0) >= 1
-                      and trace_status.get("truncated") is False
+                      context_contract.get("enabled") is True
+                      and context_contract.get("status") == "complete"
+                      and context_contract.get("required_discovery_tool") == "trace_execution_context"
                       and context_contract.get("required_discovery_target") == "pipeline/extractor.py"
+                      and context_contract.get("target_trace_final_status") == "completed"
                       and isinstance(context_contract.get("target_trace_completed_call_count"), int)
                       and not isinstance(context_contract.get("target_trace_completed_call_count"), bool)
                       and context_contract.get("target_trace_completed_call_count", 0) >= 1
@@ -450,6 +448,9 @@ jobs:
                       "required_context_contract": context_contract.get("status", "unknown"),
                       "required_context_path_roles_verified": checks["required_context_path_roles_verified"],
                       "trace_execution_context_call_count": trace_status.get("call_count", 0) if isinstance(trace_status, dict) else 0,
+                      "trace_execution_context_final_operation_status": trace_status.get("final_operation_status", "unknown") if isinstance(trace_status, dict) else "unknown",
+                      "trace_execution_context_failed_attempt_count": trace_status.get("failed_attempt_count", 0) if isinstance(trace_status, dict) else 0,
+                      "trace_execution_context_recovered_after_retry": trace_status.get("recovered_after_retry") is True if isinstance(trace_status, dict) else False,
                       "required_context_paths": [
                           {
                               "path": path,
@@ -469,7 +470,7 @@ jobs:
                   problems.append("comparison_json_invalid:" + type(exc).__name__)
           passed = bool(checks) and all(checks.values())
           gate = {
-              "schema_version": "ae32c/live-smoke-gate/v2",
+              "schema_version": "ae32c/live-smoke-gate/v3",
               "passed": passed,
               "provider": os.environ.get("SELECTED_PROVIDER", "unknown"),
               "checks": checks,
