@@ -56,9 +56,12 @@ class AE32CValidationGateWorkflowTests(unittest.TestCase):
         self.assertIn("required_entrypoint_and_factory_context_read", text)
         self.assertIn("required_context_path_roles_verified", text)
         self.assertIn("required_source_evidence_complete", text)
-        self.assertIn('"schema_version": "ae32c/live-smoke-gate/v2"', text)
+        self.assertIn('"schema_version": "ae32c/live-smoke-gate/v3"', text)
         self.assertIn('"investigation_context_coverage"', text)
         self.assertIn('"required_context_contract"', text)
+        self.assertIn('context_contract.get("target_trace_final_status") == "completed"', text)
+        self.assertIn('context_contract.get("target_trace_completed_call_count", 0) >= 1', text)
+        self.assertIn('"trace_execution_context_recovered_after_retry"', text)
 
     def test_validation_gate_job_does_not_receive_provider_secrets(self):
         for relative, _ in WORKFLOWS.items():

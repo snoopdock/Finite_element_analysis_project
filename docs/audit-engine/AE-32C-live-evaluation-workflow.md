@@ -55,7 +55,7 @@ The controlled incident evaluation passes these explicit arguments to the Stage1
 
 The investigator rejects a final diagnosis while this contract is incomplete. It requires a successful, non-truncated static trace for the exact target, completion of `find_related_tests` and `discover_case_context`, and inspection of every surfaced candidate. For this fixture, the smoke gate additionally verifies that the trace classifies `main.py` as both a static caller and Python entrypoint, and `providers/factory.py` as entrypoint context; both must be surfaced and fully read before the diagnosis can be accepted.
 
-The smoke gate uses schema `ae32c/live-smoke-gate/v2` and reports these separately:
+The smoke gate uses schema `ae32c/live-smoke-gate/v3` and reports these separately:
 
 - `required_source_evidence_complete`: direct required-source reads and root-cause citations;
 - `investigation_context_discovery_complete`: all required discovery operations are complete and non-truncated;
@@ -105,3 +105,17 @@ Both this live-evaluation workflow and the provider-compatibility preflight now 
 The provider job checks out the exact commit that passed validation; it does not resolve `stage1/section-uuids` to a newer HEAD after the gate. Missing, expired, failed, stale, or mismatched validation evidence blocks the provider job before provider secrets are made available.
 
 See `AE-32C-Phase-D-Exact-Commit-Validation-Gate.md` for the evidence bindings and operator procedure.
+
+
+## E.7-R.3N.7.2 — retry-aware live smoke gate
+
+The v3 smoke gate evaluates the exact-target trace from
+`required_context_contract.target_trace_final_status` and
+`target_trace_completed_call_count`. It does not require the aggregate trace
+status to be `completed` independently of that target-specific contract.
+Overall discovery completeness remains a separate gate and still requires all
+three discovery operations to have a successful complete, non-truncated result.
+
+The report retains failed-attempt counts and whether an operation recovered
+after a retry. A recovered operation is not represented as if the failed
+attempt never occurred.
