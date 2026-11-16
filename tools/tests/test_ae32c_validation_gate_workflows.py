@@ -63,6 +63,13 @@ class AE32CValidationGateWorkflowTests(unittest.TestCase):
         self.assertIn('context_contract.get("target_trace_completed_call_count", 0) >= 1', text)
         self.assertIn('"trace_execution_context_recovered_after_retry"', text)
 
+    def test_live_workflow_enables_only_one_bounded_cloudflare_stream_fallback(self):
+        text = (ROOT / ".github/workflows/ae32c-live-evaluation.yml").read_text(encoding="utf-8")
+        self.assertIn("FEA_LLM_STREAM_FALLBACK: ${{ inputs.provider == 'cloudflare' && 'true' || 'false' }}", text)
+        self.assertIn("FEA_LLM_STREAM_FALLBACK_MAX_ATTEMPTS: ${{ inputs.provider == 'cloudflare' && '1' || '0' }}", text)
+        self.assertIn("FEA_LLM_STREAMING:", text)
+        self.assertIn("FEA_LLM_REASONING_EFFORT:", text)
+
     def test_validation_gate_job_does_not_receive_provider_secrets(self):
         for relative, _ in WORKFLOWS.items():
             with self.subTest(workflow=relative):

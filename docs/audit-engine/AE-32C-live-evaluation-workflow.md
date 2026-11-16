@@ -119,3 +119,23 @@ three discovery operations to have a successful complete, non-truncated result.
 The report retains failed-attempt counts and whether an operation recovered
 after a retry. A recovered operation is not represented as if the failed
 attempt never occurred.
+
+
+## Bounded Cloudflare stream recovery (N7.3)
+
+For Cloudflare live evaluations, the workflow explicitly sets
+`FEA_LLM_STREAM_FALLBACK=true` and
+`FEA_LLM_STREAM_FALLBACK_MAX_ATTEMPTS=1`. Other providers receive
+fallback disabled and a zero fallback allowance.
+
+The adapter may make one non-streaming recovery request only after a
+classified SSE protocol failure with no content, reasoning, or tool-call
+deltas received. Partial output, reasoning-only output, and partial
+tool-call deltas are never replayed. The fallback is a new HTTP request
+inside the same logical model round and is counted in provider HTTP
+attempt telemetry. The adapter returns tool-call data as inert data;
+investigator validation remains the only route to evidence-tool dispatch.
+
+This is a bounded recovery allowance, not a guarantee of provider
+availability or a claim that the initial failed request incurred no
+provider-side cost.
