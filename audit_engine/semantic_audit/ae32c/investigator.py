@@ -116,6 +116,7 @@ class InvestigationLimits:
     # Number of additional finalization responses permitted after the first
     # rejected response, shared across JSON, envelope, and diagnosis failures.
     max_finalization_recovery_retries: int = 2
+    finalization_prompt_tokens_reserved_per_round: int = 1_024
     max_source_path_guidance: int = 2
     max_cost_usd: float | None = None
     temperature: float = 0.0
@@ -140,6 +141,7 @@ class InvestigationLimits:
             "max_invalid_json_retries": (0, 3),
             "max_finalization_invalid_json_retries": (0, 3),
             "max_finalization_recovery_retries": (0, 3),
+            "finalization_prompt_tokens_reserved_per_round": (256, 4_096),
             "max_source_path_guidance": (0, 5),
         }
         for name, (minimum, maximum) in integer_ranges.items():
@@ -283,6 +285,11 @@ class RepositoryInvestigator:
         self._finalization_context_chars_after = 0
         self._finalization_context_target_chars = 0
         self._finalization_context_target_exceeded = False
+        self._finalization_context_estimated_tokens = 0
+        self._finalization_context_target_tokens = 0
+        self._finalization_context_future_reserve_tokens = 0
+        self._finalization_context_response_reservation = 0
+        self._finalization_context_fit = False
         self._finalization_tool_requests_rejected = 0
         self._invalid_tool_retries = 0
         self._unsupported_action_retries = 0
@@ -928,7 +935,7 @@ class RepositoryInvestigator:
                 "tool": entry.tool,
                 "status": entry.status,
                 "response_sha256": entry.response_sha256,
-                "summary": self._safe_text(entry.summary, 160 if include_responses else 100),
+                "summary": self._safe_text(entry.summary, 160 if include_responses else 48),
             }
             if include_responses and entry.tool != "repository_summary":
                 item["response"] = self._compact_for_model(
@@ -988,6 +995,29 @@ class RepositoryInvestigator:
             })
         return messages
 
+    def _finalization_future_reserve_tokens(self, round_number: int) -> int:
+        """Return token capacity protected for finalization calls after this round.
+
+        Very small total budgets retain the legacy single-call admission check;
+        otherwise evidence-gathering calls may not consume the configured
+        finalization reserve. During finalization, only later reserved rounds
+        remain protected because the current call is budgeted separately.
+        """
+        reserved_rounds = min(self.limits.finalization_rounds_reserved, self.limits.max_rounds)
+        per_round = self.limits.finalization_prompt_tokens_reserved_per_round + self.limits.max_tokens_per_call
+        total_reserve = reserved_rounds * per_round
+        # A reserve that cannot coexist with even one response reservation is
+        # not actionable. Preserve the normal hard budget diagnostic for small
+        # budget tests/configurations instead of blocking the first call early.
+        if self.limits.max_total_tokens <= total_reserve + self.limits.max_tokens_per_call:
+            return 0
+        if round_number < self._finalization_start_round():
+            future_rounds = reserved_rounds
+        else:
+            phase_round = round_number - self._finalization_start_round() + 1
+            future_rounds = max(0, reserved_rounds - phase_round)
+        return future_rounds * per_round
+
     def _compact_finalization_context(
         self,
         *,
@@ -995,30 +1025,24 @@ class RepositoryInvestigator:
         round_number: int,
         notice: dict[str, Any],
     ) -> None:
-        """Rebuild finalization context within the remaining cumulative prompt budget."""
+        """Rebuild finalization context against the exact provider and cumulative budgets."""
         previous_messages = self._messages
         before_chars = len(self._canonical_json(previous_messages))
         feedback = self._latest_finalization_feedback(previous_messages)
         summary = next((entry for entry in self._ledger if entry.tool == "repository_summary"), None)
         remaining_chars = max(0, self.limits.max_total_prompt_chars - self._total_prompt_chars)
-        remaining_rounds = max(1, self.limits.max_rounds - round_number + 1)
-        # Finalization must retain enough room for source-reference candidates and
-        # actionable validation feedback. Prefer a modest minimum share when the
-        # cumulative budget permits it; the provider reservation gate still enforces
-        # the hard total budget before every call.
-        minimum_finalization_share = min(8_000, remaining_chars)
-        target_chars = min(
-            remaining_chars,
-            max(remaining_chars // remaining_rounds, minimum_finalization_share),
+        future_reserve = self._finalization_future_reserve_tokens(round_number)
+        remaining_tokens = max(0, self.limits.max_total_tokens - self._reserved_token_estimate)
+        available_prompt_tokens = max(
+            0,
+            remaining_tokens - future_reserve - self.limits.max_tokens_per_call,
         )
+        token_char_ceiling = available_prompt_tokens * 4
+        target_chars = min(remaining_chars, token_char_ceiling)
+        self._finalization_context_fit = False
 
-        # Start with useful source detail and progressively remove incidental
-        # context while retaining every evidence ID/hash and exact source-reference
-        # candidates. The final metadata-only fallback still permits an explicitly
-        # inconclusive diagnosis instead of forcing the model to invent citations.
-        # Keep at least the bounded candidate set in the final fallback. If
-        # even that cannot fit, expose target_exceeded rather than silently
-        # removing exact source-reference candidates from the model context.
+        # Each variant retains the complete evidence-ID ledger and bounded
+        # source-reference candidates. Only descriptive detail is reduced.
         variants = [
             (120, 3, 80, True),
             (80, 2, 60, True),
@@ -1028,8 +1052,11 @@ class RepositoryInvestigator:
             (0, 0, 5, False),
         ]
         chosen: list[dict[str, str]] | None = None
-        chosen_meta: tuple[int, int, int, bool] = variants[-1]
-        fallback: tuple[list[dict[str, str]], tuple[int, int, int, bool]] | None = None
+        chosen_meta: tuple[int, int, int, bool] | None = None
+        chosen_chars = 0
+        chosen_tokens = 0
+        smallest_chars: int | None = None
+        smallest_tokens: int | None = None
         for variant in variants:
             messages = self._finalization_context_messages(
                 problem=problem,
@@ -1043,34 +1070,69 @@ class RepositoryInvestigator:
                 feedback=feedback,
             )
             notice_message = {"role": "user", "content": self._canonical_json(notice)}
-            size = len(self._canonical_json(messages + [notice_message]))
-            fallback = (messages, variant)
-            if size <= target_chars:
+            serialized = self._prepare_provider_request(messages + [notice_message])["serialized"]
+            size = len(serialized)
+            estimated_tokens = max(1, math.ceil(size / 4))
+            if smallest_chars is None or size < smallest_chars:
+                smallest_chars = size
+                smallest_tokens = estimated_tokens
+            char_fit = self._total_prompt_chars + size <= self.limits.max_total_prompt_chars
+            token_fit = (
+                self._reserved_token_estimate
+                + estimated_tokens
+                + self.limits.max_tokens_per_call
+                + future_reserve
+                <= self.limits.max_total_tokens
+            )
+            if char_fit and token_fit:
                 chosen = messages
                 chosen_meta = variant
+                chosen_chars = size
+                chosen_tokens = estimated_tokens
                 break
 
-        if chosen is None and fallback is not None:
-            chosen, chosen_meta = fallback
-        assert chosen is not None
-        after_chars = len(self._canonical_json(
-            chosen + [{"role": "user", "content": self._canonical_json(notice)}]
-        ))
+        if chosen is None or chosen_meta is None:
+            self._events.append({
+                "event": "finalization_context_budget_unavailable",
+                "round": round_number,
+                "remaining_prompt_chars": remaining_chars,
+                "remaining_tokens": remaining_tokens,
+                "future_finalization_reserve_tokens": future_reserve,
+                "response_tokens_reserved": self.limits.max_tokens_per_call,
+                "target_prompt_tokens": available_prompt_tokens,
+                "target_prompt_chars": target_chars,
+                "smallest_attempted_prompt_chars": smallest_chars,
+                "smallest_attempted_prompt_tokens": smallest_tokens,
+                "evidence_items_retained": len(self._ledger),
+                "source_reference_candidates_required": len(self._available_source_reference_candidates(maximum=5)),
+                "reason": "no_evidence_preserving_context_variant_fits_both_budgets",
+            })
+            raise _BudgetStop("finalization_context_budget_unavailable")
+
         self._messages = chosen
         self._finalization_context_rebuilds += 1
         self._finalization_context_chars_before = before_chars
-        self._finalization_context_chars_after = after_chars
+        self._finalization_context_chars_after = chosen_chars
         self._finalization_context_target_chars = target_chars
-        self._finalization_context_target_exceeded = after_chars > target_chars
+        self._finalization_context_target_exceeded = chosen_chars > target_chars
+        self._finalization_context_estimated_tokens = chosen_tokens
+        self._finalization_context_target_tokens = available_prompt_tokens
+        self._finalization_context_future_reserve_tokens = future_reserve
+        self._finalization_context_response_reservation = self.limits.max_tokens_per_call
+        self._finalization_context_fit = True
         self._events.append({
             "event": "finalization_context_compacted",
             "round": round_number,
             "messages_before": len(previous_messages),
             "messages_after": len(chosen),
             "context_chars_before": before_chars,
-            "context_chars_after": after_chars,
+            "provider_request_prompt_chars_after": chosen_chars,
             "target_prompt_chars_for_remaining_budget": target_chars,
-            "target_exceeded": after_chars > target_chars,
+            "estimated_prompt_tokens_after": chosen_tokens,
+            "target_prompt_tokens_for_remaining_budget": available_prompt_tokens,
+            "response_tokens_reserved": self.limits.max_tokens_per_call,
+            "future_finalization_reserve_tokens": future_reserve,
+            "target_exceeded": chosen_chars > target_chars,
             "evidence_items_retained": len(self._ledger),
             "source_reference_candidates_retained": len(
                 self._available_source_reference_candidates(maximum=chosen_meta[2])
@@ -1078,6 +1140,7 @@ class RepositoryInvestigator:
             "detail_level": chosen_meta[0],
             "response_details_included": chosen_meta[3],
             "latest_feedback_preserved": feedback is not None,
+            "budget_fit": True,
         })
 
     def _register_finalization_rejection(self, round_number: int, reason_code: str) -> bool:
@@ -1103,9 +1166,22 @@ class RepositoryInvestigator:
         phase_round = round_number - start_round + 1
         reserved = min(self.limits.finalization_rounds_reserved, self.limits.max_rounds)
         remaining_including_this = self.limits.max_rounds - round_number + 1
+        coverage = self._investigation_context_coverage()
+        coverage_summary = {
+            "schema_version": coverage.get("schema_version"),
+            "status": coverage.get("status"),
+            "discovery_tools_complete": coverage.get("discovery_tools_complete"),
+            "discovery_tool_status": coverage.get("discovery_tool_status", {}),
+            "candidate_context_path_count": coverage.get("candidate_context_path_count", 0),
+            "candidate_context_paths_read_count": coverage.get("candidate_context_paths_read_count", 0),
+            "candidate_context_paths_not_read_count": coverage.get("candidate_context_paths_not_read_count", 0),
+            "candidate_context_paths_not_read": coverage.get("candidate_context_paths_not_read", [])[:20],
+            "test_classification_counts": coverage.get("test_classification_counts", {}),
+            "interpretation": "Static coverage only; no runtime execution or diagnosis-accuracy claim.",
+        }
         notice = {
             "finalization_mode": {
-                "schema_version": "ae32c/finalization-mode/v2",
+                "schema_version": "ae32c/finalization-mode/v3",
                 "round": round_number,
                 "phase_round": phase_round,
                 "reserved_rounds": reserved,
@@ -1114,7 +1190,7 @@ class RepositoryInvestigator:
                 "finalization_rejections_used": self._finalization_rejections,
                 "required_action": "final",
                 "required_source_coverage": self._required_source_coverage(),
-                "investigation_context_coverage_so_far": self._investigation_context_coverage(),
+                "investigation_context_coverage_so_far": coverage_summary,
                 "response_constraints": [
                     "Return a concise, evidence-bound diagnosis in the required JSON action envelope.",
                     "Do not quote or reproduce source code; describe relevant code behaviour in your own words.",
@@ -1922,9 +1998,10 @@ class RepositoryInvestigator:
         prompt_chars = len(self._canonical_json(messages))
         estimated_prompt_tokens = max(1, math.ceil(prompt_chars / 4))
         reserve = estimated_prompt_tokens + self.limits.max_tokens_per_call
+        future_finalization_reserve = self._finalization_future_reserve_tokens(self._model_rounds)
         if self._total_prompt_chars + prompt_chars > self.limits.max_total_prompt_chars:
             return False, "prompt_size_budget_exhausted"
-        if self._reserved_token_estimate + reserve > self.limits.max_total_tokens:
+        if self._reserved_token_estimate + reserve + future_finalization_reserve > self.limits.max_total_tokens:
             return False, "estimated_token_budget_exhausted"
         estimated_cost = 0.0
         if self.limits.max_cost_usd is not None:
@@ -1995,10 +2072,8 @@ class RepositoryInvestigator:
         })
         return True
 
-    def _provider_call(self, messages: list[dict[str, str]]) -> tuple[Any, Any, int]:
-        if self._remaining_seconds() <= 0:
-            raise _BudgetStop("elapsed_time_budget_exhausted")
-        self._last_provider_endpoint_mode = "not_reported"
+    def _prepare_provider_request(self, messages: list[dict[str, str]]) -> dict[str, Any]:
+        """Build the exact bounded request envelope used for prompt accounting."""
         capability_record = get_provider_capabilities(
             self.provider,
             provider_name=self.provider_name,
@@ -2053,11 +2128,40 @@ class RepositoryInvestigator:
                 "response_tool_definition": build_response_tool_definition(),
             }
         serialized = self._canonical_json(serialized_context)
+        return {
+            "capability_record": capability_record,
+            "capabilities": capabilities,
+            "native_tool_chat": native_tool_chat,
+            "negotiated_chat": negotiated_chat,
+            "force_plain_text": force_plain_text,
+            "use_negotiated": use_negotiated,
+            "use_native_tool_call": use_native_tool_call,
+            "request_messages": request_messages,
+            "serialized_context": serialized_context,
+            "serialized": serialized,
+        }
+
+    def _provider_call(self, messages: list[dict[str, str]]) -> tuple[Any, Any, int]:
+        if self._remaining_seconds() <= 0:
+            raise _BudgetStop("elapsed_time_budget_exhausted")
+        self._last_provider_endpoint_mode = "not_reported"
+        prepared = self._prepare_provider_request(messages)
+        capability_record = prepared["capability_record"]
+        capabilities = prepared["capabilities"]
+        native_tool_chat = prepared["native_tool_chat"]
+        negotiated_chat = prepared["negotiated_chat"]
+        force_plain_text = prepared["force_plain_text"]
+        use_negotiated = prepared["use_negotiated"]
+        use_native_tool_call = prepared["use_native_tool_call"]
+        request_messages = prepared["request_messages"]
+        serialized_context = prepared["serialized_context"]
+        serialized = prepared["serialized"]
         prompt_chars = len(serialized)
         estimated_prompt_tokens = max(1, math.ceil(prompt_chars / 4))
         reserve = estimated_prompt_tokens + self.limits.max_tokens_per_call
         reserved_before = self._reserved_token_estimate
-        projected_total = reserved_before + reserve
+        future_finalization_reserve = self._finalization_future_reserve_tokens(self._model_rounds)
+        projected_total = reserved_before + reserve + future_finalization_reserve
         prompt_total = self._total_prompt_chars + prompt_chars
         if prompt_total > self.limits.max_total_prompt_chars:
             self._last_provider_reservation_check = {
@@ -2069,6 +2173,7 @@ class RepositoryInvestigator:
                 "requested_reservation_tokens": reserve,
                 "reserved_before_tokens": reserved_before,
                 "projected_reserved_tokens": projected_total,
+                "protected_finalization_reserve_tokens": future_finalization_reserve,
                 "max_total_tokens": self.limits.max_total_tokens,
                 "prompt_chars_before": self._total_prompt_chars,
                 "projected_total_prompt_chars": prompt_total,
@@ -2085,6 +2190,7 @@ class RepositoryInvestigator:
             "requested_reservation_tokens": reserve,
             "reserved_before_tokens": reserved_before,
             "projected_reserved_tokens": projected_total,
+            "protected_finalization_reserve_tokens": future_finalization_reserve,
             "max_total_tokens": self.limits.max_total_tokens,
             "prompt_chars_before": self._total_prompt_chars,
             "projected_total_prompt_chars": prompt_total,
@@ -2438,55 +2544,114 @@ class RepositoryInvestigator:
         return response, error, reserve
 
     def _investigation_context_coverage(self) -> dict[str, Any]:
-        """Summarize static caller, test, workflow, and case-metadata exploration.
+        """Report complete, non-truncated static discovery and candidate reads."""
+        required_discovery = (
+            "trace_execution_context",
+            "find_related_tests",
+            "discover_case_context",
+        )
+        entries_by_tool: dict[str, list[Any]] = {
+            name: [entry for entry in self._ledger if entry.tool == name]
+            for name in required_discovery
+        }
+        discovery_tool_status: dict[str, dict[str, Any]] = {}
+        for name in required_discovery:
+            entries = entries_by_tool[name]
+            if not entries:
+                discovery_tool_status[name] = {
+                    "status": "not_called", "call_count": 0, "truncated": None,
+                    "reason": "required_discovery_tool_not_called",
+                }
+                continue
+            valid_results = []
+            invalid_reasons: list[str] = []
+            any_truncated = False
+            for entry in entries:
+                if entry.status != "ok":
+                    invalid_reasons.append("tool_invocation_failed")
+                    continue
+                result = entry.response.get("result", {})
+                if not isinstance(result, Mapping):
+                    invalid_reasons.append("result_not_object")
+                    continue
+                if result.get("truncated") is True:
+                    any_truncated = True
+                    invalid_reasons.append("result_truncated")
+                if result.get("truncated") is not False:
+                    invalid_reasons.append("truncation_status_missing_or_invalid")
+                if result.get("coverage_status") != "complete_for_query":
+                    invalid_reasons.append("discovery_not_complete_for_query")
+                required_lists = {
+                    "trace_execution_context": (
+                        "static_caller_relationships", "static_caller_paths",
+                        "static_dependency_relationships", "static_dependency_paths",
+                        "python_entrypoint_paths", "entrypoint_context_paths", "active_workflow_paths",
+                    ),
+                    "find_related_tests": ("tests",),
+                    "discover_case_context": ("metadata_candidates",),
+                }[name]
+                if any(not isinstance(result.get(key), list) for key in required_lists):
+                    invalid_reasons.append("required_result_fields_missing_or_malformed")
+                elif result.get("coverage_status") == "complete_for_query" and result.get("truncated") is False:
+                    valid_results.append(result)
+            complete = bool(valid_results) and not invalid_reasons
+            discovery_tool_status[name] = {
+                "status": "completed" if complete else "partial",
+                "call_count": len(entries),
+                "truncated": any_truncated,
+                "reason": None if complete else sorted(set(invalid_reasons))[:8],
+            }
 
-        This is an observability record, not a diagnosis-accuracy score or a
-        requirement that every repository contain every context category.
-        """
         successful = [entry for entry in self._ledger if entry.status == "ok"]
-        tool_names = {entry.tool for entry in successful}
         read_paths: set[str] = set()
         for entry in successful:
             if entry.tool != "read_source_file":
                 continue
             result = entry.response.get("result", {})
-            if isinstance(result, Mapping) and isinstance(result.get("path"), str):
-                read_paths.add(result["path"])
+            if not isinstance(result, Mapping):
+                continue
+            path = result.get("path")
+            if not isinstance(path, str) or result.get("source_range_complete") is not True or result.get("content_omitted") is not False:
+                continue
+            source_hash = result.get("source_sha256")
+            expected_hash = self._expected_file_hashes.get(path)
+            if not isinstance(source_hash, str) or len(source_hash) != 64:
+                continue
+            if expected_hash is not None and source_hash != expected_hash:
+                continue
+            read_paths.add(path)
 
-        trace_entries = [entry for entry in successful if entry.tool == "trace_execution_context"]
+        def string_paths(value: Any) -> set[str]:
+            if not isinstance(value, (list, tuple)):
+                return set()
+            return {item for item in value if isinstance(item, str) and item}
+
         trace_results = [
-            entry.response.get("result", {}) for entry in trace_entries
-            if isinstance(entry.response.get("result"), Mapping)
+            entry.response.get("result", {}) for entry in entries_by_tool["trace_execution_context"]
+            if entry.status == "ok" and isinstance(entry.response.get("result"), Mapping)
         ]
         static_relationship_count = sum(
             len(result.get("static_caller_relationships", []))
             + len(result.get("static_dependency_relationships", []))
             for result in trace_results
         )
-        caller_paths = sorted({
-            path
-            for result in trace_results
-            for path in result.get("static_caller_paths", [])
-            if isinstance(path, str)
-        })
-        dependency_paths = sorted({
-            path
-            for result in trace_results
-            for path in result.get("static_dependency_paths", [])
-            if isinstance(path, str)
-        })
-        active_workflow_paths = sorted({
-            item.get("path")
-            for result in trace_results
-            for item in result.get("active_workflow_paths", [])
-            if isinstance(item, Mapping) and isinstance(item.get("path"), str)
-        })
+        caller_paths = set().union(*(string_paths(result.get("static_caller_paths")) for result in trace_results)) if trace_results else set()
+        dependency_paths = set().union(*(string_paths(result.get("static_dependency_paths")) for result in trace_results)) if trace_results else set()
+        python_entrypoint_paths = set().union(*(string_paths(result.get("python_entrypoint_paths")) for result in trace_results)) if trace_results else set()
+        entrypoint_context_paths = set().union(*(string_paths(result.get("entrypoint_context_paths")) for result in trace_results)) if trace_results else set()
+        workflow_paths: set[str] = set()
+        for result in trace_results:
+            for item in result.get("active_workflow_paths", []):
+                if isinstance(item, str) and item:
+                    workflow_paths.add(item)
+                elif isinstance(item, Mapping) and isinstance(item.get("path"), str):
+                    workflow_paths.add(item["path"])
 
-        test_entries = [entry for entry in successful if entry.tool == "find_related_tests"]
+        test_entries = entries_by_tool["find_related_tests"]
         test_records: dict[str, dict[str, Any]] = {}
         for entry in test_entries:
             result = entry.response.get("result", {})
-            if not isinstance(result, Mapping):
+            if entry.status != "ok" or not isinstance(result, Mapping):
                 continue
             for item in result.get("tests", []):
                 if not isinstance(item, Mapping) or not isinstance(item.get("path"), str):
@@ -2500,49 +2665,79 @@ class RepositoryInvestigator:
                     "classification": assessment.get("classification", "not_reported"),
                     "collection_status": assessment.get("collection_status", "not_reported"),
                     "execution_status": assessment.get("execution_status", "not_reported"),
+                    "config_source": assessment.get("config_source"),
+                    "matched_python_files_pattern": assessment.get("matched_python_files_pattern"),
+                    "test_item_candidate_count": assessment.get("test_item_candidate_count", 0),
                 }
 
-        metadata_entries = [entry for entry in successful if entry.tool == "discover_case_context"]
         metadata_candidates: dict[str, str] = {}
         metadata_preview_complete: set[str] = set()
         metadata_preview_incomplete: set[str] = set()
-        for entry in metadata_entries:
+        for entry in entries_by_tool["discover_case_context"]:
             result = entry.response.get("result", {})
-            if not isinstance(result, Mapping):
+            if entry.status != "ok" or not isinstance(result, Mapping):
                 continue
             for item in result.get("metadata_candidates", []):
-                if isinstance(item, Mapping) and isinstance(item.get("path"), str):
-                    path = item["path"]
-                    metadata_candidates[path] = str(item.get("category", "unknown"))
-                    if item.get("content_complete") is True:
-                        metadata_preview_complete.add(path)
-                    elif item.get("content_omitted") is True:
-                        metadata_preview_incomplete.add(path)
+                if not isinstance(item, Mapping) or not isinstance(item.get("path"), str):
+                    continue
+                path = item["path"]
+                metadata_candidates[path] = str(item.get("category", "unknown"))
+                preview_hash = item.get("source_sha256")
+                line_numbered = (
+                    item.get("preview_line_numbered") is True
+                    and isinstance(item.get("line_numbered_preview"), list)
+                    and all(isinstance(line, str) and re.match(r"^\d+: ", line) for line in item.get("line_numbered_preview", []))
+                    and isinstance(item.get("total_lines"), int)
+                    and len(item.get("line_numbered_preview", [])) == item.get("total_lines")
+                    and [int(line.split(":", 1)[0]) for line in item.get("line_numbered_preview", [])]
+                    == list(range(1, item.get("total_lines", 0) + 1))
+                )
+                preview_complete = (
+                    item.get("content_complete") is True
+                    and item.get("content_omitted") is False
+                    and line_numbered
+                    and isinstance(preview_hash, str)
+                    and _REVISION_SHA256.fullmatch(preview_hash) is not None
+                    and item.get("redaction_applied") is True
+                    and (self._expected_file_hashes.get(path) in {None, preview_hash})
+                )
+                if preview_complete:
+                    metadata_preview_complete.add(path)
+                elif item.get("content_omitted") is True or item.get("content_complete") is not True:
+                    metadata_preview_incomplete.add(path)
 
-        metadata_read_paths = sorted(
-            path for path in metadata_candidates
-            if path in read_paths or path in metadata_preview_complete
-        )
-        unread_metadata_paths = sorted(
-            path for path in metadata_candidates
-            if path not in read_paths and path not in metadata_preview_complete
-        )
-        related_test_paths = sorted(test_records)
-        read_test_paths = sorted(path for path in related_test_paths if path in read_paths)
-        unread_test_paths = sorted(path for path in related_test_paths if path not in read_paths)
-        read_caller_paths = sorted(path for path in caller_paths if path in read_paths)
-        unread_caller_paths = sorted(path for path in caller_paths if path not in read_paths)
+        related_test_paths = set(test_records)
+        candidate_categories = {
+            "static_callers": caller_paths,
+            "static_dependencies": dependency_paths,
+            "python_entrypoints": python_entrypoint_paths,
+            "entrypoint_context": entrypoint_context_paths,
+            "active_ci_workflows": workflow_paths,
+            "related_tests": related_test_paths,
+            "case_metadata": set(metadata_candidates),
+        }
+        candidate_context_paths = set().union(*candidate_categories.values()) if candidate_categories else set()
+        read_context_paths = candidate_context_paths.intersection(read_paths.union(metadata_preview_complete))
+        unread_context_paths = candidate_context_paths - read_context_paths
+        category_summary: dict[str, dict[str, Any]] = {}
+        for category, paths in sorted(candidate_categories.items()):
+            read_for_category = paths.intersection(read_paths.union(metadata_preview_complete))
+            unread_for_category = paths - read_for_category
+            category_summary[category] = {
+                "candidate_count": len(paths),
+                "read_count": len(read_for_category),
+                "unread_count": len(unread_for_category),
+                "read_paths": sorted(read_for_category)[:40],
+                "unread_paths": sorted(unread_for_category)[:40],
+            }
 
+        trace_status = discovery_tool_status["trace_execution_context"]["status"]
         workflow_status = "not_checked"
-        if trace_results:
-            workflow_status = (
-                "observed" if active_workflow_paths else "no_static_workflow_path_observed"
-            )
-        required_discovery = {"trace_execution_context", "find_related_tests", "discover_case_context"}
-        discovery_complete = required_discovery.issubset(tool_names)
-        unread_context_paths = sorted(set(unread_caller_paths + unread_test_paths + unread_metadata_paths))
-        read_context_paths = sorted(set(read_caller_paths + read_test_paths + metadata_read_paths))
-        candidate_context_paths = sorted(set(caller_paths + related_test_paths + list(metadata_candidates)))
+        if trace_status == "completed":
+            workflow_status = "observed" if workflow_paths else "no_static_workflow_path_observed"
+        discovery_complete = all(
+            discovery_tool_status[name]["status"] == "completed" for name in required_discovery
+        )
         if not discovery_complete:
             overall = "partial_discovery"
         elif unread_context_paths:
@@ -2552,59 +2747,58 @@ class RepositoryInvestigator:
         test_classification_counts = dict(sorted(Counter(
             record.get("classification", "not_reported") for record in test_records.values()
         ).items()))
+        discovery_truncated_tools = sorted(
+            name for name, status in discovery_tool_status.items() if status.get("truncated") is True
+        )
         return {
-            "schema_version": "ae32c/investigation-context-coverage/v2",
+            "schema_version": "ae32c/investigation-context-coverage/v3",
             "status": overall,
             "discovery_tools_complete": discovery_complete,
+            "discovery_tool_status": discovery_tool_status,
+            "discovery_truncated_tools": discovery_truncated_tools,
             "candidate_context_path_count": len(candidate_context_paths),
-            "candidate_context_paths_read": read_context_paths[:60],
-            "candidate_context_paths_not_read": unread_context_paths[:60],
+            "candidate_context_paths_read": sorted(read_context_paths)[:60],
+            "candidate_context_paths_not_read": sorted(unread_context_paths)[:60],
             "candidate_context_paths_read_count": len(read_context_paths),
             "candidate_context_paths_not_read_count": len(unread_context_paths),
+            "candidate_context_paths_by_category": category_summary,
             "test_classification_counts": test_classification_counts,
             "static_execution_context": {
                 "status": "observed" if trace_results else "not_checked",
                 "static_relationship_count": static_relationship_count,
-                "caller_paths": caller_paths[:30],
-                "caller_paths_directly_read": read_caller_paths[:30],
-                "caller_paths_not_directly_read": unread_caller_paths[:30],
-                "dependency_paths": dependency_paths[:30],
-                "dependency_paths_directly_read": sorted(path for path in dependency_paths if path in read_paths)[:30],
-                "dependency_paths_not_directly_read": sorted(path for path in dependency_paths if path not in read_paths)[:30],
-                "active_ci_workflow_paths": active_workflow_paths[:20],
+                "caller_paths": sorted(caller_paths)[:30],
+                "caller_paths_directly_read": sorted(caller_paths.intersection(read_paths))[:30],
+                "caller_paths_not_directly_read": sorted(caller_paths - read_paths)[:30],
+                "dependency_paths": sorted(dependency_paths)[:30],
+                "dependency_paths_directly_read": sorted(dependency_paths.intersection(read_paths))[:30],
+                "dependency_paths_not_directly_read": sorted(dependency_paths - read_paths)[:30],
+                "python_entrypoint_paths": sorted(python_entrypoint_paths)[:20],
+                "entrypoint_context_paths": sorted(entrypoint_context_paths)[:30],
+                "active_ci_workflow_paths": sorted(workflow_paths)[:20],
                 "workflow_status": workflow_status,
-                "interpretation": "Static relationships do not prove runtime execution. Caller and dependency candidates should be read when relevant; unread candidates remain explicit coverage gaps.",
+                "interpretation": "Static import, entrypoint, and workflow relationships do not prove runtime execution. All surfaced caller, dependency, entrypoint-context, and workflow paths participate in read/unread accounting.",
             },
             "related_test_context": {
                 "status": "observed" if test_entries else "not_checked",
                 "candidate_count": len(test_records),
-                "candidates": [
-                    {"path": path, **test_records[path]} for path in related_test_paths[:30]
-                ],
-                "candidate_paths_directly_read": read_test_paths[:30],
-                "candidate_paths_not_directly_read": unread_test_paths[:30],
+                "candidates": [{"path": path, **test_records[path]} for path in sorted(test_records)[:30]],
+                "candidate_paths_directly_read": sorted(related_test_paths.intersection(read_paths))[:30],
+                "candidate_paths_not_directly_read": sorted(related_test_paths - read_paths)[:30],
                 "classification_counts": test_classification_counts,
-                "interpretation": "Static test-source relationships and collection candidates do not prove a test ran. Read relevant candidates and preserve helper-versus-collected classification.",
+                "interpretation": "Filename/configuration classification is static only. A collection candidate is not evidence that pytest collected or executed it.",
             },
             "case_metadata_context": {
-                "status": (
-                    "observed" if metadata_candidates else (
-                        "no_case_metadata_candidates" if metadata_entries else "not_checked"
-                    )
-                ),
+                "status": "observed" if metadata_candidates else ("no_case_metadata_candidates" if entries_by_tool["discover_case_context"] else "not_checked"),
                 "candidate_count": len(metadata_candidates),
-                "candidates": [
-                    {"path": path, "category": metadata_candidates[path]}
-                    for path in sorted(metadata_candidates)[:30]
-                ],
-                "candidate_paths_directly_read": metadata_read_paths[:30],
-                "candidate_paths_not_directly_read": unread_metadata_paths[:30],
+                "candidates": [{"path": path, "category": metadata_candidates[path]} for path in sorted(metadata_candidates)[:30]],
+                "candidate_paths_directly_read": sorted(set(metadata_candidates).intersection(read_paths.union(metadata_preview_complete)))[:30],
+                "candidate_paths_not_directly_read": sorted(set(metadata_candidates) - read_paths - metadata_preview_complete)[:30],
                 "candidate_paths_with_incomplete_preview": sorted(metadata_preview_incomplete)[:30],
-                "interpretation": "Complete line-numbered previews count as direct metadata reads; incomplete previews require read_source_file. Historical and fixture metadata are contextual evidence, not current runtime proof.",
+                "interpretation": "Only complete, line-numbered, source-hash-bound previews count as inspected. Incomplete previews require read_source_file. Historical and fixture metadata are not runtime proof.",
             },
             "required_discovery_tools": {
-                name: ("completed" if name in tool_names else "not_called")
-                for name in sorted(required_discovery)
+                name: ("completed" if discovery_tool_status[name]["status"] == "completed" else discovery_tool_status[name]["status"])
+                for name in required_discovery
             },
             "execution_assessment": {
                 "repository_code_executed": False,
@@ -2613,8 +2807,7 @@ class RepositoryInvestigator:
                 "diagnosis_scope": "static_source_and_graph_analysis",
             },
             "interpretation": (
-                "Context coverage measures whether available static context was inspected. "
-                "It does not score causal correctness or change acceptance gates."
+                "Context coverage is complete only when every required discovery operation returned a complete, non-truncated result and every surfaced candidate path was inspected. It does not establish exhaustive semantic discovery, test execution, runtime behavior, or diagnostic correctness."
             ),
         }
 
@@ -2727,6 +2920,15 @@ class RepositoryInvestigator:
             "finalization_context_chars_after": self._finalization_context_chars_after,
             "finalization_context_target_chars": self._finalization_context_target_chars,
             "finalization_context_target_exceeded": self._finalization_context_target_exceeded,
+            "finalization_context_estimated_tokens": self._finalization_context_estimated_tokens,
+            "finalization_context_target_tokens": self._finalization_context_target_tokens,
+            "finalization_context_future_reserve_tokens": self._finalization_context_future_reserve_tokens,
+            "finalization_context_response_reservation": self._finalization_context_response_reservation,
+            "finalization_context_fit": self._finalization_context_fit,
+            "finalization_prompt_tokens_reserved_per_round": self.limits.finalization_prompt_tokens_reserved_per_round,
+            "finalization_token_reserve_total": min(
+                self.limits.finalization_rounds_reserved, self.limits.max_rounds
+            ) * (self.limits.finalization_prompt_tokens_reserved_per_round + self.limits.max_tokens_per_call),
             "finalization_rounds_used": self._finalization_rounds_used,
             "finalization_rounds_reserved": min(
                 self.limits.finalization_rounds_reserved, self.limits.max_rounds

@@ -348,12 +348,21 @@ def test_comparison_summary_surfaces_unread_context_candidates_and_test_classifi
         "status": "completed", "budget": {}, "tool_calls": [], "evidence_ledger": [],
         "model_actions": [], "diagnosis": {},
         "investigation_context_coverage": {
+            "schema_version": "ae32c/investigation-context-coverage/v3",
             "status": "partial_unread_candidates",
             "candidate_context_path_count": 4,
             "candidate_context_paths_read_count": 1,
             "candidate_context_paths_not_read_count": 3,
             "candidate_context_paths_not_read": ["main.py", "README.md", "tests/checks.py"],
             "test_classification_counts": {"helper_only_not_default_collected": 1},
+            "discovery_tool_status": {
+                "trace_execution_context": {"status": "completed", "call_count": 1, "truncated": False},
+                "find_related_tests": {"status": "partial", "call_count": 1, "truncated": True},
+            },
+            "discovery_truncated_tools": ["find_related_tests"],
+            "candidate_context_paths_by_category": {
+                "static_callers": {"candidate_count": 1, "read_count": 1, "unread_count": 0},
+            },
         },
     })
     assert summary["investigation_context_coverage_status"] == "partial_unread_candidates"
@@ -362,6 +371,10 @@ def test_comparison_summary_surfaces_unread_context_candidates_and_test_classifi
     assert summary["investigation_context_unread_count"] == 3
     assert summary["investigation_context_unread_paths"] == ["main.py", "README.md", "tests/checks.py"]
     assert summary["test_classification_counts"] == {"helper_only_not_default_collected": 1}
+    assert summary["investigation_context_coverage_schema_version"] == "ae32c/investigation-context-coverage/v3"
+    assert summary["investigation_context_truncated_tools"] == ["find_related_tests"]
+    assert summary["investigation_context_discovery_tool_status"]["trace_execution_context"]["status"] == "completed"
+    assert summary["investigation_context_candidate_paths_by_category"]["static_callers"]["read_count"] == 1
 
 
 def test_comparison_record_rejects_malformed_manifest_hash():

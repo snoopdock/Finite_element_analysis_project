@@ -100,6 +100,10 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
             "required_source_missing_root_citations": [],
             "final_citation_validation": "not_run",
             "investigation_context_coverage_status": "not_assessed",
+            "investigation_context_coverage_schema_version": "not_assessed",
+            "investigation_context_discovery_tool_status": {},
+            "investigation_context_truncated_tools": [],
+            "investigation_context_candidate_paths_by_category": {},
             "static_execution_context_status": "not_assessed",
             "related_test_context_status": "not_assessed",
             "case_metadata_context_status": "not_assessed",
@@ -172,6 +176,29 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
         ) if isinstance(report.get("required_source_coverage"), Mapping) else [],
         "final_citation_validation": final_validation,
         "investigation_context_coverage_status": _safe_text(context.get("status", "not_assessed"), 100),
+        "investigation_context_coverage_schema_version": _safe_text(context.get("schema_version", "not_reported"), 100),
+        "investigation_context_discovery_tool_status": {
+            _safe_text(name, 100): {
+                "status": _safe_text(value.get("status", "not_reported"), 80),
+                "call_count": value.get("call_count", 0) if isinstance(value.get("call_count", 0), int) and not isinstance(value.get("call_count", 0), bool) else 0,
+                "truncated": value.get("truncated") if isinstance(value.get("truncated"), bool) else None,
+            }
+            for name, value in context.get("discovery_tool_status", {}).items()
+            if isinstance(name, str) and isinstance(value, Mapping)
+        } if isinstance(context.get("discovery_tool_status", {}), Mapping) else {},
+        "investigation_context_truncated_tools": [
+            _safe_text(name, 100) for name in context.get("discovery_truncated_tools", [])[:10]
+            if isinstance(name, str)
+        ] if isinstance(context.get("discovery_truncated_tools", []), list) else [],
+        "investigation_context_candidate_paths_by_category": {
+            _safe_text(category, 100): {
+                "candidate_count": counts.get("candidate_count", 0) if isinstance(counts.get("candidate_count", 0), int) and not isinstance(counts.get("candidate_count", 0), bool) else 0,
+                "read_count": counts.get("read_count", 0) if isinstance(counts.get("read_count", 0), int) and not isinstance(counts.get("read_count", 0), bool) else 0,
+                "unread_count": counts.get("unread_count", 0) if isinstance(counts.get("unread_count", 0), int) and not isinstance(counts.get("unread_count", 0), bool) else 0,
+            }
+            for category, counts in context.get("candidate_context_paths_by_category", {}).items()
+            if isinstance(category, str) and isinstance(counts, Mapping)
+        } if isinstance(context.get("candidate_context_paths_by_category", {}), Mapping) else {},
         "investigation_context_candidate_count": int(context.get("candidate_context_path_count", 0)) if isinstance(context.get("candidate_context_path_count", 0), int) and not isinstance(context.get("candidate_context_path_count", 0), bool) else 0,
         "investigation_context_read_count": int(context.get("candidate_context_paths_read_count", 0)) if isinstance(context.get("candidate_context_paths_read_count", 0), int) and not isinstance(context.get("candidate_context_paths_read_count", 0), bool) else 0,
         "investigation_context_unread_count": int(context.get("candidate_context_paths_not_read_count", 0)) if isinstance(context.get("candidate_context_paths_not_read_count", 0), int) and not isinstance(context.get("candidate_context_paths_not_read_count", 0), bool) else 0,

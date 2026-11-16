@@ -8,12 +8,15 @@ or run a tool-use loop; that is reserved for AE-32C.
 from __future__ import annotations
 
 import ast
+import configparser
+import fnmatch
 import hashlib
 import json
 import math
 import os
 import re
 import stat
+import tomllib
 from datetime import date, datetime
 from collections import Counter, defaultdict
 from pathlib import Path, PurePosixPath
@@ -537,6 +540,14 @@ def build_tool_definitions() -> list[dict[str, Any]]:
             "target": {"type": "string", "minLength": 1, "maxLength": 500},
             "max_results": {"type": "integer", "minimum": 1, "maximum": MAX_SEARCH_RESULTS},
         }, ["target"]),
+        _tool("trace_execution_context", "Trace bounded static import callers, dependencies, Python entrypoint context, and active CI workflow candidates. This is static analysis only and does not prove runtime execution.", {
+            "target": {"type": "string", "minLength": 1, "maxLength": 500},
+            "max_depth": {"type": "integer", "minimum": 1, "maximum": MAX_NEIGHBOR_DEPTH},
+            "max_results": {"type": "integer", "minimum": 1, "maximum": MAX_GRAPH_RESULTS},
+        }, ["target"]),
+        _tool("discover_case_context", "Discover bounded README, fixture-description, incident, case, and scenario metadata candidates. Returns line-numbered previews when a complete safe preview fits; candidates are not executed.", {
+            "max_results": {"type": "integer", "minimum": 1, "maximum": MAX_SEARCH_RESULTS},
+        }),
         _tool("find_workflow_context", "Find active workflow files with a statically observed invocation edge to a script or Python module.", {
             "target": {"type": "string", "minLength": 1, "maxLength": 500},
             "max_results": {"type": "integer", "minimum": 1, "maximum": MAX_SEARCH_RESULTS},
@@ -615,6 +626,8 @@ class RepositoryEvidenceTools:
             "graph_neighbors": self._graph_neighbors,
             "graph_path": self._graph_path,
             "find_related_tests": self._find_related_tests,
+            "trace_execution_context": self._trace_execution_context,
+            "discover_case_context": self._discover_case_context,
             "find_workflow_context": self._find_workflow_context,
             "search_decision_history": self._search_decision_history,
         }
@@ -1467,6 +1480,109 @@ class RepositoryEvidenceTools:
         result["coverage_status"] = "complete_for_query" if result["search_complete"] else "partial"
         return result
 
+    def _pytest_python_file_patterns(self) -> tuple[list[str] | None, str | None, str | None]:
+        """Return visible pytest ``python_files`` patterns without importing pytest.
+
+        Multiple active configuration files or malformed configuration are
+        treated as unknown. This deliberately prefers a conservative result
+        over guessing which config pytest would select for a particular CLI.
+        """
+        active: list[tuple[str, list[str]]] = []
+        for path in ("pyproject.toml", "pytest.ini", "tox.ini", "setup.cfg"):
+            text = self.contents.get(path)
+            if text is None:
+                continue
+            try:
+                if path == "pyproject.toml":
+                    document = tomllib.loads(text)
+                    section = document.get("tool", {}).get("pytest", {}).get("ini_options", {})
+                    if not isinstance(section, Mapping):
+                        return None, path, "malformed_pytest_configuration"
+                    if "python_files" in section:
+                        raw = section.get("python_files")
+                        if isinstance(raw, str):
+                            patterns = raw.split()
+                        elif isinstance(raw, list) and all(isinstance(item, str) for item in raw):
+                            patterns = [part for item in raw for part in item.split()]
+                        else:
+                            return None, path, "unsupported_python_files_configuration"
+                        if not patterns:
+                            return None, path, "empty_python_files_configuration"
+                        active.append((path, patterns))
+                else:
+                    parser = configparser.ConfigParser(interpolation=None, strict=True)
+                    parser.read_string(text)
+                    section_name = "pytest" if path in {"pytest.ini", "tox.ini"} else "tool:pytest"
+                    if parser.has_section(section_name) and parser.has_option(section_name, "python_files"):
+                        raw = parser.get(section_name, "python_files", raw=True)
+                        patterns = raw.split()
+                        if not patterns:
+                            return None, path, "empty_python_files_configuration"
+                        active.append((path, patterns))
+            except (tomllib.TOMLDecodeError, configparser.Error, TypeError, ValueError):
+                return None, path, "malformed_pytest_configuration"
+        if len(active) > 1:
+            return None, ";".join(item[0] for item in active), "multiple_pytest_configurations"
+        if active:
+            return active[0][1], active[0][0], None
+        return ["test_*.py", "*_test.py"], None, None
+
+    def _pytest_static_assessment(self, path: str) -> dict[str, Any]:
+        """Classify a Python candidate against visible pytest filename rules only."""
+        if PurePosixPath(path).suffix.lower() != ".py":
+            return {
+                "classification": "not_a_python_test_module",
+                "collection_status": "not_applicable",
+                "execution_status": "not_executed_static_analysis_only",
+                "config_source": None,
+                "matched_python_files_pattern": None,
+                "test_item_candidate_count": 0,
+                "parse_status": "not_applicable",
+            }
+        patterns, config_source, config_issue = self._pytest_python_file_patterns()
+        if patterns is None:
+            classification = "unknown"
+            collection_status = "unknown"
+            matched_pattern = None
+        else:
+            basename = PurePosixPath(path).name
+            matched_pattern = next(
+                (pattern for pattern in patterns if fnmatch.fnmatchcase(basename, pattern)),
+                None,
+            )
+            if matched_pattern:
+                classification = "pytest_collection_candidate"
+                collection_status = "matches_visible_python_files_pattern"
+            elif self._is_test_path(path):
+                classification = "helper_only_not_default_collected"
+                collection_status = "not_collected_by_visible_python_files_pattern"
+            else:
+                classification = "nonmatching_python_source_candidate"
+                collection_status = "not_collected_by_visible_python_files_pattern"
+        source = self.contents.get(path, "")
+        try:
+            tree = ast.parse(source, filename=path)
+            item_count = sum(
+                1 for node in ast.walk(tree)
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")
+            )
+            parse_status = "parsed"
+        except (SyntaxError, ValueError):
+            item_count = 0
+            parse_status = "syntax_error"
+        result = {
+            "classification": classification,
+            "collection_status": collection_status,
+            "execution_status": "not_executed_static_analysis_only",
+            "config_source": config_source,
+            "matched_python_files_pattern": matched_pattern,
+            "test_item_candidate_count": item_count,
+            "parse_status": parse_status,
+        }
+        if config_issue:
+            result["configuration_issue"] = config_issue
+        return result
+
     def _find_related_tests(self, args: dict[str, Any]) -> dict[str, Any]:
         self._check_keys(args, {"target", "max_results"}, {"target"})
         selector = self._string(args, "target", maximum=500)
@@ -1479,6 +1595,7 @@ class RepositoryEvidenceTools:
             if module and f"module:{module}" in self.node_metadata:
                 candidate_targets.append(f"module:{module}")
         results: dict[str, dict[str, Any]] = {}
+        graph_truncated = False
         for candidate in candidate_targets:
             query = GraphQuery(
                 query_id=self._query_id("related-tests", {"target": candidate}),
@@ -1487,6 +1604,7 @@ class RepositoryEvidenceTools:
                 constraints={"direction": "incoming", "max_depth": 1, "relation_types": ["TESTS"]},
             )
             graph_result = self._query_graph(query)
+            graph_truncated = graph_truncated or bool(graph_result.get("metadata", {}).get("truncated", False))
             for item in graph_result.get("discovered_nodes", []):
                 if item.get("entity_type") == "TestFile":
                     path = item.get("path")
@@ -1531,8 +1649,297 @@ class RepositoryEvidenceTools:
                     }
                     break
         ordered = [results[path] for path in sorted(results)]
-        return {"target": selector, "tests": ordered[:max_results], "truncated": len(ordered) > max_results,
-                "note": "Import edges and text references are static evidence; neither alone proves a test executes in a workflow."}
+        visible = ordered[:max_results]
+        for item in visible:
+            item["pytest_static_assessment"] = self._pytest_static_assessment(str(item["path"]))
+        truncated = len(ordered) > max_results or graph_truncated
+        index_incomplete = self.evidence_index_status != "complete"
+        return {
+            "target": selector,
+            "tests": visible,
+            "candidate_count": len(ordered),
+            "returned_count": len(visible),
+            "truncated": bool(truncated),
+            "coverage_status": "partial" if truncated or index_incomplete else "complete_for_query",
+            "evidence_index_status": self.evidence_index_status,
+            "note": "Pytest classification uses visible filename configuration and static AST parsing only. It does not import or execute test modules; import edges and text references do not prove a test executes in a workflow.",
+        }
+
+    def _trace_execution_context(self, args: dict[str, Any]) -> dict[str, Any]:
+        """Return bounded static caller/dependency/entrypoint/workflow context."""
+        self._check_keys(args, {"target", "max_depth", "max_results"}, {"target"})
+        selector = self._string(args, "target", maximum=500)
+        max_depth = self._bounded_int(args, "max_depth", 3, 1, MAX_NEIGHBOR_DEPTH)
+        max_results = self._bounded_int(args, "max_results", 20, 1, MAX_GRAPH_RESULTS)
+        target_id = self._resolve_node(selector)
+        target_node = self.graph.get_node(target_id)
+        target_path = str((target_node.attributes if target_node else {}).get("path", ""))
+        if target_id.startswith("module:"):
+            target_module_id = target_id
+        elif target_path:
+            module = _module_name(target_path, self.python_source_roots)
+            target_module_id = self.module_nodes.get(module, "") if module else ""
+        else:
+            target_module_id = ""
+        if not target_module_id:
+            raise EvidenceToolError("target_not_python_module", "Static execution context requires a resolvable Python module target")
+
+        imports = [
+            edge for edge in self.graph.edges
+            if edge.relation_type == "IMPORTS"
+            and edge.metadata.get("execution_context") != "type_checking_only"
+        ]
+        incoming: dict[str, list[SemanticEdge]] = defaultdict(list)
+        outgoing: dict[str, list[SemanticEdge]] = defaultdict(list)
+        for edge in imports:
+            incoming[edge.target_id].append(edge)
+            outgoing[edge.source_id].append(edge)
+        for adjacency in (incoming, outgoing):
+            for values in adjacency.values():
+                values.sort(key=lambda edge: (
+                    str(edge.metadata.get("path", "")),
+                    int(edge.metadata.get("line") or 0), edge.source_id, edge.target_id,
+                ))
+
+        def walk(start: str, adjacency: Mapping[str, list[SemanticEdge]]) -> tuple[list[dict[str, Any]], bool, set[str]]:
+            queue: list[tuple[str, int]] = [(start, 0)]
+            visited = {start}
+            records: list[dict[str, Any]] = []
+            related_nodes: set[str] = set()
+            truncated = False
+            cursor = 0
+            while cursor < len(queue):
+                current, depth = queue[cursor]
+                cursor += 1
+                if depth >= max_depth:
+                    if adjacency.get(current):
+                        truncated = True
+                    continue
+                for edge in adjacency.get(current, []):
+                    next_node = edge.source_id if adjacency is incoming else edge.target_id
+                    path = str(edge.metadata.get("path", ""))
+                    record = {
+                        "path": path,
+                        "source_module": edge.source_id,
+                        "target_module": edge.target_id,
+                        "line": edge.metadata.get("line"),
+                        "depth": depth + 1,
+                        "relation": "IMPORTS",
+                        "source_sha256": self.file_hashes.get(path),
+                    }
+                    records.append(record)
+                    if next_node != start:
+                        related_nodes.add(next_node)
+                    if next_node not in visited:
+                        visited.add(next_node)
+                        queue.append((next_node, depth + 1))
+                    if len(records) > max_results:
+                        truncated = True
+                        break
+                if len(records) > max_results:
+                    break
+            return records[:max_results], truncated, related_nodes
+
+        caller_relationships, caller_truncated, caller_nodes = walk(target_module_id, incoming)
+        dependency_relationships, dependency_truncated, dependency_nodes = walk(target_module_id, outgoing)
+        caller_paths = sorted({item["path"] for item in caller_relationships if item.get("path") in self.contents})
+        dependency_paths = sorted({
+            path for node_id in dependency_nodes
+            for path in self.module_paths.get(str(self.node_metadata.get(node_id, {}).get("module", "")), [])
+            if path in self.contents
+        })
+
+        def has_main_guard(source: str) -> bool:
+            try:
+                tree = ast.parse(source)
+            except (SyntaxError, ValueError):
+                return False
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.If) or not isinstance(node.test, ast.Compare):
+                    continue
+                test = node.test
+                if len(test.ops) != 1 or not isinstance(test.ops[0], ast.Eq) or len(test.comparators) != 1:
+                    continue
+                left, right = test.left, test.comparators[0]
+                if isinstance(left, ast.Name) and left.id == "__name__" and isinstance(right, ast.Constant) and right.value == "__main__":
+                    return True
+                if isinstance(right, ast.Name) and right.id == "__name__" and isinstance(left, ast.Constant) and left.value == "__main__":
+                    return True
+            return False
+
+        entrypoints: list[tuple[str, str]] = []
+        for path, source in sorted(self.contents.items()):
+            if PurePosixPath(path).suffix.lower() != ".py":
+                continue
+            module = _module_name(path, self.python_source_roots)
+            if not module:
+                continue
+            if module.endswith(".__main__") or has_main_guard(source):
+                entrypoints.append((path, module))
+
+        def reaches_target(start_module: str) -> bool:
+            start_id = self.module_nodes.get(start_module)
+            if not start_id:
+                return False
+            queue = [(start_id, 0)]
+            visited = {start_id}
+            cursor = 0
+            while cursor < len(queue):
+                current, depth = queue[cursor]
+                cursor += 1
+                if current == target_module_id:
+                    return True
+                if depth >= max_depth:
+                    continue
+                for edge in outgoing.get(current, []):
+                    if edge.target_id not in visited:
+                        visited.add(edge.target_id)
+                        queue.append((edge.target_id, depth + 1))
+            return False
+
+        relevant_entrypoints = [(path, module) for path, module in entrypoints if reaches_target(module)]
+        entrypoint_paths = sorted({path for path, _ in relevant_entrypoints})
+        entrypoint_context_relationships: list[dict[str, Any]] = []
+        for entrypoint_path, entrypoint_module in relevant_entrypoints:
+            entrypoint_id = self.module_nodes.get(entrypoint_module)
+            if not entrypoint_id:
+                continue
+            for edge in outgoing.get(entrypoint_id, []):
+                if edge.target_id == target_module_id:
+                    continue
+                target_module = str(self.node_metadata.get(edge.target_id, {}).get("module", ""))
+                for context_path in self.module_paths.get(target_module, []):
+                    if context_path in self.contents:
+                        entrypoint_context_relationships.append({
+                            "entrypoint_path": entrypoint_path,
+                            "path": context_path,
+                            "target_module": target_module,
+                            "line": edge.metadata.get("line"),
+                            "relationship": "direct_import_from_python_entrypoint",
+                            "source_sha256": self.file_hashes.get(context_path),
+                        })
+        entrypoint_context_relationships.sort(key=lambda item: (item["entrypoint_path"], item["path"]))
+        entrypoint_context_paths = sorted({item["path"] for item in entrypoint_context_relationships})
+        entrypoint_truncated = len(entrypoint_context_paths) > max_results or len(entrypoint_paths) > max_results
+        entrypoint_paths = entrypoint_paths[:max_results]
+        entrypoint_context_paths = entrypoint_context_paths[:max_results]
+
+        workflow_result = self._find_workflow_context({"target": selector, "max_results": max_results})
+        active_workflow_paths = workflow_result.get("workflows", []) if isinstance(workflow_result, Mapping) else []
+        workflow_truncated = bool(workflow_result.get("truncated", False)) if isinstance(workflow_result, Mapping) else True
+        truncated = caller_truncated or dependency_truncated or entrypoint_truncated or workflow_truncated
+        index_incomplete = self.evidence_index_status != "complete"
+        return {
+            "target": selector,
+            "resolved_target": target_id,
+            "target_path": target_path or None,
+            "target_module": target_module_id,
+            "coverage_status": "partial" if truncated or index_incomplete else "complete_for_query",
+            "truncated": bool(truncated),
+            "evidence_index_status": self.evidence_index_status,
+            "static_caller_relationships": caller_relationships,
+            "static_caller_paths": caller_paths[:max_results],
+            "static_dependency_relationships": dependency_relationships,
+            "static_dependency_paths": dependency_paths[:max_results],
+            "python_entrypoint_paths": entrypoint_paths,
+            "entrypoint_context_relationships": entrypoint_context_relationships[:max_results],
+            "entrypoint_context_paths": entrypoint_context_paths,
+            "active_workflow_paths": active_workflow_paths[:max_results],
+            "workflow_coverage_status": workflow_result.get("coverage_status", "partial") if isinstance(workflow_result, Mapping) else "partial",
+            "limitations": [
+                "Static import and workflow relationships do not prove runtime execution.",
+                "Python entrypoint identification is based on source syntax and package layout only.",
+                "No repository code or tests were executed.",
+            ],
+        }
+
+    def _discover_case_context(self, args: dict[str, Any]) -> dict[str, Any]:
+        """Find bounded case/fixture descriptions and return safe line-numbered previews."""
+        self._check_keys(args, {"max_results"})
+        max_results = self._bounded_int(args, "max_results", 20, 1, MAX_SEARCH_RESULTS)
+        allowed_suffixes = {".md", ".rst", ".txt", ".json", ".yaml", ".yml", ".toml", ".ini"}
+        candidates: list[tuple[str, str, str]] = []
+        for path in sorted(self.contents):
+            if _is_sensitive_path(path):
+                continue
+            pure = PurePosixPath(path)
+            basename = pure.name.casefold()
+            components = {part.casefold() for part in pure.parts[:-1]}
+            stem = pure.stem.casefold()
+            if pure.suffix.lower() not in allowed_suffixes:
+                continue
+            if basename.startswith("readme"):
+                category = "fixture_description" if components.intersection({"fixture", "fixtures", "scenario", "scenarios"}) else "readme_description"
+                reason = "README-style repository or fixture description candidate"
+            elif "incident" in stem or "incident" in components:
+                category = "incident_metadata"
+                reason = "Incident-named structured or descriptive metadata candidate"
+            elif "case" in stem or "case" in components:
+                category = "case_metadata"
+                reason = "Case-named metadata candidate"
+            elif "scenario" in stem or "scenario" in components:
+                category = "scenario_metadata"
+                reason = "Scenario-named metadata candidate"
+            elif "fixture" in stem or components.intersection({"fixture", "fixtures"}):
+                category = "fixture_metadata"
+                reason = "Fixture-named metadata candidate"
+            elif "metadata" in stem or "metadata" in components:
+                category = "case_metadata"
+                reason = "Metadata-named context candidate"
+            else:
+                continue
+            candidates.append((path, category, reason))
+
+        visible = candidates[:max_results]
+        metadata_candidates: list[dict[str, Any]] = []
+        preview_budget = 24_000
+        for path, category, reason in visible:
+            source = self.contents[path]
+            lines = _source_lines(source)
+            rendered_full = [f"{number}: {_redact_text(line)}" for number, line in enumerate(lines, start=1)]
+            full_preview_chars = sum(len(line) + 1 for line in rendered_full)
+            complete = len(lines) <= 120 and len(source) <= 6_000 and full_preview_chars <= preview_budget
+            if complete:
+                rendered = rendered_full
+            else:
+                rendered = []
+                remaining = preview_budget
+                for number, line in enumerate(lines[:40], start=1):
+                    prefix = f"{number}: "
+                    if remaining <= len(prefix):
+                        break
+                    safe_line = _redact_text(line)
+                    safe_line = safe_line[: max(0, remaining - len(prefix) - 1)]
+                    rendered_line = prefix + safe_line + ("…" if len(safe_line) < len(_redact_text(line)) else "")
+                    rendered.append(rendered_line)
+                    remaining -= len(rendered_line) + 1
+                preview_budget -= sum(len(line) + 1 for line in rendered)
+            if complete:
+                preview_budget -= full_preview_chars
+            metadata_candidates.append({
+                "path": path,
+                "category": category,
+                "reason": reason,
+                "source_sha256": self.file_hashes[path],
+                "total_lines": len(lines),
+                "line_numbered_preview": rendered,
+                "preview_line_numbered": True,
+                "redaction_applied": True,
+                "content_complete": complete,
+                "content_omitted": not complete,
+                "preview_truncated": not complete,
+            })
+        truncated = len(candidates) > max_results
+        index_incomplete = self.evidence_index_status != "complete"
+        return {
+            "candidate_count": len(candidates),
+            "returned_count": len(metadata_candidates),
+            "metadata_candidates": metadata_candidates,
+            "truncated": bool(truncated),
+            "coverage_status": "partial" if truncated or index_incomplete else "complete_for_query",
+            "evidence_index_status": self.evidence_index_status,
+            "note": "A complete line-numbered preview with a source hash may count as inspected context. Incomplete previews require read_source_file. No repository code or tests are executed.",
+        }
 
     def _find_workflow_context(self, args: dict[str, Any]) -> dict[str, Any]:
         self._check_keys(args, {"target", "max_results"}, {"target"})

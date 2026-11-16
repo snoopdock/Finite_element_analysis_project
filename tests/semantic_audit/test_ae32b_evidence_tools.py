@@ -42,7 +42,8 @@ def test_catalog_is_openai_compatible_and_contains_bounded_read_only_tools():
     names = [item["function"]["name"] for item in tools]
     assert names == [
         "repository_summary", "search_repository", "read_source_file", "search_symbols",
-        "graph_neighbors", "graph_path", "find_related_tests", "find_workflow_context",
+        "graph_neighbors", "graph_path", "find_related_tests", "trace_execution_context",
+        "discover_case_context", "find_workflow_context",
         "search_decision_history",
     ]
     for item in tools:
@@ -107,6 +108,87 @@ def test_related_tests_finds_importing_test_with_static_evidence(tmp_path):
     assert response["status"] == "ok"
     tests = response["result"]["tests"]
     assert any(item["path"] == "tests/test_a.py" and item["relationship"] == "static_import" for item in tests)
+    candidate = next(item for item in tests if item["path"] == "tests/test_a.py")
+    assert candidate["pytest_static_assessment"]["classification"] == "pytest_collection_candidate"
+    assert candidate["pytest_static_assessment"]["execution_status"] == "not_executed_static_analysis_only"
+    assert response["result"]["coverage_status"] == "complete_for_query"
+
+
+def test_trace_execution_context_reports_static_callers_dependencies_and_entrypoints(tmp_path):
+    server = _server(tmp_path)
+    response = server.invoke("trace_execution_context", {
+        "target": "module:src.pkg.a", "max_depth": 3, "max_results": 20,
+    })
+    assert response["status"] == "ok"
+    result = response["result"]
+    assert result["coverage_status"] == "complete_for_query"
+    assert result["truncated"] is False
+    assert "src/pkg/__main__.py" in result["static_caller_paths"]
+    assert "tests/test_a.py" in result["static_caller_paths"]
+    assert "src/pkg/b.py" in result["static_dependency_paths"]
+    assert "src/pkg/__main__.py" in result["python_entrypoint_paths"]
+    assert any(item["path"] == ".github/workflows/check.yml" for item in result["active_workflow_paths"])
+    assert result["limitations"] and "do not prove runtime execution" in result["limitations"][0]
+
+
+def test_discover_case_context_returns_hash_bound_line_numbered_preview(tmp_path):
+    server = _server(tmp_path)
+    response = server.invoke("discover_case_context", {"max_results": 10})
+    assert response["status"] == "ok"
+    result = response["result"]
+    candidate = next(item for item in result["metadata_candidates"] if item["path"] == "docs/audit-engine/incident-notes.md")
+    assert candidate["content_complete"] is True
+    assert candidate["content_omitted"] is False
+    assert candidate["preview_line_numbered"] is True
+    assert candidate["source_sha256"] == server.file_hashes[candidate["path"]]
+    assert candidate["line_numbered_preview"][0].startswith("1: ")
+    assert result["coverage_status"] == "complete_for_query"
+
+
+def test_context_discovery_reports_result_limit_truncation(tmp_path):
+    root = _repo(tmp_path)
+    _write(root, "incidents/incident.json", '{"case_id": "SECOND"}\n')
+    server = RepositoryEvidenceTools(root)
+    response = server.invoke("discover_case_context", {"max_results": 1})
+    assert response["status"] == "ok"
+    assert response["result"]["candidate_count"] >= 2
+    assert response["result"]["returned_count"] == 1
+    assert response["result"]["truncated"] is True
+    assert response["result"]["coverage_status"] == "partial"
+
+
+def test_execution_context_reports_truncation_when_workflow_results_are_limited(tmp_path):
+    server = _server(tmp_path)
+    response = server.invoke("trace_execution_context", {
+        "target": "module:src.pkg.a", "max_depth": 3, "max_results": 1,
+    })
+    assert response["status"] == "ok"
+    assert response["result"]["truncated"] is True
+    assert response["result"]["coverage_status"] == "partial"
+
+
+def test_pytest_static_assessment_respects_visible_custom_python_files_pattern(tmp_path):
+    root = _repo(tmp_path)
+    _write(root, "pyproject.toml", "[tool.pytest.ini_options]\npython_files = [\"spec_*.py\"]\n")
+    _write(root, "tests/spec_a.py", "from src.pkg.a import target_function\n")
+    server = RepositoryEvidenceTools(root)
+    response = server.invoke("find_related_tests", {"target": "module:src.pkg.a"})
+    assert response["status"] == "ok"
+    assessments = {item["path"]: item["pytest_static_assessment"] for item in response["result"]["tests"]}
+    assert assessments["tests/spec_a.py"]["classification"] == "pytest_collection_candidate"
+    assert assessments["tests/spec_a.py"]["matched_python_files_pattern"] == "spec_*.py"
+    assert assessments["tests/test_a.py"]["classification"] == "helper_only_not_default_collected"
+
+
+def test_malformed_pytest_configuration_produces_unknown_classification(tmp_path):
+    root = _repo(tmp_path)
+    _write(root, "pyproject.toml", "[tool.pytest.ini_options\npython_files = [\"spec_*.py\"]\n")
+    server = RepositoryEvidenceTools(root)
+    response = server.invoke("find_related_tests", {"target": "module:src.pkg.a"})
+    assert response["status"] == "ok"
+    candidate = next(item for item in response["result"]["tests"] if item["path"] == "tests/test_a.py")
+    assert candidate["pytest_static_assessment"]["classification"] == "unknown"
+    assert candidate["pytest_static_assessment"]["collection_status"] == "unknown"
 
 
 def test_workflow_context_finds_static_invocation(tmp_path):

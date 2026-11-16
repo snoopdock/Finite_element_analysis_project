@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from audit_engine.semantic_audit.ae32c import InvestigationLimits
+from audit_engine.semantic_audit.ae32c.investigator import _BudgetStop
 from tests.semantic_audit.test_ae32c_phase_e1_reliability import (
     SOURCE,
     SOURCE_HASH,
@@ -69,3 +72,39 @@ def test_recovery_feedback_is_compacted_before_exact_source_candidates_are_dropp
     assert "Do not request tools" in compacted_feedback["message"]
     assert len(compacted_feedback["message"]) <= 240
     assert "not-json" not in json.dumps({"messages": provider.messages, "report": report})
+
+
+def test_finalization_token_reserve_protects_future_reserved_rounds():
+    limits = InvestigationLimits(
+        max_rounds=4,
+        finalization_rounds_reserved=3,
+        max_total_tokens=32_000,
+        max_tokens_per_call=1_000,
+    )
+    investigator, _ = _investigator([], limits=limits)
+    per_round = limits.finalization_prompt_tokens_reserved_per_round + limits.max_tokens_per_call
+    assert investigator._finalization_future_reserve_tokens(1) == 3 * per_round
+    assert investigator._finalization_future_reserve_tokens(2) == 2 * per_round
+    assert investigator._finalization_future_reserve_tokens(4) == 0
+
+
+def test_finalization_compaction_stops_before_provider_call_when_no_context_can_fit():
+    limits = InvestigationLimits(
+        max_rounds=4,
+        finalization_rounds_reserved=3,
+        max_total_tokens=32_000,
+        max_total_prompt_chars=4_000,
+    )
+    investigator, provider = _investigator([], limits=limits)
+    original_messages = [{"role": "system", "content": "retained"}]
+    investigator._messages = list(original_messages)
+    investigator._total_prompt_chars = 3_950
+    with pytest.raises(_BudgetStop, match="finalization_context_budget_unavailable"):
+        investigator._compact_finalization_context(
+            problem="Inspect the controlled fixture.",
+            round_number=2,
+            notice={"finalization_mode": {"required_action": "final"}},
+        )
+    assert investigator._messages == original_messages
+    assert provider.calls == 0
+    assert investigator._events[-1]["event"] == "finalization_context_budget_unavailable"

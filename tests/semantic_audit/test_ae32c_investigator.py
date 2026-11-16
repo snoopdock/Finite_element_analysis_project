@@ -1500,14 +1500,17 @@ def test_context_coverage_reports_static_only_and_unread_context_paths():
             response={"result": {
                 "static_caller_relationships": [{"predicate": "IMPORTS"}],
                 "static_dependency_relationships": [{"predicate": "IMPORTS"}],
-                "static_caller_paths": ["main.py", "providers/factory.py"],
+                "coverage_status": "complete_for_query", "truncated": False,
+                "static_caller_paths": ["main.py"],
                 "static_dependency_paths": ["providers/adapter.py"],
+                "python_entrypoint_paths": ["main.py"],
+                "entrypoint_context_paths": ["providers/factory.py"],
                 "active_workflow_paths": [],
             }},
         ),
         SimpleNamespace(
             status="ok", tool="find_related_tests",
-            response={"result": {"tests": [{
+            response={"result": {"coverage_status": "complete_for_query", "truncated": False, "tests": [{
                 "path": "tests/checks.py",
                 "relationship": "static_import",
                 "pytest_static_assessment": {
@@ -1519,22 +1522,23 @@ def test_context_coverage_reports_static_only_and_unread_context_paths():
         ),
         SimpleNamespace(
             status="ok", tool="discover_case_context",
-            response={"result": {"metadata_candidates": [
+            response={"result": {"coverage_status": "complete_for_query", "truncated": False, "metadata_candidates": [
                 {"path": "README.md", "category": "readme_or_fixture_description"},
                 {"path": "incident.json", "category": "incident_or_case_metadata"},
             ]}},
         ),
         SimpleNamespace(
             status="ok", tool="read_source_file",
-            response={"result": {"path": "main.py"}},
+            response={"result": {"path": "main.py", "source_sha256": SOURCE_HASH,
+                                  "source_range_complete": True, "content_omitted": False}},
         ),
     ]
     coverage = investigator._investigation_context_coverage()
     assert coverage["status"] == "partial_unread_candidates"
     assert coverage["discovery_tools_complete"] is True
-    assert coverage["candidate_context_paths_not_read_count"] == 4
+    assert coverage["candidate_context_paths_not_read_count"] == 5
     assert coverage["candidate_context_paths_not_read"] == [
-        "README.md", "incident.json", "providers/factory.py", "tests/checks.py"
+        "README.md", "incident.json", "providers/adapter.py", "providers/factory.py", "tests/checks.py"
     ]
     assert coverage["test_classification_counts"] == {"helper_only_not_default_collected": 1}
     assert coverage["static_execution_context"]["workflow_status"] == "no_static_workflow_path_observed"
@@ -1549,25 +1553,78 @@ def test_context_coverage_is_complete_only_when_discovered_candidates_are_read()
     investigator, _, _ = make_investigator([])
     investigator._ledger = [
         SimpleNamespace(status="ok", tool="trace_execution_context", response={"result": {
+            "coverage_status": "complete_for_query", "truncated": False,
             "static_caller_relationships": [{"predicate": "IMPORTS"}],
             "static_dependency_relationships": [],
             "static_caller_paths": ["main.py"], "static_dependency_paths": [],
+            "python_entrypoint_paths": ["main.py"], "entrypoint_context_paths": [],
             "active_workflow_paths": [],
         }}),
-        SimpleNamespace(status="ok", tool="find_related_tests", response={"result": {"tests": [
+        SimpleNamespace(status="ok", tool="find_related_tests", response={"result": {
+            "coverage_status": "complete_for_query", "truncated": False, "tests": [
             {"path": "tests/test_extractor.py", "relationship": "static_import",
              "pytest_static_assessment": {"classification": "pytest_collection_candidate"}}
         ]}}),
         SimpleNamespace(status="ok", tool="discover_case_context", response={"result": {
-            "metadata_candidates": [{"path": "README.md", "category": "readme_or_fixture_description"}]
+            "coverage_status": "complete_for_query", "truncated": False,
+            "metadata_candidates": [{"path": "README.md", "category": "readme_or_fixture_description",
+                                     "content_complete": True, "content_omitted": False,
+                                     "preview_line_numbered": True, "line_numbered_preview": ["1: # Fixture"],
+                                     "redaction_applied": True, "total_lines": 1,
+                                     "source_sha256": "c" * 64}]
         }}),
         *[SimpleNamespace(status="ok", tool="read_source_file", response={"result": {"path": path}})
-          for path in ("main.py", "tests/test_extractor.py", "README.md")],
+          for path in ("main.py", "tests/test_extractor.py")],
     ]
+    for entry in investigator._ledger:
+        if entry.tool == "read_source_file":
+            entry.response["result"].update({"source_sha256": SOURCE_HASH,
+                                               "source_range_complete": True, "content_omitted": False})
     coverage = investigator._investigation_context_coverage()
     assert coverage["status"] == "complete_for_available_static_context"
     assert coverage["candidate_context_paths_read_count"] == 3
     assert coverage["candidate_context_paths_not_read_count"] == 0
+    assert coverage["schema_version"] == "ae32c/investigation-context-coverage/v3"
+
+
+def test_context_coverage_rejects_truncated_or_unreported_discovery_results():
+    investigator, _, _ = make_investigator([])
+    investigator._ledger = [
+        SimpleNamespace(status="ok", tool="trace_execution_context", response={"result": {
+            "coverage_status": "complete_for_query", "truncated": False,
+            "static_caller_paths": [], "static_dependency_paths": [],
+            "python_entrypoint_paths": [], "entrypoint_context_paths": [], "active_workflow_paths": [],
+        }}),
+        SimpleNamespace(status="ok", tool="find_related_tests", response={"result": {
+            "coverage_status": "complete_for_query", "truncated": True, "tests": [],
+        }}),
+        SimpleNamespace(status="ok", tool="discover_case_context", response={"result": {
+            "coverage_status": "complete_for_query", "truncated": False, "metadata_candidates": [],
+        }}),
+    ]
+    coverage = investigator._investigation_context_coverage()
+    assert coverage["status"] == "partial_discovery"
+    assert coverage["discovery_tools_complete"] is False
+    assert coverage["discovery_truncated_tools"] == ["find_related_tests"]
+    assert coverage["discovery_tool_status"]["find_related_tests"]["status"] == "partial"
+
+
+def test_context_coverage_does_not_accept_discovery_without_explicit_completion_status():
+    investigator, _, _ = make_investigator([])
+    investigator._ledger = [
+        SimpleNamespace(status="ok", tool="trace_execution_context", response={"result": {
+            "coverage_status": "complete_for_query", "truncated": False,
+        }}),
+        SimpleNamespace(status="ok", tool="find_related_tests", response={"result": {
+            "tests": [], "truncated": False,
+        }}),
+        SimpleNamespace(status="ok", tool="discover_case_context", response={"result": {
+            "coverage_status": "complete_for_query", "truncated": False, "metadata_candidates": [],
+        }}),
+    ]
+    coverage = investigator._investigation_context_coverage()
+    assert coverage["status"] == "partial_discovery"
+    assert coverage["discovery_tool_status"]["find_related_tests"]["status"] == "partial"
 
 
 def test_base_report_explicitly_separates_static_analysis_from_runtime_reproduction():
