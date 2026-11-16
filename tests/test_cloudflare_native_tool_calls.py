@@ -1044,3 +1044,266 @@ def test_qwen_reasoning_effort_accepts_cloudflare_and_qwen_documented_levels(mon
     monkeypatch.setenv("FEA_LLM_REASONING_EFFORT", "high")
     cloudflare = CloudflareProvider("account", "token", [MODEL])
     assert cloudflare.reasoning_effort == "high"
+
+
+def test_qwen_empty_incomplete_stream_uses_one_bounded_non_streaming_fallback(monkeypatch):
+    calls = []
+    failed_stream = FakeStreamResponse([
+        _sse_event({"choices": [{"index": 0, "delta": {"role": "assistant"}}]}),
+    ])
+    fallback = FakeResponse({
+        "choices": [{
+            "finish_reason": "stop",
+            "message": {"role": "assistant", "content": "RECOVERED_NON_STREAM"},
+        }],
+        "usage": {"prompt_tokens": 20, "completion_tokens": 8, "total_tokens": 28},
+    })
+
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return failed_stream if len(calls) == 1 else fallback
+
+    monkeypatch.setattr("providers.cloudflare.requests.post", fake_post)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK_MAX_ATTEMPTS", "1")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text(
+        [{"role": "user", "content": "Return a short answer."}],
+        max_tokens=512,
+        model=MODEL,
+    )
+
+    assert error is None
+    assert text == "RECOVERED_NON_STREAM"
+    assert len(calls) == 2
+    assert calls[0][1]["json"]["stream"] is True
+    assert calls[0][1]["stream"] is True
+    assert calls[1][1]["json"]["stream"] is False
+    assert calls[1][1]["stream"] is False
+    assert "Accept" not in calls[1][1]["headers"]
+    assert failed_stream.closed and fallback.closed
+    stats = provider.get_stats()
+    diag = stats["request_diagnostics"]
+    assert diag["stream_error_code"] == "incomplete_stream"
+    assert diag["stream_fallback_attempted"] is True
+    assert diag["stream_fallback_succeeded"] is True
+    assert diag["stream_fallbacks_used"] == 1
+    assert diag["attempt_count"] == 2
+    assert stats["successful_calls"] == 1
+    assert stats["failed_calls"] == 0
+
+
+def test_qwen_empty_incomplete_native_tool_stream_falls_back_without_executing_tool(monkeypatch):
+    calls = []
+    failed_stream = FakeStreamResponse([
+        _sse_event({"choices": [{"index": 0, "delta": {"role": "assistant"}}]}),
+    ])
+    fallback = FakeResponse({
+        "choices": [{
+            "finish_reason": "tool_calls",
+            "message": {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [{
+                    "id": "call-fallback",
+                    "type": "function",
+                    "function": {
+                        "name": RESPONSE_TOOL_NAME,
+                        "arguments": json.dumps(_call_arguments()),
+                    },
+                }],
+            },
+        }],
+    })
+
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return failed_stream if len(calls) == 1 else fallback
+
+    monkeypatch.setattr("providers.cloudflare.requests.post", fake_post)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_with_response_tool(
+        [{"role": "system", "content": "Use the response function."}],
+        tool_definition=build_response_tool_definition(),
+        model=MODEL,
+    )
+
+    assert error is None
+    assert isinstance(result, ProviderToolCall)
+    assert result.arguments == _call_arguments()
+    assert len(calls) == 2
+    assert calls[1][1]["json"]["stream"] is False
+    expected_fallback_payload = dict(calls[0][1]["json"])
+    expected_fallback_payload["stream"] = False
+    assert calls[1][1]["json"] == expected_fallback_payload
+    assert provider.get_stats()["request_diagnostics"]["stream_fallback_succeeded"] is True
+    assert provider.get_stats()["native_tool_call_responses"] == 1
+
+
+def test_qwen_partial_content_stream_is_never_replayed_by_fallback(monkeypatch):
+    calls = []
+    response = FakeStreamResponse([
+        _sse_event({"choices": [{"index": 0, "delta": {"content": "partial answer"}}]}),
+    ])
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "3")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text(
+        [{"role": "user", "content": "Return a short answer."}],
+        max_tokens=512,
+        model=MODEL,
+    )
+
+    assert text is None
+    assert "incomplete" in error.lower()
+    assert len(calls) == 1
+    diag = provider.get_stats()["request_diagnostics"]
+    assert diag["stream_fallback_attempted"] is False
+    assert diag["partial_output_chars"] == len("partial answer")
+    assert diag["stream_error_code"] == "incomplete_stream"
+
+
+def test_qwen_reasoning_only_incomplete_stream_is_not_replayed(monkeypatch):
+    calls = []
+    response = FakeStreamResponse([
+        _sse_event({"choices": [{"index": 0, "delta": {"reasoning_content": "partial thinking"}}]}),
+    ])
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text(
+        [{"role": "user", "content": "Return a short answer."}],
+        max_tokens=512,
+        model=MODEL,
+    )
+
+    assert text is None
+    assert "incomplete" in error.lower()
+    assert len(calls) == 1
+    diag = provider.get_stats()["request_diagnostics"]
+    assert diag["stream_reasoning_chars"] == len("partial thinking")
+    assert diag["stream_fallback_attempted"] is False
+
+
+def test_cloudflare_stream_fallback_is_capped_at_one_per_provider_instance(monkeypatch):
+    calls = []
+    stream_responses = [
+        FakeStreamResponse([_sse_event({"choices": [{"index": 0, "delta": {"role": "assistant"}}]})]),
+        FakeStreamResponse([_sse_event({"choices": [{"index": 0, "delta": {"role": "assistant"}}]})]),
+    ]
+    fallback = FakeResponse({
+        "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "first recovered"}}],
+    })
+
+    def fake_post(url, **kwargs):
+        calls.append(kwargs)
+        if kwargs["json"]["stream"]:
+            return stream_responses.pop(0)
+        return fallback
+
+    monkeypatch.setattr("providers.cloudflare.requests.post", fake_post)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK_MAX_ATTEMPTS", "5")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    first, first_error = provider.chat_text([{"role": "user", "content": "first"}], model=MODEL)
+    second, second_error = provider.chat_text([{"role": "user", "content": "second"}], model=MODEL)
+
+    assert first == "first recovered" and first_error is None
+    assert second is None and "incomplete" in second_error.lower()
+    assert len(calls) == 3
+    assert provider.stream_fallbacks_used == 1
+    assert provider.max_stream_fallbacks == 1
+
+
+def test_qwen_partial_tool_call_delta_is_never_replayed_or_returned(monkeypatch):
+    calls = []
+    response = FakeStreamResponse([
+        _sse_event({"choices": [{
+            "index": 0,
+            "delta": {"tool_calls": [{
+                "index": 0,
+                "id": "partial-call",
+                "type": "function",
+                "function": {
+                    "name": RESPONSE_TOOL_NAME,
+                    "arguments": '{"action":"tool_call"',
+                },
+            }]},
+        }]}),
+    ])
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "2")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_with_response_tool(
+        [{"role": "system", "content": "Use the response function."}],
+        tool_definition=build_response_tool_definition(),
+        model=MODEL,
+    )
+
+    assert result is None
+    assert error is not None
+    assert len(calls) == 1
+    diag = provider.get_stats()["request_diagnostics"]
+    assert diag["stream_tool_call_delta_count"] == 1
+    assert diag["stream_fallback_attempted"] is False
+    assert provider.get_stats()["native_tool_call_responses"] == 0
+
+
+def test_qwen_reasoning_only_non_streaming_response_is_not_accepted_as_action(monkeypatch):
+    reasoning = "The model emitted internal reasoning but no action."
+    response = FakeResponse({
+        "choices": [{
+            "finish_reason": "stop",
+            "message": {
+                "role": "assistant",
+                "content": None,
+                "reasoning_content": reasoning,
+            },
+        }],
+    })
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: response)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "false")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_with_response_tool(
+        [{"role": "system", "content": "Use the response function."}],
+        tool_definition=build_response_tool_definition(),
+        model=MODEL,
+    )
+
+    assert result is None
+    assert "reasoning without a usable response action" in error
+    stats = provider.get_stats()
+    assert stats["last_error_category"] == "empty_reasoning_only_response"
+    assert stats["request_diagnostics"]["error_type"] == "EmptyModelResponse"
+    assert reasoning not in repr(stats)
+    assert response.closed

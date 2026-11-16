@@ -312,6 +312,10 @@ class RepositoryInvestigator:
         self._messages: list[dict[str, str]] = []
         self._tool_calls = 0
         self._model_rounds = 0
+        self._provider_requests_attempted = 0
+        self._provider_responses_received = 0
+        self._provider_responses_failed = 0
+        self._provider_round_telemetry: list[dict[str, Any]] = []
         self._tool_calls_before_first_model_turn: int | None = None
         self._reserved_token_estimate = 0
         self._last_provider_reservation_check: dict[str, Any] | None = None
@@ -2321,9 +2325,11 @@ class RepositoryInvestigator:
         )
         # Provider adapters interpret max_retries as total HTTP attempts.
         # Non-streaming Cloudflare and NaraRouter retain one investigation-wide
-        # bounded retry. Streamed Cloudflare calls use one attempt in both
-        # baseline and graph conditions so a partial/ambiguous SSE response is
-        # never replayed and the comparison has matching retry policy.
+        # bounded retry. Streamed Cloudflare calls use one normal transport
+        # attempt; the adapter may separately use its single process-wide
+        # non-streaming fallback only when the SSE protocol fails before any
+        # content, reasoning, or tool-call delta is received. Partial or
+        # ambiguous output is never replayed.
         retry_limit = 2 if retry_available else 1
         restored: list[tuple[str, Any]] = []
         native_attempts_for_retry_accounting: int | None = None
@@ -3232,6 +3238,10 @@ class RepositoryInvestigator:
         return {
             "max_rounds": self.limits.max_rounds,
             "model_rounds_used": self._model_rounds,
+            "provider_requests_attempted": self._provider_requests_attempted,
+            "provider_responses_received": self._provider_responses_received,
+            "provider_responses_failed": self._provider_responses_failed,
+            "accepted_model_action_count": len(self._model_action_trace),
             "finalization_rounds_reserved": min(self.limits.finalization_rounds_reserved, self.limits.max_rounds),
             "finalization_start_round": self._finalization_start_round(),
             "finalization_rounds_used": self._finalization_rounds_used,
@@ -3319,6 +3329,7 @@ class RepositoryInvestigator:
         report["provider_protocol_guidance"] = self._provider_protocol_guidance()
         report["tool_calls"] = self._tool_trace
         report["model_actions"] = self._model_action_trace
+        report["provider_round_telemetry"] = self._provider_round_telemetry
         report["evidence_ledger"] = [
             {
                 "evidence_id": item.evidence_id,
@@ -3361,11 +3372,26 @@ class RepositoryInvestigator:
                     "stream_event_count",
                     "output_chars",
                     "partial_output_chars",
+                    "stream_reasoning_chars",
+                    "stream_tool_call_delta_count",
                     "max_completion_tokens",
                     "reasoning_content_chars",
+                    "stream_fallbacks_used",
+                    "stream_fallbacks_max",
                 ):
                     value = raw_request_diagnostics.get(key)
                     if isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= 2_000_000:
+                        safe_request_diagnostics[key] = value
+                for key in (
+                    "terminal_sentinel_observed", "stream_fallback_enabled",
+                    "stream_fallback_attempted", "stream_fallback_succeeded",
+                ):
+                    value = raw_request_diagnostics.get(key)
+                    if isinstance(value, bool):
+                        safe_request_diagnostics[key] = value
+                for key in ("stream_finish_reason", "stream_error_code", "stream_fallback_reason"):
+                    value = raw_request_diagnostics.get(key)
+                    if isinstance(value, str) and len(value) <= 128 and re.fullmatch(r"[A-Za-z0-9_.:-]*", value):
                         safe_request_diagnostics[key] = value
                 streaming = raw_request_diagnostics.get("streaming")
                 if isinstance(streaming, bool):
@@ -3383,8 +3409,8 @@ class RepositoryInvestigator:
                 if isinstance(finish_reason, str) and finish_reason in {"", "stop", "tool_calls", "length", "content_filter", "function_call"}:
                     safe_request_diagnostics["finish_reason"] = finish_reason
                 for key, allowed in {
-                    "error_type": {"", "ReadTimeout", "ConnectTimeout", "ConnectionError", "Timeout", "ChunkedEncodingError", "StreamProtocolError"},
-                    "error_category": {"none", "read_timeout", "connect_timeout", "transport_error", "stream_interrupted", "provider_request_rejected", "invalid_provider_json", "invalid_stream"},
+                    "error_type": {"", "ReadTimeout", "ConnectTimeout", "ConnectionError", "Timeout", "ChunkedEncodingError", "StreamProtocolError", "FallbackHTTPError", "FallbackResponseError", "EmptyModelResponse"},
+                    "error_category": {"none", "read_timeout", "connect_timeout", "transport_error", "stream_interrupted", "provider_request_rejected", "invalid_provider_json", "invalid_stream", "stream_fallback_rejected", "stream_fallback_transport_error", "stream_fallback_invalid_response", "empty_reasoning_only_response", "empty_provider_response"},
                 }.items():
                     value = raw_request_diagnostics.get(key)
                     if isinstance(value, str) and value in allowed:
@@ -3579,7 +3605,48 @@ class RepositoryInvestigator:
                         )
                 self._append_finalization_notice(next_round)
                 self._model_rounds = next_round
+                self._provider_requests_attempted += 1
                 response, error, _ = self._provider_call(self._messages)
+                round_stats = {}
+                try:
+                    candidate_stats = self.provider.get_stats()
+                    if isinstance(candidate_stats, Mapping):
+                        raw_diag = candidate_stats.get("request_diagnostics")
+                        if isinstance(raw_diag, Mapping):
+                            for key in (
+                                "attempt_count", "stream_event_count", "output_chars",
+                                "partial_output_chars", "stream_reasoning_chars",
+                                "stream_tool_call_delta_count", "terminal_sentinel_observed",
+                                "stream_finish_reason", "stream_error_code",
+                                "stream_fallback_attempted", "stream_fallback_succeeded",
+                                "stream_fallback_reason", "stream_fallbacks_used",
+                                "stream_fallbacks_max", "reasoning_content_chars",
+                                "reasoning_content_sha256", "finish_reason",
+                                "error_type", "error_category",
+                            ):
+                                value = raw_diag.get(key)
+                                if isinstance(value, (str, int, bool)) or value is None:
+                                    if isinstance(value, str) and len(value) > 128:
+                                        continue
+                                    if key in {"stream_error_code", "stream_fallback_reason"} and isinstance(value, str):
+                                        if not re.fullmatch(r"[A-Za-z0-9_.:-]*", value):
+                                            continue
+                                    if key in {"stream_finish_reason", "finish_reason"} and isinstance(value, str):
+                                        if value not in {"", "stop", "length", "tool_calls", "content_filter", "function_call"}:
+                                            continue
+                                    round_stats[key] = value
+                except Exception:
+                    round_stats = {}
+                response_valid = not error and isinstance(response, (str, ProviderToolCall, ProviderResponse))
+                if response_valid:
+                    self._provider_responses_received += 1
+                else:
+                    self._provider_responses_failed += 1
+                self._provider_round_telemetry.append({
+                    "round": self._model_rounds,
+                    "request_status": "response_received" if response_valid else "failed",
+                    "request_diagnostics": round_stats,
+                })
                 if self._remaining_seconds() <= 0:
                     raise _BudgetStop("elapsed_time_budget_exhausted")
                 stable, reason = self._verify_snapshot()

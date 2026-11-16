@@ -80,6 +80,7 @@ def _consume_openai_sse(
     first_event_seconds = None
     first_output_seconds = None
     output_chars = 0
+    tool_call_delta_count = 0
     wire_chars = 0
     saw_done = False
     max_wire_chars = max_chars * 8 + 131_072
@@ -160,6 +161,7 @@ def _consume_openai_sse(
             raw_calls = delta.get("tool_calls")
             if isinstance(raw_calls, list):
                 for raw_call in raw_calls:
+                    tool_call_delta_count += 1
                     if not isinstance(raw_call, dict):
                         raise ValueError("invalid_stream_tool_call_shape")
                     index = raw_call.get("index", 0)
@@ -188,7 +190,9 @@ def _consume_openai_sse(
 
             reason = choice.get("finish_reason")
             if isinstance(reason, str) and reason:
-                finish_reason = reason[:80]
+                if reason not in {"stop", "length", "tool_calls", "content_filter", "function_call"}:
+                    raise ValueError("invalid_stream_finish_reason")
+                finish_reason = reason
 
         if callable(progress_callback):
             progress_callback({
@@ -196,6 +200,10 @@ def _consume_openai_sse(
                 "first_event_seconds": first_event_seconds,
                 "first_output_seconds": first_output_seconds,
                 "output_chars": output_chars,
+                "reasoning_content_chars": reasoning_chars,
+                "tool_call_delta_count": tool_call_delta_count,
+                "terminal_sentinel": saw_done,
+                "finish_reason": finish_reason or "",
             })
         if output_chars + reasoning_chars > max_chars:
             raise ValueError("stream_response_too_large")
@@ -222,6 +230,9 @@ def _consume_openai_sse(
         "first_output_seconds": first_output_seconds,
         "output_chars": output_chars,
         "reasoning_content_chars": len(reasoning_content),
+        "tool_call_delta_count": tool_call_delta_count,
+        "terminal_sentinel": saw_done,
+        "finish_reason": finish_reason or "",
         "reasoning_content_sha256": hashlib.sha256(reasoning_content.encode("utf-8")).hexdigest() if reasoning_content else None,
         "wire_chars": wire_chars,
     }
@@ -371,6 +382,15 @@ class CloudflareProvider:
         except (TypeError, ValueError):
             self.max_retries = 1
         self.streaming_enabled = _env_flag("FEA_LLM_STREAMING", False)
+        self.stream_fallback_enabled = _env_flag("FEA_LLM_STREAM_FALLBACK", True)
+        try:
+            configured_stream_fallbacks = int(os.environ.get("FEA_LLM_STREAM_FALLBACK_MAX_ATTEMPTS", "1"))
+        except (TypeError, ValueError):
+            configured_stream_fallbacks = 1
+        # One process-wide fallback is the hard default/maximum. This bounds
+        # extra inference cost even when several logical calls encounter bad streams.
+        self.max_stream_fallbacks = max(0, min(1, configured_stream_fallbacks))
+        self.stream_fallbacks_used = 0
         requested_effort = os.environ.get("FEA_LLM_REASONING_EFFORT", "").strip().lower()
         self.reasoning_effort = requested_effort if requested_effort in {"low", "medium", "high", "xhigh"} else None
         self.usage = {
@@ -400,6 +420,14 @@ class CloudflareProvider:
         self.last_request_stream_event_count = 0
         self.last_request_output_chars = 0
         self.last_request_partial_output_chars = 0
+        self.last_request_stream_reasoning_chars = 0
+        self.last_request_stream_tool_call_delta_count = 0
+        self.last_request_stream_terminal_sentinel = False
+        self.last_request_stream_finish_reason = ""
+        self.last_request_stream_error_code = ""
+        self.last_request_stream_fallback_attempted = False
+        self.last_request_stream_fallback_succeeded = False
+        self.last_request_stream_fallback_reason = ""
         self.last_request_streaming = False
         self.last_request_reasoning_effort = None
         self.last_request_reasoning_content_chars = 0
@@ -443,6 +471,16 @@ class CloudflareProvider:
         chars = metrics.get("output_chars")
         if isinstance(chars, int) and not isinstance(chars, bool) and chars >= 0:
             self.last_request_partial_output_chars = chars
+        reasoning_chars = metrics.get("reasoning_content_chars")
+        if isinstance(reasoning_chars, int) and not isinstance(reasoning_chars, bool) and reasoning_chars >= 0:
+            self.last_request_stream_reasoning_chars = reasoning_chars
+        tool_deltas = metrics.get("tool_call_delta_count")
+        if isinstance(tool_deltas, int) and not isinstance(tool_deltas, bool) and tool_deltas >= 0:
+            self.last_request_stream_tool_call_delta_count = tool_deltas
+        self.last_request_stream_terminal_sentinel = metrics.get("terminal_sentinel") is True
+        finish_reason = metrics.get("finish_reason")
+        if isinstance(finish_reason, str):
+            self.last_request_stream_finish_reason = finish_reason[:80]
 
     def chat(
         self,
@@ -556,6 +594,14 @@ class CloudflareProvider:
         self.last_request_stream_event_count = 0
         self.last_request_output_chars = 0
         self.last_request_partial_output_chars = 0
+        self.last_request_stream_reasoning_chars = 0
+        self.last_request_stream_tool_call_delta_count = 0
+        self.last_request_stream_terminal_sentinel = False
+        self.last_request_stream_finish_reason = ""
+        self.last_request_stream_error_code = ""
+        self.last_request_stream_fallback_attempted = False
+        self.last_request_stream_fallback_succeeded = False
+        self.last_request_stream_fallback_reason = ""
         self.last_request_streaming = bool(stream_this_request)
         self.last_request_reasoning_content_chars = 0
         self.last_request_reasoning_content_sha256 = None
@@ -673,17 +719,109 @@ class CloudflareProvider:
                     )
 
                 if stream_this_request:
-                    data, stream_metrics = _consume_openai_sse(
-                        resp,
-                        max_chars=self.max_response_chars,
-                        started_at=request_started,
-                        progress_callback=self._record_stream_progress,
-                    )
-                    self.last_request_time_to_first_event_seconds = stream_metrics["first_event_seconds"]
-                    self.last_request_time_to_first_output_seconds = stream_metrics["first_output_seconds"]
-                    self.last_request_stream_event_count = stream_metrics["event_count"]
-                    self.last_request_output_chars = stream_metrics["output_chars"]
-                    self.last_request_partial_output_chars = stream_metrics["output_chars"]
+                    try:
+                        data, stream_metrics = _consume_openai_sse(
+                            resp,
+                            max_chars=self.max_response_chars,
+                            started_at=request_started,
+                            progress_callback=self._record_stream_progress,
+                        )
+                    except ValueError as stream_exc:
+                        stream_code = str(stream_exc)[:100]
+                        self.last_request_stream_error_code = stream_code
+                        no_meaningful_output = (
+                            self.last_request_partial_output_chars == 0
+                            and self.last_request_stream_reasoning_chars == 0
+                            and self.last_request_stream_tool_call_delta_count == 0
+                        )
+                        fallback_eligible_codes = {
+                            "incomplete_stream", "malformed_stream_event",
+                            "invalid_stream_event_shape", "provider_stream_error",
+                        }
+                        fallback_available = (
+                            self.stream_fallback_enabled
+                            and self.stream_fallbacks_used < self.max_stream_fallbacks
+                        )
+                        if not (
+                            stream_code in fallback_eligible_codes
+                            and no_meaningful_output
+                            and fallback_available
+                        ):
+                            raise
+                        self.last_request_stream_fallback_attempted = True
+                        self.last_request_stream_fallback_reason = stream_code
+                        self.stream_fallbacks_used += 1
+                        close_failed_stream = getattr(resp, "close", None)
+                        if callable(close_failed_stream):
+                            try:
+                                close_failed_stream()
+                            except Exception:
+                                pass
+                        fallback_payload = dict(payload)
+                        fallback_payload["stream"] = False
+                        fallback_headers = dict(headers)
+                        fallback_headers.pop("Accept", None)
+                        self.http_attempts += 1
+                        self.last_request_attempt_count += 1
+                        try:
+                            resp = requests.post(
+                                url,
+                                headers=fallback_headers,
+                                json=fallback_payload,
+                                timeout=(self.connect_timeout_seconds, self.timeout_seconds),
+                                stream=False,
+                            )
+                            self.last_http_status = int(resp.status_code)
+                            self.http_status_counts[str(resp.status_code)] = (
+                                self.http_status_counts.get(str(resp.status_code), 0) + 1
+                            )
+                            if resp.status_code >= 400:
+                                self.last_request_stream_fallback_reason = (
+                                    stream_code + ":fallback_http_" + str(resp.status_code)
+                                )
+                                self.last_error_category = "stream_fallback_rejected"
+                                self.last_request_error_type = "FallbackHTTPError"
+                                self.failed_calls += 1
+                                if tools is not None:
+                                    self.native_tool_call_failures += 1
+                                return None, (
+                                    "Non-streaming recovery request rejected "
+                                    f"(HTTP {resp.status_code})"
+                                )
+                            data = resp.json()
+                            self.last_request_stream_fallback_succeeded = True
+                            self.last_request_error_type = ""
+                            self.last_error_category = ""
+                        except requests.exceptions.RequestException as fallback_exc:
+                            self.last_error_category = "stream_fallback_transport_error"
+                            self.last_request_error_type = type(fallback_exc).__name__[:80]
+                            self.last_request_stream_fallback_reason = (
+                                stream_code + ":fallback_transport_error"
+                            )
+                            self.failed_calls += 1
+                            if tools is not None:
+                                self.native_tool_call_failures += 1
+                            return None, "Non-streaming recovery request failed"
+                        except (TypeError, ValueError, json.JSONDecodeError):
+                            self.last_error_category = "stream_fallback_invalid_response"
+                            self.last_request_error_type = "FallbackResponseError"
+                            self.last_request_stream_fallback_reason = (
+                                stream_code + ":fallback_invalid_response"
+                            )
+                            self.failed_calls += 1
+                            if tools is not None:
+                                self.native_tool_call_failures += 1
+                            return None, "Non-streaming recovery response was invalid"
+                    else:
+                        self.last_request_time_to_first_event_seconds = stream_metrics["first_event_seconds"]
+                        self.last_request_time_to_first_output_seconds = stream_metrics["first_output_seconds"]
+                        self.last_request_stream_event_count = stream_metrics["event_count"]
+                        self.last_request_output_chars = stream_metrics["output_chars"]
+                        self.last_request_partial_output_chars = stream_metrics["output_chars"]
+                        self.last_request_stream_reasoning_chars = stream_metrics["reasoning_content_chars"]
+                        self.last_request_stream_tool_call_delta_count = stream_metrics["tool_call_delta_count"]
+                        self.last_request_stream_terminal_sentinel = stream_metrics["terminal_sentinel"]
+                        self.last_request_stream_finish_reason = stream_metrics["finish_reason"]
                 else:
                     data = resp.json()
                 usage = data.get("usage") if isinstance(data, dict) else None
@@ -836,6 +974,18 @@ class CloudflareProvider:
                         ), None
                     if tools is not None:
                         self.native_tool_call_failures += 1
+                        message_content = (
+                            assistant_message.get("content")
+                            if isinstance(assistant_message, dict) else None
+                        )
+                        if reasoning_content and (
+                            message_content is None
+                            or (isinstance(message_content, str) and not message_content.strip())
+                        ):
+                            self.failed_calls += 1
+                            self.last_error_category = "empty_reasoning_only_response"
+                            self.last_request_error_type = "EmptyModelResponse"
+                            return None, "Provider returned reasoning without a usable response action"
 
                 try:
                     text = self.extractor.extract(
@@ -848,7 +998,25 @@ class CloudflareProvider:
                     self.failed_calls += 1
                     if tools is not None:
                         self.native_tool_call_failures += 1
+                    if reasoning_content and isinstance(assistant_message, dict) and not assistant_message.get("content"):
+                        self.last_error_category = "empty_reasoning_only_response"
+                        self.last_request_error_type = "EmptyModelResponse"
+                        return None, "Provider returned reasoning without a usable response"
                     return None, f"Extraction failed: {exc.message}"
+
+                if not text.strip():
+                    self.failed_calls += 1
+                    self.last_error_category = (
+                        "empty_reasoning_only_response" if reasoning_content
+                        else "empty_provider_response"
+                    )
+                    self.last_request_error_type = "EmptyModelResponse"
+                    if tools is not None:
+                        self.native_tool_call_failures += 1
+                    return None, (
+                        "Provider returned reasoning without a usable response"
+                        if reasoning_content else "Provider returned an empty response"
+                    )
 
                 if len(text) > self.max_response_chars:
                     self.failed_calls += 1
@@ -924,11 +1092,12 @@ class CloudflareProvider:
                     "provider_stream_error", "invalid_stream_tool_call_shape",
                     "invalid_stream_tool_call_index", "unexpected_stream_choice_index",
                     "unexpected_stream_tool_call_index", "multiple_stream_tool_calls",
-                    "incomplete_stream", "stream_response_too_large",
+                    "incomplete_stream", "invalid_stream_finish_reason", "stream_response_too_large",
                     "stream_event_too_large", "stream_wire_payload_too_large",
                     "stream_event_count_exceeded",
                 }
                 is_stream_error = message in stream_codes
+                self.last_request_stream_error_code = message[:100] if is_stream_error else ""
                 self.last_error_category = "invalid_stream" if is_stream_error else "invalid_provider_json"
                 self.last_request_error_type = "StreamProtocolError" if is_stream_error else "ValueError"
                 return None, (
@@ -1067,6 +1236,9 @@ class CloudflareProvider:
             "max_logical_calls": self.max_logical_calls,
             "timeout_seconds": self.timeout_seconds,
             "max_retries": self.max_retries,
+            "stream_fallback_enabled": self.stream_fallback_enabled,
+            "stream_fallbacks_used": self.stream_fallbacks_used,
+            "stream_fallbacks_max": self.max_stream_fallbacks,
             "structured_json_calls": self.structured_json_calls,
             "native_tool_call_requests": self.native_tool_call_requests,
             "native_tool_call_responses": self.native_tool_call_responses,
@@ -1091,6 +1263,17 @@ class CloudflareProvider:
                 "stream_event_count": self.last_request_stream_event_count,
                 "output_chars": self.last_request_output_chars,
                 "partial_output_chars": self.last_request_partial_output_chars,
+                "stream_reasoning_chars": self.last_request_stream_reasoning_chars,
+                "stream_tool_call_delta_count": self.last_request_stream_tool_call_delta_count,
+                "terminal_sentinel_observed": self.last_request_stream_terminal_sentinel,
+                "stream_finish_reason": self.last_request_stream_finish_reason,
+                "stream_error_code": self.last_request_stream_error_code,
+                "stream_fallback_enabled": self.stream_fallback_enabled,
+                "stream_fallback_attempted": self.last_request_stream_fallback_attempted,
+                "stream_fallback_succeeded": self.last_request_stream_fallback_succeeded,
+                "stream_fallback_reason": self.last_request_stream_fallback_reason,
+                "stream_fallbacks_used": self.stream_fallbacks_used,
+                "stream_fallbacks_max": self.max_stream_fallbacks,
                 "streaming": self.last_request_streaming,
                 "connect_timeout_seconds": self.connect_timeout_seconds,
                 "read_timeout_seconds": self.timeout_seconds,

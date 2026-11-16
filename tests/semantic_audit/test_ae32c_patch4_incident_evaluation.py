@@ -223,6 +223,12 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
         "read_source_file",
     ]
     assert len(provider.messages) == 10
+    assert report["budget"]["provider_requests_attempted"] == 10
+    assert report["budget"]["provider_responses_received"] == 10
+    assert report["budget"]["provider_responses_failed"] == 0
+    assert report["budget"]["accepted_model_action_count"] == len(report["model_actions"])
+    assert len(report["provider_round_telemetry"]) == 10
+    assert all(item["request_status"] == "response_received" for item in report["provider_round_telemetry"])
     assert report["tool_calls"][3]["status"] == "error"
     assert report["tool_calls"][3]["summary"] == "argument_out_of_range"
     assert all(item["status"] == "ok" for index, item in enumerate(report["tool_calls"]) if index != 3)

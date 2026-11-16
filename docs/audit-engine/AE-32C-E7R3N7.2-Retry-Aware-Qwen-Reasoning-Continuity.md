@@ -193,19 +193,21 @@ assertion that the Cloudflare endpoint has been live-verified with
 
 ## 6. Bounded live-investigation allowance
 
-To accommodate one corrective retry while retaining the two reserved
-finalization rounds:
+The implemented live configuration is:
 
--   maximum graph model rounds: 11 (previously 10);
--   maximum graph evidence-tool calls: 11 (previously 10);
--   per-call graph completion allowance: 2,048 tokens (unchanged);
--   cumulative graph token budget: 180,000 (unchanged);
--   finalization rounds reserved: 2 (unchanged);
+-   maximum graph model rounds: 11;
+-   maximum graph evidence-tool calls: 12;
+-   per-call graph completion allowance: 2,048 tokens;
+-   cumulative graph token budget: 180,000;
+-   finalization rounds reserved: 3;
 -   baseline completion allowance: 4,096 tokens, one request only.
 
-This is a one-round/one-call increase, not an unbounded retry loop. Tool
-schemas, argument validation, evidence verification, and
-truncated-result rules remain strict.
+The N7.2 live configuration intentionally retains three finalization
+rounds and a 12-call tool ceiling. Earlier wording in this document
+incorrectly described 11 tool calls and two finalization rounds; N7.3
+corrects that documentation mismatch without changing the validated
+runtime limits. Tool schemas, argument validation, evidence verification,
+and truncated-result rules remain strict.
 
 ## 7. Research basis and limitations
 
