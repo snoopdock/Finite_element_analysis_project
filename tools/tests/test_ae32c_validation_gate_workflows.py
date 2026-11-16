@@ -45,6 +45,21 @@ class AE32CValidationGateWorkflowTests(unittest.TestCase):
                 self.assertIn("validation_gate.py check-run", text)
                 self.assertIn("validation_gate.py verify", text)
 
+    def test_live_evaluation_requires_and_reports_investigation_context_separately(self):
+        text = (ROOT / ".github/workflows/ae32c-live-evaluation.yml").read_text(encoding="utf-8")
+        self.assertIn("--require-complete-investigation-context", text)
+        self.assertIn("--required-context-target pipeline/extractor.py", text)
+        self.assertIn("--required-context-path main.py", text)
+        self.assertIn("--required-context-path providers/factory.py", text)
+        self.assertIn("investigation_context_discovery_complete", text)
+        self.assertIn("execution_context_trace_invoked_for_required_target", text)
+        self.assertIn("required_entrypoint_and_factory_context_read", text)
+        self.assertIn("required_context_path_roles_verified", text)
+        self.assertIn("required_source_evidence_complete", text)
+        self.assertIn('"schema_version": "ae32c/live-smoke-gate/v2"', text)
+        self.assertIn('"investigation_context_coverage"', text)
+        self.assertIn('"required_context_contract"', text)
+
     def test_validation_gate_job_does_not_receive_provider_secrets(self):
         for relative, _ in WORKFLOWS.items():
             with self.subTest(workflow=relative):

@@ -15,7 +15,9 @@ The workflow definitions must be installed on `main`, because GitHub exposes `wo
 5. Installs only the minimal runtime dependencies needed by this evaluator (`requests` and `PyYAML`), rather than installing arbitrary requirements from the target branch.
 6. Uses provider-specific transport timeouts: NaraRouter 90 seconds, Cloudflare 45 seconds, and OpenRouter 30 seconds. Cloudflare and NaraRouter may each use one investigation-wide extra HTTP attempt when a transient transport failure occurs; after the extra attempt is consumed, later logical calls are limited to one HTTP attempt. OpenRouter remains at one HTTP attempt per logical call. The workflow makes one baseline request and then, if the baseline succeeds, up to ten graph-assisted model calls. The investigator retains its own bounded rounds, tool calls, response sizes, token estimates, and provider-specific deadline: 900 seconds for NaraRouter and 300 seconds for Cloudflare/OpenRouter.
 7. Uploads the comparison report and run logs even when the evaluator or smoke gate fails.
-8. Marks the workflow failed unless the baseline completes, the graph-assisted path performs multiple rounds and at least one evidence-tool call, the source snapshot is verified, and the final citations are resolved.
+8. For the controlled provider-interface fixture, requires a complete, non-truncated `trace_execution_context` call for `pipeline/extractor.py`, inspection of every surfaced candidate, and complete reads of `main.py` and `providers/factory.py`.
+9. Reports direct required-source evidence coverage separately from broader investigation-context completeness. The smoke gate fails if either dimension is incomplete.
+10. Marks the workflow failed unless the baseline completes, the graph-assisted path performs multiple rounds and evidence-tool calls, the source snapshot is verified, required source citations resolve, and the context-discovery contract passes.
 
 ## Install
 
@@ -42,6 +44,26 @@ Only the selected provider's secret values are passed to the live-evaluation ste
 
 Because the live evaluator must execute code from `stage1/section-uuids`, run this workflow only after reviewing the selected branch's current source commit. The branch is fixed in the workflow to avoid arbitrary ref selection. A repository environment with required reviewers can provide an additional approval boundary if desired.
 
+## Mandatory context-discovery contract (E.7-R.3N.7.1)
+
+The controlled incident evaluation passes these explicit arguments to the Stage1 evaluator:
+
+- `--require-complete-investigation-context`
+- `--required-context-target pipeline/extractor.py`
+- `--required-context-path main.py`
+- `--required-context-path providers/factory.py`
+
+The investigator rejects a final diagnosis while this contract is incomplete. It requires a successful, non-truncated static trace for the exact target, completion of `find_related_tests` and `discover_case_context`, and inspection of every surfaced candidate. For this fixture, the smoke gate additionally verifies that the trace classifies `main.py` as both a static caller and Python entrypoint, and `providers/factory.py` as entrypoint context; both must be surfaced and fully read before the diagnosis can be accepted.
+
+The smoke gate uses schema `ae32c/live-smoke-gate/v2` and reports these separately:
+
+- `required_source_evidence_complete`: direct required-source reads and root-cause citations;
+- `investigation_context_discovery_complete`: all required discovery operations are complete and non-truncated;
+- `execution_context_trace_invoked_for_required_target`: the exact target trace completed;
+- `required_entrypoint_and_factory_context_read`: both benchmark-required context paths were surfaced and read.
+
+These are static evidence-coverage requirements. They do not execute repository code, establish runtime behavior, or assess diagnostic accuracy. A failed context gate still uploads the comparison and logs for review.
+
 ## Reading the result
 
 The uploaded artifact is named:
@@ -50,7 +72,7 @@ The uploaded artifact is named:
 
 It includes `run-context.json`, `live-evaluation.log`, the runner exit code, `smoke-gate.json`, and the generated comparison JSON/Markdown plus checksum manifest.
 
-A green smoke gate means only that the baseline responded, the graph-assisted process made multiple model rounds and evidence calls, the snapshot was verified, and citations resolved. It does **not** establish causal correctness or prove that graph assistance improves accuracy. A human must compare the report with the independently reviewed incident outcome.
+A green smoke gate means only that the baseline responded, the graph-assisted process made multiple model rounds and evidence calls, the snapshot was verified, required source citations resolved, and the controlled context-discovery contract completed. It does **not** establish causal correctness or prove that graph assistance improves accuracy. A human must compare the report with the independently reviewed incident outcome.
 
 A failed gate still uploads evidence. Review the Actions summary and artifact before deciding whether a corrective patch is justified.
 
