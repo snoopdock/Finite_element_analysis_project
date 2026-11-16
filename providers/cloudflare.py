@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Cloudflare Workers AI provider implementation."""
 
+import hashlib
 import json
 import os
 import re
@@ -9,7 +10,7 @@ import time
 
 import requests
 
-from providers.base import ProviderToolCall
+from providers.base import ProviderResponse, ProviderToolCall
 from providers.message_compatibility import (
     MessageCompatibilityError, coalesce_leading_system_messages,
 )
@@ -70,6 +71,8 @@ def _consume_openai_sse(
     response reaches the existing local normalizers.
     """
     content_parts = []
+    reasoning_parts = []
+    reasoning_chars = 0
     tool_calls = {}
     finish_reason = None
     usage = None
@@ -132,6 +135,13 @@ def _consume_openai_sse(
             if not isinstance(delta, dict):
                 delta = choice.get("message") if isinstance(choice.get("message"), dict) else {}
 
+            reasoning_value = delta.get("reasoning_content")
+            if not isinstance(reasoning_value, str):
+                reasoning_value = delta.get("reasoning")
+            if isinstance(reasoning_value, str) and reasoning_value:
+                reasoning_parts.append(reasoning_value)
+                reasoning_chars += len(reasoning_value)
+
             content = delta.get("content")
             if isinstance(content, str):
                 if content and first_output_seconds is None:
@@ -187,17 +197,20 @@ def _consume_openai_sse(
                 "first_output_seconds": first_output_seconds,
                 "output_chars": output_chars,
             })
-        if output_chars > max_chars:
+        if output_chars + reasoning_chars > max_chars:
             raise ValueError("stream_response_too_large")
 
     if not saw_done and finish_reason is None:
         raise ValueError("incomplete_stream")
-    if output_chars > max_chars:
+    reasoning_content = "".join(reasoning_parts)
+    if output_chars + len(reasoning_content) > max_chars:
         raise ValueError("stream_response_too_large")
     if len(tool_calls) > 1:
         raise ValueError("multiple_stream_tool_calls")
 
     message = {"role": "assistant", "content": "".join(content_parts)}
+    if reasoning_content:
+        message["reasoning_content"] = reasoning_content
     if tool_calls:
         message["tool_calls"] = [tool_calls[index] for index in sorted(tool_calls)]
     normalized = {"choices": [{"message": message, "finish_reason": finish_reason}]}
@@ -208,6 +221,8 @@ def _consume_openai_sse(
         "first_event_seconds": first_event_seconds,
         "first_output_seconds": first_output_seconds,
         "output_chars": output_chars,
+        "reasoning_content_chars": len(reasoning_content),
+        "reasoning_content_sha256": hashlib.sha256(reasoning_content.encode("utf-8")).hexdigest() if reasoning_content else None,
         "wire_chars": wire_chars,
     }
 
@@ -357,7 +372,7 @@ class CloudflareProvider:
             self.max_retries = 1
         self.streaming_enabled = _env_flag("FEA_LLM_STREAMING", False)
         requested_effort = os.environ.get("FEA_LLM_REASONING_EFFORT", "").strip().lower()
-        self.reasoning_effort = requested_effort if requested_effort in {"low", "medium", "high"} else None
+        self.reasoning_effort = requested_effort if requested_effort in {"low", "medium", "high", "xhigh"} else None
         self.usage = {
             "prompt_tokens": 0,
             "completion_tokens": 0,
@@ -387,6 +402,8 @@ class CloudflareProvider:
         self.last_request_partial_output_chars = 0
         self.last_request_streaming = False
         self.last_request_reasoning_effort = None
+        self.last_request_reasoning_content_chars = 0
+        self.last_request_reasoning_content_sha256 = None
         self.last_request_max_completion_tokens = None
         self.last_request_error_type = ""
 
@@ -512,8 +529,13 @@ class CloudflareProvider:
                 "temperature": temperature,
                 "stream": stream_this_request,
             }
-            if model == QWEN_NATIVE_TOOL_MODEL and self.reasoning_effort:
-                payload["reasoning_effort"] = self.reasoning_effort
+            if model == QWEN_NATIVE_TOOL_MODEL:
+                # Qwen3.8 documents preserved thinking as the default. Send the
+                # documented setting explicitly so multi-turn tool history does
+                # not accidentally opt out when request defaults change.
+                payload["chat_template_kwargs"] = {"preserve_thinking": True}
+                if self.reasoning_effort:
+                    payload["reasoning_effort"] = self.reasoning_effort
         else:
             url = f"{CF_BASE}/accounts/{self.account_id}/ai/run/{model}"
             self.last_endpoint_mode = "workers_ai_run_chat"
@@ -535,6 +557,8 @@ class CloudflareProvider:
         self.last_request_output_chars = 0
         self.last_request_partial_output_chars = 0
         self.last_request_streaming = bool(stream_this_request)
+        self.last_request_reasoning_content_chars = 0
+        self.last_request_reasoning_content_sha256 = None
         self.last_request_reasoning_effort = (
             self.reasoning_effort if model == QWEN_NATIVE_TOOL_MODEL else None
         )
@@ -680,6 +704,7 @@ class CloudflareProvider:
                     self.usage["responses_with_usage"] += 1
 
                 choices_for_finish = data.get("choices") if isinstance(data, dict) else None
+                assistant_message = None
                 if isinstance(choices_for_finish, list) and choices_for_finish:
                     first_finish_choice = choices_for_finish[0]
                     finish_reason = (
@@ -687,6 +712,35 @@ class CloudflareProvider:
                         if isinstance(first_finish_choice, dict) else None
                     )
                     self.last_finish_reason = finish_reason[:80] if isinstance(finish_reason, str) else ""
+                    assistant_message = (
+                        first_finish_choice.get("message")
+                        if isinstance(first_finish_choice, dict) else None
+                    )
+                reasoning_content = None
+                if isinstance(assistant_message, dict):
+                    reasoning_content = assistant_message.get("reasoning_content")
+                    if not isinstance(reasoning_content, str):
+                        reasoning_content = assistant_message.get("reasoning")
+                if not isinstance(reasoning_content, str) and isinstance(data, dict):
+                    result_for_reasoning = data.get("result")
+                    if isinstance(result_for_reasoning, dict):
+                        reasoning_content = result_for_reasoning.get("reasoning_content")
+                        if not isinstance(reasoning_content, str):
+                            reasoning_content = result_for_reasoning.get("reasoning")
+                if not isinstance(reasoning_content, str):
+                    reasoning_content = None
+                if reasoning_content:
+                    self.last_request_reasoning_content_chars = len(reasoning_content)
+                    self.last_request_reasoning_content_sha256 = hashlib.sha256(
+                        reasoning_content.encode("utf-8")
+                    ).hexdigest()
+                    if len(reasoning_content) > self.max_response_chars:
+                        self.failed_calls += 1
+                        if tools is not None:
+                            self.native_tool_call_failures += 1
+                        self.oversized_responses += 1
+                        self.response_chars_rejected_total += len(reasoning_content)
+                        return None, "Reasoning content exceeds configured response character limit"
 
                 if tools is not None and isinstance(data, dict):
                     result_block = data.get("result")
@@ -734,7 +788,9 @@ class CloudflareProvider:
                                     # Preserve the truncated argument string as inert data.
                                     # The AE-32C normalizer will reject it and trigger the
                                     # bounded session downgrade; this adapter never executes it.
-                                    return ProviderToolCall(call_name, call_arguments), None
+                                    return ProviderToolCall(
+                                        call_name, call_arguments, reasoning_content=reasoning_content
+                                    ), None
                                 self.failed_calls += 1
                                 self.native_tool_call_failures += 1
                                 return None, "Native response-tool arguments invalid"
@@ -763,13 +819,21 @@ class CloudflareProvider:
                                 f"({len(encoded_call)} > {self.max_response_chars}; "
                                 f"max_response_chars={self.max_response_chars})"
                             )
+                        if len(encoded_call) + len(reasoning_content or "") > self.max_response_chars:
+                            self.failed_calls += 1
+                            self.native_tool_call_failures += 1
+                            self.oversized_responses += 1
+                            self.response_chars_rejected_total += len(encoded_call) + len(reasoning_content or "")
+                            return None, "Decoded response exceeds character limit"
                         self.native_tool_call_responses += 1
                         self.last_request_output_chars = len(encoded_call)
                         self.call_counts[model] = self.call_counts.get(model, 0) + 1
                         self.successful_calls += 1
                         self.response_chars_total += len(encoded_call)
                         self.response_chars_max = max(self.response_chars_max, len(encoded_call))
-                        return ProviderToolCall(call_name, call_arguments), None
+                        return ProviderToolCall(
+                            call_name, call_arguments, reasoning_content=reasoning_content
+                        ), None
                     if tools is not None:
                         self.native_tool_call_failures += 1
 
@@ -797,10 +861,19 @@ class CloudflareProvider:
                     )
 
                 self.last_request_output_chars = len(text)
+                if len(text) + len(reasoning_content or "") > self.max_response_chars:
+                    self.failed_calls += 1
+                    self.oversized_responses += 1
+                    self.response_chars_rejected_total += len(text) + len(reasoning_content or "")
+                    if tools is not None:
+                        self.native_tool_call_failures += 1
+                    return None, "Decoded response exceeds character limit"
                 self.call_counts[model] = self.call_counts.get(model, 0) + 1
                 self.successful_calls += 1
                 self.response_chars_total += len(text)
                 self.response_chars_max = max(self.response_chars_max, len(text))
+                if tools is not None and reasoning_content:
+                    return ProviderResponse(text=text, reasoning_content=reasoning_content), None
                 return text, None
 
             except requests.exceptions.RequestException as exc:
@@ -1004,6 +1077,8 @@ class CloudflareProvider:
             "last_request_id": self.last_request_id,
             "last_endpoint_mode": self.last_endpoint_mode,
             "last_finish_reason": self.last_finish_reason,
+            "last_reasoning_content_chars": self.last_request_reasoning_content_chars,
+            "last_reasoning_content_sha256": self.last_request_reasoning_content_sha256,
             "last_system_messages_coalesced": self.last_system_messages_coalesced,
             "last_message_compatibility": self.last_message_compatibility,
             "extraction_stats": self.extractor.get_stats(),
@@ -1020,6 +1095,8 @@ class CloudflareProvider:
                 "connect_timeout_seconds": self.connect_timeout_seconds,
                 "read_timeout_seconds": self.timeout_seconds,
                 "reasoning_effort": self.last_request_reasoning_effort,
+                "reasoning_content_chars": self.last_request_reasoning_content_chars,
+                "reasoning_content_sha256": self.last_request_reasoning_content_sha256,
                 "max_completion_tokens": self.last_request_max_completion_tokens,
                 "finish_reason": self.last_finish_reason,
                 "error_type": self.last_request_error_type,

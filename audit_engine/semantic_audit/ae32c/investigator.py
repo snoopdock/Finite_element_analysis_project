@@ -1227,11 +1227,27 @@ class RepositoryInvestigator:
         reserved = min(self.limits.finalization_rounds_reserved, self.limits.max_rounds)
         remaining_including_this = self.limits.max_rounds - round_number + 1
         coverage = self._investigation_context_coverage()
+        discovery_status_for_prompt = {}
+        for tool_name, tool_status in coverage.get("discovery_tool_status", {}).items():
+            if not isinstance(tool_status, Mapping):
+                continue
+            discovery_status_for_prompt[tool_name] = {
+                key: tool_status.get(key)
+                for key in (
+                    "status", "final_operation_status", "call_count",
+                    "failed_attempt_count", "successful_complete_call_count",
+                    "truncated_successful_call_count", "recovered_after_retry",
+                    "truncated", "unresolved_query_count",
+                )
+                if key in tool_status
+            }
         coverage_summary = {
             "schema_version": coverage.get("schema_version"),
             "status": coverage.get("status"),
             "discovery_tools_complete": coverage.get("discovery_tools_complete"),
-            "discovery_tool_status": coverage.get("discovery_tool_status", {}),
+            "discovery_tool_status": (
+                discovery_status_for_prompt if self._require_complete_investigation_context else {}
+            ),
             "candidate_context_path_count": coverage.get("candidate_context_path_count", 0),
             "candidate_context_paths_read_count": coverage.get("candidate_context_paths_read_count", 0),
             "candidate_context_paths_not_read_count": coverage.get("candidate_context_paths_not_read_count", 0),
@@ -2613,6 +2629,29 @@ class RepositoryInvestigator:
             raise _BudgetStop("reported_cost_budget_exhausted")
         return response, error, reserve
 
+    def _assistant_action_history_message(self, action: Mapping[str, Any], response: Any) -> dict[str, Any]:
+        """Build transient assistant history while preserving optional Qwen reasoning.
+
+        Reasoning content is conversation context only: it is never copied into
+        the evidence ledger, diagnosis, citations, or published evaluation report.
+        It remains subject to the normal serialized prompt/token budget.
+        """
+        message = {
+            "role": "assistant",
+            "content": self._canonical_json(dict(action)),
+        }
+        reasoning_content = None
+        if isinstance(response, ProviderToolCall):
+            reasoning_content = response.reasoning_content
+        elif isinstance(response, ProviderResponse):
+            reasoning_content = response.reasoning_content
+            if not isinstance(reasoning_content, str) and response.tool_calls:
+                reasoning_content = response.tool_calls[0].reasoning_content
+        if isinstance(reasoning_content, str) and reasoning_content:
+            if len(reasoning_content) <= self.limits.max_response_chars:
+                message["reasoning_content"] = reasoning_content
+        return message
+
     def _investigation_context_coverage(self) -> dict[str, Any]:
         """Report complete, non-truncated static discovery and candidate reads."""
         required_discovery = (
@@ -2625,51 +2664,163 @@ class RepositoryInvestigator:
             for name in required_discovery
         }
         discovery_tool_status: dict[str, dict[str, Any]] = {}
+        def discovery_query_identity(name: str, arguments: Any) -> str:
+            """Group retries for the same logical discovery query.
+
+            A changed result cap is a retry adjustment, not a new query. The
+            target and semantic depth remain part of trace identity so a retry
+            for another target cannot satisfy the original target's operation.
+            """
+            args = dict(arguments) if isinstance(arguments, Mapping) else {}
+            if name == "trace_execution_context":
+                identity = {"target": args.get("target"), "max_depth": args.get("max_depth")}
+            else:
+                identity = {
+                    key: value for key, value in args.items()
+                    if key not in {"max_results", "limit"}
+                }
+            return self._canonical_json(identity)
+
+        def discovery_result_is_complete(name: str, result: Any) -> bool:
+            if not isinstance(result, Mapping):
+                return False
+            if result.get("coverage_status") != "complete_for_query" or result.get("truncated") is not False:
+                return False
+            required_lists = {
+                "trace_execution_context": (
+                    "static_caller_relationships", "static_caller_paths",
+                    "static_dependency_relationships", "static_dependency_paths",
+                    "python_entrypoint_paths", "entrypoint_context_paths", "active_workflow_paths",
+                ),
+                "find_related_tests": ("tests",),
+                "discover_case_context": ("metadata_candidates",),
+            }[name]
+            return all(isinstance(result.get(key), list) for key in required_lists)
+
+        discovery_tool_status: dict[str, dict[str, Any]] = {}
         for name in required_discovery:
             entries = entries_by_tool[name]
             if not entries:
                 discovery_tool_status[name] = {
-                    "status": "not_called", "call_count": 0, "truncated": None,
-                    "reason": "required_discovery_tool_not_called",
+                    "status": "not_called", "final_operation_status": "not_called",
+                    "call_count": 0, "query_count": 0, "completed_query_count": 0,
+                    "unresolved_query_count": 0, "failed_attempt_count": 0,
+                    "invalid_result_attempt_count": 0, "successful_complete_call_count": 0,
+                    "truncated_successful_call_count": 0, "any_attempt_truncated": False,
+                    "truncated": None, "recovered_after_retry": False,
+                    "reason": "required_discovery_tool_not_called", "query_statuses": [],
                 }
                 continue
-            valid_results = []
-            invalid_reasons: list[str] = []
-            any_truncated = False
-            for entry in entries:
-                if entry.status != "ok":
-                    invalid_reasons.append("tool_invocation_failed")
-                    continue
-                result = entry.response.get("result", {})
-                if not isinstance(result, Mapping):
-                    invalid_reasons.append("result_not_object")
-                    continue
-                if result.get("truncated") is True:
-                    any_truncated = True
-                    invalid_reasons.append("result_truncated")
-                if result.get("truncated") is not False:
-                    invalid_reasons.append("truncation_status_missing_or_invalid")
-                if result.get("coverage_status") != "complete_for_query":
-                    invalid_reasons.append("discovery_not_complete_for_query")
-                required_lists = {
-                    "trace_execution_context": (
-                        "static_caller_relationships", "static_caller_paths",
-                        "static_dependency_relationships", "static_dependency_paths",
-                        "python_entrypoint_paths", "entrypoint_context_paths", "active_workflow_paths",
+
+            groups: dict[str, list[tuple[int, Any]]] = {}
+            for position, entry in enumerate(entries):
+                key = discovery_query_identity(name, getattr(entry, "arguments", {}))
+                groups.setdefault(key, []).append((position, entry))
+
+            failed_attempt_count = 0
+            invalid_result_attempt_count = 0
+            successful_complete_call_count = 0
+            truncated_successful_call_count = 0
+            any_attempt_truncated = False
+            recovered_query_count = 0
+            unresolved_query_count = 0
+            unresolved_truncated = False
+            unresolved_reasons: set[str] = set()
+            query_statuses = []
+
+            for key, attempts in sorted(groups.items(), key=lambda item: item[0]):
+                complete_positions: list[int] = []
+                group_failed_positions: list[int] = []
+                group_reasons: set[str] = set()
+                group_truncated = False
+                for position, entry in attempts:
+                    if entry.status != "ok":
+                        failed_attempt_count += 1
+                        group_failed_positions.append(position)
+                        group_reasons.add("tool_invocation_failed")
+                        continue
+                    result = entry.response.get("result", {}) if isinstance(entry.response, Mapping) else {}
+                    if isinstance(result, Mapping) and result.get("truncated") is True:
+                        truncated_successful_call_count += 1
+                        any_attempt_truncated = True
+                        group_truncated = True
+                        group_reasons.add("result_truncated")
+                    if discovery_result_is_complete(name, result):
+                        successful_complete_call_count += 1
+                        complete_positions.append(position)
+                    else:
+                        invalid_result_attempt_count += 1
+                        if not isinstance(result, Mapping):
+                            group_reasons.add("result_not_object")
+                        elif result.get("truncated") is not False:
+                            group_reasons.add("truncation_status_missing_or_invalid")
+                        if isinstance(result, Mapping) and result.get("coverage_status") != "complete_for_query":
+                            group_reasons.add("discovery_not_complete_for_query")
+                        if isinstance(result, Mapping):
+                            required_lists = {
+                                "trace_execution_context": (
+                                    "static_caller_relationships", "static_caller_paths",
+                                    "static_dependency_relationships", "static_dependency_paths",
+                                    "python_entrypoint_paths", "entrypoint_context_paths", "active_workflow_paths",
+                                ),
+                                "find_related_tests": ("tests",),
+                                "discover_case_context": ("metadata_candidates",),
+                            }[name]
+                            if any(not isinstance(result.get(field), list) for field in required_lists):
+                                group_reasons.add("required_result_fields_missing_or_malformed")
+
+                group_complete = bool(complete_positions)
+                recovered = bool(
+                    group_complete and group_failed_positions
+                    and min(group_failed_positions) < max(complete_positions)
+                )
+                if recovered:
+                    recovered_query_count += 1
+                if not group_complete:
+                    unresolved_query_count += 1
+                    unresolved_reasons.update(group_reasons or {"discovery_not_complete_for_query"})
+                    unresolved_truncated = unresolved_truncated or group_truncated
+
+                query_statuses.append({
+                    "query_fingerprint": hashlib.sha256(key.encode("utf-8")).hexdigest()[:16],
+                    "status": "completed" if group_complete else "partial",
+                    "attempt_count": len(attempts),
+                    "successful_complete_call_count": len(complete_positions),
+                    "failed_attempt_count": sum(1 for _, item in attempts if item.status != "ok"),
+                    "truncated_successful_call_count": sum(
+                        1 for _, item in attempts
+                        if item.status == "ok"
+                        and isinstance(item.response, Mapping)
+                        and isinstance(item.response.get("result"), Mapping)
+                        and item.response["result"].get("truncated") is True
                     ),
-                    "find_related_tests": ("tests",),
-                    "discover_case_context": ("metadata_candidates",),
-                }[name]
-                if any(not isinstance(result.get(key), list) for key in required_lists):
-                    invalid_reasons.append("required_result_fields_missing_or_malformed")
-                elif result.get("coverage_status") == "complete_for_query" and result.get("truncated") is False:
-                    valid_results.append(result)
-            complete = bool(valid_results) and not invalid_reasons
+                    "recovered_after_retry": recovered,
+                })
+
+            complete = unresolved_query_count == 0 and bool(groups)
+            recovered = recovered_query_count > 0
+            final_operation_status = (
+                "completed_with_retry" if complete and recovered
+                else "completed" if complete
+                else "partial"
+            )
             discovery_tool_status[name] = {
                 "status": "completed" if complete else "partial",
+                "final_operation_status": final_operation_status,
                 "call_count": len(entries),
-                "truncated": any_truncated,
-                "reason": None if complete else sorted(set(invalid_reasons))[:8],
+                "query_count": len(groups),
+                "completed_query_count": len(groups) - unresolved_query_count,
+                "unresolved_query_count": unresolved_query_count,
+                "failed_attempt_count": failed_attempt_count,
+                "invalid_result_attempt_count": invalid_result_attempt_count,
+                "successful_complete_call_count": successful_complete_call_count,
+                "truncated_successful_call_count": truncated_successful_call_count,
+                "any_attempt_truncated": any_attempt_truncated,
+                "truncated": unresolved_truncated if not complete else False,
+                "recovered_after_retry": recovered,
+                "recovered_query_count": recovered_query_count,
+                "reason": None if complete else sorted(unresolved_reasons)[:8],
+                "query_statuses": query_statuses[:20],
             }
 
         successful = [entry for entry in self._ledger if entry.status == "ok"]
@@ -2700,11 +2851,17 @@ class RepositoryInvestigator:
             entry.response.get("result", {}) for entry in entries_by_tool["trace_execution_context"]
             if entry.status == "ok" and isinstance(entry.response.get("result"), Mapping)
         ]
-        static_relationship_count = sum(
-            len(result.get("static_caller_relationships", []))
-            + len(result.get("static_dependency_relationships", []))
-            for result in trace_results
-        )
+        relationship_fingerprints: set[str] = set()
+        for result in trace_results:
+            for relationship in (
+                list(result.get("static_caller_relationships", []))
+                + list(result.get("static_dependency_relationships", []))
+            ):
+                try:
+                    relationship_fingerprints.add(self._canonical_json(relationship))
+                except Exception:
+                    continue
+        static_relationship_count = len(relationship_fingerprints)
         caller_paths = set().union(*(string_paths(result.get("static_caller_paths")) for result in trace_results)) if trace_results else set()
         dependency_paths = set().union(*(string_paths(result.get("static_dependency_paths")) for result in trace_results)) if trace_results else set()
         python_entrypoint_paths = set().union(*(string_paths(result.get("python_entrypoint_paths")) for result in trace_results)) if trace_results else set()
@@ -2719,21 +2876,35 @@ class RepositoryInvestigator:
 
         required_context_contract: dict[str, Any]
         if self._require_complete_investigation_context:
-            target_trace_entries = [
-                entry for entry in entries_by_tool["trace_execution_context"]
-                if entry.status == "ok"
-                and isinstance(entry.response.get("result"), Mapping)
-                and (
-                    entry.response["result"].get("target_path") == self._required_context_target
+            def entry_matches_required_target(entry: Any) -> bool:
+                result = entry.response.get("result", {}) if isinstance(entry.response, Mapping) else {}
+                entry_arguments = getattr(entry, "arguments", {})
+                submitted_target = entry_arguments.get("target") if isinstance(entry_arguments, Mapping) else None
+                return (
+                    submitted_target == self._required_context_target
+                    or submitted_target == self._required_context_target_module
                     or (
-                        self._required_context_target_module is not None
-                        and entry.response["result"].get("target_module") == self._required_context_target_module
+                        isinstance(result, Mapping)
+                        and (
+                            result.get("target_path") == self._required_context_target
+                            or (
+                                self._required_context_target_module is not None
+                                and result.get("target_module") == self._required_context_target_module
+                            )
+                        )
                     )
                 )
+
+            target_trace_entries = [
+                entry for entry in entries_by_tool["trace_execution_context"]
+                if entry_matches_required_target(entry)
             ]
             target_trace_results = [
                 entry.response.get("result", {}) for entry in target_trace_entries
-                if entry.response["result"].get("coverage_status") == "complete_for_query"
+                if entry.status == "ok"
+                and isinstance(entry.response, Mapping)
+                and isinstance(entry.response.get("result"), Mapping)
+                and entry.response["result"].get("coverage_status") == "complete_for_query"
                 and entry.response["result"].get("truncated") is False
             ]
             target_surface_paths: set[str] = set()
@@ -2773,6 +2944,11 @@ class RepositoryInvestigator:
                 "resolved_target_module": self._required_context_target_module,
                 "target_trace_call_count": len(target_trace_entries),
                 "target_trace_completed_call_count": len(target_trace_results),
+                "target_trace_failed_attempt_count": sum(1 for entry in target_trace_entries if entry.status != "ok"),
+                "target_trace_recovered_after_retry": (
+                    any(entry.status != "ok" for entry in target_trace_entries) and bool(target_trace_results)
+                ),
+                "target_trace_final_status": "completed" if target_trace_results else "partial",
                 "required_paths": required_context_path_status,
                 "interpretation": (
                     "This benchmark contract requires a successful, complete, non-truncated trace for the exact "
@@ -2789,6 +2965,9 @@ class RepositoryInvestigator:
                 "resolved_target_module": None,
                 "target_trace_call_count": 0,
                 "target_trace_completed_call_count": 0,
+                "target_trace_failed_attempt_count": 0,
+                "target_trace_recovered_after_retry": False,
+                "target_trace_final_status": "not_required",
                 "required_paths": [],
                 "interpretation": "No benchmark-specific required context contract was configured.",
             }
@@ -3183,6 +3362,7 @@ class RepositoryInvestigator:
                     "output_chars",
                     "partial_output_chars",
                     "max_completion_tokens",
+                    "reasoning_content_chars",
                 ):
                     value = raw_request_diagnostics.get(key)
                     if isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= 2_000_000:
@@ -3191,8 +3371,14 @@ class RepositoryInvestigator:
                 if isinstance(streaming, bool):
                     safe_request_diagnostics["streaming"] = streaming
                 reasoning_effort = raw_request_diagnostics.get("reasoning_effort")
-                if isinstance(reasoning_effort, str) and reasoning_effort in {"low", "medium", "high"}:
+                if isinstance(reasoning_effort, str) and reasoning_effort in {"low", "medium", "high", "xhigh"}:
                     safe_request_diagnostics["reasoning_effort"] = reasoning_effort
+                reasoning_content_sha256 = raw_request_diagnostics.get("reasoning_content_sha256")
+                if isinstance(reasoning_content_sha256, str) and re.fullmatch(r"[0-9a-f]{64}", reasoning_content_sha256):
+                    safe_request_diagnostics["reasoning_content_sha256"] = reasoning_content_sha256
+                reasoning_content_chars = raw_request_diagnostics.get("reasoning_content_chars")
+                if isinstance(reasoning_content_chars, int) and not isinstance(reasoning_content_chars, bool) and 0 <= reasoning_content_chars <= 2_000_000:
+                    safe_request_diagnostics["reasoning_content_chars"] = reasoning_content_chars
                 finish_reason = raw_request_diagnostics.get("finish_reason")
                 if isinstance(finish_reason, str) and finish_reason in {"", "stop", "tool_calls", "length", "content_filter", "function_call"}:
                     safe_request_diagnostics["finish_reason"] = finish_reason
@@ -3409,7 +3595,7 @@ class RepositoryInvestigator:
                         response_chars = len(self._canonical_json({
                             "name": response.name,
                             "arguments": response.arguments,
-                        }))
+                        })) + len(response.reasoning_content or "")
                     except Exception:
                         response_chars = self.limits.max_response_chars + 1
                 else:
@@ -3421,6 +3607,7 @@ class RepositoryInvestigator:
                                 for call in response.tool_calls
                             ],
                             "finish_reason": response.finish_reason,
+                            "reasoning_content": response.reasoning_content,
                         }))
                     except Exception:
                         response_chars = self.limits.max_response_chars + 1
@@ -3813,7 +4000,7 @@ class RepositoryInvestigator:
                         "reason": self._safe_text(action.get("reason", ""), 500),
                         "arguments": self._safe_value(arguments),
                     })
-                    self._messages.append({"role": "assistant", "content": self._canonical_json(action)})
+                    self._messages.append(self._assistant_action_history_message(action, response))
                     entry = self._invoke_tool(tool, arguments)
                     self._messages.append({"role": "user", "content": self._canonical_json({"evidence_tool_result": self._model_view(entry)})})
                     if tool == "read_source_file" and entry.status != "ok":
@@ -3959,7 +4146,7 @@ class RepositoryInvestigator:
                                 else "invalid_diagnosis_references_or_schema"
                             )
                             return self._finalize_report(report, "inconclusive", stop_reason)
-                        self._messages.append({"role": "assistant", "content": self._canonical_json(action)})
+                        self._messages.append(self._assistant_action_history_message(action, response))
                         anchor_support_now = self._required_source_anchor_support(action.get("diagnosis"))
                         anchor_candidates = self._required_anchor_reference_candidates()
                         anchor_recovery = []
@@ -4103,7 +4290,7 @@ class RepositoryInvestigator:
                                 report, "completed_with_incomplete_evidence",
                                 "diagnosis_submitted_with_textual_source_support_gap",
                             )
-                        self._messages.append({"role": "assistant", "content": self._canonical_json(action)})
+                        self._messages.append(self._assistant_action_history_message(action, response))
                         self._messages.append({"role": "user", "content": self._canonical_json({
                             "validation_feedback": {
                                 "schema_version": "ae32c/source-anchor-validation-feedback/v1",

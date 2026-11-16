@@ -1,3 +1,4 @@
+import hashlib
 import json
 
 import requests
@@ -915,3 +916,131 @@ def test_qwen_truncated_native_arguments_are_returned_as_inert_data_for_normaliz
     with pytest.raises(ResponseNormalizationError):
         normalize_provider_tool_call(result)
     assert provider.get_stats()["last_finish_reason"] == "length"
+
+
+def test_qwen_native_tool_call_preserves_reasoning_content_and_qwen_template_defaults(monkeypatch):
+    reasoning = "I should inspect the exact source evidence before choosing an action."
+    response = FakeResponse({
+        "id": "chatcmpl-reasoning-test",
+        "choices": [{
+            "finish_reason": "tool_calls",
+            "message": {
+                "role": "assistant",
+                "content": None,
+                "reasoning_content": reasoning,
+                "tool_calls": [{
+                    "id": "call-reasoning-test",
+                    "type": "function",
+                    "function": {
+                        "name": RESPONSE_TOOL_NAME,
+                        "arguments": json.dumps(_call_arguments()),
+                    },
+                }],
+            },
+        }],
+        "usage": {"prompt_tokens": 30, "completion_tokens": 42, "total_tokens": 72},
+    })
+    calls = []
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    monkeypatch.setenv("FEA_LLM_REASONING_EFFORT", "medium")
+    provider = CloudflareProvider("account", "private-secret-value", [MODEL])
+
+    result, error = provider.chat_with_response_tool(
+        [{"role": "system", "content": "Use the response function."}],
+        tool_definition=build_response_tool_definition(),
+        temperature=0.0,
+        max_tokens=2048,
+        model=MODEL,
+    )
+
+    assert error is None
+    assert isinstance(result, ProviderToolCall)
+    assert result.reasoning_content == reasoning
+    payload = calls[0][1]["json"]
+    assert payload["chat_template_kwargs"] == {"preserve_thinking": True}
+    assert payload["reasoning_effort"] == "medium"
+    stats = provider.get_stats()
+    assert stats["last_reasoning_content_chars"] == len(reasoning)
+    assert stats["last_reasoning_content_sha256"] == hashlib.sha256(reasoning.encode()).hexdigest()
+    assert reasoning not in repr(stats)
+    assert response.closed
+
+
+class FakeStreamingResponse:
+    def __init__(self, lines, status_code=200, headers=None):
+        self.lines = list(lines)
+        self.status_code = status_code
+        self.headers = headers or {}
+        self.closed = False
+
+    def iter_lines(self, chunk_size=128, decode_unicode=True):
+        return iter(self.lines)
+
+    def close(self):
+        self.closed = True
+
+
+def test_qwen_streaming_tool_call_preserves_reasoning_deltas(monkeypatch):
+    reasoning_parts = ["Trace the consumer first. ", "Then inspect the provider factory."]
+    events = [
+        {"choices": [{"index": 0, "delta": {"reasoning_content": reasoning_parts[0]}}]},
+        {"choices": [{"index": 0, "delta": {
+            "reasoning_content": reasoning_parts[1],
+            "tool_calls": [{
+                "index": 0,
+                "id": "call-stream-reasoning",
+                "type": "function",
+                "function": {
+                    "name": RESPONSE_TOOL_NAME,
+                    "arguments": json.dumps(_call_arguments()),
+                },
+            }],
+        }}]},
+        {"choices": [{"index": 0, "delta": {}, "finish_reason": "tool_calls"}]},
+    ]
+    lines = ["data: " + json.dumps(event) for event in events] + ["data: [DONE]"]
+    response = FakeStreamingResponse(lines)
+    calls = []
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda url, **kwargs: (calls.append((url, kwargs)) or response),
+    )
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_REASONING_EFFORT", "xhigh")
+    provider = CloudflareProvider("account", "private-secret-value", [MODEL])
+
+    result, error = provider.chat_with_response_tool(
+        [{"role": "system", "content": "Use the response function."}],
+        tool_definition=build_response_tool_definition(),
+        temperature=0.0,
+        max_tokens=2048,
+        model=MODEL,
+    )
+
+    expected_reasoning = "".join(reasoning_parts)
+    assert error is None
+    assert isinstance(result, ProviderToolCall)
+    assert result.reasoning_content == expected_reasoning
+    payload = calls[0][1]["json"]
+    assert payload["stream"] is True
+    assert payload["chat_template_kwargs"] == {"preserve_thinking": True}
+    assert payload["reasoning_effort"] == "xhigh"
+    stats = provider.get_stats()
+    assert stats["request_diagnostics"]["reasoning_effort"] == "xhigh"
+    assert stats["request_diagnostics"]["reasoning_content_chars"] == len(expected_reasoning)
+    assert expected_reasoning not in repr(stats)
+    assert response.closed
+
+
+def test_qwen_reasoning_effort_accepts_cloudflare_and_qwen_documented_levels(monkeypatch):
+    monkeypatch.setenv("FEA_LLM_REASONING_EFFORT", "xhigh")
+    qwen = CloudflareProvider("account", "token", [MODEL])
+    assert qwen.reasoning_effort == "xhigh"
+    monkeypatch.setenv("FEA_LLM_REASONING_EFFORT", "high")
+    cloudflare = CloudflareProvider("account", "token", [MODEL])
+    assert cloudflare.reasoning_effort == "high"

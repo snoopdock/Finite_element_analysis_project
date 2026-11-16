@@ -88,14 +88,17 @@ def _safe_request_diagnostics(provider: Any) -> dict[str, Any]:
         "output_chars",
         "partial_output_chars",
         "max_completion_tokens",
+        "reasoning_content_chars",
     ):
         value = raw.get(key)
         if isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= 2_000_000:
             result[key] = value
     if isinstance(raw.get("streaming"), bool):
         result["streaming"] = raw["streaming"]
-    if isinstance(raw.get("reasoning_effort"), str) and raw["reasoning_effort"] in {"low", "medium", "high"}:
+    if isinstance(raw.get("reasoning_effort"), str) and raw["reasoning_effort"] in {"low", "medium", "high", "xhigh"}:
         result["reasoning_effort"] = raw["reasoning_effort"]
+    if isinstance(raw.get("reasoning_content_sha256"), str) and re.fullmatch(r"[0-9a-f]{64}", raw["reasoning_content_sha256"]):
+        result["reasoning_content_sha256"] = raw["reasoning_content_sha256"]
     if isinstance(raw.get("finish_reason"), str) and raw["finish_reason"] in {
         "", "stop", "tool_calls", "length", "content_filter", "function_call",
     }:
@@ -130,6 +133,7 @@ def _provider_runtime_settings(provider: Any) -> dict[str, Any]:
         "last_http_status", "last_error_category", "last_error_codes",
         "last_request_id", "last_endpoint_mode", "last_finish_reason",
         "last_system_messages_coalesced", "last_message_compatibility",
+        "last_reasoning_content_chars", "last_reasoning_content_sha256",
         "native_tool_endpoint", "connect_timeout_seconds",
     )
     result = {key: stats[key] for key in allowed if key in stats}

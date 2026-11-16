@@ -468,3 +468,80 @@ def test_provider_preflight_reports_only_whitelisted_request_diagnostics():
         "error_category": "none",
     }
     assert "must-never-appear" not in repr(result)
+
+
+def test_provider_reasoning_metadata_is_preserved_in_transient_assistant_history_only():
+    reasoning = "I will inspect the tool result before selecting the next repository action."
+    action = {
+        "action": "tool_call",
+        "tool": "repository_summary",
+        "arguments": {},
+        "reason": "Establish the repository evidence index.",
+    }
+    investigator = RepositoryInvestigator(
+        ".",
+        FakeProvider([]),
+        evidence_tools=FakeEvidenceTools(),
+    )
+    native = ProviderToolCall(
+        RESPONSE_TOOL_NAME,
+        {
+            "action": "tool_call",
+            "tool": "repository_summary",
+            "arguments": {},
+            "reason": "inspect",
+            "diagnosis": {},
+        },
+        reasoning_content=reasoning,
+    )
+    message = investigator._assistant_action_history_message(action, native)
+    assert message["role"] == "assistant"
+    assert message["reasoning_content"] == reasoning
+    assert reasoning not in message["content"]
+
+    envelope = ProviderResponse(text=json.dumps(action), reasoning_content=reasoning)
+    envelope_message = investigator._assistant_action_history_message(action, envelope)
+    assert envelope_message["reasoning_content"] == reasoning
+    normalized = normalize_provider_response(envelope)
+    assert normalized.payload == action
+    assert "reasoning_content" not in normalized.payload
+
+
+def test_provider_reasoning_content_is_subject_to_response_size_limit():
+    reasoning = "private-reasoning-" * 20
+    native = ProviderToolCall(
+        RESPONSE_TOOL_NAME,
+        {
+            "action": "tool_call",
+            "tool": "repository_summary",
+            "arguments": {},
+            "reason": "inspect",
+            "diagnosis": {},
+        },
+        reasoning_content=reasoning,
+    )
+    with pytest.raises(ResponseNormalizationError) as exc:
+        normalize_provider_response(native, max_chars=20)
+    assert exc.value.code == "response_too_large"
+
+
+def test_qwen_xhigh_reasoning_effort_and_reasoning_fingerprint_are_safe_preflight_metadata():
+    from audit_engine.semantic_audit.ae32c.provider_preflight import _safe_request_diagnostics
+
+    class StatsProvider:
+        def get_stats(self):
+            return {
+                "request_diagnostics": {
+                    "reasoning_effort": "xhigh",
+                    "reasoning_content_chars": 1234,
+                    "reasoning_content_sha256": "a" * 64,
+                    "reasoning_content": "must-not-be-copied",
+                }
+            }
+
+    diagnostics = _safe_request_diagnostics(StatsProvider())
+    assert diagnostics["reasoning_effort"] == "xhigh"
+    assert diagnostics["reasoning_content_chars"] == 1234
+    assert diagnostics["reasoning_content_sha256"] == "a" * 64
+    assert "reasoning_content" not in diagnostics
+    assert "must-not-be-copied" not in repr(diagnostics)

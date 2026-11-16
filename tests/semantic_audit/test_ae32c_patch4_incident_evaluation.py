@@ -17,7 +17,7 @@ from audit_engine.semantic_audit.ae32c.evaluation import (
     render_comparison_markdown,
     summarize_graph_report,
 )
-from audit_engine.semantic_audit.ae32c.investigator import InvestigationLimits, RepositoryInvestigator
+from audit_engine.semantic_audit.ae32c.investigator import InvestigationLimits, RepositoryInvestigator, _EvidenceEntry
 from audit_engine.semantic_audit.ae32c.provider_preflight import run_preflight
 from providers.base import ProviderToolCall
 from audit_engine.semantic_audit.ae32c.response_protocol import RESPONSE_TOOL_NAME
@@ -127,7 +127,7 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
                     "statement": "The static caller imports the extractor and factory, and the factory imports the adapter.",
                     "kind": "observation",
                     "confidence": "medium",
-                    "evidence_refs": ["E0004", "E0007", "E0008"],
+                    "evidence_refs": ["E0005", "E0008", "E0009"],
                     "source_references": [],
                 },
                 {
@@ -137,7 +137,7 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
                     ),
                     "kind": "observation",
                     "confidence": "medium",
-                    "evidence_refs": ["E0005", "E0009"],
+                    "evidence_refs": ["E0006", "E0010"],
                     "source_references": [],
                 },
                 {
@@ -147,7 +147,7 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
                     ),
                     "kind": "limitation",
                     "confidence": "high",
-                    "evidence_refs": ["E0006"],
+                    "evidence_refs": ["E0007"],
                     "source_references": [],
                 },
             ],
@@ -170,7 +170,8 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
     provider = ScriptedProvider([
         _tool_action("read_source_file", {"path": "pipeline/extractor.py", "start_line": 1, "end_line": 99}, "Read the consumer implementation."),
         _tool_action("read_source_file", {"path": "providers/adapter.py", "start_line": 1, "end_line": 99}, "Read the provider interface implementation."),
-        _tool_action("trace_execution_context", {"target": "module:pipeline.extractor", "max_depth": 3, "max_results": 20}, "Trace static callers, dependencies, and CI workflow context."),
+        _tool_action("trace_execution_context", {"target": "module:pipeline.extractor", "max_depth": 3, "max_results": 50}, "Trace static callers, dependencies, and CI workflow context."),
+        _tool_action("trace_execution_context", {"target": "module:pipeline.extractor", "max_depth": 3, "max_results": 20}, "Retry the same static context query with a supported result limit."),
         _tool_action("find_related_tests", {"target": "module:pipeline.extractor", "max_results": 10}, "Find and classify related test sources."),
         _tool_action("discover_case_context", {"max_results": 20}, "Inspect fixture description and historical incident metadata."),
         _tool_action("read_source_file", {"path": "main.py", "start_line": 1, "end_line": 99}, "Inspect the Python entry point."),
@@ -188,7 +189,7 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
         required_context_target="pipeline/extractor.py",
         require_complete_investigation_context=True,
         limits=InvestigationLimits(
-            max_rounds=10,
+            max_rounds=11,
             max_tool_calls=12,
             finalization_rounds_reserved=2,
             max_tokens_per_call=1_000,
@@ -214,17 +215,32 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
         "read_source_file",
         "read_source_file",
         "trace_execution_context",
+        "trace_execution_context",
         "find_related_tests",
         "discover_case_context",
         "read_source_file",
         "read_source_file",
         "read_source_file",
     ]
-    assert len(provider.messages) == 9
-    assert all(item["status"] == "ok" for item in report["tool_calls"])
+    assert len(provider.messages) == 10
+    assert report["tool_calls"][3]["status"] == "error"
+    assert report["tool_calls"][3]["summary"] == "argument_out_of_range"
+    assert all(item["status"] == "ok" for index, item in enumerate(report["tool_calls"]) if index != 3)
 
     context = report["investigation_context_coverage"]
     assert context["status"] == "complete_for_available_static_context"
+    trace_retry_status = context["discovery_tool_status"]["trace_execution_context"]
+    assert trace_retry_status["status"] == "completed"
+    assert trace_retry_status["final_operation_status"] == "completed_with_retry"
+    assert trace_retry_status["call_count"] == 2
+    assert trace_retry_status["failed_attempt_count"] == 1
+    assert trace_retry_status["successful_complete_call_count"] == 1
+    assert trace_retry_status["recovered_after_retry"] is True
+    assert trace_retry_status["truncated"] is False
+    assert context["required_context_contract"]["target_trace_call_count"] == 2
+    assert context["required_context_contract"]["target_trace_completed_call_count"] == 1
+    assert context["required_context_contract"]["target_trace_failed_attempt_count"] == 1
+    assert context["required_context_contract"]["target_trace_recovered_after_retry"] is True
     assert context["required_context_contract"]["status"] == "complete"
     assert context["required_context_contract"]["required_discovery_target"] == "pipeline/extractor.py"
     assert context["required_context_contract"]["resolved_target_module"] == "module:pipeline.extractor"
@@ -724,7 +740,7 @@ def test_comparison_artifact_writer_rejects_output_inside_checkout(tmp_path: Pat
 def test_live_investigation_limits_allow_multiround_evidence_work():
     limits = build_live_investigation_limits("cloudflare")
     assert LIVE_GRAPH_MAX_CALLS == limits.max_rounds
-    assert limits.max_rounds == 10
+    assert limits.max_rounds == 11
     assert limits.max_tool_calls == 12
     assert limits.finalization_rounds_reserved == 3
     assert limits.max_invalid_final_attempts == 2
@@ -740,7 +756,7 @@ def test_live_investigation_limits_allow_multiround_evidence_work():
 def test_nararouter_gets_provider_specific_elapsed_budget():
     limits = build_live_investigation_limits("nararouter")
     assert limits.max_elapsed_seconds == 900
-    assert limits.max_rounds == 10
+    assert limits.max_rounds == 11
     assert limits.finalization_rounds_reserved == 3
     assert limits.max_invalid_final_attempts == 2
     assert limits.max_invalid_json_retries == 2
@@ -1013,7 +1029,7 @@ def test_cloudflare_live_budget_is_bounded_for_streaming_qwen():
     limits = build_live_investigation_limits("cloudflare")
     assert limits.max_elapsed_seconds == 900
     assert limits.max_tokens_per_call == 2_048
-    assert limits.max_rounds == 10
+    assert limits.max_rounds == 11
     assert limits.max_tool_calls == 12
 
 
@@ -1081,3 +1097,93 @@ def test_comparison_record_preserves_bounded_stream_latency_and_finish_reason():
     markdown = render_comparison_markdown(record)
     assert "Finish reason: `length`" in markdown
     assert "Graph streaming: `True`" in markdown
+
+
+def _coverage_entry(evidence_id, tool, arguments, status, response):
+    encoded = json.dumps(response, sort_keys=True, separators=(",", ":"))
+    return _EvidenceEntry(
+        evidence_id=evidence_id, tool=tool, arguments=arguments, status=status,
+        response_sha256=hashlib.sha256(encoded.encode("utf-8")).hexdigest(),
+        response_bytes=len(encoded.encode("utf-8")), provenance={}, response=response,
+        summary="test fixture",
+    )
+
+
+def _complete_trace_result(target_path="pipeline/extractor.py"):
+    return {
+        "target_path": target_path, "target_module": "module:pipeline.extractor",
+        "coverage_status": "complete_for_query", "truncated": False,
+        "static_caller_relationships": [], "static_caller_paths": [],
+        "static_dependency_relationships": [], "static_dependency_paths": [],
+        "python_entrypoint_paths": [], "entrypoint_context_paths": [],
+        "active_workflow_paths": [],
+    }
+
+
+def test_discovery_aggregation_recovers_failed_trace_when_same_target_retry_completes():
+    investigator = RepositoryInvestigator(
+        FIXTURE_ROOT, ScriptedProvider([]), evidence_tools=RepositoryEvidenceTools(FIXTURE_ROOT)
+    )
+    investigator._ledger = [
+        _coverage_entry("E0001", "trace_execution_context",
+            {"target": "pipeline/extractor.py", "max_depth": 2, "max_results": 50},
+            "error", {"error": "argument_out_of_range"}),
+        _coverage_entry("E0002", "trace_execution_context",
+            {"target": "pipeline/extractor.py", "max_depth": 2, "max_results": 30},
+            "ok", {"result": _complete_trace_result()}),
+    ]
+    coverage = investigator._investigation_context_coverage()
+    trace = coverage["discovery_tool_status"]["trace_execution_context"]
+    assert trace["status"] == "completed"
+    assert trace["final_operation_status"] == "completed_with_retry"
+    assert trace["failed_attempt_count"] == 1
+    assert trace["successful_complete_call_count"] == 1
+    assert trace["recovered_after_retry"] is True
+    assert trace["truncated"] is False
+    assert trace["query_count"] == 1
+
+
+def test_discovery_aggregation_does_not_let_retry_for_another_target_satisfy_original():
+    investigator = RepositoryInvestigator(
+        FIXTURE_ROOT, ScriptedProvider([]), evidence_tools=RepositoryEvidenceTools(FIXTURE_ROOT)
+    )
+    investigator._ledger = [
+        _coverage_entry("E0001", "trace_execution_context",
+            {"target": "pipeline/extractor.py", "max_depth": 2, "max_results": 50},
+            "error", {"error": "argument_out_of_range"}),
+        _coverage_entry("E0002", "trace_execution_context",
+            {"target": "providers/adapter.py", "max_depth": 2, "max_results": 30},
+            "ok", {"result": _complete_trace_result("providers/adapter.py")}),
+    ]
+    coverage = investigator._investigation_context_coverage()
+    trace = coverage["discovery_tool_status"]["trace_execution_context"]
+    assert trace["status"] == "partial"
+    assert trace["query_count"] == 2
+    assert trace["completed_query_count"] == 1
+    assert trace["unresolved_query_count"] == 1
+    assert trace["recovered_after_retry"] is False
+
+
+def test_discovery_aggregation_keeps_truncated_success_incomplete():
+    investigator = RepositoryInvestigator(
+        FIXTURE_ROOT, ScriptedProvider([]), evidence_tools=RepositoryEvidenceTools(FIXTURE_ROOT)
+    )
+    truncated = _complete_trace_result()
+    truncated["truncated"] = True
+    truncated["coverage_status"] = "partial"
+    investigator._ledger = [
+        _coverage_entry("E0001", "trace_execution_context",
+            {"target": "pipeline/extractor.py", "max_depth": 2, "max_results": 30},
+            "ok", {"result": truncated}),
+    ]
+    coverage = investigator._investigation_context_coverage()
+    trace = coverage["discovery_tool_status"]["trace_execution_context"]
+    assert trace["status"] == "partial"
+    assert trace["truncated"] is True
+    assert trace["truncated_successful_call_count"] == 1
+
+
+def test_live_baseline_completion_allowance_is_bounded_but_above_previous_truncation_cap():
+    from audit_engine.semantic_audit.ae32c.live_evaluation import LIVE_BASELINE_MAX_TOKENS
+    assert LIVE_BASELINE_MAX_TOKENS == 4_096
+    assert LIVE_BASELINE_MAX_TOKENS < 8_192

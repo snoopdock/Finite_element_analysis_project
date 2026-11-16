@@ -50,14 +50,17 @@ def _safe_request_diagnostics(value: Any) -> dict[str, Any]:
         "output_chars",
         "partial_output_chars",
         "max_completion_tokens",
+        "reasoning_content_chars",
     ):
         item = value.get(key)
         if isinstance(item, int) and not isinstance(item, bool) and 0 <= item <= 2_000_000:
             result[key] = item
     if isinstance(value.get("streaming"), bool):
         result["streaming"] = value["streaming"]
-    if isinstance(value.get("reasoning_effort"), str) and value["reasoning_effort"] in {"low", "medium", "high"}:
+    if isinstance(value.get("reasoning_effort"), str) and value["reasoning_effort"] in {"low", "medium", "high", "xhigh"}:
         result["reasoning_effort"] = value["reasoning_effort"]
+    if isinstance(value.get("reasoning_content_sha256"), str) and re.fullmatch(r"[0-9a-f]{64}", value["reasoning_content_sha256"]):
+        result["reasoning_content_sha256"] = value["reasoning_content_sha256"]
     if isinstance(value.get("finish_reason"), str) and value["finish_reason"] in {"", "stop", "tool_calls", "length", "content_filter", "function_call"}:
         result["finish_reason"] = value["finish_reason"]
     if isinstance(value.get("error_type"), str) and value["error_type"] in {"", "ReadTimeout", "ConnectTimeout", "ConnectionError", "Timeout", "ChunkedEncodingError", "StreamProtocolError"}:
@@ -325,6 +328,11 @@ def build_comparison_record(
             "call_interface": baseline_call_interface,
             "endpoint_mode": baseline_endpoint_mode,
             "request_diagnostics": baseline_request_diagnostics,
+            **({
+                "max_completion_tokens": diagnostics.get("baseline_max_completion_tokens")
+            } if isinstance(diagnostics.get("baseline_max_completion_tokens"), int)
+                 and not isinstance(diagnostics.get("baseline_max_completion_tokens"), bool)
+                 and 1 <= diagnostics.get("baseline_max_completion_tokens") <= 20_000 else {}),
             **({"finish_reason": baseline_finish_reason} if baseline_finish_reason is not None else {}),
         },
     }

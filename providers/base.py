@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 
@@ -14,6 +14,11 @@ class ProviderToolCall:
 
     name: str
     arguments: Any
+    reasoning_content: Optional[str] = field(default=None, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if self.reasoning_content is not None and not isinstance(self.reasoning_content, str):
+            raise TypeError("ProviderToolCall.reasoning_content must be str or None")
 
 
 class BaseLLMProvider(ABC):
@@ -70,6 +75,7 @@ class ProviderResponse:
     text: Optional[str] = None
     tool_calls: Tuple[ProviderToolCall, ...] = ()
     finish_reason: Optional[str] = None
+    reasoning_content: Optional[str] = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if self.text is not None and not isinstance(self.text, str):
@@ -82,3 +88,5 @@ class ProviderResponse:
         object.__setattr__(self, "tool_calls", tuple(calls))
         if self.finish_reason is not None and not isinstance(self.finish_reason, str):
             raise TypeError("ProviderResponse.finish_reason must be str or None")
+        if self.reasoning_content is not None and not isinstance(self.reasoning_content, str):
+            raise TypeError("ProviderResponse.reasoning_content must be str or None")

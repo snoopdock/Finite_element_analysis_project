@@ -29,9 +29,9 @@ from providers.factory import SUPPORTED_PROVIDERS, build_provider
 from providers.safe_errors import sanitize_provider_error
 
 MAX_BASELINE_RESPONSE_CHARS = 16_000
-LIVE_BASELINE_MAX_TOKENS = 2_000
+LIVE_BASELINE_MAX_TOKENS = 4_096
 LIVE_GRAPH_MAX_TOKENS = 2_048
-LIVE_GRAPH_MAX_ROUNDS = 10
+LIVE_GRAPH_MAX_ROUNDS = 11
 LIVE_GRAPH_MAX_CALLS = LIVE_GRAPH_MAX_ROUNDS
 DEFAULT_PROBLEM = (
     "A previous extraction workflow failed with AttributeError because the "
@@ -401,6 +401,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             baseline_provider_stats = dict(baseline_provider_stats)
         baseline_provider_stats["baseline_call_interface"] = baseline_call_interface
+        baseline_provider_stats["baseline_max_completion_tokens"] = LIVE_BASELINE_MAX_TOKENS
         if baseline_status == "completed" and baseline_provider_stats.get("last_finish_reason") == "length":
             baseline_status = "response_truncated"
             baseline_error = "completion_truncated"

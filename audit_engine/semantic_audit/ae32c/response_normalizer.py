@@ -84,7 +84,8 @@ def normalize_provider_tool_call(
         serialized = json.dumps(arguments, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
     except (TypeError, ValueError):
         raise ResponseNormalizationError("native_tool_arguments_not_json_safe") from None
-    if len(serialized) > max_chars:
+    reasoning_chars = len(tool_call.reasoning_content or "")
+    if len(serialized) + reasoning_chars > max_chars:
         raise ResponseNormalizationError("response_too_large")
 
     if set(arguments) == {"action_json"}:
@@ -550,7 +551,10 @@ def normalize_provider_response(
                 ))
             except (TypeError, ValueError):
                 raise ResponseNormalizationError("provider_response_not_json_safe") from None
-        if sum(len(part) for part in encoded_parts) > max_chars:
+        reasoning_chars = len(response.reasoning_content or "") + sum(
+            len(call.reasoning_content or "") for call in response.tool_calls
+        )
+        if sum(len(part) for part in encoded_parts) + reasoning_chars > max_chars:
             raise ResponseNormalizationError("response_too_large")
         if response.tool_calls:
             if len(response.tool_calls) != 1:
