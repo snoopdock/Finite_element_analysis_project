@@ -251,6 +251,25 @@ jobs:
             'requests>=2.31.0,<3.0.0' \
             'PyYAML>=6.0.0,<7.0.0'
 
+      - name: Verify investigation-context CLI contract before provider calls
+        working-directory: source
+        run: |
+          set -euo pipefail
+          help_file="$RUNNER_TEMP/ae32c-live-evaluation-cli-help.txt"
+          python -m audit_engine.semantic_audit.ae32c.live_evaluation --help > "$help_file"
+          for option in \\
+            --require-complete-investigation-context \\
+            --required-context-target \\
+            --required-context-path
+          do
+            if ! grep -Fq -- "$option" "$help_file"; then
+              echo "::error::Checked-out Stage1 live_evaluation CLI does not support required option: $option"
+              echo "::error::No provider call was made. Update the Stage1 CLI contract before retrying."
+              exit 2
+            fi
+          done
+          echo "Investigation-context CLI contract is available; no provider secrets were used."
+
       - name: Validate selected provider secret and run live evaluation
         id: live
         continue-on-error: true
