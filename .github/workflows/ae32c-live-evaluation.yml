@@ -21,7 +21,7 @@ on:
         type: string
         default: ""
       confirm_live_provider_calls:
-        description: "Authorize one baseline request and up to ten graph-assisted calls. Cloudflare Qwen uses SSE streaming, medium reasoning, a 90-second read-inactivity timeout, and at most one bounded retry for HTTP 429 before response data; no replay after a stream begins."
+        description: "Authorize one baseline request and up to ten graph-assisted calls. Cloudflare Qwen uses SSE streaming, medium reasoning, one bounded stream fallback and one bounded HTTP 429 retry before response data; mandatory execution-context discovery and reads are enforced; no replay after a stream begins."
         required: true
         type: boolean
         default: false
@@ -264,6 +264,9 @@ jobs:
           FEA_LLM_RATE_LIMIT_RETRY_ATTEMPTS: ${{ inputs.provider == 'cloudflare' && '1' || '0' }}
           FEA_LLM_RATE_LIMIT_RETRY_MAX_WAIT_SECONDS: '60'
           FEA_LLM_STREAMING: ${{ inputs.provider == 'cloudflare' && 'true' || 'false' }}
+          FEA_LLM_STREAM_FALLBACK: ${{ inputs.provider == 'cloudflare' && 'true' || 'false' }}
+          FEA_LLM_STREAM_FALLBACK_MAX_ATTEMPTS: ${{ inputs.provider == 'cloudflare' && '1' || '0' }}
+          FEA_LLM_STREAM_FALLBACK_ALLOW_REASONING_ONLY: ${{ inputs.provider == 'cloudflare' && 'true' || 'false' }}
           FEA_LLM_REASONING_EFFORT: ${{ inputs.provider == 'cloudflare' && 'medium' || '' }}
           CLOUDFLARE_ACCOUNT_ID: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
           CLOUDFLARE_API_TOKEN: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_API_TOKEN || '' }}
@@ -290,6 +293,12 @@ jobs:
             --provider "$FEA_LLM_PROVIDER" \
             --repo-root tests/semantic_audit/fixtures/ae32c_provider_interface_incident \
             --output-dir "$artifact_root" \
+            --require-complete-investigation-context \
+            --required-context-target "pipeline/extractor.py" \
+            --required-context-path "main.py" \
+            --required-context-path "providers/factory.py" \
+            --required-context-path "providers/adapter.py" \
+            --required-context-path "tests/checks.py" \
             2>&1 | tee "$artifact_root/live-evaluation.log"
           run_exit_code="${PIPESTATUS[0]}"
           set -e
