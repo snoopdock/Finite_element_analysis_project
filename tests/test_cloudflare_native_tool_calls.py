@@ -1558,3 +1558,25 @@ def test_sse_parser_discards_unterminated_event_at_eof_as_incomplete(monkeypatch
     assert "Invalid or incomplete provider stream" in error
     assert provider.get_stats()["request_diagnostics"]["stream_error_code"] == "incomplete_stream"
     assert provider.get_stats()["request_diagnostics"]["partial_output_chars"] == 0
+
+
+def test_successful_done_sentinel_is_not_reported_as_error_payload(monkeypatch):
+    payload = (
+        _sse_event({"choices": [{"index": 0, "delta": {"content": "DONE_OK"}, "finish_reason": "stop"}]})
+        + "\n\ndata: [DONE]\n\n"
+    )
+    response = FakeStreamResponse([payload], headers={"Content-Type": "text/event-stream"})
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: response)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_text([{"role": "user", "content": "test"}], model=MODEL)
+
+    assert error is None
+    assert result == "DONE_OK"
+    diagnostics = provider.get_stats()["request_diagnostics"]
+    assert diagnostics["terminal_sentinel_observed"] is True
+    assert diagnostics["stream_error_payload_sha256"] == ""
+    assert diagnostics["stream_error_payload_bytes"] == 0
+    assert diagnostics["stream_error_event_index"] == 0

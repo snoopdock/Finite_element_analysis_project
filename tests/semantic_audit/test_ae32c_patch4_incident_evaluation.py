@@ -750,15 +750,16 @@ def test_comparison_artifact_writer_rejects_output_inside_checkout(tmp_path: Pat
 
 
 def test_live_investigation_limits_allow_multiround_evidence_work():
-    limits = build_live_investigation_limits("cloudflare")
+    limits = build_live_investigation_limits("cloudflare", "@cf/qwen/qwen3.8-27b")
     assert LIVE_GRAPH_MAX_CALLS == limits.max_rounds
     assert limits.max_rounds == 11
     assert limits.max_tool_calls == 12
     assert limits.finalization_rounds_reserved == 3
     assert limits.max_invalid_final_attempts == 2
     assert limits.max_invalid_json_retries == 2
-    assert limits.max_finalization_invalid_json_retries == 1
+    assert limits.max_finalization_invalid_json_retries == 2
     assert limits.max_tokens_per_call == 2_048
+    assert limits.finalization_max_tokens_per_call == 6_144
     assert limits.max_total_tokens == 180_000
     assert limits.max_total_prompt_chars == 350_000
     assert limits.max_elapsed_seconds == 900
@@ -1065,6 +1066,8 @@ def test_cloudflare_live_budget_is_bounded_for_streaming_qwen(monkeypatch):
     limits = build_live_investigation_limits("cloudflare", "@cf/qwen/qwen3.8-27b")
     assert limits.max_elapsed_seconds == 900
     assert limits.max_tokens_per_call == 2_048
+    assert limits.finalization_max_tokens_per_call == 6_144
+    assert limits.max_finalization_invalid_json_retries == 2
     assert limits.max_rounds == 11
     assert limits.max_tool_calls == 12
     assert limits.max_cost_usd == 0.50

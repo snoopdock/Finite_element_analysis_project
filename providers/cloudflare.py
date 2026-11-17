@@ -234,11 +234,6 @@ def _consume_openai_sse(
                     "tool_call_delta_count": tool_call_delta_count,
                     "terminal_sentinel": True,
                     "finish_reason": finish_reason or "",
-                    "last_event_metadata": {
-                        "event_index": event_count + 1,
-                        "payload_bytes": payload_bytes,
-                        "payload_sha256": payload_sha256,
-                    },
                 })
             break
 
@@ -433,7 +428,6 @@ def _consume_openai_sse(
                 "tool_call_delta_count": tool_call_delta_count,
                 "terminal_sentinel": False,
                 "finish_reason": finish_reason or "",
-                "last_event_metadata": last_event_metadata,
             })
         if output_chars + reasoning_chars > max_chars:
             raise _SSEProtocolError(
@@ -472,7 +466,6 @@ def _consume_openai_sse(
         "finish_reason": finish_reason or "",
         "reasoning_content_sha256": hashlib.sha256(reasoning_content.encode("utf-8")).hexdigest() if reasoning_content else None,
         "wire_chars": wire_chars,
-        "last_event_metadata": last_event_metadata,
     }
 
 

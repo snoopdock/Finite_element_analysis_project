@@ -230,7 +230,7 @@ def test_finalization_context_is_rebuilt_with_exact_source_candidates_under_budg
         max_rounds=4,
         finalization_rounds_reserved=3,
         max_total_tokens=32_000,
-        max_total_prompt_chars=30_000,
+        max_total_prompt_chars=36_000,
         max_tool_context_chars=1_000,
     )
     investigator, provider = _investigator(

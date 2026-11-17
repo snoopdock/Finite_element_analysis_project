@@ -152,6 +152,9 @@ def build_live_investigation_limits(
         max_tool_calls=12,
         finalization_rounds_reserved=3,
         max_tokens_per_call=LIVE_GRAPH_MAX_TOKENS,
+        # Keep evidence gathering bounded at 2,048 while giving the reserved
+        # finalization phase enough completion capacity to finish its response.
+        finalization_max_tokens_per_call=6_144 if provider_key == "cloudflare" and str(model_name).strip() == "@cf/qwen/qwen3.8-27b" else None,
         max_total_tokens=180_000,
         max_response_chars=40_000,
         max_tool_response_bytes=100_000,
@@ -163,7 +166,12 @@ def build_live_investigation_limits(
         max_elapsed_seconds=elapsed_budget,
         max_invalid_final_attempts=2,
         max_invalid_json_retries=2,
-        max_finalization_invalid_json_retries=1,
+        # Three reserved finalization rounds allow one initial response plus
+        # two bounded recoveries; all finalization retries use the larger phase cap.
+        max_finalization_invalid_json_retries=(
+            2 if provider_key == "cloudflare" and str(model_name).strip() == "@cf/qwen/qwen3.8-27b" else 1
+        ),
+        max_finalization_recovery_retries=2,
         max_snapshot_files=100,
         max_snapshot_bytes=2_000_000,
         temperature=0.0,

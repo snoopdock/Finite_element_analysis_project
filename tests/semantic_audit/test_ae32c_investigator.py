@@ -14,6 +14,8 @@ import pytest
 
 from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
 from audit_engine.semantic_audit.ae32c.investigator import SYSTEM_INSTRUCTIONS
+from providers.base import ProviderResponse, ProviderToolCall
+from audit_engine.semantic_audit.ae32c.response_protocol import RESPONSE_TOOL_NAME
 
 from audit_engine.semantic_audit.ae32c import (
     InvestigationLimits,
@@ -258,7 +260,10 @@ def test_cloudflare_prompt_receives_compact_finalization_and_anchor_guidance():
             if isinstance(envelope, dict) and "finalization_mode" in envelope:
                 finalization_payloads.append(envelope["finalization_mode"])
     assert finalization_payloads
-    assert "Do not quote or reproduce source code" in finalization_payloads[0]["response_constraints"][1]
+    assert any(
+        "Do not quote or reproduce source code" in item
+        for item in finalization_payloads[0]["response_constraints"]
+    )
     initial_context = [
         json.loads(message["content"])
         for message in provider.messages[0]
@@ -681,6 +686,9 @@ def test_finalization_json_recovery_uses_reserved_rounds_and_can_finish():
     assert report["budget"]["evidence_gathering_invalid_json_retries_used"] == 0
     assert report["budget"]["finalization_invalid_json_retries_used"] == 2
     assert report["budget"]["max_invalid_json_retries_total"] == 4
+    assert report["budget"]["model_action_candidates"] == 4
+    assert report["budget"]["accepted_model_action_count"] == 2
+    assert report["budget"]["rejected_model_action_count"] == 2
     assert [call[0] for call in tools.calls] == ["repository_summary", "search_repository"]
     serialized = json.dumps({"messages": provider.messages, "report": report})
     assert malformed_one not in serialized
@@ -1642,3 +1650,172 @@ def test_base_report_explicitly_separates_static_analysis_from_runtime_reproduct
     assert report["execution_assessment"]["repository_code_executed"] is False
     assert report["execution_assessment"]["tests_executed_by_investigator"] is False
     assert report["execution_assessment"]["runtime_reproduction_status"] == "not_performed_read_only"
+
+
+def test_phase_specific_finalization_token_allowance_is_reserved_separately():
+    limits = InvestigationLimits(
+        max_rounds=11,
+        finalization_rounds_reserved=3,
+        max_tokens_per_call=2_048,
+        finalization_max_tokens_per_call=6_144,
+        max_total_tokens=180_000,
+    )
+    investigator, _, _ = make_investigator([], limits=limits)
+
+    assert investigator._response_token_limit(8) == 2_048
+    assert investigator._response_token_limit(9) == 6_144
+    assert investigator._response_token_limit(11) == 6_144
+    assert investigator._finalization_future_reserve_tokens(8) == 3 * (1_024 + 6_144)
+    assert investigator._finalization_future_reserve_tokens(9) == 2 * (1_024 + 6_144)
+
+
+def test_cloudflare_finalization_uses_nonstreaming_low_reasoning_and_larger_token_cap():
+    class ProfileProvider:
+        provider_name = "cloudflare"
+        model = "@cf/qwen/qwen3.8-27b"
+        streaming_enabled = True
+        reasoning_effort = "medium"
+        max_retries = 3
+        http_attempts = 0
+        usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "reported_cost_usd": 0.0}
+
+        def get_capabilities(self):
+            return {
+                "native_tool_calls": True,
+                "json_object_mode": False,
+                "json_schema_mode": False,
+                "plain_text_mode": True,
+            }
+
+        def chat_with_response_tool(self, messages, *, tool_definition, temperature=0.2, max_tokens=None, model=None):
+            self.observed = {
+                "streaming_enabled": self.streaming_enabled,
+                "reasoning_effort": self.reasoning_effort,
+                "max_tokens": max_tokens,
+                "tool_name": tool_definition["function"]["name"],
+            }
+            self.http_attempts += 1
+            return ProviderToolCall(RESPONSE_TOOL_NAME, {
+                "action": "final", "tool": "", "arguments": {}, "reason": "", "diagnosis": {}
+            }), None
+
+        def get_stats(self):
+            return {
+                "provider": self.provider_name,
+                "model": self.model,
+                "http_attempts": self.http_attempts,
+                "usage": dict(self.usage),
+                "request_diagnostics": {"finish_reason": "tool_calls"},
+                "last_endpoint_mode": "workers_ai_openai_compatible_chat_completions_auto_tool_choice",
+            }
+
+    provider = ProfileProvider()
+    limits = InvestigationLimits(
+        max_rounds=3,
+        finalization_rounds_reserved=3,
+        max_tokens_per_call=2_048,
+        finalization_max_tokens_per_call=6_144,
+        max_total_tokens=40_000,
+        max_total_prompt_chars=200_000,
+        max_elapsed_seconds=30,
+    )
+    investigator = RepositoryInvestigator(
+        ".", provider, evidence_tools=FakeEvidenceTools(), limits=limits,
+        id_factory=lambda: "finalization-profile-test",
+    )
+    investigator._model_rounds = 1
+    response, error, reserved = investigator._provider_call([
+        {"role": "system", "content": "finalize"},
+        {"role": "user", "content": "return a concise diagnosis"},
+    ])
+
+    assert error is None
+    assert isinstance(response, ProviderToolCall)
+    assert reserved >= 6_144
+    assert provider.observed == {
+        "streaming_enabled": False,
+        "reasoning_effort": "low",
+        "max_tokens": 6_144,
+        "tool_name": RESPONSE_TOOL_NAME,
+    }
+    assert provider.streaming_enabled is True
+    assert provider.reasoning_effort == "medium"
+    assert any(event.get("event") == "finalization_provider_profile_applied" for event in investigator._events)
+
+
+def test_truncated_structured_response_keeps_native_channel_for_recovery():
+    class NativeCloudflareProvider:
+        provider_name = "cloudflare"
+        model = "@cf/qwen/qwen3.8-27b"
+        streaming_enabled = True
+        reasoning_effort = "medium"
+        max_retries = 1
+        http_attempts = 0
+        usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "reported_cost_usd": 0.0}
+
+        def __init__(self):
+            self.responses = [
+                ProviderResponse(text='{"action":"tool_call"', finish_reason="length"),
+                ProviderToolCall(RESPONSE_TOOL_NAME, {
+                    "action": "tool_call",
+                    "tool": "search_repository",
+                    "arguments": {"query": "observed", "mode": "content", "max_results": 5},
+                    "reason": "Retrieve a source witness.",
+                    "diagnosis": {},
+                }),
+                ProviderToolCall(RESPONSE_TOOL_NAME, {
+                    "action": "final",
+                    "tool": "",
+                    "arguments": {},
+                    "reason": "",
+                    "diagnosis": json.loads(final_action(evidence_id="E0002", source_reference=True))["diagnosis"],
+                }),
+            ]
+            self.calls = []
+
+        def get_capabilities(self):
+            return {"native_tool_calls": True, "json_object_mode": False, "json_schema_mode": False, "plain_text_mode": True}
+
+        def chat_with_response_tool(self, messages, *, tool_definition, temperature=0.2, max_tokens=None, model=None):
+            self.calls.append({
+                "streaming": self.streaming_enabled,
+                "reasoning_effort": self.reasoning_effort,
+                "max_tokens": max_tokens,
+            })
+            self.http_attempts += 1
+            return self.responses.pop(0), None
+
+        def get_stats(self):
+            return {
+                "provider": self.provider_name,
+                "model": self.model,
+                "http_attempts": self.http_attempts,
+                "usage": dict(self.usage),
+                "request_diagnostics": {"finish_reason": "length" if self.calls and len(self.calls) == 1 else "tool_calls"},
+                "last_endpoint_mode": "workers_ai_openai_compatible_chat_completions_auto_tool_choice",
+            }
+
+    provider = NativeCloudflareProvider()
+    limits = InvestigationLimits(
+        max_rounds=3,
+        finalization_rounds_reserved=1,
+        max_tokens_per_call=2_048,
+        finalization_max_tokens_per_call=6_144,
+        max_total_tokens=60_000,
+        max_total_prompt_chars=250_000,
+        max_elapsed_seconds=60,
+    )
+    investigator = RepositoryInvestigator(
+        ".", provider, evidence_tools=FakeEvidenceTools(), limits=limits,
+        id_factory=lambda: "truncated-structured-response-test",
+    )
+
+    report = investigator.run("Investigate the observed interface mismatch.")
+
+    assert len(provider.calls) == 3
+    assert provider.calls[0]["max_tokens"] == 2_048
+    assert provider.calls[1]["max_tokens"] == 2_048
+    assert provider.calls[2] == {"streaming": False, "reasoning_effort": "low", "max_tokens": 6_144}
+    assert investigator._response_mode_override is None
+    assert not any(event.get("event") == "provider_response_contract_downgrade_requested" for event in report["errors"])
+    assert any(event.get("event") == "model_response_truncated_by_token_limit" for event in report["errors"])
