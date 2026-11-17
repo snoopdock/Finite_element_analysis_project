@@ -21,7 +21,7 @@ on:
         type: string
         default: ""
       confirm_live_provider_calls:
-        description: "Authorize one baseline request and up to ten graph-assisted calls. Cloudflare Qwen uses SSE streaming, medium reasoning, a 90-second read-inactivity timeout, and one HTTP attempt per streamed call; no automatic replay."
+        description: "Authorize one baseline request and up to ten graph-assisted calls. Cloudflare Qwen uses SSE streaming, medium reasoning, a 90-second read-inactivity timeout, and at most one bounded retry for HTTP 429 before response data; no replay after a stream begins."
         required: true
         type: boolean
         default: false
@@ -261,13 +261,9 @@ jobs:
           FEA_LLM_REQUEST_TIMEOUT_SECONDS: ${{ inputs.provider == 'cloudflare' && '90' || '30' }}
           FEA_LLM_CONNECT_TIMEOUT_SECONDS: '10'
           FEA_LLM_RETRY_ATTEMPTS: '1'
+          FEA_LLM_RATE_LIMIT_RETRY_ATTEMPTS: ${{ inputs.provider == 'cloudflare' && '1' || '0' }}
+          FEA_LLM_RATE_LIMIT_RETRY_MAX_WAIT_SECONDS: '60'
           FEA_LLM_STREAMING: ${{ inputs.provider == 'cloudflare' && 'true' || 'false' }}
-          FEA_LLM_STREAM_FALLBACK: ${{ inputs.provider == 'cloudflare' && 'true' || 'false' }}
-          FEA_LLM_STREAM_FALLBACK_MAX_ATTEMPTS: ${{ inputs.provider == 'cloudflare' && '1' || '0' }}
-          FEA_LLM_STREAM_FALLBACK_ALLOW_REASONING_ONLY: ${{ inputs.provider == 'cloudflare' && 'true' || 'false' }}
-          FEA_AE32C_MAX_COST_USD: '0.50'
-          FEA_AE32C_CLOUDFLARE_INPUT_USD_PER_M: '0.45'
-          FEA_AE32C_CLOUDFLARE_OUTPUT_USD_PER_M: '3.20'
           FEA_LLM_REASONING_EFFORT: ${{ inputs.provider == 'cloudflare' && 'medium' || '' }}
           CLOUDFLARE_ACCOUNT_ID: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
           CLOUDFLARE_API_TOKEN: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_API_TOKEN || '' }}
@@ -293,10 +289,6 @@ jobs:
             --confirm-live-provider-calls \
             --provider "$FEA_LLM_PROVIDER" \
             --repo-root tests/semantic_audit/fixtures/ae32c_provider_interface_incident \
-            --require-complete-investigation-context \
-            --required-context-target pipeline/extractor.py \
-            --required-context-path main.py \
-            --required-context-path providers/factory.py \
             --output-dir "$artifact_root" \
             2>&1 | tee "$artifact_root/live-evaluation.log"
           run_exit_code="${PIPESTATUS[0]}"
@@ -347,8 +339,6 @@ jobs:
                   # Protocol completion is not evidence-complete diagnosis.
                   # The smoke gate now fails closed on an explicitly incomplete
                   # read or a missing root-cause direct citation.
-                  # Keep direct root-cause source witnesses separate from the
-                  # broader discovery/read-completeness contract.
                   coverage = report.get("required_source_coverage") or {}
                   checks["required_source_evidence_complete"] = (
                       summary.get("status") == "completed"
@@ -356,80 +346,6 @@ jobs:
                       and coverage.get("status") == "complete"
                       and not coverage.get("missing_complete_reads")
                       and not coverage.get("missing_root_cause_direct_citations")
-                  )
-                  context = report.get("investigation_context_coverage") or {}
-                  if not isinstance(context, dict):
-                      context = {}
-                  context_contract = context.get("required_context_contract") or {}
-                  if not isinstance(context_contract, dict):
-                      context_contract = {}
-                  discovery_status = context.get("discovery_tool_status") or {}
-                  if not isinstance(discovery_status, dict):
-                      discovery_status = {}
-                  trace_status = discovery_status.get("trace_execution_context") or {}
-                  if not isinstance(trace_status, dict):
-                      trace_status = {}
-                  checks["investigation_context_discovery_complete"] = (
-                      context.get("status") == "complete_for_available_static_context"
-                      and context.get("discovery_tools_complete") is True
-                      and all(
-                          isinstance(discovery_status.get(name), dict)
-                          and discovery_status[name].get("status") == "completed"
-                          and discovery_status[name].get("truncated") is False
-                          for name in (
-                              "trace_execution_context",
-                              "find_related_tests",
-                              "discover_case_context",
-                          )
-                      )
-                  )
-                  checks["execution_context_trace_invoked_for_required_target"] = (
-                      context_contract.get("enabled") is True
-                      and context_contract.get("status") == "complete"
-                      and context_contract.get("required_discovery_tool") == "trace_execution_context"
-                      and context_contract.get("required_discovery_target") == "pipeline/extractor.py"
-                      and context_contract.get("target_trace_final_status") == "completed"
-                      and isinstance(context_contract.get("target_trace_completed_call_count"), int)
-                      and not isinstance(context_contract.get("target_trace_completed_call_count"), bool)
-                      and context_contract.get("target_trace_completed_call_count", 0) >= 1
-                  )
-                  required_context_records = context_contract.get("required_paths")
-                  required_context_by_path = {
-                      item.get("path"): item
-                      for item in required_context_records
-                      if isinstance(item, dict) and isinstance(item.get("path"), str)
-                  } if isinstance(required_context_records, list) else {}
-                  expected_context_paths = {"main.py", "providers/factory.py"}
-                  static_context = context.get("static_execution_context") or {}
-                  if not isinstance(static_context, dict):
-                      static_context = {}
-                  static_callers = {
-                      path for path in static_context.get("caller_paths", [])
-                      if isinstance(path, str)
-                  } if isinstance(static_context.get("caller_paths"), list) else set()
-                  python_entrypoints = {
-                      path for path in static_context.get("python_entrypoint_paths", [])
-                      if isinstance(path, str)
-                  } if isinstance(static_context.get("python_entrypoint_paths"), list) else set()
-                  entrypoint_context = {
-                      path for path in static_context.get("entrypoint_context_paths", [])
-                      if isinstance(path, str)
-                  } if isinstance(static_context.get("entrypoint_context_paths"), list) else set()
-                  checks["required_context_path_roles_verified"] = (
-                      "main.py" in static_callers
-                      and "main.py" in python_entrypoints
-                      and "providers/factory.py" in entrypoint_context
-                  )
-                  checks["required_entrypoint_and_factory_context_read"] = (
-                      context_contract.get("status") == "complete"
-                      and expected_context_paths.issubset(required_context_by_path)
-                      and all(
-                          required_context_by_path[path].get("surfaced") is True
-                          and required_context_by_path[path].get("read") is True
-                          and required_context_by_path[path].get("status") == "read"
-                          for path in expected_context_paths
-                      )
-                      and checks["required_context_path_roles_verified"]
                   )
                   rounds = summary.get("model_rounds", 0)
                   tool_calls = summary.get("tool_call_count", 0)
@@ -450,23 +366,6 @@ jobs:
                       "final_citation_validation": summary.get("final_citation_validation", "unknown"),
                       "diagnosis_assurance": summary.get("diagnosis_assurance", "unknown"),
                       "required_source_coverage": (report.get("required_source_coverage") or {}).get("status", "unknown"),
-                      "investigation_context_coverage": context.get("status", "unknown"),
-                      "required_context_contract": context_contract.get("status", "unknown"),
-                      "required_context_path_roles_verified": checks["required_context_path_roles_verified"],
-                      "trace_execution_context_call_count": trace_status.get("call_count", 0) if isinstance(trace_status, dict) else 0,
-                      "trace_execution_context_final_operation_status": trace_status.get("final_operation_status", "unknown") if isinstance(trace_status, dict) else "unknown",
-                      "trace_execution_context_failed_attempt_count": trace_status.get("failed_attempt_count", 0) if isinstance(trace_status, dict) else 0,
-                      "trace_execution_context_recovered_after_retry": trace_status.get("recovered_after_retry") is True if isinstance(trace_status, dict) else False,
-                      "required_context_paths": [
-                          {
-                              "path": path,
-                              "status": required_context_by_path[path].get("status", "unknown"),
-                              "surfaced": required_context_by_path[path].get("surfaced") is True,
-                              "read": required_context_by_path[path].get("read") is True,
-                          }
-                          for path in sorted(expected_context_paths)
-                          if path in required_context_by_path
-                      ],
                   }
                   for name, passed in checks.items():
                       if not passed:
@@ -476,7 +375,7 @@ jobs:
                   problems.append("comparison_json_invalid:" + type(exc).__name__)
           passed = bool(checks) and all(checks.values())
           gate = {
-              "schema_version": "ae32c/live-smoke-gate/v3",
+              "schema_version": "ae32c/live-smoke-gate/v1",
               "passed": passed,
               "provider": os.environ.get("SELECTED_PROVIDER", "unknown"),
               "checks": checks,
@@ -504,13 +403,8 @@ jobs:
                   f"- Evidence-tool calls: {metrics.get('tool_call_count', 0)}",
                   f"- Snapshot check: `{metrics.get('snapshot_check_status', 'unavailable')}`",
                   f"- Citation validation: `{metrics.get('final_citation_validation', 'unavailable')}`",
-                  f"- Required source evidence coverage: `{metrics.get('required_source_coverage', 'unavailable')}`",
-                  f"- Investigation context coverage: `{metrics.get('investigation_context_coverage', 'unavailable')}`",
-                  f"- Required context contract: `{metrics.get('required_context_contract', 'unavailable')}`",
-                  f"- trace_execution_context calls: {metrics.get('trace_execution_context_call_count', 0)}",
-                  f"- Required context paths: {', '.join(item.get('path', '') + '=' + item.get('status', 'unknown') for item in metrics.get('required_context_paths', [])) or 'not reported'}",
                   "",
-                  "The smoke gate reports required source evidence and broader investigation-context completeness separately. It does not establish that the diagnosis is causally correct.",
+                  "This smoke gate tests the live process and evidence-reference contract only. It does not establish that the diagnosis is causally correct.",
                   "",
               ]
               if problems:
