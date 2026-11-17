@@ -4,6 +4,8 @@
 import hashlib
 import json
 import os
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import re
 import sys
 import time
@@ -544,8 +546,10 @@ def _safe_cloudflare_error_diagnostics(response):
             category = "permission_denied"
         elif any(term in diagnostic_text for term in ("model not found", "unknown model", "model unavailable")):
             category = "model_unavailable"
-        elif any(term in diagnostic_text for term in ("quota", "capacity", "rate limit", "budget")):
+        elif any(term in diagnostic_text for term in ("quota", "capacity", "budget", "exceeded limit")):
             category = "capacity_or_quota"
+        elif any(term in diagnostic_text for term in ("rate limit", "too many requests", "temporarily rate limited")):
+            category = "rate_limited"
 
     return {
         "http_status": status if isinstance(status, int) else None,
@@ -553,6 +557,33 @@ def _safe_cloudflare_error_diagnostics(response):
         "error_codes": sorted(set(codes))[:5],
         "request_id": request_id,
     }
+
+
+def _cloudflare_retry_after_seconds(response, *, default_seconds=30, max_seconds=60):
+    """Return a bounded Retry-After delay; never trust unbounded provider values."""
+    headers = getattr(response, "headers", {}) or {}
+    raw = ""
+    try:
+        raw = headers.get("Retry-After") or headers.get("retry-after") or ""
+    except Exception:
+        raw = ""
+    seconds = None
+    if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+        seconds = float(raw)
+    elif isinstance(raw, str) and raw.strip():
+        try:
+            seconds = float(raw.strip())
+        except ValueError:
+            try:
+                retry_at = parsedate_to_datetime(raw.strip())
+                if retry_at.tzinfo is None:
+                    retry_at = retry_at.replace(tzinfo=timezone.utc)
+                seconds = (retry_at - datetime.now(timezone.utc)).total_seconds()
+            except (TypeError, ValueError, OverflowError):
+                seconds = None
+    if seconds is None:
+        seconds = float(default_seconds)
+    return max(0.0, min(float(max_seconds), seconds))
 
 
 class CloudflareProvider:
@@ -612,6 +643,18 @@ class CloudflareProvider:
             self.max_retries = max(1, min(5, int(os.environ.get("FEA_LLM_RETRY_ATTEMPTS", "1"))))
         except (TypeError, ValueError):
             self.max_retries = 1
+        try:
+            self.rate_limit_retry_attempts = max(
+                0, min(2, int(os.environ.get("FEA_LLM_RATE_LIMIT_RETRY_ATTEMPTS", "1")))
+            )
+        except (TypeError, ValueError):
+            self.rate_limit_retry_attempts = 1
+        try:
+            self.rate_limit_retry_max_wait_seconds = max(
+                1, min(120, int(os.environ.get("FEA_LLM_RATE_LIMIT_RETRY_MAX_WAIT_SECONDS", "60")))
+            )
+        except (TypeError, ValueError):
+            self.rate_limit_retry_max_wait_seconds = 60
         self.streaming_enabled = _env_flag("FEA_LLM_STREAMING", False)
         self.stream_fallback_enabled = _env_flag("FEA_LLM_STREAM_FALLBACK", True)
         self.stream_fallback_allow_reasoning_only = _env_flag(
@@ -651,6 +694,7 @@ class CloudflareProvider:
         self.last_request_time_to_first_event_seconds = None
         self.last_request_time_to_first_output_seconds = None
         self.last_request_attempt_count = 0
+        self.last_request_rate_limit_retries_used = 0
         self.last_request_stream_event_count = 0
         self.last_request_output_chars = 0
         self.last_request_partial_output_chars = 0
@@ -840,6 +884,7 @@ class CloudflareProvider:
         self.last_request_time_to_first_event_seconds = None
         self.last_request_time_to_first_output_seconds = None
         self.last_request_attempt_count = 0
+        self.last_request_rate_limit_retries_used = 0
         self.last_request_stream_event_count = 0
         self.last_request_output_chars = 0
         self.last_request_partial_output_chars = 0
@@ -912,7 +957,9 @@ class CloudflareProvider:
                 "workers_ai_openai_compatible_chat_completions_auto_tool_choice"
             )
 
-        for attempt in range(self.max_retries):
+        rate_limit_retries_used = 0
+        transport_retries_used = 0
+        for attempt in range(self.max_retries + self.rate_limit_retry_attempts):
             self.http_attempts += 1
             resp = None
             try:
@@ -928,19 +975,44 @@ class CloudflareProvider:
                 self.last_http_status = int(resp.status_code)
                 self.http_status_counts[str(resp.status_code)] = self.http_status_counts.get(str(resp.status_code), 0) + 1
                 if resp.status_code == 429:
-                    self.last_error_category = "rate_limited"
-                    wait = min(120, 30 * (2 ** attempt))
-                    print(
-                        f"  [Cloudflare] Rate limited, waiting {wait}s...",
-                        file=sys.stderr,
+                    rate_limit_diagnostics = _safe_cloudflare_error_diagnostics(resp)
+                    self.last_error_category = (
+                        "capacity_or_quota"
+                        if rate_limit_diagnostics["error_category"] == "capacity_or_quota"
+                        else "rate_limited"
                     )
-                    if attempt + 1 < self.max_retries:
+                    can_retry_rate_limit = (
+                        self.last_error_category == "rate_limited"
+                        and rate_limit_retries_used < self.rate_limit_retry_attempts
+                    )
+                    if can_retry_rate_limit:
+                        wait = _cloudflare_retry_after_seconds(
+                            resp,
+                            default_seconds=min(30 * (2 ** rate_limit_retries_used), 60),
+                            max_seconds=self.rate_limit_retry_max_wait_seconds,
+                        )
+                        close_rate_limited_response = getattr(resp, "close", None)
+                        if callable(close_rate_limited_response):
+                            try:
+                                close_rate_limited_response()
+                            except Exception:
+                                pass
+                        rate_limit_retries_used += 1
+                        self.last_request_rate_limit_retries_used = rate_limit_retries_used
+                        print(
+                            f"  [Cloudflare] HTTP 429 rate limit; retry "
+                            f"{rate_limit_retries_used}/{self.rate_limit_retry_attempts} "
+                            f"after {wait:g}s.",
+                            file=sys.stderr,
+                        )
                         time.sleep(wait)
                         continue
                     self.failed_calls += 1
                     if tools is not None:
                         self.native_tool_call_failures += 1
-                    return None, "HTTP 429: rate limit after retries"
+                    if self.last_error_category == "capacity_or_quota":
+                        return None, "HTTP 429: provider capacity or quota exhausted"
+                    return None, "HTTP 429: rate-limit retry budget exhausted"
 
                 if resp.status_code == 402:
                     self.last_error_category = "budget_exhausted"
@@ -1355,7 +1427,7 @@ class CloudflareProvider:
                     self.last_error_category = "stream_interrupted"
                     self.last_request_error_type = type(exc).__name__[:80]
                     return None, "Provider response stream was interrupted"
-                if attempt + 1 >= self.max_retries:
+                if transport_retries_used + 1 >= self.max_retries:
                     self.failed_calls += 1
                     if tools is not None:
                         self.native_tool_call_failures += 1
@@ -1366,7 +1438,8 @@ class CloudflareProvider:
                     )
                     self.last_request_error_type = type(exc).__name__[:80]
                     return None, str(exc)
-                time.sleep(10 * (attempt + 1))
+                transport_retries_used += 1
+                time.sleep(10 * transport_retries_used)
 
             except ValueError as exc:
                 self.failed_calls += 1
@@ -1527,6 +1600,8 @@ class CloudflareProvider:
             "max_logical_calls": self.max_logical_calls,
             "timeout_seconds": self.timeout_seconds,
             "max_retries": self.max_retries,
+            "rate_limit_retry_attempts": self.rate_limit_retry_attempts,
+            "rate_limit_retry_max_wait_seconds": self.rate_limit_retry_max_wait_seconds,
             "stream_fallback_enabled": self.stream_fallback_enabled,
             "stream_fallbacks_used": self.stream_fallbacks_used,
             "stream_fallbacks_max": self.max_stream_fallbacks,
@@ -1551,6 +1626,7 @@ class CloudflareProvider:
                 "time_to_first_event_seconds": self.last_request_time_to_first_event_seconds,
                 "time_to_first_output_seconds": self.last_request_time_to_first_output_seconds,
                 "attempt_count": self.last_request_attempt_count,
+                "rate_limit_retries_used": self.last_request_rate_limit_retries_used,
                 "stream_event_count": self.last_request_stream_event_count,
                 "output_chars": self.last_request_output_chars,
                 "partial_output_chars": self.last_request_partial_output_chars,

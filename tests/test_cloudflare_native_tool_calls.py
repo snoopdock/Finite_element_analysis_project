@@ -1580,3 +1580,141 @@ def test_successful_done_sentinel_is_not_reported_as_error_payload(monkeypatch):
     assert diagnostics["stream_error_payload_sha256"] == ""
     assert diagnostics["stream_error_payload_bytes"] == 0
     assert diagnostics["stream_error_event_index"] == 0
+
+
+def test_cloudflare_rate_limit_retries_once_and_honors_retry_after(monkeypatch):
+    calls = []
+    sleeps = []
+    rate_limited = FakeResponse(
+        {"success": False, "errors": [{"code": 429, "message": "Too many requests"}]},
+        status_code=429,
+        headers={"Retry-After": "0"},
+    )
+    success = FakeResponse({
+        "id": "chatcmpl-after-429",
+        "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "recovered"}}],
+    })
+
+    def post(url, **kwargs):
+        calls.append((url, kwargs))
+        return rate_limited if len(calls) == 1 else success
+
+    monkeypatch.setattr("providers.cloudflare.requests.post", post)
+    monkeypatch.setattr("providers.cloudflare.time.sleep", sleeps.append)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    monkeypatch.setenv("FEA_LLM_RATE_LIMIT_RETRY_ATTEMPTS", "1")
+    monkeypatch.setenv("FEA_LLM_RATE_LIMIT_RETRY_MAX_WAIT_SECONDS", "60")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_openai_compatible(
+        [{"role": "user", "content": "probe"}], max_tokens=32, model=MODEL
+    )
+
+    assert error is None
+    assert result == "recovered"
+    assert len(calls) == 2
+    assert sleeps == [0.0]
+    assert rate_limited.closed
+    diagnostics = provider.get_stats()["request_diagnostics"]
+    assert diagnostics["attempt_count"] == 2
+    assert diagnostics["rate_limit_retries_used"] == 1
+
+
+def test_cloudflare_rate_limit_retry_wait_is_capped(monkeypatch):
+    calls = []
+    sleeps = []
+    responses = [
+        FakeResponse(
+            {"success": False, "errors": [{"code": 429, "message": "Too many requests"}]},
+            status_code=429,
+            headers={"Retry-After": "120"},
+        ),
+        FakeResponse({
+            "id": "chatcmpl-after-429",
+            "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "ok"}}],
+        }),
+    ]
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda *a, **k: (calls.append(1) or responses[len(calls) - 1]),
+    )
+    monkeypatch.setattr("providers.cloudflare.time.sleep", sleeps.append)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    monkeypatch.setenv("FEA_LLM_RATE_LIMIT_RETRY_ATTEMPTS", "1")
+    monkeypatch.setenv("FEA_LLM_RATE_LIMIT_RETRY_MAX_WAIT_SECONDS", "5")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_openai_compatible(
+        [{"role": "user", "content": "probe"}], max_tokens=32, model=MODEL
+    )
+
+    assert error is None
+    assert result == "ok"
+    assert len(calls) == 2
+    assert sleeps == [5.0]
+
+
+def test_cloudflare_rate_limit_retry_is_bounded_and_reports_exhaustion(monkeypatch):
+    calls = []
+    sleeps = []
+    responses = [
+        FakeResponse(
+            {"success": False, "errors": [{"code": 429, "message": "Too many requests"}]},
+            status_code=429,
+            headers={"Retry-After": "0"},
+        ),
+        FakeResponse(
+            {"success": False, "errors": [{"code": 429, "message": "Too many requests"}]},
+            status_code=429,
+            headers={"Retry-After": "0"},
+        ),
+    ]
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda *a, **k: (calls.append(1) or responses[len(calls) - 1]),
+    )
+    monkeypatch.setattr("providers.cloudflare.time.sleep", sleeps.append)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    monkeypatch.setenv("FEA_LLM_RATE_LIMIT_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_openai_compatible(
+        [{"role": "user", "content": "probe"}], max_tokens=32, model=MODEL
+    )
+
+    assert result is None
+    assert error == "HTTP 429: rate-limit retry budget exhausted"
+    assert len(calls) == 2
+    assert sleeps == [0.0]
+    diagnostics = provider.get_stats()["request_diagnostics"]
+    assert diagnostics["attempt_count"] == 2
+    assert diagnostics["rate_limit_retries_used"] == 1
+    assert provider.get_stats()["last_error_category"] == "rate_limited"
+
+
+def test_cloudflare_does_not_retry_hard_quota_429(monkeypatch):
+    calls = []
+    sleeps = []
+    response = FakeResponse(
+        {"success": False, "errors": [{"code": 429, "message": "Monthly quota exceeded"}]},
+        status_code=429,
+        headers={"Retry-After": "0"},
+    )
+    monkeypatch.setattr(
+        "providers.cloudflare.requests.post",
+        lambda *a, **k: (calls.append(1) or response),
+    )
+    monkeypatch.setattr("providers.cloudflare.time.sleep", sleeps.append)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    monkeypatch.setenv("FEA_LLM_RATE_LIMIT_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_openai_compatible(
+        [{"role": "user", "content": "probe"}], max_tokens=32, model=MODEL
+    )
+
+    assert result is None
+    assert error == "HTTP 429: provider capacity or quota exhausted"
+    assert len(calls) == 1
+    assert sleeps == []
+    assert provider.get_stats()["last_error_category"] == "capacity_or_quota"
