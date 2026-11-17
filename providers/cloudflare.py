@@ -54,6 +54,136 @@ def _env_flag(name: str, default: bool = False) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
+class _SSEProtocolError(ValueError):
+    """Safe, structured SSE parse failure; never retains the raw payload."""
+
+    def __init__(self, code, *, event_index=0, payload_bytes=0, payload_sha256="", json_error_position=None):
+        super().__init__(code)
+        self.code = code
+        self.event_index = max(0, int(event_index))
+        self.payload_bytes = max(0, int(payload_bytes))
+        self.payload_sha256 = payload_sha256 if re.fullmatch(r"[a-f0-9]{64}", payload_sha256 or "") else ""
+        self.json_error_position = (
+            max(0, int(json_error_position))
+            if isinstance(json_error_position, int) and not isinstance(json_error_position, bool)
+            else None
+        )
+
+
+def _iter_sse_lines(response, *, max_line_bytes: int):
+    """Yield UTF-8-decoded lines from bounded raw transport chunks.
+
+    Unlike iter_lines(), this checks the pending line buffer while bytes arrive,
+    so a peer cannot force an unbounded unterminated line allocation.
+    """
+    pending = bytearray()
+    skip_lf_after_cr = False
+    for chunk in response.iter_content(chunk_size=4096, decode_unicode=False):
+        if chunk is None:
+            continue
+        if isinstance(chunk, str):
+            chunk = chunk.encode("utf-8", errors="strict")
+        if not isinstance(chunk, (bytes, bytearray)):
+            raise _SSEProtocolError("invalid_stream_transport_chunk")
+        for byte in chunk:
+            if skip_lf_after_cr:
+                skip_lf_after_cr = False
+                if byte == 0x0A:
+                    continue
+            if byte == 0x0D:
+                yield bytes(pending)
+                pending.clear()
+                skip_lf_after_cr = True
+            elif byte == 0x0A:
+                yield bytes(pending)
+                pending.clear()
+            else:
+                pending.append(byte)
+                if len(pending) > max_line_bytes:
+                    digest = hashlib.sha256(pending[:max_line_bytes]).hexdigest()
+                    raise _SSEProtocolError(
+                        "stream_line_too_large", payload_bytes=len(pending),
+                        payload_sha256=digest,
+                    )
+    if pending:
+        # An unterminated final line is yielded, but its event is not dispatched
+        # unless a later blank line was received (the SSE EOF rule).
+        yield bytes(pending)
+
+
+def _iter_sse_data_payloads(response, *, max_line_bytes: int, max_event_bytes: int):
+    """Yield complete SSE data payloads, honoring blank-line event boundaries.
+
+    Requests' iter_lines is consumed exactly once. It performs line splitting;
+    this layer implements the SSE field and event semantics, including multiple
+    data fields, comments, BOM removal, and the three standard line endings.
+    """
+    data_fields = []
+    event_bytes = 0
+    first_line = True
+    iterator = _iter_sse_lines(response, max_line_bytes=max_line_bytes)
+    for raw_line in iterator:
+        if raw_line is None:
+            continue
+        if isinstance(raw_line, bytes):
+            try:
+                line = raw_line.decode("utf-8", errors="strict")
+            except UnicodeDecodeError as exc:
+                digest = hashlib.sha256(raw_line).hexdigest()
+                raise _SSEProtocolError(
+                    "invalid_stream_utf8", payload_bytes=len(raw_line), payload_sha256=digest,
+                ) from exc
+            line_size = len(raw_line)
+        else:
+            line = str(raw_line)
+            try:
+                line_size = len(line.encode("utf-8", errors="strict"))
+            except UnicodeEncodeError as exc:
+                raise _SSEProtocolError("invalid_stream_utf8") from exc
+        if first_line:
+            first_line = False
+            if line.startswith("\ufeff"):
+                line = line[1:]
+                line_size = len(line.encode("utf-8"))
+        if line_size > max_line_bytes:
+            digest = hashlib.sha256(line.encode("utf-8", errors="replace")).hexdigest()
+            raise _SSEProtocolError(
+                "stream_line_too_large", payload_bytes=line_size, payload_sha256=digest,
+            )
+        if line == "":
+            if data_fields:
+                payload = "\n".join(data_fields)
+                payload_raw = payload.encode("utf-8")
+                digest = hashlib.sha256(payload_raw).hexdigest()
+                yield payload, len(payload_raw), digest
+            data_fields = []
+            event_bytes = 0
+            continue
+        if line.startswith(":"):
+            continue
+        field, separator, value = line.partition(":")
+        if separator:
+            # The SSE algorithm removes exactly one optional leading U+0020.
+            if value.startswith(" "):
+                value = value[1:]
+        else:
+            value = ""
+        if field == "data":
+            value_bytes = len(value.encode("utf-8"))
+            event_bytes += value_bytes
+            if event_bytes > max_event_bytes:
+                digest = hashlib.sha256("\n".join(data_fields + [value]).encode("utf-8")).hexdigest()
+                raise _SSEProtocolError(
+                    "stream_event_too_large", payload_bytes=event_bytes, payload_sha256=digest,
+                )
+            data_fields.append(value)
+        # event/id/retry and extension fields are intentionally ignored by
+        # this one-shot Chat Completions consumer; they do not affect JSON data.
+
+    # Per the SSE processing model, an event without its terminating blank line
+    # is not dispatched at EOF. The caller will classify the stream as incomplete.
+
+
 def _consume_openai_sse(
     response,
     *,
@@ -62,13 +192,10 @@ def _consume_openai_sse(
     progress_callback=None,
     max_events: int = 20_000,
 ):
-    """Consume OpenAI-compatible Chat Completions SSE into a normal envelope.
+    """Consume standards-framed OpenAI-compatible Chat Completions SSE.
 
-    A stream must end with [DONE] or a terminal finish_reason. A terminal
-    ``length`` reason is preserved as metadata so the upper-level canonical
-    normalizer can reject an incomplete action and trigger the bounded response
-    mode downgrade. Output and wire-event sizes are bounded before the assembled
-    response reaches the existing local normalizers.
+    Event framing is completed before JSON decoding. All output remains local
+    until a complete terminal stream has been received and normalized.
     """
     content_parts = []
     reasoning_parts = []
@@ -83,117 +210,219 @@ def _consume_openai_sse(
     tool_call_delta_count = 0
     wire_chars = 0
     saw_done = False
+    last_event_metadata = {}
     max_wire_chars = max_chars * 8 + 131_072
 
-    for raw_line in response.iter_lines(chunk_size=128, decode_unicode=True):
-        if raw_line is None:
-            continue
-        line = (
-            raw_line.decode("utf-8", errors="replace")
-            if isinstance(raw_line, bytes)
-            else str(raw_line)
-        )
-        if len(line) > max_wire_chars:
-            raise ValueError("stream_event_too_large")
-        line = line.strip()
-        if not line or line.startswith(":") or not line.startswith("data:"):
-            continue
-        payload = line[5:].strip()
-        wire_chars += len(payload)
+    for payload, payload_bytes, payload_sha256 in _iter_sse_data_payloads(
+        response, max_line_bytes=max_wire_chars, max_event_bytes=max_wire_chars,
+    ):
+        wire_chars += payload_bytes
         if wire_chars > max_wire_chars:
-            raise ValueError("stream_wire_payload_too_large")
+            raise _SSEProtocolError(
+                "stream_wire_payload_too_large", event_index=event_count + 1,
+                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+            )
         if payload == "[DONE]":
             saw_done = True
+            if callable(progress_callback):
+                progress_callback({
+                    "event_count": event_count,
+                    "first_event_seconds": first_event_seconds,
+                    "first_output_seconds": first_output_seconds,
+                    "output_chars": output_chars,
+                    "reasoning_content_chars": reasoning_chars,
+                    "tool_call_delta_count": tool_call_delta_count,
+                    "terminal_sentinel": True,
+                    "finish_reason": finish_reason or "",
+                    "last_event_metadata": {
+                        "event_index": event_count + 1,
+                        "payload_bytes": payload_bytes,
+                        "payload_sha256": payload_sha256,
+                    },
+                })
             break
 
         try:
             event = json.loads(payload)
         except (TypeError, ValueError, json.JSONDecodeError) as exc:
-            raise ValueError("malformed_stream_event") from exc
+            raise _SSEProtocolError(
+                "malformed_stream_event", event_index=event_count + 1,
+                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                json_error_position=getattr(exc, "pos", None),
+            ) from exc
         if not isinstance(event, dict):
-            raise ValueError("invalid_stream_event_shape")
+            raise _SSEProtocolError(
+                "invalid_stream_event_shape", event_index=event_count + 1,
+                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+            )
         if "error" in event:
-            raise ValueError("provider_stream_error")
+            raise _SSEProtocolError(
+                "provider_stream_error", event_index=event_count + 1,
+                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+            )
+
+        choices = event.get("choices")
+        event_usage = event.get("usage")
+        if choices is None and isinstance(event_usage, dict):
+            choices = []  # OpenAI-compatible usage-only terminal chunk.
+        if not isinstance(choices, list):
+            raise _SSEProtocolError(
+                "invalid_stream_choices_shape", event_index=event_count + 1,
+                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+            )
+        if not choices and not isinstance(event_usage, dict):
+            raise _SSEProtocolError(
+                "invalid_stream_event_shape", event_index=event_count + 1,
+                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+            )
 
         event_count += 1
         if event_count > max_events:
-            raise ValueError("stream_event_count_exceeded")
+            raise _SSEProtocolError(
+                "stream_event_count_exceeded", event_index=event_count,
+                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+            )
         if first_event_seconds is None:
             first_event_seconds = max(0.0, time.monotonic() - started_at)
-        if isinstance(event.get("usage"), dict):
-            usage = event["usage"]
+        if isinstance(event_usage, dict):
+            usage = event_usage
 
-        choices = event.get("choices")
-        if not isinstance(choices, list):
-            choices = []
         for choice in choices:
             if not isinstance(choice, dict):
-                continue
+                raise _SSEProtocolError(
+                    "invalid_stream_choice_shape", event_index=event_count,
+                    payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                )
             choice_index = choice.get("index", 0)
             if isinstance(choice_index, bool) or not isinstance(choice_index, int) or choice_index != 0:
-                raise ValueError("unexpected_stream_choice_index")
+                raise _SSEProtocolError(
+                    "unexpected_stream_choice_index", event_index=event_count,
+                    payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                )
             delta = choice.get("delta")
+            if delta is None:
+                delta = choice.get("message", {})
             if not isinstance(delta, dict):
-                delta = choice.get("message") if isinstance(choice.get("message"), dict) else {}
+                raise _SSEProtocolError(
+                    "invalid_stream_delta_shape", event_index=event_count,
+                    payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                )
 
-            reasoning_value = delta.get("reasoning_content")
-            if not isinstance(reasoning_value, str):
-                reasoning_value = delta.get("reasoning")
+            reasoning_value = delta.get("reasoning_content", delta.get("reasoning"))
+            if reasoning_value is not None and not isinstance(reasoning_value, str):
+                raise _SSEProtocolError(
+                    "invalid_stream_reasoning_type", event_index=event_count,
+                    payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                )
             if isinstance(reasoning_value, str) and reasoning_value:
                 reasoning_parts.append(reasoning_value)
                 reasoning_chars += len(reasoning_value)
 
             content = delta.get("content")
-            if isinstance(content, str):
-                if content and first_output_seconds is None:
-                    first_output_seconds = max(0.0, time.monotonic() - started_at)
-                content_parts.append(content)
-                output_chars += len(content)
-            elif isinstance(content, list):
-                for part in content:
-                    if isinstance(part, dict) and isinstance(part.get("text"), str):
-                        value = part["text"]
-                        if value and first_output_seconds is None:
-                            first_output_seconds = max(0.0, time.monotonic() - started_at)
-                        content_parts.append(value)
-                        output_chars += len(value)
+            if content is not None:
+                if isinstance(content, str):
+                    if content and first_output_seconds is None:
+                        first_output_seconds = max(0.0, time.monotonic() - started_at)
+                    content_parts.append(content)
+                    output_chars += len(content)
+                elif isinstance(content, list):
+                    for part in content:
+                        if not isinstance(part, dict):
+                            raise _SSEProtocolError(
+                                "invalid_stream_content_part", event_index=event_count,
+                                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                            )
+                        if "text" in part and not isinstance(part.get("text"), str):
+                            raise _SSEProtocolError(
+                                "invalid_stream_content_text_type", event_index=event_count,
+                                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                            )
+                        value = part.get("text", "")
+                        if value:
+                            if first_output_seconds is None:
+                                first_output_seconds = max(0.0, time.monotonic() - started_at)
+                            content_parts.append(value)
+                            output_chars += len(value)
+                else:
+                    raise _SSEProtocolError(
+                        "invalid_stream_content_type", event_index=event_count,
+                        payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                    )
 
             raw_calls = delta.get("tool_calls")
+            if raw_calls is not None and not isinstance(raw_calls, list):
+                raise _SSEProtocolError(
+                    "invalid_stream_tool_calls_shape", event_index=event_count,
+                    payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                )
             if isinstance(raw_calls, list):
                 for raw_call in raw_calls:
                     tool_call_delta_count += 1
                     if not isinstance(raw_call, dict):
-                        raise ValueError("invalid_stream_tool_call_shape")
+                        raise _SSEProtocolError(
+                            "invalid_stream_tool_call_shape", event_index=event_count,
+                            payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                        )
                     index = raw_call.get("index", 0)
                     if isinstance(index, bool) or not isinstance(index, int) or index != 0:
-                        raise ValueError("unexpected_stream_tool_call_index")
+                        raise _SSEProtocolError(
+                            "unexpected_stream_tool_call_index", event_index=event_count,
+                            payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                        )
                     target = tool_calls.setdefault(index, {
                         "id": "", "type": "function",
                         "function": {"name": "", "arguments": ""},
                     })
                     call_id = raw_call.get("id")
+                    if call_id is not None and not isinstance(call_id, str):
+                        raise _SSEProtocolError(
+                            "invalid_stream_tool_call_id_type", event_index=event_count,
+                            payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                        )
                     if isinstance(call_id, str) and not target["id"]:
                         target["id"] = call_id[:200]
                     function = raw_call.get("function")
+                    if function is not None and not isinstance(function, dict):
+                        raise _SSEProtocolError(
+                            "invalid_stream_tool_function_shape", event_index=event_count,
+                            payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                        )
                     if isinstance(function, dict):
                         name = function.get("name")
                         arguments = function.get("arguments")
+                        if name is not None and not isinstance(name, str):
+                            raise _SSEProtocolError(
+                                "invalid_stream_tool_name_type", event_index=event_count,
+                                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                            )
+                        if arguments is not None and not isinstance(arguments, str):
+                            raise _SSEProtocolError(
+                                "invalid_stream_tool_arguments_type", event_index=event_count,
+                                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                            )
                         if isinstance(name, str):
-                            target["function"]["name"] = (
-                                target["function"]["name"] + name
-                            )[:200]
+                            target["function"]["name"] = (target["function"]["name"] + name)[:200]
                         if isinstance(arguments, str):
-                            if arguments and first_output_seconds is None:
-                                first_output_seconds = max(0.0, time.monotonic() - started_at)
                             target["function"]["arguments"] += arguments
                             output_chars += len(arguments)
+                            if arguments and first_output_seconds is None:
+                                first_output_seconds = max(0.0, time.monotonic() - started_at)
 
             reason = choice.get("finish_reason")
-            if isinstance(reason, str) and reason:
-                if reason not in {"stop", "length", "tool_calls", "content_filter", "function_call"}:
-                    raise ValueError("invalid_stream_finish_reason")
-                finish_reason = reason
+            if reason is not None:
+                if not isinstance(reason, str) or reason not in {"stop", "length", "tool_calls", "content_filter", "function_call"}:
+                    raise _SSEProtocolError(
+                        "invalid_stream_finish_reason", event_index=event_count,
+                        payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+                    )
+                if reason:
+                    finish_reason = reason
 
+        last_event_metadata = {
+            "event_index": event_count,
+            "payload_bytes": payload_bytes,
+            "payload_sha256": payload_sha256,
+        }
         if callable(progress_callback):
             progress_callback({
                 "event_count": event_count,
@@ -202,19 +431,27 @@ def _consume_openai_sse(
                 "output_chars": output_chars,
                 "reasoning_content_chars": reasoning_chars,
                 "tool_call_delta_count": tool_call_delta_count,
-                "terminal_sentinel": saw_done,
+                "terminal_sentinel": False,
                 "finish_reason": finish_reason or "",
+                "last_event_metadata": last_event_metadata,
             })
         if output_chars + reasoning_chars > max_chars:
-            raise ValueError("stream_response_too_large")
+            raise _SSEProtocolError(
+                "stream_response_too_large", event_index=event_count,
+                payload_bytes=payload_bytes, payload_sha256=payload_sha256,
+            )
 
     if not saw_done and finish_reason is None:
-        raise ValueError("incomplete_stream")
+        raise _SSEProtocolError(
+            "incomplete_stream", event_index=event_count,
+            payload_bytes=last_event_metadata.get("payload_bytes", 0),
+            payload_sha256=last_event_metadata.get("payload_sha256", ""),
+        )
     reasoning_content = "".join(reasoning_parts)
     if output_chars + len(reasoning_content) > max_chars:
-        raise ValueError("stream_response_too_large")
+        raise _SSEProtocolError("stream_response_too_large", event_index=event_count)
     if len(tool_calls) > 1:
-        raise ValueError("multiple_stream_tool_calls")
+        raise _SSEProtocolError("multiple_stream_tool_calls", event_index=event_count)
 
     message = {"role": "assistant", "content": "".join(content_parts)}
     if reasoning_content:
@@ -235,6 +472,7 @@ def _consume_openai_sse(
         "finish_reason": finish_reason or "",
         "reasoning_content_sha256": hashlib.sha256(reasoning_content.encode("utf-8")).hexdigest() if reasoning_content else None,
         "wire_chars": wire_chars,
+        "last_event_metadata": last_event_metadata,
     }
 
 
@@ -383,6 +621,9 @@ class CloudflareProvider:
             self.max_retries = 1
         self.streaming_enabled = _env_flag("FEA_LLM_STREAMING", False)
         self.stream_fallback_enabled = _env_flag("FEA_LLM_STREAM_FALLBACK", True)
+        self.stream_fallback_allow_reasoning_only = _env_flag(
+            "FEA_LLM_STREAM_FALLBACK_ALLOW_REASONING_ONLY", False
+        )
         try:
             configured_stream_fallbacks = int(os.environ.get("FEA_LLM_STREAM_FALLBACK_MAX_ATTEMPTS", "1"))
         except (TypeError, ValueError):
@@ -425,6 +666,14 @@ class CloudflareProvider:
         self.last_request_stream_terminal_sentinel = False
         self.last_request_stream_finish_reason = ""
         self.last_request_stream_error_code = ""
+        self.last_request_stream_error_event_index = 0
+        self.last_request_stream_error_payload_bytes = 0
+        self.last_request_stream_error_payload_sha256 = ""
+        self.last_request_stream_json_error_position = None
+        self.last_request_stream_content_type = ""
+        self.last_request_stream_content_encoding = ""
+        self.last_request_stream_transfer_encoding = ""
+        self.last_request_stream_request_id = ""
         self.last_request_stream_fallback_attempted = False
         self.last_request_stream_fallback_succeeded = False
         self.last_request_stream_fallback_reason = ""
@@ -481,6 +730,13 @@ class CloudflareProvider:
         finish_reason = metrics.get("finish_reason")
         if isinstance(finish_reason, str):
             self.last_request_stream_finish_reason = finish_reason[:80]
+        event_metadata = metrics.get("last_event_metadata")
+        if isinstance(event_metadata, dict):
+            self.last_request_stream_error_event_index = max(0, int(event_metadata.get("event_index", 0) or 0))
+            self.last_request_stream_error_payload_bytes = max(0, int(event_metadata.get("payload_bytes", 0) or 0))
+            digest = event_metadata.get("payload_sha256")
+            if isinstance(digest, str) and re.fullmatch(r"[a-f0-9]{64}", digest):
+                self.last_request_stream_error_payload_sha256 = digest
 
     def chat(
         self,
@@ -599,6 +855,14 @@ class CloudflareProvider:
         self.last_request_stream_terminal_sentinel = False
         self.last_request_stream_finish_reason = ""
         self.last_request_stream_error_code = ""
+        self.last_request_stream_error_event_index = 0
+        self.last_request_stream_error_payload_bytes = 0
+        self.last_request_stream_error_payload_sha256 = ""
+        self.last_request_stream_json_error_position = None
+        self.last_request_stream_content_type = ""
+        self.last_request_stream_content_encoding = ""
+        self.last_request_stream_transfer_encoding = ""
+        self.last_request_stream_request_id = ""
         self.last_request_stream_fallback_attempted = False
         self.last_request_stream_fallback_succeeded = False
         self.last_request_stream_fallback_reason = ""
@@ -719,6 +983,16 @@ class CloudflareProvider:
                     )
 
                 if stream_this_request:
+                    response_headers = getattr(resp, "headers", {}) or {}
+                    raw_content_type = response_headers.get("Content-Type", "")
+                    self.last_request_stream_content_type = str(raw_content_type).split(";", 1)[0].strip().lower()[:100]
+                    self.last_request_stream_content_encoding = str(response_headers.get("Content-Encoding", "")).strip().lower()[:40]
+                    self.last_request_stream_transfer_encoding = str(response_headers.get("Transfer-Encoding", "")).strip().lower()[:40]
+                    if self.last_request_stream_content_type and self.last_request_stream_content_type != "text/event-stream":
+                        raise _SSEProtocolError("unexpected_stream_content_type")
+                    candidate_request_id = response_headers.get("cf-ray") or response_headers.get("CF-Ray") or ""
+                    if isinstance(candidate_request_id, str) and re.fullmatch(r"[A-Za-z0-9-]{8,80}", candidate_request_id):
+                        self.last_request_stream_request_id = candidate_request_id
                     try:
                         data, stream_metrics = _consume_openai_sse(
                             resp,
@@ -729,14 +1003,33 @@ class CloudflareProvider:
                     except ValueError as stream_exc:
                         stream_code = str(stream_exc)[:100]
                         self.last_request_stream_error_code = stream_code
-                        no_meaningful_output = (
+                        if isinstance(stream_exc, _SSEProtocolError):
+                            self.last_request_stream_error_event_index = stream_exc.event_index
+                            self.last_request_stream_error_payload_bytes = stream_exc.payload_bytes
+                            self.last_request_stream_error_payload_sha256 = stream_exc.payload_sha256
+                            self.last_request_stream_json_error_position = stream_exc.json_error_position
+                        no_content_or_tool_action = (
                             self.last_request_partial_output_chars == 0
-                            and self.last_request_stream_reasoning_chars == 0
                             and self.last_request_stream_tool_call_delta_count == 0
+                        )
+                        no_meaningful_output = (
+                            no_content_or_tool_action
+                            and (
+                                self.last_request_stream_reasoning_chars == 0
+                                or self.stream_fallback_allow_reasoning_only
+                            )
                         )
                         fallback_eligible_codes = {
                             "incomplete_stream", "malformed_stream_event",
-                            "invalid_stream_event_shape", "provider_stream_error",
+                            "invalid_stream_utf8", "invalid_stream_event_shape",
+                            "invalid_stream_choices_shape", "invalid_stream_choice_shape",
+                            "invalid_stream_delta_shape", "invalid_stream_reasoning_type",
+                            "invalid_stream_content_part", "invalid_stream_content_text_type",
+                            "invalid_stream_content_type", "invalid_stream_tool_calls_shape",
+                            "invalid_stream_tool_call_shape", "invalid_stream_tool_call_id_type",
+                            "invalid_stream_tool_function_shape", "invalid_stream_tool_name_type",
+                            "invalid_stream_tool_arguments_type", "invalid_stream_finish_reason",
+                            "provider_stream_error", "unexpected_stream_content_type",
                         }
                         fallback_available = (
                             self.stream_fallback_enabled
@@ -1096,8 +1389,13 @@ class CloudflareProvider:
                     "stream_event_too_large", "stream_wire_payload_too_large",
                     "stream_event_count_exceeded",
                 }
-                is_stream_error = message in stream_codes
+                is_stream_error = isinstance(exc, _SSEProtocolError) or message in stream_codes
                 self.last_request_stream_error_code = message[:100] if is_stream_error else ""
+                if isinstance(exc, _SSEProtocolError):
+                    self.last_request_stream_error_event_index = exc.event_index
+                    self.last_request_stream_error_payload_bytes = exc.payload_bytes
+                    self.last_request_stream_error_payload_sha256 = exc.payload_sha256
+                    self.last_request_stream_json_error_position = exc.json_error_position
                 self.last_error_category = "invalid_stream" if is_stream_error else "invalid_provider_json"
                 self.last_request_error_type = "StreamProtocolError" if is_stream_error else "ValueError"
                 return None, (
@@ -1268,7 +1566,16 @@ class CloudflareProvider:
                 "terminal_sentinel_observed": self.last_request_stream_terminal_sentinel,
                 "stream_finish_reason": self.last_request_stream_finish_reason,
                 "stream_error_code": self.last_request_stream_error_code,
+                "stream_error_event_index": self.last_request_stream_error_event_index,
+                "stream_error_payload_bytes": self.last_request_stream_error_payload_bytes,
+                "stream_error_payload_sha256": self.last_request_stream_error_payload_sha256,
+                "stream_json_error_position": self.last_request_stream_json_error_position,
+                "stream_content_type": self.last_request_stream_content_type,
+                "stream_content_encoding": self.last_request_stream_content_encoding,
+                "stream_transfer_encoding": self.last_request_stream_transfer_encoding,
+                "stream_request_id": self.last_request_stream_request_id,
                 "stream_fallback_enabled": self.stream_fallback_enabled,
+                "stream_fallback_allow_reasoning_only": self.stream_fallback_allow_reasoning_only,
                 "stream_fallback_attempted": self.last_request_stream_fallback_attempted,
                 "stream_fallback_succeeded": self.last_request_stream_fallback_succeeded,
                 "stream_fallback_reason": self.last_request_stream_fallback_reason,

@@ -3317,8 +3317,38 @@ class RepositoryInvestigator:
         report["status"] = status
         report["stop_reason"] = stop_reason
         report["snapshot_check_status"] = self._snapshot_check_status
-        report["required_source_coverage"] = self._required_source_coverage(report.get("diagnosis"))
-        report["investigation_context_coverage"] = self._investigation_context_coverage()
+        required_source_coverage = self._required_source_coverage(report.get("diagnosis"))
+        investigation_context_coverage = self._investigation_context_coverage()
+        report["required_source_coverage"] = required_source_coverage
+        report["investigation_context_coverage"] = investigation_context_coverage
+        required_reads_complete = not required_source_coverage.get("missing_complete_reads", [])
+        context_complete = investigation_context_coverage.get("required_context_contract_complete") is True
+        snapshot_verified = self._snapshot_check_status == "verified"
+        report["investigation_continuity"] = {
+            "schema_version": "ae32c/investigation-continuity/v1",
+            "provider_requests_attempted": self._provider_requests_attempted,
+            "provider_responses_received": self._provider_responses_received,
+            "provider_responses_failed": self._provider_responses_failed,
+            "accepted_model_actions": len(self._model_action_trace),
+            "evidence_records_preserved": len(self._ledger),
+            "evidence_preserved_after_provider_failure": (
+                self._provider_responses_failed > 0 and len(self._ledger) > 0
+            ),
+            "partial_provider_response_accepted": False,
+            "finalization_started": self._finalization_rounds_used > 0,
+            "finalization_eligibility": {
+                "eligible": bool(snapshot_verified and required_reads_complete and context_complete),
+                "snapshot_verified": snapshot_verified,
+                "required_source_reads_complete": bool(required_reads_complete),
+                "required_context_contract_complete": bool(context_complete),
+                "reason": (
+                    "eligible" if snapshot_verified and required_reads_complete and context_complete
+                    else "snapshot_not_verified" if not snapshot_verified
+                    else "required_source_reads_incomplete" if not required_reads_complete
+                    else "required_context_contract_incomplete"
+                ),
+            },
+        }
         report["execution_assessment"] = {
             "repository_code_executed": False,
             "tests_executed_by_investigator": False,
@@ -3378,6 +3408,9 @@ class RepositoryInvestigator:
                     "reasoning_content_chars",
                     "stream_fallbacks_used",
                     "stream_fallbacks_max",
+                    "stream_error_event_index",
+                    "stream_error_payload_bytes",
+                    "stream_json_error_position",
                 ):
                     value = raw_request_diagnostics.get(key)
                     if isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= 2_000_000:
@@ -3385,6 +3418,7 @@ class RepositoryInvestigator:
                 for key in (
                     "terminal_sentinel_observed", "stream_fallback_enabled",
                     "stream_fallback_attempted", "stream_fallback_succeeded",
+                    "stream_fallback_allow_reasoning_only",
                 ):
                     value = raw_request_diagnostics.get(key)
                     if isinstance(value, bool):
@@ -3396,6 +3430,20 @@ class RepositoryInvestigator:
                 streaming = raw_request_diagnostics.get("streaming")
                 if isinstance(streaming, bool):
                     safe_request_diagnostics["streaming"] = streaming
+                payload_hash = raw_request_diagnostics.get("stream_error_payload_sha256")
+                if isinstance(payload_hash, str) and re.fullmatch(r"[0-9a-f]{64}", payload_hash):
+                    safe_request_diagnostics["stream_error_payload_sha256"] = payload_hash
+                request_id = raw_request_diagnostics.get("stream_request_id")
+                if isinstance(request_id, str) and re.fullmatch(r"[A-Za-z0-9-]{8,80}", request_id):
+                    safe_request_diagnostics["stream_request_id"] = request_id
+                for key, allowed in {
+                    "stream_content_type": {"text/event-stream", "application/json", ""},
+                    "stream_content_encoding": {"identity", "gzip", "br", "deflate", ""},
+                    "stream_transfer_encoding": {"chunked", "identity", ""},
+                }.items():
+                    value = raw_request_diagnostics.get(key)
+                    if isinstance(value, str) and value.lower() in allowed:
+                        safe_request_diagnostics[key] = value.lower()
                 reasoning_effort = raw_request_diagnostics.get("reasoning_effort")
                 if isinstance(reasoning_effort, str) and reasoning_effort in {"low", "medium", "high", "xhigh"}:
                     safe_request_diagnostics["reasoning_effort"] = reasoning_effort
@@ -3619,10 +3667,14 @@ class RepositoryInvestigator:
                                 "stream_tool_call_delta_count", "terminal_sentinel_observed",
                                 "stream_finish_reason", "stream_error_code",
                                 "stream_fallback_attempted", "stream_fallback_succeeded",
-                                "stream_fallback_reason", "stream_fallbacks_used",
+                                "stream_fallback_allow_reasoning_only", "stream_fallback_reason", "stream_fallbacks_used",
                                 "stream_fallbacks_max", "reasoning_content_chars",
+                                "stream_error_event_index", "stream_error_payload_bytes",
+                                "stream_json_error_position",
                                 "reasoning_content_sha256", "finish_reason",
-                                "error_type", "error_category",
+                                "stream_error_payload_sha256", "stream_content_type",
+                                "stream_content_encoding", "stream_transfer_encoding",
+                                "stream_request_id", "error_type", "error_category",
                             ):
                                 value = raw_diag.get(key)
                                 if isinstance(value, (str, int, bool)) or value is None:
@@ -3633,6 +3685,21 @@ class RepositoryInvestigator:
                                             continue
                                     if key in {"stream_finish_reason", "finish_reason"} and isinstance(value, str):
                                         if value not in {"", "stop", "length", "tool_calls", "content_filter", "function_call"}:
+                                            continue
+                                    if key == "stream_error_payload_sha256" and isinstance(value, str):
+                                        if not re.fullmatch(r"[a-f0-9]{64}", value):
+                                            continue
+                                    if key == "stream_request_id" and isinstance(value, str):
+                                        if not re.fullmatch(r"[A-Za-z0-9-]{8,80}", value):
+                                            continue
+                                    if key == "stream_content_type" and isinstance(value, str):
+                                        if value.lower() not in {"text/event-stream", "application/json", ""}:
+                                            continue
+                                    if key == "stream_content_encoding" and isinstance(value, str):
+                                        if value.lower() not in {"identity", "gzip", "br", "deflate", ""}:
+                                            continue
+                                    if key == "stream_transfer_encoding" and isinstance(value, str):
+                                        if value.lower() not in {"chunked", "identity", ""}:
                                             continue
                                     round_stats[key] = value
                 except Exception:

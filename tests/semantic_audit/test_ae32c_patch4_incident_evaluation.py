@@ -25,6 +25,7 @@ from audit_engine.semantic_audit.ae32c.live_evaluation import (
     LIVE_GRAPH_MAX_CALLS,
     _call_baseline_text,
     build_live_investigation_limits,
+    build_live_cost_estimator,
     main as live_evaluation_main,
 )
 
@@ -210,6 +211,11 @@ def test_controlled_incident_drives_real_evidence_tools_over_multiple_rounds():
         f"model_actions={report.get('model_actions')!r}; errors={report.get('errors')!r}"
     )
     assert report["diagnosis_assurance"] == "references_resolved_not_independently_proven"
+    continuity = report["investigation_continuity"]
+    assert continuity["partial_provider_response_accepted"] is False
+    assert continuity["finalization_started"] is True
+    assert continuity["finalization_eligibility"]["eligible"] is True
+    assert continuity["evidence_records_preserved"] == len(report["evidence_ledger"])
     assert [item["tool"] for item in report["tool_calls"]] == [
         "repository_summary",
         "read_source_file",
@@ -759,6 +765,30 @@ def test_live_investigation_limits_allow_multiround_evidence_work():
     assert limits.max_response_chars == 40_000
 
 
+def test_cloudflare_qwen_cost_estimator_is_conservative_and_includes_recovery_allowance(monkeypatch):
+    monkeypatch.setenv("FEA_AE32C_CLOUDFLARE_INPUT_USD_PER_M", "0.45")
+    monkeypatch.setenv("FEA_AE32C_CLOUDFLARE_OUTPUT_USD_PER_M", "3.20")
+    estimator = build_live_cost_estimator("cloudflare", "@cf/qwen/qwen3.8-27b")
+    assert estimator is not None
+    estimate = estimator("cloudflare", "@cf/qwen/qwen3.8-27b", 4_000, 2_048)
+    expected_input_tokens = 1_250
+    expected_output_tokens = 4_096
+    expected = ((expected_input_tokens * 0.45 + expected_output_tokens * 3.20) / 1_000_000) * 1.15
+    assert estimate == pytest.approx(expected)
+    assert build_live_cost_estimator("openrouter", "@cf/qwen/qwen3.8-27b") is None
+    assert build_live_cost_estimator("cloudflare", "@cf/meta/llama-3.1-8b-instruct-fast") is None
+
+
+def test_cloudflare_qwen_cost_configuration_rejects_invalid_price_or_ceiling(monkeypatch):
+    monkeypatch.setenv("FEA_AE32C_MAX_COST_USD", "nan")
+    with pytest.raises(ValueError, match="FEA_AE32C_MAX_COST_USD"):
+        build_live_investigation_limits("cloudflare", "@cf/qwen/qwen3.8-27b")
+    monkeypatch.setenv("FEA_AE32C_MAX_COST_USD", "0.50")
+    monkeypatch.setenv("FEA_AE32C_CLOUDFLARE_OUTPUT_USD_PER_M", "-1")
+    with pytest.raises(ValueError, match="FEA_AE32C_CLOUDFLARE_OUTPUT_USD_PER_M"):
+        build_live_cost_estimator("cloudflare", "@cf/qwen/qwen3.8-27b")
+
+
 def test_nararouter_gets_provider_specific_elapsed_budget():
     limits = build_live_investigation_limits("nararouter")
     assert limits.max_elapsed_seconds == 900
@@ -1031,12 +1061,17 @@ def test_provider_preflight_rejects_unsafe_model_override_before_provider_initia
 
 
 
-def test_cloudflare_live_budget_is_bounded_for_streaming_qwen():
-    limits = build_live_investigation_limits("cloudflare")
+def test_cloudflare_live_budget_is_bounded_for_streaming_qwen(monkeypatch):
+    limits = build_live_investigation_limits("cloudflare", "@cf/qwen/qwen3.8-27b")
     assert limits.max_elapsed_seconds == 900
     assert limits.max_tokens_per_call == 2_048
     assert limits.max_rounds == 11
     assert limits.max_tool_calls == 12
+    assert limits.max_cost_usd == 0.50
+    graph_only = build_live_investigation_limits(
+        "cloudflare", "@cf/qwen/qwen3.8-27b", max_cost_usd_override=0.42
+    )
+    assert graph_only.max_cost_usd == 0.42
 
 
 def test_other_provider_live_budget_remains_unchanged():

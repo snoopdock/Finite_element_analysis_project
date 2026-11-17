@@ -71,7 +71,62 @@ def _build_provider(provider_name: str, model_name: str, *, max_calls: int, max_
     )
 
 
-def build_live_investigation_limits(provider_name: str = "") -> InvestigationLimits:
+def _positive_env_float(name: str, default: str) -> float:
+    raw = os.environ.get(name, default)
+    try:
+        value = float(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a positive finite number") from exc
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError(f"{name} must be a positive finite number")
+    return value
+
+
+def build_live_cost_estimator(provider_name: str, model_name: str):
+    """Build a conservative Cloudflare Qwen3.8 estimator from published rates.
+
+    Prompt characters are converted at four characters/token and padded by
+    25%; output reserves two maximum completions to cover one possible stream
+    recovery. Cached-input discounts are deliberately not assumed.
+    """
+    if (str(provider_name).strip().lower() != "cloudflare"
+            or str(model_name).strip() != "@cf/qwen/qwen3.8-27b"):
+        return None
+    input_rate = _positive_env_float("FEA_AE32C_CLOUDFLARE_INPUT_USD_PER_M", "0.45")
+    output_rate = _positive_env_float("FEA_AE32C_CLOUDFLARE_OUTPUT_USD_PER_M", "3.20")
+
+    def estimate(_provider: str, _model: str, prompt_chars: int, output_tokens: int) -> float:
+        if (isinstance(prompt_chars, bool) or not isinstance(prompt_chars, int) or prompt_chars < 0
+                or isinstance(output_tokens, bool) or not isinstance(output_tokens, int) or output_tokens < 0):
+            raise ValueError("invalid_cost_estimator_input")
+        estimated_input_tokens = math.ceil((prompt_chars / 4.0) * 1.25)
+        # Two output allowances conservatively cover a possible one-time
+        # non-streaming recovery. This intentionally over-reserves because the
+        # process-wide fallback cap is one, not one per logical model round.
+        estimated_output_tokens = output_tokens * 2
+        raw_cost = (
+            estimated_input_tokens * input_rate
+            + estimated_output_tokens * output_rate
+        ) / 1_000_000.0
+        return raw_cost * 1.15  # additional 15% estimator uncertainty margin
+
+    estimate.pricing_metadata = {
+        "provider": "cloudflare",
+        "model": "@cf/qwen/qwen3.8-27b",
+        "input_usd_per_million_tokens": input_rate,
+        "output_usd_per_million_tokens": output_rate,
+        "cached_input_discount_assumed": False,
+        "prompt_token_estimate": "ceil(prompt_chars / 4 * 1.25)",
+        "output_reservation_multiplier": 2,
+        "uncertainty_margin": 0.15,
+        "scope": "baseline_and_graph_assisted_provider_calls",
+    }
+    return estimate
+
+
+def build_live_investigation_limits(
+    provider_name: str = "", model_name: str = "", *, max_cost_usd_override: float | None = None,
+) -> InvestigationLimits:
     """Return finite live limits with provider-appropriate wall-clock budgets.
 
     Cloudflare Qwen's previous full-context requests timed out at the 45-second
@@ -83,6 +138,15 @@ def build_live_investigation_limits(provider_name: str = "") -> InvestigationLim
     """
     provider_key = str(provider_name).strip().lower()
     elapsed_budget = 900 if provider_key in {"nararouter", "cloudflare"} else 300
+    cost_limit = None
+    if (provider_key == "cloudflare"
+            and str(model_name).strip() == "@cf/qwen/qwen3.8-27b"):
+        cost_limit = (
+            _positive_env_float("FEA_AE32C_MAX_COST_USD", "0.50")
+            if max_cost_usd_override is None else float(max_cost_usd_override)
+        )
+        if not math.isfinite(cost_limit) or cost_limit <= 0:
+            raise ValueError("max_cost_usd_override must be positive and finite")
     return InvestigationLimits(
         max_rounds=LIVE_GRAPH_MAX_ROUNDS,
         max_tool_calls=12,
@@ -103,6 +167,7 @@ def build_live_investigation_limits(provider_name: str = "") -> InvestigationLim
         max_snapshot_files=100,
         max_snapshot_bytes=2_000_000,
         temperature=0.0,
+        max_cost_usd=cost_limit,
     )
 
 
@@ -343,6 +408,11 @@ def main(argv: list[str] | None = None) -> int:
 
         baseline_provider = _build_provider(args.provider, model_name, max_calls=1, max_tokens=LIVE_BASELINE_MAX_TOKENS)
         effective_model_name = _effective_model_name(baseline_provider, model_name)
+        live_cost_estimator = build_live_cost_estimator(args.provider, effective_model_name)
+        live_cost_cap = (
+            _positive_env_float("FEA_AE32C_MAX_COST_USD", "0.50")
+            if live_cost_estimator is not None else None
+        )
         baseline_messages = [
             {
                 "role": "system",
@@ -364,27 +434,44 @@ def main(argv: list[str] | None = None) -> int:
                 }, ensure_ascii=True, sort_keys=True, allow_nan=False),
             },
         ]
+        baseline_cost_estimate_reserved = 0.0
+        graph_cost_allowance = None
+        baseline_cost_budget_blocked = False
+        if live_cost_estimator is not None and live_cost_cap is not None:
+            serialized_baseline_messages = json.dumps(
+                baseline_messages, ensure_ascii=True, sort_keys=True, allow_nan=False
+            )
+            baseline_cost_estimate_reserved = float(live_cost_estimator(
+                args.provider, effective_model_name,
+                len(serialized_baseline_messages), LIVE_BASELINE_MAX_TOKENS,
+            ))
+            graph_cost_allowance = live_cost_cap - baseline_cost_estimate_reserved
+            baseline_cost_budget_blocked = graph_cost_allowance <= 0
         baseline_response: str | None = None
         baseline_error: str | None = None
         baseline_call_interface = "unavailable"
         baseline_started = time.monotonic()
         try:
-            response, error, baseline_call_interface = _call_baseline_text(
-                baseline_provider,
-                baseline_messages,
-                temperature=0.0,
-                max_tokens=LIVE_BASELINE_MAX_TOKENS,
-                model=model_name or None,
-            )
-            if error or not isinstance(response, str):
-                baseline_error = _safe_text(error or "provider returned no text", baseline_provider, 500)
-                baseline_status = "provider_failed"
-            elif len(response) > MAX_BASELINE_RESPONSE_CHARS:
-                baseline_error = "baseline_response_too_large"
-                baseline_status = "response_rejected"
+            if baseline_cost_budget_blocked:
+                baseline_error = "live_cost_budget_exhausted_before_baseline"
+                baseline_status = "budget_rejected"
             else:
-                baseline_response = _safe_text(response, baseline_provider, MAX_BASELINE_RESPONSE_CHARS)
-                baseline_status = "completed"
+                response, error, baseline_call_interface = _call_baseline_text(
+                    baseline_provider,
+                    baseline_messages,
+                    temperature=0.0,
+                    max_tokens=LIVE_BASELINE_MAX_TOKENS,
+                    model=model_name or None,
+                )
+                if error or not isinstance(response, str):
+                    baseline_error = _safe_text(error or "provider returned no text", baseline_provider, 500)
+                    baseline_status = "provider_failed"
+                elif len(response) > MAX_BASELINE_RESPONSE_CHARS:
+                    baseline_error = "baseline_response_too_large"
+                    baseline_status = "response_rejected"
+                else:
+                    baseline_response = _safe_text(response, baseline_provider, MAX_BASELINE_RESPONSE_CHARS)
+                    baseline_status = "completed"
         except Exception as exc:
             baseline_error = _safe_text("provider_exception:" + type(exc).__name__, baseline_provider, 500)
             baseline_status = "provider_failed"
@@ -410,34 +497,48 @@ def main(argv: list[str] | None = None) -> int:
         # E.5: run the graph condition independently of baseline transport and
         # parsing outcomes. The common immutable snapshot check still fails closed.
         try:
-            graph_tools = RepositoryEvidenceTools(repo_root)
-            if graph_tools.manifest_sha256 != manifest_hash or graph_tools.graph_fingerprint != baseline_tools.graph_fingerprint:
+            if baseline_cost_budget_blocked:
                 graph_report = {
                     "schema_version": "ae32c/interactive-investigation/v1",
-                    "status": "inconclusive",
-                    "stop_reason": "snapshot_changed_between_evaluation_conditions",
-                    "provenance": {"source_manifest_sha256": graph_tools.manifest_sha256,
-                                   "graph_fingerprint": graph_tools.graph_fingerprint},
+                    "status": "incomplete",
+                    "stop_reason": "live_cost_budget_exhausted_before_graph",
                     "tool_calls": [], "model_actions": [], "evidence_ledger": [],
-                    "limitations": ["The baseline and graph-assisted conditions did not use the same evidence snapshot."],
+                    "limitations": ["The configured live cost ceiling did not leave a positive graph-investigation allowance; no graph provider call was made."],
                 }
             else:
-                graph_provider = _build_provider(args.provider, model_name, max_calls=LIVE_GRAPH_MAX_CALLS, max_tokens=LIVE_GRAPH_MAX_TOKENS)
-                limits = build_live_investigation_limits(args.provider)
-                investigator = RepositoryInvestigator(
-                    repo_root,
-                    graph_provider,
-                    provider_name=args.provider,
-                    model_name=effective_model_name,
-                    evidence_tools=graph_tools,
-                    required_source_paths=required_source_paths,
-                    required_source_anchors=required_source_anchors,
-                    required_context_paths=required_context_paths,
-                    required_context_target=required_context_target,
-                    require_complete_investigation_context=args.require_complete_investigation_context,
-                    limits=limits,
-                )
-                graph_report = investigator.run(baseline_problem)
+                graph_tools = RepositoryEvidenceTools(repo_root)
+                if graph_tools.manifest_sha256 != manifest_hash or graph_tools.graph_fingerprint != baseline_tools.graph_fingerprint:
+                    graph_report = {
+                        "schema_version": "ae32c/interactive-investigation/v1",
+                        "status": "inconclusive",
+                        "stop_reason": "snapshot_changed_between_evaluation_conditions",
+                        "provenance": {"source_manifest_sha256": graph_tools.manifest_sha256,
+                                       "graph_fingerprint": graph_tools.graph_fingerprint},
+                        "tool_calls": [], "model_actions": [], "evidence_ledger": [],
+                        "limitations": ["The baseline and graph-assisted conditions did not use the same evidence snapshot."],
+                    }
+                else:
+                    graph_provider = _build_provider(args.provider, model_name, max_calls=LIVE_GRAPH_MAX_CALLS, max_tokens=LIVE_GRAPH_MAX_TOKENS)
+                    limits = build_live_investigation_limits(
+                        args.provider, effective_model_name,
+                        max_cost_usd_override=graph_cost_allowance,
+                    )
+                    cost_estimator = live_cost_estimator
+                    investigator = RepositoryInvestigator(
+                        repo_root,
+                        graph_provider,
+                        provider_name=args.provider,
+                        model_name=effective_model_name,
+                        evidence_tools=graph_tools,
+                        required_source_paths=required_source_paths,
+                        required_source_anchors=required_source_anchors,
+                        required_context_paths=required_context_paths,
+                        required_context_target=required_context_target,
+                        require_complete_investigation_context=args.require_complete_investigation_context,
+                        limits=limits,
+                        cost_estimator=cost_estimator,
+                    )
+                    graph_report = investigator.run(baseline_problem)
         except Exception as exc:
             graph_report = {
                 "schema_version": "ae32c/interactive-investigation/v1",
@@ -447,6 +548,12 @@ def main(argv: list[str] | None = None) -> int:
                 "tool_calls": [], "model_actions": [], "evidence_ledger": [],
                 "limitations": ["The graph-assisted condition could not initialize; no causal conclusion is implied."],
             }
+        if isinstance(graph_report, dict) and isinstance(graph_report.get("budget"), dict) and live_cost_estimator is not None:
+            graph_budget_report = graph_report["budget"]
+            graph_budget_report["live_evaluation_total_cost_cap_usd"] = round(float(live_cost_cap), 8)
+            graph_budget_report["baseline_cost_estimate_reserved_usd"] = round(baseline_cost_estimate_reserved, 8)
+            graph_budget_report["graph_cost_allowance_usd"] = round(float(graph_cost_allowance or 0.0), 8)
+            graph_budget_report["cost_estimator_assumptions"] = live_cost_estimator.pricing_metadata
         record = build_comparison_record(
             problem_statement=baseline_problem,
             provider_name=args.provider,
@@ -472,7 +579,7 @@ def main(argv: list[str] | None = None) -> int:
             "baseline_status": baseline_status,
             "graph_assisted_status": (graph_report or {}).get("status", "not_run"),
             "publication": publication,
-            "live_provider_calls_made": True,
+            "live_provider_calls_made": not baseline_cost_budget_blocked,
             "automatic_accuracy_claim": False,
             "human_review_required": True,
         }, ensure_ascii=True, sort_keys=True, indent=2, allow_nan=False))

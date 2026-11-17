@@ -670,10 +670,23 @@ class FakeStreamResponse(FakeResponse):
         super().__init__({}, status_code=status_code, headers=headers or {"Content-Type": "text/event-stream"})
         self._lines = list(lines)
 
-    def iter_lines(self, chunk_size=128, decode_unicode=True):
+    def iter_lines(self, chunk_size=128, decode_unicode=False):
         self.chunk_size = chunk_size
-        for line in self._lines:
-            yield line
+        for item in self._lines:
+            if isinstance(item, (str, bytes)) and (b"\n" in item if isinstance(item, bytes) else "\n" in item or "\r" in item):
+                parts = item.splitlines()
+                for part in parts:
+                    yield part
+            else:
+                yield item
+                # Each legacy fixture item represents one complete SSE event.
+                yield b"" if isinstance(item, bytes) else ""
+
+    def iter_content(self, chunk_size=4096, decode_unicode=False):
+        self.transport_chunk_size = chunk_size
+        for line in self.iter_lines(chunk_size=128, decode_unicode=False):
+            value = line if isinstance(line, bytes) else str(line).encode("utf-8")
+            yield value + b"\n"
 
 
 def _sse_event(value):
@@ -717,6 +730,7 @@ def test_qwen_streaming_text_response_is_normalized_and_reports_latency(monkeypa
     assert kwargs["timeout"] == (10, 90)
     assert kwargs["json"]["stream"] is True
     assert response.chunk_size == 128
+    assert response.transport_chunk_size == 4096
     assert kwargs["json"]["reasoning_effort"] == "medium"
     stats = provider.get_stats()
     diag = stats["request_diagnostics"]
@@ -791,6 +805,7 @@ def test_qwen_stream_read_timeout_wrapped_as_connection_error_is_not_replayed(mo
     class ReadTimeoutStream(FakeStreamResponse):
         def iter_lines(self, chunk_size=128, decode_unicode=True):
             yield _sse_event({"choices": [{"index": 0, "delta": {"content": "partial"}}]})
+            yield ""
             raise requests.exceptions.ConnectionError("Read timed out.")
 
     response = ReadTimeoutStream([])
@@ -826,6 +841,7 @@ def test_qwen_interrupted_stream_is_not_replayed_after_response_started(monkeypa
     class InterruptedStream(FakeStreamResponse):
         def iter_lines(self, chunk_size=128, decode_unicode=True):
             yield _sse_event({"choices": [{"index": 0, "delta": {"content": "partial"}}]})
+            yield ""
             raise requests.exceptions.ChunkedEncodingError("stream ended unexpectedly")
 
     response = InterruptedStream([])
@@ -977,8 +993,20 @@ class FakeStreamingResponse:
         self.headers = headers or {}
         self.closed = False
 
-    def iter_lines(self, chunk_size=128, decode_unicode=True):
-        return iter(self.lines)
+    def iter_lines(self, chunk_size=128, decode_unicode=False):
+        def _lines():
+            for item in self.lines:
+                if isinstance(item, (str, bytes)) and (b"\n" in item if isinstance(item, bytes) else "\n" in item or "\r" in item):
+                    yield from item.splitlines()
+                else:
+                    yield item
+                    yield b"" if isinstance(item, bytes) else ""
+        return iter(_lines())
+
+    def iter_content(self, chunk_size=4096, decode_unicode=False):
+        for line in self.iter_lines(chunk_size=128, decode_unicode=False):
+            value = line if isinstance(line, bytes) else str(line).encode("utf-8")
+            yield value + b"\n"
 
     def close(self):
         self.closed = True
@@ -1307,3 +1335,226 @@ def test_qwen_reasoning_only_non_streaming_response_is_not_accepted_as_action(mo
     assert stats["request_diagnostics"]["error_type"] == "EmptyModelResponse"
     assert reasoning not in repr(stats)
     assert response.closed
+
+
+
+def test_sse_parser_accumulates_multiline_data_fields_before_json_decode(monkeypatch):
+    payload = (
+        'data: {"choices":[\r\n'
+        'data: {"index":0,"delta":{"content":"MULTILINE_OK"},"finish_reason":"stop"}]}\r\n'
+        '\r\n'
+        'data: [DONE]\r\n\r\n'
+    )
+    response = FakeStreamResponse([payload])
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: response)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text([{"role": "user", "content": "test"}], model=MODEL)
+
+    assert error is None
+    assert text == "MULTILINE_OK"
+    assert response.closed
+
+
+def test_sse_parser_handles_bom_comments_crlf_and_usage_only_chunk(monkeypatch):
+    payload = (
+        '\ufeff: heartbeat\r\n'
+        'data: {"choices":[{"index":0,"delta":{"content":"BOM_OK"},"finish_reason":"stop"}]}\r\n\r\n'
+        'data: {"choices":[],"usage":{"prompt_tokens":3,"completion_tokens":2,"total_tokens":5}}\r\n\r\n'
+        'data: [DONE]\r\n\r\n'
+    )
+    response = FakeStreamResponse([payload])
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: response)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text([{"role": "user", "content": "test"}], model=MODEL)
+
+    assert error is None
+    assert text == "BOM_OK"
+    assert provider.get_stats()["usage"]["total_tokens"] == 5
+
+
+def test_sse_parser_rejects_non_string_content_with_safe_fingerprint(monkeypatch):
+    response = FakeStreamResponse([
+        _sse_event({"choices": [{"index": 0, "delta": {"content": 123}}]}),
+        "data: [DONE]",
+    ], headers={"Content-Type": "text/event-stream", "Content-Encoding": "identity", "Transfer-Encoding": "chunked", "CF-Ray": "abc12345"})
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: response)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "false")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text([{"role": "user", "content": "test"}], model=MODEL)
+
+    assert text is None
+    assert "Invalid or incomplete provider stream" in error
+    diag = provider.get_stats()["request_diagnostics"]
+    assert diag["stream_error_code"] == "invalid_stream_content_type"
+    assert diag["stream_error_payload_sha256"]
+    assert len(diag["stream_error_payload_sha256"]) == 64
+    assert diag["stream_content_type"] == "text/event-stream"
+    assert diag["stream_content_encoding"] == "identity"
+    assert diag["stream_transfer_encoding"] == "chunked"
+    assert '{"choices":[{"index":0,"delta":{"content":123}}]}' not in repr(diag)
+
+
+def test_qwen_reasoning_only_malformed_stream_uses_one_bounded_recovery(monkeypatch):
+    calls = []
+    failed_stream = FakeStreamResponse([
+        _sse_event({"choices": [{"index": 0, "delta": {"reasoning_content": "partial internal reasoning"}}]}),
+        "data: {malformed-json",
+    ], headers={"Content-Type": "text/event-stream", "CF-Ray": "ray123456789"})
+    fallback = FakeResponse({
+        "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "RECOVERED_FINAL"}}],
+        "usage": {"prompt_tokens": 12, "completion_tokens": 5, "total_tokens": 17},
+    })
+
+    def fake_post(url, **kwargs):
+        calls.append(kwargs)
+        return failed_stream if len(calls) == 1 else fallback
+
+    monkeypatch.setattr("providers.cloudflare.requests.post", fake_post)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK_ALLOW_REASONING_ONLY", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK_MAX_ATTEMPTS", "1")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text([{"role": "user", "content": "test"}], model=MODEL)
+
+    assert error is None
+    assert text == "RECOVERED_FINAL"
+    assert len(calls) == 2
+    assert calls[0]["json"]["stream"] is True
+    assert calls[1]["json"]["stream"] is False
+    assert calls[1]["json"]["messages"] == calls[0]["json"]["messages"]
+    assert failed_stream.closed and fallback.closed
+    diag = provider.get_stats()["request_diagnostics"]
+    assert diag["stream_reasoning_chars"] == len("partial internal reasoning")
+    assert diag["stream_error_code"] == "malformed_stream_event"
+    assert diag["stream_error_event_index"] == 2
+    assert diag["stream_error_payload_bytes"] > 0
+    assert len(diag["stream_error_payload_sha256"]) == 64
+    assert diag["stream_json_error_position"] is not None
+    assert diag["stream_request_id"] == "ray123456789"
+    assert diag["stream_fallback_attempted"] is True
+    assert diag["stream_fallback_succeeded"] is True
+    assert diag["stream_fallback_reason"] == "malformed_stream_event"
+    assert "partial internal reasoning" not in repr(provider.get_stats())
+
+
+def test_reasoning_only_recovery_is_disabled_without_explicit_flag(monkeypatch):
+    calls = []
+    stream = FakeStreamResponse([
+        _sse_event({"choices": [{"index": 0, "delta": {"reasoning_content": "private partial"}}]}),
+        "data: {malformed",
+    ])
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: (calls.append(k) or stream))
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "true")
+    monkeypatch.delenv("FEA_LLM_STREAM_FALLBACK_ALLOW_REASONING_ONLY", raising=False)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_text([{"role": "user", "content": "test"}], model=MODEL)
+
+    assert result is None
+    assert len(calls) == 1
+    assert provider.get_stats()["request_diagnostics"]["stream_fallback_attempted"] is False
+
+
+def test_reasoning_only_recovery_never_replays_partial_content_or_tool_calls(monkeypatch):
+    for delta in (
+        {"content": "partial visible answer"},
+        {"tool_calls": [{"index": 0, "id": "partial", "function": {"arguments": "{"}}]},
+    ):
+        calls = []
+        stream = FakeStreamResponse([
+            _sse_event({"choices": [{"index": 0, "delta": delta}]}),
+            "data: {malformed",
+        ])
+        monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: (calls.append(k) or stream))
+        monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+        monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "true")
+        monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK_ALLOW_REASONING_ONLY", "true")
+        monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+        provider = CloudflareProvider("account", "token", [MODEL])
+        result, error = provider.chat_text([{"role": "user", "content": "test"}], model=MODEL)
+        assert result is None
+        assert len(calls) == 1
+        assert provider.get_stats()["request_diagnostics"]["stream_fallback_attempted"] is False
+
+
+
+def test_sse_parser_rejects_wrong_content_type_before_consuming_body(monkeypatch):
+    response = FakeStreamResponse([
+        _sse_event({"choices": [{"index": 0, "delta": {"content": "SHOULD_NOT_BE_READ"}}]}),
+    ], headers={"Content-Type": "application/json"})
+    calls = []
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: (calls.append(k) or response))
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "false")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_text([{"role": "user", "content": "test"}], model=MODEL)
+
+    assert result is None
+    assert "Invalid or incomplete provider stream" in error
+    assert provider.get_stats()["request_diagnostics"]["stream_error_code"] == "unexpected_stream_content_type"
+    assert response.closed
+
+
+
+def test_sse_parser_handles_crlf_and_utf8_codepoint_split_across_transport_chunks(monkeypatch):
+    class RawChunkResponse(FakeResponse):
+        def __init__(self, chunks):
+            super().__init__({}, headers={"Content-Type": "text/event-stream"})
+            self.chunks = chunks
+            self.chunk_sizes = []
+
+        def iter_content(self, chunk_size=4096, decode_unicode=False):
+            self.chunk_sizes.append(chunk_size)
+            yield from self.chunks
+
+    payload = '{"choices":[{"index":0,"delta":{"content":"café 😀"},"finish_reason":"stop"}]}'
+    raw = ("\ufeffdata: " + payload + "\r\n\r\ndata: [DONE]\r\n\r\n").encode("utf-8")
+    split_at = raw.index("😀".encode("utf-8")) + 2
+    response = RawChunkResponse([raw[:split_at], raw[split_at:split_at + 1], raw[split_at + 1:]])
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: response)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    text, error = provider.chat_text([{"role": "user", "content": "test"}], model=MODEL)
+
+    assert error is None
+    assert text == "café 😀"
+    assert response.chunk_sizes == [4096]
+    assert response.closed
+
+
+def test_sse_parser_discards_unterminated_event_at_eof_as_incomplete(monkeypatch):
+    class RawChunkResponse(FakeResponse):
+        def iter_content(self, chunk_size=4096, decode_unicode=False):
+            yield b'data: {"choices":[{"index":0,"delta":{"content":"not-dispatched"},"finish_reason":"stop"}]}'
+
+    response = RawChunkResponse({}, headers={"Content-Type": "text/event-stream"})
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: response)
+    monkeypatch.setenv("FEA_LLM_STREAMING", "true")
+    monkeypatch.setenv("FEA_LLM_STREAM_FALLBACK", "false")
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "token", [MODEL])
+
+    result, error = provider.chat_text([{"role": "user", "content": "test"}], model=MODEL)
+
+    assert result is None
+    assert "Invalid or incomplete provider stream" in error
+    assert provider.get_stats()["request_diagnostics"]["stream_error_code"] == "incomplete_stream"
+    assert provider.get_stats()["request_diagnostics"]["partial_output_chars"] == 0

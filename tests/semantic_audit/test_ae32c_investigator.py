@@ -920,6 +920,15 @@ def test_provider_failure_is_reported_without_raw_provider_payload():
     report = investigator.run("Investigate a failed workflow")
     serialized = json.dumps(report)
     assert report["stop_reason"] == "provider_failure"
+    continuity = report["investigation_continuity"]
+    assert continuity["provider_requests_attempted"] == 1
+    assert continuity["provider_responses_failed"] == 1
+    assert continuity["evidence_records_preserved"] >= 1
+    assert continuity["evidence_preserved_after_provider_failure"] is True
+    assert continuity["partial_provider_response_accepted"] is False
+    assert continuity["finalization_started"] is False
+    assert continuity["finalization_eligibility"]["eligible"] is False
+    assert continuity["finalization_eligibility"]["reason"] == "snapshot_not_verified"
     assert "sk-ABCDEFGHIJKLMNOPQRSTUVWX" not in serialized
     assert "redacted" in serialized
 
