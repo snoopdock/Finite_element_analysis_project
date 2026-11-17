@@ -264,6 +264,10 @@ jobs:
           FEA_LLM_STREAMING: ${{ inputs.provider == 'cloudflare' && 'true' || 'false' }}
           FEA_LLM_STREAM_FALLBACK: ${{ inputs.provider == 'cloudflare' && 'true' || 'false' }}
           FEA_LLM_STREAM_FALLBACK_MAX_ATTEMPTS: ${{ inputs.provider == 'cloudflare' && '1' || '0' }}
+          FEA_LLM_STREAM_FALLBACK_ALLOW_REASONING_ONLY: ${{ inputs.provider == 'cloudflare' && 'true' || 'false' }}
+          FEA_AE32C_MAX_COST_USD: '0.50'
+          FEA_AE32C_CLOUDFLARE_INPUT_USD_PER_M: '0.45'
+          FEA_AE32C_CLOUDFLARE_OUTPUT_USD_PER_M: '3.20'
           FEA_LLM_REASONING_EFFORT: ${{ inputs.provider == 'cloudflare' && 'medium' || '' }}
           CLOUDFLARE_ACCOUNT_ID: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
           CLOUDFLARE_API_TOKEN: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_API_TOKEN || '' }}
