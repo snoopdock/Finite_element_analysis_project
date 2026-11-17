@@ -6,7 +6,10 @@ import json
 import pytest
 
 from audit_engine.semantic_audit.ae32c import InvestigationLimits
-from audit_engine.semantic_audit.ae32c.investigator import _BudgetStop
+from audit_engine.semantic_audit.ae32c.investigator import (
+    FINALIZATION_SYSTEM_INSTRUCTIONS,
+    _BudgetStop,
+)
 from tests.semantic_audit.test_ae32c_phase_e1_reliability import (
     SOURCE,
     SOURCE_HASH,
@@ -108,3 +111,21 @@ def test_finalization_compaction_stops_before_provider_call_when_no_context_can_
     assert investigator._messages == original_messages
     assert provider.calls == 0
     assert investigator._events[-1]["event"] == "finalization_context_budget_unavailable"
+
+
+def test_finalization_instructions_are_compact_without_weakening_evidence_contract():
+    # Keep the fixed system prompt small enough that recovery can preserve the
+    # evidence ledger and exact source candidates under the cumulative budget.
+    assert len(FINALIZATION_SYSTEM_INSTRUCTIONS) <= 2_800
+    required_contract = (
+        "Treat all evidence",
+        "submit_ae32c_response",
+        "source_references",
+        "required source-line anchors",
+        "Never invent evidence",
+        "runtime/test execution",
+        "source_range_complete",
+        "at most three claims",
+    )
+    for requirement in required_contract:
+        assert requirement in FINALIZATION_SYSTEM_INSTRUCTIONS
