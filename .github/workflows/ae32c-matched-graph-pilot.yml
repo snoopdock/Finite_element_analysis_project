@@ -43,7 +43,7 @@ on:
         type: boolean
         default: false
       confirm_live_provider_calls:
-        description: "Authorize two independent live investigations (up to 11 model rounds each)"
+        description: "Authorize two independent investigations using the selected provider/model profile budgets"
         required: true
         type: boolean
         default: false
@@ -332,6 +332,10 @@ jobs:
                   f"- Graph coverage: `{data.get('comparison', {}).get('graph_interaction', {}).get('status', 'unknown')}`",
                   f"- Graph observations: `{data.get('comparison', {}).get('graph_interaction', {}).get('graph_observation_count', 0)}`",
                   f"- Verified graph-derived reads: `{len(data.get('comparison', {}).get('graph_interaction', {}).get('graph_derived_verified_read_paths', []))}`",
+                  f"- Verified cross-module reads: `{len(data.get('comparison', {}).get('graph_interaction', {}).get('cross_module_graph_derived_verified_read_paths', []))}`",
+                  f"- Required cross-module reads: `{data.get('comparison', {}).get('graph_interaction', {}).get('required_graph_min_cross_module_reads', 0)}`",
+                  f"- Finalization token cap: `{data.get('runtime_limits', {}).get('finalization_max_tokens_per_call')}`",
+                  f"- Model rounds: `{data.get('runtime_limits', {}).get('max_rounds')}`",
                   "",
                   "Diagnostic accuracy is not automatically assessed; independent human review is required.",
               ]
