@@ -16,7 +16,7 @@ on:
           - cloudflare
           - openrouter
       model:
-        description: "Optional provider-specific model override; for Cloudflare Qwen use @cf/qwen/qwen3.8-27b. Leave blank for provider default"
+        description: "For this E.7 pilot, enter @cf/qwen/qwen3.8-27b when provider=cloudflare. For other providers, enter a compatible model ID."
         required: false
         type: string
         default: ""
@@ -273,6 +273,9 @@ jobs:
             --require-complete-investigation-context
             --required-context-target
             --required-context-path
+            --require-graph-interaction
+            --required-graph-target
+            --required-graph-relation-type
           )
           missing_options=()
           for option in "${required_options[@]}"; do
@@ -284,7 +287,7 @@ jobs:
           if ((${#missing_options[@]} > 0)); then
             printf 'failed:missing_options\n' > "$status_file"
             printf '%s\n' "${missing_options[@]}" > "$ARTIFACT_ROOT/cli-preflight-missing-options.txt"
-            echo "::error::Checked-out Stage1 live_evaluation CLI does not support all required context options."
+            echo "::error::Checked-out Stage1 live_evaluation CLI does not support all required investigation/graph options."
             printf 'Missing option: %s\n' "${missing_options[@]}"
             echo "::error::No provider call was made. Update the Stage1 CLI contract before retrying."
             exit 2
@@ -343,6 +346,9 @@ jobs:
             --required-context-path providers/factory.py \
             --required-context-path providers/adapter.py \
             --required-context-path tests/checks.py \
+            --require-graph-interaction \
+            --required-graph-target 'symbol:pipeline.extractor::extract' \
+            --required-graph-relation-type CALLS \
             2>&1 | tee "$artifact_root/live-evaluation.log"
           run_exit_code="${PIPESTATUS[0]}"
           set -e
@@ -511,6 +517,40 @@ jobs:
                           and checks["required_context_path_roles_verified"]
                       )
 
+                      graph_coverage = report.get("graph_interaction_coverage") or {}
+                      if not isinstance(graph_coverage, dict):
+                          graph_coverage = {}
+                      observed_graph_relations = graph_coverage.get("required_relation_types_observed")
+                      if not isinstance(observed_graph_relations, list):
+                          observed_graph_relations = []
+                      graph_source_paths = graph_coverage.get("graph_source_paths")
+                      if not isinstance(graph_source_paths, list):
+                          graph_source_paths = []
+                      graph_derived_read_paths = graph_coverage.get("graph_derived_read_paths")
+                      if not isinstance(graph_derived_read_paths, list):
+                          graph_derived_read_paths = []
+                      target_graph_calls = graph_coverage.get("target_graph_tool_call_count", 0)
+                      successful_graph_calls = graph_coverage.get("successful_graph_tool_call_count", 0)
+                      checks["graph_interaction_enabled"] = graph_coverage.get("enabled") is True
+                      checks["graph_interaction_complete"] = graph_coverage.get("status") == "complete"
+                      checks["required_graph_target_matches"] = (
+                          graph_coverage.get("required_graph_target") == "symbol:pipeline.extractor::extract"
+                      )
+                      checks["required_CALLS_relationship_observed"] = "CALLS" in observed_graph_relations
+                      checks["successful_required_target_graph_query"] = (
+                          isinstance(target_graph_calls, int)
+                          and not isinstance(target_graph_calls, bool)
+                          and target_graph_calls >= 1
+                          and isinstance(successful_graph_calls, int)
+                          and not isinstance(successful_graph_calls, bool)
+                          and successful_graph_calls >= 1
+                      )
+                      checks["graph_source_paths_returned"] = bool(graph_source_paths)
+                      checks["graph_derived_source_read_recorded"] = bool(graph_derived_read_paths)
+                      checks["graph_follow_through_complete"] = (
+                          graph_coverage.get("graph_follow_through_complete") is True
+                      )
+
                       rounds = summary.get("model_rounds", 0)
                       tool_calls = summary.get("tool_call_count", 0)
                       checks["multiple_model_rounds"] = (
@@ -537,6 +577,13 @@ jobs:
                           "required_source_coverage": (report.get("required_source_coverage") or {}).get("status", "unknown"),
                           "investigation_context_coverage": context.get("status", "unknown"),
                           "required_context_contract": context_contract.get("status", "unknown"),
+                          "graph_interaction_status": graph_coverage.get("status", "unknown"),
+                          "required_graph_target": graph_coverage.get("required_graph_target", "unknown"),
+                          "required_graph_relations_observed": observed_graph_relations,
+                          "target_graph_tool_call_count": target_graph_calls if isinstance(target_graph_calls, int) and not isinstance(target_graph_calls, bool) else 0,
+                          "successful_graph_tool_call_count": successful_graph_calls if isinstance(successful_graph_calls, int) and not isinstance(successful_graph_calls, bool) else 0,
+                          "graph_source_paths": graph_source_paths,
+                          "graph_derived_read_paths": graph_derived_read_paths,
                           "required_context_path_roles_verified": checks["required_context_path_roles_verified"],
                           "trace_execution_context_call_count": trace_status.get("call_count", 0) if isinstance(trace_status, dict) else 0,
                           "trace_execution_context_final_operation_status": trace_status.get("final_operation_status", "unknown") if isinstance(trace_status, dict) else "unknown",
@@ -598,10 +645,15 @@ jobs:
                   f"- Required source evidence coverage: `{metrics.get('required_source_coverage', 'unavailable')}`",
                   f"- Investigation context coverage: `{metrics.get('investigation_context_coverage', 'unavailable')}`",
                   f"- Required context contract: `{metrics.get('required_context_contract', 'unavailable')}`",
+                  f"- Graph interaction: `{metrics.get('graph_interaction_status', 'unavailable')}`",
+                  f"- Required graph target: `{metrics.get('required_graph_target', 'unavailable')}`",
+                  f"- Graph relationships observed: `{', '.join(metrics.get('required_graph_relations_observed', [])) or 'none'}`",
+                  f"- Successful target graph queries: {metrics.get('successful_graph_tool_call_count', 0)}",
+                  f"- Graph-derived source reads: `{', '.join(metrics.get('graph_derived_read_paths', [])) or 'none'}`",
                   f"- trace_execution_context calls: {metrics.get('trace_execution_context_call_count', 0)}",
                   f"- Required context paths: {', '.join(item.get('path', '') + '=' + item.get('status', 'unknown') for item in metrics.get('required_context_paths', [])) or 'not reported'}",
                   "",
-                  "The smoke gate reports workflow preflight, runner execution, source evidence, and investigation-context completeness separately. It does not establish that the diagnosis is causally correct.",
+                  "The smoke gate reports workflow preflight, runner execution, source evidence, investigation-context completeness, and direct graph-to-source interaction separately. It does not establish that the diagnosis is causally correct or that graph relationships are complete.",
                   "",
               ]
               if problems:
