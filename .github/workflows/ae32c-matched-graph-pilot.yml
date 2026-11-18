@@ -1,0 +1,344 @@
+name: AE-32C Matched Graph Pilot (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      validation_run_id:
+        description: "Successful Manual Validation Dispatcher run ID for the exact Stage1 G9.42 source commit"
+        required: true
+        type: string
+      provider:
+        description: "Provider registered in providers.factory.SUPPORTED_PROVIDERS (lowercase)"
+        required: true
+        type: string
+        default: cloudflare
+      model:
+        description: "Optional model ID; leave blank to use the selected provider's configured default"
+        required: false
+        type: string
+        default: ""
+      profile:
+        description: "Bounded real-repository source-scope profile"
+        required: true
+        type: choice
+        default: ae32c_core
+        options:
+          - ae32c_core
+      condition_order:
+        description: "Order of the matched control and graph-enabled conditions"
+        required: true
+        type: choice
+        default: control-first
+        options:
+          - control-first
+          - graph-first
+      max_cost_usd:
+        description: "Estimated maximum cost for both conditions combined when a pricing profile exists"
+        required: true
+        type: string
+        default: "1.0"
+      allow_unpriced_provider_calls:
+        description: "Explicitly permit live calls when no provider/model pricing profile exists (token/time limits still apply)"
+        required: true
+        type: boolean
+        default: false
+      confirm_live_provider_calls:
+        description: "Authorize two independent live investigations (up to 11 model rounds each)"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ae32c-matched-graph-pilot-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Confirm manual paired graph pilot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require main workflow ref, explicit consent, and well-formed inputs
+        shell: bash
+        env:
+          WORKFLOW_REF: ${{ github.ref }}
+          CONFIRM_LIVE_CALLS: ${{ inputs.confirm_live_provider_calls }}
+          SELECTED_PROVIDER: ${{ inputs.provider }}
+          SELECTED_MODEL: ${{ inputs.model }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          MAX_COST_USD: ${{ inputs.max_cost_usd }}
+        run: |
+          set -euo pipefail
+          [[ "$WORKFLOW_REF" == "refs/heads/main" ]] || { echo "::error::Run this workflow from main only."; exit 1; }
+          [[ "$CONFIRM_LIVE_CALLS" == "true" ]] || { echo "::error::Explicit live-call confirmation is required."; exit 1; }
+          [[ "$VALIDATION_RUN_ID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::A numeric G9.42 validation run ID is required."; exit 1; }
+          [[ "$SELECTED_PROVIDER" =~ ^[a-z][a-z0-9_-]{0,63}$ ]] || { echo "::error::Provider name must be lowercase and identifier-like."; exit 1; }
+          [[ ${#SELECTED_MODEL} -le 200 ]] || { echo "::error::Model name is too long."; exit 1; }
+          if [[ -n "$SELECTED_MODEL" && ! "$SELECTED_MODEL" =~ ^[A-Za-z0-9@._:/-]+$ ]]; then
+            echo "::error::Model name contains unsupported characters."
+            exit 1
+          fi
+          python - <<'PY'
+          import math, os
+          value = float(os.environ["MAX_COST_USD"])
+          if not math.isfinite(value) or not 0 < value <= 10:
+              raise SystemExit("max_cost_usd must be positive, finite, and no greater than 10")
+          PY
+          echo "Paired live evaluation authorized for provider: $SELECTED_PROVIDER."
+          echo "Provider/model compatibility and pricing are checked by the source-commit runner before requests."
+          echo "The pilot compares graph-tool availability; it does not automatically assess diagnostic correctness."
+
+  validation-gate:
+    name: Verify exact-commit G9.42 evidence
+    needs: guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    outputs:
+      source_commit_sha: ${{ steps.verify_gate.outputs.source_commit_sha }}
+      validation_run_id: ${{ steps.verify_gate.outputs.validation_run_id }}
+      validation_run_attempt: ${{ steps.verify_gate.outputs.validation_run_attempt }}
+      validation_report_sha256: ${{ steps.verify_gate.outputs.validation_report_sha256 }}
+      validation_bundle_sha256: ${{ steps.verify_gate.outputs.validation_bundle_sha256 }}
+      validation_engine_commit_sha: ${{ steps.verify_gate.outputs.validation_engine_commit_sha }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Stage1 source for validation-gate verification
+        uses: actions/checkout@v4
+        with:
+          ref: stage1/section-uuids
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install evidence-verifier dependency
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
+
+      - name: Retrieve and validate central dispatcher run metadata
+        id: check_validation_run
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+        run: |
+          set -euo pipefail
+          metadata="$RUNNER_TEMP/ae32c-graph-pilot-validation-run-metadata.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}" > "$metadata"
+          python audit_engine/semantic_audit/ae32c/validation_gate.py check-run \
+            --run-metadata "$metadata" \
+            --expected-run-id "$VALIDATION_RUN_ID" \
+            --expected-repository "$GITHUB_REPOSITORY" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Download exact validation evidence artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ steps.check_validation_run.outputs.run_attempt }}
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/ae32c-graph-pilot-validation-evidence"
+          mkdir -p "$evidence_dir"
+          gh run download "$VALIDATION_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "manual-validation-evidence-${VALIDATION_RUN_ID}-${VALIDATION_RUN_ATTEMPT}" \
+            --dir "$evidence_dir"
+
+      - name: Checkout exact validation-engine commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.check_validation_run.outputs.engine_commit_sha }}
+          path: validation-engine
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Independently verify G9.42 report, bundle, and provenance catalog
+        id: verify_gate
+        working-directory: source
+        env:
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/ae32c-graph-pilot-validation-evidence"
+          metadata="$RUNNER_TEMP/ae32c-graph-pilot-validation-run-metadata.json"
+          python audit_engine/semantic_audit/ae32c/validation_gate.py verify \
+            --evidence-dir "$evidence_dir" \
+            --run-metadata "$metadata" \
+            --expected-run-id "$VALIDATION_RUN_ID" \
+            --expected-repository "$EXPECTED_REPOSITORY" \
+            --source-root . \
+            --engine-root ../validation-engine \
+            --github-output "$GITHUB_OUTPUT" \
+            | tee "$RUNNER_TEMP/ae32c-graph-pilot-validation-gate.json"
+
+      - name: Upload validation-gate diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-graph-pilot-validation-gate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ae32c-graph-pilot-validation-gate.json
+            ${{ runner.temp }}/ae32c-graph-pilot-validation-run-metadata.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  graph-pilot:
+    name: Run matched graph-disabled and graph-enabled investigations
+    needs: [guard, validation-gate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout exact G9.42-validated Stage1 source commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify source commit and prepare artifact directory
+        working-directory: source
+        env:
+          VALIDATED_SOURCE_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          [[ "$actual" == "$VALIDATED_SOURCE_SHA" ]] || { echo "::error::Checkout does not match G9.42-validated source commit."; exit 1; }
+          mkdir -p "$RUNNER_TEMP/ae32c-graph-pilot"
+          printf '%s\n' "$actual" > "$RUNNER_TEMP/ae32c-graph-pilot/source-commit.txt"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal runtime dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            'requests>=2.31.0,<3.0.0' \
+            'PyYAML>=6.0.0,<7.0.0'
+
+      - name: Run no-provider-call scope and graph preflight
+        id: preflight
+        working-directory: source
+        env:
+          SELECTED_PROVIDER: ${{ inputs.provider }}
+          SELECTED_MODEL: ${{ inputs.model }}
+          SELECTED_PROFILE: ${{ inputs.profile }}
+          VALIDATED_SOURCE_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          RUNNER_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          preflight_dir="$RUNNER_TEMP/ae32c-graph-pilot/preflight"
+          python tools/run_ae32c_graph_pilot.py \
+            --preflight-only \
+            --repo-root . \
+            --output-dir "$preflight_dir" \
+            --profile "$SELECTED_PROFILE" \
+            --provider "$SELECTED_PROVIDER" \
+            --model "$SELECTED_MODEL" \
+            --source-revision "$VALIDATED_SOURCE_SHA" \
+            --runner-revision "$RUNNER_COMMIT_SHA" \
+            2>&1 | tee "$RUNNER_TEMP/ae32c-graph-pilot/preflight.log"
+          printf 'passed\n' > "$RUNNER_TEMP/ae32c-graph-pilot/preflight.status"
+
+      - name: Run matched live provider conditions
+        id: live_run
+        if: steps.preflight.outcome == 'success'
+        working-directory: source
+        env:
+          SELECTED_PROVIDER: ${{ inputs.provider }}
+          SELECTED_MODEL: ${{ inputs.model }}
+          SELECTED_PROFILE: ${{ inputs.profile }}
+          CONDITION_ORDER: ${{ inputs.condition_order }}
+          MAX_COST_USD: ${{ inputs.max_cost_usd }}
+          ALLOW_UNPRICED: ${{ inputs.allow_unpriced_provider_calls }}
+          VALIDATED_SOURCE_SHA: ${{ needs.validation-gate.outputs.source_commit_sha }}
+          RUNNER_COMMIT_SHA: ${{ github.sha }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
+          CLOUDFLARE_API_TOKEN: ${{ inputs.provider == 'cloudflare' && secrets.CLOUDFLARE_API_TOKEN || '' }}
+          NARAROUTER_API_KEY: ${{ inputs.provider == 'nararouter' && secrets.NARAROUTER_API_KEY || '' }}
+          OPENROUTER_TOKEN: ${{ inputs.provider == 'openrouter' && secrets.OPENROUTER_TOKEN || '' }}
+        run: |
+          set -euo pipefail
+          artifact_root="$RUNNER_TEMP/ae32c-graph-pilot"
+          args=(
+            --confirm-live-provider-calls
+            --repo-root .
+            --output-dir "$artifact_root/run"
+            --profile "$SELECTED_PROFILE"
+            --provider "$SELECTED_PROVIDER"
+            --model "$SELECTED_MODEL"
+            --source-revision "$VALIDATED_SOURCE_SHA"
+            --runner-revision "$RUNNER_COMMIT_SHA"
+            --condition-order "$CONDITION_ORDER"
+            --max-cost-usd "$MAX_COST_USD"
+          )
+          if [[ "$ALLOW_UNPRICED" == "true" ]]; then
+            args+=(--allow-unpriced-provider-calls)
+          fi
+          set +e
+          python tools/run_ae32c_graph_pilot.py "${args[@]}" \
+            2>&1 | tee "$artifact_root/live-pilot.log"
+          code="${PIPESTATUS[0]}"
+          set -e
+          printf '%s\n' "$code" > "$artifact_root/runner-exit-code.txt"
+          exit "$code"
+
+      - name: Upload matched graph pilot artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-matched-graph-pilot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ae32c-graph-pilot/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Publish run summary
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "ae32c-graph-pilot" / "run"
+          comparison = root / "comparison.json"
+          lines = ["## AE-32C Matched Graph Pilot", ""]
+          if comparison.is_file():
+              data = json.loads(comparison.read_text(encoding="utf-8"))
+              lines += [
+                  f"- Provider/model: `{data.get('provider')}` / `{data.get('model')}`",
+                  f"- Profile: `{data.get('profile')}`",
+                  f"- Evaluation: `{data.get('evaluation_id')}`",
+                  f"- Control: `{data.get('conditions', {}).get('control', {}).get('status', 'unknown')}`",
+                  f"- Graph-enabled: `{data.get('conditions', {}).get('graph_enabled', {}).get('status', 'unknown')}`",
+                  f"- Graph coverage: `{data.get('comparison', {}).get('graph_interaction', {}).get('status', 'unknown')}`",
+                  f"- Graph observations: `{data.get('comparison', {}).get('graph_interaction', {}).get('graph_observation_count', 0)}`",
+                  f"- Verified graph-derived reads: `{len(data.get('comparison', {}).get('graph_interaction', {}).get('graph_derived_verified_read_paths', []))}`",
+                  "",
+                  "Diagnostic accuracy is not automatically assessed; independent human review is required.",
+              ]
+          else:
+              lines += ["No comparison artifact was produced. Inspect the uploaded logs and preflight evidence."]
+          summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary:
+              with open(summary, "a", encoding="utf-8") as stream:
+                  stream.write("\n".join(lines) + "\n")
+          PY
