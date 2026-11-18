@@ -54,6 +54,9 @@ def test_recovery_feedback_is_compacted_before_exact_source_candidates_are_dropp
         if message.get("role") == "user"
         and "source_reference_candidates" in message.get("content", "")
     )
+    # Graph coverage remains in the final report, but must not consume model
+    # context when this investigation did not require graph interaction.
+    assert "graph_interaction_coverage" not in latest_context
     assert latest_context["source_reference_candidates"] == [{
         "evidence_id": "E0002",
         "path": SOURCE,
@@ -111,6 +114,8 @@ def test_finalization_compaction_stops_before_provider_call_when_no_context_can_
     assert investigator._messages == original_messages
     assert provider.calls == 0
     assert investigator._events[-1]["event"] == "finalization_context_budget_unavailable"
+    assert investigator._events[-1]["prompt_char_budget_shortfall"] > 0
+    assert investigator._events[-1]["graph_interaction_coverage_included"] is False
 
 
 def test_finalization_instructions_are_compact_without_weakening_evidence_contract():

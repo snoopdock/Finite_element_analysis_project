@@ -6,6 +6,7 @@ target_tests:
   - tests/semantic_audit/test_ae32c_patch1_evidence_integrity.py
   - tests/semantic_audit/test_ae32c_patch2_graph_workflow_fidelity.py
   - tests/semantic_audit/test_ae32c_investigator.py
+  - tests/semantic_audit/test_ae32c_finalization_context_compaction.py
   - tests/semantic_audit/test_ae32c_phase_e1_reliability.py
   - tests/semantic_audit/test_ae32c_phase_e2_coverage.py
   - tests/semantic_audit/test_ae32c_phase_e3_fidelity.py

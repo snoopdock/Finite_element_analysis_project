@@ -575,3 +575,23 @@ def test_nemotron_and_qwen_profiles_keep_separate_runtime_budgets():
     assert nemotron["pricing"]["input_usd_per_million_tokens"]["default"] == 0.0
     assert qwen["runtime_limits"]["finalization_max_tokens_per_call"] == 6144
     assert qwen["runtime_limits"]["max_rounds"] == 11
+
+
+def test_graph_required_finalization_context_includes_graph_coverage(tmp_path):
+    investigator = _investigator(tmp_path, graph_enabled=True, require_graph=True)
+    messages = investigator._finalization_context_messages(
+        problem="Inspect the live evaluation call chain.",
+        summary=None,
+        round_number=1,
+        notice={"finalization_mode": {"required_action": "final"}},
+        string_limit=120,
+        list_limit=3,
+        candidate_limit=20,
+        include_responses=True,
+        feedback=None,
+    )
+
+    payload = json.loads(messages[1]["content"])
+    assert payload["graph_interaction_coverage"]["enabled"] is True
+    assert payload["graph_investigation_contract"]["enabled"] is True
+    assert payload["graph_investigation_contract"]["required_graph_target"] == "symbol:target"

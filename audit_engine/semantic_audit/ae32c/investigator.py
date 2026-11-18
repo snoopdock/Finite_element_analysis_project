@@ -1372,9 +1372,13 @@ class RepositoryInvestigator:
             "evidence_ledger": evidence_items,
             "source_reference_candidates": candidates,
             "required_source_coverage": self._required_source_coverage(),
-            "graph_interaction_coverage": self._graph_interaction_coverage(),
         }
+        # Keep graph telemetry in the final report, but do not duplicate the
+        # full graph-coverage object into model context when graph interaction
+        # is not required. This preserves recovery budget for exact source
+        # candidates and validation feedback in ordinary investigations.
         if self._require_graph_interaction:
+            payload["graph_interaction_coverage"] = self._graph_interaction_coverage()
             payload["graph_investigation_contract"] = {
                 "enabled": True,
                 "required_graph_target": self._required_graph_target,
@@ -1528,6 +1532,9 @@ class RepositoryInvestigator:
                 "target_prompt_chars": target_chars,
                 "smallest_attempted_prompt_chars": smallest_chars,
                 "smallest_attempted_prompt_tokens": smallest_tokens,
+                "prompt_char_budget_shortfall": max(0, (smallest_chars or 0) - remaining_chars),
+                "prompt_token_budget_shortfall": max(0, (smallest_tokens or 0) - available_prompt_tokens),
+                "graph_interaction_coverage_included": self._require_graph_interaction,
                 "evidence_items_retained": len(self._ledger),
                 "source_reference_candidates_required": len(self._available_source_reference_candidates(maximum=5)),
                 "reason": "no_evidence_preserving_context_variant_fits_both_budgets",
@@ -1565,6 +1572,7 @@ class RepositoryInvestigator:
             "detail_level": chosen_meta[0],
             "response_details_included": chosen_meta[3],
             "latest_feedback_preserved": feedback is not None,
+            "graph_interaction_coverage_included": self._require_graph_interaction,
             "budget_fit": True,
         })
 
