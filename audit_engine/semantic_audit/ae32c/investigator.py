@@ -205,6 +205,8 @@ class RepositoryInvestigator:
         required_graph_target: str | None = None,
         required_graph_relation_types: tuple[str, ...] = ("CALLS",),
         required_graph_min_cross_module_reads: int = 0,
+        graph_query_max_depth: int | None = None,
+        graph_query_max_results: int | None = None,
         limits: InvestigationLimits | None = None,
         cost_estimator: Callable[[str, str, int, int], float] | None = None,
         clock: Callable[[], float] = time.monotonic,
@@ -331,12 +333,25 @@ class RepositoryInvestigator:
             raise ValueError("required_graph_min_cross_module_reads must be an integer between 0 and 10")
         if not require_graph_interaction and required_graph_min_cross_module_reads:
             raise ValueError("minimum cross-module graph reads require graph interaction")
+        if (graph_query_max_depth is None) != (graph_query_max_results is None):
+            raise ValueError("graph query depth and result bounds must be supplied together")
+        if graph_query_max_depth is not None:
+            if not require_graph_interaction or not enable_graph_tools:
+                raise ValueError("graph query bounds require enabled, required graph interaction")
+            if (isinstance(graph_query_max_depth, bool) or not isinstance(graph_query_max_depth, int)
+                    or not 1 <= graph_query_max_depth <= 4):
+                raise ValueError("graph_query_max_depth must be an integer between 1 and 4")
+            if (isinstance(graph_query_max_results, bool) or not isinstance(graph_query_max_results, int)
+                    or not 1 <= graph_query_max_results <= 50):
+                raise ValueError("graph_query_max_results must be an integer between 1 and 50")
         self._require_complete_investigation_context = require_complete_investigation_context
         self._require_graph_interaction = require_graph_interaction
         self._graph_tools_enabled = enable_graph_tools
         self._required_graph_target = required_graph_target.strip() if isinstance(required_graph_target, str) else None
         self._required_graph_relation_types = tuple(checked_graph_relations)
         self._required_graph_min_cross_module_reads = required_graph_min_cross_module_reads
+        self._graph_query_max_depth = graph_query_max_depth
+        self._graph_query_max_results = graph_query_max_results
         self._required_context_target = required_context_target.strip() if isinstance(required_context_target, str) else None
         self._required_context_paths = tuple(sorted(checked_context_paths))
         self._required_context_target_module = None
@@ -357,6 +372,44 @@ class RepositoryInvestigator:
             item["function"]["name"]: item["function"]
             for item in self._tool_definitions
         }
+        if self._graph_query_max_depth is not None:
+            # The matched pilot uses the same bounded query as its successful
+            # no-provider preflight. Pin the graph-tool schema so the model
+            # cannot repeat the depth-4/results-50 query that previously
+            # exceeded the safe evidence response size.
+            for tool_name in ("graph_neighbors", "graph_path"):
+                function_schema = self._tool_schemas.get(tool_name)
+                parameters = function_schema.get("parameters", {}) if isinstance(function_schema, Mapping) else {}
+                properties = parameters.get("properties", {}) if isinstance(parameters, Mapping) else {}
+                if not isinstance(properties, Mapping):
+                    continue
+                direction_schema = properties.get("direction")
+                if isinstance(direction_schema, dict):
+                    direction_schema["enum"] = ["outgoing"]
+                relation_schema = properties.get("relation_types")
+                if isinstance(relation_schema, dict):
+                    relation_schema["minItems"] = 1
+                    items_schema = relation_schema.get("items")
+                    if isinstance(items_schema, dict):
+                        items_schema["enum"] = list(self._required_graph_relation_types)
+                depth_schema = properties.get("max_depth")
+                if isinstance(depth_schema, dict):
+                    depth_schema["enum"] = [self._graph_query_max_depth]
+                if tool_name == "graph_neighbors":
+                    result_schema = properties.get("max_results")
+                    if isinstance(result_schema, dict):
+                        result_schema["enum"] = [self._graph_query_max_results]
+                    required = parameters.get("required", [])
+                    if isinstance(required, list):
+                        for field in ("direction", "relation_types", "max_depth", "max_results"):
+                            if field not in required:
+                                required.append(field)
+                elif isinstance(parameters, dict):
+                    required = parameters.get("required", [])
+                    if isinstance(required, list):
+                        for field in ("direction", "relation_types", "max_depth"):
+                            if field not in required:
+                                required.append(field)
         self._ledger: list[_EvidenceEntry] = []
         self._tool_trace: list[dict[str, Any]] = []
         self._model_action_trace: list[dict[str, Any]] = []
@@ -896,10 +949,10 @@ class RepositoryInvestigator:
                 seen_paths.add(path)
         selected_ids = {item.get("observation_id") for item in selected}
         for _priority, record, _path in candidates:
-            if record.get("observation_id") not in selected_ids and len(selected) < 12:
+            if record.get("observation_id") not in selected_ids and len(selected) < 8:
                 selected.append(record)
                 selected_ids.add(record.get("observation_id"))
-        selected = selected[:12]
+        selected = selected[:8]
 
         source_paths = raw_result.get("source_paths", [])
         if not isinstance(source_paths, list):
@@ -971,7 +1024,7 @@ class RepositoryInvestigator:
             "observed_relation_types": raw_result.get("observed_relation_types", []),
             "source_paths": normalized_source_paths,
             "cross_module_source_paths": cross_module_paths,
-            "priority_source_targets": priority_targets[:10],
+            "priority_source_targets": priority_targets[:6],
             "observation_count": len(raw_observations),
             "observations_included": len(selected),
             "observations_omitted": max(0, len(raw_observations) - len(selected)),
@@ -1203,20 +1256,34 @@ class RepositoryInvestigator:
                     "required_graph_target": self._required_graph_target,
                     "required_relation_types": list(self._required_graph_relation_types),
                     "minimum_distinct_cross_module_source_reads": self._required_graph_min_cross_module_reads,
+                    "graph_query_limits": {
+                        "direction": "outgoing",
+                        "max_depth": self._graph_query_max_depth,
+                        "max_results": self._graph_query_max_results,
+                        "relation_types": list(self._required_graph_relation_types),
+                    },
                     "instructions": (
                         "This controlled evaluation measures whether the investigator actually uses the semantic "
-                        "graph. Before broad repository searches, issue a successful graph_neighbors query for the "
-                        "exact required_graph_target and required relation types. Inspect cross_module_source_paths "
-                        "and priority_source_targets in the compact graph response. Then directly call "
-                        "read_source_file on at least minimum_distinct_cross_module_source_reads distinct paths "
-                        "from that returned list, preferring paths outside the target module. Use the exact "
-                        "repository-relative path and the symbol line supplied by the graph; read a bounded range "
-                        "around that line. Do not issue search_repository calls merely to rediscover a path already "
-                        "returned by the graph, and do not repeatedly read the target entry-point file. If fewer "
-                        "than the required number of cross-module paths are available, read every available path "
-                        "and explicitly report the shortfall. Each counted read must occur after the graph query, "
-                        "must not have been read earlier, must cover its requested line range without truncation, "
-                        "and must have a source_sha256 matching the graph snapshot. Graph observations are static "
+                        "graph. First issue exactly one graph_neighbors query for required_graph_target using "
+                        "direction=outgoing, relation_types=" + repr(list(self._required_graph_relation_types)) +
+                        ", max_depth=" + str(self._graph_query_max_depth) +
+                        ", and max_results=" + str(self._graph_query_max_results) +
+                        ". These arguments are schema-enforced because this exact bounded query passed the "
+                        "no-provider-call graph preflight. Do not increase depth or result count and do not repeat "
+                        "the required-target query after it returns complete_for_query. Inspect priority_source_targets "
+                        "and cross_module_source_paths, then read at least minimum_distinct_cross_module_source_reads "
+                        "distinct paths directly with read_source_file, using the exact repository-relative path and "
+                        "the supplied symbol line. Prefer paths outside the target module. CALLS observations are "
+                        "function-level invocation edges: do not query class symbols such as RepositoryEvidenceTools "
+                        "or RepositoryInvestigator as CALLS roots, because class-level roots may have no matching "
+                        "outgoing CALLS. For a class endpoint, read its source path around the supplied class line. "
+                        "If a further graph query is necessary, query a returned function symbol only and state the "
+                        "specific relationship question. Do not use search_repository to rediscover a path already "
+                        "surfaced by the graph or repeatedly read the target entry-point file. If fewer than the "
+                        "required number of cross-module paths are available, read every available path and report "
+                        "the shortfall. Each counted read must occur after the successful complete target query, "
+                        "must not have been read earlier, must cover its requested range without truncation, and "
+                        "must have a source_sha256 matching the graph snapshot. Graph observations are static "
                         "evidence, not runtime proof."
                     ),
                 }
@@ -1228,6 +1295,12 @@ class RepositoryInvestigator:
                 "max_tool_calls_including_initial_summary": self.limits.max_tool_calls,
                 "max_tokens_per_call": self.limits.max_tokens_per_call,
                 "max_response_chars": self.limits.max_response_chars,
+                **({
+                    "graph_query_direction": "outgoing",
+                    "graph_query_max_depth": self._graph_query_max_depth,
+                    "graph_query_max_results": self._graph_query_max_results,
+                    "graph_query_relation_types": list(self._required_graph_relation_types),
+                } if self._graph_query_max_depth is not None else {}),
             },
         }
         return [

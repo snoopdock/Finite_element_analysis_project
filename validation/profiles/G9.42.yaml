@@ -21,6 +21,7 @@ target_tests:
   - tests/test_cloudflare_native_tool_calls.py
   - tests/semantic_audit/test_ae32c_validation_gate.py
   - tests/semantic_audit/test_ae32b_evidence_tools.py
+  - tests/semantic_audit/test_ae32c_graph_pilot.py
   - tests/semantic_audit/test_ae32a_architecture_wiring_audit.py
   - tests/semantic_audit/test_ae32d_benchmark_scaffold.py
   - tests/semantic_audit/test_ae32d_adjudication_pack.py

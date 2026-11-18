@@ -592,6 +592,8 @@ def run_graph_pilot(
                 required_graph_min_cross_module_reads=(
                     int(profile["graph_min_cross_module_reads"]) if graph_enabled else 0
                 ),
+                graph_query_max_depth=(int(profile["graph_query_depth"]) if graph_enabled else None),
+                graph_query_max_results=(int(profile["graph_query_max_results"]) if graph_enabled else None),
                 limits=limits,
                 cost_estimator=cost_estimator,
             )
@@ -684,6 +686,14 @@ def run_graph_pilot(
                 "graph_enabled_available_tools": sorted(treatment_tools),
                 "intended_intervention": "graph tool availability plus explicit graph-use instruction",
                 "required_distinct_cross_module_reads": int(profile["graph_min_cross_module_reads"]),
+                "graph_query_policy": {
+                    "target": target,
+                    "direction": "outgoing",
+                    "relation_types": list(relation_types),
+                    "max_depth": int(profile["graph_query_depth"]),
+                    "max_results": int(profile["graph_query_max_results"]),
+                    "treatment_tool_schema_enforced": True,
+                },
                 "randomization": "single paired pilot; order recorded but no counterbalancing",
             },
             "cost_policy": {

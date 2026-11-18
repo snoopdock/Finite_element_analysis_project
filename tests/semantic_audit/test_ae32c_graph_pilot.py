@@ -31,7 +31,8 @@ class _EvidenceTools:
 
 
 def _investigator(
-    tmp_path, *, graph_enabled=True, require_graph=False, min_cross_module_reads=0
+    tmp_path, *, graph_enabled=True, require_graph=False, min_cross_module_reads=0,
+    graph_query_max_depth=None, graph_query_max_results=None,
 ):
     return RepositoryInvestigator(
         tmp_path,
@@ -41,6 +42,8 @@ def _investigator(
         require_graph_interaction=require_graph,
         required_graph_target="symbol:target" if require_graph else None,
         required_graph_min_cross_module_reads=min_cross_module_reads,
+        graph_query_max_depth=graph_query_max_depth,
+        graph_query_max_results=graph_query_max_results,
     )
 
 
@@ -332,6 +335,68 @@ def test_provider_model_cost_profiles_are_generic_and_extensible(monkeypatch):
 
 
 
+def test_graph_pilot_pins_model_graph_queries_to_preflight_bounds(tmp_path):
+    investigator = _investigator(
+        tmp_path,
+        graph_enabled=True,
+        require_graph=True,
+        min_cross_module_reads=3,
+        graph_query_max_depth=2,
+        graph_query_max_results=30,
+    )
+    neighbors = investigator._tool_schemas["graph_neighbors"]["parameters"]
+    properties = neighbors["properties"]
+    assert set(("node", "direction", "relation_types", "max_depth", "max_results")).issubset(
+        set(neighbors["required"])
+    )
+    assert properties["direction"]["enum"] == ["outgoing"]
+    assert properties["relation_types"]["items"]["enum"] == ["CALLS"]
+    assert properties["max_depth"]["enum"] == [2]
+    assert properties["max_results"]["enum"] == [30]
+
+    graph_path = investigator._tool_schemas["graph_path"]["parameters"]
+    path_properties = graph_path["properties"]
+    assert path_properties["direction"]["enum"] == ["outgoing"]
+    assert path_properties["relation_types"]["items"]["enum"] == ["CALLS"]
+    assert path_properties["max_depth"]["enum"] == [2]
+
+    try:
+        investigator._validate_tool_action({
+            "action": "tool_call",
+            "tool": "graph_neighbors",
+            "arguments": {
+                "node": "symbol:target", "direction": "outgoing", "relation_types": ["CALLS"],
+                "max_depth": 4, "max_results": 50,
+            },
+            "reason": "Attempt an unbounded graph query.",
+        })
+    except Exception as exc:
+        assert "tool_arguments_schema_invalid" in str(exc)
+    else:
+        raise AssertionError("over-wide graph query was accepted")
+
+
+def test_graph_required_contract_states_exact_query_and_class_root_rule(tmp_path):
+    investigator = _investigator(
+        tmp_path, graph_enabled=True, require_graph=True, min_cross_module_reads=3,
+        graph_query_max_depth=2, graph_query_max_results=30,
+    )
+    summary = SimpleNamespace(
+        evidence_id="E0001", tool="repository_summary", status="ok",
+        response_sha256="summary-hash", provenance={},
+        response={"result": {"audit_status": "complete"}}, summary="audit_status=complete",
+    )
+    messages = investigator._initial_messages("Trace the live evaluation call chain.", summary)
+    payload = json.loads(messages[1]["content"])
+    contract = payload["graph_investigation_contract"]
+    assert contract["graph_query_limits"] == {
+        "direction": "outgoing", "max_depth": 2, "max_results": 30, "relation_types": ["CALLS"]
+    }
+    assert "max_depth=2" in contract["instructions"]
+    assert "max_results=30" in contract["instructions"]
+    assert "do not query class symbols" in contract["instructions"]
+
+
 def test_graph_neighbors_model_view_prioritizes_cross_module_edges(tmp_path):
     investigator = _investigator(tmp_path, graph_enabled=True)
     source_nodes = [{
@@ -438,13 +503,13 @@ def test_graph_neighbors_model_view_prioritizes_cross_module_edges(tmp_path):
     result = view["response"]["result"]
 
     assert result["observation_count"] == 17
-    assert 3 <= result["observations_included"] <= 12
+    assert 3 <= result["observations_included"] <= 8
     assert set(result["cross_module_source_paths"]) == set(external_paths)
     assert {item["path"] for item in result["priority_source_targets"]} == set(external_paths)
     assert {
         item["cross_module_path"] for item in result["observations"][:3]
     } == set(external_paths)
-    assert len(view["response"]["result"]["observations"]) <= 12
+    assert len(view["response"]["result"]["observations"]) <= 8
     assert len(json.dumps(view)) <= investigator.limits.max_tool_context_chars
 
 
@@ -542,7 +607,8 @@ def test_model_runtime_limits_are_provider_model_profile_driven():
         "max_tool_calls": 16,
         "max_tokens_per_call": 2048,
         "finalization_max_tokens_per_call": 12000,
-        "max_total_tokens": 180000,
+        "max_total_tokens": 200000,
+        "max_total_prompt_chars": 500000,
         "max_elapsed_seconds": 600,
         "finalization_rounds_reserved": 3,
         "max_finalization_invalid_json_retries": 2,
@@ -552,7 +618,8 @@ def test_model_runtime_limits_are_provider_model_profile_driven():
     assert tuned.max_tool_calls == 16
     assert tuned.max_tokens_per_call == 2048
     assert tuned.finalization_max_tokens_per_call == 12000
-    assert tuned.max_total_tokens == 180000
+    assert tuned.max_total_tokens == 200000
+    assert tuned.max_total_prompt_chars == 500000
     assert tuned.max_elapsed_seconds == 600
     assert tuned.finalization_rounds_reserved == 3
 
@@ -572,6 +639,8 @@ def test_nemotron_and_qwen_profiles_keep_separate_runtime_budgets():
 
     assert nemotron["runtime_limits"]["finalization_max_tokens_per_call"] == 12000
     assert nemotron["runtime_limits"]["max_rounds"] == 13
+    assert nemotron["runtime_limits"]["max_total_tokens"] == 200000
+    assert nemotron["runtime_limits"]["max_total_prompt_chars"] == 500000
     assert nemotron["pricing"]["input_usd_per_million_tokens"]["default"] == 0.0
     assert qwen["runtime_limits"]["finalization_max_tokens_per_call"] == 6144
     assert qwen["runtime_limits"]["max_rounds"] == 11

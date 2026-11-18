@@ -37,7 +37,7 @@
     "openrouter": {
       "models": {
         "nvidia/nemotron-3-ultra-550b-a55b:free": {
-          "notes": "OpenRouter free Nemotron endpoint. Tool calling is supported; provider-enforced structured response_format is not supported. Keep plain-text/local response normalization. Free endpoint availability and rate limits are provider controlled. Local finalization completion cap is deliberately 12,000 tokens, below the documented endpoint maximum.",
+          "notes": "OpenRouter free Nemotron endpoint. Tool calling is supported; provider-enforced structured response_format is not supported. Keep plain-text/local response normalization. Free endpoint availability and rate limits are provider controlled. Finalization completion cap remains 12,000 tokens. The matched pilot uses a 500,000-character cumulative prompt ceiling and 200,000-token total budget after the prior run exhausted the 350,000-character ceiling at 354,650 projected characters. Graph tool schemas are pinned to the preflight-verified outgoing CALLS query (depth 2, 30 results).",
           "pricing": {
             "input_usd_per_million_tokens": {
               "default": 0.0
@@ -59,7 +59,8 @@
             "max_rounds": 13,
             "max_tokens_per_call": 2048,
             "max_tool_calls": 16,
-            "max_total_tokens": 180000
+            "max_total_tokens": 200000,
+            "max_total_prompt_chars": 500000
           }
         }
       }
