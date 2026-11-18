@@ -200,6 +200,9 @@ class RepositoryInvestigator:
         required_context_paths: tuple[str, ...] = (),
         required_context_target: str | None = None,
         require_complete_investigation_context: bool = False,
+        require_graph_interaction: bool = False,
+        required_graph_target: str | None = None,
+        required_graph_relation_types: tuple[str, ...] = ("CALLS",),
         limits: InvestigationLimits | None = None,
         cost_estimator: Callable[[str, str, int, int], float] | None = None,
         clock: Callable[[], float] = time.monotonic,
@@ -298,7 +301,26 @@ class RepositoryInvestigator:
                 raise ValueError("required_context_paths are required when complete investigation context is enforced")
         elif required_context_target is not None or checked_context_paths:
             raise ValueError("required context target/paths require require_complete_investigation_context")
+        if type(require_graph_interaction) is not bool:
+            raise ValueError("require_graph_interaction must be a boolean")
+        if not isinstance(required_graph_relation_types, (tuple, list)) or not required_graph_relation_types:
+            raise ValueError("required_graph_relation_types must be a non-empty bounded list")
+        checked_graph_relations: list[str] = []
+        for relation in required_graph_relation_types:
+            if (not isinstance(relation, str) or not relation.strip() or len(relation) > 80):
+                raise ValueError("required graph relation types must be bounded non-empty strings")
+            normalized_relation = relation.strip()
+            if normalized_relation not in checked_graph_relations:
+                checked_graph_relations.append(normalized_relation)
+        if require_graph_interaction:
+            if not isinstance(required_graph_target, str) or not required_graph_target.strip():
+                raise ValueError("required_graph_target is required when graph interaction is enforced")
+        elif required_graph_target is not None:
+            raise ValueError("required_graph_target requires require_graph_interaction")
         self._require_complete_investigation_context = require_complete_investigation_context
+        self._require_graph_interaction = require_graph_interaction
+        self._required_graph_target = required_graph_target.strip() if isinstance(required_graph_target, str) else None
+        self._required_graph_relation_types = tuple(checked_graph_relations)
         self._required_context_target = required_context_target.strip() if isinstance(required_context_target, str) else None
         self._required_context_paths = tuple(sorted(checked_context_paths))
         self._required_context_target_module = None
@@ -896,6 +918,21 @@ class RepositoryInvestigator:
                     ),
                 }
             } if self._require_complete_investigation_context else {}),
+            **({
+                "graph_investigation_contract": {
+                    "enabled": True,
+                    "required_graph_tools": ["graph_neighbors", "graph_path"],
+                    "required_graph_target": self._required_graph_target,
+                    "required_relation_types": list(self._required_graph_relation_types),
+                    "instructions": (
+                        "This controlled evaluation measures whether the investigator actually uses the semantic "
+                        "graph. Before finalization, issue at least one successful graph_neighbors or graph_path "
+                        "query for the exact required_graph_target. Prefer the required relation types, inspect the "
+                        "returned graph observations, and then read at least one repository source path surfaced by "
+                        "that graph result. Graph observations are static evidence, not runtime proof."
+                    ),
+                }
+            } if self._require_graph_interaction else {}),
             "operating_limits": {
                 "max_rounds": self.limits.max_rounds,
                 "finalization_rounds_reserved": min(self.limits.finalization_rounds_reserved, self.limits.max_rounds),
@@ -1047,7 +1084,20 @@ class RepositoryInvestigator:
             "evidence_ledger": evidence_items,
             "source_reference_candidates": candidates,
             "required_source_coverage": self._required_source_coverage(),
+            "graph_interaction_coverage": self._graph_interaction_coverage(),
         }
+        if self._require_graph_interaction:
+            payload["graph_investigation_contract"] = {
+                "enabled": True,
+                "required_graph_target": self._required_graph_target,
+                "required_relation_types": list(self._required_graph_relation_types),
+                "rules": [
+                    "A successful graph_neighbors or graph_path query against the exact target is required.",
+                    "At least one required relation type must be observed unless the graph query is explicitly no-match.",
+                    "Read at least one source path surfaced by the successful graph query.",
+                    "Graph presence is static evidence and does not prove runtime execution or causal correctness.",
+                ],
+            }
         if self._required_source_anchors:
             payload["required_source_line_witnesses"] = self._required_anchor_reference_candidates()
             payload["source_line_witness_rules"] = [
@@ -2087,6 +2137,10 @@ class RepositoryInvestigator:
                 or context_coverage.get("required_context_contract_complete") is not True
             ):
                 errors.append("required_investigation_context_incomplete")
+        if self._require_graph_interaction:
+            graph_coverage = self._graph_interaction_coverage()
+            if graph_coverage.get("status") != "complete":
+                errors.append("required_graph_interaction_incomplete")
         if errors:
             return None, sorted(set(errors))[:30]
         normalized = {
@@ -2702,6 +2756,101 @@ class RepositoryInvestigator:
             if len(reasoning_content) <= self.limits.max_response_chars:
                 message["reasoning_content"] = reasoning_content
         return message
+
+    def _graph_interaction_coverage(self) -> dict[str, Any]:
+        """Measure direct model use of the semantic graph and graph-to-source follow-through."""
+        if not self._require_graph_interaction:
+            return {
+                "enabled": False,
+                "status": "not_required",
+                "graph_tool_call_count": 0,
+                "successful_graph_tool_call_count": 0,
+                "required_graph_target": None,
+                "required_relation_types": [],
+            }
+
+        graph_entries = [
+            entry for entry in self._ledger
+            if entry.tool in {"graph_neighbors", "graph_path"}
+        ]
+        target = self._required_graph_target
+        target_entries = [
+            entry for entry in graph_entries
+            if isinstance(entry.arguments, Mapping)
+            and (
+                entry.arguments.get("node") == target
+                or entry.arguments.get("source") == target
+                or entry.arguments.get("target") == target
+            )
+        ]
+        successful: list[Any] = []
+        for entry in target_entries:
+            if entry.status != "ok" or not isinstance(entry.response, Mapping):
+                continue
+            result = entry.response.get("result")
+            if not isinstance(result, Mapping):
+                continue
+            if result.get("coverage_status") != "complete_for_query" or result.get("truncated") is True:
+                continue
+            successful.append(entry)
+
+        observed_relations: set[str] = set()
+        graph_source_paths: set[str] = set()
+        graph_evidence_ids: set[str] = set()
+        for entry in successful:
+            result = entry.response.get("result", {})
+            for relation in result.get("observed_relation_types", []):
+                if isinstance(relation, str):
+                    observed_relations.add(relation)
+            for path in result.get("source_paths", []):
+                if isinstance(path, str) and path:
+                    graph_source_paths.add(path)
+            for evidence in result.get("evidence", []):
+                if isinstance(evidence, Mapping) and isinstance(evidence.get("evidence_id"), str):
+                    graph_evidence_ids.add(evidence["evidence_id"])
+
+        read_paths: set[str] = set()
+        for entry in self._ledger:
+            if entry.tool != "read_source_file" or entry.status != "ok":
+                continue
+            result = entry.response.get("result", {}) if isinstance(entry.response, Mapping) else {}
+            if isinstance(result, Mapping) and isinstance(result.get("path"), str):
+                read_paths.add(result["path"])
+
+        graph_derived_read_paths = sorted(graph_source_paths & read_paths)
+        required_relations = set(self._required_graph_relation_types)
+        relation_support = bool(observed_relations & required_relations)
+        no_match_graph_query = any(
+            isinstance(entry.response.get("result"), Mapping)
+            and entry.response["result"].get("status") == "no_match"
+            for entry in successful
+        )
+        status = "complete" if (
+            successful
+            and (relation_support or no_match_graph_query)
+            and bool(graph_derived_read_paths)
+        ) else "incomplete"
+
+        return {
+            "enabled": True,
+            "status": status,
+            "required_graph_target": target,
+            "required_relation_types": list(self._required_graph_relation_types),
+            "graph_tool_call_count": len(graph_entries),
+            "target_graph_tool_call_count": len(target_entries),
+            "successful_graph_tool_call_count": len(successful),
+            "observed_relation_types": sorted(observed_relations),
+            "required_relation_types_observed": sorted(observed_relations & required_relations),
+            "graph_evidence_ids": sorted(graph_evidence_ids),
+            "graph_source_paths": sorted(graph_source_paths),
+            "graph_derived_read_paths": graph_derived_read_paths,
+            "graph_follow_through_complete": bool(graph_derived_read_paths),
+            "interpretation": (
+                "This contract measures direct model interaction with the semantic graph and a subsequent "
+                "read of graph-surfaced source. It does not establish that the graph is complete or that "
+                "the resulting diagnosis is causally correct."
+            ),
+        }
 
     def _investigation_context_coverage(self) -> dict[str, Any]:
         """Report complete, non-truncated static discovery and candidate reads."""
@@ -3383,6 +3532,7 @@ class RepositoryInvestigator:
         investigation_context_coverage = self._investigation_context_coverage()
         report["required_source_coverage"] = required_source_coverage
         report["investigation_context_coverage"] = investigation_context_coverage
+        report["graph_interaction_coverage"] = self._graph_interaction_coverage()
         required_reads_complete = not required_source_coverage.get("missing_complete_reads", [])
         context_complete = investigation_context_coverage.get("required_context_contract_complete") is True
         snapshot_verified = self._snapshot_check_status == "verified"

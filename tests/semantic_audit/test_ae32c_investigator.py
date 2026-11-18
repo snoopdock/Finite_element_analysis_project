@@ -58,7 +58,42 @@ class FakeEvidenceTools:
         elif tool == "search_repository":
             result = {"query": arguments["query"], "matches": [{"path": SOURCE, "line": 2, "match_kind": "content", "snippet": "return 'observed'", "source_sha256": SOURCE_HASH}], "truncated": False}
         elif tool == "graph_path":
-            result = {"source": arguments["source"], "target": arguments["target"], "observations": [{"path": SOURCE, "line": 1, "source_sha256": SOURCE_HASH, "relation_type": "IMPORTS"}], "truncated": False}
+            result = {
+                "source": arguments["source"],
+                "target": arguments["target"],
+                "observations": [{"path": SOURCE, "line": 1, "source_sha256": SOURCE_HASH, "predicate": "CALLS"}],
+                "observed_relation_types": ["CALLS"],
+                "source_paths": [SOURCE],
+                "evidence": [{"evidence_id": "edge:test", "provenance": {"edge_metadata": {"path": SOURCE, "line": 1, "source_sha256": SOURCE_HASH}}}],
+                "coverage_status": "complete_for_query",
+                "truncated": False,
+                "status": "completed",
+            }
+        elif tool == "graph_neighbors":
+            result = {
+                "observations": [{"predicate": "CALLS", "subject_id": "caller", "object_id": arguments["node"], "evidence_ids": ["edge:test"]}],
+                "observed_relation_types": ["CALLS"],
+                "source_paths": [SOURCE],
+                "evidence": [{"evidence_id": "edge:test", "provenance": {"edge_metadata": {"path": SOURCE, "line": 1, "source_sha256": SOURCE_HASH}}}],
+                "coverage_status": "complete_for_query",
+                "truncated": False,
+                "status": "completed",
+            }
+        elif tool == "read_source_file":
+            result = {
+                "path": SOURCE,
+                "source_sha256": SOURCE_HASH,
+                "total_lines": 2,
+                "requested_start_line": 1,
+                "requested_end_line": 2,
+                "start_line": 1,
+                "end_line": 2,
+                "content": "1: def run():\n2:     return 'observed'",
+                "truncated": False,
+                "source_range_complete": True,
+                "content_omitted": False,
+                "read_coverage": "complete_file",
+            }
         else:
             result = {"query": str(arguments), "matches": [], "truncated": False}
         if tool != "repository_summary":
@@ -1819,3 +1854,55 @@ def test_truncated_structured_response_keeps_native_channel_for_recovery():
     assert investigator._response_mode_override is None
     assert not any(event.get("event") == "provider_response_contract_downgrade_requested" for event in report["errors"])
     assert any(event.get("event") == "model_response_truncated_by_token_limit" for event in report["errors"])
+
+
+def test_graph_interaction_contract_requires_direct_graph_use_and_follow_through():
+    provider = FakeProvider([
+        action_tool(
+            "graph_neighbors",
+            {"node": "symbol:pipeline.extractor::extract", "direction": "incoming", "relation_types": ["CALLS"], "max_depth": 1, "max_results": 10},
+        ),
+        action_tool(
+            "read_source_file",
+            {"path": SOURCE, "start_line": 1, "end_line": 2},
+        ),
+        final_action(evidence_id="E0003", source_reference=True),
+    ])
+    tools = FakeEvidenceTools()
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        evidence_tools=tools,
+        required_graph_target="symbol:pipeline.extractor::extract",
+        require_graph_interaction=True,
+        required_graph_relation_types=("CALLS",),
+        limits=InvestigationLimits(max_rounds=3, finalization_rounds_reserved=1),
+        id_factory=lambda: "graph-contract-0001",
+    )
+    report = investigator.run("Investigate the controlled provider interface issue")
+    coverage = report["graph_interaction_coverage"]
+    assert coverage["status"] == "complete"
+    assert coverage["required_relation_types_observed"] == ["CALLS"]
+    assert coverage["graph_derived_read_paths"] == [SOURCE]
+    assert coverage["graph_follow_through_complete"] is True
+
+
+def test_graph_interaction_contract_is_not_satisfied_by_source_reads_alone():
+    provider = FakeProvider([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    tools = FakeEvidenceTools()
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        evidence_tools=tools,
+        required_graph_target="symbol:pipeline.extractor::extract",
+        require_graph_interaction=True,
+        required_graph_relation_types=("CALLS",),
+        limits=InvestigationLimits(max_rounds=3, finalization_rounds_reserved=1),
+        id_factory=lambda: "graph-contract-0002",
+    )
+    report = investigator.run("Investigate the controlled provider interface issue")
+    assert report["graph_interaction_coverage"]["status"] == "incomplete"
+    assert report["status"] != "completed"

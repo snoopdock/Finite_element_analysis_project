@@ -339,6 +339,12 @@ def main(argv: list[str] | None = None) -> int:
                         help="Exact repository-relative target for mandatory trace_execution_context discovery.")
     parser.add_argument("--required-context-path", action="append", default=[],
                         help="Repository-relative context path that must be surfaced by the required trace and fully read. Repeat for each path.")
+    parser.add_argument("--require-graph-interaction", action="store_true",
+                        help="Require the graph-assisted condition to perform a successful graph query and read a graph-surfaced source path.")
+    parser.add_argument("--required-graph-target", default="",
+                        help="Exact graph node selector required by --require-graph-interaction, e.g. symbol:pipeline.extractor::extract.")
+    parser.add_argument("--required-graph-relation-type", action="append", default=[],
+                        help="Graph relation type required by --require-graph-interaction. Defaults to CALLS.")
     parser.add_argument("--problem", default=DEFAULT_PROBLEM, help="Incident description; bounded and sanitized.")
     parser.add_argument("--provider", choices=SUPPORTED_PROVIDERS,
                         default=os.environ.get("FEA_LLM_PROVIDER", "cloudflare"))
@@ -363,6 +369,13 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("duplicate --required-context-path")
     elif args.required_context_target.strip() or args.required_context_path:
         parser.error("--required-context-target/--required-context-path require --require-complete-investigation-context")
+    if args.require_graph_interaction:
+        if not args.required_graph_target.strip():
+            parser.error("--required-graph-target is required with --require-graph-interaction")
+        if len(args.required_graph_relation_type) > 8:
+            parser.error("at most 8 --required-graph-relation-type values are allowed")
+    elif args.required_graph_target.strip() or args.required_graph_relation_type:
+        parser.error("--required-graph-target/--required-graph-relation-type require --require-graph-interaction")
     if not isinstance(args.problem, str) or not args.problem.strip() or len(args.problem) > 8_000:
         parser.error("--problem must be non-empty and at most 8000 characters")
 
@@ -396,6 +409,13 @@ def main(argv: list[str] | None = None) -> int:
                     checked_context_paths.append(path)
             required_context_paths = tuple(checked_context_paths)
             required_context_target = target
+        required_graph_target = args.required_graph_target.strip() if args.require_graph_interaction else None
+        required_graph_relation_types = tuple(
+            dict.fromkeys(
+                item.strip() for item in args.required_graph_relation_type
+                if isinstance(item, str) and item.strip()
+            )
+        ) or ("CALLS",)
         indexed_source = baseline_tools.contents.get(args.baseline_context_path)
         if not isinstance(indexed_source, str):
             raise ValueError("baseline_source_context_unavailable")
@@ -543,6 +563,9 @@ def main(argv: list[str] | None = None) -> int:
                         required_context_paths=required_context_paths,
                         required_context_target=required_context_target,
                         require_complete_investigation_context=args.require_complete_investigation_context,
+                        require_graph_interaction=args.require_graph_interaction,
+                        required_graph_target=required_graph_target,
+                        required_graph_relation_types=required_graph_relation_types,
                         limits=limits,
                         cost_estimator=cost_estimator,
                     )

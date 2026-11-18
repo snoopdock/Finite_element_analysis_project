@@ -369,3 +369,91 @@ def test_empty_source_end_range_clamps_to_zero_lines(tmp_path):
     assert response["result"]["end_line"] == 0
     assert response["result"]["content"] == ""
     assert response["result"]["truncated"] is True
+
+
+def test_conservative_call_graph_resolves_local_imported_and_self_method_calls(tmp_path: Path):
+    _write(tmp_path, "pkg/__init__.py", "")
+    _write(
+        tmp_path,
+        "pkg/provider.py",
+        "class Provider:\n"
+        "    def chat(self):\n"
+        "        return self.finish()\n"
+        "    def finish(self):\n"
+        "        return 'ok'\n",
+    )
+    _write(
+        tmp_path,
+        "pkg/service.py",
+        "from pkg.provider import Provider\n"
+        "def build():\n"
+        "    return Provider()\n"
+        "def run():\n"
+        "    return build()\n",
+    )
+    server = RepositoryEvidenceTools(tmp_path)
+    call_edges = [edge for edge in server.graph.edges if edge.relation_type == "CALLS"]
+    assert call_edges
+    pairs = {
+        (edge.source_id, edge.target_id)
+        for edge in call_edges
+    }
+    symbols = {
+        (item["module"], item["qualified_name"]): item["node_id"]
+        for item in server.symbols
+    }
+    assert (symbols[("pkg.service", "run")], symbols[("pkg.service", "build")]) in pairs
+    assert (symbols[("pkg.service", "build")], symbols[("pkg.provider", "Provider")]) in pairs
+    assert (symbols[("pkg.provider", "Provider.chat")], symbols[("pkg.provider", "Provider.finish")]) in pairs
+
+
+def test_call_graph_does_not_promote_dynamic_attribute_calls(tmp_path: Path):
+    _write(
+        tmp_path,
+        "pkg.py",
+        "def run(obj):\n"
+        "    return obj.method()\n"
+        "def helper():\n"
+        "    return 1\n",
+    )
+    server = RepositoryEvidenceTools(tmp_path)
+    calls = [
+        edge for edge in server.graph.edges
+        if edge.relation_type == "CALLS"
+    ]
+    assert not calls
+    assert server.call_graph_stats["runtime_execution"] is False
+    assert server.call_graph_stats["unresolved_call_sites"] >= 1
+
+
+def test_graph_neighbors_exposes_call_edges_with_source_paths(tmp_path: Path):
+    _write(tmp_path, "pkg.py", "def helper():\n    return 1\n\ndef run():\n    return helper()\n")
+    server = RepositoryEvidenceTools(tmp_path)
+    run_symbol = next(item for item in server.symbols if item["qualified_name"] == "run")
+    response = server.invoke(
+        "graph_neighbors",
+        {
+            "node": run_symbol["node_id"],
+            "direction": "outgoing",
+            "relation_types": ["CALLS"],
+            "max_depth": 1,
+            "max_results": 10,
+        },
+    )
+    assert response["status"] == "ok"
+    result = response["result"]
+    assert result["observed_relation_types"] == ["CALLS"]
+    assert "pkg.py" in result["source_paths"]
+    assert any(item["predicate"] == "CALLS" for item in result["observations"])
+    evidence = result["evidence"]
+    assert evidence
+    assert evidence[0]["provenance"]["edge_metadata"]["observed_by"] == "python_ast_call_resolution"
+
+
+def test_repository_summary_reports_call_graph_resolution_policy(tmp_path: Path):
+    _write(tmp_path, "pkg.py", "def run():\n    return helper()\n\ndef helper():\n    return 1\n")
+    server = RepositoryEvidenceTools(tmp_path)
+    result = server.invoke("repository_summary", {})["result"]
+    assert result["call_graph"]["resolution_policy"] == "conservative_ast_v1"
+    assert result["call_graph"]["resolved_call_edges"] >= 1
+    assert result["graph_relation_counts"]["CALLS"] >= 1

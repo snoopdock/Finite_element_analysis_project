@@ -38,7 +38,7 @@ from audit_engine.semantic_audit.graph.queries import GraphQuery, QueryType
 from audit_engine.semantic_audit.graph.service import SemanticGraphAnalysisService
 
 SCHEMA_VERSION = "ae32b/repository-evidence-tools/v1"
-GRAPH_PROJECTION_VERSION = "ae32b/source-evidence-projection/v2"
+GRAPH_PROJECTION_VERSION = "ae32b/source-evidence-projection/v3"
 MAX_QUERY_CHARS = 240
 MAX_SEARCH_RESULTS = 30
 MAX_GRAPH_RESULTS = 50
@@ -487,6 +487,190 @@ class _SymbolVisitor(ast.NodeVisitor):
         self._visit_named(node, "async_function", node.name)
 
 
+
+def _dotted_ast_name(node: ast.AST) -> tuple[str, ...]:
+    """Return a dotted expression as identifier parts, or an empty tuple."""
+    if isinstance(node, ast.Name):
+        return (node.id,)
+    if isinstance(node, ast.Attribute):
+        parent = _dotted_ast_name(node.value)
+        return (*parent, node.attr) if parent else ()
+    return ()
+
+
+class _CallGraphVisitor(ast.NodeVisitor):
+    """Resolve a deliberately conservative subset of Python call relationships.
+
+    Only statically unambiguous calls are promoted to graph edges. Dynamic
+    dispatch, arbitrary instance attributes, reflection, and alias assignments
+    are intentionally left unresolved rather than guessed.
+    """
+
+    def __init__(
+        self,
+        *,
+        module: str,
+        path: str,
+        source_sha256: str,
+        symbol_nodes: Mapping[tuple[str, str], list[str]],
+        module_nodes: Mapping[str, str],
+        import_bindings: Mapping[str, Mapping[str, Any]],
+    ) -> None:
+        self.module = module
+        self.path = path
+        self.source_sha256 = source_sha256
+        self.symbol_nodes = symbol_nodes
+        self.module_nodes = module_nodes
+        self.import_bindings = import_bindings
+        self.scope: list[str] = []
+        self.class_stack: list[str] = []
+        self.current_symbol: str | None = None
+        self.current_qualified: str | None = None
+        self.edges: list[dict[str, Any]] = []
+        self.call_sites = 0
+        self.unresolved_calls = 0
+        self.ambiguous_calls = 0
+
+    def _unique_symbol(self, module: str, qualified: str) -> str | None:
+        candidates = self.symbol_nodes.get((module, qualified), [])
+        if len(candidates) == 1:
+            return candidates[0]
+        if len(candidates) > 1:
+            self.ambiguous_calls += 1
+        return None
+
+    def _resolve_name(self, name: str) -> str | None:
+        # Prefer a nested/local definition, then the module-level definition.
+        if self.current_qualified:
+            nested = self._unique_symbol(
+                self.module, f"{self.current_qualified}.{name}"
+            )
+            if nested:
+                return nested
+        if self.class_stack:
+            method = self._unique_symbol(
+                self.module, f"{self.class_stack[-1]}.{name}"
+            )
+            if method:
+                return method
+        local = self._unique_symbol(self.module, name)
+        if local:
+            return local
+
+        binding = self.import_bindings.get(name)
+        if not binding:
+            return None
+        if binding.get("kind") == "symbol":
+            return self._unique_symbol(
+                str(binding.get("module", "")),
+                str(binding.get("name", "")),
+            )
+        # A module object is not itself a confirmed callable.
+        return None
+
+    def _resolve_dotted(self, parts: tuple[str, ...]) -> str | None:
+        if not parts:
+            return None
+        if parts[0] == "self" and self.class_stack and len(parts) == 2:
+            return self._unique_symbol(
+                self.module, f"{self.class_stack[-1]}.{parts[1]}"
+            )
+
+        binding = self.import_bindings.get(parts[0])
+        if not binding:
+            return None
+
+        if binding.get("kind") == "symbol":
+            # Calling a method on an imported class/function is not promoted:
+            # the receiver's runtime type may be different from the imported
+            # definition.
+            return None
+
+        base_module = str(binding.get("module", ""))
+        remainder = list(parts[1:])
+        if not base_module:
+            return None
+
+        # Find the longest repository module prefix represented by this import
+        # binding, then treat the remaining identifiers as a symbol path.
+        module_candidates = [base_module]
+        candidate = base_module
+        for item in remainder:
+            candidate = f"{candidate}.{item}"
+            if candidate in self.module_nodes:
+                module_candidates.append(candidate)
+
+        selected_module = module_candidates[-1]
+        consumed = len(selected_module.split(".")) - len(base_module.split("."))
+        symbol_parts = remainder[consumed:]
+        if not symbol_parts:
+            return None
+        return self._unique_symbol(selected_module, ".".join(symbol_parts))
+
+    def _record_call(self, node: ast.Call, target: str | None, resolution: str) -> None:
+        if not self.current_symbol:
+            return
+        if target is None or target == self.current_symbol:
+            self.unresolved_calls += 1 if target is None else 0
+            return
+        self.edges.append({
+            "source": self.current_symbol,
+            "target": target,
+            "line": getattr(node, "lineno", None),
+            "resolution_kind": resolution,
+        })
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        self.class_stack.append(node.name)
+        self.scope.append(node.name)
+        # Class-body calls are deliberately not attributed to a callable
+        # symbol. Constructor/method relationships are captured at call sites.
+        previous_symbol = self.current_symbol
+        previous_qualified = self.current_qualified
+        self.current_symbol = None
+        self.current_qualified = None
+        self.generic_visit(node)
+        self.current_symbol = previous_symbol
+        self.current_qualified = previous_qualified
+        self.scope.pop()
+        self.class_stack.pop()
+
+    def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        qualified = ".".join([*self.scope, node.name])
+        target_symbol = self._unique_symbol(self.module, qualified)
+        previous_symbol = self.current_symbol
+        previous_qualified = self.current_qualified
+        self.current_symbol = target_symbol
+        self.current_qualified = qualified
+        self.scope.append(node.name)
+        self.generic_visit(node)
+        self.scope.pop()
+        self.current_symbol = previous_symbol
+        self.current_qualified = previous_qualified
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self._visit_function(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        self._visit_function(node)
+
+    def visit_Call(self, node: ast.Call) -> None:
+        self.call_sites += 1
+        parts = _dotted_ast_name(node.func)
+        target = None
+        resolution = ""
+        if len(parts) == 1:
+            target = self._resolve_name(parts[0])
+            resolution = "name"
+        elif parts:
+            target = self._resolve_dotted(parts)
+            resolution = "dotted"
+        if target is None and self.current_symbol:
+            self.unresolved_calls += 1
+        self._record_call(node, target, resolution)
+        self.generic_visit(node)
+
+
 def _tool(name: str, description: str, properties: dict[str, Any] | None = None, required: list[str] | None = None) -> dict[str, Any]:
     return {
         "type": "function",
@@ -522,14 +706,14 @@ def build_tool_definitions() -> list[dict[str, Any]]:
             "kind": {"type": "string", "enum": ["any", "class", "function", "async_function"]},
             "max_results": {"type": "integer", "minimum": 1, "maximum": MAX_SEARCH_RESULTS},
         }, ["query"]),
-        _tool("graph_neighbors", "Query observed source dependencies through the repository's SemanticGraphAnalysisService. Graph relationships are static observations, not proof of runtime behavior.", {
+        _tool("graph_neighbors", "Query observed repository relationships through the SemanticGraphAnalysisService, including imports and conservative CALLS edges when available. Graph relationships are static observations, not proof of runtime behavior.", {
             "node": {"type": "string", "minLength": 1, "maxLength": 500},
             "direction": {"type": "string", "enum": ["outgoing", "incoming", "both"]},
             "relation_types": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 80}, "maxItems": 12},
             "max_depth": {"type": "integer", "minimum": 0, "maximum": MAX_NEIGHBOR_DEPTH},
             "max_results": {"type": "integer", "minimum": 1, "maximum": MAX_GRAPH_RESULTS},
         }, ["node"]),
-        _tool("graph_path", "Test whether a bounded path exists between two repository graph entities using the existing semantic graph analysis service.", {
+        _tool("graph_path", "Test whether a bounded path exists between repository graph entities using the SemanticGraphAnalysisService. CALLS edges are conservative AST-resolved invocation observations.", {
             "source": {"type": "string", "minLength": 1, "maxLength": 500},
             "target": {"type": "string", "minLength": 1, "maxLength": 500},
             "direction": {"type": "string", "enum": ["outgoing", "incoming", "both"]},
@@ -605,6 +789,7 @@ class RepositoryEvidenceTools:
         self.symbols_by_id: dict[str, dict[str, Any]] = {}
         self.symbols_by_legacy_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
         self._edge_keys: set[str] = set()
+        self.call_graph_stats: dict[str, Any] = {}
         self._build_graph()
         if self.skipped_non_utf8_files or self.structured_record_issues or self.module_identity_issues:
             self.evidence_index_status = "incomplete"
@@ -708,6 +893,124 @@ class RepositoryEvidenceTools:
             self._add_node(node_id, "PythonModule", {"module": module, "paths": paths})
             self.module_nodes[module] = node_id
         return node_id
+
+
+    def _collect_import_bindings(
+        self,
+        path: str,
+        tree: ast.AST,
+    ) -> dict[str, dict[str, Any]]:
+        """Collect conservative import bindings used by static call resolution."""
+        line_targets: dict[int, list[str]] = defaultdict(list)
+        for edge in self.report.get("python_import_edges", []):
+            if edge.get("path") != path:
+                continue
+            target = str(edge.get("target", "")).strip()
+            line = edge.get("line")
+            if target and isinstance(line, int) and target not in line_targets[line]:
+                line_targets[line].append(target)
+
+        bindings: dict[str, dict[str, Any]] = {}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    local = alias.asname or alias.name.split(".", 1)[0]
+                    bindings[local] = {
+                        "kind": "module",
+                        "module": alias.name,
+                        "import_line": node.lineno,
+                    }
+            elif isinstance(node, ast.ImportFrom):
+                if node.level and node.module is None:
+                    # ``from . import x`` is resolved conservatively only when
+                    # AE-32A supplied an unambiguous target for the line.
+                    targets = line_targets.get(node.lineno, [])
+                else:
+                    targets = line_targets.get(node.lineno, [])
+                if len(targets) != 1:
+                    continue
+                target_module = targets[0]
+                for alias in node.names:
+                    if alias.name == "*":
+                        continue
+                    local = alias.asname or alias.name
+                    symbol_qualified = f"symbol:{target_module}::{alias.name}"
+                    if len(self.symbols_by_legacy_id.get(symbol_qualified, [])) == 1:
+                        bindings[local] = {
+                            "kind": "symbol",
+                            "module": target_module,
+                            "name": alias.name,
+                            "import_line": node.lineno,
+                        }
+                    elif f"{target_module}.{alias.name}" in self.module_nodes:
+                        bindings[local] = {
+                            "kind": "module",
+                            "module": f"{target_module}.{alias.name}",
+                            "import_line": node.lineno,
+                        }
+                    else:
+                        # Keep unresolved internal imports out of the call
+                        # graph rather than turning a textual import into a
+                        # confirmed callable relationship.
+                        continue
+        return bindings
+
+    def _build_static_call_graph(self) -> None:
+        """Add source-grounded CALLS edges for unambiguous AST call sites."""
+        symbol_nodes: dict[tuple[str, str], list[str]] = defaultdict(list)
+        for symbol in self.symbols:
+            symbol_nodes[(symbol["module"], symbol["qualified_name"])].append(symbol["node_id"])
+
+        total_candidates = 0
+        resolved = 0
+        unresolved = 0
+        ambiguous = 0
+        for rel in sorted(self.contents):
+            if PurePosixPath(rel).suffix.lower() != ".py":
+                continue
+            module = _module_name(rel, self.python_source_roots)
+            if not module:
+                continue
+            try:
+                tree = ast.parse(self.contents[rel], filename=rel)
+            except (SyntaxError, ValueError):
+                continue
+            bindings = self._collect_import_bindings(rel, tree)
+            visitor = _CallGraphVisitor(
+                module=module,
+                path=rel,
+                source_sha256=self.file_hashes[rel],
+                symbol_nodes=symbol_nodes,
+                module_nodes=self.module_nodes,
+                import_bindings=bindings,
+            )
+            visitor.visit(tree)
+            total_candidates += visitor.call_sites
+            resolved += len(visitor.edges)
+            unresolved += max(0, visitor.call_sites - len(visitor.edges))
+            ambiguous += visitor.ambiguous_calls
+            for edge in visitor.edges:
+                self._add_edge(
+                    edge["source"],
+                    edge["target"],
+                    "CALLS",
+                    {
+                        "path": rel,
+                        "line": edge.get("line"),
+                        "source_sha256": self.file_hashes[rel],
+                        "observed_by": "python_ast_call_resolution",
+                        "resolution_kind": edge.get("resolution_kind"),
+                        "resolution_status": "statically_resolved",
+                    },
+                )
+        self.call_graph_stats = {
+            "candidate_call_sites": total_candidates,
+            "resolved_call_edges": resolved,
+            "unresolved_call_sites": unresolved,
+            "ambiguous_call_sites": ambiguous,
+            "resolution_policy": "conservative_ast_v1",
+            "runtime_execution": False,
+        }
 
     def _build_graph(self) -> None:
         # File nodes are derived only from the hashed, included, UTF-8 source set.
@@ -883,6 +1186,9 @@ class RepositoryEvidenceTools:
                     "source_sha256": self.file_hashes.get(path),
                     "observed_by": "ae32a_static_finding",
                 })
+
+        # Add conservative function/class invocation relationships only after all symbols exist.
+        self._build_static_call_graph()
 
         # Refresh package/module path metadata after every implementation path is known.
         for module, paths in self.module_paths.items():
@@ -1207,6 +1513,7 @@ class RepositoryEvidenceTools:
             "graph_edge_count": len(self.graph.edges),
             "graph_relation_counts": dict(sorted(relations.items())),
             "symbol_count": len(self.symbols),
+            "call_graph": dict(self.call_graph_stats),
             "workflow_count": self.report.get("audit", {}).get("workflow_count", 0),
             "static_finding_count": len(self.report.get("findings", [])),
             "read_only": True,
@@ -1395,6 +1702,26 @@ class RepositoryEvidenceTools:
         # Evidence records contain the observed edge and its source-line metadata.
         return result
 
+    @staticmethod
+    def _graph_source_paths(result: Mapping[str, Any]) -> list[str]:
+        paths: set[str] = set()
+        for item in list(result.get("source_nodes", [])) + list(result.get("discovered_nodes", [])):
+            if isinstance(item, Mapping) and isinstance(item.get("path"), str) and item.get("path"):
+                paths.add(item["path"])
+        for evidence in result.get("evidence", []):
+            if not isinstance(evidence, Mapping):
+                continue
+            provenance = evidence.get("provenance", {})
+            if not isinstance(provenance, Mapping):
+                continue
+            metadata = provenance.get("edge_metadata", {})
+            if not isinstance(metadata, Mapping):
+                continue
+            path = metadata.get("path")
+            if isinstance(path, str) and path:
+                paths.add(path)
+        return sorted(paths)
+
     def _graph_neighbors(self, args: dict[str, Any]) -> dict[str, Any]:
         self._check_keys(args, {"node", "direction", "relation_types", "max_depth", "max_results"}, {"node"})
         node = self._resolve_node(self._string(args, "node", maximum=500))
@@ -1435,6 +1762,12 @@ class RepositoryEvidenceTools:
         visible_evidence_ids = {evidence_id for item in visible_observations for evidence_id in item.get("evidence_ids", [])}
         result["observations"] = visible_observations
         result["evidence"] = [item for item in result.get("evidence", []) if item.get("evidence_id") in visible_evidence_ids]
+        result["observed_relation_types"] = sorted({
+            str(item.get("predicate"))
+            for item in visible_observations
+            if isinstance(item, Mapping) and item.get("predicate")
+        })
+        result["source_paths"] = self._graph_source_paths(result)
         return result
 
     def _graph_path(self, args: dict[str, Any]) -> dict[str, Any]:
@@ -1478,6 +1811,12 @@ class RepositoryEvidenceTools:
         result["search_complete"] = not bool(result.get("metadata", {}).get("truncated", False))
         result["truncated"] = not result["search_complete"]
         result["coverage_status"] = "complete_for_query" if result["search_complete"] else "partial"
+        result["observed_relation_types"] = sorted({
+            str(item.get("predicate"))
+            for item in result.get("observations", [])
+            if isinstance(item, Mapping) and item.get("predicate")
+        })
+        result["source_paths"] = self._graph_source_paths(result)
         return result
 
     def _pytest_python_file_patterns(self) -> tuple[list[str] | None, str | None, str | None]:
