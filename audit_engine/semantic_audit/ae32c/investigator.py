@@ -201,6 +201,7 @@ class RepositoryInvestigator:
         required_context_target: str | None = None,
         require_complete_investigation_context: bool = False,
         require_graph_interaction: bool = False,
+        enable_graph_tools: bool = True,
         required_graph_target: str | None = None,
         required_graph_relation_types: tuple[str, ...] = ("CALLS",),
         limits: InvestigationLimits | None = None,
@@ -303,6 +304,10 @@ class RepositoryInvestigator:
             raise ValueError("required context target/paths require require_complete_investigation_context")
         if type(require_graph_interaction) is not bool:
             raise ValueError("require_graph_interaction must be a boolean")
+        if type(enable_graph_tools) is not bool:
+            raise ValueError("enable_graph_tools must be a boolean")
+        if require_graph_interaction and not enable_graph_tools:
+            raise ValueError("graph interaction cannot be required when graph tools are disabled")
         if not isinstance(required_graph_relation_types, (tuple, list)) or not required_graph_relation_types:
             raise ValueError("required_graph_relation_types must be a non-empty bounded list")
         checked_graph_relations: list[str] = []
@@ -319,6 +324,7 @@ class RepositoryInvestigator:
             raise ValueError("required_graph_target requires require_graph_interaction")
         self._require_complete_investigation_context = require_complete_investigation_context
         self._require_graph_interaction = require_graph_interaction
+        self._graph_tools_enabled = enable_graph_tools
         self._required_graph_target = required_graph_target.strip() if isinstance(required_graph_target, str) else None
         self._required_graph_relation_types = tuple(checked_graph_relations)
         self._required_context_target = required_context_target.strip() if isinstance(required_context_target, str) else None
@@ -332,7 +338,11 @@ class RepositoryInvestigator:
                         self._required_context_target_module = f"module:{module_name}"
                         break
 
-        self._tool_definitions = build_tool_definitions()
+        graph_tool_names = {"graph_neighbors", "graph_path"}
+        self._tool_definitions = [
+            item for item in build_tool_definitions()
+            if self._graph_tools_enabled or item.get("function", {}).get("name") not in graph_tool_names
+        ]
         self._tool_schemas = {
             item["function"]["name"]: item["function"]
             for item in self._tool_definitions
@@ -602,6 +612,7 @@ class RepositoryInvestigator:
             "status": "incomplete",
             "stop_reason": "not_started",
             "provider": {"name": self.provider_name, "model": self.model_name},
+            "graph_tools_enabled": self._graph_tools_enabled,
             "problem_statement": self._safe_text(problem, MAX_PROBLEM_CHARS),
             "provenance": provenance,
             "snapshot_check_status": self._snapshot_check_status,
@@ -928,8 +939,11 @@ class RepositoryInvestigator:
                         "This controlled evaluation measures whether the investigator actually uses the semantic "
                         "graph. Before finalization, issue at least one successful graph_neighbors or graph_path "
                         "query for the exact required_graph_target. Prefer the required relation types, inspect the "
-                        "returned graph observations, and then read at least one repository source path surfaced by "
-                        "that graph result. Graph observations are static evidence, not runtime proof."
+                        "returned graph observations, and then read at least one newly surfaced repository source "
+                        "path after the query. If a default read is clamped, retry with explicit line bounds. The "
+                        "graph-derived read must return the complete requested line range without truncation and "
+                        "a source_sha256 matching the graph snapshot for that path; reading the entire file is not "
+                        "required. Graph observations are static evidence, not runtime proof."
                     ),
                 }
             } if self._require_graph_interaction else {}),
@@ -1094,7 +1108,9 @@ class RepositoryInvestigator:
                 "rules": [
                     "A successful graph_neighbors or graph_path query against the exact target is required.",
                     "At least one required relation type must be observed unless the graph query is explicitly no-match.",
-                    "Read at least one source path surfaced by the successful graph query.",
+                    "Read at least one newly surfaced source path after the successful graph query.",
+                    "If a default source read is clamped, retry with explicit line bounds.",
+                    "A graph-derived read counts only when the complete requested line range is returned without truncation and the read source_sha256 matches the graph snapshot hash for that path; a full-file read is not required.",
                     "Graph presence is static evidence and does not prove runtime execution or causal correctness.",
                 ],
             }
@@ -2758,33 +2774,47 @@ class RepositoryInvestigator:
         return message
 
     def _graph_interaction_coverage(self) -> dict[str, Any]:
-        """Measure direct model use of the semantic graph and graph-to-source follow-through."""
+        """Measure ordered graph-to-source follow-through and preserve compact edge observations."""
         if not self._require_graph_interaction:
             return {
                 "enabled": False,
-                "status": "not_required",
+                "tools_available": self._graph_tools_enabled,
+                "status": "not_required" if self._graph_tools_enabled else "disabled",
                 "graph_tool_call_count": 0,
+                "target_graph_tool_call_count": 0,
                 "successful_graph_tool_call_count": 0,
+                "required_target_successful_graph_query_count": 0,
                 "required_graph_target": None,
                 "required_relation_types": [],
+                "observed_relation_types": [],
+                "target_observed_relation_types": [],
+                "required_relation_types_observed": [],
+                "graph_evidence_ids": [],
+                "graph_source_paths": [],
+                "graph_paths_already_read_before_query": [],
+                "graph_derived_read_paths": [],
+                "graph_derived_verified_read_paths": [],
+                "graph_follow_through": [],
+                "graph_follow_through_complete": False,
+                "graph_queries": [],
+                "graph_observations": [],
+                "graph_observation_count": 0,
+                "graph_observations_truncated": False,
             }
 
-        graph_entries = [
-            entry for entry in self._ledger
-            if entry.tool in {"graph_neighbors", "graph_path"}
-        ]
+        graph_entries: list[tuple[int, Any, Mapping[str, Any]]] = []
         target = self._required_graph_target
-        target_entries = [
-            entry for entry in graph_entries
-            if isinstance(entry.arguments, Mapping)
-            and (
+        target_entries: list[tuple[int, Any, Mapping[str, Any]]] = []
+        for index, entry in enumerate(self._ledger):
+            if entry.tool not in {"graph_neighbors", "graph_path"}:
+                continue
+            if not isinstance(entry.arguments, Mapping):
+                continue
+            is_target = (
                 entry.arguments.get("node") == target
                 or entry.arguments.get("source") == target
                 or entry.arguments.get("target") == target
             )
-        ]
-        successful: list[Any] = []
-        for entry in target_entries:
             if entry.status != "ok" or not isinstance(entry.response, Mapping):
                 continue
             result = entry.response.get("result")
@@ -2792,63 +2822,291 @@ class RepositoryInvestigator:
                 continue
             if result.get("coverage_status") != "complete_for_query" or result.get("truncated") is True:
                 continue
-            successful.append(entry)
+            graph_entries.append((index, entry, result))
+            if is_target:
+                target_entries.append((index, entry, result))
 
         observed_relations: set[str] = set()
+        target_observed_relations: set[str] = set()
         graph_source_paths: set[str] = set()
         graph_evidence_ids: set[str] = set()
-        for entry in successful:
-            result = entry.response.get("result", {})
-            for relation in result.get("observed_relation_types", []):
-                if isinstance(relation, str):
-                    observed_relations.add(relation)
-            for path in result.get("source_paths", []):
-                if isinstance(path, str) and path:
-                    graph_source_paths.add(path)
-            for evidence in result.get("evidence", []):
-                if isinstance(evidence, Mapping) and isinstance(evidence.get("evidence_id"), str):
-                    graph_evidence_ids.add(evidence["evidence_id"])
+        graph_queries: list[dict[str, Any]] = []
+        graph_observations: list[dict[str, Any]] = []
+        graph_follow_through: list[dict[str, Any]] = []
+        already_read_before_graph: set[str] = set()
+        read_entries: list[tuple[int, Any, str, Mapping[str, Any]]] = []
 
-        read_paths: set[str] = set()
-        for entry in self._ledger:
+        for index, entry in enumerate(self._ledger):
             if entry.tool != "read_source_file" or entry.status != "ok":
                 continue
             result = entry.response.get("result", {}) if isinstance(entry.response, Mapping) else {}
             if isinstance(result, Mapping) and isinstance(result.get("path"), str):
-                read_paths.add(result["path"])
+                read_entries.append((index, entry, result["path"], result))
 
-        graph_derived_read_paths = sorted(graph_source_paths & read_paths)
-        required_relations = set(self._required_graph_relation_types)
-        relation_support = bool(observed_relations & required_relations)
-        no_match_graph_query = any(
-            isinstance(entry.response.get("result"), Mapping)
-            and entry.response["result"].get("status") == "no_match"
-            for entry in successful
+        first_required_target_query_index = min(
+            (index for index, _entry, _result in target_entries),
+            default=None,
         )
+        for query_index, entry, result in graph_entries:
+            is_required_target_query = (
+                isinstance(entry.arguments, Mapping)
+                and (
+                    entry.arguments.get("node") == target
+                    or entry.arguments.get("source") == target
+                    or entry.arguments.get("target") == target
+                )
+            )
+            raw_relations = result.get("observed_relation_types", [])
+            if not isinstance(raw_relations, (list, tuple, set)):
+                raw_relations = []
+            relations = {relation for relation in raw_relations if isinstance(relation, str)}
+            observed_relations.update(relations)
+            if is_required_target_query:
+                target_observed_relations.update(relations)
+            raw_paths = result.get("source_paths", [])
+            if not isinstance(raw_paths, (list, tuple, set)):
+                raw_paths = []
+            paths = {path for path in raw_paths if isinstance(path, str) and path}
+            graph_source_paths.update(paths)
+            raw_evidence = result.get("evidence", [])
+            if not isinstance(raw_evidence, list):
+                raw_evidence = []
+            evidence_items = [
+                item for item in raw_evidence
+                if isinstance(item, Mapping) and isinstance(item.get("evidence_id"), str)
+            ]
+            evidence_by_id = {item["evidence_id"]: item for item in evidence_items}
+            graph_evidence_ids.update(evidence_by_id)
+
+            node_items = [
+                item for item in list(result.get("source_nodes", [])) + list(result.get("discovered_nodes", []))
+                if isinstance(item, Mapping) and isinstance(item.get("node_id"), str)
+            ]
+            nodes_by_id = {
+                item["node_id"]: {
+                    key: item.get(key)
+                    for key in ("node_id", "name", "qualified_name", "module", "path", "line", "kind", "entity_type")
+                    if item.get(key) is not None
+                }
+                for item in node_items
+            }
+            expected_source_hashes: dict[str, str] = {}
+            for node in node_items:
+                path = node.get("path")
+                source_hash = node.get("source_sha256")
+                if isinstance(path, str) and isinstance(source_hash, str):
+                    expected_source_hashes[path] = source_hash
+            for evidence in evidence_items:
+                provenance = evidence.get("provenance", {})
+                if not isinstance(provenance, Mapping):
+                    continue
+                edge_metadata = provenance.get("edge_metadata", {})
+                if not isinstance(edge_metadata, Mapping):
+                    continue
+                path = edge_metadata.get("path")
+                source_hash = edge_metadata.get("source_sha256")
+                if isinstance(path, str) and isinstance(source_hash, str):
+                    expected_source_hashes.setdefault(path, source_hash)
+
+            raw_observations = result.get("observations", [])
+            if not isinstance(raw_observations, list):
+                raw_observations = []
+            query_observations = [item for item in raw_observations if isinstance(item, Mapping)]
+            observation_count = 0
+            for observation in query_observations:
+                observation_evidence_ids = observation.get("evidence_ids", [])
+                if not isinstance(observation_evidence_ids, list):
+                    observation_evidence_ids = []
+                for evidence_id in observation_evidence_ids:
+                    evidence = evidence_by_id.get(evidence_id)
+                    if evidence is None:
+                        continue
+                    provenance = evidence.get("provenance", {})
+                    if not isinstance(provenance, Mapping):
+                        provenance = {}
+                    edge_metadata = provenance.get("edge_metadata", {})
+                    if not isinstance(edge_metadata, Mapping):
+                        edge_metadata = {}
+                    record = {
+                        "graph_query_evidence_id": entry.evidence_id,
+                        "observation_id": observation.get("observation_id"),
+                        "edge_evidence_id": evidence_id,
+                        "subject_id": observation.get("subject_id"),
+                        "subject": nodes_by_id.get(observation.get("subject_id")),
+                        "predicate": observation.get("predicate"),
+                        "object_id": observation.get("object_id"),
+                        "object": nodes_by_id.get(observation.get("object_id")),
+                        "depth": observation.get("depth"),
+                        "source_path": edge_metadata.get("path"),
+                        "source_line": edge_metadata.get("line"),
+                        "source_sha256": edge_metadata.get("source_sha256"),
+                        "observed_by": edge_metadata.get("observed_by"),
+                        "resolution_kind": edge_metadata.get("resolution_kind"),
+                        "resolution_status": edge_metadata.get("resolution_status"),
+                    }
+                    graph_observations.append(record)
+                    observation_count += 1
+
+            query_record = {
+                "evidence_id": entry.evidence_id,
+                "tool": entry.tool,
+                "ledger_index": query_index,
+                "target": (
+                    entry.arguments.get("node")
+                    or entry.arguments.get("source")
+                    or entry.arguments.get("target")
+                ),
+                "status": entry.status,
+                "coverage_status": result.get("coverage_status"),
+                "observed_relation_types": sorted(relations),
+                "source_paths": sorted(paths),
+                "observation_count": observation_count,
+                "is_required_target": is_required_target_query,
+            }
+            graph_queries.append(query_record)
+
+            if (
+                first_required_target_query_index is None
+                or query_index < first_required_target_query_index
+            ):
+                continue
+
+            reads_before = {
+                path for read_index, _read_entry, path, _read_result in read_entries
+                if read_index < query_index
+            }
+            reads_after = [
+                (read_index, read_entry, path, read_result)
+                for read_index, read_entry, path, read_result in read_entries
+                if read_index > query_index and path in paths
+            ]
+            already_read_before_graph.update(paths & reads_before)
+            for read_index, read_entry, path, read_result in reads_after:
+                if path in reads_before:
+                    continue
+                read_source_hash = read_result.get("source_sha256")
+                expected_source_hash = expected_source_hashes.get(path)
+                source_hash_matches_graph = (
+                    read_source_hash == expected_source_hash
+                    if isinstance(expected_source_hash, str) and isinstance(read_source_hash, str)
+                    else None
+                )
+                requested_start = read_result.get("requested_start_line", read_result.get("start_line"))
+                requested_end = read_result.get("requested_end_line", read_result.get("end_line"))
+                returned_start = read_result.get("start_line")
+                returned_end = read_result.get("end_line")
+                total_lines = read_result.get("total_lines")
+                valid_line_numbers = all(
+                    isinstance(value, int) and not isinstance(value, bool)
+                    for value in (requested_start, requested_end, returned_start, returned_end, total_lines)
+                )
+                requested_range_complete = False
+                if valid_line_numbers:
+                    expected_end = min(requested_end, total_lines)
+                    requested_range_complete = (
+                        returned_start == requested_start
+                        and returned_end >= expected_end
+                    )
+                    if read_result.get("truncated") is True and not (
+                        read_result.get("end_clamped_to_eof") is True
+                        and returned_end == total_lines
+                    ):
+                        requested_range_complete = False
+                graph_follow_through.append({
+                    "graph_query_evidence_id": entry.evidence_id,
+                    "graph_query_ledger_index": query_index,
+                    "is_required_target_query": is_required_target_query,
+                    "read_evidence_id": read_entry.evidence_id,
+                    "read_ledger_index": read_index,
+                    "path": path,
+                    "source_sha256": read_source_hash,
+                    "source_range_complete": read_result.get("source_range_complete") is True,
+                    "requested_range_complete": requested_range_complete,
+                    "requested_start_line": requested_start,
+                    "requested_end_line": requested_end,
+                    "returned_start_line": returned_start,
+                    "returned_end_line": returned_end,
+                    "truncated": read_result.get("truncated") is True,
+                    "end_clamped_to_eof": read_result.get("end_clamped_to_eof") is True,
+                    "expected_graph_source_sha256": expected_source_hash,
+                    "source_hash_matches_graph": source_hash_matches_graph,
+                })
+
+        graph_observations.sort(key=lambda item: (
+            str(item.get("graph_query_evidence_id") or ""),
+            str(item.get("edge_evidence_id") or ""),
+            str(item.get("observation_id") or ""),
+        ))
+        observation_limit = 100
+        graph_observations_truncated = len(graph_observations) > observation_limit
+        graph_observations = graph_observations[:observation_limit]
+        graph_follow_through.sort(key=lambda item: (
+            int(item.get("graph_query_ledger_index", 0)),
+            int(item.get("read_ledger_index", 0)),
+            str(item.get("path", "")),
+        ))
+
+        required_relations = set(self._required_graph_relation_types)
+        relation_support = bool(target_observed_relations & required_relations)
+        no_match_graph_query = any(
+            result.get("status") == "no_match"
+            for _index, _entry, result in target_entries
+        )
+        graph_derived_read_paths = sorted({item["path"] for item in graph_follow_through})
+        graph_derived_verified_read_paths = sorted({
+            item["path"] for item in graph_follow_through
+            if item.get("requested_range_complete") is True
+            and item.get("source_hash_matches_graph") is True
+        })
         status = "complete" if (
-            successful
+            target_entries
             and (relation_support or no_match_graph_query)
-            and bool(graph_derived_read_paths)
+            and bool(graph_derived_verified_read_paths)
         ) else "incomplete"
 
         return {
             "enabled": True,
+            "tools_available": self._graph_tools_enabled,
             "status": status,
             "required_graph_target": target,
             "required_relation_types": list(self._required_graph_relation_types),
-            "graph_tool_call_count": len(graph_entries),
-            "target_graph_tool_call_count": len(target_entries),
-            "successful_graph_tool_call_count": len(successful),
+            "graph_tool_call_count": sum(
+                1 for item in self._ledger if item.tool in {"graph_neighbors", "graph_path"}
+            ),
+            "target_graph_tool_call_count": len([
+                item for item in self._ledger
+                if item.tool in {"graph_neighbors", "graph_path"}
+                and isinstance(item.arguments, Mapping)
+                and (
+                    item.arguments.get("node") == target
+                    or item.arguments.get("source") == target
+                    or item.arguments.get("target") == target
+                )
+            ]),
+            "successful_graph_tool_call_count": len(graph_entries),
+            "required_target_successful_graph_query_count": len(target_entries),
             "observed_relation_types": sorted(observed_relations),
-            "required_relation_types_observed": sorted(observed_relations & required_relations),
+            "target_observed_relation_types": sorted(target_observed_relations),
+            "required_relation_types_observed": sorted(target_observed_relations & required_relations),
             "graph_evidence_ids": sorted(graph_evidence_ids),
             "graph_source_paths": sorted(graph_source_paths),
+            "graph_paths_already_read_before_query": sorted(already_read_before_graph),
             "graph_derived_read_paths": graph_derived_read_paths,
-            "graph_follow_through_complete": bool(graph_derived_read_paths),
+            "graph_derived_verified_read_paths": graph_derived_verified_read_paths,
+            "graph_follow_through": graph_follow_through,
+            "graph_follow_through_complete": bool(graph_derived_verified_read_paths),
+            "graph_queries": graph_queries,
+            "graph_observations": graph_observations,
+            "graph_observation_count": sum(item["observation_count"] for item in graph_queries),
+            "graph_observations_truncated": graph_observations_truncated,
             "interpretation": (
-                "This contract measures direct model interaction with the semantic graph and a subsequent "
-                "read of graph-surfaced source. It does not establish that the graph is complete or that "
-                "the resulting diagnosis is causally correct."
+                "A graph-derived read is counted only when the source path was surfaced by a successful "
+                "graph query at or after a successful query against the required target, had not already been "
+                "read before the surfacing query, and was "
+                "read afterward with a complete, non-truncated requested line range and a source hash matching the graph snapshot. "
+                "Compact edge observations preserve endpoint, relationship, source-line, hash, and static-resolution "
+                "metadata. These measures do not establish graph completeness "
+                "or causal correctness."
             ),
         }
 
