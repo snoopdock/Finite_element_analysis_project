@@ -8,11 +8,24 @@
             "default": 0.45,
             "env": "FEA_AE32C_CLOUDFLARE_INPUT_USD_PER_M"
           },
-          "notes": "Conservative estimator carried forward from the accepted Qwen live-evaluation configuration; verify rates before relying on a budget.",
+          "notes": "Conservative estimator carried forward from the accepted Qwen live-evaluation configuration; verify rates before relying on a budget. Provider/model-specific runtime limits are applied from this profile; retained as a first-class comparison target.",
           "output_reservation_multiplier": 2,
           "output_usd_per_million_tokens": {
             "default": 3.2,
             "env": "FEA_AE32C_CLOUDFLARE_OUTPUT_USD_PER_M"
+          },
+          "runtime_limits": {
+            "finalization_max_tokens_per_call": 6144,
+            "finalization_prompt_tokens_reserved_per_round": 1024,
+            "finalization_rounds_reserved": 3,
+            "max_elapsed_seconds": 900,
+            "max_finalization_invalid_json_retries": 2,
+            "max_finalization_recovery_retries": 2,
+            "max_invalid_json_retries": 2,
+            "max_rounds": 11,
+            "max_tokens_per_call": 2048,
+            "max_tool_calls": 12,
+            "max_total_tokens": 180000
           },
           "uncertainty_margin": 0.15
         }
@@ -22,7 +35,34 @@
       "models": {}
     },
     "openrouter": {
-      "models": {}
+      "models": {
+        "nvidia/nemotron-3-ultra-550b-a55b:free": {
+          "notes": "OpenRouter free Nemotron endpoint. Tool calling is supported; provider-enforced structured response_format is not supported. Keep plain-text/local response normalization. Free endpoint availability and rate limits are provider controlled. Local finalization completion cap is deliberately 12,000 tokens, below the documented endpoint maximum.",
+          "pricing": {
+            "input_usd_per_million_tokens": {
+              "default": 0.0
+            },
+            "output_reservation_multiplier": 2,
+            "output_usd_per_million_tokens": {
+              "default": 0.0
+            },
+            "uncertainty_margin": 0.15
+          },
+          "runtime_limits": {
+            "finalization_max_tokens_per_call": 12000,
+            "finalization_prompt_tokens_reserved_per_round": 1024,
+            "finalization_rounds_reserved": 3,
+            "max_elapsed_seconds": 600,
+            "max_finalization_invalid_json_retries": 2,
+            "max_finalization_recovery_retries": 2,
+            "max_invalid_json_retries": 2,
+            "max_rounds": 13,
+            "max_tokens_per_call": 2048,
+            "max_tool_calls": 16,
+            "max_total_tokens": 180000
+          }
+        }
+      }
     }
   },
   "schema_version": "ae32c/provider-model-evaluation-profiles/v1"

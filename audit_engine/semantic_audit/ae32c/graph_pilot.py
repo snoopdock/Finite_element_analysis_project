@@ -96,6 +96,9 @@ def _load_profile(profile_name: str, profile_path: Path = _DEFAULT_GRAPH_PROFILE
     if not isinstance(profile, Mapping):
         raise GraphPilotError(f"unknown_graph_pilot_profile:{profile_name}")
     result = dict(profile)
+    # Preserve compatibility with earlier v1 profiles that predate the
+    # cross-module follow-through threshold.
+    result.setdefault("graph_min_cross_module_reads", 1)
     for key in ("source_directories", "include_files", "graph_relation_types"):
         if not isinstance(result.get(key), list):
             raise GraphPilotError(f"profile_field_must_be_list:{key}")
@@ -106,8 +109,13 @@ def _load_profile(profile_name: str, profile_path: Path = _DEFAULT_GRAPH_PROFILE
         not isinstance(item, str) or not item.strip() for item in result["graph_relation_types"]
     ):
         raise GraphPilotError("profile_graph_relation_types_invalid")
-    for key, minimum, maximum in (("max_files", 1, 100), ("max_bytes", 1024, 2_000_000),
-                                  ("graph_query_depth", 1, 3), ("graph_query_max_results", 1, 30)):
+    for key, minimum, maximum in (
+        ("max_files", 1, 100),
+        ("max_bytes", 1024, 2_000_000),
+        ("graph_query_depth", 1, 3),
+        ("graph_query_max_results", 1, 30),
+        ("graph_min_cross_module_reads", 1, 10),
+    ):
         value = result.get(key)
         if isinstance(value, bool) or not isinstance(value, int) or not minimum <= value <= maximum:
             raise GraphPilotError(f"profile_bound_invalid:{key}")
@@ -203,7 +211,11 @@ def _graph_preflight(
 
     query_response = evidence_tools.invoke("graph_neighbors", {
         "node": target,
-        "direction": "both",
+        # The pilot follows the target's outgoing CALLS chain. A bidirectional
+        # depth-two preflight can exhaust the traversal's visited-node bound
+        # with unrelated callers and falsely fail an otherwise complete target
+        # investigation.
+        "direction": "outgoing",
         "relation_types": list(relation_types),
         "max_depth": depth,
         "max_results": max_results,
@@ -253,6 +265,62 @@ def _load_provider_model_profile(
     models = provider.get("models", {}) if isinstance(provider, Mapping) else {}
     model_profile = models.get(model_name, {}) if isinstance(models, Mapping) else {}
     return dict(model_profile) if isinstance(model_profile, Mapping) else {}, float(default_pair_cap)
+
+
+_RUNTIME_LIMIT_KEYS = {
+    "max_rounds",
+    "max_tool_calls",
+    "max_tokens_per_call",
+    "finalization_max_tokens_per_call",
+    "max_total_tokens",
+    "max_response_chars",
+    "max_tool_response_bytes",
+    "max_tool_context_chars",
+    "max_total_evidence_bytes",
+    "max_total_prompt_chars",
+    "max_elapsed_seconds",
+    "finalization_rounds_reserved",
+    "max_invalid_final_attempts",
+    "max_invalid_json_retries",
+    "max_finalization_invalid_json_retries",
+    "max_finalization_recovery_retries",
+    "finalization_prompt_tokens_reserved_per_round",
+}
+
+
+def _apply_model_runtime_limits(base_limits: Any, runtime_limits: Any) -> Any:
+    """Apply bounded per-provider/model InvestigationLimits from the profile."""
+    if runtime_limits is None:
+        return base_limits
+    if not isinstance(runtime_limits, Mapping):
+        raise GraphPilotError("model_runtime_limits_must_be_an_object")
+    unknown = sorted(set(runtime_limits) - _RUNTIME_LIMIT_KEYS)
+    if unknown:
+        raise GraphPilotError("unsupported_model_runtime_limit:" + ",".join(str(item) for item in unknown))
+    try:
+        return replace(base_limits, **dict(runtime_limits))
+    except (TypeError, ValueError) as exc:
+        raise GraphPilotError("model_runtime_limits_invalid:" + str(exc)) from exc
+
+
+def _runtime_limits_record(limits: Any) -> dict[str, Any]:
+    """Return the bounded execution limits that define a model's live run."""
+    names = (
+        "max_rounds",
+        "max_tool_calls",
+        "max_tokens_per_call",
+        "finalization_max_tokens_per_call",
+        "max_total_tokens",
+        "max_elapsed_seconds",
+        "finalization_rounds_reserved",
+        "finalization_prompt_tokens_reserved_per_round",
+        "max_tool_context_chars",
+        "max_total_prompt_chars",
+        "max_invalid_json_retries",
+        "max_finalization_invalid_json_retries",
+        "max_finalization_recovery_retries",
+    )
+    return {name: getattr(limits, name) for name in names}
 
 
 def _rate(spec: Any) -> float:
@@ -486,6 +554,10 @@ def run_graph_pilot(
         )
         effective_model = _effective_model(provider_probe, effective_requested_model)
         model_profile, _ = _load_provider_model_profile(provider_name, effective_model, provider_profile_path)
+        limits_template = _apply_model_runtime_limits(
+            limits_template,
+            model_profile.get("runtime_limits", {}),
+        )
         cost_estimator = _build_cost_estimator(provider_name, effective_model, model_profile)
         if cost_estimator is None and not allow_unpriced_provider_calls:
             raise GraphPilotError(
@@ -517,6 +589,9 @@ def run_graph_pilot(
                 require_graph_interaction=graph_enabled,
                 required_graph_target=target if graph_enabled else None,
                 required_graph_relation_types=relation_types,
+                required_graph_min_cross_module_reads=(
+                    int(profile["graph_min_cross_module_reads"]) if graph_enabled else 0
+                ),
                 limits=limits,
                 cost_estimator=cost_estimator,
             )
@@ -576,6 +651,7 @@ def run_graph_pilot(
             "created_at_unix": round(start_time, 3),
             "provider": provider_name,
             "model": effective_model,
+            "runtime_limits": _runtime_limits_record(limits_template),
             "condition_order": order,
             "profile": profile_name,
             "problem_statement": problem,
@@ -607,6 +683,7 @@ def run_graph_pilot(
                 "control_available_tools": sorted(control_tools),
                 "graph_enabled_available_tools": sorted(treatment_tools),
                 "intended_intervention": "graph tool availability plus explicit graph-use instruction",
+                "required_distinct_cross_module_reads": int(profile["graph_min_cross_module_reads"]),
                 "randomization": "single paired pilot; order recorded but no counterbalancing",
             },
             "cost_policy": {
@@ -734,7 +811,9 @@ def _write_comparison_markdown(path: Path, record: Mapping[str, Any]) -> None:
         f"- Graph-enabled-only read paths: {len(paths.get('graph_enabled_only', []))}",
         f"- Graph coverage: `{graph.get('status', 'unknown')}`",
         f"- Graph observations preserved: {graph.get('graph_observation_count', 0)}",
-        f"- New graph-derived read paths: {len(graph.get('graph_derived_read_paths', []))}",
+        f"- Verified cross-module reads: {len(graph.get('cross_module_graph_derived_verified_read_paths', []))}",
+        f"- Required cross-module reads: {graph.get('required_graph_min_cross_module_reads', 0)}",
+        f"- Finalization completion allowance: {comparison.get('runtime_limits', {}).get('finalization_max_tokens_per_call')}",
         "",
         "## Interpretation boundary",
         "",

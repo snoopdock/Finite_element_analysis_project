@@ -204,6 +204,7 @@ class RepositoryInvestigator:
         enable_graph_tools: bool = True,
         required_graph_target: str | None = None,
         required_graph_relation_types: tuple[str, ...] = ("CALLS",),
+        required_graph_min_cross_module_reads: int = 0,
         limits: InvestigationLimits | None = None,
         cost_estimator: Callable[[str, str, int, int], float] | None = None,
         clock: Callable[[], float] = time.monotonic,
@@ -322,11 +323,20 @@ class RepositoryInvestigator:
                 raise ValueError("required_graph_target is required when graph interaction is enforced")
         elif required_graph_target is not None:
             raise ValueError("required_graph_target requires require_graph_interaction")
+        if (
+            isinstance(required_graph_min_cross_module_reads, bool)
+            or not isinstance(required_graph_min_cross_module_reads, int)
+            or not 0 <= required_graph_min_cross_module_reads <= 10
+        ):
+            raise ValueError("required_graph_min_cross_module_reads must be an integer between 0 and 10")
+        if not require_graph_interaction and required_graph_min_cross_module_reads:
+            raise ValueError("minimum cross-module graph reads require graph interaction")
         self._require_complete_investigation_context = require_complete_investigation_context
         self._require_graph_interaction = require_graph_interaction
         self._graph_tools_enabled = enable_graph_tools
         self._required_graph_target = required_graph_target.strip() if isinstance(required_graph_target, str) else None
         self._required_graph_relation_types = tuple(checked_graph_relations)
+        self._required_graph_min_cross_module_reads = required_graph_min_cross_module_reads
         self._required_context_target = required_context_target.strip() if isinstance(required_context_target, str) else None
         self._required_context_paths = tuple(sorted(checked_context_paths))
         self._required_context_target_module = None
@@ -752,7 +762,264 @@ class RepositoryInvestigator:
             return result
         return value
 
+    def _graph_neighbors_model_view(self, entry: _EvidenceEntry) -> dict[str, Any] | None:
+        """Expose a compact, cross-module-first graph view without changing ledger evidence."""
+        if entry.tool != "graph_neighbors" or not isinstance(entry.response, Mapping):
+            return None
+        raw_result = entry.response.get("result")
+        if not isinstance(raw_result, Mapping):
+            return None
+
+        source_nodes = raw_result.get("source_nodes", [])
+        discovered_nodes = raw_result.get("discovered_nodes", [])
+        if not isinstance(source_nodes, list):
+            source_nodes = []
+        if not isinstance(discovered_nodes, list):
+            discovered_nodes = []
+        nodes_by_id: dict[str, dict[str, Any]] = {}
+        for node in source_nodes + discovered_nodes:
+            if not isinstance(node, Mapping) or not isinstance(node.get("node_id"), str):
+                continue
+            nodes_by_id[node["node_id"]] = {
+                key: node.get(key)
+                for key in (
+                    "node_id", "name", "qualified_name", "module", "path",
+                    "line", "kind", "entity_type", "source_sha256",
+                )
+                if node.get(key) is not None
+            }
+        root_paths = {
+            node.get("path") for node in source_nodes
+            if isinstance(node, Mapping) and isinstance(node.get("path"), str)
+        }
+
+        raw_evidence = raw_result.get("evidence", [])
+        if not isinstance(raw_evidence, list):
+            raw_evidence = []
+        evidence_by_id: dict[str, Mapping[str, Any]] = {
+            item["evidence_id"]: item for item in raw_evidence
+            if isinstance(item, Mapping) and isinstance(item.get("evidence_id"), str)
+        }
+        raw_observations = raw_result.get("observations", [])
+        if not isinstance(raw_observations, list):
+            raw_observations = []
+
+        direction = (
+            entry.arguments.get("direction", "both")
+            if isinstance(entry.arguments, Mapping) else "both"
+        )
+        candidates: list[tuple[tuple[Any, ...], dict[str, Any], str | None]] = []
+        for observation in raw_observations:
+            if not isinstance(observation, Mapping):
+                continue
+            subject = nodes_by_id.get(observation.get("subject_id"), {})
+            object_node = nodes_by_id.get(observation.get("object_id"), {})
+            subject_path = subject.get("path")
+            object_path = object_node.get("path")
+            ordered_nodes = (
+                (subject, object_node) if direction == "incoming"
+                else (object_node, subject)
+            )
+            cross_node = next(
+                (
+                    node for node in ordered_nodes
+                    if isinstance(node.get("path"), str) and node.get("path") not in root_paths
+                ),
+                None,
+            )
+            if cross_node is None:
+                cross_node = next(
+                    (
+                        node for node in (object_node, subject)
+                        if isinstance(node.get("path"), str)
+                    ),
+                    {},
+                )
+            cross_path = cross_node.get("path") if isinstance(cross_node, Mapping) else None
+            evidence_ids = observation.get("evidence_ids", [])
+            if not isinstance(evidence_ids, list):
+                evidence_ids = []
+            edge_id = next((item for item in evidence_ids if isinstance(item, str)), None)
+            edge = evidence_by_id.get(edge_id, {}) if edge_id else {}
+            provenance = edge.get("provenance", {}) if isinstance(edge, Mapping) else {}
+            if not isinstance(provenance, Mapping):
+                provenance = {}
+            edge_metadata = provenance.get("edge_metadata", {})
+            if not isinstance(edge_metadata, Mapping):
+                edge_metadata = {}
+            depth = observation.get("depth")
+            if isinstance(depth, bool) or not isinstance(depth, int):
+                depth = 99
+            endpoint_fields = ("name", "qualified_name", "module", "path", "line", "kind")
+            subject_view = {
+                key: subject.get(key) for key in endpoint_fields if subject.get(key) is not None
+            }
+            object_view = {
+                key: object_node.get(key) for key in endpoint_fields if object_node.get(key) is not None
+            }
+            record = {
+                "observation_id": observation.get("observation_id"),
+                "edge_evidence_id": edge_id,
+                "relation": observation.get("predicate"),
+                "depth": depth,
+                "subject": subject_view,
+                "object": object_view,
+                "cross_module_path": cross_path,
+                "cross_module_source_sha256": cross_node.get("source_sha256") if isinstance(cross_node, Mapping) else None,
+                "source_path": edge_metadata.get("path"),
+                "source_line": edge_metadata.get("line"),
+                "source_sha256": edge_metadata.get("source_sha256"),
+                "observed_by": edge_metadata.get("observed_by"),
+                "resolution_kind": edge_metadata.get("resolution_kind"),
+                "resolution_status": edge_metadata.get("resolution_status"),
+            }
+            is_cross_module = (
+                isinstance(subject_path, str)
+                and isinstance(object_path, str)
+                and subject_path != object_path
+            )
+            priority = (
+                0 if is_cross_module and cross_path not in root_paths else 1,
+                depth,
+                str(cross_path or ""),
+                str(edge_id or ""),
+            )
+            candidates.append((priority, record, cross_path if isinstance(cross_path, str) else None))
+
+        candidates.sort(key=lambda item: item[0])
+        # First retain one useful observation for each distinct cross-module path.
+        selected: list[dict[str, Any]] = []
+        seen_paths: set[str] = set()
+        for _priority, record, path in candidates:
+            if path and path not in root_paths and path not in seen_paths:
+                selected.append(record)
+                seen_paths.add(path)
+        selected_ids = {item.get("observation_id") for item in selected}
+        for _priority, record, _path in candidates:
+            if record.get("observation_id") not in selected_ids and len(selected) < 12:
+                selected.append(record)
+                selected_ids.add(record.get("observation_id"))
+        selected = selected[:12]
+
+        source_paths = raw_result.get("source_paths", [])
+        if not isinstance(source_paths, list):
+            source_paths = []
+        normalized_source_paths = sorted({
+            item for item in source_paths if isinstance(item, str) and item
+        })
+        cross_module_paths = [
+            path for path in normalized_source_paths if path not in root_paths
+        ]
+
+        priority_targets: list[dict[str, Any]] = []
+        target_by_path: dict[str, dict[str, Any]] = {}
+        for record in selected:
+            path = record.get("cross_module_path")
+            if not isinstance(path, str) or path in root_paths or path in target_by_path:
+                continue
+            node = record.get("object") if record.get("object", {}).get("path") == path else record.get("subject", {})
+            if not isinstance(node, Mapping):
+                node = {}
+            target_by_path[path] = {
+                "path": path,
+                "symbol": node.get("qualified_name") or node.get("name"),
+                "module": node.get("module"),
+                "line": node.get("line"),
+                "kind": node.get("kind"),
+                "relation": record.get("relation"),
+                "depth": record.get("depth"),
+                "edge_evidence_id": record.get("edge_evidence_id"),
+                "edge_source_path": record.get("source_path"),
+                "edge_source_line": record.get("source_line"),
+                "source_sha256": record.get("cross_module_source_sha256") or record.get("source_sha256"),
+            }
+        for path in cross_module_paths:
+            if path not in target_by_path:
+                node = next(
+                    (
+                        item for item in discovered_nodes
+                        if isinstance(item, Mapping) and item.get("path") == path
+                    ),
+                    {},
+                )
+                target_by_path[path] = {
+                    "path": path,
+                    "symbol": node.get("qualified_name") or node.get("name"),
+                    "module": node.get("module"),
+                    "line": node.get("line"),
+                    "kind": node.get("kind"),
+                    "relation": None,
+                    "depth": None,
+                    "edge_evidence_id": None,
+                    "edge_source_path": None,
+                    "edge_source_line": None,
+                    "source_sha256": node.get("source_sha256"),
+                }
+        priority_targets = sorted(
+            target_by_path.values(),
+            key=lambda item: (
+                item.get("depth") if isinstance(item.get("depth"), int) else 99,
+                item["path"],
+                item.get("line") if isinstance(item.get("line"), int) else 0,
+            ),
+        )
+
+        model_result = {
+            "status": raw_result.get("status"),
+            "coverage_status": raw_result.get("coverage_status"),
+            "truncated": raw_result.get("truncated"),
+            "observed_relation_types": raw_result.get("observed_relation_types", []),
+            "source_paths": normalized_source_paths,
+            "cross_module_source_paths": cross_module_paths,
+            "priority_source_targets": priority_targets[:10],
+            "observation_count": len(raw_observations),
+            "observations_included": len(selected),
+            "observations_omitted": max(0, len(raw_observations) - len(selected)),
+            "observations": selected,
+            "model_view_policy": (
+                "Cross-module observations are prioritized for the model. The immutable evidence ledger "
+                "and final report retain the complete graph response and all observation provenance."
+            ),
+        }
+        response_view = {
+            "schema_version": entry.response.get("schema_version"),
+            "tool": entry.response.get("tool"),
+            "status": entry.response.get("status"),
+            "result": model_result,
+        }
+        view = {
+            "evidence_id": entry.evidence_id,
+            "tool": entry.tool,
+            "status": entry.status,
+            "response_sha256": entry.response_sha256,
+            "response": response_view,
+            "provenance": {
+                key: entry.provenance.get(key)
+                for key in ("source_manifest_sha256", "graph_fingerprint", "graph_projection_version")
+                if isinstance(entry.provenance, Mapping) and entry.provenance.get(key) is not None
+            },
+        }
+        if len(self._canonical_json(view)) <= self.limits.max_tool_context_chars:
+            return view
+
+        # Keep graph navigation useful under smaller model context budgets.
+        for observation_limit in (8, 5, 3):
+            model_result["observations"] = selected[:observation_limit]
+            model_result["observations_included"] = len(model_result["observations"])
+            model_result["observations_omitted"] = max(0, len(raw_observations) - len(model_result["observations"]))
+            view["response"]["result"] = model_result
+            if len(self._canonical_json(view)) <= self.limits.max_tool_context_chars:
+                return view
+
+        model_result["observations"] = []
+        model_result["observations_included"] = 0
+        view["context_truncated"] = True
+        return view
+
     def _model_view(self, entry: _EvidenceEntry) -> dict[str, Any]:
+        graph_view = self._graph_neighbors_model_view(entry)
+        if graph_view is not None:
+            return graph_view
         for string_limit, list_limit in ((1_200, 12), (500, 8), (240, 5)):
             view = {
                 "evidence_id": entry.evidence_id,
@@ -935,15 +1202,22 @@ class RepositoryInvestigator:
                     "required_graph_tools": ["graph_neighbors", "graph_path"],
                     "required_graph_target": self._required_graph_target,
                     "required_relation_types": list(self._required_graph_relation_types),
+                    "minimum_distinct_cross_module_source_reads": self._required_graph_min_cross_module_reads,
                     "instructions": (
                         "This controlled evaluation measures whether the investigator actually uses the semantic "
-                        "graph. Before finalization, issue at least one successful graph_neighbors or graph_path "
-                        "query for the exact required_graph_target. Prefer the required relation types, inspect the "
-                        "returned graph observations, and then read at least one newly surfaced repository source "
-                        "path after the query. If a default read is clamped, retry with explicit line bounds. The "
-                        "graph-derived read must return the complete requested line range without truncation and "
-                        "a source_sha256 matching the graph snapshot for that path; reading the entire file is not "
-                        "required. Graph observations are static evidence, not runtime proof."
+                        "graph. Before broad repository searches, issue a successful graph_neighbors query for the "
+                        "exact required_graph_target and required relation types. Inspect cross_module_source_paths "
+                        "and priority_source_targets in the compact graph response. Then directly call "
+                        "read_source_file on at least minimum_distinct_cross_module_source_reads distinct paths "
+                        "from that returned list, preferring paths outside the target module. Use the exact "
+                        "repository-relative path and the symbol line supplied by the graph; read a bounded range "
+                        "around that line. Do not issue search_repository calls merely to rediscover a path already "
+                        "returned by the graph, and do not repeatedly read the target entry-point file. If fewer "
+                        "than the required number of cross-module paths are available, read every available path "
+                        "and explicitly report the shortfall. Each counted read must occur after the graph query, "
+                        "must not have been read earlier, must cover its requested line range without truncation, "
+                        "and must have a source_sha256 matching the graph snapshot. Graph observations are static "
+                        "evidence, not runtime proof."
                     ),
                 }
             } if self._require_graph_interaction else {}),
@@ -2791,6 +3065,10 @@ class RepositoryInvestigator:
                 "required_relation_types_observed": [],
                 "graph_evidence_ids": [],
                 "graph_source_paths": [],
+                "cross_module_graph_source_paths": [],
+                "required_graph_min_cross_module_reads": 0,
+                "cross_module_graph_derived_read_paths": [],
+                "cross_module_graph_derived_verified_read_paths": [],
                 "graph_paths_already_read_before_query": [],
                 "graph_derived_read_paths": [],
                 "graph_derived_verified_read_paths": [],
@@ -2829,6 +3107,7 @@ class RepositoryInvestigator:
         observed_relations: set[str] = set()
         target_observed_relations: set[str] = set()
         graph_source_paths: set[str] = set()
+        target_source_paths: set[str] = set()
         graph_evidence_ids: set[str] = set()
         graph_queries: list[dict[str, Any]] = []
         graph_observations: list[dict[str, Any]] = []
@@ -2868,6 +3147,13 @@ class RepositoryInvestigator:
                 raw_paths = []
             paths = {path for path in raw_paths if isinstance(path, str) and path}
             graph_source_paths.update(paths)
+            if is_required_target_query:
+                raw_target_nodes = result.get("source_nodes", [])
+                if isinstance(raw_target_nodes, list):
+                    target_source_paths.update(
+                        node.get("path") for node in raw_target_nodes
+                        if isinstance(node, Mapping) and isinstance(node.get("path"), str)
+                    )
             raw_evidence = result.get("evidence", [])
             if not isinstance(raw_evidence, list):
                 raw_evidence = []
@@ -3046,6 +3332,7 @@ class RepositoryInvestigator:
             str(item.get("path", "")),
         ))
 
+        cross_module_graph_source_paths = sorted(graph_source_paths - target_source_paths)
         required_relations = set(self._required_graph_relation_types)
         relation_support = bool(target_observed_relations & required_relations)
         no_match_graph_query = any(
@@ -3058,10 +3345,21 @@ class RepositoryInvestigator:
             if item.get("requested_range_complete") is True
             and item.get("source_hash_matches_graph") is True
         })
+        cross_module_graph_derived_read_paths = sorted(
+            set(graph_derived_read_paths) & set(cross_module_graph_source_paths)
+        )
+        cross_module_graph_derived_verified_read_paths = sorted(
+            set(graph_derived_verified_read_paths) & set(cross_module_graph_source_paths)
+        )
+        minimum_cross_module_reads_met = (
+            len(cross_module_graph_derived_verified_read_paths)
+            >= self._required_graph_min_cross_module_reads
+        )
         status = "complete" if (
             target_entries
             and (relation_support or no_match_graph_query)
             and bool(graph_derived_verified_read_paths)
+            and minimum_cross_module_reads_met
         ) else "incomplete"
 
         return {
@@ -3090,11 +3388,16 @@ class RepositoryInvestigator:
             "required_relation_types_observed": sorted(target_observed_relations & required_relations),
             "graph_evidence_ids": sorted(graph_evidence_ids),
             "graph_source_paths": sorted(graph_source_paths),
+            "cross_module_graph_source_paths": cross_module_graph_source_paths,
+            "required_graph_min_cross_module_reads": self._required_graph_min_cross_module_reads,
+            "cross_module_graph_derived_read_paths": cross_module_graph_derived_read_paths,
+            "cross_module_graph_derived_verified_read_paths": cross_module_graph_derived_verified_read_paths,
+            "minimum_cross_module_reads_met": minimum_cross_module_reads_met,
             "graph_paths_already_read_before_query": sorted(already_read_before_graph),
             "graph_derived_read_paths": graph_derived_read_paths,
             "graph_derived_verified_read_paths": graph_derived_verified_read_paths,
             "graph_follow_through": graph_follow_through,
-            "graph_follow_through_complete": bool(graph_derived_verified_read_paths),
+            "graph_follow_through_complete": bool(graph_derived_verified_read_paths) and minimum_cross_module_reads_met,
             "graph_queries": graph_queries,
             "graph_observations": graph_observations,
             "graph_observation_count": sum(item["observation_count"] for item in graph_queries),

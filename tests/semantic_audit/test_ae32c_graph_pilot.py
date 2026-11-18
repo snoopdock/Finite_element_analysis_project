@@ -5,11 +5,15 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from audit_engine.semantic_audit.ae32c.graph_pilot import (
+    _apply_model_runtime_limits,
     _build_cost_estimator,
     _load_profile,
     build_scoped_snapshot,
 )
-from audit_engine.semantic_audit.ae32c.investigator import RepositoryInvestigator
+from audit_engine.semantic_audit.ae32c.investigator import (
+    InvestigationLimits,
+    RepositoryInvestigator,
+)
 
 
 class _Provider:
@@ -26,7 +30,9 @@ class _EvidenceTools:
     file_hashes = {}
 
 
-def _investigator(tmp_path, *, graph_enabled=True, require_graph=False):
+def _investigator(
+    tmp_path, *, graph_enabled=True, require_graph=False, min_cross_module_reads=0
+):
     return RepositoryInvestigator(
         tmp_path,
         _Provider(),
@@ -34,6 +40,7 @@ def _investigator(tmp_path, *, graph_enabled=True, require_graph=False):
         enable_graph_tools=graph_enabled,
         require_graph_interaction=require_graph,
         required_graph_target="symbol:target" if require_graph else None,
+        required_graph_min_cross_module_reads=min_cross_module_reads,
     )
 
 
@@ -170,6 +177,9 @@ def test_graph_follow_through_counts_only_new_reads_after_query(tmp_path):
     assert coverage["graph_paths_already_read_before_query"] == ["target.py"]
     assert coverage["graph_derived_read_paths"] == ["caller.py"]
     assert coverage["graph_derived_verified_read_paths"] == ["caller.py"]
+    assert coverage["cross_module_graph_source_paths"] == ["caller.py"]
+    assert coverage["cross_module_graph_derived_verified_read_paths"] == ["caller.py"]
+    assert coverage["minimum_cross_module_reads_met"] is True
     assert coverage["graph_follow_through"] == [
         {
             "graph_query_evidence_id": "E0002",
@@ -301,6 +311,8 @@ def test_ae32c_core_profile_builds_bounded_real_repository_scope(tmp_path):
     assert "audit_engine/semantic_audit/ae32c/live_evaluation.py" in paths
     assert "providers/factory.py" in paths
     assert profile["graph_target"] == "symbol:audit_engine.semantic_audit.ae32c.live_evaluation::main"
+    assert profile["graph_min_cross_module_reads"] == 3
+    assert profile["graph_query_depth"] == 2
 
 
 def test_provider_model_cost_profiles_are_generic_and_extensible(monkeypatch):
@@ -317,3 +329,249 @@ def test_provider_model_cost_profiles_are_generic_and_extensible(monkeypatch):
     assert estimator.pricing_metadata["provider"] == "future-provider"
     assert estimator.pricing_metadata["model"] == "future-model-v1"
     assert _build_cost_estimator("future-provider", "unpriced-model", {}) is None
+
+
+
+def test_graph_neighbors_model_view_prioritizes_cross_module_edges(tmp_path):
+    investigator = _investigator(tmp_path, graph_enabled=True)
+    source_nodes = [{
+        "node_id": "root",
+        "name": "main",
+        "qualified_name": "main",
+        "module": "audit_engine.semantic_audit.ae32c.live_evaluation",
+        "path": "audit_engine/semantic_audit/ae32c/live_evaluation.py",
+        "line": 322,
+        "kind": "function",
+        "source_sha256": "root-hash",
+    }]
+    discovered_nodes = []
+    observations = []
+    evidence = []
+    root_path = source_nodes[0]["path"]
+
+    # Deliberately put same-module edges first: the model view must still
+    # prioritize cross-module endpoints instead of truncating to list order.
+    for index in range(14):
+        node_id = f"local-{index}"
+        path = root_path
+        discovered_nodes.append({
+            "node_id": node_id, "name": f"helper_{index}",
+            "qualified_name": f"helper_{index}",
+            "module": "audit_engine.semantic_audit.ae32c.live_evaluation",
+            "path": path, "line": 20 + index, "kind": "function",
+            "source_sha256": "root-hash",
+        })
+        edge_id = f"edge-local-{index}"
+        observations.append({
+            "observation_id": f"obs-local-{index}",
+            "subject_id": "root", "predicate": "CALLS",
+            "object_id": node_id, "evidence_ids": [edge_id], "depth": 1,
+        })
+        evidence.append({
+            "evidence_id": edge_id,
+            "provenance": {"edge_metadata": {
+                "path": root_path, "line": 400 + index,
+                "source_sha256": "root-hash",
+                "observed_by": "python_ast_call_resolution",
+                "resolution_kind": "name",
+                "resolution_status": "statically_resolved",
+            }},
+        })
+
+    external_paths = [
+        "providers/factory.py",
+        "audit_engine/semantic_audit/ae32b/evidence_tools.py",
+        "audit_engine/semantic_audit/ae32c/investigator.py",
+    ]
+    for index, path in enumerate(external_paths):
+        node_id = f"external-{index}"
+        module = path.removesuffix(".py").replace("/", ".")
+        discovered_nodes.append({
+            "node_id": node_id, "name": f"cross_module_{index}",
+            "qualified_name": f"{module}.cross_module_{index}",
+            "module": module, "path": path, "line": 50 + index,
+            "kind": "function", "source_sha256": f"hash-{index}",
+        })
+        edge_id = f"edge-external-{index}"
+        observations.append({
+            "observation_id": f"obs-external-{index}",
+            "subject_id": "root", "predicate": "CALLS",
+            "object_id": node_id, "evidence_ids": [edge_id], "depth": 1,
+        })
+        evidence.append({
+            "evidence_id": edge_id,
+            "provenance": {"edge_metadata": {
+                "path": root_path, "line": 500 + index,
+                "source_sha256": "root-hash",
+                "observed_by": "python_ast_call_resolution",
+                "resolution_kind": "name",
+                "resolution_status": "statically_resolved",
+            }},
+        })
+
+    entry = SimpleNamespace(
+        evidence_id="E0002",
+        tool="graph_neighbors",
+        status="ok",
+        response_sha256="response-hash",
+        provenance={"graph_fingerprint": "graph"},
+        arguments={"direction": "outgoing", "node": "symbol:target"},
+        response={
+            "schema_version": "evidence-tool/v1",
+            "tool": "graph_neighbors",
+            "status": "ok",
+            "result": {
+                "status": "completed",
+                "coverage_status": "complete_for_query",
+                "truncated": False,
+                "observed_relation_types": ["CALLS"],
+                "source_paths": [root_path, *external_paths],
+                "source_nodes": source_nodes,
+                "discovered_nodes": discovered_nodes,
+                "observations": observations,
+                "evidence": evidence,
+            },
+        },
+    )
+
+    view = investigator._model_view(entry)
+    result = view["response"]["result"]
+
+    assert result["observation_count"] == 17
+    assert 3 <= result["observations_included"] <= 12
+    assert set(result["cross_module_source_paths"]) == set(external_paths)
+    assert {item["path"] for item in result["priority_source_targets"]} == set(external_paths)
+    assert {
+        item["cross_module_path"] for item in result["observations"][:3]
+    } == set(external_paths)
+    assert len(view["response"]["result"]["observations"]) <= 12
+    assert len(json.dumps(view)) <= investigator.limits.max_tool_context_chars
+
+
+def test_graph_interaction_enforces_minimum_distinct_cross_module_reads(tmp_path):
+    investigator = _investigator(
+        tmp_path, graph_enabled=True, require_graph=True, min_cross_module_reads=2
+    )
+    root_path = "entry.py"
+    external = {
+        "a.py": "hash-a",
+        "b.py": "hash-b",
+        "c.py": "hash-c",
+    }
+    nodes = [
+        {"node_id": "root", "name": "entry", "path": root_path, "source_sha256": "hash-root"}
+    ]
+    nodes.extend(
+        {"node_id": f"node-{path}", "name": path[:-3], "path": path, "source_sha256": digest}
+        for path, digest in external.items()
+    )
+    observations = []
+    evidence = []
+    for index, (path, digest) in enumerate(external.items()):
+        edge_id = f"edge-{index}"
+        observations.append({
+            "observation_id": f"obs-{index}",
+            "subject_id": "root",
+            "predicate": "CALLS",
+            "object_id": f"node-{path}",
+            "evidence_ids": [edge_id],
+            "depth": 1,
+        })
+        evidence.append({
+            "evidence_id": edge_id,
+            "provenance": {"edge_metadata": {
+                "path": root_path, "line": 10 + index,
+                "source_sha256": "hash-root",
+                "observed_by": "python_ast_call_resolution",
+                "resolution_kind": "name",
+                "resolution_status": "statically_resolved",
+            }},
+        })
+    graph_result = {
+        "coverage_status": "complete_for_query",
+        "truncated": False,
+        "observed_relation_types": ["CALLS"],
+        "source_paths": [root_path, *external.keys()],
+        "source_nodes": [nodes[0]],
+        "discovered_nodes": nodes[1:],
+        "observations": observations,
+        "evidence": evidence,
+    }
+    investigator._ledger = [
+        SimpleNamespace(
+            evidence_id="E0001", tool="graph_neighbors",
+            arguments={"node": "symbol:target"}, status="ok",
+            response={"result": graph_result},
+        ),
+    ]
+
+    def add_read(evidence_id, path, digest):
+        investigator._ledger.append(SimpleNamespace(
+            evidence_id=evidence_id,
+            tool="read_source_file",
+            arguments={"path": path},
+            status="ok",
+            response={"result": {
+                "path": path, "source_sha256": digest,
+                "requested_start_line": 1, "requested_end_line": 50,
+                "start_line": 1, "end_line": 50, "total_lines": 100,
+                "source_range_complete": False, "truncated": False,
+                "end_clamped_to_eof": False,
+            }},
+        ))
+
+    add_read("E0002", "a.py", "hash-a")
+    one_read = investigator._graph_interaction_coverage()
+    assert one_read["status"] == "incomplete"
+    assert one_read["cross_module_graph_derived_verified_read_paths"] == ["a.py"]
+    assert one_read["minimum_cross_module_reads_met"] is False
+    assert one_read["graph_follow_through_complete"] is False
+
+    add_read("E0003", "b.py", "hash-b")
+    two_reads = investigator._graph_interaction_coverage()
+    assert two_reads["status"] == "complete"
+    assert two_reads["cross_module_graph_derived_verified_read_paths"] == ["a.py", "b.py"]
+    assert two_reads["minimum_cross_module_reads_met"] is True
+    assert two_reads["graph_follow_through_complete"] is True
+
+
+def test_model_runtime_limits_are_provider_model_profile_driven():
+    base = InvestigationLimits()
+    tuned = _apply_model_runtime_limits(base, {
+        "max_rounds": 13,
+        "max_tool_calls": 16,
+        "max_tokens_per_call": 2048,
+        "finalization_max_tokens_per_call": 12000,
+        "max_total_tokens": 180000,
+        "max_elapsed_seconds": 600,
+        "finalization_rounds_reserved": 3,
+        "max_finalization_invalid_json_retries": 2,
+    })
+
+    assert tuned.max_rounds == 13
+    assert tuned.max_tool_calls == 16
+    assert tuned.max_tokens_per_call == 2048
+    assert tuned.finalization_max_tokens_per_call == 12000
+    assert tuned.max_total_tokens == 180000
+    assert tuned.max_elapsed_seconds == 600
+    assert tuned.finalization_rounds_reserved == 3
+
+    try:
+        _apply_model_runtime_limits(base, {"not_a_limit": 100})
+    except Exception as exc:
+        assert "unsupported_model_runtime_limit" in str(exc)
+    else:
+        raise AssertionError("unknown model runtime limit was accepted")
+
+
+def test_nemotron_and_qwen_profiles_keep_separate_runtime_budgets():
+    repo_root = Path(__file__).resolve().parents[2]
+    config = json.loads((repo_root / "evaluation/ae32c/provider_model_profiles.json").read_text())
+    nemotron = config["providers"]["openrouter"]["models"]["nvidia/nemotron-3-ultra-550b-a55b:free"]
+    qwen = config["providers"]["cloudflare"]["models"]["@cf/qwen/qwen3.8-27b"]
+
+    assert nemotron["runtime_limits"]["finalization_max_tokens_per_call"] == 12000
+    assert nemotron["runtime_limits"]["max_rounds"] == 13
+    assert nemotron["pricing"]["input_usd_per_million_tokens"]["default"] == 0.0
+    assert qwen["runtime_limits"]["finalization_max_tokens_per_call"] == 6144
+    assert qwen["runtime_limits"]["max_rounds"] == 11
