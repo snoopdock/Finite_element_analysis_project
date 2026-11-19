@@ -37,7 +37,7 @@ def git(repo: Path, *args: str, check: bool = True) -> str:
 
 def resolve_ref(repo: Path, name: str) -> str:
     for candidate in (f"refs/remotes/origin/{name}", f"refs/heads/{name}", name):
-        result = git(repo, "rev-parse", "--verify", candidate, check=False)
+        result = git(repo, "rev-parse", "--verify", "--quiet", candidate, check=False)
         if result:
             return result.splitlines()[0]
     raise RuntimeError(f"Cannot resolve branch/ref: {name}")
