@@ -37,9 +37,9 @@ From the repository root:
 
 The default output directory is branch-graphify-results/latest. Open either branch's graph.html in a browser. The Graphify JSON can also be queried using the Graphify CLI, for example:
 
-    graphify query "How does the LaTeX document model connect to the builder?"
-    graphify path "CitationOccurrence" "latex_builder.py"
-    graphify explain "EquationOccurrence"
+    graphify query "How does the LaTeX document model connect to the builder?" --graph branch-graphify-results/latest/main/graph.json
+    graphify path "CitationOccurrence" "latex_builder.py" --graph branch-graphify-results/latest/main/graph.json
+    graphify explain "EquationOccurrence" --graph branch-graphify-results/latest/main/graph.json
 
 ## GitHub Actions
 
@@ -54,7 +54,7 @@ If GitHub Actions is not permitted to push to the repository, enable repository 
 - The Git report is authoritative for merge base, commit counts, commit SHAs, and changed paths.
 - This workflow uses Graphify code-only mode to avoid sending repository source to an external LLM and to avoid semantic extraction costs. Community labels may be generic.
 - Generated graphs are snapshots. Re-run after meaningful code changes to refresh them.
-- The Graphify package is installed from PyPI at run time. Each report records the installed package version; pin a tested version after the first successful run for stricter reproducibility.
+- Graphify is pinned to version 0.9.112 in requirements.txt so the AST extraction and graph comparison use a known CLI release.
 
 ## Safety
 
