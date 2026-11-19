@@ -52,8 +52,8 @@ jobs:
         run: |
           python tools/branch-graphify/run_analysis.py \
             --repo . \
-            --base origin/main \
-            --compare origin/stage1/section-uuids \
+            --base main \
+            --compare stage1/section-uuids \
             --output branch-graphify-results/latest
 
       - name: Publish analysis results to main
