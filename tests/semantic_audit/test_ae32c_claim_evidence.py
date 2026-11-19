@@ -1,4 +1,4 @@
-"""E.7 claim-to-evidence linkage and human-adjudication tests.
+"""E.7 claim-to-evidence linkage and optional legacy-review helper tests.
 
 No provider calls, network access, or target-code execution are performed.
 """
@@ -82,6 +82,8 @@ def test_direct_source_line_is_textual_witness_not_semantic_entailment():
     assert claim["verification_level"] == "textual_witness"
     assert claim["support_outcome"] == "unverified"
     assert claim["semantic_support_assessment"] == "not_assessed"
+    assert assessment["human_review_required"] is False
+    assert assessment["machine_verification_required"] is True
     assert claim["source_ranges"] == [{
         "evidence_id": "E0002",
         "path": "providers/adapter.py",

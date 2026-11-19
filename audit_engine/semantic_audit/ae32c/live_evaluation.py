@@ -612,7 +612,9 @@ def main(argv: list[str] | None = None) -> int:
             "publication": publication,
             "live_provider_calls_made": not baseline_cost_budget_blocked,
             "automatic_accuracy_claim": False,
-            "human_review_required": True,
+            "human_review_required": False,
+            "machine_verification_required": True,
+            "diagnostic_accuracy": "not_assessed",
         }, ensure_ascii=True, sort_keys=True, indent=2, allow_nan=False))
         # Nonzero means runner/publication failure, not a provider condition failure.
         # Both condition outcomes are independently evaluated by the batch assessor.

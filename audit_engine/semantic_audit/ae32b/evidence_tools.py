@@ -1495,7 +1495,7 @@ class RepositoryEvidenceTools:
     def _repository_summary(self, args: dict[str, Any]) -> dict[str, Any]:
         self._check_keys(args, set())
         relations = Counter(edge.relation_type for edge in self.graph.edges)
-        return {
+        summary = {
             "audit_status": self.report.get("audit", {}).get("status", "unknown"),
             "indexed_file_count": len(self.contents),
             "manifest_included_file_count": len(self.manifest_rows),
@@ -1512,6 +1512,16 @@ class RepositoryEvidenceTools:
             "graph_node_count": len(self.graph.nodes),
             "graph_edge_count": len(self.graph.edges),
             "graph_relation_counts": dict(sorted(relations.items())),
+            "graph_fingerprint": self.graph_fingerprint,
+            "graph_projection_version": GRAPH_PROJECTION_VERSION,
+            "graph_runtime": {
+                "canonical_model": "SemanticGraph",
+                "query_service": "SemanticGraphAnalysisService",
+                "active_traversal_algorithm": "deterministic_breadth_first_search",
+                "active_computation_backend": "python_reference_traversal",
+                "external_backend_adapters_active": [],
+                "repository_code_executed": False,
+            },
             "symbol_count": len(self.symbols),
             "call_graph": dict(self.call_graph_stats),
             "workflow_count": self.report.get("audit", {}).get("workflow_count", 0),
@@ -1521,6 +1531,7 @@ class RepositoryEvidenceTools:
             "network_calls_performed": False,
             "source_files_modified": False,
         }
+        return summary
 
     def _search_repository(self, args: dict[str, Any]) -> dict[str, Any]:
         self._check_keys(args, {"query", "mode", "max_results"}, {"query"})

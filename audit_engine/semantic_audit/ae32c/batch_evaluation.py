@@ -3,7 +3,7 @@
 The GitHub workflow manually authorizes and executes each live trial. This file
 never calls a provider and cannot dispatch a workflow, alter source, or access
 credentials. It scores protocol completion separately from declared evidence
-coverage; diagnostic truth always requires external human review.
+coverage; diagnostic truth remains unassessed unless a trusted deterministic reproduction exists.
 """
 from __future__ import annotations
 
@@ -177,7 +177,8 @@ def evaluate_trial(root: Path, *, round_number: int, provider: str) -> dict[str,
         "issues": sorted(set(failures)),
         "metrics": metrics,
         "diagnostic_accuracy": "not_assessed",
-        "human_review_required": True,
+        "human_review_required": False,
+        "machine_verification_required": True,
     }
 
 
@@ -269,7 +270,8 @@ def build_summary(root: Path, rounds: int) -> dict[str, Any]:
         "provider_breakdown": provider_breakdown,
         "trials": trials,
         "diagnostic_accuracy": "not_assessed",
-        "human_review_required": True,
+        "human_review_required": False,
+        "machine_verification_required": True,
     }
     return result
 
@@ -310,7 +312,7 @@ def main(argv: list[str] | None = None) -> int:
         f"- Overall accepted trials (baseline + graph + evidence/integrity gates): **{result['overall_accepted_trials']}/{result['expected_trials']}**",
         f"- Graph protocol failure classes: `{json.dumps(result['graph_protocol_failure_classes'], sort_keys=True)}`",
         f"- Graph evidence failure classes: `{json.dumps(result['graph_evidence_failure_classes'], sort_keys=True)}`",
-        "- Diagnostic correctness: **not assessed; human review required**.",
+        "- Diagnostic correctness: **not assessed; no human review dependency; deterministic reproduction required for accuracy claims**.",
         "",
     ])
     (root / "batch-summary.md").write_text("\n".join(lines), encoding="utf-8")

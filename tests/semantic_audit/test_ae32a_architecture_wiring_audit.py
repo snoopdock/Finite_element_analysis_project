@@ -196,3 +196,27 @@ def test_invalid_revision_metadata_is_rejected(tmp_path):
     root = _fixture(tmp_path)
     with pytest.raises(ValueError, match="hexadecimal Git revision"):
         audit_repository(root, source_revision="not-a-commit")
+
+
+def test_current_ae32c_graph_tool_path_suppresses_stale_legacy_graph_isolation_finding(tmp_path):
+    root = _fixture(tmp_path)
+    _write(root, "audit_engine/semantic_audit/ae32c/__init__.py", "")
+    _write(root, "audit_engine/semantic_audit/ae32c/__main__.py", "from providers.factory import build_provider\n")
+    _write(root, "audit_engine/semantic_audit/ae32c/investigator.py", '''
+def run_investigation(response):
+    tool_calls = response["tool_calls"]
+    graph_neighbors = "graph_neighbors"
+    return invoke_tool(graph_neighbors)
+
+def invoke_tool(name):
+    return {"tool": name}
+''')
+    report = audit_repository(root)
+    system = report["system_components"]
+    assert system["llm_graph_integration"]["static_integration_observed"] is True
+    assert system["llm_graph_integration"]["runtime_graph_tool_use_proven"] is False
+    findings = {item["id"]: item for item in report["findings"]}
+    assert "AE32A-GRAPH-NOT-IN-LLM-PATH" not in findings
+    assert findings["AE32A-LLM-ISOLATION-AE31"]["severity"] == "info"
+    assert findings["AE32A-FIXED-DIAGNOSTIC-CONTEXT"]["severity"] == "info"
+    assert findings["AE32A-PROVIDER-PATH-DUPLICATION"]["severity"] == "info"

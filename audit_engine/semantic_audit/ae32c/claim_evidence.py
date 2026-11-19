@@ -1,4 +1,4 @@
-"""AE-32C E.7 claim-to-evidence linkage and human-adjudication helpers.
+"""AE-32C E.7 claim-to-evidence linkage and optional legacy review helpers.
 
 This module performs deterministic evidence-linkage checks only. It does not
 infer semantic entailment, causal correctness, or runtime behavior.
@@ -157,6 +157,7 @@ def build_claim_evidence_assessment(diagnosis: Any, ledger: Sequence[Any]) -> di
             "semantic_support_assessment": "not_performed",
             "machine_assessment_scope": "no_accepted_diagnosis",
             "human_review_required": False,
+            "machine_verification_required": False,
             "ledger_evidence_ids": [],
             "items": [],
             "summary": {"item_count": 0, "citation_gap_count": 0, "direct_source_link_count": 0},
@@ -278,7 +279,8 @@ def build_claim_evidence_assessment(diagnosis: Any, ledger: Sequence[Any]) -> di
             )),
             "counterevidence": {"status": "not_assessed", "evidence_ids": []},
             "unresolved_assumptions": {"status": "not_collected", "items": []},
-            "review_required": True,
+            "review_required": False,
+            "machine_verification_status": "pending_deterministic_evidence_integrity_check",
             "interpretation_limit": (
                 "A direct source-line citation establishes that the line was observed; it does not establish "
                 "semantic entailment, intent, execution, or causal correctness."
@@ -299,7 +301,8 @@ def build_claim_evidence_assessment(diagnosis: Any, ledger: Sequence[Any]) -> di
         "status": "available",
         "semantic_support_assessment": "not_performed",
         "machine_assessment_scope": "evidence_ledger_linkage_source_range_integrity_and_citation_gap_detection_only",
-        "human_review_required": bool(items),
+        "human_review_required": False,
+        "machine_verification_required": bool(items),
         "ledger_evidence_ids": sorted(successful),
         "items": items,
         "summary": {

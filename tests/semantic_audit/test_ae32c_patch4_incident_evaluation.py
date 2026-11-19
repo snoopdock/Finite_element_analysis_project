@@ -496,10 +496,11 @@ def test_comparison_metrics_describe_behavior_without_claiming_accuracy():
     assert record["comparison_metrics"]["graph_assisted_tool_call_count"] == 2
     assert record["comparison_metrics"]["graph_assisted_source_reference_count"] == 1
     assert record["evaluation_policy"]["diagnostic_accuracy"] == "not_automatically_assessed"
-    assert record["evaluation_policy"]["graph_benefit"] == "not_claimed_without_independent_comparison"
-    assert record["evaluation_policy"]["human_review_required"] is True
+    assert record["evaluation_policy"]["graph_benefit"] == "not_claimed_without_repeated_counterbalanced_machine_comparison"
+    assert record["evaluation_policy"]["human_review_required"] is False
+    assert record["evaluation_policy"]["machine_verification_required"] is True
     markdown = render_comparison_markdown(record)
-    assert "Human review is required" in markdown
+    assert "No blinded reviewer packets or human adjudication are required" in markdown
     assert "not assessed" in markdown.lower()
 
 

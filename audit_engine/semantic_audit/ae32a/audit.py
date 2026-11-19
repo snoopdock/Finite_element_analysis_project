@@ -955,14 +955,20 @@ def _build_findings(components: list[dict[str, Any]], parsed: Mapping[str, Mappi
                          "evidence": evidence[:12], "limitation": limitation})
 
     llm_components = [c for c in components if c["llm_transport_evidence"]]
+    current_ae32c_graph_integration = bool(
+        system.get("llm_graph_integration", {}).get("static_integration_observed")
+    )
     for comp in llm_components:
         if not comp["graph_api_evidence"] and not comp["exposed_as_llm_tool_evidence"]:
             evidence = comp["llm_transport_evidence"] + comp["fixed_allowlist_evidence"]
-            add("AE32A-LLM-ISOLATION-" + comp["component"].upper(), "high",
-                f"{comp['component']} makes LLM requests without observed graph/tool integration",
-                "Static inspection found a model-provider HTTP call but no graph-query API use or explicit model tool-dispatch loop in this component. If the intended behavior is interactive repository investigation, the model currently appears to receive preassembled context rather than request graph-grounded tools.",
+            legacy_ae31 = comp["component"] == "ae31" and current_ae32c_graph_integration
+            add("AE32A-LLM-ISOLATION-" + comp["component"].upper(), "info" if legacy_ae31 else "high",
+                (f"Legacy {comp['component']} request path lacks graph/tool integration; AE-32C has a separate graph-assisted path"
+                 if legacy_ae31 else f"{comp['component']} makes LLM requests without observed graph/tool integration"),
+                ("This source-level finding applies only to the legacy AE-31 request path. The current AE-32C path statically imports the shared provider factory, exposes graph-derived tools, and contains the model tool-dispatch loop."
+                 if legacy_ae31 else "Static inspection found a model-provider HTTP call but no graph-query API use or explicit model tool-dispatch loop in this component. If the intended behavior is interactive repository investigation, the model currently appears to receive preassembled context rather than request graph-grounded tools."),
                 evidence,
-                "This is a source-level observation; it does not establish that the provider call fails or that no external wrapper supplies additional context.")
+                "This is a source-level observation; it does not establish actual runtime graph-tool usage. Inspect the per-investigation tool ledger for runtime use.")
 
     if not global_tool_loop_evidence:
         add("AE32A-NO-TOOL-LOOP", "high", "No explicit LLM tool-use loop was observed",
@@ -982,10 +988,13 @@ def _build_findings(components: list[dict[str, Any]], parsed: Mapping[str, Mappi
 
     ae31 = next((c for c in components if c["component"] == "ae31"), None)
     if ae31 and ae31["fixed_allowlist_evidence"] and not ae31["graph_api_evidence"]:
-        add("AE32A-FIXED-DIAGNOSTIC-CONTEXT", "high", "LLM diagnosis context is assembled from a fixed file allowlist",
-            "The diagnosis component declares explicit input/context path lists and no graph-query API was observed in that component. This limits discovery to files selected in advance instead of following dependencies from the current failure.",
+        add("AE32A-FIXED-DIAGNOSTIC-CONTEXT", "info" if current_ae32c_graph_integration else "high",
+            ("Legacy AE-31 diagnosis context uses a fixed file allowlist; AE-32C provides a separate graph-assisted path"
+             if current_ae32c_graph_integration else "LLM diagnosis context is assembled from a fixed file allowlist"),
+            ("This finding is scoped to legacy AE-31. It must not be interpreted as describing the current AE-32C investigator, which exposes graph-derived relationship tools through the shared evidence-tool dispatcher."
+             if current_ae32c_graph_integration else "The diagnosis component declares explicit input/context path lists and no graph-query API was observed in that component. This limits discovery to files selected in advance instead of following dependencies from the current failure."),
             ae31["fixed_allowlist_evidence"],
-            "A fixed allowlist is a legitimate security boundary for a narrow diagnostic. The gap is the absence of a safe, queryable evidence-selection tool within that boundary, not the existence of a boundary itself.")
+            "A fixed allowlist is a legitimate security boundary for a narrow diagnostic. This static finding does not establish runtime graph-tool usage in AE-32C.")
 
     if not system["semantic_graph_analysis_service"]["consumer_count"]:
         add("AE32A-GRAPH-SERVICE-UNUSED", "high", "Semantic graph analysis service has no static consumers",
@@ -996,7 +1005,7 @@ def _build_findings(components: list[dict[str, Any]], parsed: Mapping[str, Mappi
         for comp in llm_components:
             if comp["graph_api_evidence"]:
                 llm_graph_consumers.append(comp["component"])
-        if llm_components and not llm_graph_consumers:
+        if llm_components and not llm_graph_consumers and not current_ae32c_graph_integration:
             add("AE32A-GRAPH-NOT-IN-LLM-PATH", "high", "Graph analysis is used elsewhere but not in the detected LLM request path",
                 "The repository contains consumers of SemanticGraphAnalysisService, but none of the detected LLM-requesting AE components shows direct graph-query evidence. The graph and LLM capabilities therefore appear adjacent rather than integrated in the audited source path.",
                 system["semantic_graph_analysis_service"]["consumers"],
@@ -1037,7 +1046,9 @@ def _build_findings(components: list[dict[str, Any]], parsed: Mapping[str, Mappi
     if ae31 and ae31["llm_transport_evidence"] and system["provider_factory"]["implementation_present"]:
         ae31_imports_factory = any(edge["path"].startswith("audit_engine/semantic_audit/ae31/") and edge["target"].startswith("providers.factory") for edge in report_import_edges)
         if not ae31_imports_factory:
-            add("AE32A-PROVIDER-PATH-DUPLICATION", "medium", "AE-31 uses direct provider HTTP transport rather than the shared provider factory",
+            add("AE32A-PROVIDER-PATH-DUPLICATION", "info" if current_ae32c_graph_integration else "medium",
+                ("Legacy AE-31 uses direct provider HTTP transport; current AE-32C uses the shared provider factory"
+                 if current_ae32c_graph_integration else "AE-31 uses direct provider HTTP transport rather than the shared provider factory"),
                 "The repository has a shared provider factory used by the FEA entrypoint, while the detected AE-31 LLM requests are implemented directly in the diagnosis module. This duplicates provider transport/configuration paths and makes common retry, telemetry, and adapter behavior harder to reuse.",
                 ae31["llm_transport_evidence"],
                 "A dedicated report-only diagnostic may intentionally require different limits or endpoints; the finding recommends reviewing the boundary, not blindly replacing it.")
@@ -1258,6 +1269,30 @@ def audit_repository(
     system = _system_components(parsed, contents, import_edges, workflows, workflow_edges)
     global_tool_loop_evidence = _tool_loop_evidence(parsed.keys(), parsed)
     system["global_tool_loop_evidence"] = global_tool_loop_evidence[:30]
+    ae32c = next((item for item in components if item["component"] == "ae32c"), None)
+    provider_factory_paths = {
+        item.get("path") for item in system.get("provider_factory", {}).get("consumers", [])
+        if isinstance(item, Mapping)
+    }
+    ae32c_provider_factory_consumer = any(
+        isinstance(path, str) and path.startswith("audit_engine/semantic_audit/ae32c/")
+        for path in provider_factory_paths
+    )
+    ae32c_graph_tool_loop = bool(
+        ae32c
+        and ae32c.get("graph_api_evidence")
+        and ae32c.get("exposed_as_llm_tool_evidence")
+        and ae32c_provider_factory_consumer
+    )
+    system["llm_graph_integration"] = {
+        "static_integration_observed": ae32c_graph_tool_loop,
+        "integration_component": "ae32c" if ae32c_graph_tool_loop else None,
+        "provider_factory_consumer_observed": ae32c_provider_factory_consumer,
+        "graph_api_evidence_count": len(ae32c.get("graph_api_evidence", [])) if ae32c else 0,
+        "model_tool_loop_evidence_count": len(ae32c.get("exposed_as_llm_tool_evidence", [])) if ae32c else 0,
+        "runtime_graph_tool_use_proven": False,
+        "interpretation": "Static wiring is observed; actual graph tool usage must be established from an investigation ledger.",
+    }
     manifest_digest = _sha256(_canonical_json(manifest))
     status = "complete" if not parse_issues and not scope_issues and not source_root_issues and not workflow_issues else "incomplete"
     report: dict[str, Any] = {
@@ -1306,6 +1341,7 @@ def audit_repository(
         "graph_api_component_count": sum(1 for c in components if c["graph_api_evidence"]),
         "llm_transport_component_count": sum(1 for c in components if c["llm_transport_evidence"]),
         "tool_loop_component_count": sum(1 for c in components if c["exposed_as_llm_tool_evidence"]),
+        "llm_graph_integration_status": "static_integration_observed" if ae32c_graph_tool_loop else "not_observed",
         "high_finding_count": sum(1 for f in report["findings"] if f["severity"] == "high"),
         "medium_finding_count": sum(1 for f in report["findings"] if f["severity"] == "medium"),
         "runtime_execution_performed": False,

@@ -2081,7 +2081,7 @@ def test_graph_interaction_contract_is_not_satisfied_by_source_reads_alone():
     assert report["status"] != "completed"
 
 
-def test_final_report_includes_claim_evidence_assessment_and_publishes_review_template(tmp_path: Path):
+def test_final_report_includes_machine_verification_and_does_not_publish_review_template(tmp_path: Path):
     investigator, _, _ = make_investigator([
         action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
         final_action(evidence_id="E0002", source_reference=True),
@@ -2090,7 +2090,12 @@ def test_final_report_includes_claim_evidence_assessment_and_publishes_review_te
     assessment = report["claim_evidence_assessment"]
     assert assessment["status"] == "available"
     assert assessment["semantic_support_assessment"] == "not_performed"
-    assert assessment["human_review_required"] is True
+    assert assessment["human_review_required"] is False
+    assert assessment["machine_verification_required"] is True
+    assert report["human_review_policy"]["blinded_reviewer_packets_generated"] is False
+    assert report["machine_verification_assessment"]["semantic_correctness"] == "not_assessed"
+    assert report["deterministic_follow_up_plan"]["execution_mode"] == "plan_only"
+    assert report["deterministic_follow_up_plan"]["source_mutation_permitted"] is False
     assert assessment["items"][0]["claim_type"] == "causal_hypothesis"
     assert assessment["items"][1]["verification_level"] == "textual_witness"
     assert assessment["items"][1]["support_outcome"] == "unverified"
@@ -2100,12 +2105,11 @@ def test_final_report_includes_claim_evidence_assessment_and_publishes_review_te
     repository.mkdir()
     output.mkdir()
     result = write_report_artifacts(report, output, repository)
-    assert len(result["artifacts"]) == 3
-    template_artifacts = [item for item in result["artifacts"] if item["path"].endswith(".adjudication-template.json")]
-    assert len(template_artifacts) == 1
-    template = json.loads(Path(template_artifacts[0]["path"]).read_text(encoding="utf-8"))
-    assert template["investigation_id"] == report["investigation_id"]
-    assert len(template["items"]) == len(assessment["items"])
+    assert len(result["artifacts"]) == 2
+    assert not any(item["path"].endswith(".adjudication-template.json") for item in result["artifacts"])
+    markdown = Path(next(item["path"] for item in result["artifacts"] if item["path"].endswith(".md"))).read_text(encoding="utf-8")
+    assert "Human adjudication: **pending**" not in markdown
+    assert "Semantic correctness: **not assessed**" in markdown
 
 
 def test_runtime_claim_kind_is_accepted_but_never_promoted_by_static_evidence():
@@ -2121,3 +2125,29 @@ def test_runtime_claim_kind_is_accepted_but_never_promoted_by_static_evidence():
     assert claim["claim_type"] == "runtime_claim"
     assert claim["support_outcome"] == "unverified"
     assert claim["verification_level"] == "textual_witness"
+
+
+def test_real_evidence_tools_produce_machine_verified_report_without_human_packets(tmp_path: Path):
+    source = tmp_path / SOURCE
+    source.parent.mkdir(parents=True, exist_ok=True)
+    source.write_bytes(SOURCE_BYTES)
+    tools = RepositoryEvidenceTools(tmp_path)
+    provider = FakeProvider([
+        action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    investigator = RepositoryInvestigator(
+        tmp_path,
+        provider,
+        evidence_tools=tools,
+        enable_graph_tools=True,
+        limits=InvestigationLimits(max_rounds=3, finalization_rounds_reserved=1),
+        id_factory=lambda: "machine-verified-real-evidence-tools",
+    )
+    report = investigator.run("Verify the exact source observation.")
+    assert report["snapshot_check_status"] == "verified"
+    assert report["machine_verification_assessment"]["status"] == "evidence_integrity_passed"
+    assert report["machine_verification_assessment"]["summary"]["invalid_source_reference_count"] == 0
+    assert report["machine_verification_assessment"]["semantic_correctness"] == "not_assessed"
+    assert report["runtime_architecture"]["graph_engine"]["active_computation_backend"] == "python_reference_traversal"
+    assert report["human_review_policy"]["blinded_reviewer_packets_generated"] is False

@@ -69,6 +69,25 @@ def test_graph_tools_can_be_removed_for_matched_control(tmp_path):
 
 
 
+
+
+def test_graph_derived_tool_usage_counts_all_five_tools_including_discovery_helpers(tmp_path):
+    investigator = _investigator(tmp_path, graph_enabled=True, require_graph=False)
+    investigator._ledger = [
+        SimpleNamespace(evidence_id="E0001", tool="trace_execution_context", arguments={"node": "symbol:entry"}, status="ok"),
+        SimpleNamespace(evidence_id="E0002", tool="find_related_tests", arguments={"path": "tests/test_entry.py"}, status="error"),
+        SimpleNamespace(evidence_id="E0003", tool="find_workflow_context", arguments={"query": "entry"}, status="ok"),
+    ]
+    coverage = investigator._graph_interaction_coverage()
+    usage = coverage["graph_derived_tool_usage"]
+    assert set(usage) == set(GRAPH_DERIVED_TOOL_NAMES)
+    assert usage["trace_execution_context"]["attempt_count"] == 1
+    assert usage["trace_execution_context"]["successful_call_count"] == 1
+    assert usage["find_related_tests"]["failed_call_count"] == 1
+    assert usage["find_workflow_context"]["distinct_target_count"] == 1
+    assert usage["graph_neighbors"]["attempt_count"] == 0
+
+
 def test_graph_tool_ablation_changes_only_graph_tool_availability(tmp_path):
     control = _investigator(tmp_path, graph_enabled=False)
     treatment = _investigator(tmp_path, graph_enabled=True)
@@ -340,7 +359,7 @@ def test_ae32c_core_profile_builds_bounded_real_repository_scope(tmp_path):
     profile = _load_profile("ae32c_core", repo_root / "evaluation/ae32c/graph_pilot_profiles.json")
     manifest = build_scoped_snapshot(repo_root, tmp_path / "scope", profile)
 
-    assert manifest["file_count"] <= profile["max_files"] == 100
+    assert manifest["file_count"] <= profile["max_files"] == 110
     assert manifest["total_bytes"] <= profile["max_bytes"] == 2_000_000
     paths = {item["path"] for item in manifest["files"]}
     assert "audit_engine/semantic_audit/ae32c/live_evaluation.py" in paths

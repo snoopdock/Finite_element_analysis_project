@@ -24,6 +24,7 @@ from typing import Any, Callable, Mapping
 from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
 from audit_engine.semantic_audit.ae32c.investigator import RepositoryInvestigator
 from audit_engine.semantic_audit.ae32c.tool_policy import GRAPH_DERIVED_TOOL_NAMES
+from audit_engine.semantic_audit.ae32c.runtime_architecture import build_runtime_architecture_report
 from audit_engine.semantic_audit.ae32c.live_evaluation import build_live_investigation_limits
 from providers.factory import SUPPORTED_PROVIDERS, build_provider
 
@@ -140,7 +141,7 @@ def _load_profile(profile_name: str, profile_path: Path = _DEFAULT_GRAPH_PROFILE
     ):
         raise GraphPilotError("profile_graph_relation_types_invalid")
     for key, minimum, maximum in (
-        ("max_files", 1, 100),
+        ("max_files", 1, 120),
         ("max_bytes", 1024, 2_000_000),
         ("graph_query_depth", 1, 3),
         ("graph_query_max_results", 1, 30),
@@ -726,6 +727,7 @@ def run_graph_pilot(
                 "graph_node_count": final_summary.get("graph_node_count"),
                 "graph_edge_count": final_summary.get("graph_edge_count"),
                 "graph_relation_counts": final_summary.get("graph_relation_counts"),
+                "graph_runtime": final_summary.get("graph_runtime"),
             },
             "design": {
                 "control": "source-only control on the same bounded repository snapshot; all graph-derived relationship tools and graph summary metadata are withheld",
@@ -776,6 +778,8 @@ def run_graph_pilot(
                     "available_tool_names": item["available_tool_names"],
                     "status": item["status"],
                     "summary": item["summary"],
+                    "graph_derived_tool_usage": item["report"].get("graph_interaction_coverage", {}).get("graph_derived_tool_usage", {}),
+                    "machine_verification_status": item["report"].get("machine_verification_assessment", {}).get("status", "not_available"),
                     "runner_elapsed_seconds": item["runner_elapsed_seconds"],
                 }
                 for name, item in conditions.items()
@@ -794,7 +798,7 @@ def run_graph_pilot(
                     "This is one matched paired pilot. It can demonstrate graph-tool interaction and describe "
                     "differences in navigation, evidence and resource use. It does not establish causal graph "
                     "benefit or general model/provider performance; repeat with counterbalanced order and "
-                    "independent adjudication before making comparative claims."
+                    "deterministic fixture-based verification before making diagnostic-accuracy claims."
                 ),
             },
             "acceptance": {
@@ -807,29 +811,54 @@ def run_graph_pilot(
                 "control_graph_derived_calls": control_graph_derived_calls,
                 "source_snapshot_stable": source_manifest_stable and graph_fingerprint_stable,
                 "diagnostic_accuracy": "not_assessed",
-                "human_review_required": True,
+                "human_review_required": False,
+                "machine_verification_required": True,
+                "machine_verification_complete": all(
+                    conditions[name]["report"].get("machine_verification_assessment", {}).get("status") == "evidence_integrity_passed"
+                    for name in ("control", "graph_enabled")
+                ),
+                "comparative_accuracy_claim_permitted": False,
             },
         }
 
+        comparison["runtime_architecture"] = build_runtime_architecture_report(
+            audit_report=evidence_tools.report,
+            repository_summary=final_summary,
+            provider_name=provider_name,
+            model_name=effective_model,
+            provider_stats={},
+            available_tool_names=treatment_tools,
+        )
         _write_json(out / "scope-manifest.json", scope_manifest)
         _write_json(out / "graph-preflight.json", graph_preflight_record)
         _write_json(out / "control.report.json", conditions["control"]["report"])
         _write_json(out / "graph-enabled.report.json", conditions["graph_enabled"]["report"])
         _write_json(out / "comparison.json", comparison)
-        _write_json(out / "review-guide.json", {
-            "schema_version": "ae32c/paired-graph-pilot-review-guide/v1",
-            "review_landmarks": profile.get("review_landmarks", []),
-            "review_questions": [
-                "Did each condition identify the same live-evaluation entry point and describe its responsibility accurately?",
-                "Did the graph-enabled condition cite actual CALLS observations with correct endpoints and source locations?",
-                "Which relevant files were discovered only after graph exploration?",
-                "Did the source-only control recover any of the same relationships using only search, symbol search, and direct source reads?",
-                "Did the graph-assisted treatment use graph-derived tools without confusing static relationships with runtime behavior?",
-                "Were any CALLS edges misleading, ambiguous, or inconsistent with the source?",
-                "Did either condition confuse static call relationships with runtime execution?",
-                "Which explanation is better supported by exact source evidence, and why?",
+        _write_json(out / "machine-verification-plan.json", {
+            "schema_version": "ae32c/paired-graph-pilot-machine-verification/v1",
+            "human_review_required": False,
+            "diagnostic_accuracy": "not_assessed",
+            "comparative_accuracy_claim_permitted": False,
+            "scope": [
+                "source snapshot and manifest identity",
+                "exact source-line and file-hash linkage",
+                "graph evidence provenance",
+                "control/treatment tool isolation",
+                "graph-derived tool usage and source-read follow-through",
             ],
-            "scoring_warning": "Do not infer graph benefit from tool usage, token count, response length, or more files read alone.",
+            "conditions": {
+                name: {
+                    "status": item["report"].get("machine_verification_assessment", {}).get("status", "not_available"),
+                    "assessment": item["report"].get("machine_verification_assessment", {}),
+                    "deterministic_follow_up_plan": item["report"].get("deterministic_follow_up_plan", {}),
+                }
+                for name, item in conditions.items()
+            },
+            "limitations": [
+                "Machine checks verify evidence integrity and provenance, not semantic entailment or causal correctness.",
+                "Runtime claims remain unverified unless a trusted registered reproduction is executed.",
+                "One matched pair does not establish general graph benefit or provider/model superiority.",
+            ],
         })
         _write_json(out / "run-context.json", {
             "evaluation_id": run_id,
@@ -905,7 +934,7 @@ def _write_comparison_markdown(path: Path, record: Mapping[str, Any]) -> None:
         "",
         str(comparison.get("interpretation", "")),
         "",
-        "Diagnostic accuracy is not automatically assessed. Human review is required.",
+        "Diagnostic accuracy is not assessed. Human review is not required by this workflow; deterministic checks cover evidence integrity and provenance, not semantic correctness.",
         "",
     ])
     path.write_text("\n".join(lines), encoding="utf-8")

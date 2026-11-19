@@ -97,7 +97,7 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
             "evidence_count": 0,
             "source_reference_count": 0,
             "diagnosis_assurance": "not_assessed",
-            "semantic_claim_support": "requires_independent_adjudication",
+            "semantic_claim_support": "machine_evidence_integrity_only_semantics_unassessed",
             "required_source_coverage_status": "not_assessed",
             "required_source_missing_reads": [],
             "required_source_missing_root_citations": [],
@@ -171,7 +171,7 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
         "evidence_count": len(ledger),
         "source_reference_count": _source_reference_count(diagnosis),
         "diagnosis_assurance": _safe_text(report.get("diagnosis_assurance", "not_assessed"), 120),
-        "semantic_claim_support": "requires_independent_adjudication",
+        "semantic_claim_support": "machine_evidence_integrity_only_semantics_unassessed",
         "source_textual_support_status": _safe_text((report.get("source_textual_support") or {}).get("status", "not_assessed") if isinstance(report.get("source_textual_support"), Mapping) else "not_assessed", 80),
         "required_source_coverage_status": _safe_text(
             (report.get("required_source_coverage") or {}).get("status", "not_assessed")
@@ -260,7 +260,7 @@ def build_comparison_record(
     baseline_elapsed_seconds: float | None = None,
     baseline_provider_diagnostics: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Build a comparison record that explicitly leaves accuracy to human review."""
+    """Build a comparison record that leaves semantic accuracy unassessed without deterministic reproduction."""
     if source_manifest_sha256 is not None and not re.fullmatch(r"[0-9a-f]{64}", source_manifest_sha256):
         raise ValueError("source_manifest_sha256 must be a lowercase SHA-256 or None")
     if baseline_source_sha256 is not None and not re.fullmatch(r"[0-9a-f]{64}", baseline_source_sha256):
@@ -371,13 +371,17 @@ def build_comparison_record(
         },
         "evaluation_policy": {
             "diagnostic_accuracy": "not_automatically_assessed",
-            "graph_benefit": "not_claimed_without_independent_comparison",
-            "human_review_required": True,
+            "graph_benefit": "not_claimed_without_repeated_counterbalanced_machine_comparison",
+            "human_review_required": False,
+            "machine_verification_required": True,
+            "machine_verification_scope": "evidence_integrity_and_registered_reproduction_only",
+            "semantic_correctness": "not_assessed",
             "resolved_citations_are_not_causal_proof": True,
             "limitations": [
                 "A scripted or live model response is not proof of causal correctness.",
+                "Deterministic evidence checks validate source and provenance integrity, not semantic entailment.",
+                "Runtime or causal claims remain unverified without a trusted registered reproduction.",
                 "The two conditions may produce different evidence and token consumption.",
-                "Accuracy requires an independently reviewed incident outcome.",
             ],
         },
     }
@@ -457,14 +461,14 @@ def render_comparison_markdown(record: Mapping[str, Any]) -> str:
         root = diagnosis.get("root_cause") if isinstance(diagnosis.get("root_cause"), Mapping) else {}
         lines.extend(["### Graph-assisted assessment", "", _markdown_text(diagnosis.get("summary", ""), 4_000), "", _markdown_text(root.get("statement", ""), 4_000), ""])
     lines.extend([
-        "## Review requirements",
+        "## Machine-verification boundary",
         "",
-        "- [ ] Independently verify each material source and graph citation.",
-        "- [ ] Compare both diagnoses against the independently reviewed incident outcome.",
-        "- [ ] Record unsupported claims, missed evidence, and any misleading graph relationships.",
-        "- [ ] Do not infer accuracy or graph benefit from tool usage or response length alone.",
+        "- Source-line linkage and file hashes can be checked deterministically.",
+        "- Graph evidence provenance and tool-isolation contracts can be checked deterministically.",
+        "- Runtime or causal claims require a trusted, registered reproduction harness.",
+        "- No blinded reviewer packets or human adjudication are required by this workflow.",
         "",
-        "**Automated diagnostic accuracy:** not assessed. Human review is required.",
+        "**Diagnostic accuracy:** not assessed. Machine evidence-integrity checks are not semantic entailment or causal proof.",
         "",
     ])
     return "\n".join(lines)

@@ -59,6 +59,9 @@ def test_summary_reports_graph_and_provenance_without_claiming_runtime_execution
     assert result["indexed_file_count"] >= 7
     assert result["graph_node_count"] > result["indexed_file_count"]
     assert result["graph_edge_count"] > 0
+    assert result["graph_runtime"]["canonical_model"] == "SemanticGraph"
+    assert result["graph_runtime"]["active_traversal_algorithm"] == "deterministic_breadth_first_search"
+    assert result["graph_runtime"]["external_backend_adapters_active"] == []
     assert result["repository_code_executed"] is False
     assert result["network_calls_performed"] is False
     assert response["provenance"]["source_manifest_sha256"]

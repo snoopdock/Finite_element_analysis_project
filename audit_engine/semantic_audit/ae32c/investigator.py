@@ -38,10 +38,12 @@ from audit_engine.semantic_audit.ae32c.response_normalizer import (
     ResponseNormalizationError,
     normalize_provider_response,
 )
-from audit_engine.semantic_audit.ae32c.claim_evidence import (
-    build_adjudication_template,
-    build_claim_evidence_assessment,
+from audit_engine.semantic_audit.ae32c.claim_evidence import build_claim_evidence_assessment
+from audit_engine.semantic_audit.ae32c.machine_verification import (
+    build_deterministic_follow_up_plan,
+    build_machine_verification_assessment,
 )
+from audit_engine.semantic_audit.ae32c.runtime_architecture import build_runtime_architecture_report
 
 SCHEMA_VERSION = "ae32c/interactive-investigation/v1"
 MAX_PROBLEM_CHARS = 8_000
@@ -3321,13 +3323,33 @@ class RepositoryInvestigator:
         return message
 
     def _graph_interaction_coverage(self) -> dict[str, Any]:
-        """Measure ordered graph-to-source follow-through and preserve compact edge observations."""
+        """Measure graph-to-source follow-through and every graph-derived tool family member."""
+        graph_derived_tool_usage = {}
+        for tool_name in sorted(GRAPH_DERIVED_TOOL_NAMES):
+            entries = [item for item in self._ledger if item.tool == tool_name]
+            targets = set()
+            for item in entries:
+                arguments = getattr(item, "arguments", {})
+                if isinstance(arguments, Mapping):
+                    target_value = next((arguments.get(key) for key in ("node", "source", "target", "path", "query")
+                                         if isinstance(arguments.get(key), str)), None)
+                    if target_value:
+                        targets.add(target_value)
+            graph_derived_tool_usage[tool_name] = {
+                "attempt_count": len(entries),
+                "successful_call_count": sum(getattr(item, "status", None) == "ok" for item in entries),
+                "failed_call_count": sum(getattr(item, "status", None) != "ok" for item in entries),
+                "distinct_target_count": len(targets),
+                "targets": sorted(targets)[:30],
+                "evidence_ids": [getattr(item, "evidence_id", None) for item in entries],
+            }
         if not self._require_graph_interaction:
             return {
                 "enabled": False,
                 "tools_available": self._graph_tools_enabled,
                 "status": "not_required" if self._graph_tools_enabled else "disabled",
                 "graph_tool_call_count": 0,
+                "graph_derived_tool_usage": graph_derived_tool_usage,
                 "target_graph_tool_call_count": 0,
                 "successful_graph_tool_call_count": 0,
                 "required_target_successful_graph_query_count": 0,
@@ -3644,6 +3666,7 @@ class RepositoryInvestigator:
             "graph_tool_call_count": sum(
                 1 for item in self._ledger if item.tool in {"graph_neighbors", "graph_path"}
             ),
+            "graph_derived_tool_usage": graph_derived_tool_usage,
             "target_graph_tool_call_count": len([
                 item for item in self._ledger
                 if item.tool in {"graph_neighbors", "graph_path"}
@@ -4457,6 +4480,24 @@ class RepositoryInvestigator:
             }
             for item in self._ledger
         ]
+        report["machine_verification_assessment"] = build_machine_verification_assessment(
+            diagnosis=report.get("diagnosis"),
+            claim_assessment=report["claim_evidence_assessment"],
+            ledger_entries=self._ledger,
+            repo_root=self.repo_root,
+            expected_file_hashes=self._expected_file_hashes,
+            expected_manifest_sha256=self._source_provenance.get("source_manifest_sha256"),
+            expected_graph_fingerprint=self._source_provenance.get("graph_fingerprint"),
+            snapshot_status=self._snapshot_check_status,
+        )
+        report["deterministic_follow_up_plan"] = build_deterministic_follow_up_plan(
+            report["machine_verification_assessment"]
+        )
+        report["human_review_policy"] = {
+            "required_for_operational_completion": False,
+            "blinded_reviewer_packets_generated": False,
+            "semantic_diagnostic_accuracy": "not_assessed_without_deterministic_reproduction",
+        }
         report["elapsed_seconds"] = round(self._elapsed(), 3)
         try:
             provider_stats = self.provider.get_stats()
@@ -4648,6 +4689,22 @@ class RepositoryInvestigator:
                     if str(key) in {"408", "425", "429", "500", "502", "503", "504", "transport", "invalid_json"}
                     and isinstance(value, int) and not isinstance(value, bool)
                 }
+        summary_entry = next(
+            (item for item in self._ledger if item.tool == "repository_summary" and item.status == "ok"),
+            None,
+        )
+        summary_result = summary_entry.response.get("result", {}) if summary_entry and isinstance(summary_entry.response, Mapping) else {}
+        audit_report = getattr(self.evidence_tools, "report", {})
+        if not isinstance(audit_report, Mapping):
+            audit_report = {}
+        report["runtime_architecture"] = build_runtime_architecture_report(
+            audit_report=audit_report,
+            repository_summary=summary_result if isinstance(summary_result, Mapping) else {},
+            provider_name=self.provider_name,
+            model_name=self.model_name,
+            provider_stats=provider_stats if isinstance(provider_stats, Mapping) else {},
+            available_tool_names=self._tool_schemas,
+        )
         report["budget"] = self._report_budget()
         report["interaction_diagnostics"] = self._interaction_diagnostics()
         report["errors"] = self._events[-100:]
@@ -5776,7 +5833,7 @@ def render_markdown_report(report: Mapping[str, Any]) -> str:
         assessment_items = assessment.get("items", []) if isinstance(assessment, Mapping) else []
         if isinstance(assessment_items, list) and assessment_items:
             lines.extend(["", "### Claim-to-evidence linkage (not semantic adjudication)", ""])
-            lines.append("Automated scope: ledger linkage and exact source-range integrity only. Semantic entailment and causal correctness require human review or reproduction.")
+            lines.append("Automated scope: ledger linkage, exact source-range integrity, current source hashes, and graph provenance. Semantic entailment and causal correctness remain unassessed unless a registered deterministic reproduction is available.")
             lines.append("")
             for item in assessment_items:
                 if not isinstance(item, Mapping):
@@ -5798,7 +5855,11 @@ def render_markdown_report(report: Mapping[str, Any]) -> str:
                             f"(evidence `{_markdown_safe(source_range.get('evidence_id', ''), 30)}`, "
                             f"SHA-256 `{_markdown_safe(source_range.get('source_sha256', ''), 64)}`)"
                         )
-            lines.extend(["", "Human adjudication: **pending**", ""])
+            machine = report.get("machine_verification_assessment", {})
+            if isinstance(machine, Mapping):
+                lines.extend(["", f"Machine verification: **{_markdown_safe(machine.get('status', 'not_available'), 80)}**", ""])
+                lines.append("Semantic correctness: **not assessed**. No human adjudication is required by the current project workflow.")
+                lines.append("")
         lines.extend(["", "### Proposed corrective action", "", _markdown_safe(diagnosis.get("proposed_corrective_action", ""), MAX_DIAGNOSIS_STRING_CHARS), "", "### Limitations", ""])
         lines.extend(f"- {_markdown_safe(item, 1_000)}" for item in diagnosis.get("limitations", []))
         lines.extend(["", "### Next steps", ""])
@@ -5826,7 +5887,7 @@ def render_markdown_report(report: Mapping[str, Any]) -> str:
 
 
 def write_report_artifacts(report: Mapping[str, Any], output_dir: str | Path, repo_root: str | Path) -> dict[str, Any]:
-    """Publish JSON, Markdown, and (when applicable) an adjudication template outside the repository.
+    """Publish JSON and Markdown evidence reports outside the repository.
 
     Files are created exclusively through temporary files and hard links so an
     existing artifact is never overwritten. No repository source is modified.
@@ -5852,10 +5913,6 @@ def write_report_artifacts(report: Mapping[str, Any], output_dir: str | Path, re
     payload_md = render_markdown_report(report).encode("utf-8")
     stem = "ae32c-investigation-" + re.sub(r"[^A-Za-z0-9_-]", "_", str(report.get("investigation_id", "run")))[:100]
     payloads = [(".json", payload_json), (".md", payload_md)]
-    assessment = report.get("claim_evidence_assessment")
-    if isinstance(assessment, Mapping) and assessment.get("status") == "available" and assessment.get("items"):
-        template = build_adjudication_template(assessment, str(report.get("investigation_id", "unknown")))
-        payloads.append((".adjudication-template.json", (json.dumps(template, ensure_ascii=True, sort_keys=True, indent=2, allow_nan=False) + "\n").encode("utf-8")))
     outputs = []
     for suffix, payload in payloads:
         target = out / (stem + suffix)
