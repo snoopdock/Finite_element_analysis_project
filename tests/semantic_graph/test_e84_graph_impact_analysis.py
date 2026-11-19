@@ -88,12 +88,14 @@ def test_impact_analysis_is_bounded_and_fails_closed_as_incomplete():
     assert result.metadata["stop_reason"] == "max_visited_nodes"
 
 
-def test_impact_analysis_rejects_multiple_sources():
+def test_impact_analysis_accepts_bounded_change_set():
     graph = impact_graph()
     service = SemanticGraphAnalysisService(graph, traversal_backend="reference")
     query = GraphQuery("multi", QueryType.IMPACT, ["module:app", "module:consumer"])
-    with pytest.raises(ValueError, match="exactly one"):
-        service.analyze(query)
+    result = service.analyze(query)
+    assert result.source_entities == ("module:app", "module:consumer")
+    assert result.metadata["changed_source_count"] == 2
+    assert result.metadata["unique_impact_count"] >= 1
 
 
 @pytest.mark.parametrize("backend", ["networkx", "scipy"])

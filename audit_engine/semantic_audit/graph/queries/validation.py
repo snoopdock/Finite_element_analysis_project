@@ -30,8 +30,11 @@ def validate_query(query: GraphQuery, graph: SemanticGraph) -> None:
             + ", ".join(repr(value) for value in missing)
         )
 
-    if query.query_type is QueryType.IMPACT and len(query.source_entities) != 1:
-        raise GraphQueryValidationError("IMPACT queries require exactly one changed source entity.")
+    if query.query_type is QueryType.IMPACT:
+        if len(query.source_entities) > 25:
+            raise GraphQueryValidationError("IMPACT change sets are limited to 25 source entities.")
+        if len(set(query.source_entities)) != len(query.source_entities):
+            raise GraphQueryValidationError("IMPACT change sets must not contain duplicate source entities.")
 
     if query.query_type is QueryType.PATH:
         target = str(query.constraints.get("target_entity", "")).strip()

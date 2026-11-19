@@ -706,8 +706,9 @@ def build_tool_definitions() -> list[dict[str, Any]]:
             "kind": {"type": "string", "enum": ["any", "class", "function", "async_function"]},
             "max_results": {"type": "integer", "minimum": 1, "maximum": MAX_SEARCH_RESULTS},
         }, ["query"]),
-        _tool("graph_neighbors", "Query graph neighbors or dependency/impact relationships. direction=outgoing/incoming/both traverses neighbors; dependencies, dependents or impact selects the corresponding analysis mode. Static only, not runtime proof.", {
+        _tool("graph_neighbors", "Query graph relationships; impact accepts up to 24 additional changed_nodes.", {
             "node": {"type": "string", "minLength": 1, "maxLength": 500},
+            "changed_nodes": {"type": "array", "items": {"type": "string"}, "maxItems": 24},
             "direction": {"type": "string", "enum": ["outgoing", "incoming", "both", "dependencies", "dependents", "impact"]},
             "relation_types": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 80}, "maxItems": 12},
             "max_depth": {"type": "integer", "minimum": 0, "maximum": MAX_NEIGHBOR_DEPTH},
@@ -1756,11 +1757,13 @@ class RepositoryEvidenceTools:
     def _graph_neighbors(self, args: dict[str, Any]) -> dict[str, Any]:
         self._check_keys(
             args,
-            {"node", "direction", "relation_types", "max_depth", "max_results"},
+            {"node", "changed_nodes", "direction", "relation_types", "max_depth", "max_results"},
             {"node"},
         )
         direction = args.get("direction", "both")
         if direction in {"dependencies", "dependents"}:
+            if "changed_nodes" in args:
+                raise EvidenceToolError("invalid_argument", "changed_nodes is supported only when direction=impact")
             forwarded = {
                 key: value for key, value in args.items()
                 if key in {"node", "relation_types", "max_depth", "max_results"}
@@ -1770,9 +1773,11 @@ class RepositoryEvidenceTools:
         if direction == "impact":
             forwarded = {
                 key: value for key, value in args.items()
-                if key in {"node", "relation_types", "max_depth", "max_results"}
+                if key in {"node", "changed_nodes", "relation_types", "max_depth", "max_results"}
             }
             return self._graph_impact(forwarded)
+        if "changed_nodes" in args:
+            raise EvidenceToolError("invalid_argument", "changed_nodes is supported only when direction=impact")
         node = self._resolve_node(self._string(args, "node", maximum=500))
         if direction not in {"outgoing", "incoming", "both"}:
             raise EvidenceToolError("invalid_argument", "direction must be outgoing, incoming, or both")
@@ -1885,24 +1890,43 @@ class RepositoryEvidenceTools:
         return result
 
     def _graph_impact(self, args: dict[str, Any]) -> dict[str, Any]:
-        self._check_keys(args, {"node", "relation_types", "max_depth", "max_results"}, {"node"})
-        node = self._resolve_node(self._string(args, "node", maximum=500))
+        self._check_keys(
+            args,
+            {"node", "changed_nodes", "relation_types", "max_depth", "max_results"},
+            {"node"},
+        )
+        first = self._resolve_node(self._string(args, "node", maximum=500))
+        raw_changed = args.get("changed_nodes", [])
+        if not isinstance(raw_changed, list) or len(raw_changed) > 24:
+            raise EvidenceToolError("invalid_argument", "changed_nodes must be an array of at most 24 additional node selectors")
+        resolved_changed = [
+            self._resolve_node(self._string({"node": value}, "node", maximum=500))
+            for value in raw_changed
+        ]
+        sources = [first, *resolved_changed]
+        if len(set(sources)) != len(sources):
+            raise EvidenceToolError("duplicate_change_source", "Change-set node selectors must resolve to unique graph entities")
+        sources = sorted(sources)
+
         depth = self._bounded_int(args, "max_depth", 3, 1, MAX_NEIGHBOR_DEPTH)
         max_results = self._bounded_int(args, "max_results", 30, 1, MAX_GRAPH_RESULTS)
         relations = self._relation_types(args)
         if relations is None:
             relations = ["IMPORTS", "DEPENDS_ON", "CALLS", "INVOKES", "TESTS"]
         query_payload = {
-            "node": node, "max_depth": depth, "relation_types": relations,
+            "changed_sources": sources,
+            "max_depth": depth,
+            "relation_types": relations,
             "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
             "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS,
         }
         query = GraphQuery(
-            query_id=self._query_id("impact", query_payload),
+            query_id=self._query_id("impact-change-set", query_payload),
             query_type=QueryType.IMPACT,
-            source_entities=[node],
+            source_entities=sources,
             constraints={
-                "max_depth": depth, "relation_types": relations,
+                "max_depth": depth,
+                "relation_types": relations,
                 "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
                 "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS,
             },
@@ -1922,17 +1946,36 @@ class RepositoryEvidenceTools:
             if not isinstance(candidate, Mapping) or not isinstance(candidate.get("node_id"), str):
                 continue
             enriched = dict(candidate)
-            enriched["node"] = node_descriptions.get(candidate["node_id"], self._describe_node(candidate["node_id"]))
+            enriched["node"] = node_descriptions.get(
+                candidate["node_id"], self._describe_node(candidate["node_id"])
+            )
             visible_candidates.append(enriched)
         visible_ids = {item["node_id"] for item in visible_candidates}
+        cycle_reports = metadata.get("dependency_cycles", []) if isinstance(metadata, Mapping) else []
+        if not isinstance(cycle_reports, list):
+            raise EvidenceToolError("invalid_graph_result", "Dependency-cycle payload is invalid")
+        visible_cycles = [
+            item for item in cycle_reports[:50]
+            if isinstance(item, Mapping)
+            and (set(item.get("node_ids", [])) & (visible_ids | set(sources)))
+        ]
         candidate_evidence_ids = {
             evidence_id
             for item in visible_candidates
             for evidence_id in item.get("evidence_ids", [])
             if isinstance(evidence_id, str)
         }
-        ownership_evidence_ids = set(metadata.get("ownership_evidence_ids", [])) if isinstance(metadata, Mapping) else set()
-        allowed_evidence_ids = candidate_evidence_ids | ownership_evidence_ids
+        cycle_evidence_ids = {
+            evidence_id
+            for item in visible_cycles
+            for evidence_id in item.get("evidence_ids", [])
+            if isinstance(evidence_id, str)
+        }
+        ownership_evidence_ids = (
+            set(metadata.get("ownership_evidence_ids", []))
+            if isinstance(metadata, Mapping) else set()
+        )
+        allowed_evidence_ids = candidate_evidence_ids | cycle_evidence_ids | ownership_evidence_ids
         result["evidence"] = [
             item for item in result.get("evidence", [])
             if item.get("evidence_id") in allowed_evidence_ids
@@ -1949,32 +1992,74 @@ class RepositoryEvidenceTools:
             item["node_id"] for item in result["discovered_nodes"] if item.get("node_id")
         ]
         result["impact_candidates"] = visible_candidates
+        result["dependency_cycles"] = visible_cycles
+        visible_risk_indicators = []
+        if isinstance(metadata, Mapping):
+            for raw_indicator in metadata.get("risk_indicators", []):
+                if not isinstance(raw_indicator, Mapping):
+                    continue
+                indicator = dict(raw_indicator)
+                raw_node_ids = indicator.get("node_ids")
+                if isinstance(raw_node_ids, list):
+                    indicator["node_ids"] = [
+                        node_id for node_id in raw_node_ids
+                        if node_id in visible_ids or node_id in sources
+                    ]
+                    if raw_node_ids and not indicator["node_ids"]:
+                        continue
+                raw_evidence_ids = indicator.get("evidence_ids")
+                if isinstance(raw_evidence_ids, list):
+                    indicator["evidence_ids"] = [
+                        evidence_id for evidence_id in raw_evidence_ids
+                        if evidence_id in allowed_evidence_ids
+                    ]
+                visible_risk_indicators.append(indicator)
+        result["risk_indicators"] = visible_risk_indicators
         if isinstance(result.get("metadata"), dict):
             result["metadata"]["impact_candidates"] = visible_candidates
+            result["metadata"]["dependency_cycles"] = visible_cycles
+            result["metadata"]["risk_indicators"] = result["risk_indicators"]
         result["direct_impact_candidates"] = [
-            item for item in visible_candidates if item.get("impact_depth") == 1
+            item for item in visible_candidates
+            if min(item.get("impact_depth_by_source", {}).values(), default=item.get("impact_depth", 0)) == 1
         ]
         result["transitive_impact_candidates"] = [
-            item for item in visible_candidates if item.get("impact_depth", 0) > 1
+            item for item in visible_candidates
+            if min(item.get("impact_depth_by_source", {}).values(), default=item.get("impact_depth", 0)) > 1
+        ]
+        result["shared_impact_candidates"] = [
+            item for item in visible_candidates if item.get("shared_change_impact")
         ]
         result["impacted_tests"] = [
-            item for item in visible_candidates
-            if item.get("node", {}).get("entity_type") == "TestFile"
-            or str(item.get("node", {}).get("path", "")).startswith("tests/")
+            item for item in visible_candidates if item.get("candidate_kind") == "test"
         ]
         result["impacted_workflows"] = [
-            item for item in visible_candidates
-            if str(item.get("node", {}).get("path", "")).startswith(".github/workflows/")
+            item for item in visible_candidates if item.get("candidate_kind") == "workflow"
+        ]
+        result["impacted_symbols"] = [
+            item for item in visible_candidates if item.get("candidate_kind") == "symbol"
         ]
         result["result_limit_truncated"] = len(candidates) > max_results
-        result["truncated"] = bool(metadata.get("truncated", False)) or result["result_limit_truncated"]
+        cycle_status = metadata.get("cycle_analysis_status", "unknown") if isinstance(metadata, Mapping) else "unknown"
+        result["truncated"] = (
+            bool(metadata.get("truncated", False)) if isinstance(metadata, Mapping) else True
+        ) or result["result_limit_truncated"] or cycle_status != "complete"
         result["coverage_status"] = "partial" if result["truncated"] else (
             "complete_for_query" if result.get("status") != "incomplete" else "partial"
         )
+        result["change_set_summary"] = {
+            "changed_sources": sources,
+            "changed_source_count": len(sources),
+            "unique_impact_count": metadata.get("unique_impact_count", len(candidates)),
+            "shared_impact_count": metadata.get("shared_impact_count", 0),
+            "source_impact_counts": metadata.get("source_impact_counts", {}),
+        }
+        result["cycle_analysis_status"] = cycle_status
         result["impact_semantics"] = (
-            "Possible static consumers of the changed entity. Import, call, workflow and test "
-            "relationships are structural observations, not proof of runtime execution, severity, "
-            "failure, or correctness."
+            "Static change-set impact candidates aggregated across the supplied source entities. "
+            "Shared candidates identify observed overlap; dependency cycles are strongly connected "
+            "components over IMPORTS/DEPENDS_ON in the bounded impacted subgraph. These observations "
+            "do not prove runtime execution, failure, severity, missing test coverage, or correctness."
         )
         result["impact_relation_types"] = relations
         result["source_paths"] = self._graph_source_paths(result)
