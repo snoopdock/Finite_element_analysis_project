@@ -22,6 +22,7 @@ from audit_engine.semantic_audit.ae32b.evidence_tools import (
     RepositoryEvidenceTools,
     build_tool_definitions,
 )
+from audit_engine.semantic_audit.ae32c.tool_policy import GRAPH_DERIVED_TOOL_NAMES
 from providers.safe_errors import sanitize_provider_error
 from providers.base import ProviderResponse, ProviderToolCall
 from providers.capabilities import get_provider_capabilities, should_fallback_to_plain_text
@@ -78,7 +79,7 @@ You have no shell, network, filesystem-write, patch, commit, or push capability.
 
 For read_source_file, use only an exact repository-relative path returned by a successful evidence tool. For attribute access (for example provider.total_calls), search_repository with mode=content before search_symbols. If a read fails, use returned path guidance; never guess paths. Do not invent paths, lines, hashes, evidence IDs, test results, workflow runs, or graph relations.
 
-INVESTIGATION CONTEXT: For key modules, call trace_execution_context and read relevant caller/factory files; call find_related_tests and read candidates (pytest_static_assessment is static candidacy only, not execution); call discover_case_context and inspect line-numbered README/incident previews; read candidates with incomplete content and relevant test configuration. Distinguish Python entry points from CI workflows and historical metadata from current source. This read-only auditor never runs code/tests; runtime reproduction is not performed.
+INVESTIGATION CONTEXT: Use only tools in the supplied catalog. Use trace_execution_context, find_related_tests, and find_workflow_context only when present; when absent, do not request or infer graph relationships and rely on search_repository, search_symbols, read_source_file, and discover_case_context. Treat test and workflow findings as static, not execution proof; pytest_static_assessment is static candidacy only. Inspect incomplete previews and relevant test configuration. Distinguish Python entry points from CI workflows and historical metadata from current source. runtime reproduction is not performed.
 
 Return one JSON object or the explicit labelled text contract in provider_protocol_guidance when JSON is unreliable. No unlabelled prose. Supported action envelopes:
 - Tool: {"action":"tool_call","tool":"<registered tool>","arguments":{},"reason":"brief reason"}
@@ -304,6 +305,11 @@ class RepositoryInvestigator:
         # required_source_paths, which carry direct root-cause citation rules.
         if type(require_complete_investigation_context) is not bool:
             raise ValueError("require_complete_investigation_context must be a boolean")
+        if require_complete_investigation_context and not enable_graph_tools:
+            raise ValueError(
+                "complete investigation context requires graph-derived discovery tools; "
+                "they are intentionally unavailable in source-only control mode"
+            )
         if not isinstance(required_context_paths, (tuple, list)) or len(required_context_paths) > 12:
             raise ValueError("required_context_paths must be a bounded list of paths")
         checked_context_paths: list[str] = []
@@ -366,7 +372,10 @@ class RepositoryInvestigator:
                 raise ValueError("graph_query_max_results must be an integer between 1 and 50")
         self._require_complete_investigation_context = require_complete_investigation_context
         self._require_graph_interaction = require_graph_interaction
+        # Backward-compatible attribute name; this flag now controls the full
+        # graph-derived relationship tool family, not only graph_neighbors/path.
         self._graph_tools_enabled = enable_graph_tools
+        self._graph_derived_tools_enabled = enable_graph_tools
         self._required_graph_target = required_graph_target.strip() if isinstance(required_graph_target, str) else None
         self._required_graph_relation_types = tuple(checked_graph_relations)
         self._required_graph_min_cross_module_reads = required_graph_min_cross_module_reads
@@ -383,10 +392,10 @@ class RepositoryInvestigator:
                         self._required_context_target_module = f"module:{module_name}"
                         break
 
-        graph_tool_names = {"graph_neighbors", "graph_path"}
         self._tool_definitions = [
             item for item in build_tool_definitions()
-            if self._graph_tools_enabled or item.get("function", {}).get("name") not in graph_tool_names
+            if self._graph_derived_tools_enabled
+            or item.get("function", {}).get("name") not in GRAPH_DERIVED_TOOL_NAMES
         ]
         self._tool_schemas = {
             item["function"]["name"]: item["function"]
@@ -697,6 +706,13 @@ class RepositoryInvestigator:
             "stop_reason": "not_started",
             "provider": {"name": self.provider_name, "model": self.model_name},
             "graph_tools_enabled": self._graph_tools_enabled,
+            "graph_derived_tools_enabled": self._graph_derived_tools_enabled,
+            "graph_derived_tool_names": sorted(
+                GRAPH_DERIVED_TOOL_NAMES if self._graph_derived_tools_enabled else ()
+            ),
+            "repository_access_mode": (
+                "graph_assisted_treatment" if self._graph_derived_tools_enabled else "source_only_control"
+            ),
             "problem_statement": self._safe_text(problem, MAX_PROBLEM_CHARS),
             "provenance": provenance,
             "snapshot_check_status": self._snapshot_check_status,
@@ -734,7 +750,13 @@ class RepositoryInvestigator:
                 return self._safe_text(error.get("code", "tool_error"), 200)
             return "No structured result"
         fields = []
-        for key in ("audit_status", "evidence_index_status", "indexed_file_count", "graph_node_count", "graph_edge_count", "truncated", "target", "query", "path", "source", "status"):
+        summary_fields = [
+            "audit_status", "evidence_index_status", "indexed_file_count",
+            "truncated", "target", "query", "path", "source", "status",
+        ]
+        if self._graph_derived_tools_enabled:
+            summary_fields.extend(("graph_node_count", "graph_edge_count"))
+        for key in summary_fields:
             if key in result:
                 fields.append(f"{key}={self._safe_text(result[key], 240)}")
         for key in (
@@ -788,8 +810,11 @@ class RepositoryInvestigator:
             "status": entry.status,
             "response_sha256": entry.response_sha256,
             "response_bytes": entry.response_bytes,
-            "summary": entry.summary,
-            "provenance": self._safe_value(entry.provenance),
+            "summary": entry.summary if self._graph_derived_tools_enabled else self._tool_summary(self._model_response_view(entry)),
+            "provenance": self._safe_value(entry.provenance) if self._graph_derived_tools_enabled else {
+                key: value for key, value in self._safe_value(entry.provenance).items()
+                if key not in {"graph_fingerprint", "graph_projection_version"}
+            },
         })
         return entry
 
@@ -1090,6 +1115,26 @@ class RepositoryInvestigator:
         view["context_truncated"] = True
         return view
 
+    def _model_response_view(self, entry: _EvidenceEntry) -> Any:
+        """Return the model-facing response, withholding graph metadata in source-only control."""
+        response = entry.response
+        if self._graph_derived_tools_enabled or entry.tool != "repository_summary":
+            return response
+        if not isinstance(response, Mapping):
+            return response
+        result = response.get("result")
+        if not isinstance(result, Mapping):
+            return response
+        filtered_response = dict(response)
+        filtered_result = dict(result)
+        for key in (
+            "graph_node_count", "graph_edge_count", "graph_relation_counts", "call_graph",
+            "module_identity_issue_count", "module_identity_issues",
+        ):
+            filtered_result.pop(key, None)
+        filtered_response["result"] = filtered_result
+        return filtered_response
+
     def _model_view(self, entry: _EvidenceEntry) -> dict[str, Any]:
         graph_view = self._graph_neighbors_model_view(entry)
         if graph_view is not None:
@@ -1100,7 +1145,7 @@ class RepositoryInvestigator:
                 "tool": entry.tool,
                 "status": entry.status,
                 "response_sha256": entry.response_sha256,
-                "response": self._compact_for_model(entry.response, string_limit=string_limit, list_limit=list_limit),
+                "response": self._compact_for_model(self._model_response_view(entry), string_limit=string_limit, list_limit=list_limit),
             }
             if len(self._canonical_json(view)) <= self.limits.max_tool_context_chars:
                 return view
@@ -1452,7 +1497,7 @@ class RepositoryInvestigator:
                 "status": summary.status,
                 "response_sha256": summary.response_sha256,
                 "response": self._compact_for_model(
-                    summary.response,
+                    self._model_response_view(summary),
                     string_limit=max(80, string_limit),
                     list_limit=max(2, list_limit),
                 ),
@@ -3643,16 +3688,19 @@ class RepositoryInvestigator:
 
     def _investigation_context_coverage(self) -> dict[str, Any]:
         """Report complete, non-truncated static discovery and candidate reads."""
-        required_discovery = (
+        discovery_tool_names = (
             "trace_execution_context",
             "find_related_tests",
             "discover_case_context",
         )
+        available_tool_names = set(self._tool_schemas)
+        required_discovery = tuple(
+            name for name in discovery_tool_names if name in available_tool_names
+        )
         entries_by_tool: dict[str, list[Any]] = {
             name: [entry for entry in self._ledger if entry.tool == name]
-            for name in required_discovery
+            for name in discovery_tool_names
         }
-        discovery_tool_status: dict[str, dict[str, Any]] = {}
         def discovery_query_identity(name: str, arguments: Any) -> str:
             """Group retries for the same logical discovery query.
 
@@ -3687,8 +3735,21 @@ class RepositoryInvestigator:
             return all(isinstance(result.get(key), list) for key in required_lists)
 
         discovery_tool_status: dict[str, dict[str, Any]] = {}
-        for name in required_discovery:
+        for name in discovery_tool_names:
             entries = entries_by_tool[name]
+            if name not in required_discovery:
+                discovery_tool_status[name] = {
+                    "status": "not_available_by_design" if not entries else "unexpectedly_present",
+                    "final_operation_status": "not_available_by_design" if not entries else "unexpectedly_present",
+                    "call_count": len(entries), "query_count": 0, "completed_query_count": 0,
+                    "unresolved_query_count": 0, "failed_attempt_count": 0,
+                    "invalid_result_attempt_count": 0, "successful_complete_call_count": 0,
+                    "truncated_successful_call_count": 0, "any_attempt_truncated": False,
+                    "truncated": None, "recovered_after_retry": False,
+                    "reason": "graph_derived_tool_withheld_from_source_only_control" if not entries else "graph_derived_tool_evidence_present_despite_withholding",
+                    "query_statuses": [],
+                }
+                continue
             if not entries:
                 discovery_tool_status[name] = {
                     "status": "not_called", "final_operation_status": "not_called",
@@ -4050,8 +4111,14 @@ class RepositoryInvestigator:
         workflow_status = "not_checked"
         if trace_status == "completed":
             workflow_status = "observed" if workflow_paths else "no_static_workflow_path_observed"
-        discovery_complete = all(
-            discovery_tool_status[name]["status"] == "completed" for name in required_discovery
+        elif trace_status == "not_available_by_design":
+            workflow_status = "not_available_by_design"
+        discovery_complete = (
+            all(discovery_tool_status[name]["status"] == "completed" for name in required_discovery)
+            and not any(
+                discovery_tool_status[name]["status"] == "unexpectedly_present"
+                for name in discovery_tool_names
+            )
         )
         required_context_discovery_complete = required_context_contract.get("status") not in {
             "trace_not_completed", "required_context_path_not_surfaced",
@@ -4071,6 +4138,9 @@ class RepositoryInvestigator:
         return {
             "schema_version": "ae32c/investigation-context-coverage/v3",
             "status": overall,
+            "discovery_mode": "graph_assisted_treatment" if self._graph_derived_tools_enabled else "source_only_control",
+            "graph_derived_discovery_tools_available": self._graph_derived_tools_enabled,
+            "graph_derived_discovery_tools_withheld": sorted(GRAPH_DERIVED_TOOL_NAMES) if not self._graph_derived_tools_enabled else [],
             "discovery_tools_complete": discovery_complete,
             "discovery_tool_status": discovery_tool_status,
             "discovery_truncated_tools": discovery_truncated_tools,
@@ -4084,7 +4154,10 @@ class RepositoryInvestigator:
             "candidate_context_paths_by_category": category_summary,
             "test_classification_counts": test_classification_counts,
             "static_execution_context": {
-                "status": "observed" if trace_results else "not_checked",
+                "status": (
+                    "not_available_by_design" if trace_status == "not_available_by_design"
+                    else "observed" if trace_results else "not_checked"
+                ),
                 "static_relationship_count": static_relationship_count,
                 "caller_paths": sorted(caller_paths)[:30],
                 "caller_paths_directly_read": sorted(caller_paths.intersection(read_paths))[:30],
@@ -4099,7 +4172,11 @@ class RepositoryInvestigator:
                 "interpretation": "Static import, entrypoint, and workflow relationships do not prove runtime execution. All surfaced caller, dependency, entrypoint-context, and workflow paths participate in read/unread accounting.",
             },
             "related_test_context": {
-                "status": "observed" if test_entries else "not_checked",
+                "status": (
+                    "not_available_by_design"
+                    if discovery_tool_status["find_related_tests"]["status"] == "not_available_by_design"
+                    else "observed" if test_entries else "not_checked"
+                ),
                 "candidate_count": len(test_records),
                 "candidates": [{"path": path, **test_records[path]} for path in sorted(test_records)[:30]],
                 "candidate_paths_directly_read": sorted(related_test_paths.intersection(read_paths))[:30],
@@ -4127,7 +4204,7 @@ class RepositoryInvestigator:
                 "diagnosis_scope": "static_source_and_graph_analysis",
             },
             "interpretation": (
-                "Context coverage is complete only when every required discovery operation returned a complete, non-truncated result and every surfaced candidate path was inspected. It does not establish exhaustive semantic discovery, test execution, runtime behavior, or diagnostic correctness."
+                "Context coverage is complete only when every discovery operation available in this condition returned a complete, non-truncated result and every surfaced candidate path was inspected. In source-only control, graph-derived discovery tools are intentionally unavailable and are not counted as missing operations. This does not establish exhaustive semantic discovery, test execution, runtime behavior, or diagnostic correctness."
             ),
         }
 

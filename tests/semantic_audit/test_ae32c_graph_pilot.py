@@ -4,7 +4,10 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
+from audit_engine.semantic_audit.ae32c.tool_policy import GRAPH_DERIVED_TOOL_NAMES
 from audit_engine.semantic_audit.ae32c.graph_pilot import (
+    _graph_tool_isolation,
+    _graph_derived_tool_calls,
     _apply_model_runtime_limits,
     _build_cost_estimator,
     _load_profile,
@@ -52,8 +55,12 @@ def test_graph_tools_can_be_removed_for_matched_control(tmp_path):
     investigator = _investigator(tmp_path, graph_enabled=False)
     names = {item["function"]["name"] for item in investigator._tool_definitions}
 
+    assert not (names & GRAPH_DERIVED_TOOL_NAMES)
     assert "graph_neighbors" not in names
     assert "graph_path" not in names
+    assert "trace_execution_context" not in names
+    assert "find_related_tests" not in names
+    assert "find_workflow_context" not in names
     coverage = investigator._graph_interaction_coverage()
     assert coverage["status"] == "disabled"
     assert coverage["tools_available"] is False
@@ -67,11 +74,35 @@ def test_graph_tool_ablation_changes_only_graph_tool_availability(tmp_path):
     treatment = _investigator(tmp_path, graph_enabled=True)
     control_names = {item["function"]["name"] for item in control._tool_definitions}
     treatment_names = {item["function"]["name"] for item in treatment._tool_definitions}
-    graph_tools = {"graph_neighbors", "graph_path"}
+    graph_tools = set(GRAPH_DERIVED_TOOL_NAMES)
 
     assert not (control_names & graph_tools)
     assert (treatment_names & graph_tools) == graph_tools
     assert (control_names - graph_tools) == (treatment_names - graph_tools)
+
+
+def test_graph_tool_isolation_helper_rejects_any_graph_derived_control_leak():
+    non_graph = {"repository_summary", "search_repository", "search_symbols", "read_source_file"}
+    expected = set(GRAPH_DERIVED_TOOL_NAMES)
+    valid = _graph_tool_isolation(non_graph, non_graph | expected)
+    assert valid["isolated"] is True
+    assert valid["non_graph_tool_sets_match"] is True
+    assert valid["control_graph_derived_tools"] == []
+    assert set(valid["treatment_graph_derived_tools"]) == expected
+
+    leaked = _graph_tool_isolation(non_graph | {"trace_execution_context"}, non_graph | expected)
+    assert leaked["isolated"] is False
+    assert leaked["unexpected_control_graph_derived_tools"] == ["trace_execution_context"]
+
+def test_graph_derived_tool_call_ledger_detects_relationship_tool_leaks():
+    assert _graph_derived_tool_calls([
+        {"tool": "read_source_file"},
+        {"tool": "trace_execution_context"},
+        {"tool": "graph_neighbors"},
+        {"tool": "trace_execution_context"},
+    ]) == ["graph_neighbors", "trace_execution_context"]
+    assert _graph_derived_tool_calls([{"tool": "search_repository"}]) == []
+
 
 def test_graph_interaction_requires_graph_tools_to_be_available(tmp_path):
     try:

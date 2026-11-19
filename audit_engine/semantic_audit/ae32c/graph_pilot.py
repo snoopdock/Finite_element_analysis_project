@@ -1,4 +1,4 @@
-"""Matched graph-enabled/graph-disabled AE-32C repository pilot.
+"""Matched source-only/graph-assisted AE-32C repository pilot.
 
 The pilot uses one immutable, bounded source slice and two independent
 provider sessions. The only intended intervention is graph-tool availability
@@ -23,6 +23,7 @@ from typing import Any, Callable, Mapping
 
 from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
 from audit_engine.semantic_audit.ae32c.investigator import RepositoryInvestigator
+from audit_engine.semantic_audit.ae32c.tool_policy import GRAPH_DERIVED_TOOL_NAMES
 from audit_engine.semantic_audit.ae32c.live_evaluation import build_live_investigation_limits
 from providers.factory import SUPPORTED_PROVIDERS, build_provider
 
@@ -35,6 +36,35 @@ _MODEL_RE = re.compile(r"[A-Za-z0-9@._:/-]{1,200}")
 
 class GraphPilotError(RuntimeError):
     """Raised when the bounded pilot cannot be prepared safely."""
+
+
+def _graph_tool_isolation(control_tools: set[str], treatment_tools: set[str]) -> dict[str, Any]:
+    """Verify that all graph-derived relationship tools are withheld only from control."""
+    expected = set(GRAPH_DERIVED_TOOL_NAMES)
+    control_graph = control_tools & expected
+    treatment_graph = treatment_tools & expected
+    non_graph_match = (control_tools - expected) == (treatment_tools - expected)
+    isolated = not control_graph and treatment_graph == expected and non_graph_match
+    return {
+        "isolated": isolated,
+        "non_graph_tool_sets_match": non_graph_match,
+        "expected_graph_derived_tools": sorted(expected),
+        "control_graph_derived_tools": sorted(control_graph),
+        "treatment_graph_derived_tools": sorted(treatment_graph),
+        "missing_treatment_graph_derived_tools": sorted(expected - treatment_graph),
+        "unexpected_control_graph_derived_tools": sorted(control_graph),
+    }
+
+
+def _graph_derived_tool_calls(tool_calls: Any) -> list[str]:
+    """Return unique graph-derived tools actually recorded in an investigation ledger."""
+    if not isinstance(tool_calls, list):
+        return []
+    return sorted({
+        item.get("tool") for item in tool_calls
+        if isinstance(item, Mapping) and isinstance(item.get("tool"), str)
+        and item.get("tool") in GRAPH_DERIVED_TOOL_NAMES
+    })
 
 
 def _canonical_json(value: Any) -> str:
@@ -620,6 +650,7 @@ def run_graph_pilot(
             report_elapsed = time.monotonic() - condition_started
             conditions[condition] = {
                 "graph_tools_enabled": graph_enabled,
+                "graph_derived_tools_enabled": graph_enabled,
                 "available_tool_names": available_tool_names,
                 "status": report.get("status", "unknown"),
                 "summary": _condition_metrics(report),
@@ -655,17 +686,20 @@ def run_graph_pilot(
         graph_only = sorted(graph_paths - control_paths)
         graph_coverage = conditions["graph_enabled"]["report"].get("graph_interaction_coverage", {})
         control_coverage = conditions["control"]["report"].get("graph_interaction_coverage", {})
-        graph_tool_names = {"graph_neighbors", "graph_path"}
         control_tools = set(conditions["control"]["available_tool_names"])
         treatment_tools = set(conditions["graph_enabled"]["available_tool_names"])
-        non_graph_tools_match = (control_tools - graph_tool_names) == (treatment_tools - graph_tool_names)
-        graph_tool_difference_isolated = (
-            not (control_tools & graph_tool_names)
-            and (treatment_tools & graph_tool_names) == graph_tool_names
-            and non_graph_tools_match
+        tool_isolation = _graph_tool_isolation(control_tools, treatment_tools)
+        non_graph_tools_match = tool_isolation["non_graph_tool_sets_match"]
+        control_graph_derived_calls = _graph_derived_tool_calls(
+            conditions["control"]["report"].get("tool_calls", [])
         )
+        source_only_control_enforced = (
+            not bool(control_tools & set(GRAPH_DERIVED_TOOL_NAMES))
+            and not control_graph_derived_calls
+        )
+        graph_tool_difference_isolated = tool_isolation["isolated"] and source_only_control_enforced
         comparison = {
-            "schema_version": "ae32c/paired-graph-pilot/v1",
+            "schema_version": "ae32c/paired-graph-pilot/v2",
             "evaluation_id": run_id,
             "created_at_unix": round(start_time, 3),
             "provider": provider_name,
@@ -694,8 +728,8 @@ def run_graph_pilot(
                 "graph_relation_counts": final_summary.get("graph_relation_counts"),
             },
             "design": {
-                "control": "same bounded repository snapshot and non-graph evidence tools; graph_neighbors and graph_path are not exposed",
-                "treatment": "same bounded repository snapshot and non-graph evidence tools, with graph_neighbors and graph_path exposed and graph interaction required",
+                "control": "source-only control on the same bounded repository snapshot; all graph-derived relationship tools and graph summary metadata are withheld",
+                "treatment": "graph-assisted treatment on the same bounded repository snapshot; all graph-derived relationship tools are exposed and direct graph interaction is required",
                 "same_provider_and_model": True,
                 "same_problem_statement": True,
                 "same_source_snapshot": source_manifest_stable,
@@ -705,9 +739,16 @@ def run_graph_pilot(
                 "inter_condition_cooldown_seconds": inter_condition_cooldown_seconds,
                 "non_graph_tool_sets_match": non_graph_tools_match,
                 "graph_tool_difference_isolated": graph_tool_difference_isolated,
+                "graph_derived_tool_difference_isolated": graph_tool_difference_isolated,
+                "graph_derived_tool_names": sorted(GRAPH_DERIVED_TOOL_NAMES),
+                "control_graph_derived_tools": tool_isolation["control_graph_derived_tools"],
+                "control_graph_derived_calls": control_graph_derived_calls,
+                "source_only_control_enforced": source_only_control_enforced,
+                "treatment_graph_derived_tools": tool_isolation["treatment_graph_derived_tools"],
+                "missing_treatment_graph_derived_tools": tool_isolation["missing_treatment_graph_derived_tools"],
                 "control_available_tools": sorted(control_tools),
                 "graph_enabled_available_tools": sorted(treatment_tools),
-                "intended_intervention": "graph tool availability plus explicit graph-use instruction",
+                "intended_intervention": "availability of the complete graph-derived relationship tool family plus explicit graph-use instruction",
                 "required_distinct_cross_module_reads": int(profile["graph_min_cross_module_reads"]),
                 "graph_query_policy": {
                     "target": target,
@@ -731,6 +772,7 @@ def run_graph_pilot(
             "conditions": {
                 name: {
                     "graph_tools_enabled": item["graph_tools_enabled"],
+                    "graph_derived_tools_enabled": item["graph_derived_tools_enabled"],
                     "available_tool_names": item["available_tool_names"],
                     "status": item["status"],
                     "summary": item["summary"],
@@ -760,6 +802,9 @@ def run_graph_pilot(
                 "graph_enabled_completed": conditions["graph_enabled"]["status"] in {"completed", "completed_with_incomplete_evidence"},
                 "graph_interaction_complete": graph_coverage.get("status") == "complete",
                 "graph_tool_difference_isolated": graph_tool_difference_isolated,
+                "graph_derived_tool_difference_isolated": graph_tool_difference_isolated,
+                "source_only_control_enforced": source_only_control_enforced,
+                "control_graph_derived_calls": control_graph_derived_calls,
                 "source_snapshot_stable": source_manifest_stable and graph_fingerprint_stable,
                 "diagnostic_accuracy": "not_assessed",
                 "human_review_required": True,
@@ -778,7 +823,8 @@ def run_graph_pilot(
                 "Did each condition identify the same live-evaluation entry point and describe its responsibility accurately?",
                 "Did the graph-enabled condition cite actual CALLS observations with correct endpoints and source locations?",
                 "Which relevant files were discovered only after graph exploration?",
-                "Did the control find the same relationships through ordinary search/read/trace tools?",
+                "Did the source-only control recover any of the same relationships using only search, symbol search, and direct source reads?",
+                "Did the graph-assisted treatment use graph-derived tools without confusing static relationships with runtime behavior?",
                 "Were any CALLS edges misleading, ambiguous, or inconsistent with the source?",
                 "Did either condition confuse static call relationships with runtime execution?",
                 "Which explanation is better supported by exact source evidence, and why?",
@@ -822,7 +868,7 @@ def _write_comparison_markdown(path: Path, record: Mapping[str, Any]) -> None:
         "",
         "## Paired conditions",
         "",
-        "| Metric | Graph-disabled control | Graph-enabled treatment |",
+        "| Metric | Source-only control | Graph-assisted treatment |",
         "|---|---:|---:|",
     ]
     metric_labels = [
@@ -837,6 +883,12 @@ def _write_comparison_markdown(path: Path, record: Mapping[str, Any]) -> None:
     for key, label in metric_labels:
         lines.append(f"| {label} | {control.get(key, 'n/a')} | {treatment.get(key, 'n/a')} |")
     lines.extend([
+        "",
+        "## Experimental isolation",
+        "",
+        f"- Graph-derived tool difference isolated: `{record.get('design', {}).get('graph_derived_tool_difference_isolated', False)}`",
+        f"- Source-only control enforced: `{record.get('acceptance', {}).get('source_only_control_enforced', False)}`",
+        f"- Graph-derived tools withheld from control: {len(record.get('design', {}).get('graph_derived_tool_names', []))}",
         "",
         "## Source navigation",
         "",

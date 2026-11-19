@@ -196,13 +196,14 @@ def final_action(*, evidence_id="E0002", source_reference=True, candidate_id=Non
     })
 
 
-def make_investigator(responses, *, evidence=None, limits=None, cost_estimator=None):
+def make_investigator(responses, *, evidence=None, limits=None, cost_estimator=None, graph_enabled=True):
     provider = FakeProvider(responses)
     tools = evidence or FakeEvidenceTools()
     investigator = RepositoryInvestigator(
         ".",
         provider,
         evidence_tools=tools,
+        enable_graph_tools=graph_enabled,
         limits=limits or InvestigationLimits(),
         cost_estimator=cost_estimator,
         id_factory=lambda: "test-investigation-0001",
@@ -1640,13 +1641,80 @@ def test_missing_required_source_anchor_triggers_bounded_finalization_recovery(t
     )
 
 
-def test_investigation_prompt_requires_relationship_test_and_case_context_review():
-    assert "trace_execution_context" in SYSTEM_INSTRUCTIONS
-    assert "find_related_tests" in SYSTEM_INSTRUCTIONS
+def test_investigation_prompt_uses_only_condition_available_discovery_tools():
+    assert "Use only tools in the supplied catalog" in SYSTEM_INSTRUCTIONS
+    assert "Use trace_execution_context, find_related_tests, and find_workflow_context only when present" in SYSTEM_INSTRUCTIONS
+    assert "when absent, do not request or infer graph relationships" in SYSTEM_INSTRUCTIONS
     assert "discover_case_context" in SYSTEM_INSTRUCTIONS
     assert "pytest_static_assessment is static candidacy only" in SYSTEM_INSTRUCTIONS
     assert "Distinguish Python entry points from CI workflows" in SYSTEM_INSTRUCTIONS
     assert "runtime reproduction is not performed" in SYSTEM_INSTRUCTIONS
+
+
+def test_source_only_control_withholds_all_graph_derived_tools_and_summary_metadata():
+    investigator, _, tools = make_investigator([], graph_enabled=False)
+    available = set(investigator._tool_schemas)
+    from audit_engine.semantic_audit.ae32c.tool_policy import GRAPH_DERIVED_TOOL_NAMES
+    assert not (available & GRAPH_DERIVED_TOOL_NAMES)
+
+    entry = investigator._record_tool_response("repository_summary", {}, tools.invoke("repository_summary", {}))
+    model_view = investigator._model_view(entry)
+    model_result = model_view["response"]["result"]
+    assert "graph_node_count" not in model_result
+    assert "graph_edge_count" not in model_result
+    assert "graph_relation_counts" not in model_result
+    assert "call_graph" not in model_result
+    # The authoritative evidence ledger still retains the complete repository summary.
+    assert entry.response["result"]["graph_node_count"] == 2
+
+    messages = investigator._initial_messages("Inspect this repository", entry)
+    payload = json.loads(messages[1]["content"])
+    catalog = json.loads(messages[0]["content"].split("Approved evidence-tool catalog (schemas are authoritative):\n", 1)[1])
+    catalog_names = {item["name"] for item in catalog}
+    assert not (catalog_names & GRAPH_DERIVED_TOOL_NAMES)
+    assert "discover_case_context" in catalog_names
+    assert "graph_node_count" not in payload["initial_repository_evidence"]["response"]["result"]
+
+
+def test_source_only_finalization_context_withholds_graph_summary_metadata():
+    investigator, _, tools = make_investigator([], graph_enabled=False)
+    summary = investigator._record_tool_response("repository_summary", {}, tools.invoke("repository_summary", {}))
+    messages = investigator._finalization_context_messages(
+        problem="Inspect this repository",
+        summary=summary,
+        round_number=1,
+        notice={"finalization_mode": {"required_action": "final"}},
+        string_limit=120,
+        list_limit=3,
+        candidate_limit=20,
+        include_responses=True,
+        feedback=None,
+    )
+    payload = json.loads(messages[1]["content"])
+    result = payload["initial_repository_evidence"]["response"]["result"]
+    assert "graph_node_count" not in result
+    assert "graph_edge_count" not in result
+    assert "graph_relation_counts" not in result
+    assert summary.response["result"]["graph_node_count"] == 2
+
+
+def test_source_only_control_marks_graph_discovery_tools_not_available_by_design():
+    investigator, _, _ = make_investigator([], graph_enabled=False)
+    investigator._ledger = [SimpleNamespace(
+        status="ok", tool="discover_case_context", arguments={},
+        response={"result": {"coverage_status": "complete_for_query", "truncated": False, "metadata_candidates": []}},
+    )]
+    coverage = investigator._investigation_context_coverage()
+    assert coverage["status"] == "complete_for_available_static_context"
+    assert coverage["discovery_tools_complete"] is True
+    assert coverage["discovery_mode"] == "source_only_control"
+    assert coverage["discovery_tool_status"]["trace_execution_context"]["status"] == "not_available_by_design"
+    assert coverage["discovery_tool_status"]["find_related_tests"]["status"] == "not_available_by_design"
+    assert coverage["static_execution_context"]["status"] == "not_available_by_design"
+    assert coverage["related_test_context"]["status"] == "not_available_by_design"
+    assert set(coverage["graph_derived_discovery_tools_withheld"]) >= {
+        "trace_execution_context", "find_related_tests", "find_workflow_context"
+    }
 
 
 def test_context_coverage_reports_static_only_and_unread_context_paths():
