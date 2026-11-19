@@ -111,11 +111,31 @@ def run_graphify(repo: Path, commit: str, branch: str, destination: Path,
         (destination / "graphify-run.log").write_text(proc.stdout, encoding="utf-8")
         if proc.returncode:
             raise RuntimeError(
-                f"Graphify failed for {branch} (exit {proc.returncode}); "
+                f"Graphify extraction failed for {branch} (exit {proc.returncode}); "
                 f"inspect {destination / 'graphify-run.log'}"
             )
 
+        # The headless extract command writes the AST graph. A separate cluster-only
+        # pass creates the report and interactive HTML without semantic/LLM labeling.
         generated = destination / "graphify-out"
+        cluster = subprocess.run(
+            command + [
+                "cluster-only", str(snapshot),
+                "--graph", str(generated / "graph.json"),
+                "--no-label",
+            ],
+            cwd=str(repo), text=True, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, encoding="utf-8", errors="replace",
+        )
+        with (destination / "graphify-run.log").open("a", encoding="utf-8") as log:
+            log.write("\n\n--- cluster-only ---\n")
+            log.write(cluster.stdout)
+        if cluster.returncode:
+            raise RuntimeError(
+                f"Graphify cluster-only failed for {branch} (exit {cluster.returncode}); "
+                f"inspect {destination / 'graphify-run.log'}"
+            )
+
         required = ("graph.html", "graph.json", "GRAPH_REPORT.md")
         missing = [name for name in required if not (generated / name).is_file()]
         if missing:
