@@ -30,3 +30,26 @@ class IGraphAdapter(NativeAdapterMixin, SemanticGraphAdapter):
         self._index = dict(data.node_to_index)
         self._edge_ids = {e["occurrence"]: e["occurrence"] for e in data.edges}
         self.graph = native
+
+
+    def iter_native_nodes(self):
+        for vertex in self.graph.vs:
+            yield {
+                "id": vertex["semantic_id"],
+                "type": vertex["entity_type"],
+                "attributes": vertex["attributes"],
+                "metadata": vertex["metadata"],
+            }
+
+    def iter_native_edges(self):
+        for edge in self.graph.es:
+            source_vertex = self.graph.vs[edge.source]
+            target_vertex = self.graph.vs[edge.target]
+            yield {
+                "occurrence": int(edge["semantic_occurrence"]),
+                "source": source_vertex["semantic_id"],
+                "target": target_vertex["semantic_id"],
+                "relation": edge["relation"],
+                "attributes": edge["attributes"],
+                "metadata": edge["metadata"],
+            }

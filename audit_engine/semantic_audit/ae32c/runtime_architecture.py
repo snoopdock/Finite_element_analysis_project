@@ -86,6 +86,19 @@ def build_runtime_architecture_report(
             "AE-32 deterministic BFS controls ordering, bounds and evidence construction; "
             "each accepted query is compared with the pure-Python reference traversal."
         )
+    elif active_backend == "scipy":
+        interpretation = (
+            "AE-32B graph queries use a SciPy CSR adjacency projection. Parallel-edge "
+            "multiplicity is represented by sparse counts; exact relation labels, edge "
+            "occurrences, attributes and provenance are reconstructed from canonical side "
+            "channels. AE-32 deterministic BFS and per-query reference parity remain authoritative."
+        )
+    elif active_backend in {"igraph", "graph-tool", "snap"}:
+        interpretation = (
+            f"AE-32B graph queries use the native {active_backend} directed multigraph "
+            "projection. AE-32 deterministic BFS controls ordering, bounds and evidence "
+            "construction; each accepted query is compared with the pure-Python reference traversal."
+        )
     elif active_backend == "python_reference_traversal":
         interpretation = (
             "AE-32B graph queries use the canonical SemanticGraph and the pure-Python "
@@ -127,6 +140,8 @@ def build_runtime_architecture_report(
             "backend_projection_type": runtime.get("backend_projection_type"),
             "backend_projection_fingerprint": runtime.get("backend_projection_fingerprint"),
             "backend_parity_mode": runtime.get("backend_parity_mode"),
+            "backend_semantic_query_preservation": runtime.get("backend_semantic_query_preservation"),
+            "backend_loss_assessment": runtime.get("backend_loss_assessment"),
             "backend_execution": dict(backend_execution),
             "backend_pipeline": runtime.get("backend_pipeline"),
             "backend_pipeline_provenance": runtime.get("backend_pipeline_provenance", []),

@@ -70,3 +70,26 @@ class SNAPAdapter(NativeAdapterMixin, SemanticGraphAdapter):
         result["transformed"].append("attributes_encoded_as_canonical_json")
         result["scope"] = "JSON-compatible attribute dictionaries only"
         return result
+
+
+    def iter_native_nodes(self):
+        for node in self.graph.Nodes():
+            node_id = node.GetId()
+            yield {
+                "id": self.graph.GetStrAttrDatN(node_id, "semantic_id"),
+                "type": self.graph.GetStrAttrDatN(node_id, "entity_type"),
+                "attributes": json.loads(self.graph.GetStrAttrDatN(node_id, "attributes_json")),
+                "metadata": json.loads(self.graph.GetStrAttrDatN(node_id, "metadata_json")),
+            }
+
+    def iter_native_edges(self):
+        for edge in self.graph.Edges():
+            edge_id = edge.GetId()
+            yield {
+                "occurrence": int(self.graph.GetIntAttrDatE(edge_id, "semantic_occurrence")),
+                "source": self.graph.GetStrAttrDatN(edge.GetSrcNId(), "semantic_id"),
+                "target": self.graph.GetStrAttrDatN(edge.GetDstNId(), "semantic_id"),
+                "relation": self.graph.GetStrAttrDatE(edge_id, "relation"),
+                "attributes": json.loads(self.graph.GetStrAttrDatE(edge_id, "attributes_json")),
+                "metadata": json.loads(self.graph.GetStrAttrDatE(edge_id, "metadata_json")),
+            }

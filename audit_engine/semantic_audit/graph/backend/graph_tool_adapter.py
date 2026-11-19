@@ -59,3 +59,27 @@ class GraphToolAdapter(NativeAdapterMixin, SemanticGraphAdapter):
         report = super().loss_report()
         report["scope"] = "in_memory_only; Python-object property maps are not portable graph-tool files"
         return report
+
+
+    def iter_native_nodes(self):
+        props = self.graph.vertex_properties
+        for vertex in self.graph.vertices():
+            yield {
+                "id": props["semantic_id"][vertex],
+                "type": props["entity_type"][vertex],
+                "attributes": props["attributes"][vertex],
+                "metadata": props["metadata"][vertex],
+            }
+
+    def iter_native_edges(self):
+        vp = self.graph.vertex_properties
+        ep = self.graph.edge_properties
+        for edge in self.graph.edges():
+            yield {
+                "occurrence": int(ep["semantic_occurrence"][edge]),
+                "source": vp["semantic_id"][edge.source()],
+                "target": vp["semantic_id"][edge.target()],
+                "relation": ep["relation"][edge],
+                "attributes": ep["attributes"][edge],
+                "metadata": ep["metadata"][edge],
+            }

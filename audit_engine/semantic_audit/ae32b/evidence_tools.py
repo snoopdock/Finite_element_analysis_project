@@ -755,10 +755,11 @@ class RepositoryEvidenceTools:
         graph_backend: str = "networkx",
     ) -> None:
         self.root = _validate_root(repo_root)
-        if graph_backend not in {"networkx", "reference"}:
+        if graph_backend not in {"networkx", "scipy", "igraph", "graph-tool", "snap", "reference"}:
             raise EvidenceToolError(
                 "unsupported_graph_backend",
-                "graph_backend must be selected by trusted configuration as networkx or reference",
+                "graph_backend must be selected by trusted configuration as a registered "
+                "backend (networkx, scipy, igraph, graph-tool, snap) or reference",
             )
         self.graph_backend = graph_backend
         self.source_revision = _validate_revision(source_revision, "source_revision")
@@ -1508,9 +1509,9 @@ class RepositoryEvidenceTools:
         runtime.update({
             "canonical_model": "SemanticGraph",
             "query_service": "SemanticGraphAnalysisService",
-            "backend_pipeline_wired_into_ae32b_query_path": self.graph_backend == "networkx",
+            "backend_pipeline_wired_into_ae32b_query_path": self.graph_backend != "reference",
             "external_backend_adapters_active": (
-                ["networkx"] if self.graph_backend == "networkx" else []
+                [self.graph_backend] if self.graph_backend != "reference" else []
             ),
             "repository_code_executed": False,
             "network_calls_performed": False,

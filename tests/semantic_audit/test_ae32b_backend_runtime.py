@@ -72,3 +72,24 @@ def test_reference_backend_is_explicit_and_not_llm_selectable(tmp_path):
 def test_unsupported_backend_configuration_fails_closed(tmp_path):
     with pytest.raises(EvidenceToolError, match="trusted configuration"):
         RepositoryEvidenceTools(_repository(tmp_path), graph_backend="arbitrary-model-choice")
+
+
+def test_ae32b_scipy_backend_is_selected_by_trusted_configuration_and_observed(tmp_path):
+    server = RepositoryEvidenceTools(_repository(tmp_path), graph_backend="scipy")
+    before = server.graph_runtime_report()
+    assert before["active_computation_backend"] == "scipy"
+    assert before["backend_pipeline"]["backend"] == "scipy"
+    assert before["external_backend_adapters_active"] == ["scipy"]
+    response = server.invoke("graph_neighbors", {
+        "node": "module:src.pkg.a",
+        "direction": "outgoing",
+        "relation_types": ["IMPORTS"],
+        "max_depth": 1,
+    })
+    assert response["status"] == "ok"
+    assert "module:src.pkg.b" in response["result"]["discovered_entities"]
+    after = server.graph_runtime_report()
+    assert after["backend_execution"]["queries_attempted"] == 1
+    assert after["backend_execution"]["parity_verified_queries"] == 1
+    assert after["backend_execution"]["parity_failures"] == 0
+    assert after["backend_pipeline"]["lossless"] is False

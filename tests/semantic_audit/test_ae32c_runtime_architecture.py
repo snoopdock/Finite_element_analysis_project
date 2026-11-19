@@ -49,3 +49,29 @@ def test_runtime_report_distinguishes_available_graph_libraries_from_active_back
     assert report["llm_driver"]["credential_value_in_report"] is False
     assert report["deterministic_action_boundary"]["model_can_modify_repository_files"] is False
     assert report["deterministic_action_boundary"]["registered_verification_orchestration_invoked_by_ae32c"] is False
+
+
+def test_runtime_architecture_reports_selected_optional_backend_as_active():
+    from audit_engine.semantic_audit.ae32c.runtime_architecture import build_runtime_architecture_report
+
+    report = build_runtime_architecture_report(
+        audit_report={"audit": {"status": "complete"}},
+        repository_summary={"graph_node_count": 3, "graph_edge_count": 2},
+        graph_runtime={
+            "active_computation_backend": "igraph",
+            "active_traversal_algorithm": "deterministic_breadth_first_search",
+            "backend_library": "igraph",
+            "backend_library_version": "0.test",
+            "backend_projection_type": "igraph.Graph",
+            "backend_parity_mode": "strict_per_query_reference_comparison",
+            "external_backend_adapters_active": ["igraph"],
+            "backend_pipeline_wired_into_ae32b_query_path": True,
+            "backend_execution": {"parity_verified_queries": 1},
+        },
+        available_tool_names=["graph_neighbors"],
+    )
+    adapters = report["graph_engine"]["external_backend_adapters"]
+    assert adapters["igraph"]["active_in_ae32b_query_path"] is True
+    assert adapters["networkx"]["active_in_ae32b_query_path"] is False
+    assert report["graph_engine"]["active_computation_backend"] == "igraph"
+    assert report["graph_engine"]["backend_pipeline_wired_into_ae32b_query_path"] is True

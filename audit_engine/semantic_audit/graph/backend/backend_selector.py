@@ -15,8 +15,15 @@ class BackendSelectionPolicy:
                 results.append(backend)
         return results
 
-    def select(self, requirements):
+    def select(self, requirements, *, preferred_backend=None):
         candidates = self.find_backends(requirements)
+        if preferred_backend is not None:
+            if preferred_backend not in candidates:
+                raise ValueError(
+                    f"Requested backend {preferred_backend!r} is unavailable or "
+                    "does not satisfy the declared capabilities"
+                )
+            return preferred_backend
         if not candidates:
             raise ValueError("No available backend satisfies requirements")
         return candidates[0]

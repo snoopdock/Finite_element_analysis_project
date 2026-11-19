@@ -727,3 +727,87 @@ def test_graph_required_finalization_context_includes_graph_coverage(tmp_path):
     assert payload["graph_interaction_coverage"]["enabled"] is True
     assert payload["graph_investigation_contract"]["enabled"] is True
     assert payload["graph_investigation_contract"]["required_graph_target"] == "symbol:target"
+
+
+def test_graph_pilot_preflight_uses_trusted_selected_backend(tmp_path, monkeypatch, capsys):
+    import audit_engine.semantic_audit.ae32c.graph_pilot as pilot
+
+    repo = tmp_path / "repo"
+    (repo / "pkg").mkdir(parents=True)
+    (repo / "pkg" / "main.py").write_text("def main():\\n    return 1\\n", encoding="utf-8")
+    profile_path = tmp_path / "profiles.json"
+    profile_path.write_text(json.dumps({
+        "schema_version": "ae32c/graph-pilot-profiles/v1",
+        "profiles": {
+            "smoke": {
+                "description": "small backend preflight",
+                "graph_min_cross_module_reads": 1,
+                "graph_query_depth": 2,
+                "graph_query_max_results": 10,
+                "graph_relation_types": ["CALLS"],
+                "graph_target": "symbol:pkg.main::main",
+                "include_files": ["pkg/main.py"],
+                "source_directories": ["pkg"],
+                "max_bytes": 100000,
+                "max_files": 10,
+                "problem_statement": "Verify selected graph backend preflight.",
+            }
+        },
+    }), encoding="utf-8")
+    original_load_profile = pilot._load_profile
+    monkeypatch.setattr(pilot, "_load_profile", lambda name: original_load_profile(name, profile_path))
+    captured = {}
+
+    class _ConfiguredEvidenceTools:
+        manifest_sha256 = "test-manifest"
+        graph_fingerprint = "test-graph-fingerprint"
+
+        def __init__(self, repo_root, *, source_revision=None, runner_revision=None, graph_backend="networkx"):
+            captured["graph_backend"] = graph_backend
+
+        def invoke(self, tool, arguments):
+            if tool == "repository_summary":
+                return {
+                    "status": "ok",
+                    "result": {
+                        "audit_status": "complete",
+                        "indexed_file_count": 1,
+                        "graph_node_count": 2,
+                        "graph_edge_count": 1,
+                        "graph_relation_counts": {"CALLS": 1},
+                        "read_only": True,
+                        "repository_code_executed": False,
+                        "network_calls_performed": False,
+                        "source_files_modified": False,
+                    },
+                }
+            return {
+                "status": "ok",
+                "result": {
+                    "coverage_status": "complete_for_query",
+                    "truncated": False,
+                    "observed_relation_types": ["CALLS"],
+                    "source_paths": ["pkg/main.py"],
+                    "metadata": {
+                        "computation_backend": captured["graph_backend"],
+                        "backend_parity_status": "verified_against_reference_per_query",
+                    },
+                },
+            }
+
+    monkeypatch.setattr(pilot, "RepositoryEvidenceTools", _ConfiguredEvidenceTools)
+    output = tmp_path / "outside-output"
+    exit_code = pilot.main([
+        "--preflight-only",
+        "--repo-root", str(repo),
+        "--output-dir", str(output),
+        "--profile", "smoke",
+        "--graph-backend", "scipy",
+    ])
+    assert exit_code == 0
+    record = json.loads((output / "preflight.json").read_text(encoding="utf-8"))
+    assert captured["graph_backend"] == "scipy"
+    assert record["graph_backend"] == "scipy"
+    assert record["graph_query"]["result"]["metadata"]["computation_backend"] == "scipy"
+    assert record["provider_calls_made"] is False
+    assert record["repository_code_executed"] is False

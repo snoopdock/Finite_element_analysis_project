@@ -33,6 +33,7 @@ _PACKAGE_ROOT = Path(__file__).resolve().parents[3]
 _DEFAULT_GRAPH_PROFILES = _PACKAGE_ROOT / "evaluation" / "ae32c" / "graph_pilot_profiles.json"
 _DEFAULT_PROVIDER_PROFILES = _PACKAGE_ROOT / "evaluation" / "ae32c" / "provider_model_profiles.json"
 _MODEL_RE = re.compile(r"[A-Za-z0-9@._:/-]{1,200}")
+_SUPPORTED_GRAPH_BACKENDS = ("networkx", "scipy", "igraph", "graph-tool", "snap", "reference")
 
 
 class GraphPilotError(RuntimeError):
@@ -509,6 +510,7 @@ def run_graph_pilot(
     profile_name: str = "ae32c_core",
     provider_name: str = "cloudflare",
     model_name: str = "",
+    graph_backend: str = "networkx",
     source_revision: str | None = None,
     runner_revision: str | None = None,
     condition_order: str = "control-first",
@@ -522,6 +524,8 @@ def run_graph_pilot(
         raise GraphPilotError("live_provider_calls_require_explicit_confirmation")
     if provider_name not in SUPPORTED_PROVIDERS:
         raise GraphPilotError("unsupported_provider:" + provider_name)
+    if graph_backend not in _SUPPORTED_GRAPH_BACKENDS:
+        raise GraphPilotError("unsupported_graph_backend:" + str(graph_backend))
     if model_name and _MODEL_RE.fullmatch(model_name) is None:
         raise GraphPilotError("invalid_model_name")
     if condition_order not in {"control-first", "graph-first"}:
@@ -558,6 +562,7 @@ def run_graph_pilot(
             scope_root,
             source_revision=source_revision,
             runner_revision=runner_revision,
+            graph_backend=graph_backend,
         )
         preflight = _graph_preflight(
             evidence_tools,
@@ -868,6 +873,7 @@ def run_graph_pilot(
             "source_revision": source_revision,
             "runner_revision": runner_revision,
             "profile": profile_name,
+            "graph_backend": graph_backend,
             "graph_target": target,
             "graph_relation_types": list(relation_types),
             "condition_order": order,
@@ -951,6 +957,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--provider", choices=SUPPORTED_PROVIDERS,
                         default=os.environ.get("FEA_LLM_PROVIDER", "cloudflare"))
     parser.add_argument("--model", default=os.environ.get("FEA_LLM_MODEL", ""))
+    parser.add_argument(
+        "--graph-backend",
+        choices=_SUPPORTED_GRAPH_BACKENDS,
+        default=os.environ.get("AE32C_GRAPH_BACKEND", "networkx"),
+        help="Trusted graph backend for the AE-32B query path; never selected by the LLM.",
+    )
     parser.add_argument("--source-revision", default=os.environ.get("AE32C_SOURCE_REVISION", ""))
     parser.add_argument("--runner-revision", default=os.environ.get("AE32C_RUNNER_REVISION", ""))
     parser.add_argument("--condition-order", choices=("control-first", "graph-first"), default="control-first")
@@ -995,6 +1007,7 @@ def main(argv: list[str] | None = None) -> int:
                     scope_root,
                     source_revision=args.source_revision or None,
                     runner_revision=args.runner_revision or None,
+                    graph_backend=args.graph_backend,
                 )
                 preflight = _graph_preflight(
                     evidence_tools,
@@ -1006,6 +1019,7 @@ def main(argv: list[str] | None = None) -> int:
                 record = {
                     **preflight,
                     "profile": args.profile,
+                    "graph_backend": args.graph_backend,
                     "scope_manifest": manifest,
                     "source_manifest_sha256": evidence_tools.manifest_sha256,
                     "graph_fingerprint": evidence_tools.graph_fingerprint,
@@ -1017,6 +1031,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(json.dumps({
                     "preflight_passed": True,
                     "profile": args.profile,
+                    "graph_backend": args.graph_backend,
                     "scope_file_count": manifest["file_count"],
                     "scope_total_bytes": manifest["total_bytes"],
                     "graph_fingerprint": evidence_tools.graph_fingerprint,
@@ -1031,6 +1046,7 @@ def main(argv: list[str] | None = None) -> int:
             profile_name=args.profile,
             provider_name=args.provider,
             model_name=args.model,
+            graph_backend=args.graph_backend,
             source_revision=args.source_revision or None,
             runner_revision=args.runner_revision or None,
             condition_order=args.condition_order,

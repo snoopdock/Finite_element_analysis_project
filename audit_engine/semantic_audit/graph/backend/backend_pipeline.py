@@ -11,8 +11,8 @@ class BackendPipeline:
         self.selector = selector
         self.factory = factory
 
-    def execute(self, requirements, context):
-        backend_name = self.selector.select(requirements)
+    def execute(self, requirements, context, *, preferred_backend=None):
+        backend_name = self.selector.select(requirements, preferred_backend=preferred_backend)
         adapter = self.factory.create(backend_name, context)
         loss = adapter.loss_report()
         return BackendExecutionResult(

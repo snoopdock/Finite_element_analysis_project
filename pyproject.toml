@@ -16,6 +16,13 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
 ]
+graph-core = [
+    "networkx>=3.2,<4.0",
+    "scipy>=1.11,<2.0",
+]
+graph-igraph = [
+    "igraph>=0.11,<1.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

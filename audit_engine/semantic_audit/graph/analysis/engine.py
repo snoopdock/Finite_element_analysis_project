@@ -33,6 +33,13 @@ def _create_traversal_engine(
             NetworkXGraphTraversalEngine,
         )
         return NetworkXGraphTraversalEngine(graph, verify_parity=verify_backend_parity)
+    if backend in {"scipy", "igraph", "graph-tool", "snap"}:
+        from audit_engine.semantic_audit.graph.backend.adapter_traversal import (
+            NativeAdapterGraphTraversalEngine,
+        )
+        return NativeAdapterGraphTraversalEngine(
+            graph, backend, verify_parity=verify_backend_parity,
+        )
     raise ValueError(f"Unsupported semantic graph traversal backend: {backend!r}")
 
 

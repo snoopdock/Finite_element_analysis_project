@@ -24,18 +24,23 @@ def create_default_registry():
     registry = BackendCapabilityRegistry()
     registry.register("networkx", "NetworkXAdapter", {
         "lossless": True, "metadata": True, "multiedges": True,
-        "directed": True, "available": backend_available("networkx"),
+        "directed": True, "semantic_traversal": True,
+        "available": backend_available("networkx"),
     })
     registry.register("scipy", "SciPyAdapter", {
+        # CSR is a hybrid backend: the matrix indexes connectivity while
+        # exact typed edge occurrences and metadata are preserved separately.
         "lossless": False, "sparse_matrix": True, "metadata": False,
         "relation_side_channel": True, "directed": True, "multiedges": False,
+        "semantic_traversal": True, "side_channel_preservation": True,
         "available": backend_available("scipy"),
     })
     for name, klass in (("igraph", "IGraphAdapter"),
                         ("graph-tool", "GraphToolAdapter"), ("snap", "SNAPAdapter")):
         registry.register(name, klass, {
             "lossless": True, "metadata": True, "multiedges": True,
-            "directed": True, "available": backend_available(name),
+            "directed": True, "semantic_traversal": True,
+            "available": backend_available(name),
             "optional": True,
             "json_attributes_only": name == "snap",
         })
