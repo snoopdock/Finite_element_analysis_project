@@ -1,0 +1,70 @@
+{
+  "schema_version": "ae32c/graph-backend-conformance-matrix/v1",
+  "release": "E.8.5",
+  "project_python": ">=3.11",
+  "acceptance_rule": "A backend is native-verified only when the real native library executes all conformance cases and its JSON report has status=passed.",
+  "backends": [
+    {
+      "name": "networkx",
+      "module": "networkx",
+      "distribution": "networkx",
+      "native_projection": "networkx.MultiDiGraph",
+      "install_route": "pip extra graph-core",
+      "ci_environment": "ubuntu-latest / CPython 3.11",
+      "acceptance_class": "required_native"
+    },
+    {
+      "name": "scipy",
+      "module": "scipy",
+      "distribution": "scipy",
+      "native_projection": "scipy.sparse.csr_matrix plus exact semantic side channels",
+      "install_route": "pip extra graph-core",
+      "ci_environment": "ubuntu-latest / CPython 3.11",
+      "acceptance_class": "required_native"
+    },
+    {
+      "name": "igraph",
+      "module": "igraph",
+      "distribution": "igraph",
+      "native_projection": "igraph.Graph(directed=True)",
+      "install_route": "pip extra graph-igraph",
+      "ci_environment": "ubuntu-latest / CPython 3.11",
+      "acceptance_class": "required_native"
+    },
+    {
+      "name": "graph-tool",
+      "module": "graph_tool",
+      "distribution": "graph-tool-base",
+      "native_projection": "graph_tool.Graph(directed=True) with property maps",
+      "install_route": "conda-forge graph-tool-base",
+      "ci_environment": "ubuntu-latest / CPython 3.11",
+      "acceptance_class": "required_native"
+    },
+    {
+      "name": "snap",
+      "module": "snap",
+      "distribution": "snap-stanford",
+      "native_projection": "snap.TNEANet",
+      "install_route": "published pip distribution probe; source build requires separate review",
+      "ci_environment": "ubuntu-latest / CPython 3.11",
+      "acceptance_class": "conditional_native_compatibility_block",
+      "known_constraint": "The official published installation matrix lists Python 3.5 through 3.9; project runtime is Python >=3.11. No Python 3.11 native pass may be inferred from an older interpreter."
+    }
+  ],
+  "cases": [
+    "outgoing_all",
+    "incoming_all",
+    "bidirectional_all",
+    "relation_filter",
+    "depth_bound",
+    "visited_node_bound",
+    "step_bound"
+  ],
+  "repeat_count_per_case": 2,
+  "required_parity_checks": 14,
+  "fixture_nodes": 5,
+  "fixture_edge_occurrences": 8,
+  "fixture_parallel_edge_occurrences": 3,
+  "fixture_self_loop_occurrences": 1,
+  "rdf_interchange_in_scope": false
+}

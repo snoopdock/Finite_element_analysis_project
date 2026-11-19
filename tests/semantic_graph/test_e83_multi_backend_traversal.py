@@ -20,6 +20,7 @@ from audit_engine.semantic_audit.graph.backend.adapter_traversal import (
 from audit_engine.semantic_audit.graph.backend.optional_backend_support import BackendUnavailableError
 from audit_engine.semantic_audit.graph.queries import GraphQuery, QueryType
 from audit_engine.semantic_audit.graph.service import SemanticGraphAnalysisService
+from tools.gb03_native_backend_conformance import run as run_e85_conformance
 
 
 def graph_fixture():
@@ -336,3 +337,17 @@ def test_real_optional_native_backend_query_when_installed(backend, module_name)
     assert result.discovered_entities == ("B", "C")
     assert runtime["active_computation_backend"] == backend
     assert runtime["backend_execution"]["parity_verified_queries"] == 1
+
+
+@pytest.mark.parametrize("backend", ["igraph", "graph-tool", "snap"])
+def test_e85_conformance_runner_contract_with_adapter_test_double(monkeypatch, backend):
+    """Exercise the E.8.5 runner contract; this is not native-library acceptance."""
+    install_fake(monkeypatch, backend)
+    report = run_e85_conformance(backend)
+    assert report["status"] == "passed"
+    assert report["backend"] == backend
+    assert report["projection_round_trip"]["exact"] is True
+    assert report["projection_round_trip"]["edge_occurrence_count"] == 8
+    assert report["case_count"] == 7
+    assert report["backend_execution"]["parity_verified_queries"] == 14
+    assert report["backend_execution"]["parity_failures"] == 0
