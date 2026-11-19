@@ -1,0 +1,151 @@
+name: AE-32C E.8.5 Native Graph Backend Conformance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e85-native-graph-backend-conformance-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pip-native-backends:
+    name: Native conformance — ${{ matrix.backend }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [networkx, scipy, igraph]
+    steps:
+      - name: Checkout selected Stage1 commit
+        uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and native graph dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,graph-core,graph-igraph]"
+      - name: Run native projection and traversal conformance
+        run: |
+          python tools/gb03_native_backend_conformance.py \
+            --backend "${{ matrix.backend }}" \
+            --output "e85-${{ matrix.backend }}.json"
+      - name: Upload conformance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e85-${{ matrix.backend }}-conformance
+          path: e85-${{ matrix.backend }}.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  graph-tool-native:
+    name: Native conformance — graph-tool
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout selected Stage1 commit
+        uses: actions/checkout@v4
+      - name: Provision graph-tool Python 3.11 environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: .github/environments/e85-graph-tool.yml
+          environment-name: ae32-e85-graph-tool
+          cache-environment: true
+          init-shell: bash
+      - name: Install project
+        shell: micromamba-shell {0}
+        run: python -m pip install -e .
+      - name: Run native graph-tool conformance
+        shell: micromamba-shell {0}
+        run: |
+          python tools/gb03_native_backend_conformance.py \
+            --backend graph-tool \
+            --output e85-graph-tool.json
+      - name: Upload conformance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e85-graph-tool-conformance
+          path: e85-graph-tool.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  snap-compatibility-probe:
+    name: SNAP Python 3.11 compatibility probe
+    outputs:
+      native_status: ${{ steps.snap.outputs.status }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout selected Stage1 commit
+        uses: actions/checkout@v4
+      - name: Set up project Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project
+        run: python -m pip install -e ".[graph-core]"
+      - name: Probe published SNAP distribution and run native test if installable
+        id: snap
+        shell: bash
+        run: |
+          mkdir -p e85-snap-evidence
+          if python -m pip install snap-stanford; then
+            python tools/gb03_native_backend_conformance.py \
+              --backend snap \
+              --output e85-snap-evidence/e85-snap.json
+            echo "status=native_verified" >> "$GITHUB_OUTPUT"
+          else
+            python tools/gb03_native_backend_conformance.py \
+              --backend snap --probe-only \
+              --output e85-snap-evidence/e85-snap.json
+            echo "status=not_installable_on_project_python" >> "$GITHUB_OUTPUT"
+            {
+              echo "### SNAP native acceptance"
+              echo "SNAP was not installable in the project's Python 3.11 environment."
+              echo "This is a compatibility block, not a passing native test."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload SNAP compatibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e85-snap-compatibility-probe
+          path: e85-snap-evidence/e85-snap.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  conformance-summary:
+    name: E.8.5 conformance summary
+    if: always()
+    needs: [pip-native-backends, graph-tool-native, snap-compatibility-probe]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish acceptance summary
+        env:
+          PIP_BACKENDS: ${{ needs.pip-native-backends.result }}
+          GRAPH_TOOL: ${{ needs.graph-tool-native.result }}
+          SNAP_JOB: ${{ needs.snap-compatibility-probe.result }}
+          SNAP_NATIVE: ${{ needs.snap-compatibility-probe.outputs.native_status }}
+        run: |
+          {
+            echo "## E.8.5 native graph backend conformance"
+            echo "- NetworkX / SciPy / igraph matrix: ${PIP_BACKENDS}"
+            echo "- graph-tool native job: ${GRAPH_TOOL}"
+            echo "- SNAP compatibility probe job: ${SNAP_JOB}"
+            echo "- SNAP native status: ${SNAP_NATIVE}"
+            echo ""
+            echo "SNAP is accepted only when its JSON report says status=passed. A probe-only or unavailable result is not native conformance."
+            if [[ "${SNAP_NATIVE}" != "native_verified" ]]; then echo "SNAP remains compatibility-blocked; E.8.5 is not five-backend native acceptance."; fi
+            echo "E.8.5 must not be described as five-backend native acceptance unless all five reports show status=passed."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$PIP_BACKENDS" != "success" || "$GRAPH_TOOL" != "success" || "$SNAP_JOB" != "success" ]]; then
+            exit 1
+          fi
