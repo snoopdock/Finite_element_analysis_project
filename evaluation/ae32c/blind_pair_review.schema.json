@@ -1,0 +1,223 @@
+{
+  "$id": "urn:ae32c:blind-pair-review:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "blindness_attestation": {
+      "additionalProperties": false,
+      "properties": {
+        "has_not_seen_condition_mapping": {
+          "const": true
+        },
+        "has_not_seen_other_reviewer_labels": {
+          "const": true
+        },
+        "has_not_seen_provider_or_model_identity": {
+          "const": true
+        }
+      },
+      "required": [
+        "has_not_seen_other_reviewer_labels",
+        "has_not_seen_provider_or_model_identity",
+        "has_not_seen_condition_mapping"
+      ],
+      "type": "object"
+    },
+    "cases": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "actionability": {
+            "enum": [
+              "actionable",
+              "not_actionable",
+              "partially_actionable"
+            ]
+          },
+          "case_alias": {
+            "enum": [
+              "A",
+              "B"
+            ]
+          },
+          "causal_explanation": {
+            "enum": [
+              "contradicted",
+              "partially_supported",
+              "supported",
+              "unsupported",
+              "unverified"
+            ]
+          },
+          "claim_level_support": {
+            "enum": [
+              "counterevidence_present",
+              "directly_supported",
+              "indirectly_supported",
+              "not_assessed",
+              "unsupported"
+            ]
+          },
+          "claim_reviews": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "claim_id": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "counterevidence_ids": {
+                  "items": {
+                    "pattern": "^E[0-9]{4,6}$",
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "outcome": {
+                  "enum": [
+                    "contradicted",
+                    "entailed",
+                    "partially_supported",
+                    "unverified"
+                  ]
+                },
+                "rationale": {
+                  "maxLength": 4000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "supporting_evidence_ids": {
+                  "items": {
+                    "pattern": "^E[0-9]{4,6}$",
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "verification_level": {
+                  "enum": [
+                    "textual_witness",
+                    "static_review",
+                    "test_reproduction",
+                    "independent_expert_review",
+                    "unverified"
+                  ]
+                }
+              },
+              "required": [
+                "claim_id",
+                "outcome",
+                "verification_level",
+                "supporting_evidence_ids",
+                "counterevidence_ids",
+                "rationale"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "evidence_integrity": {
+            "enum": [
+              "incomplete",
+              "invalid",
+              "not_assessed",
+              "valid"
+            ]
+          },
+          "localization": {
+            "enum": [
+              "exact",
+              "incorrect",
+              "not_applicable",
+              "partial",
+              "unsupported"
+            ]
+          },
+          "overall_outcome": {
+            "enum": [
+              "correct_abstention",
+              "correct_detection",
+              "correct_no_defect",
+              "false_positive",
+              "incorrect_abstention",
+              "missed_defect",
+              "not_scorable"
+            ]
+          },
+          "rationale": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "uncertainty": {
+            "enum": [
+              "appropriate",
+              "appropriate_abstention",
+              "overconfident",
+              "unnecessary_abstention"
+            ]
+          }
+        },
+        "required": [
+          "case_alias",
+          "overall_outcome",
+          "localization",
+          "causal_explanation",
+          "claim_level_support",
+          "evidence_integrity",
+          "uncertainty",
+          "actionability",
+          "claim_reviews",
+          "rationale"
+        ],
+        "type": "object"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "type": "array"
+    },
+    "pair_id": {
+      "pattern": "^blind-pair-[0-9a-f]{16}$",
+      "type": "string"
+    },
+    "pair_preference": {
+      "enum": [
+        "A_better",
+        "B_better",
+        "both_unacceptable",
+        "tie",
+        "unable_to_judge"
+      ]
+    },
+    "pair_rationale": {
+      "maxLength": 5000,
+      "minLength": 1,
+      "type": "string"
+    },
+    "reviewed_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "reviewer_id": {
+      "maxLength": 120,
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "ae32c/blind-pair-review/v1"
+    }
+  },
+  "required": [
+    "schema_version",
+    "pair_id",
+    "reviewer_id",
+    "reviewed_at",
+    "cases",
+    "pair_preference",
+    "pair_rationale",
+    "blindness_attestation"
+  ],
+  "title": "AE-32C blinded paired diagnosis review",
+  "type": "object"
+}
