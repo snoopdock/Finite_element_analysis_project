@@ -2011,3 +2011,45 @@ def test_graph_interaction_contract_is_not_satisfied_by_source_reads_alone():
     report = investigator.run("Investigate the controlled provider interface issue")
     assert report["graph_interaction_coverage"]["status"] == "incomplete"
     assert report["status"] != "completed"
+
+
+def test_final_report_includes_claim_evidence_assessment_and_publishes_review_template(tmp_path: Path):
+    investigator, _, _ = make_investigator([
+        action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    report = investigator.run("Inspect the source-level interface evidence.")
+    assessment = report["claim_evidence_assessment"]
+    assert assessment["status"] == "available"
+    assert assessment["semantic_support_assessment"] == "not_performed"
+    assert assessment["human_review_required"] is True
+    assert assessment["items"][0]["claim_type"] == "causal_hypothesis"
+    assert assessment["items"][1]["verification_level"] == "textual_witness"
+    assert assessment["items"][1]["support_outcome"] == "unverified"
+
+    repository = tmp_path / "repo"
+    output = tmp_path / "reports"
+    repository.mkdir()
+    output.mkdir()
+    result = write_report_artifacts(report, output, repository)
+    assert len(result["artifacts"]) == 3
+    template_artifacts = [item for item in result["artifacts"] if item["path"].endswith(".adjudication-template.json")]
+    assert len(template_artifacts) == 1
+    template = json.loads(Path(template_artifacts[0]["path"]).read_text(encoding="utf-8"))
+    assert template["investigation_id"] == report["investigation_id"]
+    assert len(template["items"]) == len(assessment["items"])
+
+
+def test_runtime_claim_kind_is_accepted_but_never_promoted_by_static_evidence():
+    final = json.loads(final_action(evidence_id="E0002", source_reference=True))
+    final["diagnosis"]["claims"][0]["kind"] = "runtime_claim"
+    investigator, _, _ = make_investigator([
+        action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
+        json.dumps(final),
+    ])
+    report = investigator.run("Check whether the runtime claim is evidenced.")
+    assert report["diagnosis"] is not None
+    claim = report["claim_evidence_assessment"]["items"][1]
+    assert claim["claim_type"] == "runtime_claim"
+    assert claim["support_outcome"] == "unverified"
+    assert claim["verification_level"] == "textual_witness"

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ae32c:claim-adjudication:v1",
+  "title": "AE-32C Independent Claim Adjudication Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "investigation_id", "reviewer_id", "reviewed_at", "items"],
+  "properties": {
+    "schema_version": {"const": "ae32c/claim-adjudication/v1"},
+    "investigation_id": {"type": "string", "minLength": 1, "maxLength": 120},
+    "reviewer_id": {"type": "string", "minLength": 1, "maxLength": 120},
+    "reviewed_at": {"type": "string", "format": "date-time"},
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 21,
+      "items": {"$ref": "#/$defs/reviewItem"}
+    }
+  },
+  "$defs": {
+    "evidenceId": {"type": "string", "pattern": "^E[0-9]{4,6}$"},
+    "reviewItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim_id", "role", "claim_type", "statement", "outcome", "rationale",
+        "supporting_evidence_ids", "counterevidence_ids", "unresolved_assumptions", "verification_level"
+      ],
+      "properties": {
+        "claim_id": {"type": "string", "pattern": "^(ROOT|CLM)-[0-9a-f]{12}(-[0-9]+)?$"},
+        "role": {"enum": ["root_cause", "claim"]},
+        "claim_type": {"enum": ["observation", "static_inference", "runtime_claim", "causal_hypothesis", "recommendation"]},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "outcome": {"enum": ["entailed", "partially_supported", "contradicted", "unverified"]},
+        "rationale": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "supporting_evidence_ids": {"type": "array", "maxItems": 100, "uniqueItems": true, "items": {"$ref": "#/$defs/evidenceId"}},
+        "counterevidence_ids": {"type": "array", "maxItems": 100, "uniqueItems": true, "items": {"$ref": "#/$defs/evidenceId"}},
+        "unresolved_assumptions": {"type": "array", "maxItems": 50, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
+        "verification_level": {"enum": ["textual_witness", "static_review", "test_reproduction", "independent_expert_review", "unverified"]}
+      }
+    }
+  }
+}
