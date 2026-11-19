@@ -752,8 +752,15 @@ class RepositoryEvidenceTools:
         *,
         source_revision: str | None = None,
         runner_revision: str | None = None,
+        graph_backend: str = "networkx",
     ) -> None:
         self.root = _validate_root(repo_root)
+        if graph_backend not in {"networkx", "reference"}:
+            raise EvidenceToolError(
+                "unsupported_graph_backend",
+                "graph_backend must be selected by trusted configuration as networkx or reference",
+            )
+        self.graph_backend = graph_backend
         self.source_revision = _validate_revision(source_revision, "source_revision")
         self.runner_revision = _validate_revision(runner_revision, "runner_revision")
         self.report = audit_repository(
@@ -802,6 +809,8 @@ class RepositoryEvidenceTools:
                 projection_contract_version=GRAPH_PROJECTION_VERSION,
                 analysis_contract_version="semantic_graph_analysis_contract/v2",
             ),
+            traversal_backend=self.graph_backend,
+            verify_backend_parity=True,
         )
         self._handlers: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
             "repository_summary": self._repository_summary,
@@ -1492,6 +1501,23 @@ class RepositoryEvidenceTools:
             raise EvidenceToolError("invalid_argument", "relation_types must be a list of at most 12 non-empty strings")
         return sorted(set(item.strip() for item in value))
 
+    def graph_runtime_report(self) -> dict[str, Any]:
+        """Return the actual query backend and its observed execution counters."""
+        engine = self.graph_service.engine.traversal_engine
+        runtime = engine.runtime_report()
+        runtime.update({
+            "canonical_model": "SemanticGraph",
+            "query_service": "SemanticGraphAnalysisService",
+            "backend_pipeline_wired_into_ae32b_query_path": self.graph_backend == "networkx",
+            "external_backend_adapters_active": (
+                ["networkx"] if self.graph_backend == "networkx" else []
+            ),
+            "repository_code_executed": False,
+            "network_calls_performed": False,
+            "source_files_modified": False,
+        })
+        return runtime
+
     def _repository_summary(self, args: dict[str, Any]) -> dict[str, Any]:
         self._check_keys(args, set())
         relations = Counter(edge.relation_type for edge in self.graph.edges)
@@ -1514,14 +1540,7 @@ class RepositoryEvidenceTools:
             "graph_relation_counts": dict(sorted(relations.items())),
             "graph_fingerprint": self.graph_fingerprint,
             "graph_projection_version": GRAPH_PROJECTION_VERSION,
-            "graph_runtime": {
-                "canonical_model": "SemanticGraph",
-                "query_service": "SemanticGraphAnalysisService",
-                "active_traversal_algorithm": "deterministic_breadth_first_search",
-                "active_computation_backend": "python_reference_traversal",
-                "external_backend_adapters_active": [],
-                "repository_code_executed": False,
-            },
+            "graph_runtime": self.graph_runtime_report(),
             "symbol_count": len(self.symbols),
             "call_graph": dict(self.call_graph_stats),
             "workflow_count": self.report.get("audit", {}).get("workflow_count", 0),

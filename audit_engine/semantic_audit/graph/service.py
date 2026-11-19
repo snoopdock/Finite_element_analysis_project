@@ -23,12 +23,16 @@ class SemanticGraphAnalysisService:
         *,
         memory: AuditWorkingMemory | None = None,
         semantic_context: SemanticContext | None = None,
+        traversal_backend: str = "reference",
+        verify_backend_parity: bool = True,
     ) -> None:
         self.memory = memory if memory is not None else AuditWorkingMemory()
         self.engine = GraphAnalysisEngine(
             graph,
             memory=self.memory,
             semantic_context=semantic_context,
+            traversal_backend=traversal_backend,
+            verify_backend_parity=verify_backend_parity,
         )
 
     def analyze(self, query: GraphQuery) -> GraphAnalysisResult:

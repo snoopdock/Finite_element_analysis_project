@@ -20,11 +20,19 @@ class BackendUnavailableError(ImportError):
 
 
 INSTALLATION = {
+    "networkx": "Install the declared `networkx` dependency.",
+    "scipy": "Install the declared `scipy` dependency.",
     "igraph": "Install `python-igraph` (provides Python module `igraph`).",
     "graph-tool": "Install `graph-tool` in a compatible Linux/conda environment (module `graph_tool`).",
     "snap": "Install Stanford Snap.py (`snap-stanford`) for a supported Python/platform (module `snap`).",
 }
-MODULES = {"igraph": "igraph", "graph-tool": "graph_tool", "snap": "snap"}
+MODULES = {
+    "networkx": "networkx",
+    "scipy": "scipy",
+    "igraph": "igraph",
+    "graph-tool": "graph_tool",
+    "snap": "snap",
+}
 
 
 def backend_available(name: str) -> bool:
@@ -46,6 +54,13 @@ def require_backend(name: str) -> Any:
         module = importlib.import_module(MODULES[name])
     except (ImportError, OSError) as exc:
         raise BackendUnavailableError(f"Backend {name!r} is unavailable. {INSTALLATION[name]}") from exc
+    if name == "networkx" and not hasattr(module, "MultiDiGraph"):
+        raise BackendUnavailableError("The installed networkx module does not export MultiDiGraph.")
+    if name == "scipy":
+        try:
+            importlib.import_module("scipy.sparse")
+        except (ImportError, OSError) as exc:
+            raise BackendUnavailableError("The installed scipy module does not expose scipy.sparse.") from exc
     if name == "snap" and not hasattr(module, "TNEANet"):
         raise BackendUnavailableError(
             "The installed module `snap` is not Stanford Snap.py or does not expose "

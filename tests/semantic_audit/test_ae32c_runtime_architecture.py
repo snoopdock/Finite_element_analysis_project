@@ -19,13 +19,32 @@ def test_runtime_report_distinguishes_available_graph_libraries_from_active_back
         model_name="fake-model",
         provider_stats={"usage": {"total_tokens": 42}},
         available_tool_names=["repository_summary", "graph_neighbors", "read_source_file"],
+        graph_runtime={
+            "active_computation_backend": "networkx",
+            "active_traversal_algorithm": "deterministic_breadth_first_search",
+            "backend_library": "networkx",
+            "backend_library_version": "3.6.1",
+            "backend_projection_type": "MultiDiGraph",
+            "backend_parity_mode": "strict_per_query_reference_comparison",
+            "backend_pipeline_wired_into_ae32b_query_path": True,
+            "external_backend_adapters_active": ["networkx"],
+            "backend_execution": {"queries_attempted": 3, "queries_succeeded": 3,
+                                  "queries_failed": 0, "parity_verified_queries": 3,
+                                  "parity_failures": 0},
+        },
     )
     graph = report["graph_engine"]
     assert graph["canonical_semantic_model"] == "SemanticGraph"
-    assert graph["active_computation_backend"] == "python_reference_traversal"
+    assert graph["active_computation_backend"] == "networkx"
     assert graph["active_algorithm"] == "deterministic_breadth_first_search"
-    assert graph["backend_pipeline_wired_into_ae32b_query_path"] is False
-    assert all(item["active_in_ae32b_query_path"] is False for item in graph["external_backend_adapters"].values())
+    assert graph["backend_library"] == "networkx"
+    assert graph["backend_projection_type"] == "MultiDiGraph"
+    assert graph["backend_pipeline_wired_into_ae32b_query_path"] is True
+    assert graph["backend_execution"]["parity_verified_queries"] == 3
+    assert graph["external_backend_adapters"]["networkx"]["active_in_ae32b_query_path"] is True
+    assert all(not graph["external_backend_adapters"][name]["active_in_ae32b_query_path"]
+               for name in ("scipy", "igraph", "graph-tool", "snap"))
+    assert report["schema_version"] == "ae32c/runtime-architecture/v2"
     assert report["llm_driver"]["total_tokens"] == 42
     assert report["llm_driver"]["credential_value_in_report"] is False
     assert report["deterministic_action_boundary"]["model_can_modify_repository_files"] is False

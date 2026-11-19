@@ -828,6 +828,7 @@ def run_graph_pilot(
             model_name=effective_model,
             provider_stats={},
             available_tool_names=treatment_tools,
+            graph_runtime=evidence_tools.graph_runtime_report(),
         )
         _write_json(out / "scope-manifest.json", scope_manifest)
         _write_json(out / "graph-preflight.json", graph_preflight_record)

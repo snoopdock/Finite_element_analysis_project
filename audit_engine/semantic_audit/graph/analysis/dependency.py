@@ -26,9 +26,9 @@ class DependencyAnalyzer:
 
     DEFAULT_RELATION_TYPES = ("IMPORTS", "DEPENDS_ON")
 
-    def __init__(self, graph: SemanticGraph):
+    def __init__(self, graph: SemanticGraph, *, traversal_engine: GraphTraversalEngine | None = None):
         self.graph = graph
-        self.traversal = GraphTraversalEngine(graph)
+        self.traversal = traversal_engine if traversal_engine is not None else GraphTraversalEngine(graph)
 
     def analyze(self, query: GraphQuery) -> GraphAnalysisResult:
         if query.query_type is not QueryType.DEPENDENCY:

@@ -86,6 +86,57 @@ class GraphTraversalEngine:
     def __init__(self, graph: SemanticGraph):
         self.graph = graph
 
+    @property
+    def backend_name(self) -> str:
+        """Stable identifier for the computation path used by this engine."""
+        return "python_reference_traversal"
+
+    def result_metadata(self) -> dict:
+        """Backend facts attached to each semantic analysis result."""
+        return {
+            "computation_backend": self.backend_name,
+            "computation_algorithm": self.ALGORITHM,
+            "backend_parity_status": "reference_implementation",
+        }
+
+    def runtime_report(self) -> dict:
+        """Static backend identity; concrete adapters may add execution counters."""
+        return {
+            "active_computation_backend": self.backend_name,
+            "active_traversal_algorithm": self.ALGORITHM,
+            "backend_library": None,
+            "backend_library_version": None,
+            "backend_projection_type": "canonical_semantic_graph",
+            "backend_parity_mode": "reference",
+            "backend_execution": {
+                "queries_attempted": 0,
+                "queries_succeeded": 0,
+                "queries_failed": 0,
+                "parity_verified_queries": 0,
+                "parity_failures": 0,
+                "total_examined_edges": 0,
+                "total_visited_nodes": 0,
+            },
+        }
+
+    def _build_adjacency(
+        self,
+    ) -> tuple[dict[str, list[SemanticEdge]], dict[str, list[SemanticEdge]]]:
+        """Build the reference adjacency indexes from canonical semantic edges."""
+        outgoing: dict[str, list[SemanticEdge]] = {}
+        incoming: dict[str, list[SemanticEdge]] = {}
+        for edge in self.graph.edges:
+            outgoing.setdefault(edge.source_id, []).append(edge)
+            incoming.setdefault(edge.target_id, []).append(edge)
+        for values in (*outgoing.values(), *incoming.values()):
+            values.sort(
+                key=lambda edge: (
+                    edge.target_id, edge.relation_type, edge.source_id,
+                    edge_fingerprint(edge),
+                )
+            )
+        return outgoing, incoming
+
     def _candidate_edges(
         self,
         node_id: str,
@@ -135,15 +186,10 @@ class GraphTraversalEngine:
         ):
             raise GraphTraversalError("max_steps must be a positive integer or None.")
 
-        # Build adjacency once per walk. The previous implementation scanned the
-        # complete edge list for every visited node, making broad queries O(V*E).
-        outgoing: dict[str, list[SemanticEdge]] = {}
-        incoming: dict[str, list[SemanticEdge]] = {}
-        for edge in self.graph.edges:
-            outgoing.setdefault(edge.source_id, []).append(edge)
-            incoming.setdefault(edge.target_id, []).append(edge)
-        for values in (*outgoing.values(), *incoming.values()):
-            values.sort(key=lambda edge: (edge.target_id, edge.relation_type, edge.source_id, edge_fingerprint(edge)))
+        # Build the adjacency indexes once per walk. Concrete computation
+        # adapters override this method while retaining the canonical result
+        # and evidence contract below.
+        outgoing, incoming = self._build_adjacency()
 
         normalized_relations = None
         if relation_types is not None:

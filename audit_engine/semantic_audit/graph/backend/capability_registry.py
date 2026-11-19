@@ -24,12 +24,12 @@ def create_default_registry():
     registry = BackendCapabilityRegistry()
     registry.register("networkx", "NetworkXAdapter", {
         "lossless": True, "metadata": True, "multiedges": True,
-        "directed": True, "available": True,
+        "directed": True, "available": backend_available("networkx"),
     })
     registry.register("scipy", "SciPyAdapter", {
         "lossless": False, "sparse_matrix": True, "metadata": False,
         "relation_side_channel": True, "directed": True, "multiedges": False,
-        "available": True,
+        "available": backend_available("scipy"),
     })
     for name, klass in (("igraph", "IGraphAdapter"),
                         ("graph-tool", "GraphToolAdapter"), ("snap", "SNAPAdapter")):

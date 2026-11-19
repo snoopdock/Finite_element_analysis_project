@@ -61,7 +61,10 @@ def test_summary_reports_graph_and_provenance_without_claiming_runtime_execution
     assert result["graph_edge_count"] > 0
     assert result["graph_runtime"]["canonical_model"] == "SemanticGraph"
     assert result["graph_runtime"]["active_traversal_algorithm"] == "deterministic_breadth_first_search"
-    assert result["graph_runtime"]["external_backend_adapters_active"] == []
+    assert result["graph_runtime"]["active_computation_backend"] == "networkx"
+    assert result["graph_runtime"]["external_backend_adapters_active"] == ["networkx"]
+    assert result["graph_runtime"]["backend_pipeline_wired_into_ae32b_query_path"] is True
+    assert result["graph_runtime"]["backend_parity_mode"] == "strict_per_query_reference_comparison"
     assert result["repository_code_executed"] is False
     assert result["network_calls_performed"] is False
     assert response["provenance"]["source_manifest_sha256"]
@@ -80,6 +83,8 @@ def test_graph_neighbors_uses_existing_semantic_graph_analysis_service(tmp_path)
     assert result["evidence"]
     assert any(item["predicate"] == "IMPORTS" for item in result["observations"])
     assert result["graph_fingerprint"] == response["provenance"]["graph_fingerprint"]
+    assert result["metadata"]["computation_backend"] == "networkx"
+    assert result["metadata"]["backend_parity_status"] == "verified_against_reference_per_query"
 
 
 def test_graph_path_returns_observed_path_not_semantic_validity_claim(tmp_path):

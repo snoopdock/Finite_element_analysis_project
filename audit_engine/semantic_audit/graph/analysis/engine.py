@@ -15,6 +15,25 @@ from .memory import AuditWorkingMemory
 from .path import PathAnalyzer
 from .results import GraphAnalysisResult
 from .structural import StructuralAnalyzer
+from .traversal import GraphTraversalEngine
+
+
+def _create_traversal_engine(
+    graph: SemanticGraph,
+    backend: str,
+    *,
+    verify_backend_parity: bool,
+) -> GraphTraversalEngine:
+    if backend == "reference":
+        return GraphTraversalEngine(graph)
+    if backend == "networkx":
+        # Lazy import keeps the canonical semantic graph/query layer free of
+        # eager third-party graph-library imports.
+        from audit_engine.semantic_audit.graph.backend.networkx_traversal import (
+            NetworkXGraphTraversalEngine,
+        )
+        return NetworkXGraphTraversalEngine(graph, verify_parity=verify_backend_parity)
+    raise ValueError(f"Unsupported semantic graph traversal backend: {backend!r}")
 
 
 class UnsupportedGraphQueryError(ValueError):
@@ -30,14 +49,22 @@ class GraphAnalysisEngine:
         *,
         memory: AuditWorkingMemory | None = None,
         semantic_context: SemanticContext | None = None,
+        traversal_backend: str = "reference",
+        verify_backend_parity: bool = True,
     ) -> None:
         self.graph = graph
         self.memory = memory if memory is not None else AuditWorkingMemory()
         self.semantic_context = semantic_context or SemanticContext()
+        self.traversal_backend = str(traversal_backend)
+        self.traversal_engine = _create_traversal_engine(
+            graph,
+            self.traversal_backend,
+            verify_backend_parity=verify_backend_parity,
+        )
         self._analyzers = {
-            QueryType.STRUCTURAL: StructuralAnalyzer(graph),
-            QueryType.DEPENDENCY: DependencyAnalyzer(graph),
-            QueryType.PATH: PathAnalyzer(graph),
+            QueryType.STRUCTURAL: StructuralAnalyzer(graph, traversal_engine=self.traversal_engine),
+            QueryType.DEPENDENCY: DependencyAnalyzer(graph, traversal_engine=self.traversal_engine),
+            QueryType.PATH: PathAnalyzer(graph, traversal_engine=self.traversal_engine),
         }
 
     def execute(self, query: GraphQuery) -> GraphAnalysisResult:
@@ -50,8 +77,11 @@ class GraphAnalysisEngine:
             )
 
         primitive_result = analyzer.analyze(query)
+        result_metadata = dict(primitive_result.metadata)
+        result_metadata.update(self.traversal_engine.result_metadata())
         result = replace(
             primitive_result,
+            metadata=result_metadata,
             semantic_context=self.semantic_context,
             analysis_id=make_analysis_id(
                 analysis_type=primitive_result.analysis_type,

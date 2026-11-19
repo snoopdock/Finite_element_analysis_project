@@ -4704,6 +4704,11 @@ class RepositoryInvestigator:
             model_name=self.model_name,
             provider_stats=provider_stats if isinstance(provider_stats, Mapping) else {},
             available_tool_names=self._tool_schemas,
+            graph_runtime=(
+                self.evidence_tools.graph_runtime_report()
+                if callable(getattr(self.evidence_tools, "graph_runtime_report", None))
+                else None
+            ),
         )
         report["budget"] = self._report_budget()
         report["interaction_diagnostics"] = self._interaction_diagnostics()

@@ -1,5 +1,5 @@
 id: G9.42
-name: AE-32C E.1–E.8.1 deterministic evidence, runtime and graph integrity plus AE-32D benchmark integrity
+name: AE-32C E.1–E.8.2 deterministic evidence, NetworkX query integration and graph integrity plus AE-32D benchmark integrity
 # Deterministic validation only. No live provider credentials or network calls are required.
 # The separate live comparison runner is opt-in and is not invoked here.
 target_tests:
@@ -21,6 +21,7 @@ target_tests:
   - tests/test_cloudflare_native_tool_calls.py
   - tests/semantic_audit/test_ae32c_validation_gate.py
   - tests/semantic_audit/test_ae32b_evidence_tools.py
+  - tests/semantic_audit/test_ae32b_backend_runtime.py
   - tests/semantic_audit/test_ae32c_graph_pilot.py
   - tests/semantic_audit/test_ae32c_claim_evidence.py
   - tests/semantic_audit/test_ae32c_machine_verification.py
@@ -31,6 +32,7 @@ target_tests:
   - tests/semantic_audit/test_ae32c_blind_pair_review.py
   - tests/semantic_audit/test_ae32c_operational_failure_modes.py
   - tests/semantic_graph/test_traversal.py
+  - tests/semantic_graph/test_e82_networkx_traversal_backend.py
   - tests/semantic_graph/test_dependency_analysis.py
   - tests/semantic_graph/test_path_analysis.py
   - tests/test_provider_safe_errors.py

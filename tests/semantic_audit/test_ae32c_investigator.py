@@ -2149,5 +2149,6 @@ def test_real_evidence_tools_produce_machine_verified_report_without_human_packe
     assert report["machine_verification_assessment"]["status"] == "evidence_integrity_passed"
     assert report["machine_verification_assessment"]["summary"]["invalid_source_reference_count"] == 0
     assert report["machine_verification_assessment"]["semantic_correctness"] == "not_assessed"
-    assert report["runtime_architecture"]["graph_engine"]["active_computation_backend"] == "python_reference_traversal"
+    assert report["runtime_architecture"]["graph_engine"]["active_computation_backend"] == "networkx"
+    assert report["runtime_architecture"]["graph_engine"]["external_backend_adapters"]["networkx"]["active_in_ae32b_query_path"] is True
     assert report["human_review_policy"]["blinded_reviewer_packets_generated"] is False
