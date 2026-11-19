@@ -1,0 +1,10 @@
+name: ae32-e85-graph-tool
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - graph-tool-base=3.9
+  - networkx>=3.2,<4
+  - scipy>=1.11,<2
+  - pip
+  - pytest>=7
