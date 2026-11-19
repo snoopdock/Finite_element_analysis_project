@@ -54,10 +54,17 @@ jobs:
             --repo . \
             --base main \
             --compare stage1/section-uuids \
-            --output branch-graphify-results/latest
+            --output "$RUNNER_TEMP/branch-graphify-results/latest"
 
       - name: Publish analysis results to main
         run: |
+          # Rebase publication onto the newest main without disturbing the
+          # immutable branch snapshots used by the analysis above.
+          git fetch origin main
+          git reset --hard origin/main
+          mkdir -p branch-graphify-results
+          rm -rf branch-graphify-results/latest
+          cp -a "$RUNNER_TEMP/branch-graphify-results/latest" branch-graphify-results/latest
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add branch-graphify-results/latest
