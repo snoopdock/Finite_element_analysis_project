@@ -62,12 +62,19 @@ def graphify_version() -> str:
 
 
 def graph_collections(payload: dict[str, Any]) -> tuple[list[dict], list[dict]]:
-    graph = payload.get("graph", payload)
-    if not isinstance(graph, dict):
-        raise ValueError("Graphify JSON has no graph object")
-    nodes, edges = graph.get("nodes", []), graph.get("edges", [])
+    # Graphify's persisted format may include a top-level "graph" metadata
+    # object alongside top-level "nodes" and "links" collections.
+    if isinstance(payload.get("nodes"), list):
+        nodes = payload["nodes"]
+        edges = payload.get("edges", payload.get("links", []))
+    else:
+        graph = payload.get("graph", payload)
+        if not isinstance(graph, dict):
+            raise ValueError("Graphify JSON has no graph object")
+        nodes = graph.get("nodes", [])
+        edges = graph.get("edges", graph.get("links", []))
     if not isinstance(nodes, list) or not isinstance(edges, list):
-        raise ValueError("Graphify JSON nodes/edges are not arrays")
+        raise ValueError("Graphify JSON nodes/edges (or links) are not arrays")
     return nodes, edges
 
 
@@ -147,6 +154,9 @@ def run_graphify(repo: Path, commit: str, branch: str, destination: Path,
         # Publish only portable user-facing artifacts; omit machine-local caches.
         for filename in required:
             shutil.copy2(generated / filename, destination / filename)
+        # The intermediate folder contains absolute-path markers and a large
+        # machine-local AST cache. Keep only the portable graph/report/HTML files.
+        shutil.rmtree(generated)
 
         graph_path = destination / "graph.json"
         nodes, edges = graph_collections(json.loads(graph_path.read_text(encoding="utf-8")))
