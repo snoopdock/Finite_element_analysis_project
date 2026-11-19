@@ -724,7 +724,7 @@ def build_tool_definitions() -> list[dict[str, Any]]:
             "target": {"type": "string", "minLength": 1, "maxLength": 500},
             "max_results": {"type": "integer", "minimum": 1, "maximum": MAX_SEARCH_RESULTS},
         }, ["target"]),
-        _tool("trace_execution_context", "Trace bounded static import callers, dependencies, Python entrypoint context, and active CI workflow candidates. This is static analysis only and does not prove runtime execution.", {
+        _tool("trace_execution_context", "Trace bounded static import callers, dependencies, Python entrypoint context, and active CI workflow candidates. target must be a resolvable repository-relative Python file path or module ID; function-level symbol IDs are not valid module targets. This is static analysis only and does not prove runtime execution.", {
             "target": {"type": "string", "minLength": 1, "maxLength": 500},
             "max_depth": {"type": "integer", "minimum": 1, "maximum": MAX_NEIGHBOR_DEPTH},
             "max_results": {"type": "integer", "minimum": 1, "maximum": MAX_GRAPH_RESULTS},

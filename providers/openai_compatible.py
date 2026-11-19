@@ -10,6 +10,8 @@ from __future__ import annotations
 import os
 import re
 import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
@@ -52,6 +54,37 @@ OPENROUTER_JSON_OBJECT_MODELS = frozenset({
 TRANSIENT_HTTP_STATUSES = {408, 425, 429, 500, 502, 503, 504}
 DEFAULT_MAX_RESPONSE_CHARS = 100_000
 _SAFE_ERROR_TOKEN = re.compile(r"^[A-Za-z0-9_.:/\-\[\]]{1,100}$")
+
+
+def _bounded_retry_wait_seconds(headers: object, *, status_code: int, attempt: int,
+                                maximum: int = 60) -> int:
+    """Honor numeric or HTTP-date Retry-After values within a hard wait ceiling."""
+    raw = ""
+    try:
+        getter = getattr(headers, "get", None)
+        if callable(getter):
+            raw = getter("Retry-After") or getter("retry-after") or ""
+    except Exception:
+        raw = ""
+    seconds: float | None = None
+    if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+        seconds = float(raw)
+    elif isinstance(raw, str) and raw.strip():
+        try:
+            seconds = float(raw.strip())
+        except ValueError:
+            try:
+                retry_at = parsedate_to_datetime(raw.strip())
+                if retry_at.tzinfo is None:
+                    retry_at = retry_at.replace(tzinfo=timezone.utc)
+                seconds = (retry_at - datetime.now(timezone.utc)).total_seconds()
+            except (TypeError, ValueError, OverflowError):
+                seconds = None
+    if seconds is None:
+        # Free-tier 429s often omit Retry-After. Give the endpoint a useful,
+        # bounded cool-off rather than immediately replaying into the same limit.
+        seconds = (15 * (attempt + 1)) if status_code == 429 else min(30, 2 ** attempt)
+    return max(0, min(int(maximum), int(seconds + 0.999)))
 _SAFE_ERROR_FIELD_NAMES = {"type", "code", "param", "message", "details", "metadata", "status", "request_id", "trace_id"}
 
 
@@ -252,6 +285,10 @@ class OpenAICompatibleProvider:
         self.failed_calls = 0
         self.http_attempts = 0
         self.http_status_counts: Dict[str, int] = {}
+        self.retry_attempts = 0
+        self.retry_wait_seconds_total = 0
+        self.last_retry_wait_seconds = 0
+        self.retry_status_counts: Dict[str, int] = {}
         self.finish_reason_counts: Dict[str, int] = {}
         self.last_http_status: Optional[int] = None
         self.last_returned_model: Optional[str] = None
@@ -484,7 +521,12 @@ class OpenAICompatibleProvider:
                 )
             except requests.exceptions.RequestException as exc:
                 if attempt + 1 < self.max_retries:
-                    time.sleep(min(30, 2 ** attempt))
+                    wait_seconds = min(30, 2 ** attempt)
+                    self.retry_attempts += 1
+                    self.retry_wait_seconds_total += wait_seconds
+                    self.last_retry_wait_seconds = wait_seconds
+                    self.retry_status_counts["transport"] = self.retry_status_counts.get("transport", 0) + 1
+                    time.sleep(wait_seconds)
                     continue
                 return self._error(f"{self.provider_name} transport error: {type(exc).__name__}", code="transport_error")
 
@@ -492,13 +534,17 @@ class OpenAICompatibleProvider:
             status_key = str(response.status_code)
             self.http_status_counts[status_key] = self.http_status_counts.get(status_key, 0) + 1
             if response.status_code in TRANSIENT_HTTP_STATUSES:
+                status_code = int(response.status_code)
+                response_headers = getattr(response, "headers", {}) or {}
                 close_response(response)
                 if attempt + 1 < self.max_retries:
-                    retry_after = response.headers.get("Retry-After", "")
-                    try:
-                        wait_seconds = max(0, min(60, int(float(retry_after))))
-                    except (TypeError, ValueError):
-                        wait_seconds = min(30, 2 ** attempt)
+                    wait_seconds = _bounded_retry_wait_seconds(
+                        response_headers, status_code=status_code, attempt=attempt, maximum=60
+                    )
+                    self.retry_attempts += 1
+                    self.retry_wait_seconds_total += wait_seconds
+                    self.last_retry_wait_seconds = wait_seconds
+                    self.retry_status_counts[str(status_code)] = self.retry_status_counts.get(str(status_code), 0) + 1
                     time.sleep(wait_seconds)
                     continue
                 return self._error(
@@ -547,7 +593,12 @@ class OpenAICompatibleProvider:
                 return self._error(f"{self.provider_name} response stream error: {type(exc).__name__}", code="response_stream_error")
             except (ValueError, TypeError):
                 if attempt + 1 < self.max_retries:
-                    time.sleep(min(10, 2 ** attempt))
+                    wait_seconds = min(10, 2 ** attempt)
+                    self.retry_attempts += 1
+                    self.retry_wait_seconds_total += wait_seconds
+                    self.last_retry_wait_seconds = wait_seconds
+                    self.retry_status_counts["invalid_json"] = self.retry_status_counts.get("invalid_json", 0) + 1
+                    time.sleep(wait_seconds)
                     continue
                 return self._error(f"{self.provider_name} returned invalid JSON (HTTP {response.status_code})", code="invalid_json_response")
 
@@ -682,6 +733,10 @@ class OpenAICompatibleProvider:
             "failed_calls": self.failed_calls,
             "http_attempts": self.http_attempts,
             "http_status_counts": dict(self.http_status_counts),
+            "retry_attempts": self.retry_attempts,
+            "retry_wait_seconds_total": self.retry_wait_seconds_total,
+            "last_retry_wait_seconds": self.last_retry_wait_seconds,
+            "retry_status_counts": dict(self.retry_status_counts),
             "last_http_status": self.last_http_status,
             "last_returned_model": self.last_returned_model,
             "finish_reason_counts": dict(self.finish_reason_counts),

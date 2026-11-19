@@ -9,6 +9,7 @@ from audit_engine.semantic_audit.ae32c import InvestigationLimits
 from audit_engine.semantic_audit.ae32c.investigator import (
     FINALIZATION_SYSTEM_INSTRUCTIONS,
     _BudgetStop,
+    _source_reference_candidate_id,
 )
 from tests.semantic_audit.test_ae32c_phase_e1_reliability import (
     SOURCE,
@@ -58,10 +59,12 @@ def test_recovery_feedback_is_compacted_before_exact_source_candidates_are_dropp
     # context when this investigation did not require graph interaction.
     assert "graph_interaction_coverage" not in latest_context
     assert latest_context["source_reference_candidates"] == [{
+        "candidate_id": _source_reference_candidate_id({
+            "evidence_id": "E0002", "path": SOURCE, "line": 2, "source_sha256": SOURCE_HASH
+        }),
         "evidence_id": "E0002",
         "path": SOURCE,
         "line": 2,
-        "source_sha256": SOURCE_HASH,
     }]
 
     compacted_feedback = next(

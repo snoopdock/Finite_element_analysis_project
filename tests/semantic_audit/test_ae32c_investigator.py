@@ -13,7 +13,7 @@ from types import SimpleNamespace
 import pytest
 
 from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
-from audit_engine.semantic_audit.ae32c.investigator import SYSTEM_INSTRUCTIONS
+from audit_engine.semantic_audit.ae32c.investigator import SYSTEM_INSTRUCTIONS, _source_reference_candidate_id
 from providers.base import ProviderResponse, ProviderToolCall
 from audit_engine.semantic_audit.ae32c.response_protocol import RESPONSE_TOOL_NAME
 
@@ -164,10 +164,14 @@ def action_tool(tool, arguments, reason="need additional evidence"):
     return json.dumps({"action": "tool_call", "tool": tool, "arguments": arguments, "reason": reason})
 
 
-def final_action(*, evidence_id="E0002", source_reference=True, summary="The interface mismatch is supported by retrieved source evidence.", claim_statement="The source search returned a line from the indexed module."):
+def final_action(*, evidence_id="E0002", source_reference=True, candidate_id=None, summary="The interface mismatch is supported by retrieved source evidence.", claim_statement="The source search returned a line from the indexed module."):
     source_refs = []
     if source_reference:
-        source_refs = [{"evidence_id": evidence_id, "path": SOURCE, "line": 2, "source_sha256": SOURCE_HASH}]
+        source_refs = (
+            [{"candidate_id": candidate_id}]
+            if candidate_id else
+            [{"evidence_id": evidence_id, "path": SOURCE, "line": 2, "source_sha256": SOURCE_HASH}]
+        )
     return json.dumps({
         "action": "final",
         "diagnosis": {
@@ -204,6 +208,107 @@ def make_investigator(responses, *, evidence=None, limits=None, cost_estimator=N
         id_factory=lambda: "test-investigation-0001",
     )
     return investigator, provider, tools
+
+
+def test_source_reference_candidate_id_resolves_to_manifest_bound_ledger_tuple_and_drops_unknown_ids():
+    investigator, provider, _ = make_investigator([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E9999", candidate_id=_source_reference_candidate_id({
+            "evidence_id": "E0002", "path": SOURCE, "line": 2, "source_sha256": SOURCE_HASH
+        })),
+    ])
+
+    report = investigator.run("Investigate the source-backed interface.")
+
+    assert report["diagnosis"] is not None
+    assert report["diagnosis"]["root_cause"]["evidence_refs"] == ["E0002"]
+    assert report["diagnosis"]["root_cause"]["source_references"] == [{
+        "evidence_id": "E0002",
+        "path": SOURCE,
+        "line": 2,
+        "source_sha256": SOURCE_HASH,
+    }]
+    assert any(
+        event.get("event") == "source_reference_candidate_resolved"
+        and event.get("candidate_id") == _source_reference_candidate_id({
+            "evidence_id": "E0002", "path": SOURCE, "line": 2, "source_sha256": SOURCE_HASH
+        })
+        for event in report["errors"]
+    )
+    assert any(
+        event.get("event") == "unresolved_evidence_references_dropped"
+        and event.get("scope") == "root_cause"
+        for event in report["errors"]
+    )
+
+
+def test_openrouter_receives_one_model_profile_bounded_transport_retry_per_investigation():
+    class RetryAwareOpenRouterProvider(FakeProvider):
+        provider_name = "openrouter"
+        model = "nvidia/nemotron-3-ultra-550b-a55b:free"
+
+        def __init__(self, responses, attempts_per_call):
+            super().__init__(responses)
+            self.attempts_per_call = list(attempts_per_call)
+
+        def chat(self, messages, temperature=0.2, max_tokens=None, model=None):
+            self.http_attempts += self.attempts_per_call.pop(0)
+            return super().chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)
+
+    provider = RetryAwareOpenRouterProvider([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ], attempts_per_call=[2, 1])
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        evidence_tools=FakeEvidenceTools(),
+        limits=InvestigationLimits(max_provider_transport_retries=1),
+        id_factory=lambda: "test-investigation-openrouter-retry",
+    )
+
+    report = investigator.run("Investigate a source-backed interface mismatch.")
+
+    assert report["diagnosis"] is not None
+    assert provider.max_retries_seen == [2, 1]
+    assert provider.max_retries == 3
+    assert report["budget"]["max_provider_transport_retries"] == 1
+    assert report["budget"]["provider_transport_retries_used"] == 1
+    retry_events = [
+        event for event in report["errors"]
+        if event.get("event") == "provider_transport_retry_budget_consumed"
+    ]
+    assert retry_events == [{
+        "event": "provider_transport_retry_budget_consumed",
+        "provider": "openrouter",
+        "round": 1,
+        "http_attempts": 2,
+        "retry_attempts": 1,
+        "retry_budget_remaining": 0,
+    }]
+
+
+def test_legacy_source_tuple_is_rebound_only_to_unique_observed_manifest_line():
+    invalid = json.loads(final_action(evidence_id="E9999", source_reference=True))
+    invalid_ref = invalid["diagnosis"]["root_cause"]["source_references"][0]
+    invalid_ref["source_sha256"] = "b" * 64
+    invalid["diagnosis"]["claims"][0]["source_references"][0]["source_sha256"] = "b" * 64
+
+    investigator, _, _ = make_investigator([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        json.dumps(invalid),
+    ])
+
+    report = investigator.run("Investigate the source-backed interface.")
+
+    assert report["diagnosis"] is not None
+    assert report["diagnosis"]["root_cause"]["evidence_refs"] == ["E0002"]
+    assert report["diagnosis"]["root_cause"]["source_references"][0]["source_sha256"] == SOURCE_HASH
+    assert any(
+        event.get("event") == "source_reference_binding_repaired"
+        and event.get("hash_rebound_from_manifest") is True
+        for event in report["errors"]
+    )
 
 
 def test_nararouter_prompt_and_invalid_json_recovery_include_explicit_action_contract():
@@ -1040,16 +1145,16 @@ def test_invalid_source_references_receive_exact_ledger_candidates_and_recover_t
 
     assert len(feedback_envelopes) == 2
     candidate = {
+        "candidate_id": _source_reference_candidate_id({
+            "evidence_id": "E0002", "path": SOURCE, "line": 2, "source_sha256": SOURCE_HASH
+        }),
         "evidence_id": "E0002",
         "path": SOURCE,
         "line": 2,
-        "source_sha256": SOURCE_HASH,
     }
     assert candidate in feedback_envelopes[0]["source_reference_candidates"]
-    assert feedback_envelopes[0]["required_source_reference_keys"] == [
-        "evidence_id", "path", "line", "source_sha256"
-    ]
-    assert "line must be a positive JSON integer" in " ".join(feedback_envelopes[0]["rules"])
+    assert feedback_envelopes[0]["required_source_reference_keys"] == ["candidate_id"]
+    assert "candidate_id" in " ".join(feedback_envelopes[0]["rules"])
     assert "Do not invent citations" in feedback_envelopes[1]["message"]
 
 

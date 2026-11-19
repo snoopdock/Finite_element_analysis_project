@@ -284,6 +284,7 @@ _RUNTIME_LIMIT_KEYS = {
     "max_invalid_json_retries",
     "max_finalization_invalid_json_retries",
     "max_finalization_recovery_retries",
+    "max_provider_transport_retries",
     "finalization_prompt_tokens_reserved_per_round",
 }
 
@@ -303,6 +304,14 @@ def _apply_model_runtime_limits(base_limits: Any, runtime_limits: Any) -> Any:
         raise GraphPilotError("model_runtime_limits_invalid:" + str(exc)) from exc
 
 
+def _inter_condition_cooldown_seconds(model_profile: Mapping[str, Any]) -> int:
+    """Return a bounded provider/model-specific pause between matched conditions."""
+    value = model_profile.get("inter_condition_cooldown_seconds", 0)
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 120:
+        raise GraphPilotError("inter_condition_cooldown_seconds_must_be_between_0_and_120")
+    return value
+
+
 def _runtime_limits_record(limits: Any) -> dict[str, Any]:
     """Return the bounded execution limits that define a model's live run."""
     names = (
@@ -319,6 +328,7 @@ def _runtime_limits_record(limits: Any) -> dict[str, Any]:
         "max_invalid_json_retries",
         "max_finalization_invalid_json_retries",
         "max_finalization_recovery_retries",
+        "max_provider_transport_retries",
     )
     return {name: getattr(limits, name) for name in names}
 
@@ -554,6 +564,7 @@ def run_graph_pilot(
         )
         effective_model = _effective_model(provider_probe, effective_requested_model)
         model_profile, _ = _load_provider_model_profile(provider_name, effective_model, provider_profile_path)
+        inter_condition_cooldown_seconds = _inter_condition_cooldown_seconds(model_profile)
         limits_template = _apply_model_runtime_limits(
             limits_template,
             model_profile.get("runtime_limits", {}),
@@ -615,6 +626,12 @@ def run_graph_pilot(
                 "report": report,
                 "runner_elapsed_seconds": round(report_elapsed, 3),
             }
+            if condition != order[-1] and inter_condition_cooldown_seconds:
+                cooldown_started = time.monotonic()
+                time.sleep(inter_condition_cooldown_seconds)
+                conditions[condition]["provider_cooldown_after_seconds"] = round(
+                    time.monotonic() - cooldown_started, 3
+                )
 
         final_summary = evidence_tools.invoke("repository_summary", {}).get("result", {})
         both_snapshot_checks_verified = all(
@@ -655,6 +672,11 @@ def run_graph_pilot(
             "model": effective_model,
             "runtime_limits": _runtime_limits_record(limits_template),
             "condition_order": order,
+            "provider_cooldown": {
+                "seconds_between_conditions": inter_condition_cooldown_seconds,
+                "applied": inter_condition_cooldown_seconds > 0,
+                "reason": "reduce immediate back-to-back requests against free/rate-limited endpoints",
+            },
             "profile": profile_name,
             "problem_statement": problem,
             "source": {
@@ -680,6 +702,7 @@ def run_graph_pilot(
                 "both_conditions_snapshot_verified": both_snapshot_checks_verified,
                 "same_graph_fingerprint": graph_fingerprint_stable,
                 "same_limits": True,
+                "inter_condition_cooldown_seconds": inter_condition_cooldown_seconds,
                 "non_graph_tool_sets_match": non_graph_tools_match,
                 "graph_tool_difference_isolated": graph_tool_difference_isolated,
                 "control_available_tools": sorted(control_tools),
@@ -772,6 +795,7 @@ def run_graph_pilot(
             "graph_target": target,
             "graph_relation_types": list(relation_types),
             "condition_order": order,
+            "inter_condition_cooldown_seconds": inter_condition_cooldown_seconds,
             "started_at_unix": round(start_time, 3),
             "finished_at_unix": round(time.time(), 3),
         })

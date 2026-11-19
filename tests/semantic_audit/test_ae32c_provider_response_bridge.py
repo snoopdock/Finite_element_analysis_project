@@ -15,6 +15,7 @@ from audit_engine.semantic_audit.ae32c.response_normalizer import (
 from audit_engine.semantic_audit.ae32c.provider_preflight import run_preflight, _provider_runtime_settings
 from audit_engine.semantic_audit.ae32c.response_protocol import RESPONSE_TOOL_NAME
 from audit_engine.semantic_audit.ae32c import InvestigationLimits, RepositoryInvestigator
+from audit_engine.semantic_audit.ae32c.investigator import _source_reference_candidate_id
 from tests.semantic_audit.test_ae32c_investigator import (
     FakeEvidenceTools,
     FakeProvider,
@@ -25,6 +26,9 @@ from tests.semantic_audit.test_ae32c_investigator import (
 
 
 MODEL = "@cf/qwen/qwen3.8-27b"
+SOURCE_CANDIDATE_ID = _source_reference_candidate_id({
+    "evidence_id": "E0002", "path": SOURCE, "line": 2, "source_sha256": SOURCE_HASH
+})
 
 
 def _fielded_final(evidence_id="E0002"):
@@ -33,13 +37,13 @@ SUMMARY: The source evidence supports a bounded provider-interface diagnosis.
 ROOT_CAUSE_STATEMENT: The inspected response path has a compatibility mismatch.
 ROOT_CAUSE_CONFIDENCE: medium
 ROOT_CAUSE_EVIDENCE_REFS: {evidence_id}
-ROOT_CAUSE_SOURCE_REFERENCE: {evidence_id} | {SOURCE} | 2 | {SOURCE_HASH}
+ROOT_CAUSE_SOURCE_REFERENCE: {SOURCE_CANDIDATE_ID}
 CLAIM_BEGIN
 CLAIM_STATEMENT: The repository search returned the relevant source line.
 CLAIM_KIND: observation
 CLAIM_CONFIDENCE: high
 CLAIM_EVIDENCE_REFS: {evidence_id}
-CLAIM_SOURCE_REFERENCE: {evidence_id} | {SOURCE} | 2 | {SOURCE_HASH}
+CLAIM_SOURCE_REFERENCE: {SOURCE_CANDIDATE_ID}
 CLAIM_END
 PROPOSED_CORRECTIVE_ACTION: Correct the response adapter and validate its fallback.
 LIMITATION: Static evidence does not establish live provider behavior.
@@ -91,8 +95,25 @@ def test_fielded_final_text_normalizes_without_json():
     assert result.payload["action"] == "final"
     diagnosis = result.payload["diagnosis"]
     assert diagnosis["root_cause"]["evidence_refs"] == ["E0002"]
-    assert diagnosis["root_cause"]["source_references"][0]["line"] == 2
+    assert diagnosis["root_cause"]["source_references"][0] == {"candidate_id": SOURCE_CANDIDATE_ID}
     assert diagnosis["claims"][0]["kind"] == "observation"
+
+
+def test_fielded_final_text_keeps_legacy_full_source_tuple_compatibility():
+    legacy = _fielded_final().replace(
+        f"ROOT_CAUSE_SOURCE_REFERENCE: {SOURCE_CANDIDATE_ID}",
+        f"ROOT_CAUSE_SOURCE_REFERENCE: E0002 | {SOURCE} | 2 | {SOURCE_HASH}",
+    ).replace(
+        f"CLAIM_SOURCE_REFERENCE: {SOURCE_CANDIDATE_ID}",
+        f"CLAIM_SOURCE_REFERENCE: E0002 | {SOURCE} | 2 | {SOURCE_HASH}",
+    )
+    result = normalize_response(legacy)
+    assert result.payload["diagnosis"]["root_cause"]["source_references"][0] == {
+        "evidence_id": "E0002",
+        "path": SOURCE,
+        "line": 2,
+        "source_sha256": SOURCE_HASH,
+    }
 
 
 def test_fielded_final_text_rejects_unknown_or_duplicate_fields():

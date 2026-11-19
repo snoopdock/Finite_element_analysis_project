@@ -8,6 +8,7 @@ from audit_engine.semantic_audit.ae32c.graph_pilot import (
     _apply_model_runtime_limits,
     _build_cost_estimator,
     _load_profile,
+    _inter_condition_cooldown_seconds,
     build_scoped_snapshot,
 )
 from audit_engine.semantic_audit.ae32c.investigator import (
@@ -612,6 +613,7 @@ def test_model_runtime_limits_are_provider_model_profile_driven():
         "max_elapsed_seconds": 600,
         "finalization_rounds_reserved": 3,
         "max_finalization_invalid_json_retries": 2,
+        "max_provider_transport_retries": 1,
     })
 
     assert tuned.max_rounds == 13
@@ -622,6 +624,7 @@ def test_model_runtime_limits_are_provider_model_profile_driven():
     assert tuned.max_total_prompt_chars == 500000
     assert tuned.max_elapsed_seconds == 600
     assert tuned.finalization_rounds_reserved == 3
+    assert tuned.max_provider_transport_retries == 1
 
     try:
         _apply_model_runtime_limits(base, {"not_a_limit": 100})
@@ -641,9 +644,19 @@ def test_nemotron_and_qwen_profiles_keep_separate_runtime_budgets():
     assert nemotron["runtime_limits"]["max_rounds"] == 13
     assert nemotron["runtime_limits"]["max_total_tokens"] == 200000
     assert nemotron["runtime_limits"]["max_total_prompt_chars"] == 500000
+    assert nemotron["runtime_limits"]["max_provider_transport_retries"] == 1
+    assert _inter_condition_cooldown_seconds(nemotron) == 60
     assert nemotron["pricing"]["input_usd_per_million_tokens"]["default"] == 0.0
     assert qwen["runtime_limits"]["finalization_max_tokens_per_call"] == 6144
     assert qwen["runtime_limits"]["max_rounds"] == 11
+
+
+def test_core_profile_documents_control_trace_module_target_and_nonoverlapping_reads():
+    profile = _load_profile("ae32c_core")
+    problem = profile["problem_statement"]
+    assert "audit_engine/semantic_audit/ae32c/live_evaluation.py" in problem
+    assert "function-symbol identifiers" in problem
+    assert "non-overlapping line range" in problem
 
 
 def test_graph_required_finalization_context_includes_graph_coverage(tmp_path):

@@ -206,6 +206,7 @@ def _parse_labelled_arguments(value: str) -> dict[str, Any]:
 
 _TEXT_EVIDENCE_ID = re.compile(r"^E[0-9]{4,6}$")
 _TEXT_SOURCE_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_TEXT_SOURCE_CANDIDATE_ID = re.compile(r"^SRC[0-9a-f]{16}$")
 
 
 def _parse_text_evidence_refs(value: str) -> list[str]:
@@ -221,7 +222,10 @@ def _parse_text_evidence_refs(value: str) -> list[str]:
 
 
 def _parse_text_source_reference(value: str) -> dict[str, Any]:
-    parts = [part.strip() for part in value.split("|")]
+    token = value.strip()
+    if _TEXT_SOURCE_CANDIDATE_ID.fullmatch(token):
+        return {"candidate_id": token}
+    parts = [part.strip() for part in token.split("|")]
     if len(parts) != 4:
         raise ResponseNormalizationError("labelled_final_source_reference_invalid")
     evidence_id, path, raw_line, digest = parts

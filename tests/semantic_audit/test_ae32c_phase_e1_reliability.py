@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 
 from audit_engine.semantic_audit.ae32c import InvestigationLimits, RepositoryInvestigator
+from audit_engine.semantic_audit.ae32c.investigator import _source_reference_candidate_id
 import hashlib
 
 SOURCE = "src/pkg/a.py"
@@ -254,10 +255,12 @@ def test_finalization_context_is_rebuilt_with_exact_source_candidates_under_budg
     candidates = payload["source_reference_candidates"]
     assert any(
         item == {
+            "candidate_id": _source_reference_candidate_id({
+                "evidence_id": "E0002", "path": SOURCE, "line": 2, "source_sha256": SOURCE_HASH
+            }),
             "evidence_id": "E0002",
             "path": SOURCE,
             "line": 2,
-            "source_sha256": SOURCE_HASH,
         }
         for item in candidates
     )

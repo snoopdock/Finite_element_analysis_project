@@ -88,6 +88,33 @@ def test_retry_after_is_bounded_and_transient_429_can_recover(monkeypatch):
     assert provider.get_stats()["http_attempts"] == 2
 
 
+def test_openrouter_429_without_retry_after_uses_bounded_cooldown_and_records_retry(monkeypatch):
+    responses = [
+        FakeResponse(status_code=429, payload={"error": "busy"}),
+        FakeResponse(payload=success_payload()),
+    ]
+    sleeps = []
+
+    def fake_post(url, **kwargs):
+        return responses.pop(0)
+
+    monkeypatch.setattr("providers.openai_compatible.requests.post", fake_post)
+    monkeypatch.setattr("providers.openai_compatible.time.sleep", sleeps.append)
+    provider = OpenAICompatibleProvider("openrouter", "key", "model", max_retries=2)
+
+    text, error = provider.chat([{"role": "user", "content": "hello"}])
+
+    assert text == "ok"
+    assert error is None
+    assert sleeps == [15]
+    stats = provider.get_stats()
+    assert stats["http_attempts"] == 2
+    assert stats["retry_attempts"] == 1
+    assert stats["retry_wait_seconds_total"] == 15
+    assert stats["last_retry_wait_seconds"] == 15
+    assert stats["retry_status_counts"] == {"429": 1}
+
+
 def test_missing_choices_is_reported_with_http_status_without_response_dump(monkeypatch):
     monkeypatch.setattr(
         "providers.openai_compatible.requests.post",
