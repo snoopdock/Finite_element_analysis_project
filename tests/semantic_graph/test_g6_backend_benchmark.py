@@ -102,8 +102,14 @@ def test_bad_dimensions():
 
 def test_duplicate_graph_id_rejected():
     g = SemanticGraph(nodes=[SemanticNode('x','X'),SemanticNode('x','X')])
-    with pytest.raises(bb.BenchmarkError, match='Duplicate'):
-        bb.verify_projection(g, NetworkXAdapter(g), SciPyAdapter(g))
+    # Native projection construction rejects malformed canonical identities
+    # before a backend graph can be created.
+    with pytest.raises(ValueError, match='Invalid or duplicate semantic node identity'):
+        SciPyAdapter(g)
+    # The benchmark API normalizes this invalid input to its public error type
+    # before constructing either backend projection.
+    with pytest.raises(bb.BenchmarkError, match='Duplicate or excessive'):
+        bb.benchmark_graph(g, repeats=3, warmup=0)
 
 
 def test_benchmark_metrics_shape(miniature):
@@ -223,3 +229,10 @@ def test_corrupted_scipy_side_channel(miniature):
     a.metadata['edges'][0]['metadata'] = {'forged': True}
     with pytest.raises(bb.BenchmarkError,match='side-channel'):
         bb.verify_projection(miniature, NetworkXAdapter(miniature), a)
+
+
+def test_scipy_side_channel_occurrence_identity_is_verified(miniature):
+    adapter = SciPyAdapter(miniature)
+    adapter.relations[0]["occurrence"] = 1
+    with pytest.raises(bb.BenchmarkError, match='side-channel parity'):
+        bb.verify_projection(miniature, NetworkXAdapter(miniature), adapter)

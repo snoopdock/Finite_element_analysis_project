@@ -113,14 +113,22 @@ def _sp_reach(adapter: SciPyAdapter, source: str) -> set[str]:
     return {adapter.index_to_node[i] for i in seen}
 
 
-def verify_projection(graph: SemanticGraph, nx_adapter: NetworkXAdapter,
-                      sp_adapter: SciPyAdapter) -> dict:
-    """Check structure, multiplicities, typed payloads, and common queries."""
+def _validate_benchmark_graph(graph: SemanticGraph) -> None:
+    """Validate canonical graph identity and benchmark bounds before projection."""
+    if not isinstance(graph, SemanticGraph):
+        raise BenchmarkError('Expected canonical SemanticGraph input')
     if not graph.nodes:
         raise BenchmarkError('Empty input')
     ids = [n.node_id for n in graph.nodes]
     if len(ids) != len(set(ids)) or len(ids) > MAX_NODES or len(graph.edges) > MAX_EDGES:
         raise BenchmarkError('Duplicate or excessive graph elements')
+
+
+def verify_projection(graph: SemanticGraph, nx_adapter: NetworkXAdapter,
+                      sp_adapter: SciPyAdapter) -> dict:
+    """Check structure, multiplicities, typed payloads, and common queries."""
+    _validate_benchmark_graph(graph)
+    ids = [node.node_id for node in graph.nodes]
     if set(ids) != set(nx_adapter.export().nodes) or set(ids) != set(sp_adapter.node_to_index):
         raise BenchmarkError('Node identity mismatch')
     if set(ids) != set(sp_adapter.index_to_node.values()):
@@ -154,12 +162,49 @@ def verify_projection(graph: SemanticGraph, nx_adapter: NetworkXAdapter,
         raise BenchmarkError('NetworkX edge metadata not preserved')
     if len(sp_adapter.relations) != len(graph.edges) or len(sp_adapter.metadata['edges']) != len(graph.edges):
         raise BenchmarkError('SciPy side-channel information missing')
-    for e, relation, meta in zip(graph.edges, sp_adapter.relations, sp_adapter.metadata['edges']):
-        if relation != {'source': e.source_id, 'target': e.target_id,
-                        'relation': e.relation_type} or meta != {
-                'source': e.source_id, 'target': e.target_id,
-                'attributes': e.attributes, 'metadata': e.metadata}:
+    expected_scipy_edges = []
+    for occurrence, edge in enumerate(graph.edges):
+        expected_relation = {
+            'source': edge.source_id,
+            'target': edge.target_id,
+            'relation': edge.relation_type,
+            'occurrence': occurrence,
+        }
+        expected_metadata = {
+            'source': edge.source_id,
+            'target': edge.target_id,
+            'relation': edge.relation_type,
+            'attributes': edge.attributes,
+            'metadata': edge.metadata,
+            'occurrence': occurrence,
+        }
+        expected_scipy_edges.append({
+            'occurrence': occurrence,
+            'source': edge.source_id,
+            'target': edge.target_id,
+            'relation': edge.relation_type,
+            'attributes': edge.attributes,
+            'metadata': edge.metadata,
+        })
+        if (sp_adapter.relations[occurrence] != expected_relation
+                or sp_adapter.metadata['edges'][occurrence] != expected_metadata):
             raise BenchmarkError('SciPy relation/metadata side-channel parity failure')
+
+    # Verify the actual backend read path as well as the Python side-channel
+    # containers.  This checks that CSR pair multiplicities resolve to the
+    # exact canonical edge occurrence, relation, attributes and metadata.
+    try:
+        observed_scipy_edges = list(sp_adapter.iter_native_edges())
+    except Exception as exc:
+        raise BenchmarkError('SciPy native projection side-channel read-back failure') from exc
+    observed_by_occurrence = {
+        item.get('occurrence'): item for item in observed_scipy_edges
+    }
+    if (len(observed_by_occurrence) != len(expected_scipy_edges)
+            or observed_by_occurrence != {
+                item['occurrence']: item for item in expected_scipy_edges
+            }):
+        raise BenchmarkError('SciPy native projection relation/metadata parity failure')
     for node in graph.nodes:
         if sp_adapter.metadata['nodes'].get(node.node_id) != {
                 'type': node.entity_type, 'attributes': node.attributes,
@@ -201,6 +246,7 @@ def benchmark_graph(graph: SemanticGraph, *, repeats: int = 7, warmup: int = 2,
                     scenario: str = 'custom') -> dict:
     if type(repeats) is not int or not 3 <= repeats <= 50 or type(warmup) is not int or not 0 <= warmup <= 10:
         raise BenchmarkError('Invalid repetition budget')
+    _validate_benchmark_graph(graph)
     nx_adapter = NetworkXAdapter(graph)
     sp_adapter = SciPyAdapter(graph)
     parity = verify_projection(graph, nx_adapter, sp_adapter)
