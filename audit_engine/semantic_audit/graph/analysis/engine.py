@@ -11,6 +11,7 @@ from audit_engine.semantic_audit.graph.queries import GraphQuery, QueryType, val
 from .context import SemanticContext
 from .dependency import DependencyAnalyzer
 from .helpers import make_analysis_id
+from .impact import ImpactAnalyzer
 from .memory import AuditWorkingMemory
 from .path import PathAnalyzer
 from .results import GraphAnalysisResult
@@ -72,6 +73,7 @@ class GraphAnalysisEngine:
             QueryType.STRUCTURAL: StructuralAnalyzer(graph, traversal_engine=self.traversal_engine),
             QueryType.DEPENDENCY: DependencyAnalyzer(graph, traversal_engine=self.traversal_engine),
             QueryType.PATH: PathAnalyzer(graph, traversal_engine=self.traversal_engine),
+            QueryType.IMPACT: ImpactAnalyzer(graph, traversal_engine=self.traversal_engine),
         }
 
     def execute(self, query: GraphQuery) -> GraphAnalysisResult:

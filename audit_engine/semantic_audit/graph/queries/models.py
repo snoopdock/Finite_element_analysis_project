@@ -18,6 +18,7 @@ class QueryType(str, Enum):
     STRUCTURAL = "structural"
     DEPENDENCY = "dependency"
     PATH = "path"
+    IMPACT = "impact"
 
 
 @dataclass(frozen=True)

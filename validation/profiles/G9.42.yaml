@@ -1,5 +1,5 @@
 id: G9.42
-name: AE-32C E.1–E.8.3.1 corrected evidence, multi-backend graph queries and benchmark parity plus AE-32D benchmark integrity
+name: AE-32C E.1–E.8.4 deterministic evidence, multi-backend graph queries and impact/dependency analysis plus AE-32D benchmark integrity
 # Deterministic validation only. No live provider credentials or network calls are required.
 # The separate live comparison runner is opt-in and is not invoked here.
 target_tests:
@@ -36,6 +36,8 @@ target_tests:
   - tests/semantic_graph/test_e83_multi_backend_traversal.py
   - tests/semantic_graph/test_g6_backend_benchmark.py
   - tests/semantic_graph/test_g62_backend_benchmark_campaign.py
+  - tests/semantic_graph/test_e84_graph_impact_analysis.py
+  - tests/semantic_audit/test_ae32b_impact_dependency_tools.py
   - tests/semantic_graph/test_dependency_analysis.py
   - tests/semantic_graph/test_path_analysis.py
   - tests/test_provider_safe_errors.py

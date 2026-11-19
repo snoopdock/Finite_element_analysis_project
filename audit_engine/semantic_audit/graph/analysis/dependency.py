@@ -92,5 +92,8 @@ class DependencyAnalyzer:
                 "stop_reason": traversal.stop_reason,
                 "examined_edges": traversal.examined_edges,
                 "visited_node_count": len(traversal.visited_nodes) + 1,
+                "direct_discovery_count": sum(hit.depth == 1 for hit in traversal.hits),
+                "transitive_discovery_count": sum(hit.depth > 1 for hit in traversal.hits),
+                "max_observed_depth": max((hit.depth for hit in traversal.hits), default=0),
             },
         )

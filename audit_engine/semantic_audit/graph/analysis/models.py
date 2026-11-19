@@ -10,6 +10,7 @@ class AnalysisType(str, Enum):
     DEPENDENCY = "dependency"
     PATH = "path"
     CENTRALITY = "centrality"
+    IMPACT = "impact"
 
 
 class AnalysisStatus(str, Enum):

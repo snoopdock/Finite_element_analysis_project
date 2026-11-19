@@ -706,9 +706,9 @@ def build_tool_definitions() -> list[dict[str, Any]]:
             "kind": {"type": "string", "enum": ["any", "class", "function", "async_function"]},
             "max_results": {"type": "integer", "minimum": 1, "maximum": MAX_SEARCH_RESULTS},
         }, ["query"]),
-        _tool("graph_neighbors", "Query observed repository relationships through the SemanticGraphAnalysisService, including imports and conservative CALLS edges when available. Graph relationships are static observations, not proof of runtime behavior.", {
+        _tool("graph_neighbors", "Query graph neighbors or dependency/impact relationships. direction=outgoing/incoming/both traverses neighbors; dependencies, dependents or impact selects the corresponding analysis mode. Static only, not runtime proof.", {
             "node": {"type": "string", "minLength": 1, "maxLength": 500},
-            "direction": {"type": "string", "enum": ["outgoing", "incoming", "both"]},
+            "direction": {"type": "string", "enum": ["outgoing", "incoming", "both", "dependencies", "dependents", "impact"]},
             "relation_types": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 80}, "maxItems": 12},
             "max_depth": {"type": "integer", "minimum": 0, "maximum": MAX_NEIGHBOR_DEPTH},
             "max_results": {"type": "integer", "minimum": 1, "maximum": MAX_GRAPH_RESULTS},
@@ -1754,9 +1754,26 @@ class RepositoryEvidenceTools:
         return sorted(paths)
 
     def _graph_neighbors(self, args: dict[str, Any]) -> dict[str, Any]:
-        self._check_keys(args, {"node", "direction", "relation_types", "max_depth", "max_results"}, {"node"})
-        node = self._resolve_node(self._string(args, "node", maximum=500))
+        self._check_keys(
+            args,
+            {"node", "direction", "relation_types", "max_depth", "max_results"},
+            {"node"},
+        )
         direction = args.get("direction", "both")
+        if direction in {"dependencies", "dependents"}:
+            forwarded = {
+                key: value for key, value in args.items()
+                if key in {"node", "relation_types", "max_depth", "max_results"}
+            }
+            forwarded["direction"] = "outgoing" if direction == "dependencies" else "incoming"
+            return self._graph_dependencies(forwarded)
+        if direction == "impact":
+            forwarded = {
+                key: value for key, value in args.items()
+                if key in {"node", "relation_types", "max_depth", "max_results"}
+            }
+            return self._graph_impact(forwarded)
+        node = self._resolve_node(self._string(args, "node", maximum=500))
         if direction not in {"outgoing", "incoming", "both"}:
             raise EvidenceToolError("invalid_argument", "direction must be outgoing, incoming, or both")
         depth = self._bounded_int(args, "max_depth", 1, 0, MAX_NEIGHBOR_DEPTH)
@@ -1798,6 +1815,168 @@ class RepositoryEvidenceTools:
             for item in visible_observations
             if isinstance(item, Mapping) and item.get("predicate")
         })
+        result["source_paths"] = self._graph_source_paths(result)
+        return result
+
+    def _graph_dependencies(self, args: dict[str, Any]) -> dict[str, Any]:
+        self._check_keys(
+            args,
+            {"node", "direction", "relation_types", "max_depth", "max_results"},
+            {"node"},
+        )
+        node = self._resolve_node(self._string(args, "node", maximum=500))
+        direction = args.get("direction", "outgoing")
+        if direction not in {"outgoing", "incoming", "both"}:
+            raise EvidenceToolError("invalid_argument", "direction must be outgoing, incoming, or both")
+        depth = self._bounded_int(args, "max_depth", 3, 1, MAX_NEIGHBOR_DEPTH)
+        max_results = self._bounded_int(args, "max_results", 30, 1, MAX_GRAPH_RESULTS)
+        relations = self._relation_types(args)
+        if relations is None:
+            relations = ["IMPORTS", "DEPENDS_ON"]
+        query_payload = {
+            "node": node, "direction": direction, "max_depth": depth,
+            "relation_types": relations, "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
+            "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS,
+        }
+        query = GraphQuery(
+            query_id=self._query_id("dependencies", query_payload),
+            query_type=QueryType.DEPENDENCY,
+            source_entities=[node],
+            constraints={
+                "direction": direction, "max_depth": depth, "relation_types": relations,
+                "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
+                "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS,
+            },
+        )
+        result = self._query_graph(query)
+        discovered = result.get("discovered_nodes", [])
+        depth_by_node: dict[str, int] = {}
+        for observation in result.get("observations", []):
+            metadata = observation.get("metadata", {})
+            target = metadata.get("traversed_to") if isinstance(metadata, Mapping) else None
+            observed_depth = observation.get("depth")
+            if isinstance(target, str) and isinstance(observed_depth, int):
+                depth_by_node[target] = min(depth_by_node.get(target, observed_depth), observed_depth)
+        visible = discovered[:max_results]
+        direct = [item for item in visible if depth_by_node.get(item.get("node_id"), 0) == 1]
+        transitive = [item for item in visible if depth_by_node.get(item.get("node_id"), 0) > 1]
+        if direction == "outgoing":
+            result["direct_dependencies"] = direct
+            result["transitive_dependencies"] = transitive
+        elif direction == "incoming":
+            result["direct_dependents"] = direct
+            result["transitive_dependents"] = transitive
+        else:
+            result["direct_neighbors"] = direct
+            result["transitive_neighbors"] = transitive
+        visible_ids = {item.get("node_id") for item in visible}
+        result["discovered_nodes"] = visible
+        result["discovered_entities"] = [item["node_id"] for item in visible if item.get("node_id")]
+        result["result_limit_truncated"] = len(discovered) > max_results
+        result["truncated"] = bool(result.get("metadata", {}).get("truncated", False)) or result["result_limit_truncated"]
+        result["coverage_status"] = "partial" if result["truncated"] else "complete_for_query"
+        result["dependency_semantics"] = {
+            "outgoing": "dependencies",
+            "incoming": "dependents",
+            "both": "neighbors",
+        }[direction]
+        result["dependency_relation_types"] = relations
+        result["source_paths"] = self._graph_source_paths(result)
+        return result
+
+    def _graph_impact(self, args: dict[str, Any]) -> dict[str, Any]:
+        self._check_keys(args, {"node", "relation_types", "max_depth", "max_results"}, {"node"})
+        node = self._resolve_node(self._string(args, "node", maximum=500))
+        depth = self._bounded_int(args, "max_depth", 3, 1, MAX_NEIGHBOR_DEPTH)
+        max_results = self._bounded_int(args, "max_results", 30, 1, MAX_GRAPH_RESULTS)
+        relations = self._relation_types(args)
+        if relations is None:
+            relations = ["IMPORTS", "DEPENDS_ON", "CALLS", "INVOKES", "TESTS"]
+        query_payload = {
+            "node": node, "max_depth": depth, "relation_types": relations,
+            "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
+            "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS,
+        }
+        query = GraphQuery(
+            query_id=self._query_id("impact", query_payload),
+            query_type=QueryType.IMPACT,
+            source_entities=[node],
+            constraints={
+                "max_depth": depth, "relation_types": relations,
+                "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
+                "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS,
+            },
+        )
+        result = self._query_graph(query)
+        metadata = result.get("metadata", {})
+        candidates = metadata.get("impact_candidates", []) if isinstance(metadata, Mapping) else []
+        if not isinstance(candidates, list):
+            raise EvidenceToolError("invalid_graph_result", "Impact candidate payload is invalid")
+        node_descriptions = {
+            item.get("node_id"): item
+            for item in result.get("discovered_nodes", [])
+            if isinstance(item, Mapping) and isinstance(item.get("node_id"), str)
+        }
+        visible_candidates = []
+        for candidate in candidates[:max_results]:
+            if not isinstance(candidate, Mapping) or not isinstance(candidate.get("node_id"), str):
+                continue
+            enriched = dict(candidate)
+            enriched["node"] = node_descriptions.get(candidate["node_id"], self._describe_node(candidate["node_id"]))
+            visible_candidates.append(enriched)
+        visible_ids = {item["node_id"] for item in visible_candidates}
+        candidate_evidence_ids = {
+            evidence_id
+            for item in visible_candidates
+            for evidence_id in item.get("evidence_ids", [])
+            if isinstance(evidence_id, str)
+        }
+        ownership_evidence_ids = set(metadata.get("ownership_evidence_ids", [])) if isinstance(metadata, Mapping) else set()
+        allowed_evidence_ids = candidate_evidence_ids | ownership_evidence_ids
+        result["evidence"] = [
+            item for item in result.get("evidence", [])
+            if item.get("evidence_id") in allowed_evidence_ids
+        ]
+        result["observations"] = [
+            item for item in result.get("observations", [])
+            if set(item.get("evidence_ids", [])) & allowed_evidence_ids
+        ]
+        result["discovered_nodes"] = [
+            item for item in result.get("discovered_nodes", [])
+            if item.get("node_id") in visible_ids
+        ]
+        result["discovered_entities"] = [
+            item["node_id"] for item in result["discovered_nodes"] if item.get("node_id")
+        ]
+        result["impact_candidates"] = visible_candidates
+        if isinstance(result.get("metadata"), dict):
+            result["metadata"]["impact_candidates"] = visible_candidates
+        result["direct_impact_candidates"] = [
+            item for item in visible_candidates if item.get("impact_depth") == 1
+        ]
+        result["transitive_impact_candidates"] = [
+            item for item in visible_candidates if item.get("impact_depth", 0) > 1
+        ]
+        result["impacted_tests"] = [
+            item for item in visible_candidates
+            if item.get("node", {}).get("entity_type") == "TestFile"
+            or str(item.get("node", {}).get("path", "")).startswith("tests/")
+        ]
+        result["impacted_workflows"] = [
+            item for item in visible_candidates
+            if str(item.get("node", {}).get("path", "")).startswith(".github/workflows/")
+        ]
+        result["result_limit_truncated"] = len(candidates) > max_results
+        result["truncated"] = bool(metadata.get("truncated", False)) or result["result_limit_truncated"]
+        result["coverage_status"] = "partial" if result["truncated"] else (
+            "complete_for_query" if result.get("status") != "incomplete" else "partial"
+        )
+        result["impact_semantics"] = (
+            "Possible static consumers of the changed entity. Import, call, workflow and test "
+            "relationships are structural observations, not proof of runtime execution, severity, "
+            "failure, or correctness."
+        )
+        result["impact_relation_types"] = relations
         result["source_paths"] = self._graph_source_paths(result)
         return result
 

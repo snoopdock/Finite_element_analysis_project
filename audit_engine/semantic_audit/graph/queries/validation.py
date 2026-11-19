@@ -30,6 +30,9 @@ def validate_query(query: GraphQuery, graph: SemanticGraph) -> None:
             + ", ".join(repr(value) for value in missing)
         )
 
+    if query.query_type is QueryType.IMPACT and len(query.source_entities) != 1:
+        raise GraphQueryValidationError("IMPACT queries require exactly one changed source entity.")
+
     if query.query_type is QueryType.PATH:
         target = str(query.constraints.get("target_entity", "")).strip()
         if not target:

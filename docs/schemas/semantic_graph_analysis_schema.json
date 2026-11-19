@@ -64,13 +64,15 @@
             "dependency",
             "path",
             "traversal",
-            "centrality"
+            "centrality",
+            "impact"
           ]
         },
         "status": {
           "enum": [
             "completed",
-            "no_match"
+            "no_match",
+            "incomplete"
           ]
         },
         "algorithm": {

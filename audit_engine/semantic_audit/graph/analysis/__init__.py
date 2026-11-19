@@ -3,6 +3,7 @@ from .dependency import DependencyAnalyzer
 from .engine import GraphAnalysisEngine, UnsupportedGraphQueryError
 from .evidence import EvidenceRecord
 from .identity import edge_fingerprint, graph_fingerprint
+from .impact import ImpactAnalyzer
 from .memory import AnalysisMemoryEntry, AuditWorkingMemory
 from .models import (
     AnalysisStatus,
@@ -35,6 +36,7 @@ __all__ = [
     "GraphAnalysisEngine",
     "GraphAnalysisResult",
     "GraphTraversalEngine",
+    "ImpactAnalyzer",
     "GraphTraversalError",
     "PathAnalyzer",
     "SemanticContext",
