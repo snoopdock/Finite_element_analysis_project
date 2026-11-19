@@ -1,0 +1,22 @@
+[graphify extract] --force: full re-scan, semantic cache reads skipped
+[graphify extract] scanning /tmp/branch-graphify-worktrees-j_e9mnc9/main
+[graphify extract] --code-only: skipping 32 non-code file(s) (32 docs, 0 papers, 0 images) — no LLM extraction
+[graphify extract] found 308 code, 0 docs, 0 papers, 0 images
+[graphify extract] 25 file(s) not classified (no supported extension or shebang), skipped: .git, .gitignore, .gitkeep, BasicTest.lean, Contracts.lean, Convergence.lean (+19 more)
+[graphify extract] AST extraction on 308 code files...
+  AST cache: 0/308 files served from cache (0%); 308 to extract
+  AST extraction: 100/308 uncached files (32%) [4 workers]
+  AST extraction: 200/308 uncached files (64%) [4 workers]
+  AST extraction: 300/308 uncached files (97%) [4 workers]
+  AST extraction: 308/308 uncached files (100%) [4 workers]
+  warning: 1 code file(s) yielded no symbols (0.00 MB) — a data file, or source this extractor models no symbols for: pyproject.toml
+[graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/main/graphify-out/graph.json: 4930 nodes, 7691 edges, 384 communities
+[graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/main/graphify-out/.graphify_analysis.json
+[graphify extract] next: run `graphify cluster-only /home/runner/work/_temp/branch-graphify-results/latest/main` to generate GRAPH_REPORT.md and name communities
+
+
+--- cluster-only ---
+Loading existing graph...
+Graph: 4930 nodes, 7691 edges
+Re-clustering...
+Done - 384 communities. GRAPH_REPORT.md, graph.json and graph.html updated.
