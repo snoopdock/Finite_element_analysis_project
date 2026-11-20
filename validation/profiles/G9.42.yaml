@@ -1,5 +1,5 @@
 id: G9.42
-name: AE-32C E.1–E.8.7 deterministic evidence, native graph conformance, impact analysis and live graph-utilization telemetry plus AE-32D benchmark integrity
+name: AE-32C E.1–E.8.8.1 deterministic evidence, NetworkX repository-backed native adjacency, native graph conformance, impact analysis and live graph-utilization telemetry plus AE-32D benchmark integrity
 # Deterministic validation only. No live provider credentials or network calls are required.
 # The separate live comparison runner is opt-in and is not invoked here.
 target_tests:
@@ -44,6 +44,7 @@ target_tests:
   - tests/semantic_audit/test_ae32b_impact_dependency_tools.py
   - tests/semantic_graph/test_dependency_analysis.py
   - tests/semantic_graph/test_path_analysis.py
+  - tests/semantic_graph/test_e88_networkx_repository_backend.py
   - tests/test_provider_safe_errors.py
   - tests/test_provider_capabilities.py
   - tests/test_provider_response_limits.py

@@ -17,6 +17,7 @@ from audit_engine.semantic_audit.core.semantic_graph import (
     SemanticGraph,
     SemanticNode,
 )
+from audit_engine.semantic_audit.graph.analysis.models import TraversalDirection
 from audit_engine.semantic_audit.graph.analysis.traversal import (
     GraphTraversalEngine,
     TraversalResult,
@@ -30,7 +31,7 @@ from audit_engine.semantic_audit.graph.backend.optional_backend_support import (
     BackendUnavailableError,
     make_projection,
 )
-from audit_engine.semantic_audit.graph.analysis.identity import graph_fingerprint
+from audit_engine.semantic_audit.graph.analysis.identity import edge_fingerprint, graph_fingerprint
 
 
 _EDGE_OCCURRENCE_KEY = "__ae32_semantic_edge_occurrence__"
@@ -125,7 +126,16 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             "parity_failures": 0,
             "total_examined_edges": 0,
             "total_visited_nodes": 0,
+            "native_adjacency_lookups": 0,
+            "native_edge_occurrences_read": 0,
+            "projection_validation_nodes": 0,
+            "projection_validation_edge_occurrences": 0,
         }
+        self._last_query_native_metrics = {
+            "native_adjacency_lookups": 0,
+            "native_edge_occurrences_read": 0,
+        }
+        self._verify_projection()
 
     @property
     def backend_name(self) -> str:
@@ -145,10 +155,13 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
                 raise BackendProjectionError("networkx_reserved_edge_key_collision")
             data[_EDGE_OCCURRENCE_KEY] = occurrence
 
-    def _build_adjacency(
-        self,
-    ) -> tuple[dict[str, list[SemanticEdge]], dict[str, list[SemanticEdge]]]:
-        """Read edge occurrences from NetworkX's directed multigraph index."""
+    def _verify_projection(self) -> None:
+        """Verify the complete native projection once before query execution.
+
+        Query execution then uses NetworkX's indexed ``succ``/``pred``
+        adjacency for only the nodes reached by the bounded traversal. The
+        canonical edge tuple remains the semantic evidence side channel.
+        """
         if graph_fingerprint(self.graph) != self._source_fingerprint:
             raise BackendProjectionError("canonical_graph_changed_after_networkx_projection")
 
@@ -163,11 +176,9 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
                 "metadata": node.metadata,
             }:
                 raise BackendProjectionError("networkx_projection_node_payload_mismatch")
+        self._metrics["projection_validation_nodes"] = len(expected_nodes)
 
-        outgoing: dict[str, list[SemanticEdge]] = {}
-        incoming: dict[str, list[SemanticEdge]] = {}
         seen: set[int] = set()
-
         for source, target, _key, data in self.native_graph.edges(keys=True, data=True):
             occurrence = data.get(_EDGE_OCCURRENCE_KEY)
             if type(occurrence) is not int or not 0 <= occurrence < len(self._edge_occurrences):
@@ -184,15 +195,93 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
                 or data.get("metadata") != edge.metadata
             ):
                 raise BackendProjectionError("networkx_projection_semantic_payload_mismatch")
-            outgoing.setdefault(source, []).append(edge)
-            incoming.setdefault(target, []).append(edge)
 
         if len(seen) != len(self._edge_occurrences):
             raise BackendProjectionError("networkx_projection_edge_count_mismatch")
-        return outgoing, incoming
+        self._metrics["projection_validation_edge_occurrences"] = len(seen)
+
+    def _build_adjacency(
+        self,
+    ) -> tuple[dict[str, list[SemanticEdge]], dict[str, list[SemanticEdge]]]:
+        """Return no Python adjacency copy; traversal reads NetworkX per node."""
+        if graph_fingerprint(self.graph) != self._source_fingerprint:
+            raise BackendProjectionError("canonical_graph_changed_after_networkx_projection")
+        return {}, {}
+
+    def _validated_native_edge(
+        self,
+        source: str,
+        target: str,
+        data: dict[str, Any],
+    ) -> SemanticEdge:
+        occurrence = data.get(_EDGE_OCCURRENCE_KEY)
+        if type(occurrence) is not int or not 0 <= occurrence < len(self._edge_occurrences):
+            raise BackendProjectionError("networkx_edge_occurrence_mapping_invalid")
+        edge = self._edge_occurrences[occurrence]
+        if (
+            edge.source_id != source
+            or edge.target_id != target
+            or data.get("relation") != edge.relation_type
+            or data.get("attributes") != edge.attributes
+            or data.get("metadata") != edge.metadata
+        ):
+            raise BackendProjectionError("networkx_projection_semantic_payload_mismatch")
+        return edge
+
+    def _candidate_edges(
+        self,
+        node_id: str,
+        *,
+        direction,
+        relation_types: set[str] | None,
+        outgoing: dict[str, list[SemanticEdge]],
+        incoming: dict[str, list[SemanticEdge]],
+    ) -> list[tuple[SemanticEdge, str]]:
+        """Read only the selected node's native NetworkX adjacency entries."""
+        if graph_fingerprint(self.graph) != self._source_fingerprint:
+            raise BackendProjectionError("canonical_graph_changed_after_networkx_projection")
+        if node_id not in self.native_graph:
+            raise BackendProjectionError("networkx_projection_node_missing_during_query")
+        canonical_node = self.graph.get_node(node_id)
+        native_node = self.native_graph.nodes[node_id]
+        if canonical_node is None or native_node != {
+            "entity_type": canonical_node.entity_type,
+            "attributes": canonical_node.attributes,
+            "metadata": canonical_node.metadata,
+        }:
+            raise BackendProjectionError("networkx_projection_node_payload_mismatch")
+
+        self._metrics["native_adjacency_lookups"] += 1
+        candidates: list[tuple[SemanticEdge, str]] = []
+        if direction in (TraversalDirection.OUTGOING, TraversalDirection.BOTH):
+            for neighbor, keyed_edges in self.native_graph.succ[node_id].items():
+                for data in keyed_edges.values():
+                    self._metrics["native_edge_occurrences_read"] += 1
+                    edge = self._validated_native_edge(node_id, neighbor, data)
+                    if relation_types is None or edge.relation_type in relation_types:
+                        candidates.append((edge, neighbor))
+        if direction in (TraversalDirection.INCOMING, TraversalDirection.BOTH):
+            for neighbor, keyed_edges in self.native_graph.pred[node_id].items():
+                for data in keyed_edges.values():
+                    self._metrics["native_edge_occurrences_read"] += 1
+                    edge = self._validated_native_edge(neighbor, node_id, data)
+                    if relation_types is None or edge.relation_type in relation_types:
+                        candidates.append((edge, neighbor))
+
+        candidates.sort(
+            key=lambda item: (
+                item[1], item[0].relation_type, item[0].source_id,
+                item[0].target_id, edge_fingerprint(item[0]),
+            )
+        )
+        return candidates
 
     def walk(self, *args: Any, **kwargs: Any) -> TraversalResult:
         self._metrics["queries_attempted"] += 1
+        native_before = {
+            "native_adjacency_lookups": self._metrics["native_adjacency_lookups"],
+            "native_edge_occurrences_read": self._metrics["native_edge_occurrences_read"],
+        }
         try:
             if graph_fingerprint(self.graph) != self._source_fingerprint:
                 raise BackendProjectionError("canonical_graph_changed_after_networkx_projection")
@@ -210,9 +299,15 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             self._metrics["queries_succeeded"] += 1
             self._metrics["total_examined_edges"] += result.examined_edges
             self._metrics["total_visited_nodes"] += len(result.visited_nodes) + 1
+            self._last_query_native_metrics = {
+                key: self._metrics[key] - native_before[key] for key in native_before
+            }
             return result
         except Exception:
             self._metrics["queries_failed"] += 1
+            self._last_query_native_metrics = {
+                key: self._metrics[key] - native_before[key] for key in native_before
+            }
             raise
 
     def result_metadata(self) -> dict:
@@ -227,6 +322,8 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
                 if self.verify_parity else "not_checked"
             ),
             "backend_projection_fingerprint": self._source_fingerprint,
+            "backend_native_query_mode": "networkx_successor_predecessor_adjacency",
+            "backend_native_query_metrics": dict(self._last_query_native_metrics),
         }
 
     def runtime_report(self) -> dict:
@@ -250,5 +347,6 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             ],
             "projection_node_count": self.native_graph.number_of_nodes(),
             "projection_edge_occurrence_count": self.native_graph.number_of_edges(),
+            "backend_native_query_mode": "networkx_successor_predecessor_adjacency",
             "backend_execution": dict(self._metrics),
         }
