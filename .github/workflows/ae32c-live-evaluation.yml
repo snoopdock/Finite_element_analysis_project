@@ -244,38 +244,124 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install project and graph runtime dependencies
+      - name: Install declared runtime requirements and verify live graph path
         working-directory: source
+        env:
+          ARTIFACT_ROOT: ${{ runner.temp }}/ae32c-live-evaluation
         run: |
           set -euo pipefail
-          # Install the exact checked-out Stage1 project and its declared graph-core
-          # extra. This includes the default NetworkX backend and SciPy parity support.
-          python -m pip install --disable-pip-version-check --editable ".[graph-core]"
-          python -m pip check
+          mkdir -p "$ARTIFACT_ROOT"
+          status_file="$ARTIFACT_ROOT/runtime-preflight.status"
+          printf 'started\n' > "$status_file"
 
-          # Fail before provider credentials or calls if the graph runtime cannot
-          # be imported and initialized from the validated source snapshot.
+          # Do not build/install the repository as a distribution here.
+          # Its pyproject.toml has no package-discovery configuration and setuptools
+          # correctly rejects this repository's many top-level source packages.
+          # The live runner executes from the checked-out source root, so imports
+          # resolve directly from this working directory.
+          if ! python -m pip install --disable-pip-version-check -r requirements.txt; then
+            printf 'failed:requirements_install\n' > "$status_file"
+            echo "::error::Could not install the checked-out Stage1 requirements. No provider call was made."
+            exit 2
+          fi
+
+          if ! python -m pip check; then
+            printf 'failed:pip_check\n' > "$status_file"
+            echo "::error::Python dependency consistency check failed. No provider call was made."
+            exit 2
+          fi
+
+          # Validate the graph implementation actually used by E.8.6 live
+          # investigation. Do not pass graph_backend: RepositoryEvidenceTools
+          # does not accept that argument and does not select NetworkX/SciPy.
           python - <<'PY'
-          import networkx
-          import requests
-          import scipy
-          import yaml
+          import importlib.metadata
+          import json
+          import os
+          import platform
+          import sys
+          from pathlib import Path
 
           from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
+          from audit_engine.semantic_audit.core.semantic_graph import SemanticGraph
+          from audit_engine.semantic_audit.graph.analysis.engine import GraphAnalysisEngine
 
-          fixture = "tests/semantic_audit/fixtures/ae32c_provider_interface_incident"
-          tools = RepositoryEvidenceTools(fixture, graph_backend="networkx")
-          if tools.graph_backend != "networkx":
-              raise SystemExit("live_graph_runtime_backend_mismatch")
-          if tools.evidence_index_status != "complete":
-              raise SystemExit("live_graph_runtime_fixture_incomplete")
+          artifact_root = Path(os.environ["ARTIFACT_ROOT"])
+          artifact_root.mkdir(parents=True, exist_ok=True)
+          status_path = artifact_root / "runtime-preflight.status"
+          report_path = artifact_root / "runtime-preflight.json"
 
-          print(
-              "Live runtime preflight passed: "
-              f"NetworkX={networkx.__version__}, "
-              f"SciPy={scipy.__version__}, "
-              f"evidence_index={tools.evidence_index_status}"
-          )
+          try:
+              fixture = Path(
+                  "tests/semantic_audit/fixtures/ae32c_provider_interface_incident"
+              ).resolve()
+              if not fixture.is_dir():
+                  raise RuntimeError("live_evaluation_fixture_missing")
+
+              tools = RepositoryEvidenceTools(fixture)
+
+              if tools.evidence_index_status != "complete":
+                  raise RuntimeError("evidence_index_incomplete")
+              if not isinstance(tools.graph, SemanticGraph):
+                  raise RuntimeError("unexpected_semantic_graph_implementation")
+              if not isinstance(tools.graph_service.engine, GraphAnalysisEngine):
+                  raise RuntimeError("unexpected_graph_analysis_engine")
+              if len(tools.graph.nodes) == 0 or len(tools.graph.edges) == 0:
+                  raise RuntimeError("empty_live_graph")
+
+              installed_distributions = {
+                  name: importlib.metadata.version(name)
+                  for name in ("requests", "PyYAML", "networkx", "scipy", "rdflib")
+              }
+
+              report = {
+                  "schema_version": "ae32c/live-runtime-preflight/v1",
+                  "status": "passed",
+                  "python_version": sys.version.split()[0],
+                  "platform": platform.platform(),
+                  "evidence_index_status": tools.evidence_index_status,
+                  "graph_node_count": len(tools.graph.nodes),
+                  "graph_edge_count": len(tools.graph.edges),
+                  "graph_runtime": {
+                      "semantic_graph_class": (
+                          f"{type(tools.graph).__module__}.{type(tools.graph).__name__}"
+                      ),
+                      "analysis_engine_class": (
+                          f"{type(tools.graph_service.engine).__module__}."
+                          f"{type(tools.graph_service.engine).__name__}"
+                      ),
+                      "external_backend_adapter_active": False,
+                      "interpretation": (
+                          "The E.8.6 RepositoryEvidenceTools live path constructs the "
+                          "internal SemanticGraph and GraphAnalysisEngine directly. "
+                          "Installed NetworkX and SciPy distributions are not evidence "
+                          "that their adapters are active or conformant."
+                      ),
+                  },
+                  "installed_distributions": installed_distributions,
+                  "provider_calls_made": False,
+              }
+              report_path.write_text(
+                  json.dumps(report, indent=2, sort_keys=True) + "\n",
+                  encoding="utf-8",
+              )
+              status_path.write_text("passed\n", encoding="utf-8")
+              print(json.dumps(report, indent=2, sort_keys=True))
+          except Exception as exc:
+              report = {
+                  "schema_version": "ae32c/live-runtime-preflight/v1",
+                  "status": "failed",
+                  "failure_type": type(exc).__name__,
+                  "failure_message": str(exc)[:1000],
+                  "provider_calls_made": False,
+              }
+              report_path.write_text(
+                  json.dumps(report, indent=2, sort_keys=True) + "\n",
+                  encoding="utf-8",
+              )
+              status_path.write_text("failed:graph_initialization\n", encoding="utf-8")
+              print(json.dumps(report, indent=2, sort_keys=True))
+              raise SystemExit(2)
           PY
 
       - name: Verify investigation-context CLI contract before provider calls
@@ -405,20 +491,25 @@ jobs:
                   return default
               return path.read_text(encoding="utf-8").strip() or default
 
+          runtime_preflight_status = read_status("runtime-preflight.status")
           preflight_status = read_status("cli-preflight.status")
           provider_step_started = (root / "provider-step-started.status").is_file()
           runner_started = (root / "runner-started.status").is_file()
 
+          checks["runtime_preflight_passed"] = runtime_preflight_status == "passed"
           checks["cli_preflight_passed"] = preflight_status == "passed"
           checks["provider_step_started"] = provider_step_started
           checks["runner_started"] = runner_started
 
           metrics.update({
+              "runtime_preflight_status": runtime_preflight_status,
               "cli_preflight_status": preflight_status,
               "provider_step_started": provider_step_started,
               "runner_started": runner_started,
           })
 
+          if runtime_preflight_status != "passed":
+              problems.append("runtime_preflight_not_passed:" + runtime_preflight_status)
           if preflight_status != "passed":
               problems.append("cli_preflight_not_passed:" + preflight_status)
           elif not provider_step_started:
@@ -659,6 +750,7 @@ jobs:
                   "",
                   f"- Provider: `{gate['provider']}`",
                   f"- Smoke gate: **{'PASS' if passed else 'FAIL'}**",
+                  f"- Runtime preflight: `{runtime_preflight_status}`",
                   f"- CLI preflight: `{preflight_status}`",
                   f"- Provider step started: `{provider_step_started}`",
                   f"- Live runner started: `{runner_started}`",
@@ -718,7 +810,7 @@ jobs:
           gate_path = Path(os.environ["ARTIFACT_ROOT"]) / "smoke-gate.json"
           gate = json.loads(gate_path.read_text(encoding="utf-8"))
           if gate.get("passed") is not True:
-              print("AE-32C live smoke gate failed. Evidence was uploaded for review.")
+              print("AE-32C live smoke gate failed. Evidence was uploaded for machine-verification inspection.")
               raise SystemExit(1)
-          print("AE-32C live smoke gate passed. Diagnosis correctness still requires human review.")
+          print("AE-32C live smoke gate passed. This establishes execution and evidence-contract checks; diagnostic accuracy remains not_assessed.")
           PY
