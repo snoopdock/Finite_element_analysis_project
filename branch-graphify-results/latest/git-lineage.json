@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "fe7027ba8395857ed396c23c422138d22ffbe496",
-  "compare_sha": "c17382c74b6cb0d85afc9457cc46a73150aeb07b",
+  "base_sha": "ceae07695182bf8a7c4dadf9d9ce6b65dd1bcaf8",
+  "compare_sha": "f55f10d5438b297b423f7e5d456f7eff6969d8ad",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 251,
-  "compare_only_commit_count": 952,
+  "base_only_commit_count": 253,
+  "compare_only_commit_count": 957,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -278,6 +278,62 @@
     {
       "status": "A",
       "path": "audit_engine/semantic_audit/ae32c/investigator.py"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/analysis-report.md"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/architecture-comparison.md"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/architecture-delta.json"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/git-lineage.json"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/git-lineage.mmd"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/graphify-run-summary.json"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/main/GRAPH_REPORT.md"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/main/graph.html"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/main/graph.json"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/main/graphify-run.log"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/stage1-section-uuids/GRAPH_REPORT.md"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/stage1-section-uuids/graph.html"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/stage1-section-uuids/graph.json"
+    },
+    {
+      "status": "A",
+      "path": "branch-graphify-results/latest/stage1-section-uuids/graphify-run.log"
     },
     {
       "status": "M",
@@ -567,6 +623,10 @@
   "compare_changes_since_merge_base": [
     {
       "status": "A",
+      "path": ".github/environments/e85-graph-tool.yml"
+    },
+    {
+      "status": "A",
       "path": ".github/workflows/05_semantic_graph_analysis_validation.yml"
     },
     {
@@ -644,6 +704,10 @@
     {
       "status": "A",
       "path": ".github/workflows/archive/null.txt"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/e85-native-graph-backend-conformance.yml"
     },
     {
       "status": "A",
@@ -2855,6 +2919,14 @@
     },
     {
       "status": "A",
+      "path": "docs/audit-engine/AE-32C-E8.5-Native-Graph-Backend-Conformance.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-E8.6-Advanced-Change-Set-Impact-and-Dependency-Analysis.md"
+    },
+    {
+      "status": "A",
       "path": "docs/audit-engine/AE-32C-Live-Failure-Analysis-and-Next-Decision.md"
     },
     {
@@ -3147,6 +3219,10 @@
     },
     {
       "status": "A",
+      "path": "docs/decisions/ADR-048-native-graph-backend-conformance.md"
+    },
+    {
+      "status": "A",
       "path": "docs/decisions/ADR-049-reverification-replay-and-execution-boundary.md"
     },
     {
@@ -3264,6 +3340,10 @@
     {
       "status": "A",
       "path": "docs/decisions/ADR-078-proof-retrieval-and-resource-failure-are-epistemically-neutral.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/decisions/ADR-079-bounded-multi-source-impact-and-dependency-cycles.md"
     },
     {
       "status": "A",
@@ -3676,6 +3756,10 @@
     {
       "status": "A",
       "path": "evaluation/ae32c/claim_adjudication_rubric.md"
+    },
+    {
+      "status": "A",
+      "path": "evaluation/ae32c/graph_backend_conformance_matrix.json"
     },
     {
       "status": "A",
@@ -5875,6 +5959,14 @@
     },
     {
       "status": "A",
+      "path": "tests/semantic_graph/test_e85_native_backend_conformance.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_e86_change_set_impact.py"
+    },
+    {
+      "status": "A",
       "path": "tests/semantic_graph/test_g3_architecture_boundaries.py"
     },
     {
@@ -6719,6 +6811,10 @@
     },
     {
       "status": "A",
+      "path": "tools/gb03_native_backend_conformance.py"
+    },
+    {
+      "status": "A",
       "path": "tools/publish_validation_evidence_bundle.py"
     },
     {
@@ -7175,6 +7271,41 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "ceae07695182bf8a7c4dadf9d9ce6b65dd1bcaf8",
+      "subject": "Update ae32c-live-evaluation.yml"
+    },
+    {
+      "side": ">",
+      "sha": "f55f10d5438b297b423f7e5d456f7eff6969d8ad",
+      "subject": "AE-32C E.8.6"
+    },
+    {
+      "side": ">",
+      "sha": "b4352f7b5923c09b1a16d0468ccab9444e4636ed",
+      "subject": "AE-32C E.8.6"
+    },
+    {
+      "side": ">",
+      "sha": "f228173b3e604dd08db5e24bc76e130ab8245b56",
+      "subject": "Create e85-graph-tool.yml"
+    },
+    {
+      "side": ">",
+      "sha": "b674ffd3bc24af97e9eb44bc145ef7379d2985dc",
+      "subject": "AE-32C E.8.5"
+    },
+    {
+      "side": ">",
+      "sha": "6e846b38b464c457e0a82934faf8c2d932b9073a",
+      "subject": "AE-32C E.8.5"
+    },
+    {
+      "side": "<",
+      "sha": "2b3b46af9eaf32dbea7ae58e6f8416f172ea8c5e",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "fe7027ba8395857ed396c23c422138d22ffbe496",

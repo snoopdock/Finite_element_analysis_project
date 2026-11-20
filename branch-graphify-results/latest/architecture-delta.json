@@ -7,13 +7,13 @@
   },
   "compare": {
     "branch": "stage1-section-uuids",
-    "node_count": 17562,
-    "edge_count": 44670
+    "node_count": 17681,
+    "edge_count": 44971
   },
   "nodes": {
     "common_count": 2438,
     "base_only_count": 2492,
-    "compare_only_count": 15124,
+    "compare_only_count": 15243,
     "base_only": [
       "abc",
       "analysis_citation_validator_rationale_128",
@@ -3908,15 +3908,15 @@
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_103",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_108",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_123",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1409",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1436",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1506",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2033",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2080",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2218",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2406",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1410",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1437",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1507",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2118",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2165",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2303",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2491",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_255",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2672",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2757",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_282",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_306",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_316",
@@ -3925,10 +3925,10 @@
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_492",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_502",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_691",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_747",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_748",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_91",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_913",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_969",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_914",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_970",
       "audit_engine_semantic_audit_ae32b_evidence_tools_read_snapshot_file",
       "audit_engine_semantic_audit_ae32b_evidence_tools_redact_then_truncate",
       "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_build_decision_memory_graph_safe_review_field",
@@ -4619,9 +4619,16 @@
       "audit_engine_semantic_audit_graph_analysis_impact",
       "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer",
       "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze",
+      "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+      "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_single",
+      "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_candidate_kind",
+      "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_dependency_cycles",
       "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_init",
+      "audit_engine_semantic_audit_graph_analysis_impact_py_any",
       "audit_engine_semantic_audit_graph_analysis_impact_rationale_1",
-      "audit_engine_semantic_audit_graph_analysis_impact_rationale_25",
+      "audit_engine_semantic_audit_graph_analysis_impact_rationale_28",
+      "audit_engine_semantic_audit_graph_analysis_impact_rationale_397",
+      "audit_engine_semantic_audit_graph_analysis_impact_rationale_55",
       "audit_engine_semantic_audit_graph_analysis_init",
       "audit_engine_semantic_audit_graph_analysis_memory",
       "audit_engine_semantic_audit_graph_analysis_memory_analysismemoryentry",
@@ -6621,6 +6628,10 @@
       "fcntl",
       "fnmatch",
       "generatorexp",
+      "github_environments_e85_graph_tool",
+      "github_environments_e85_graph_tool_channels",
+      "github_environments_e85_graph_tool_dependencies",
+      "github_environments_e85_graph_tool_name",
       "github_workflows_archive_11_semantic_audit_orchestration_validation",
       "github_workflows_archive_11_semantic_audit_orchestration_validation_jobs",
       "github_workflows_archive_11_semantic_audit_orchestration_validation_jobs_validate",
@@ -6640,6 +6651,65 @@
       "github_workflows_archive_11_semantic_audit_orchestration_validation_with_name",
       "github_workflows_archive_11_semantic_audit_orchestration_validation_with_path",
       "github_workflows_archive_11_semantic_audit_orchestration_validation_with_python_version",
+      "github_workflows_e85_native_graph_backend_conformance",
+      "github_workflows_e85_native_graph_backend_conformance_concurrency",
+      "github_workflows_e85_native_graph_backend_conformance_concurrency_cancel_in_progress",
+      "github_workflows_e85_native_graph_backend_conformance_concurrency_group",
+      "github_workflows_e85_native_graph_backend_conformance_conformance_summary_if",
+      "github_workflows_e85_native_graph_backend_conformance_conformance_summary_name",
+      "github_workflows_e85_native_graph_backend_conformance_conformance_summary_needs",
+      "github_workflows_e85_native_graph_backend_conformance_conformance_summary_runs_on",
+      "github_workflows_e85_native_graph_backend_conformance_conformance_summary_steps",
+      "github_workflows_e85_native_graph_backend_conformance_env_graph_tool",
+      "github_workflows_e85_native_graph_backend_conformance_env_pip_backends",
+      "github_workflows_e85_native_graph_backend_conformance_env_snap_job",
+      "github_workflows_e85_native_graph_backend_conformance_env_snap_native",
+      "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_name",
+      "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_runs_on",
+      "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
+      "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_timeout_minutes",
+      "github_workflows_e85_native_graph_backend_conformance_jobs",
+      "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
+      "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
+      "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
+      "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
+      "github_workflows_e85_native_graph_backend_conformance_matrix_backend",
+      "github_workflows_e85_native_graph_backend_conformance_name",
+      "github_workflows_e85_native_graph_backend_conformance_on",
+      "github_workflows_e85_native_graph_backend_conformance_on_workflow_dispatch",
+      "github_workflows_e85_native_graph_backend_conformance_outputs_native_status",
+      "github_workflows_e85_native_graph_backend_conformance_permissions",
+      "github_workflows_e85_native_graph_backend_conformance_permissions_contents",
+      "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_name",
+      "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_runs_on",
+      "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
+      "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_strategy",
+      "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_timeout_minutes",
+      "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_name",
+      "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_outputs",
+      "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_runs_on",
+      "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+      "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_timeout_minutes",
+      "github_workflows_e85_native_graph_backend_conformance_steps_env",
+      "github_workflows_e85_native_graph_backend_conformance_steps_id",
+      "github_workflows_e85_native_graph_backend_conformance_steps_if",
+      "github_workflows_e85_native_graph_backend_conformance_steps_name",
+      "github_workflows_e85_native_graph_backend_conformance_steps_run",
+      "github_workflows_e85_native_graph_backend_conformance_steps_shell",
+      "github_workflows_e85_native_graph_backend_conformance_steps_uses",
+      "github_workflows_e85_native_graph_backend_conformance_steps_with",
+      "github_workflows_e85_native_graph_backend_conformance_strategy_fail_fast",
+      "github_workflows_e85_native_graph_backend_conformance_strategy_matrix",
+      "github_workflows_e85_native_graph_backend_conformance_with_cache",
+      "github_workflows_e85_native_graph_backend_conformance_with_cache_environment",
+      "github_workflows_e85_native_graph_backend_conformance_with_environment_file",
+      "github_workflows_e85_native_graph_backend_conformance_with_environment_name",
+      "github_workflows_e85_native_graph_backend_conformance_with_if_no_files_found",
+      "github_workflows_e85_native_graph_backend_conformance_with_init_shell",
+      "github_workflows_e85_native_graph_backend_conformance_with_name",
+      "github_workflows_e85_native_graph_backend_conformance_with_path",
+      "github_workflows_e85_native_graph_backend_conformance_with_python_version",
+      "github_workflows_e85_native_graph_backend_conformance_with_retention_days",
       "github_workflows_fea_llm_provider_benchmark_env_benchmark_source_commit",
       "github_workflows_fea_llm_provider_benchmark_env_benchmark_workflow_commit",
       "github_workflows_fea_llm_provider_benchmark_env_fea_source_commit",
@@ -14636,6 +14706,7 @@
       "tests_semantic_graph_test_e83_multi_backend_traversal_py_parametrize",
       "tests_semantic_graph_test_e83_multi_backend_traversal_query_result",
       "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_1",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_344",
       "tests_semantic_graph_test_e83_multi_backend_traversal_snapedge",
       "tests_semantic_graph_test_e83_multi_backend_traversal_snapedge_getdstnid",
       "tests_semantic_graph_test_e83_multi_backend_traversal_snapedge_getid",
@@ -14645,6 +14716,7 @@
       "tests_semantic_graph_test_e83_multi_backend_traversal_snapnode_getid",
       "tests_semantic_graph_test_e83_multi_backend_traversal_snapnode_init",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_backend_registry_marks_all_adapters_as_semantic_query_capable",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_e85_conformance_runner_contract_with_adapter_test_double",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_explicit_backend_selection_never_silently_falls_back",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_native_projection_mutation_fails_closed",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_optional_native_adapter_is_used_by_live_query_path",
@@ -14662,11 +14734,37 @@
       "tests_semantic_graph_test_e84_graph_impact_analysis_impact_graph",
       "tests_semantic_graph_test_e84_graph_impact_analysis_py_parametrize",
       "tests_semantic_graph_test_e84_graph_impact_analysis_query",
+      "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_accepts_bounded_change_set",
       "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_can_start_from_module_or_symbol",
       "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_is_bounded_and_fails_closed_as_incomplete",
-      "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_rejects_multiple_sources",
       "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_resolves_file_ownership_and_reverse_dependencies",
       "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_uses_selected_external_backend_with_reference_parity",
+      "tests_semantic_graph_test_e85_native_backend_conformance",
+      "tests_semantic_graph_test_e85_native_backend_conformance_py_parametrize",
+      "tests_semantic_graph_test_e85_native_backend_conformance_rationale_1",
+      "tests_semantic_graph_test_e85_native_backend_conformance_test_backend_probe_never_claims_native_conformance_without_execution",
+      "tests_semantic_graph_test_e85_native_backend_conformance_test_conformance_fixture_contains_required_semantic_edge_cases",
+      "tests_semantic_graph_test_e85_native_backend_conformance_test_native_backend_conformance_when_library_is_installed",
+      "tests_semantic_graph_test_e85_native_backend_conformance_test_networkx_and_scipy_round_trip_same_canonical_semantic_payload",
+      "tests_semantic_graph_test_e85_native_backend_conformance_test_snap_adapter_is_not_marked_native_verified_by_presence_alone",
+      "tests_semantic_graph_test_e86_change_set_impact",
+      "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+      "tests_semantic_graph_test_e86_change_set_impact_py_parametrize",
+      "tests_semantic_graph_test_e86_change_set_impact_py_path",
+      "tests_semantic_graph_test_e86_change_set_impact_query",
+      "tests_semantic_graph_test_e86_change_set_impact_test_change_set_impact_matches_reference_for_external_backends",
+      "tests_semantic_graph_test_e86_change_set_impact_test_cycle_scan_budget_is_explicitly_incomplete",
+      "tests_semantic_graph_test_e86_change_set_impact_test_dependency_cycle_is_reported_with_edge_evidence",
+      "tests_semantic_graph_test_e86_change_set_impact_test_duplicate_change_sources_are_rejected",
+      "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_rejects_changed_nodes_outside_impact_mode",
+      "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_schema_advertises_bounded_change_set",
+      "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_tool_accepts_multi_file_change_set",
+      "tests_semantic_graph_test_e86_change_set_impact_test_impact_traversal_budget_is_shared_across_sources",
+      "tests_semantic_graph_test_e86_change_set_impact_test_more_than_25_change_sources_are_rejected",
+      "tests_semantic_graph_test_e86_change_set_impact_test_multi_source_impact_is_order_independent",
+      "tests_semantic_graph_test_e86_change_set_impact_test_multi_source_impact_merges_candidates_and_attributes_sources",
+      "tests_semantic_graph_test_e86_change_set_impact_test_self_loop_is_reported_as_dependency_cycle",
+      "tests_semantic_graph_test_e86_change_set_impact_write",
       "tests_semantic_graph_test_g3_architecture_boundaries",
       "tests_semantic_graph_test_g3_architecture_boundaries_imports",
       "tests_semantic_graph_test_g3_architecture_boundaries_py_path",
@@ -16900,6 +16998,27 @@
       "tools_gb02_backend_traversal_smoke_main",
       "tools_gb02_backend_traversal_smoke_rationale_2",
       "tools_gb02_backend_traversal_smoke_run",
+      "tools_gb03_native_backend_conformance",
+      "tools_gb03_native_backend_conformance_canonical_json",
+      "tools_gb03_native_backend_conformance_digest",
+      "tools_gb03_native_backend_conformance_expected_edges",
+      "tools_gb03_native_backend_conformance_expected_nodes",
+      "tools_gb03_native_backend_conformance_fixture",
+      "tools_gb03_native_backend_conformance_main",
+      "tools_gb03_native_backend_conformance_make_engine",
+      "tools_gb03_native_backend_conformance_native_projection_payloads",
+      "tools_gb03_native_backend_conformance_probe_backend",
+      "tools_gb03_native_backend_conformance_py_any",
+      "tools_gb03_native_backend_conformance_py_path",
+      "tools_gb03_native_backend_conformance_rationale_127",
+      "tools_gb03_native_backend_conformance_rationale_2",
+      "tools_gb03_native_backend_conformance_rationale_339",
+      "tools_gb03_native_backend_conformance_rationale_84",
+      "tools_gb03_native_backend_conformance_result_summary",
+      "tools_gb03_native_backend_conformance_run",
+      "tools_gb03_native_backend_conformance_scenario_definitions",
+      "tools_gb03_native_backend_conformance_verify_round_trip",
+      "tools_gb03_native_backend_conformance_write_report",
       "tools_publish_validation_evidence_bundle",
       "tools_publish_validation_evidence_bundle_main",
       "tools_publish_validation_evidence_bundle_rationale_1",
@@ -17638,7 +17757,7 @@
   "edges": {
     "common_count": 4707,
     "base_only_count": 2984,
-    "compare_only_count": 39963,
+    "compare_only_count": 40264,
     "base_only": [
       [
         "analysis_citation_validator",
@@ -57398,37 +57517,37 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1409",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1410",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_finalize_response",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1436",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1437",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_invoke",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1506",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1507",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_graph_runtime_report",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2033",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2118",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_pytest_python_file_patterns",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2080",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2165",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_pytest_static_assessment",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2218",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2303",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_trace_execution_context",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2406",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2491",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_discover_case_context",
         "rationale_for"
       ],
@@ -57438,7 +57557,7 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2672",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2757",
         "audit_engine_semantic_audit_ae32b_evidence_tools_create_tool_server",
         "rationale_for"
       ],
@@ -57483,7 +57602,7 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_747",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_748",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
         "rationale_for"
       ],
@@ -57493,12 +57612,12 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_913",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_914",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_collect_import_bindings",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_969",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_970",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_build_static_call_graph",
         "rationale_for"
       ],
@@ -69314,6 +69433,16 @@
       ],
       [
         "audit_engine_semantic_audit_graph_analysis_impact",
+        "audit_engine_semantic_audit_graph_analysis_identity_deterministic_id",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact",
+        "audit_engine_semantic_audit_graph_analysis_identity_edge_fingerprint",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact",
         "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
         "imports"
       ],
@@ -69389,6 +69518,11 @@
       ],
       [
         "audit_engine_semantic_audit_graph_analysis_impact",
+        "json",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact",
         "typing",
         "imports_from"
       ],
@@ -69405,6 +69539,26 @@
       [
         "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer",
         "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_single",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_candidate_kind",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_dependency_cycles",
         "method"
       ],
       [
@@ -69454,33 +69608,138 @@
       ],
       [
         "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze",
-        "audit_engine_semantic_audit_graph_analysis_helpers_make_analysis_id",
-        "calls"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze",
-        "audit_engine_semantic_audit_graph_analysis_helpers_parse_relation_types",
-        "calls"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze",
-        "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
-        "calls"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze",
-        "audit_engine_semantic_audit_graph_analysis_observations_semanticobservation_create",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
         "calls"
       ],
       [
         "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze",
         "audit_engine_semantic_audit_graph_analysis_results_graphanalysisresult",
-        "calls"
+        "references"
       ],
       [
         "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze",
         "audit_engine_semantic_audit_graph_queries_models_graphquery",
         "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_get_node",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_has_node",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+        "audit_engine_semantic_audit_graph_analysis_helpers_make_analysis_id",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+        "audit_engine_semantic_audit_graph_analysis_helpers_parse_relation_types",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+        "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_single",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_candidate_kind",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_dependency_cycles",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+        "audit_engine_semantic_audit_graph_analysis_results_graphanalysisresult",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_change_set",
+        "audit_engine_semantic_audit_graph_queries_models_graphquery",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_single",
+        "audit_engine_semantic_audit_graph_analysis_helpers_make_analysis_id",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_single",
+        "audit_engine_semantic_audit_graph_analysis_helpers_parse_relation_types",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_single",
+        "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_single",
+        "audit_engine_semantic_audit_graph_analysis_observations_semanticobservation_create",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_single",
+        "audit_engine_semantic_audit_graph_analysis_results_graphanalysisresult",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze_single",
+        "audit_engine_semantic_audit_graph_queries_models_graphquery",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_candidate_kind",
+        "audit_engine_semantic_audit_graph_analysis_impact_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_dependency_cycles",
+        "audit_engine_semantic_audit_graph_analysis_evidence_evidencerecord",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_dependency_cycles",
+        "audit_engine_semantic_audit_graph_analysis_evidence_evidencerecord_from_edge",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_dependency_cycles",
+        "audit_engine_semantic_audit_graph_analysis_identity_deterministic_id",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_dependency_cycles",
+        "audit_engine_semantic_audit_graph_analysis_identity_edge_fingerprint",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_dependency_cycles",
+        "audit_engine_semantic_audit_graph_analysis_impact_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_dependency_cycles",
+        "audit_engine_semantic_audit_graph_analysis_observations_semanticobservation",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_dependency_cycles",
+        "audit_engine_semantic_audit_graph_analysis_observations_semanticobservation_create",
+        "calls"
       ],
       [
         "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_init",
@@ -69498,8 +69757,18 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_analysis_impact_rationale_25",
+        "audit_engine_semantic_audit_graph_analysis_impact_rationale_28",
         "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_rationale_397",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_dependency_cycles",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_analysis_impact_rationale_55",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer_analyze",
         "rationale_for"
       ],
       [
@@ -100193,6 +100462,21 @@
         "contains"
       ],
       [
+        "github_environments_e85_graph_tool",
+        "github_environments_e85_graph_tool_channels",
+        "contains"
+      ],
+      [
+        "github_environments_e85_graph_tool",
+        "github_environments_e85_graph_tool_dependencies",
+        "contains"
+      ],
+      [
+        "github_environments_e85_graph_tool",
+        "github_environments_e85_graph_tool_name",
+        "contains"
+      ],
+      [
         "github_workflows_archive_11_semantic_audit_orchestration_validation",
         "github_workflows_archive_11_semantic_audit_orchestration_validation_jobs",
         "contains"
@@ -100280,6 +100564,361 @@
       [
         "github_workflows_archive_11_semantic_audit_orchestration_validation_validate_steps",
         "github_workflows_archive_11_semantic_audit_orchestration_validation_steps_with",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance",
+        "github_workflows_e85_native_graph_backend_conformance_concurrency",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance",
+        "github_workflows_e85_native_graph_backend_conformance_jobs",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance",
+        "github_workflows_e85_native_graph_backend_conformance_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance",
+        "github_workflows_e85_native_graph_backend_conformance_on",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance",
+        "github_workflows_e85_native_graph_backend_conformance_permissions",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_concurrency",
+        "github_workflows_e85_native_graph_backend_conformance_concurrency_cancel_in_progress",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_concurrency",
+        "github_workflows_e85_native_graph_backend_conformance_concurrency_group",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_env",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_run",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_if",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_run",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_shell",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_uses",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
+        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_if",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
+        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
+        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_needs",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
+        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_runs_on",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
+        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_steps",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
+        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
+        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_runs_on",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
+        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
+        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_timeout_minutes",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_runs_on",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_strategy",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_timeout_minutes",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_outputs",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_runs_on",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_timeout_minutes",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_on",
+        "github_workflows_e85_native_graph_backend_conformance_on_workflow_dispatch",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_permissions",
+        "github_workflows_e85_native_graph_backend_conformance_permissions_contents",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_if",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_run",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_uses",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_strategy",
+        "github_workflows_e85_native_graph_backend_conformance_strategy_fail_fast",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_strategy",
+        "github_workflows_e85_native_graph_backend_conformance_strategy_matrix",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_outputs",
+        "github_workflows_e85_native_graph_backend_conformance_outputs_native_status",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_id",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_if",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_run",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_shell",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_uses",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_env",
+        "github_workflows_e85_native_graph_backend_conformance_env_graph_tool",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_env",
+        "github_workflows_e85_native_graph_backend_conformance_env_pip_backends",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_env",
+        "github_workflows_e85_native_graph_backend_conformance_env_snap_job",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_env",
+        "github_workflows_e85_native_graph_backend_conformance_env_snap_native",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "github_workflows_e85_native_graph_backend_conformance_with_cache",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "github_workflows_e85_native_graph_backend_conformance_with_cache_environment",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "github_workflows_e85_native_graph_backend_conformance_with_environment_file",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "github_workflows_e85_native_graph_backend_conformance_with_environment_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "github_workflows_e85_native_graph_backend_conformance_with_if_no_files_found",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "github_workflows_e85_native_graph_backend_conformance_with_init_shell",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "github_workflows_e85_native_graph_backend_conformance_with_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "github_workflows_e85_native_graph_backend_conformance_with_path",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "github_workflows_e85_native_graph_backend_conformance_with_python_version",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_steps_with",
+        "github_workflows_e85_native_graph_backend_conformance_with_retention_days",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_native_graph_backend_conformance_strategy_matrix",
+        "github_workflows_e85_native_graph_backend_conformance_matrix_backend",
         "contains"
       ],
       [
@@ -181154,6 +181793,11 @@
       ],
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_e85_conformance_runner_contract_with_adapter_test_double",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
         "tests_semantic_graph_test_e83_multi_backend_traversal_test_explicit_backend_selection_never_silently_falls_back",
         "contains"
       ],
@@ -181186,6 +181830,16 @@
         "tests_semantic_graph_test_e83_multi_backend_traversal",
         "tests_semantic_graph_test_e83_multi_backend_traversal_vertexseq",
         "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tools_gb03_native_backend_conformance",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tools_gb03_native_backend_conformance_run",
+        "imports"
       ],
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal",
@@ -181478,6 +182132,11 @@
         "rationale_for"
       ],
       [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_344",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_e85_conformance_runner_contract_with_adapter_test_double",
+        "rationale_for"
+      ],
+      [
         "tests_semantic_graph_test_e83_multi_backend_traversal_snapedge",
         "tests_semantic_graph_test_e83_multi_backend_traversal_snapedge_getdstnid",
         "method"
@@ -181510,6 +182169,21 @@
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal_test_backend_registry_marks_all_adapters_as_semantic_query_capable",
         "audit_engine_semantic_audit_graph_backend_capability_registry_create_default_registry",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_e85_conformance_runner_contract_with_adapter_test_double",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_install_fake",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_e85_conformance_runner_contract_with_adapter_test_double",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_py_parametrize",
+        "references"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_e85_conformance_runner_contract_with_adapter_test_double",
+        "tools_gb03_native_backend_conformance_run",
         "calls"
       ],
       [
@@ -181734,17 +182408,17 @@
       ],
       [
         "tests_semantic_graph_test_e84_graph_impact_analysis",
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_accepts_bounded_change_set",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e84_graph_impact_analysis",
         "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_can_start_from_module_or_symbol",
         "contains"
       ],
       [
         "tests_semantic_graph_test_e84_graph_impact_analysis",
         "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_is_bounded_and_fails_closed_as_incomplete",
-        "contains"
-      ],
-      [
-        "tests_semantic_graph_test_e84_graph_impact_analysis",
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_rejects_multiple_sources",
         "contains"
       ],
       [
@@ -181788,68 +182462,63 @@
         "calls"
       ],
       [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_can_start_from_module_or_symbol",
-        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
-        "calls"
-      ],
-      [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_can_start_from_module_or_symbol",
-        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice_analyze",
-        "calls"
-      ],
-      [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_can_start_from_module_or_symbol",
-        "tests_semantic_graph_test_e84_graph_impact_analysis_impact_graph",
-        "calls"
-      ],
-      [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_can_start_from_module_or_symbol",
-        "tests_semantic_graph_test_e84_graph_impact_analysis_query",
-        "calls"
-      ],
-      [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_is_bounded_and_fails_closed_as_incomplete",
-        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
-        "calls"
-      ],
-      [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_is_bounded_and_fails_closed_as_incomplete",
-        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice_analyze",
-        "calls"
-      ],
-      [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_is_bounded_and_fails_closed_as_incomplete",
-        "tests_semantic_graph_test_e84_graph_impact_analysis_impact_graph",
-        "calls"
-      ],
-      [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_is_bounded_and_fails_closed_as_incomplete",
-        "tests_semantic_graph_test_e84_graph_impact_analysis_query",
-        "calls"
-      ],
-      [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_rejects_multiple_sources",
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_accepts_bounded_change_set",
         "audit_engine_semantic_audit_graph_queries_models_graphquery",
         "calls"
       ],
       [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_rejects_multiple_sources",
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_accepts_bounded_change_set",
         "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
         "calls"
       ],
       [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_rejects_multiple_sources",
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_accepts_bounded_change_set",
         "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice_analyze",
         "calls"
       ],
       [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_rejects_multiple_sources",
-        "pytest",
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_accepts_bounded_change_set",
+        "tests_semantic_graph_test_e84_graph_impact_analysis_impact_graph",
         "calls"
       ],
       [
-        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_rejects_multiple_sources",
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_can_start_from_module_or_symbol",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_can_start_from_module_or_symbol",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice_analyze",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_can_start_from_module_or_symbol",
         "tests_semantic_graph_test_e84_graph_impact_analysis_impact_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_can_start_from_module_or_symbol",
+        "tests_semantic_graph_test_e84_graph_impact_analysis_query",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_is_bounded_and_fails_closed_as_incomplete",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_is_bounded_and_fails_closed_as_incomplete",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice_analyze",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_is_bounded_and_fails_closed_as_incomplete",
+        "tests_semantic_graph_test_e84_graph_impact_analysis_impact_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_is_bounded_and_fails_closed_as_incomplete",
+        "tests_semantic_graph_test_e84_graph_impact_analysis_query",
         "calls"
       ],
       [
@@ -181896,6 +182565,521 @@
         "tests_semantic_graph_test_e84_graph_impact_analysis_test_impact_analysis_uses_selected_external_backend_with_reference_parity",
         "tests_semantic_graph_test_e84_graph_impact_analysis_query",
         "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "importlib_util",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "pytest",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_backend_probe_never_claims_native_conformance_without_execution",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_conformance_fixture_contains_required_semantic_edge_cases",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_native_backend_conformance_when_library_is_installed",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_networkx_and_scipy_round_trip_same_canonical_semantic_payload",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_snap_adapter_is_not_marked_native_verified_by_presence_alone",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "tools_gb03_native_backend_conformance",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_fixture",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_probe_backend",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_run",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance_rationale_1",
+        "tests_semantic_graph_test_e85_native_backend_conformance",
+        "rationale_for"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_backend_probe_never_claims_native_conformance_without_execution",
+        "tests_semantic_graph_test_e85_native_backend_conformance_py_parametrize",
+        "references"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_backend_probe_never_claims_native_conformance_without_execution",
+        "tools_gb03_native_backend_conformance_probe_backend",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_conformance_fixture_contains_required_semantic_edge_cases",
+        "tools_gb03_native_backend_conformance_fixture",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_native_backend_conformance_when_library_is_installed",
+        "pytest",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_native_backend_conformance_when_library_is_installed",
+        "tests_semantic_graph_test_e85_native_backend_conformance_py_parametrize",
+        "references"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_native_backend_conformance_when_library_is_installed",
+        "tools_gb03_native_backend_conformance_run",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_networkx_and_scipy_round_trip_same_canonical_semantic_payload",
+        "tools_gb03_native_backend_conformance_run",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e85_native_backend_conformance_test_snap_adapter_is_not_marked_native_verified_by_presence_alone",
+        "tools_gb03_native_backend_conformance_probe_backend",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_ae32b_init",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_core_semantic_graph",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_graph_analysis_engine_graphanalysisengine",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_graph_analysis_init",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_graph_analysis_models_analysisstatus",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_graph_queries_init",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_graph_queries_models_graphquery",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_graph_queries_models_querytype",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_graph_queries_validation",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_graph_queries_validation_graphqueryvalidationerror",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_graph_service",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "pathlib",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "pytest",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_query",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_change_set_impact_matches_reference_for_external_backends",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_cycle_scan_budget_is_explicitly_incomplete",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_dependency_cycle_is_reported_with_edge_evidence",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_duplicate_change_sources_are_rejected",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_rejects_changed_nodes_outside_impact_mode",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_schema_advertises_bounded_change_set",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_tool_accepts_multi_file_change_set",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_impact_traversal_budget_is_shared_across_sources",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_more_than_25_change_sources_are_rejected",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_multi_source_impact_is_order_independent",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_multi_source_impact_merges_candidates_and_attributes_sources",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_test_self_loop_is_reported_as_dependency_cycle",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact",
+        "tests_semantic_graph_test_e86_change_set_impact_write",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_add_edge",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_add_node",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_query",
+        "audit_engine_semantic_audit_graph_queries_models_graphquery",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_change_set_impact_matches_reference_for_external_backends",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_change_set_impact_matches_reference_for_external_backends",
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_change_set_impact_matches_reference_for_external_backends",
+        "tests_semantic_graph_test_e86_change_set_impact_py_parametrize",
+        "references"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_change_set_impact_matches_reference_for_external_backends",
+        "tests_semantic_graph_test_e86_change_set_impact_query",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_cycle_scan_budget_is_explicitly_incomplete",
+        "audit_engine_semantic_audit_graph_analysis_impact_impactanalyzer",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_cycle_scan_budget_is_explicitly_incomplete",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_cycle_scan_budget_is_explicitly_incomplete",
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_cycle_scan_budget_is_explicitly_incomplete",
+        "tests_semantic_graph_test_e86_change_set_impact_query",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_dependency_cycle_is_reported_with_edge_evidence",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_dependency_cycle_is_reported_with_edge_evidence",
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_dependency_cycle_is_reported_with_edge_evidence",
+        "tests_semantic_graph_test_e86_change_set_impact_query",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_duplicate_change_sources_are_rejected",
+        "audit_engine_semantic_audit_graph_queries_models_graphquery",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_duplicate_change_sources_are_rejected",
+        "audit_engine_semantic_audit_graph_queries_validation_graphqueryvalidationerror",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_duplicate_change_sources_are_rejected",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_duplicate_change_sources_are_rejected",
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_rejects_changed_nodes_outside_impact_mode",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_rejects_changed_nodes_outside_impact_mode",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_invoke",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_rejects_changed_nodes_outside_impact_mode",
+        "tests_semantic_graph_test_e86_change_set_impact_write",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_schema_advertises_bounded_change_set",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_schema_advertises_bounded_change_set",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_list_tools",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_schema_advertises_bounded_change_set",
+        "tests_semantic_graph_test_e86_change_set_impact_write",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_tool_accepts_multi_file_change_set",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_tool_accepts_multi_file_change_set",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_invoke",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_graph_neighbors_tool_accepts_multi_file_change_set",
+        "tests_semantic_graph_test_e86_change_set_impact_write",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_impact_traversal_budget_is_shared_across_sources",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_impact_traversal_budget_is_shared_across_sources",
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_impact_traversal_budget_is_shared_across_sources",
+        "tests_semantic_graph_test_e86_change_set_impact_query",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_more_than_25_change_sources_are_rejected",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_more_than_25_change_sources_are_rejected",
+        "audit_engine_semantic_audit_graph_queries_models_graphquery",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_more_than_25_change_sources_are_rejected",
+        "audit_engine_semantic_audit_graph_queries_validation_graphqueryvalidationerror",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_more_than_25_change_sources_are_rejected",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_more_than_25_change_sources_are_rejected",
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_multi_source_impact_is_order_independent",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_multi_source_impact_is_order_independent",
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_multi_source_impact_is_order_independent",
+        "tests_semantic_graph_test_e86_change_set_impact_query",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_multi_source_impact_merges_candidates_and_attributes_sources",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_multi_source_impact_merges_candidates_and_attributes_sources",
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_multi_source_impact_merges_candidates_and_attributes_sources",
+        "tests_semantic_graph_test_e86_change_set_impact_query",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_self_loop_is_reported_as_dependency_cycle",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_self_loop_is_reported_as_dependency_cycle",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_self_loop_is_reported_as_dependency_cycle",
+        "tests_semantic_graph_test_e86_change_set_impact_change_set_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_test_self_loop_is_reported_as_dependency_cycle",
+        "tests_semantic_graph_test_e86_change_set_impact_query",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e86_change_set_impact_write",
+        "tests_semantic_graph_test_e86_change_set_impact_py_path",
+        "references"
       ],
       [
         "tests_semantic_graph_test_g3_architecture_boundaries",
@@ -224321,6 +225505,446 @@
         "tools_gb02_backend_traversal_smoke_run",
         "tools_gb02_backend_traversal_smoke_fixture",
         "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "argparse",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_core_semantic_graph",
+        "imports_from"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_graph_analysis_models",
+        "imports_from"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_graph_analysis_traversal",
+        "imports_from"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal",
+        "imports_from"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal",
+        "imports_from"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_graph_backend_optional_backend_support",
+        "imports_from"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_graph_backend_optional_backend_support_backendunavailableerror",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "audit_engine_semantic_audit_graph_backend_optional_backend_support_require_backend",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "collections_abc",
+        "imports_from"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "importlib",
+        "imports_from"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "importlib_util",
+        "imports_from"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "json",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "pathlib",
+        "imports_from"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "platform",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "sys",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_canonical_json",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_digest",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_expected_edges",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_expected_nodes",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_fixture",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_main",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_make_engine",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_native_projection_payloads",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_probe_backend",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_result_summary",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_run",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_scenario_definitions",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_verify_round_trip",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "tools_gb03_native_backend_conformance_write_report",
+        "contains"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "typing",
+        "imports_from"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_canonical_json",
+        "json",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_canonical_json",
+        "tools_gb03_native_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_digest",
+        "tools_gb03_native_backend_conformance_canonical_json",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_digest",
+        "tools_gb03_native_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_expected_edges",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "uses"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_expected_edges",
+        "tools_gb03_native_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_expected_nodes",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "uses"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_expected_nodes",
+        "tools_gb03_native_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_fixture",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_fixture",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_fixture",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_add_edge",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_fixture",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_add_node",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_fixture",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_main",
+        "argparse",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_main",
+        "platform",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_main",
+        "tools_gb03_native_backend_conformance_probe_backend",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_main",
+        "tools_gb03_native_backend_conformance_run",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_main",
+        "tools_gb03_native_backend_conformance_write_report",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_make_engine",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "uses"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_make_engine",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_make_engine",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_native_projection_payloads",
+        "tools_gb03_native_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_probe_backend",
+        "audit_engine_semantic_audit_graph_backend_optional_backend_support_require_backend",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_probe_backend",
+        "tools_gb03_native_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_rationale_127",
+        "tools_gb03_native_backend_conformance_fixture",
+        "rationale_for"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_rationale_2",
+        "tools_gb03_native_backend_conformance",
+        "rationale_for"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_rationale_339",
+        "tools_gb03_native_backend_conformance_run",
+        "rationale_for"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_rationale_84",
+        "tools_gb03_native_backend_conformance_probe_backend",
+        "rationale_for"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_result_summary",
+        "tools_gb03_native_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_run",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_run",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_run",
+        "audit_engine_semantic_audit_graph_backend_optional_backend_support_backendunavailableerror",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_run",
+        "platform",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_run",
+        "tools_gb03_native_backend_conformance_fixture",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_run",
+        "tools_gb03_native_backend_conformance_make_engine",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_run",
+        "tools_gb03_native_backend_conformance_probe_backend",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_run",
+        "tools_gb03_native_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_run",
+        "tools_gb03_native_backend_conformance_result_summary",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_run",
+        "tools_gb03_native_backend_conformance_scenario_definitions",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_run",
+        "tools_gb03_native_backend_conformance_verify_round_trip",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_scenario_definitions",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_verify_round_trip",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "uses"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_verify_round_trip",
+        "tools_gb03_native_backend_conformance_digest",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_verify_round_trip",
+        "tools_gb03_native_backend_conformance_expected_edges",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_verify_round_trip",
+        "tools_gb03_native_backend_conformance_expected_nodes",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_verify_round_trip",
+        "tools_gb03_native_backend_conformance_native_projection_payloads",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_verify_round_trip",
+        "tools_gb03_native_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_write_report",
+        "json",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_write_report",
+        "tools_gb03_native_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_write_report",
+        "tools_gb03_native_backend_conformance_py_path",
+        "references"
       ],
       [
         "tools_publish_validation_evidence_bundle",
