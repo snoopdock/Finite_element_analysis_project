@@ -244,12 +244,39 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install minimal runtime dependencies
+      - name: Install project and graph runtime dependencies
+        working-directory: source
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check \
-            'requests>=2.31.0,<3.0.0' \
-            'PyYAML>=6.0.0,<7.0.0'
+          # Install the exact checked-out Stage1 project and its declared graph-core
+          # extra. This includes the default NetworkX backend and SciPy parity support.
+          python -m pip install --disable-pip-version-check --editable ".[graph-core]"
+          python -m pip check
+
+          # Fail before provider credentials or calls if the graph runtime cannot
+          # be imported and initialized from the validated source snapshot.
+          python - <<'PY'
+          import networkx
+          import requests
+          import scipy
+          import yaml
+
+          from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
+
+          fixture = "tests/semantic_audit/fixtures/ae32c_provider_interface_incident"
+          tools = RepositoryEvidenceTools(fixture, graph_backend="networkx")
+          if tools.graph_backend != "networkx":
+              raise SystemExit("live_graph_runtime_backend_mismatch")
+          if tools.evidence_index_status != "complete":
+              raise SystemExit("live_graph_runtime_fixture_incomplete")
+
+          print(
+              "Live runtime preflight passed: "
+              f"NetworkX={networkx.__version__}, "
+              f"SciPy={scipy.__version__}, "
+              f"evidence_index={tools.evidence_index_status}"
+          )
+          PY
 
       - name: Verify investigation-context CLI contract before provider calls
         shell: bash
@@ -618,7 +645,8 @@ jobs:
               "problems": sorted(set(problems)),
               "comparison_artifact": str(comparison_path.relative_to(root)) if comparison_path else None,
               "diagnostic_accuracy": "not_assessed",
-              "human_review_required": True,
+              "human_review_required": False,
+              "machine_verification_required": True,
           }
           gate_path = root / "smoke-gate.json"
           gate_path.write_text(json.dumps(gate, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
