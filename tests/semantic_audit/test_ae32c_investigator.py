@@ -2060,6 +2060,144 @@ def test_graph_interaction_contract_requires_direct_graph_use_and_follow_through
     assert coverage["graph_follow_through_complete"] is True
 
 
+def test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through():
+    fixture = Path("tests/semantic_audit/fixtures/ae32c_provider_interface_incident")
+    tools = RepositoryEvidenceTools(fixture)
+    extractor_hash = tools.file_hashes["pipeline/extractor.py"]
+    adapter_hash = tools.file_hashes["providers/adapter.py"]
+    extractor_candidate = _source_reference_candidate_id({
+        "evidence_id": "E0002",
+        "path": "pipeline/extractor.py",
+        "line": 6,
+        "source_sha256": extractor_hash,
+    })
+    adapter_candidate = _source_reference_candidate_id({
+        "evidence_id": "E0003",
+        "path": "providers/adapter.py",
+        "line": 6,
+        "source_sha256": adapter_hash,
+    })
+
+    def read_action(path):
+        content = tools.contents[path]
+        return action_tool("read_source_file", {
+            "path": path,
+            "start_line": 1,
+            "end_line": len(content.splitlines()),
+        })
+
+    final = {
+        "action": "final",
+        "diagnosis": {
+            "summary": "The fixture exposes a statically observable provider counter-name mismatch.",
+            "root_cause": {
+                "statement": "The consumer reads provider.total_calls while the inspected adapter initializes self.calls; this supports a static interface-mismatch hypothesis, not a runtime reproduction.",
+                "confidence": "high",
+                "evidence_refs": ["E0002", "E0003"],
+                "source_references": [
+                    {"candidate_id": extractor_candidate},
+                    {"candidate_id": adapter_candidate},
+                ],
+            },
+            "claims": [{
+                "statement": "The consumer and adapter use different counter attribute names in the inspected source.",
+                "kind": "static_inference",
+                "confidence": "high",
+                "evidence_refs": ["E0002", "E0003"],
+                "source_references": [
+                    {"candidate_id": extractor_candidate},
+                    {"candidate_id": adapter_candidate},
+                ],
+            }],
+            "proposed_corrective_action": "Review and align the provider counter interface and its tests.",
+            "limitations": ["The fixture was not executed; static source evidence does not prove runtime causality."],
+            "next_steps": ["Add an interface contract test and verify the concrete provider implementation."],
+        },
+    }
+    provider = FakeProvider([
+        read_action("main.py"),
+        read_action("providers/factory.py"),
+        read_action("tests/checks.py"),
+        action_tool("find_related_tests", {"target": "pipeline/extractor.py"}),
+        action_tool("discover_case_context", {}),
+        json.dumps(final),
+    ])
+    investigator = RepositoryInvestigator(
+        fixture,
+        provider,
+        evidence_tools=tools,
+        required_source_paths=("pipeline/extractor.py", "providers/adapter.py"),
+        required_source_anchors={
+            "pipeline/extractor.py": ("provider.total_calls",),
+            "providers/adapter.py": ("self.calls",),
+        },
+        required_context_paths=("main.py", "providers/factory.py", "providers/adapter.py", "tests/checks.py"),
+        required_context_target="pipeline/extractor.py",
+        require_complete_investigation_context=True,
+        require_graph_interaction=True,
+        required_graph_target="symbol:pipeline.extractor::extract",
+        required_graph_relation_types=("CALLS",),
+        required_graph_direction="incoming",
+        required_graph_min_cross_module_reads=1,
+        graph_query_max_depth=1,
+        graph_query_max_results=20,
+        prefetch_required_graph_query=True,
+        prefetch_required_context_trace=True,
+        limits=InvestigationLimits(
+            max_rounds=7,
+            finalization_rounds_reserved=2,
+            max_tool_calls=20,
+            max_total_prompt_chars=200_000,
+            max_total_tokens=180_000,
+            max_elapsed_seconds=120,
+        ),
+        id_factory=lambda: "incoming-calls-prefetch-test",
+    )
+
+    report = investigator.run("Investigate the controlled provider interface mismatch.")
+
+    coverage = report["graph_interaction_coverage"]
+    assert report["diagnosis"] is not None
+    assert coverage["status"] == "complete"
+    assert coverage["required_relation_types_observed"] == ["CALLS"]
+    assert coverage["graph_derived_verified_read_paths"] == ["main.py", "tests/checks.py"]
+    assert coverage["graph_follow_through_complete"] is True
+    assert coverage["orchestrator_prefetched_graph_query_count"] == 1
+    assert coverage["model_requested_graph_tool_call_count"] == 0
+    assert coverage["graph_queries"][0]["initiator"] == "orchestrator_prefetch"
+    assert investigator._tool_schemas["graph_neighbors"]["parameters"]["properties"]["direction"]["enum"] == ["incoming"]
+    assert report["source_textual_support"]["status"] == "complete"
+    assert report["budget"]["finalization_context_fit"] is True
+    assert report["budget"]["finalization_context_chars_after"] <= report["budget"]["finalization_context_target_chars"]
+    assert report["investigation_context_coverage"]["status"] == "complete_for_available_static_context"
+
+    # The model prompt records the orchestrator query separately and instructs
+    # the model to inspect/read graph-surfaced paths rather than repeat it.
+    initial_payload = json.loads(provider.messages[0][1]["content"])
+    assert initial_payload["prefetched_required_graph_query"]["tool"] == "graph_neighbors"
+    assert initial_payload["prefetched_required_graph_query"]["response"]["result"]["observed_relation_types"] == ["CALLS"]
+    assert "not an LLM-requested graph call" in initial_payload["graph_investigation_contract"]["instructions"]
+
+    # Exact anchor candidates, not every incidental line candidate, survive
+    # finalization compaction.
+    finalization_payload = next(
+        json.loads(message["content"])
+        for message in provider.messages[-1]
+        if message.get("role") == "user"
+        and "source_reference_candidates" in message.get("content", "")
+    )
+    retained_candidate_ids = {
+        item["candidate_id"] for item in finalization_payload["source_reference_candidates"]
+    }
+    assert {extractor_candidate, adapter_candidate}.issubset(retained_candidate_ids)
+    assert len(retained_candidate_ids) == 3
+    assert all(
+        item["path"] in {"pipeline/extractor.py", "providers/adapter.py"}
+        for item in finalization_payload["source_reference_candidates"]
+    )
+    assert "graph_observations" not in finalization_payload["graph_interaction_coverage"]
+
+
 def test_graph_interaction_contract_is_not_satisfied_by_source_reads_alone():
     provider = FakeProvider([
         action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
@@ -2081,7 +2219,7 @@ def test_graph_interaction_contract_is_not_satisfied_by_source_reads_alone():
     assert report["status"] != "completed"
 
 
-def test_final_report_includes_machine_verification_and_does_not_publish_review_template(tmp_path: Path):
+def test_final_report_includes_claim_evidence_assessment_and_publishes_review_template(tmp_path: Path):
     investigator, _, _ = make_investigator([
         action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
         final_action(evidence_id="E0002", source_reference=True),
@@ -2090,12 +2228,7 @@ def test_final_report_includes_machine_verification_and_does_not_publish_review_
     assessment = report["claim_evidence_assessment"]
     assert assessment["status"] == "available"
     assert assessment["semantic_support_assessment"] == "not_performed"
-    assert assessment["human_review_required"] is False
-    assert assessment["machine_verification_required"] is True
-    assert report["human_review_policy"]["blinded_reviewer_packets_generated"] is False
-    assert report["machine_verification_assessment"]["semantic_correctness"] == "not_assessed"
-    assert report["deterministic_follow_up_plan"]["execution_mode"] == "plan_only"
-    assert report["deterministic_follow_up_plan"]["source_mutation_permitted"] is False
+    assert assessment["human_review_required"] is True
     assert assessment["items"][0]["claim_type"] == "causal_hypothesis"
     assert assessment["items"][1]["verification_level"] == "textual_witness"
     assert assessment["items"][1]["support_outcome"] == "unverified"
@@ -2105,11 +2238,12 @@ def test_final_report_includes_machine_verification_and_does_not_publish_review_
     repository.mkdir()
     output.mkdir()
     result = write_report_artifacts(report, output, repository)
-    assert len(result["artifacts"]) == 2
-    assert not any(item["path"].endswith(".adjudication-template.json") for item in result["artifacts"])
-    markdown = Path(next(item["path"] for item in result["artifacts"] if item["path"].endswith(".md"))).read_text(encoding="utf-8")
-    assert "Human adjudication: **pending**" not in markdown
-    assert "Semantic correctness: **not assessed**" in markdown
+    assert len(result["artifacts"]) == 3
+    template_artifacts = [item for item in result["artifacts"] if item["path"].endswith(".adjudication-template.json")]
+    assert len(template_artifacts) == 1
+    template = json.loads(Path(template_artifacts[0]["path"]).read_text(encoding="utf-8"))
+    assert template["investigation_id"] == report["investigation_id"]
+    assert len(template["items"]) == len(assessment["items"])
 
 
 def test_runtime_claim_kind_is_accepted_but_never_promoted_by_static_evidence():
@@ -2125,30 +2259,3 @@ def test_runtime_claim_kind_is_accepted_but_never_promoted_by_static_evidence():
     assert claim["claim_type"] == "runtime_claim"
     assert claim["support_outcome"] == "unverified"
     assert claim["verification_level"] == "textual_witness"
-
-
-def test_real_evidence_tools_produce_machine_verified_report_without_human_packets(tmp_path: Path):
-    source = tmp_path / SOURCE
-    source.parent.mkdir(parents=True, exist_ok=True)
-    source.write_bytes(SOURCE_BYTES)
-    tools = RepositoryEvidenceTools(tmp_path)
-    provider = FakeProvider([
-        action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
-        final_action(evidence_id="E0002", source_reference=True),
-    ])
-    investigator = RepositoryInvestigator(
-        tmp_path,
-        provider,
-        evidence_tools=tools,
-        enable_graph_tools=True,
-        limits=InvestigationLimits(max_rounds=3, finalization_rounds_reserved=1),
-        id_factory=lambda: "machine-verified-real-evidence-tools",
-    )
-    report = investigator.run("Verify the exact source observation.")
-    assert report["snapshot_check_status"] == "verified"
-    assert report["machine_verification_assessment"]["status"] == "evidence_integrity_passed"
-    assert report["machine_verification_assessment"]["summary"]["invalid_source_reference_count"] == 0
-    assert report["machine_verification_assessment"]["semantic_correctness"] == "not_assessed"
-    assert report["runtime_architecture"]["graph_engine"]["active_computation_backend"] == "networkx"
-    assert report["runtime_architecture"]["graph_engine"]["external_backend_adapters"]["networkx"]["active_in_ae32b_query_path"] is True
-    assert report["human_review_policy"]["blinded_reviewer_packets_generated"] is False

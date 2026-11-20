@@ -682,6 +682,7 @@ class CloudflareProvider:
         self.native_tool_call_requests = 0
         self.native_tool_call_responses = 0
         self.native_tool_call_failures = 0
+        self.native_tool_call_contract_rejections = 0
         self.last_http_status = None
         self.last_error_category = ""
         self.last_error_codes = []
@@ -774,6 +775,48 @@ class CloudflareProvider:
             digest = event_metadata.get("payload_sha256")
             if isinstance(digest, str) and re.fullmatch(r"[a-f0-9]{64}", digest):
                 self.last_request_stream_error_payload_sha256 = digest
+
+    def _preserve_invalid_native_tool_call(self, model, call_name, call_arguments, reasoning_content):
+        """Return malformed native arguments as inert data for AE-32C normalization.
+
+        A completed HTTP 200 response with malformed function arguments is a
+        model response-contract rejection, not a provider transport failure.
+        Preserve the bounded raw arguments so the investigator can reject them
+        safely and use its existing recovery/downgrade policy.
+        """
+        safe_name = call_name if isinstance(call_name, str) else ""
+        try:
+            encoded_call = json.dumps(
+                {"name": safe_name, "arguments": call_arguments},
+                ensure_ascii=False,
+                separators=(",", ":"),
+                allow_nan=False,
+            )
+        except (TypeError, ValueError):
+            encoded_call = json.dumps(
+                {"name": safe_name, "arguments_type": type(call_arguments).__name__},
+                separators=(",", ":"),
+            )
+        total_chars = len(encoded_call) + len(reasoning_content or "")
+        if total_chars > self.max_response_chars:
+            self.failed_calls += 1
+            self.native_tool_call_failures += 1
+            self.oversized_responses += 1
+            self.response_chars_rejected_total += total_chars
+            return None, "Decoded response exceeds character limit"
+
+        self.native_tool_call_responses += 1
+        self.native_tool_call_contract_rejections += 1
+        self.last_request_output_chars = len(encoded_call)
+        self.call_counts[model] = self.call_counts.get(model, 0) + 1
+        self.successful_calls += 1
+        self.response_chars_total += len(encoded_call)
+        self.response_chars_max = max(self.response_chars_max, len(encoded_call))
+        return ProviderToolCall(
+            safe_name,
+            call_arguments,
+            reasoning_content=reasoning_content,
+        ), None
 
     def chat(
         self,
@@ -1280,20 +1323,17 @@ class CloudflareProvider:
                                     parse_constant=_reject_tool_constant,
                                 )
                             except (TypeError, ValueError, json.JSONDecodeError):
-                                if self.last_finish_reason == "length":
-                                    # Preserve the truncated argument string as inert data.
-                                    # The AE-32C normalizer will reject it and trigger the
-                                    # bounded session downgrade; this adapter never executes it.
-                                    return ProviderToolCall(
-                                        call_name, call_arguments, reasoning_content=reasoning_content
-                                    ), None
-                                self.failed_calls += 1
-                                self.native_tool_call_failures += 1
-                                return None, "Native response-tool arguments invalid"
+                                # Malformed/duplicate-key arguments are model
+                                # contract failures. Preserve them as inert data
+                                # so AE-32C can reject and recover; do not convert
+                                # a completed provider response into a transport failure.
+                                return self._preserve_invalid_native_tool_call(
+                                    model, call_name, call_arguments, reasoning_content
+                                )
                         if not isinstance(call_name, str) or not isinstance(call_arguments, dict):
-                            self.failed_calls += 1
-                            self.native_tool_call_failures += 1
-                            return None, "Native response-tool arguments invalid"
+                            return self._preserve_invalid_native_tool_call(
+                                model, call_name, call_arguments, reasoning_content
+                            )
                         try:
                             encoded_call = json.dumps(
                                 {"name": call_name, "arguments": call_arguments},
@@ -1498,6 +1538,7 @@ class CloudflareProvider:
             "json_object_mode": json_object_model,
             "json_schema_mode": False,
             "native_tool_calls": native_tool_model,
+            "plain_text_mode": True,
             "finish_reason_reporting": False,
         }
 
@@ -1609,6 +1650,7 @@ class CloudflareProvider:
             "native_tool_call_requests": self.native_tool_call_requests,
             "native_tool_call_responses": self.native_tool_call_responses,
             "native_tool_call_failures": self.native_tool_call_failures,
+            "native_tool_call_contract_rejections": self.native_tool_call_contract_rejections,
             "last_http_status": self.last_http_status,
             "last_error_category": self.last_error_category,
             "last_error_codes": list(self.last_error_codes),

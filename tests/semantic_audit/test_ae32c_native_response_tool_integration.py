@@ -56,6 +56,7 @@ class NativeCloudflareFakeProvider(FakeProvider):
             "json_object_mode": False,
             "json_schema_mode": False,
             "native_tool_calls": True,
+            "plain_text_mode": True,
             "finish_reason_reporting": False,
         }
 
@@ -150,3 +151,51 @@ def test_native_response_tool_does_not_bypass_finalization_no_tool_rule():
     assert rejected
     assert rejected[0]["tool_dispatched"] is False
     assert report["budget"]["finalization_tool_requests_rejected"] == 1
+
+
+def test_malformed_native_arguments_are_recoverable_model_rejections_not_provider_failures():
+    malformed = (
+        '{"action":"tool_call","action":"final","tool":"repository_summary",'
+        '"arguments":{},"reason":"x","diagnosis":{}}'
+    )
+    provider = NativeCloudflareFakeProvider([
+        ProviderToolCall(RESPONSE_TOOL_NAME, malformed),
+        action_tool(
+            "search_repository",
+            {"query": "observed", "mode": "content", "max_results": 5},
+        ),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    evidence = FakeEvidenceTools()
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        provider_name="cloudflare",
+        model_name=MODEL,
+        evidence_tools=evidence,
+        limits=InvestigationLimits(
+            max_rounds=3,
+            finalization_rounds_reserved=1,
+            max_invalid_json_retries=1,
+            max_finalization_invalid_json_retries=1,
+        ),
+        id_factory=lambda: "native-malformed-recovery-test",
+    )
+
+    report = investigator.run("Investigate the provider interface mismatch.")
+
+    assert report["diagnosis"] is not None
+    assert investigator._response_mode_override == "plain_text"
+    assert [tool for tool, _ in evidence.calls] == ["repository_summary", "search_repository"]
+    assert any(
+        event.get("event") == "model_action_rejected"
+        and event.get("parse_error_code") == "duplicate_json_key"
+        for event in report["errors"]
+    )
+    assert any(
+        event.get("event") == "provider_response_contract_downgrade_requested"
+        and event.get("to_mode") == "plain_text"
+        for event in report["errors"]
+    )
+    assert not any(event.get("event") == "provider_failure" for event in report["errors"])
+

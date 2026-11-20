@@ -345,6 +345,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="Exact graph node selector required by --require-graph-interaction, e.g. symbol:pipeline.extractor::extract.")
     parser.add_argument("--required-graph-relation-type", action="append", default=[],
                         help="Graph relation type required by --require-graph-interaction. Defaults to CALLS.")
+    parser.add_argument("--required-graph-direction", choices=("incoming", "outgoing", "both"),
+                        default="incoming",
+                        help="Direction for the required graph relation query. Incoming is appropriate when the target function is called by other functions.")
     parser.add_argument("--problem", default=DEFAULT_PROBLEM, help="Incident description; bounded and sanitized.")
     parser.add_argument("--provider", choices=SUPPORTED_PROVIDERS,
                         default=os.environ.get("FEA_LLM_PROVIDER", "cloudflare"))
@@ -566,6 +569,12 @@ def main(argv: list[str] | None = None) -> int:
                         require_graph_interaction=args.require_graph_interaction,
                         required_graph_target=required_graph_target,
                         required_graph_relation_types=required_graph_relation_types,
+                        required_graph_direction=args.required_graph_direction,
+                        required_graph_min_cross_module_reads=1 if args.require_graph_interaction else 0,
+                        graph_query_max_depth=1 if args.require_graph_interaction else None,
+                        graph_query_max_results=20 if args.require_graph_interaction else None,
+                        prefetch_required_graph_query=args.require_graph_interaction,
+                        prefetch_required_context_trace=args.require_complete_investigation_context,
                         limits=limits,
                         cost_estimator=cost_estimator,
                     )
@@ -612,9 +621,7 @@ def main(argv: list[str] | None = None) -> int:
             "publication": publication,
             "live_provider_calls_made": not baseline_cost_budget_blocked,
             "automatic_accuracy_claim": False,
-            "human_review_required": False,
-            "machine_verification_required": True,
-            "diagnostic_accuracy": "not_assessed",
+            "human_review_required": True,
         }, ensure_ascii=True, sort_keys=True, indent=2, allow_nan=False))
         # Nonzero means runner/publication failure, not a provider condition failure.
         # Both condition outcomes are independently evaluated by the batch assessor.

@@ -38,12 +38,10 @@ from audit_engine.semantic_audit.ae32c.response_normalizer import (
     ResponseNormalizationError,
     normalize_provider_response,
 )
-from audit_engine.semantic_audit.ae32c.claim_evidence import build_claim_evidence_assessment
-from audit_engine.semantic_audit.ae32c.machine_verification import (
-    build_deterministic_follow_up_plan,
-    build_machine_verification_assessment,
+from audit_engine.semantic_audit.ae32c.claim_evidence import (
+    build_adjudication_template,
+    build_claim_evidence_assessment,
 )
-from audit_engine.semantic_audit.ae32c.runtime_architecture import build_runtime_architecture_report
 
 SCHEMA_VERSION = "ae32c/interactive-investigation/v1"
 MAX_PROBLEM_CHARS = 8_000
@@ -227,9 +225,12 @@ class RepositoryInvestigator:
         enable_graph_tools: bool = True,
         required_graph_target: str | None = None,
         required_graph_relation_types: tuple[str, ...] = ("CALLS",),
+        required_graph_direction: str = "outgoing",
         required_graph_min_cross_module_reads: int = 0,
         graph_query_max_depth: int | None = None,
         graph_query_max_results: int | None = None,
+        prefetch_required_graph_query: bool = False,
+        prefetch_required_context_trace: bool = False,
         limits: InvestigationLimits | None = None,
         cost_estimator: Callable[[str, str, int, int], float] | None = None,
         clock: Callable[[], float] = time.monotonic,
@@ -348,11 +349,23 @@ class RepositoryInvestigator:
             normalized_relation = relation.strip()
             if normalized_relation not in checked_graph_relations:
                 checked_graph_relations.append(normalized_relation)
+        if not isinstance(required_graph_direction, str) or required_graph_direction not in {
+            "outgoing", "incoming", "both"
+        }:
+            raise ValueError("required_graph_direction must be outgoing, incoming, or both")
         if require_graph_interaction:
             if not isinstance(required_graph_target, str) or not required_graph_target.strip():
                 raise ValueError("required_graph_target is required when graph interaction is enforced")
         elif required_graph_target is not None:
             raise ValueError("required_graph_target requires require_graph_interaction")
+        if type(prefetch_required_graph_query) is not bool:
+            raise ValueError("prefetch_required_graph_query must be a boolean")
+        if prefetch_required_graph_query and not require_graph_interaction:
+            raise ValueError("required graph prefetch requires graph interaction")
+        if type(prefetch_required_context_trace) is not bool:
+            raise ValueError("prefetch_required_context_trace must be a boolean")
+        if prefetch_required_context_trace and not require_complete_investigation_context:
+            raise ValueError("required context trace prefetch requires complete investigation context")
         if (
             isinstance(required_graph_min_cross_module_reads, bool)
             or not isinstance(required_graph_min_cross_module_reads, int)
@@ -380,9 +393,12 @@ class RepositoryInvestigator:
         self._graph_derived_tools_enabled = enable_graph_tools
         self._required_graph_target = required_graph_target.strip() if isinstance(required_graph_target, str) else None
         self._required_graph_relation_types = tuple(checked_graph_relations)
+        self._required_graph_direction = required_graph_direction
         self._required_graph_min_cross_module_reads = required_graph_min_cross_module_reads
         self._graph_query_max_depth = graph_query_max_depth
         self._graph_query_max_results = graph_query_max_results
+        self._prefetch_required_graph_query = prefetch_required_graph_query
+        self._prefetch_required_context_trace = prefetch_required_context_trace
         self._required_context_target = required_context_target.strip() if isinstance(required_context_target, str) else None
         self._required_context_paths = tuple(sorted(checked_context_paths))
         self._required_context_target_module = None
@@ -416,7 +432,7 @@ class RepositoryInvestigator:
                     continue
                 direction_schema = properties.get("direction")
                 if isinstance(direction_schema, dict):
-                    direction_schema["enum"] = ["outgoing"]
+                    direction_schema["enum"] = [self._required_graph_direction]
                 relation_schema = properties.get("relation_types")
                 if isinstance(relation_schema, dict):
                     relation_schema["minItems"] = 1
@@ -444,6 +460,11 @@ class RepositoryInvestigator:
         self._ledger: list[_EvidenceEntry] = []
         self._tool_trace: list[dict[str, Any]] = []
         self._model_action_trace: list[dict[str, Any]] = []
+        # Required discovery may be executed deterministically before the first
+        # model turn. Keep its origin explicit so telemetry never attributes an
+        # orchestrator prefetch to LLM-requested graph usage.
+        self._orchestrator_prefetched_graph_evidence_ids: set[str] = set()
+        self._orchestrator_prefetched_context_evidence_ids: set[str] = set()
         self._events: list[dict[str, Any]] = []
         self._messages: list[dict[str, str]] = []
         self._tool_calls = 0
@@ -1265,11 +1286,102 @@ class RepositoryInvestigator:
                 "status": entry.status,
             })
 
+    def _prefetch_required_graph_evidence(self) -> None:
+        """Run the exact bounded required-target graph query before model turns.
+
+        This stabilizes the controlled evaluation's graph input. The model is
+        still responsible for interpreting the returned relationships and
+        reading at least one newly surfaced source path afterward. Telemetry
+        records this query as orchestrator-prefetched, not model-requested.
+        """
+        if not self._prefetch_required_graph_query:
+            return
+        if self._tool_calls >= self.limits.max_tool_calls:
+            self._events.append({
+                "event": "required_graph_prefetch_skipped",
+                "reason": "tool_call_budget_exhausted",
+            })
+            return
+        arguments = {
+            "node": self._required_graph_target,
+            "direction": self._required_graph_direction,
+            "relation_types": list(self._required_graph_relation_types),
+            "max_depth": self._graph_query_max_depth or 1,
+            "max_results": self._graph_query_max_results or 20,
+        }
+        entry = self._invoke_tool("graph_neighbors", arguments)
+        self._orchestrator_prefetched_graph_evidence_ids.add(entry.evidence_id)
+        result = entry.response.get("result", {}) if isinstance(entry.response, Mapping) else {}
+        complete = (
+            entry.status == "ok"
+            and isinstance(result, Mapping)
+            and result.get("coverage_status") == "complete_for_query"
+            and result.get("truncated") is not True
+        )
+        self._events.append({
+            "event": "required_graph_query_prefetched" if complete else "required_graph_query_prefetch_incomplete",
+            "evidence_id": entry.evidence_id,
+            "status": entry.status,
+            "direction": self._required_graph_direction,
+            "observed_relation_types": (
+                list(result.get("observed_relation_types", []))
+                if isinstance(result, Mapping) else []
+            ),
+            "source_paths": (
+                list(result.get("source_paths", []))
+                if isinstance(result, Mapping) else []
+            ),
+        })
+
+    def _prefetch_required_context_evidence(self) -> None:
+        """Run the exact bounded static context trace before model turns."""
+        if not self._prefetch_required_context_trace:
+            return
+        if self._tool_calls >= self.limits.max_tool_calls:
+            self._events.append({
+                "event": "required_context_trace_prefetch_skipped",
+                "reason": "tool_call_budget_exhausted",
+            })
+            return
+        entry = self._invoke_tool("trace_execution_context", {
+            "target": self._required_context_target,
+            "max_depth": 4,
+            "max_results": 30,
+        })
+        self._orchestrator_prefetched_context_evidence_ids.add(entry.evidence_id)
+        result = entry.response.get("result", {}) if isinstance(entry.response, Mapping) else {}
+        complete = (
+            entry.status == "ok"
+            and isinstance(result, Mapping)
+            and result.get("coverage_status") == "complete_for_query"
+            and result.get("truncated") is not True
+            and result.get("evidence_index_status") == "complete"
+        )
+        self._events.append({
+            "event": "required_context_trace_prefetched" if complete else "required_context_trace_prefetch_incomplete",
+            "evidence_id": entry.evidence_id,
+            "status": entry.status,
+            "coverage_status": result.get("coverage_status") if isinstance(result, Mapping) else None,
+            "truncated": result.get("truncated") if isinstance(result, Mapping) else None,
+        })
+
     def _initial_messages(self, problem: str, summary: _EvidenceEntry) -> list[dict[str, str]]:
         system = SYSTEM_INSTRUCTIONS + "\n\nApproved evidence-tool catalog (schemas are authoritative):\n" + self._canonical_json(self._tool_catalog_for_prompt())
         user_payload = {
             "problem_statement": problem,
             "initial_repository_evidence": self._model_view(summary),
+            **({
+                "prefetched_required_graph_query": self._model_view(next(
+                    entry for entry in self._ledger
+                    if entry.evidence_id in self._orchestrator_prefetched_graph_evidence_ids
+                )),
+            } if self._orchestrator_prefetched_graph_evidence_ids else {}),
+            **({
+                "prefetched_required_context_trace": self._model_view(next(
+                    entry for entry in self._ledger
+                    if entry.evidence_id in self._orchestrator_prefetched_context_evidence_ids
+                )),
+            } if self._orchestrator_prefetched_context_evidence_ids else {}),
             "required_source_textual_anchors": self._required_source_anchors,
             "required_source_inspection": {
                 "paths": list(self._required_source_paths),
@@ -1307,13 +1419,21 @@ class RepositoryInvestigator:
                     "required_discovery_target": self._required_context_target,
                     "required_context_paths": list(self._required_context_paths),
                     "instructions": (
-                        "This controlled evaluation has a mandatory context-discovery contract. Before submitting "
-                        "a final diagnosis, call trace_execution_context for the exact required_discovery_target. "
-                        "Then read every surfaced caller, dependency, Python entrypoint, entrypoint-context, and "
-                        "workflow path, including every required_context_path. Also complete find_related_tests "
-                        "and discover_case_context and inspect all surfaced candidates. A final diagnosis is rejected "
-                        "until discovery is complete, non-truncated, and all surfaced/required paths are inspected. "
-                        "Static relationships do not prove runtime execution."
+                        (
+                            "The auditor has already executed the exact required trace_execution_context query "
+                            "before the first model turn. Inspect prefetched_required_context_trace; do not repeat "
+                            "a complete, non-truncated trace. Read every surfaced caller, dependency, Python "
+                            "entrypoint, entrypoint-context, and workflow path, including every required_context_path. "
+                        ) if self._prefetch_required_context_trace else (
+                            "This controlled evaluation has a mandatory context-discovery contract. Before submitting "
+                            "a final diagnosis, call trace_execution_context for the exact required_discovery_target. "
+                            "Then read every surfaced caller, dependency, Python entrypoint, entrypoint-context, and "
+                            "workflow path, including every required_context_path. "
+                        )
+                    ) + (
+                        "Also complete find_related_tests and discover_case_context and inspect all surfaced candidates. "
+                        "A final diagnosis is rejected until discovery is complete, non-truncated, and all "
+                        "surfaced/required paths are inspected. Static relationships do not prove runtime execution."
                     ),
                 }
             } if self._require_complete_investigation_context else {}),
@@ -1325,34 +1445,39 @@ class RepositoryInvestigator:
                     "required_relation_types": list(self._required_graph_relation_types),
                     "minimum_distinct_cross_module_source_reads": self._required_graph_min_cross_module_reads,
                     "graph_query_limits": {
-                        "direction": "outgoing",
-                        "max_depth": self._graph_query_max_depth,
-                        "max_results": self._graph_query_max_results,
+                        "direction": self._required_graph_direction,
+                        "max_depth": self._graph_query_max_depth or 1,
+                        "max_results": self._graph_query_max_results or 20,
                         "relation_types": list(self._required_graph_relation_types),
                     },
                     "instructions": (
-                        "This controlled evaluation measures whether the investigator actually uses the semantic "
-                        "graph. First issue exactly one graph_neighbors query for required_graph_target using "
-                        "direction=outgoing, relation_types=" + repr(list(self._required_graph_relation_types)) +
-                        ", max_depth=" + str(self._graph_query_max_depth) +
-                        ", and max_results=" + str(self._graph_query_max_results) +
-                        ". These arguments are schema-enforced because this exact bounded query passed the "
-                        "no-provider-call graph preflight. Do not increase depth or result count and do not repeat "
-                        "the required-target query after it returns complete_for_query. Inspect priority_source_targets "
-                        "and cross_module_source_paths, then read at least minimum_distinct_cross_module_source_reads "
-                        "distinct paths directly with read_source_file, using the exact repository-relative path and "
-                        "the supplied symbol line. Prefer paths outside the target module. CALLS observations are "
-                        "function-level invocation edges: do not query class symbols such as RepositoryEvidenceTools "
-                        "or RepositoryInvestigator as CALLS roots, because class-level roots may have no matching "
-                        "outgoing CALLS. For a class endpoint, read its source path around the supplied class line. "
-                        "If a further graph query is necessary, query a returned function symbol only and state the "
-                        "specific relationship question. Do not use search_repository to rediscover a path already "
-                        "surfaced by the graph or repeatedly read the target entry-point file. If fewer than the "
-                        "required number of cross-module paths are available, read every available path and report "
-                        "the shortfall. Each counted read must occur after the successful complete target query, "
-                        "must not have been read earlier, must cover its requested range without truncation, and "
-                        "must have a source_sha256 matching the graph snapshot. Graph observations are static "
-                        "evidence, not runtime proof."
+                        (
+                            "The auditor has already executed the exact bounded graph_neighbors query against "
+                            "required_graph_target before the first model turn. Inspect prefetched_required_graph_query, "
+                            "including its observations, source_paths, relation types, and source locations. Do not "
+                            "repeat a complete, non-truncated required-target query. The prefetch is deterministic "
+                            "orchestration, not an LLM-requested graph call; your graph follow-through is to read at "
+                            "least one newly surfaced source path with read_source_file after the query. "
+                        ) if self._prefetch_required_graph_query else (
+                            "This controlled evaluation measures whether the investigator actually uses the semantic "
+                            "graph. First issue exactly one graph_neighbors query for required_graph_target using "
+                            "direction=" + self._required_graph_direction + ", relation_types=" +
+                            repr(list(self._required_graph_relation_types)) + ", max_depth=" +
+                            str(self._graph_query_max_depth) + ", and max_results=" +
+                            str(self._graph_query_max_results) + ". "
+                        )
+                    ) + (
+                        "Inspect priority_source_targets and cross_module_source_paths, then read at least "
+                        "minimum_distinct_cross_module_source_reads distinct paths directly with read_source_file, "
+                        "using exact repository-relative paths and supplied symbol lines. Prefer paths outside the "
+                        "target module. CALLS observations are function-level invocation edges; choose direction "
+                        "according to whether the target calls other functions or is called by them. do not query "
+                        "class symbols as CALLS roots when no function-level edge is expected. If a further graph "
+                        "query is necessary, query a returned function symbol only and state the relationship question. "
+                        "Do not rediscover surfaced paths or reread the target entry-point file. Each counted read "
+                        "must occur after the successful complete target query, must not have been read earlier, "
+                        "must cover its requested range without truncation, and must have a source_sha256 matching "
+                        "the graph snapshot. Graph observations are static evidence, not runtime proof."
                     ),
                 }
             } if self._require_graph_interaction else {}),
@@ -1364,7 +1489,7 @@ class RepositoryInvestigator:
                 "max_tokens_per_call": self.limits.max_tokens_per_call,
                 "max_response_chars": self.limits.max_response_chars,
                 **({
-                    "graph_query_direction": "outgoing",
+                    "graph_query_direction": self._required_graph_direction,
                     "graph_query_max_depth": self._graph_query_max_depth,
                     "graph_query_max_results": self._graph_query_max_results,
                     "graph_query_relation_types": list(self._required_graph_relation_types),
@@ -1505,7 +1630,29 @@ class RepositoryInvestigator:
                 ),
             }
 
-        candidates = self._source_reference_candidate_index(maximum=candidate_limit)
+        anchor_witnesses = self._required_anchor_reference_candidates()
+        if self._required_source_anchors:
+            # In a task with exact required line anchors, the model needs those
+            # witnesses, not every incidental source line from every read. This
+            # keeps the finalization prompt bounded without weakening the
+            # manifest-bound citation contract.
+            candidates_by_id: dict[str, dict[str, Any]] = {}
+            for witness in anchor_witnesses:
+                for candidate in witness.get("source_reference_candidates", []):
+                    if not isinstance(candidate, Mapping):
+                        continue
+                    candidate_id = candidate.get("candidate_id")
+                    if not isinstance(candidate_id, str) or candidate_id in candidates_by_id:
+                        continue
+                    candidates_by_id[candidate_id] = {
+                        "candidate_id": candidate_id,
+                        "evidence_id": candidate.get("evidence_id"),
+                        "path": witness.get("path"),
+                        "line": candidate.get("line"),
+                    }
+            candidates = list(candidates_by_id.values())[:candidate_limit]
+        else:
+            candidates = self._source_reference_candidate_index(maximum=candidate_limit)
         payload: dict[str, Any] = {
             "schema_version": "ae32c/finalization-evidence-context/v1",
             "problem_statement": problem,
@@ -1519,7 +1666,25 @@ class RepositoryInvestigator:
         # is not required. This preserves recovery budget for exact source
         # candidates and validation feedback in ordinary investigations.
         if self._require_graph_interaction:
-            payload["graph_interaction_coverage"] = self._graph_interaction_coverage()
+            graph_coverage = self._graph_interaction_coverage()
+            payload["graph_interaction_coverage"] = {
+                "enabled": graph_coverage.get("enabled"),
+                "status": graph_coverage.get("status"),
+                "required_graph_target": graph_coverage.get("required_graph_target"),
+                "required_relation_types": graph_coverage.get("required_relation_types", []),
+                "target_observed_relation_types": graph_coverage.get("target_observed_relation_types", []),
+                "required_relation_types_observed": graph_coverage.get("required_relation_types_observed", []),
+                "graph_source_paths": graph_coverage.get("graph_source_paths", [])[:12],
+                "cross_module_graph_source_paths": graph_coverage.get("cross_module_graph_source_paths", [])[:12],
+                "graph_derived_verified_read_paths": graph_coverage.get("graph_derived_verified_read_paths", [])[:12],
+                "graph_follow_through_complete": graph_coverage.get("graph_follow_through_complete"),
+                "orchestrator_prefetched_graph_query_count": graph_coverage.get(
+                    "orchestrator_prefetched_graph_query_count", 0
+                ),
+                "model_requested_graph_tool_call_count": graph_coverage.get(
+                    "model_requested_graph_tool_call_count", 0
+                ),
+            }
             payload["graph_investigation_contract"] = {
                 "enabled": True,
                 "required_graph_target": self._required_graph_target,
@@ -1534,7 +1699,7 @@ class RepositoryInvestigator:
                 ],
             }
         if self._required_source_anchors:
-            payload["required_source_line_witnesses"] = self._required_anchor_reference_candidates()
+            payload["required_source_line_witnesses"] = anchor_witnesses
             payload["source_line_witness_rules"] = [
                 "Cite only exact observed anchor-line tuples in root_cause.source_references and root_cause.evidence_refs.",
                 "Class declarations and file-wide citations do not prove attributes; missing witnesses mean inconclusive evidence.",
@@ -3323,33 +3488,13 @@ class RepositoryInvestigator:
         return message
 
     def _graph_interaction_coverage(self) -> dict[str, Any]:
-        """Measure graph-to-source follow-through and every graph-derived tool family member."""
-        graph_derived_tool_usage = {}
-        for tool_name in sorted(GRAPH_DERIVED_TOOL_NAMES):
-            entries = [item for item in self._ledger if item.tool == tool_name]
-            targets = set()
-            for item in entries:
-                arguments = getattr(item, "arguments", {})
-                if isinstance(arguments, Mapping):
-                    target_value = next((arguments.get(key) for key in ("node", "source", "target", "path", "query")
-                                         if isinstance(arguments.get(key), str)), None)
-                    if target_value:
-                        targets.add(target_value)
-            graph_derived_tool_usage[tool_name] = {
-                "attempt_count": len(entries),
-                "successful_call_count": sum(getattr(item, "status", None) == "ok" for item in entries),
-                "failed_call_count": sum(getattr(item, "status", None) != "ok" for item in entries),
-                "distinct_target_count": len(targets),
-                "targets": sorted(targets)[:30],
-                "evidence_ids": [getattr(item, "evidence_id", None) for item in entries],
-            }
+        """Measure ordered graph-to-source follow-through and preserve compact edge observations."""
         if not self._require_graph_interaction:
             return {
                 "enabled": False,
                 "tools_available": self._graph_tools_enabled,
                 "status": "not_required" if self._graph_tools_enabled else "disabled",
                 "graph_tool_call_count": 0,
-                "graph_derived_tool_usage": graph_derived_tool_usage,
                 "target_graph_tool_call_count": 0,
                 "successful_graph_tool_call_count": 0,
                 "required_target_successful_graph_query_count": 0,
@@ -3531,6 +3676,11 @@ class RepositoryInvestigator:
             query_record = {
                 "evidence_id": entry.evidence_id,
                 "tool": entry.tool,
+                "initiator": (
+                    "orchestrator_prefetch"
+                    if entry.evidence_id in self._orchestrator_prefetched_graph_evidence_ids
+                    else "model_requested"
+                ),
                 "ledger_index": query_index,
                 "target": (
                     entry.arguments.get("node")
@@ -3666,7 +3816,16 @@ class RepositoryInvestigator:
             "graph_tool_call_count": sum(
                 1 for item in self._ledger if item.tool in {"graph_neighbors", "graph_path"}
             ),
-            "graph_derived_tool_usage": graph_derived_tool_usage,
+            "orchestrator_prefetched_graph_query_count": sum(
+                1 for item in self._ledger
+                if item.tool in {"graph_neighbors", "graph_path"}
+                and item.evidence_id in self._orchestrator_prefetched_graph_evidence_ids
+            ),
+            "model_requested_graph_tool_call_count": sum(
+                1 for item in self._ledger
+                if item.tool in {"graph_neighbors", "graph_path"}
+                and item.evidence_id not in self._orchestrator_prefetched_graph_evidence_ids
+            ),
             "target_graph_tool_call_count": len([
                 item for item in self._ledger
                 if item.tool in {"graph_neighbors", "graph_path"}
@@ -4480,24 +4639,6 @@ class RepositoryInvestigator:
             }
             for item in self._ledger
         ]
-        report["machine_verification_assessment"] = build_machine_verification_assessment(
-            diagnosis=report.get("diagnosis"),
-            claim_assessment=report["claim_evidence_assessment"],
-            ledger_entries=self._ledger,
-            repo_root=self.repo_root,
-            expected_file_hashes=self._expected_file_hashes,
-            expected_manifest_sha256=self._source_provenance.get("source_manifest_sha256"),
-            expected_graph_fingerprint=self._source_provenance.get("graph_fingerprint"),
-            snapshot_status=self._snapshot_check_status,
-        )
-        report["deterministic_follow_up_plan"] = build_deterministic_follow_up_plan(
-            report["machine_verification_assessment"]
-        )
-        report["human_review_policy"] = {
-            "required_for_operational_completion": False,
-            "blinded_reviewer_packets_generated": False,
-            "semantic_diagnostic_accuracy": "not_assessed_without_deterministic_reproduction",
-        }
         report["elapsed_seconds"] = round(self._elapsed(), 3)
         try:
             provider_stats = self.provider.get_stats()
@@ -4689,27 +4830,6 @@ class RepositoryInvestigator:
                     if str(key) in {"408", "425", "429", "500", "502", "503", "504", "transport", "invalid_json"}
                     and isinstance(value, int) and not isinstance(value, bool)
                 }
-        summary_entry = next(
-            (item for item in self._ledger if item.tool == "repository_summary" and item.status == "ok"),
-            None,
-        )
-        summary_result = summary_entry.response.get("result", {}) if summary_entry and isinstance(summary_entry.response, Mapping) else {}
-        audit_report = getattr(self.evidence_tools, "report", {})
-        if not isinstance(audit_report, Mapping):
-            audit_report = {}
-        report["runtime_architecture"] = build_runtime_architecture_report(
-            audit_report=audit_report,
-            repository_summary=summary_result if isinstance(summary_result, Mapping) else {},
-            provider_name=self.provider_name,
-            model_name=self.model_name,
-            provider_stats=provider_stats if isinstance(provider_stats, Mapping) else {},
-            available_tool_names=self._tool_schemas,
-            graph_runtime=(
-                self.evidence_tools.graph_runtime_report()
-                if callable(getattr(self.evidence_tools, "graph_runtime_report", None))
-                else None
-            ),
-        )
         report["budget"] = self._report_budget()
         report["interaction_diagnostics"] = self._interaction_diagnostics()
         report["errors"] = self._events[-100:]
@@ -4742,6 +4862,11 @@ class RepositoryInvestigator:
                 self._events.append({"event": "initial_summary_failed", "evidence_id": summary.evidence_id})
                 return self._finalize_report(report, "incomplete", "initial_evidence_unavailable")
             self._prefetch_required_source_evidence()
+            # Stable, bounded discovery runs before the model spends turns on
+            # routine target lookup. The model must still inspect the returned
+            # graph paths and read newly surfaced source files itself.
+            self._prefetch_required_graph_evidence()
+            self._prefetch_required_context_evidence()
             self._messages = self._initial_messages(problem, summary)
             self._tool_calls_before_first_model_turn = self._tool_calls
 
@@ -5838,7 +5963,7 @@ def render_markdown_report(report: Mapping[str, Any]) -> str:
         assessment_items = assessment.get("items", []) if isinstance(assessment, Mapping) else []
         if isinstance(assessment_items, list) and assessment_items:
             lines.extend(["", "### Claim-to-evidence linkage (not semantic adjudication)", ""])
-            lines.append("Automated scope: ledger linkage, exact source-range integrity, current source hashes, and graph provenance. Semantic entailment and causal correctness remain unassessed unless a registered deterministic reproduction is available.")
+            lines.append("Automated scope: ledger linkage and exact source-range integrity only. Semantic entailment and causal correctness require human review or reproduction.")
             lines.append("")
             for item in assessment_items:
                 if not isinstance(item, Mapping):
@@ -5860,11 +5985,7 @@ def render_markdown_report(report: Mapping[str, Any]) -> str:
                             f"(evidence `{_markdown_safe(source_range.get('evidence_id', ''), 30)}`, "
                             f"SHA-256 `{_markdown_safe(source_range.get('source_sha256', ''), 64)}`)"
                         )
-            machine = report.get("machine_verification_assessment", {})
-            if isinstance(machine, Mapping):
-                lines.extend(["", f"Machine verification: **{_markdown_safe(machine.get('status', 'not_available'), 80)}**", ""])
-                lines.append("Semantic correctness: **not assessed**. No human adjudication is required by the current project workflow.")
-                lines.append("")
+            lines.extend(["", "Human adjudication: **pending**", ""])
         lines.extend(["", "### Proposed corrective action", "", _markdown_safe(diagnosis.get("proposed_corrective_action", ""), MAX_DIAGNOSIS_STRING_CHARS), "", "### Limitations", ""])
         lines.extend(f"- {_markdown_safe(item, 1_000)}" for item in diagnosis.get("limitations", []))
         lines.extend(["", "### Next steps", ""])
@@ -5892,7 +6013,7 @@ def render_markdown_report(report: Mapping[str, Any]) -> str:
 
 
 def write_report_artifacts(report: Mapping[str, Any], output_dir: str | Path, repo_root: str | Path) -> dict[str, Any]:
-    """Publish JSON and Markdown evidence reports outside the repository.
+    """Publish JSON, Markdown, and (when applicable) an adjudication template outside the repository.
 
     Files are created exclusively through temporary files and hard links so an
     existing artifact is never overwritten. No repository source is modified.
@@ -5918,6 +6039,10 @@ def write_report_artifacts(report: Mapping[str, Any], output_dir: str | Path, re
     payload_md = render_markdown_report(report).encode("utf-8")
     stem = "ae32c-investigation-" + re.sub(r"[^A-Za-z0-9_-]", "_", str(report.get("investigation_id", "run")))[:100]
     payloads = [(".json", payload_json), (".md", payload_md)]
+    assessment = report.get("claim_evidence_assessment")
+    if isinstance(assessment, Mapping) and assessment.get("status") == "available" and assessment.get("items"):
+        template = build_adjudication_template(assessment, str(report.get("investigation_id", "unknown")))
+        payloads.append((".adjudication-template.json", (json.dumps(template, ensure_ascii=True, sort_keys=True, indent=2, allow_nan=False) + "\n").encode("utf-8")))
     outputs = []
     for suffix, payload in payloads:
         target = out / (stem + suffix)

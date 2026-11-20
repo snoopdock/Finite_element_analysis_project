@@ -46,6 +46,7 @@ def test_qwen_adapter_declares_native_tool_support_only_for_single_exact_model()
 
     assert qwen.get_capabilities()["native_tool_calls"] is True
     assert qwen.get_capabilities()["json_object_mode"] is False
+    assert qwen.get_capabilities()["plain_text_mode"] is True
     assert other.get_capabilities()["native_tool_calls"] is False
     assert mixed.get_capabilities()["native_tool_calls"] is False
 
@@ -196,7 +197,12 @@ def test_qwen_native_tool_call_rejects_multiple_calls_before_returning(monkeypat
     assert provider.get_stats()["native_tool_call_failures"] == 1
 
 
-def test_qwen_native_tool_call_rejects_duplicate_keys_in_string_arguments(monkeypatch):
+def test_qwen_native_tool_call_preserves_duplicate_key_arguments_for_local_rejection(monkeypatch):
+    from audit_engine.semantic_audit.ae32c.response_normalizer import (
+        ResponseNormalizationError,
+        normalize_provider_tool_call,
+    )
+
     raw = '{"action":"tool_call","action":"final","tool":"repository_summary","arguments":{},"reason":"x","diagnosis":{}}'
     response = FakeResponse({
         "success": True,
@@ -212,9 +218,44 @@ def test_qwen_native_tool_call_rejects_duplicate_keys_in_string_arguments(monkey
         tool_definition=build_response_tool_definition(),
         model=MODEL,
     )
-    assert result is None
-    assert error == "Native response-tool arguments invalid"
-    assert raw not in repr(provider.get_stats())
+    assert error is None
+    assert isinstance(result, ProviderToolCall)
+    assert result.arguments == raw
+    with pytest.raises(ResponseNormalizationError, match="duplicate_json_key"):
+        normalize_provider_tool_call(result)
+    stats = provider.get_stats()
+    assert stats["native_tool_call_responses"] == 1
+    assert stats["native_tool_call_contract_rejections"] == 1
+    assert stats["native_tool_call_failures"] == 0
+    assert raw not in repr(stats)
+
+
+def test_qwen_native_tool_call_preserves_non_object_arguments_for_local_rejection(monkeypatch):
+    from audit_engine.semantic_audit.ae32c.response_normalizer import (
+        ResponseNormalizationError,
+        normalize_provider_tool_call,
+    )
+
+    response = FakeResponse({
+        "success": True,
+        "result": {
+            "tool_calls": [{"name": RESPONSE_TOOL_NAME, "arguments": "[]"}]
+        },
+    })
+    monkeypatch.setattr("providers.cloudflare.requests.post", lambda *a, **k: response)
+    monkeypatch.setenv("FEA_LLM_RETRY_ATTEMPTS", "1")
+    provider = CloudflareProvider("account", "private-secret-value", [MODEL])
+    result, error = provider.chat_with_response_tool(
+        [{"role": "user", "content": "probe"}],
+        tool_definition=build_response_tool_definition(),
+        model=MODEL,
+    )
+    assert error is None
+    assert isinstance(result, ProviderToolCall)
+    assert result.arguments == []
+    with pytest.raises(ResponseNormalizationError, match="native_tool_arguments_not_object"):
+        normalize_provider_tool_call(result)
+    assert provider.get_stats()["native_tool_call_contract_rejections"] == 1
 
 
 def test_qwen_native_tool_call_can_fall_back_to_text_for_normalizer(monkeypatch):
