@@ -2060,6 +2060,103 @@ def test_graph_interaction_contract_requires_direct_graph_use_and_follow_through
     assert coverage["graph_follow_through_complete"] is True
 
 
+def test_graph_interaction_contract_is_not_satisfied_by_source_reads_alone():
+    provider = FakeProvider([
+        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    tools = FakeEvidenceTools()
+    investigator = RepositoryInvestigator(
+        ".",
+        provider,
+        evidence_tools=tools,
+        required_graph_target="symbol:pipeline.extractor::extract",
+        require_graph_interaction=True,
+        required_graph_relation_types=("CALLS",),
+        limits=InvestigationLimits(max_rounds=3, finalization_rounds_reserved=1),
+        id_factory=lambda: "graph-contract-0002",
+    )
+    report = investigator.run("Investigate the controlled provider interface issue")
+    assert report["graph_interaction_coverage"]["status"] == "incomplete"
+    assert report["status"] != "completed"
+
+
+def test_final_report_includes_machine_verification_and_does_not_publish_review_template(tmp_path: Path):
+    investigator, _, _ = make_investigator([
+        action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    report = investigator.run("Inspect the source-level interface evidence.")
+    assessment = report["claim_evidence_assessment"]
+    assert assessment["status"] == "available"
+    assert assessment["semantic_support_assessment"] == "not_performed"
+    assert assessment["human_review_required"] is False
+    assert assessment["machine_verification_required"] is True
+    assert report["human_review_policy"]["blinded_reviewer_packets_generated"] is False
+    assert report["machine_verification_assessment"]["semantic_correctness"] == "not_assessed"
+    assert report["deterministic_follow_up_plan"]["execution_mode"] == "plan_only"
+    assert report["deterministic_follow_up_plan"]["source_mutation_permitted"] is False
+    assert assessment["items"][0]["claim_type"] == "causal_hypothesis"
+    assert assessment["items"][1]["verification_level"] == "textual_witness"
+    assert assessment["items"][1]["support_outcome"] == "unverified"
+
+    repository = tmp_path / "repo"
+    output = tmp_path / "reports"
+    repository.mkdir()
+    output.mkdir()
+    result = write_report_artifacts(report, output, repository)
+    assert len(result["artifacts"]) == 2
+    assert not any(item["path"].endswith(".adjudication-template.json") for item in result["artifacts"])
+    markdown = Path(next(item["path"] for item in result["artifacts"] if item["path"].endswith(".md"))).read_text(encoding="utf-8")
+    assert "Human adjudication: **pending**" not in markdown
+    assert "Semantic correctness: **not assessed**" in markdown
+
+
+def test_runtime_claim_kind_is_accepted_but_never_promoted_by_static_evidence():
+    final = json.loads(final_action(evidence_id="E0002", source_reference=True))
+    final["diagnosis"]["claims"][0]["kind"] = "runtime_claim"
+    investigator, _, _ = make_investigator([
+        action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
+        json.dumps(final),
+    ])
+    report = investigator.run("Check whether the runtime claim is evidenced.")
+    assert report["diagnosis"] is not None
+    claim = report["claim_evidence_assessment"]["items"][1]
+    assert claim["claim_type"] == "runtime_claim"
+    assert claim["support_outcome"] == "unverified"
+    assert claim["verification_level"] == "textual_witness"
+
+
+def test_real_evidence_tools_produce_machine_verified_report_without_human_packets(tmp_path: Path):
+    source = tmp_path / SOURCE
+    source.parent.mkdir(parents=True, exist_ok=True)
+    source.write_bytes(SOURCE_BYTES)
+    tools = RepositoryEvidenceTools(tmp_path)
+    provider = FakeProvider([
+        action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
+        final_action(evidence_id="E0002", source_reference=True),
+    ])
+    investigator = RepositoryInvestigator(
+        tmp_path,
+        provider,
+        evidence_tools=tools,
+        enable_graph_tools=True,
+        limits=InvestigationLimits(max_rounds=3, finalization_rounds_reserved=1),
+        id_factory=lambda: "machine-verified-real-evidence-tools",
+    )
+    report = investigator.run("Verify the exact source observation.")
+    assert report["snapshot_check_status"] == "verified"
+    assert report["machine_verification_assessment"]["status"] == "evidence_integrity_passed"
+    assert report["machine_verification_assessment"]["summary"]["invalid_source_reference_count"] == 0
+    assert report["machine_verification_assessment"]["semantic_correctness"] == "not_assessed"
+    assert report["runtime_architecture"]["graph_engine"]["active_computation_backend"] == "networkx"
+    assert report["runtime_architecture"]["graph_engine"]["external_backend_adapters"]["networkx"]["active_in_ae32b_query_path"] is True
+    assert report["graph_utilization_assessment"]["schema_version"] == "ae32c/graph-utilization-assessment/v1"
+    assert report["graph_utilization_assessment"]["status"] == "no_graph_use_observed"
+    assert report["graph_utilization_assessment"]["backend"]["active_computation_backend"] == "networkx"
+    assert report["human_review_policy"]["blinded_reviewer_packets_generated"] is False
+
+
 def test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through():
     fixture = Path("tests/semantic_audit/fixtures/ae32c_provider_interface_incident")
     tools = RepositoryEvidenceTools(fixture)
@@ -2196,66 +2293,3 @@ def test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_thro
         for item in finalization_payload["source_reference_candidates"]
     )
     assert "graph_observations" not in finalization_payload["graph_interaction_coverage"]
-
-
-def test_graph_interaction_contract_is_not_satisfied_by_source_reads_alone():
-    provider = FakeProvider([
-        action_tool("search_repository", {"query": "observed", "mode": "content", "max_results": 5}),
-        final_action(evidence_id="E0002", source_reference=True),
-    ])
-    tools = FakeEvidenceTools()
-    investigator = RepositoryInvestigator(
-        ".",
-        provider,
-        evidence_tools=tools,
-        required_graph_target="symbol:pipeline.extractor::extract",
-        require_graph_interaction=True,
-        required_graph_relation_types=("CALLS",),
-        limits=InvestigationLimits(max_rounds=3, finalization_rounds_reserved=1),
-        id_factory=lambda: "graph-contract-0002",
-    )
-    report = investigator.run("Investigate the controlled provider interface issue")
-    assert report["graph_interaction_coverage"]["status"] == "incomplete"
-    assert report["status"] != "completed"
-
-
-def test_final_report_includes_claim_evidence_assessment_and_publishes_review_template(tmp_path: Path):
-    investigator, _, _ = make_investigator([
-        action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
-        final_action(evidence_id="E0002", source_reference=True),
-    ])
-    report = investigator.run("Inspect the source-level interface evidence.")
-    assessment = report["claim_evidence_assessment"]
-    assert assessment["status"] == "available"
-    assert assessment["semantic_support_assessment"] == "not_performed"
-    assert assessment["human_review_required"] is True
-    assert assessment["items"][0]["claim_type"] == "causal_hypothesis"
-    assert assessment["items"][1]["verification_level"] == "textual_witness"
-    assert assessment["items"][1]["support_outcome"] == "unverified"
-
-    repository = tmp_path / "repo"
-    output = tmp_path / "reports"
-    repository.mkdir()
-    output.mkdir()
-    result = write_report_artifacts(report, output, repository)
-    assert len(result["artifacts"]) == 3
-    template_artifacts = [item for item in result["artifacts"] if item["path"].endswith(".adjudication-template.json")]
-    assert len(template_artifacts) == 1
-    template = json.loads(Path(template_artifacts[0]["path"]).read_text(encoding="utf-8"))
-    assert template["investigation_id"] == report["investigation_id"]
-    assert len(template["items"]) == len(assessment["items"])
-
-
-def test_runtime_claim_kind_is_accepted_but_never_promoted_by_static_evidence():
-    final = json.loads(final_action(evidence_id="E0002", source_reference=True))
-    final["diagnosis"]["claims"][0]["kind"] = "runtime_claim"
-    investigator, _, _ = make_investigator([
-        action_tool("read_source_file", {"path": SOURCE, "start_line": 1, "end_line": 2}),
-        json.dumps(final),
-    ])
-    report = investigator.run("Check whether the runtime claim is evidenced.")
-    assert report["diagnosis"] is not None
-    claim = report["claim_evidence_assessment"]["items"][1]
-    assert claim["claim_type"] == "runtime_claim"
-    assert claim["support_outcome"] == "unverified"
-    assert claim["verification_level"] == "textual_witness"

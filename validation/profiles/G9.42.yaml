@@ -1,11 +1,13 @@
 id: G9.42
-name: AE-32C E.1–E.8.6 deterministic evidence, native graph conformance, multi-source impact and dependency-cycle analysis plus AE-32D benchmark integrity
+name: AE-32C E.1–E.8.7 deterministic evidence, native graph conformance, impact analysis and live graph-utilization telemetry plus AE-32D benchmark integrity
 # Deterministic validation only. No live provider credentials or network calls are required.
 # The separate live comparison runner is opt-in and is not invoked here.
 target_tests:
   - tests/semantic_audit/test_ae32c_patch1_evidence_integrity.py
   - tests/semantic_audit/test_ae32c_patch2_graph_workflow_fidelity.py
   - tests/semantic_audit/test_ae32c_investigator.py
+  - tests/semantic_audit/test_ae32c_graph_utilization.py
+  - tests/semantic_audit/test_ae32c_graph_utilization_aggregate.py
   - tests/semantic_audit/test_ae32c_finalization_context_compaction.py
   - tests/semantic_audit/test_ae32c_phase_e1_reliability.py
   - tests/semantic_audit/test_ae32c_phase_e2_coverage.py

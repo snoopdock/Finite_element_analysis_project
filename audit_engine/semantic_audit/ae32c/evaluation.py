@@ -1,4 +1,4 @@
-"""Human-review-oriented comparison helpers for AE-32C evaluation runs.
+"""Machine-observed comparison helpers for AE-32C evaluation runs.
 
 The helpers summarize observed investigation behavior. They deliberately do
 not assign diagnostic-accuracy scores or infer that graph use improved a result.
@@ -17,6 +17,7 @@ import shutil
 import uuid
 
 from providers.safe_errors import sanitize_provider_error
+from audit_engine.semantic_audit.ae32c.graph_utilization import summarize_graph_utilization_assessment
 
 SCHEMA_VERSION = "ae32c/evaluation-comparison/v1"
 _MAX_REPORT_CHARS = 200_000
@@ -115,6 +116,7 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
             "related_test_context_status": "not_assessed",
             "case_metadata_context_status": "not_assessed",
             "runtime_reproduction_status": "not_assessed",
+            "graph_utilization_assessment": {"status": "not_available"},
         }
 
     budget = report.get("budget") if isinstance(report.get("budget"), Mapping) else {}
@@ -162,6 +164,9 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
         _safe_text(call.get("tool", "unknown"), 100)
         for call in calls if isinstance(call, Mapping)
     })
+    graph_utilization = summarize_graph_utilization_assessment(
+        report.get("graph_utilization_assessment")
+    )
     return {
         "status": _safe_text(report.get("status", "unknown"), 100),
         "stop_reason": _safe_text(report.get("stop_reason", "unknown"), 160),
@@ -241,6 +246,7 @@ def summarize_graph_report(report: Mapping[str, Any] | None) -> dict[str, Any]:
         "runtime_reproduction_status": _safe_text(execution_assessment.get("runtime_reproduction_status", "not_assessed"), 100),
         "response_mode_negotiation": mode_summary,
         "provider_request_diagnostics": request_diagnostics,
+        "graph_utilization_assessment": graph_utilization,
     }
 
 
@@ -368,6 +374,11 @@ def build_comparison_record(
             "graph_assisted_required_source_coverage": graph_summary["required_source_coverage_status"],
             "graph_assisted_investigation_context_coverage": graph_summary["investigation_context_coverage_status"],
             "graph_assisted_required_context_contract": graph_summary["required_context_contract_status"],
+            "graph_assisted_backend": graph_summary["graph_utilization_assessment"].get("active_computation_backend"),
+            "graph_assisted_graph_query_count": graph_summary["graph_utilization_assessment"].get("graph_query_attempt_count", 0),
+            "graph_assisted_graph_query_success_count": graph_summary["graph_utilization_assessment"].get("graph_query_success_count", 0),
+            "graph_assisted_verified_graph_read_count": graph_summary["graph_utilization_assessment"].get("graph_verified_follow_through_path_count", 0),
+            "graph_assisted_claims_citing_graph_evidence": graph_summary["graph_utilization_assessment"].get("claims_citing_graph_tool_evidence_count", 0),
         },
         "evaluation_policy": {
             "diagnostic_accuracy": "not_automatically_assessed",
@@ -453,6 +464,16 @@ def render_comparison_markdown(record: Mapping[str, Any]) -> str:
         f"- Graph streaming: `{bool((summary.get('provider_request_diagnostics') or {}).get('streaming'))}`",
         f"- Graph time to first event/output: `{(summary.get('provider_request_diagnostics') or {}).get('time_to_first_event_seconds', 'n/a')}s / {(summary.get('provider_request_diagnostics') or {}).get('time_to_first_output_seconds', 'n/a')}s`",
         f"- Graph finish reason: `{_markdown_text((summary.get('provider_request_diagnostics') or {}).get('finish_reason', 'not_reported'), 40)}`",
+        "",
+        "### Graph-utilization telemetry",
+        "",
+        f"- Utilization status: `{_markdown_text((summary.get('graph_utilization_assessment') or {}).get('status', 'not_available'), 80)}`",
+        f"- Active graph backend: `{_markdown_text((summary.get('graph_utilization_assessment') or {}).get('active_computation_backend', 'not_reported'), 80)}`",
+        f"- Graph queries attempted/succeeded/complete: `{(summary.get('graph_utilization_assessment') or {}).get('graph_query_attempt_count', 0)}` / `{(summary.get('graph_utilization_assessment') or {}).get('graph_query_success_count', 0)}` / `{(summary.get('graph_utilization_assessment') or {}).get('graph_query_complete_count', 0)}`",
+        f"- Impact/dependency queries: `{(summary.get('graph_utilization_assessment') or {}).get('graph_impact_query_count', 0)}` / `{(summary.get('graph_utilization_assessment') or {}).get('graph_dependency_query_count', 0)}`",
+        f"- Graph-surfaced paths / verified follow-through: `{(summary.get('graph_utilization_assessment') or {}).get('graph_surfaced_path_count', 0)}` / `{(summary.get('graph_utilization_assessment') or {}).get('graph_verified_follow_through_path_count', 0)}`",
+        f"- Claims citing graph-tool evidence: `{(summary.get('graph_utilization_assessment') or {}).get('claims_citing_graph_tool_evidence_count', 0)}` of `{(summary.get('graph_utilization_assessment') or {}).get('claim_count', 0)}`",
+        f"- Graph-assisted reported tokens: `{(summary.get('graph_utilization_assessment') or {}).get('reported_tokens', 'not reported')}`",
         "",
     ]
     report = assisted.get("report")

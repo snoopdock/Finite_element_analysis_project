@@ -33,6 +33,7 @@ LIVE_BASELINE_MAX_TOKENS = 4_096
 LIVE_GRAPH_MAX_TOKENS = 2_048
 LIVE_GRAPH_MAX_ROUNDS = 11
 LIVE_GRAPH_MAX_CALLS = LIVE_GRAPH_MAX_ROUNDS
+GRAPH_BACKEND_CHOICES = ("networkx", "scipy", "igraph", "graph-tool", "snap", "reference")
 DEFAULT_PROBLEM = (
     "A previous extraction workflow failed with AttributeError because the "
     "consumer attempted to access provider.total_calls. Investigate the "
@@ -351,6 +352,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--problem", default=DEFAULT_PROBLEM, help="Incident description; bounded and sanitized.")
     parser.add_argument("--provider", choices=SUPPORTED_PROVIDERS,
                         default=os.environ.get("FEA_LLM_PROVIDER", "cloudflare"))
+    parser.add_argument("--graph-backend", choices=GRAPH_BACKEND_CHOICES,
+                        default=os.environ.get("FEA_AE32C_GRAPH_BACKEND", "networkx"),
+                        help="Trusted graph backend for the graph-assisted condition; unavailable backends fail closed.")
     parser.add_argument("--model", default=os.environ.get("FEA_LLM_MODEL", ""))
     parser.add_argument("--output-dir", required=True,
                         help="Existing directory outside the repository checkout, e.g. RUNNER_TEMP.")
@@ -386,7 +390,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         repo_root, output_dir = _validate_paths(Path(args.repo_root), Path(args.output_dir), checkout_root)
         # Capture one immutable evidence snapshot for the baseline context.
-        baseline_tools = RepositoryEvidenceTools(repo_root)
+        baseline_tools = RepositoryEvidenceTools(repo_root, graph_backend=args.graph_backend)
         indexed_paths = set(baseline_tools.contents)
         required_source_paths, required_source_anchors = _required_source_contract(
             repo_root,
@@ -537,7 +541,7 @@ def main(argv: list[str] | None = None) -> int:
                     "limitations": ["The configured live cost ceiling did not leave a positive graph-investigation allowance; no graph provider call was made."],
                 }
             else:
-                graph_tools = RepositoryEvidenceTools(repo_root)
+                graph_tools = RepositoryEvidenceTools(repo_root, graph_backend=args.graph_backend)
                 if graph_tools.manifest_sha256 != manifest_hash or graph_tools.graph_fingerprint != baseline_tools.graph_fingerprint:
                     graph_report = {
                         "schema_version": "ae32c/interactive-investigation/v1",
@@ -618,10 +622,13 @@ def main(argv: list[str] | None = None) -> int:
             "status": "published_independent_conditions",
             "baseline_status": baseline_status,
             "graph_assisted_status": (graph_report or {}).get("status", "not_run"),
+            "graph_backend": args.graph_backend,
             "publication": publication,
             "live_provider_calls_made": not baseline_cost_budget_blocked,
             "automatic_accuracy_claim": False,
-            "human_review_required": True,
+            "human_review_required": False,
+            "machine_verification_required": True,
+            "diagnostic_accuracy": "not_assessed",
         }, ensure_ascii=True, sort_keys=True, indent=2, allow_nan=False))
         # Nonzero means runner/publication failure, not a provider condition failure.
         # Both condition outcomes are independently evaluated by the batch assessor.

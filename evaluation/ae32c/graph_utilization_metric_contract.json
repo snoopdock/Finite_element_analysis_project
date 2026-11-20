@@ -1,0 +1,55 @@
+{
+  "metrics": {
+    "backend": {
+      "active_computation_backend": "Backend reported by the runtime architecture graph engine.",
+      "parity_verified_queries": "Runtime backend counter for queries verified against the reference traversal."
+    },
+    "claim_linkage": {
+      "claims_citing_graph_tool_evidence_count": "Diagnosis claim items whose evidence_refs include a successful ledger evidence ID from any registered graph-derived tool family.",
+      "graph_tool_evidence_citation_count": "Number of claim-to-successful-graph-derived-tool ledger references."
+    },
+    "graph_query_usage": {
+      "attempt_count": "Number of graph_neighbors/graph_path ledger entries, including failed calls.",
+      "complete_query_count": "Successful results with coverage_status=complete_for_query and truncated=false.",
+      "failed_call_count": "Graph query attempts without an accepted structured result.",
+      "mode_counts": "Counts by graph_neighbors direction or graph_path.",
+      "partial_or_truncated_query_count": "Successful graph queries that are not complete.",
+      "successful_call_count": "Entries with status ok and a structured result object."
+    },
+    "provider_resource_usage": {
+      "estimated_cost_usd_reserved": "Investigator's explicitly reserved cost estimate, when configured.",
+      "provider_reported_cost_usd": "Provider-reported cost, when available.",
+      "provider_reported_tokens": "Provider-reported tokens; not estimated."
+    },
+    "source_follow_through": {
+      "eligible_newly_surfaced_path_count": "Unique source paths surfaced by complete results from any of the five registered graph-derived tools that had not already been read before first surfacing. For find_related_tests, only static_import relationship candidates count; text_reference candidates are excluded.",
+      "verified_complete_hash_matching_path_count": "Eligible paths read after surfacing with a complete requested line range and matching graph-snapshot SHA-256.",
+      "verified_follow_through_rate": "Verified path count divided by eligible newly surfaced path count; null when denominator is zero."
+    }
+  },
+  "non_claims": [
+    "No diagnostic accuracy score.",
+    "No semantic entailment or causal correctness inference.",
+    "No graph benefit or counterfactual superiority inference from one run.",
+    "No human review or adjudication requirement."
+  ],
+  "privacy": {
+    "credentials_included": false,
+    "raw_prompt_content_included": false,
+    "raw_provider_response_included": false,
+    "source_file_content_included": false
+  },
+  "release": "E.8.7",
+  "schema_version": "ae32c/graph-utilization-metric-contract/v1",
+  "tool_families": {
+    "graph_derived_discovery": [
+      "trace_execution_context",
+      "find_related_tests",
+      "find_workflow_context"
+    ],
+    "graph_query": [
+      "graph_neighbors",
+      "graph_path"
+    ]
+  }
+}
