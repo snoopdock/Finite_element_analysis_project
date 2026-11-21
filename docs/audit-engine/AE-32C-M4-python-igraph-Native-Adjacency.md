@@ -84,6 +84,7 @@ The fake-adapter test establishes the intended interface behavior only. It does 
 - `8be9e5d7ecd4475f08c8602d391ce8d424502187` — place real-library assertions in the conditional real-igraph test.
 - `992670dba9ff12a48d85f0a97181cbccc1af749e` — align native projection-mutation errors with the traversal integrity contract.
 - `8ff22ea2020e86758cad7a5215771d90f6688f0a` — add igraph to the requirements manifest actually installed by G9.42.
+- `fc7e6e92e91764d59c5f4bca5762d073a71d2601` — require the real python-igraph version in native and repository conformance runtime evidence.
 
 No local tests or workflows were run by the implementer. The next step is a user-run G9.42 validation against the latest Stage1 head.
 
