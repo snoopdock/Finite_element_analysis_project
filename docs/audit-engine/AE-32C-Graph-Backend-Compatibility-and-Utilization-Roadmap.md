@@ -6,7 +6,7 @@
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
 **M1 accepted implementation snapshot:** `fb3f26e0600c5abe894fb54c9b0cecefed2476f2` — typed protocol, NetworkX native adjacency, `BOTH` self-loop correction and conformance states; validated by G9.42 run `44892453883`  
 **M1 validation record:** [AE-32C M1 NetworkX Validation Record](AE-32C-M1-NetworkX-Validation-Record.md) — exact source SHA, 18 focused protocol tests passed, E.8.5/E.8.8 test gates passed, skips and artifact digests recorded  
-**M2 implementation snapshot:** `7e9a680e41dfb4fd322aeba29ddd18e10b3b490f` — context adjacency now uses backend-neutral `GraphQuery` service operations; backend-specific hook bypass regression test added; validation pending  
+**M2 implementation snapshot:** `9a78eb7dcc7c45a5443d2a71565f94dda6007e30` — context adjacency uses backend-neutral `GraphQuery` service operations; repository conformance now publishes context telemetry separately; initial G9.42 run `44893673258` exposed a report-schema assertion failure, corrected and awaiting rerun  
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
 **Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
 
@@ -499,13 +499,13 @@ M0 closure does not imply that every backend has native query conformance. The o
 
 **M1 is accepted for the NetworkX adapter contract and its tested repository-backed path.** The exact-commit evidence is recorded in [AE-32C M1 NetworkX Validation Record](AE-32C-M1-NetworkX-Validation-Record.md). G9.42 run `44892453883` checked out source SHA `fb3f26e0600c5abe894fb54c9b0cecefed2476f2`; all 18 focused M1 tests passed in regression, and the targeted E.8.5/E.8.8 modules passed. This acceptance does not extend to other native backends.
 
-**M2 is now in progress.** The initial implementation is documented in [AE-32C M2 — Context and Workflow Tool Backend Routing](AE-32C-M2-Context-Tool-Backend-Routing.md). Commits `7d9e8f1aac3b873e689a45f525060c60420314bc` and `7e9a680e41dfb4fd322aeba29ddd18e10b3b490f` replace the backend-specific context adjacency hook and canonical-edge fallback with backend-neutral one-hop `GraphQuery` operations, preserve context-tool-owned BFS semantics, add operation-level telemetry, and add a regression guard.
+M2 remains in progress. Its implementation and the validation-driven correction are documented in [AE-32C M2 — Context and Workflow Tool Backend Routing](AE-32C-M2-Context-Tool-Backend-Routing.md) and [AE-32C M2 Validation Failure Review](AE-32C-M2-Validation-Failure-44893673258.md). The initial implementation routes context adjacency through backend-neutral one-hop `GraphQuery` operations and removes the backend-specific hook/fallback. G9.42 run `44893673258` failed only at the aggregate report assertion: the runner validated context telemetry internally but omitted it from the serialized report, and the test expected it under traversal-engine `backend_execution`. The correction publishes `context_operation_telemetry` as a separate top-level field and updates the test to validate its three operation records.
 
 Next:
-1. Validate the current M2 branch head with G9.42; no local tests or workflows have been run for the M2 commits.
-2. Review the new context routing test and inspect the exact run's operation-level telemetry for direct and nested context operations.
+1. Run G9.42 against the corrected Stage1 branch head; no tests or workflows have been run after the corrective commits.
+2. Inspect the exact run's top-level context telemetry for direct trace, nested workflow context and direct workflow context.
 3. Confirm type-checking-only import exclusion, source-line provenance, workflow relationship handling, active-workflow scope, traversal bounds and truncation semantics.
-4. If validation passes, close M2 with a separate exact-commit validation record. If it fails, correct the implementation and rerun.
+4. If validation passes, close M2 with a separate exact-commit validation record. If it fails, review the logs and correct the implementation.
 5. Proceed to M3 only after M2 acceptance. M3 is the separate SciPy CSR/CSC native adjacency milestone.
 
 The dedicated E.8.5/E.8.8 workflow was not separately dispatched for M1; the equivalent M1 and repository-runner test assertions passed under G9.42. Do not infer SciPy, igraph, graph-tool or SNAP acceptance from this result. No live provider test substitutes for deterministic adapter conformance.
