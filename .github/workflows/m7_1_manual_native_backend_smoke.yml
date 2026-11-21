@@ -30,7 +30,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  workflow-lint:
+    name: Lint M7.1 workflow definition
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout workflow revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache: false
+      - name: Install pinned actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+      - name: Lint M7.1 workflow
+        run: "$(go env GOPATH)/bin/actionlint" -color -verbose .github/workflows/m7_1_manual_native_backend_smoke.yml
+
   resolve-source:
+    needs: workflow-lint
     name: Resolve immutable source revision
     runs-on: ubuntu-24.04
     timeout-minutes: 5
