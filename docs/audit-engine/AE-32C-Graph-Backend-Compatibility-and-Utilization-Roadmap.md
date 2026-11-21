@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0 closed; M1 NetworkX accepted; M2 NetworkX repository context routing accepted; M3 SciPy and M4 python-igraph accepted for their recorded exact Stage1 snapshots; M5 graph-tool accepted for exact SHA `9adc99b9511d0281b18be76d60865dcf13bb16b0`; E.8.8 is now extended to NetworkX, SciPy, igraph, graph-tool and SNAP; M6 SNAP isolated-worker E.8.5 and E.8.8 conformance passed on Stage1 SHA `425c0f7378bfe190da81b10b0f6e0b22c3df4f41`; exact-current-commit G9.42 validation remains pending; production approval remains false  
+**Status:** M0 closed; M1 NetworkX accepted; M2 NetworkX repository context routing accepted; M3 SciPy and M4 python-igraph accepted for their recorded exact Stage1 snapshots; M5 graph-tool accepted for exact SHA `9adc99b9511d0281b18be76d60865dcf13bb16b0`; E.8.8 is now extended to NetworkX, SciPy, igraph, graph-tool and SNAP; M6 SNAP isolated-worker E.8.5 and E.8.8 conformance passed on final provenance-stamped Stage1 SHA `c7fe14c52ded38eafbf3153137bf163efaa3f0e6`; exact-commit G9.42 validation remains pending; production approval remains false  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -616,7 +616,7 @@ Results from that run:
 - graph-tool: E.8.5 and E.8.8 passed.
 - SNAP 6.0 isolated worker: E.8.5 and E.8.8 passed.
 
-For SNAP, E.8.5 verified 14/14 repeated queries with zero parity failures, 34 native adjacency lookups and 96 native edge occurrences read. E.8.8 verified 43/43 repository queries with zero parity failures, 45 native adjacency lookups and 86 native edge occurrences read. The graph-to-source follow-through verified two source reads against SHA-256 hashes. The worker image ID was `sha256:55b531951c9f7f70bc0414ce4a59059d6602df3ec15e17bf0732099bd602f593`.
+For SNAP, E.8.5 verified 14/14 repeated queries with zero parity failures, 34 native adjacency lookups and 96 native edge occurrences read. E.8.8 verified 43/43 repository queries with zero parity failures, 45 native adjacency lookups and 86 native edge occurrences read. The graph-to-source follow-through verified two source reads against SHA-256 hashes. The final worker image ID was `sha256:9701ec285db9ed7d41415ce7b6950f7ae27ce54ea99ea4469d0e0f524d007ee1`.
 
 The E.8.5/E.8.8 runner reports and workflow now also stamp the actual checked-out Stage1 source SHA, workflow run ID and attempt. A provenance-stamped run is triggered on the current Stage1 head by the workflow/documentation commit. G9.42 exact-commit validation remains the final milestone gate.
 
@@ -643,8 +643,8 @@ See [AE-32C M6 SNAP Isolated Worker — Implementation and Acceptance](AE-32C-M6
 
 | Milestone | Current state | Remaining acceptance requirement |
 |---|---|---|
-| M5 graph-tool | Previously accepted at exact SHA `9adc99b...`; E.8.5/E.8.8 passed again at SHA `425c0f7...` | Run G9.42 at the exact same SHA as the final provenance-stamped E.8.5/E.8.8 run before closing current-head revalidation. |
-| M6 SNAP | Real isolated worker E.8.5 and E.8.8 passed at SHA `425c0f7...` | Run G9.42 at the exact same SHA as the final provenance-stamped E.8.5/E.8.8 run before recording M6 accepted. |
+| M5 graph-tool | Previously accepted at exact SHA `9adc99b...`; E.8.5/E.8.8 passed again at final SHA `c7fe14c...` | Run G9.42 at exact SHA `c7fe14c52ded38eafbf3153137bf163efaa3f0e6` before closing current-head revalidation. |
+| M6 SNAP | Real isolated worker E.8.5 and E.8.8 passed at SHA `425c0f7...` | Run G9.42 at exact SHA `c7fe14c52ded38eafbf3153137bf163efaa3f0e6` before recording M6 accepted. |
 | M3 SciPy / M4 igraph | Their historical exact-SHA acceptance records remain valid; E.8.5/E.8.8 also passed together at SHA `425c0f7...` | No promotion; preserve `production_approval=false`. |
 
-Do not infer M6 completion from a successful Docker build or fake-process test alone. The real SNAP E.8.5/E.8.8 gate is now green; final milestone closure still requires a successful G9.42 Manual Validation Dispatcher report for the exact same Stage1 SHA. Do not change registry production approval.
+Do not infer final milestone closure from a successful Docker build or fake-process test alone. The real E.8.5/E.8.8 gates for all five backends are green on exact Stage1 SHA `c7fe14c52ded38eafbf3153137bf163efaa3f0e6`; the remaining closure gate is a successful G9.42 Manual Validation Dispatcher report for that same SHA. Do not change registry production approval.
