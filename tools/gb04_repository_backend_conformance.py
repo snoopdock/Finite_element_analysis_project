@@ -234,6 +234,11 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
             "paths": sorted({item.get("path") for item in related_tests.get("tests", []) if isinstance(item, dict)}),
         },
         "backend_execution": final_runtime.get("backend_execution"),
+        # Context-tool counters are maintained by RepositoryEvidenceTools,
+        # separately from traversal-engine counters. Keep them explicit in
+        # the conformance artifact instead of nesting them under
+        # backend_execution (which only describes traversal-engine metrics).
+        "context_operation_telemetry": context_telemetry,
         "side_effects": {
             "repository_code_executed": False,
             "tests_executed_by_backend": False,
