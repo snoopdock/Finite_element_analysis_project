@@ -1,0 +1,177 @@
+name: AE-32C Native Graph Backend Conformance (E.8.5 / E.8.8)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e85-native-graph-backend-conformance-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pip-native-backends:
+    name: Native conformance — ${{ matrix.backend }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [networkx, scipy, igraph]
+    steps:
+      - name: Checkout selected Stage1 commit
+        uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install declared runtime requirements without building the flat-layout repository
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Run M1 NetworkX adapter protocol contract
+        if: matrix.backend == 'networkx'
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/semantic_graph/test_m1_adapter_protocol_networkx.py
+      - name: Install igraph native library
+        if: matrix.backend == 'igraph'
+        run: python -m pip install 'igraph>=0.11,<2.0'
+      - name: Run synthetic native projection and traversal conformance
+        run: |
+          python tools/gb03_native_backend_conformance.py \
+            --backend "${{ matrix.backend }}" \
+            --output "e85-${{ matrix.backend }}.json"
+      - name: Run repository-backed graph and source conformance (NetworkX only)
+        if: matrix.backend == 'networkx'
+        run: |
+          python tools/gb04_repository_backend_conformance.py \
+            --backend "${{ matrix.backend }}" \
+            --output "e88-${{ matrix.backend }}-repository.json"
+      - name: Record deferred repository gate for non-NetworkX backends
+        if: matrix.backend != 'networkx'
+        run: |
+          {
+            echo "### Repository-backed conformance"
+            echo "NOT RUN: native local edge-occurrence adjacency is not implemented for this backend; repository/tool-routing acceptance is deferred to its backend milestone."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload conformance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e85-${{ matrix.backend }}-conformance
+          path: |
+            e85-${{ matrix.backend }}.json
+            e88-${{ matrix.backend }}-repository.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  graph-tool-native:
+    name: Native conformance — graph-tool
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout selected Stage1 commit
+        uses: actions/checkout@v4
+      - name: Provision graph-tool Python 3.11 environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: .github/environments/e85-graph-tool.yml
+          environment-name: ae32-e85-graph-tool
+          cache-environment: true
+          init-shell: bash
+      - name: Run graph-tool adapter API and local-adjacency tests
+        shell: micromamba-shell {0}
+        run: |
+          python -m pytest -q tests/semantic_graph/test_e83_multi_backend_traversal.py -k graph_tool
+      - name: Run synthetic native graph-tool conformance
+        shell: micromamba-shell {0}
+        run: |
+          python tools/gb03_native_backend_conformance.py \
+            --backend graph-tool \
+            --output e85-graph-tool.json
+      - name: Run graph-tool repository-backed context and source conformance
+        shell: micromamba-shell {0}
+        run: |
+          python tools/gb04_repository_backend_conformance.py \
+            --backend graph-tool \
+            --output e88-graph-tool-repository.json
+      - name: Upload graph-tool conformance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e85-graph-tool-conformance
+          path: |
+            e85-graph-tool.json
+            e88-graph-tool-repository.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  snap-python39-compatibility-probe:
+    name: SNAP isolated Python 3.9 compatibility probe
+    outputs:
+      native_status: ${{ steps.snap.outputs.status }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout selected Stage1 commit
+        uses: actions/checkout@v4
+      - name: Set up isolated Python 3.9 worker runtime
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9.19"
+      - name: Install published SNAP 6.0 binary
+        run: python -m pip install 'snap-stanford==6.0.0'
+      - name: Verify TNEANet directed multigraph and adjacency APIs
+        id: snap
+        shell: bash
+        run: |
+          mkdir -p e85-snap-evidence
+          python tools/snap_python39_compatibility_smoke.py \
+            --output e85-snap-evidence/e85-snap-python39.json
+          echo "status=python39_worker_candidate" >> "$GITHUB_OUTPUT"
+          {
+            echo "### SNAP compatibility"
+            echo "The isolated CPython 3.9 SNAP 6.0 TNEANet smoke passed."
+            echo "This is not AE-32C native adapter acceptance: the Python 3.11 worker protocol and repository-level parity gate remain to be implemented."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload SNAP compatibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e85-snap-python39-compatibility
+          path: e85-snap-evidence/e85-snap-python39.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  conformance-summary:
+    name: E.8.5 / E.8.8 backend conformance summary
+    if: always()
+    needs: [pip-native-backends, graph-tool-native, snap-python39-compatibility-probe]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish acceptance summary
+        env:
+          PIP_BACKENDS: ${{ needs.pip-native-backends.result }}
+          GRAPH_TOOL: ${{ needs.graph-tool-native.result }}
+          SNAP_JOB: ${{ needs.snap-python39-compatibility-probe.result }}
+          SNAP_NATIVE: ${{ needs.snap-python39-compatibility-probe.outputs.native_status }}
+        run: |
+          {
+            echo "## Native graph backend conformance"
+            echo "- NetworkX / SciPy / igraph matrix job execution: ${PIP_BACKENDS}"
+            echo "- graph-tool synthetic job execution: ${GRAPH_TOOL}"
+            echo "- SNAP isolated Python 3.9 compatibility job: ${SNAP_JOB}"
+            echo "- SNAP compatibility status: ${SNAP_NATIVE}"
+            echo "- SNAP AE-32C adapter acceptance: NOT YET ACCEPTED; isolated worker protocol and repository parity remain required."
+            echo "- NetworkX: M1 protocol tests run in the NetworkX matrix job; acceptance still requires their pass plus the repository report."
+            echo "- graph-tool: dedicated conda-forge environment runs both synthetic E.8.5 and repository-backed E.8.8 conformance; acceptance requires both reports to pass."
+            echo "- A green workflow job status is not, by itself, backend acceptance."
+            echo ""
+            echo "A backend is accepted only when both synthetic and repository-backed reports show status=passed. graph-tool runs in its dedicated conda-forge environment. SNAP's Python 3.9 import/adjacency smoke is not native adapter acceptance."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "${PIP_BACKENDS}" != "success" || "${GRAPH_TOOL}" != "success" || "${SNAP_JOB}" != "success" ]]; then
+            exit 1
+          fi
