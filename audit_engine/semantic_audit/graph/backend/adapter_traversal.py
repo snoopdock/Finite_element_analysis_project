@@ -126,6 +126,9 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
         self.adapter = self.backend_execution.output
         self.native_graph = self.adapter.export()
         self._edge_occurrences = tuple(graph.edges)
+        self._projection_validated = False
+        self._projection_node_count = 0
+        self._projection_edge_occurrence_count = 0
         self._metrics = {
             "queries_attempted": 0,
             "queries_succeeded": 0,
@@ -135,6 +138,8 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
             "total_examined_edges": 0,
             "total_visited_nodes": 0,
             "native_projection_reads": 0,
+            "native_adjacency_lookups": 0,
+            "native_edge_occurrences_read": 0,
         }
         # Fail during construction if the native projection is already corrupt.
         self._build_adjacency()
@@ -146,6 +151,11 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
     def _build_adjacency(self):
         if graph_fingerprint(self.graph) != self._source_fingerprint:
             raise NativeAdapterProjectionError("canonical_graph_changed_after_native_projection")
+        # SciPy's complete projection is validated once at construction.
+        # Every subsequent walk receives empty Python indexes and must obtain
+        # candidates from CSR/CSC local adjacency.
+        if self._backend_name == "scipy" and self._projection_validated:
+            return {}, {}
 
         expected_nodes = {
             node.node_id: {
@@ -199,7 +209,57 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
             raise NativeAdapterProjectionError("native_edge_projection_occurrence_count_mismatch")
         if graph_fingerprint(self.graph) != self._source_fingerprint:
             raise NativeAdapterProjectionError("canonical_graph_changed_during_native_projection_read")
+        self._projection_node_count = len(native_nodes)
+        self._projection_edge_occurrence_count = len(seen)
+        if self._backend_name == "scipy":
+            self._projection_validated = True
         return dict(outgoing), dict(incoming)
+
+    def _candidate_edges(
+        self,
+        node_id: str,
+        *,
+        direction,
+        relation_types: set[str] | None,
+        outgoing: dict[str, list[SemanticEdge]],
+        incoming: dict[str, list[SemanticEdge]],
+    ):
+        if self._backend_name != "scipy":
+            return super()._candidate_edges(
+                node_id, direction=direction, relation_types=relation_types,
+                outgoing=outgoing, incoming=incoming,
+            )
+        if isinstance(direction, str):
+            direction = TraversalDirection(direction)
+        self._metrics["native_adjacency_lookups"] += 1
+        records = self.adapter.iter_adjacent_edge_occurrences(node_id, direction)
+        self._metrics["native_edge_occurrences_read"] += len(records)
+        candidates = []
+        seen = set()
+        for record in records:
+            occurrence = record.occurrence_id
+            if type(occurrence) is not int or not 0 <= occurrence < len(self._edge_occurrences):
+                raise NativeAdapterProjectionError("scipy_native_edge_occurrence_invalid")
+            if occurrence in seen:
+                raise NativeAdapterProjectionError("scipy_native_edge_occurrence_duplicate")
+            seen.add(occurrence)
+            edge = self._edge_occurrences[occurrence]
+            if (
+                record.source_id != edge.source_id
+                or record.target_id != edge.target_id
+                or record.relation_type != edge.relation_type
+                or record.attributes != edge.attributes
+                or record.metadata != edge.metadata
+            ):
+                raise NativeAdapterProjectionError("scipy_native_edge_occurrence_semantic_mismatch")
+            if relation_types is not None and edge.relation_type not in relation_types:
+                continue
+            neighbor = edge.target_id if edge.source_id == node_id else edge.source_id
+            candidates.append((edge, neighbor))
+        candidates.sort(key=lambda item: (
+            item[1], item[0].relation_type, item[0].source_id, item[0].target_id,
+        ))
+        return candidates
 
     def walk(self, *args: Any, **kwargs: Any) -> TraversalResult:
         self._metrics["queries_attempted"] += 1
@@ -272,7 +332,17 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
                 if self._backend_name == "scipy"
                 else "native_projection_verified_against_canonical_semantic_graph"
             ),
-            "projection_node_count": len(list(self.adapter.iter_native_nodes())),
-            "projection_edge_occurrence_count": len(list(self.adapter.iter_native_edges())),
+            "projection_node_count": (
+                self._projection_node_count if self._backend_name == "scipy"
+                else len(list(self.adapter.iter_native_nodes()))
+            ),
+            "projection_edge_occurrence_count": (
+                self._projection_edge_occurrence_count if self._backend_name == "scipy"
+                else len(list(self.adapter.iter_native_edges()))
+            ),
+            "native_adjacency": (
+                self.adapter.native_adjacency_report()
+                if self._backend_name == "scipy" else None
+            ),
             "backend_execution": dict(self._metrics),
         }
