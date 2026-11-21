@@ -82,6 +82,10 @@ jobs:
           environment-name: ae32-e85-graph-tool
           cache-environment: true
           init-shell: bash
+      - name: Run graph-tool adapter API and local-adjacency tests
+        shell: micromamba-shell {0}
+        run: |
+          python -m pytest -q tests/semantic_graph/test_e83_multi_backend_traversal.py -k graph_tool
       - name: Run synthetic native graph-tool conformance
         shell: micromamba-shell {0}
         run: |
