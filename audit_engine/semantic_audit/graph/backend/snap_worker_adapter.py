@@ -125,20 +125,21 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
                 raise SNAPWorkerProtocolError("snap_worker_node_count_mismatch")
             if response.get("edge_occurrence_count") != len(snapshot_edges):
                 raise SNAPWorkerProtocolError("snap_worker_edge_count_mismatch")
-            native_map = response.get("occurrence_to_native_edge_id")
-            if not isinstance(native_map, list):
-                raise SNAPWorkerProtocolError("snap_worker_edge_identity_map_missing")
-            parsed_map = {}
-            for pair in native_map:
-                if (not isinstance(pair, list) or len(pair) != 2
-                        or type(pair[0]) is not int or type(pair[1]) is not int
-                        or pair[0] in parsed_map):
-                    raise SNAPWorkerProtocolError("snap_worker_edge_identity_map_invalid")
-                parsed_map[pair[0]] = pair[1]
-            if set(parsed_map) != set(range(len(snapshot_edges))):
-                raise SNAPWorkerProtocolError("snap_worker_edge_identity_map_incomplete")
-            self._edge_ids = parsed_map
             self.worker_info = response
+            self.worker_info["container_image"] = image
+            self.worker_info["container_image_id"] = os.environ.get(
+                "AE32C_SNAP_WORKER_IMAGE_ID"
+            )
+            self.worker_info["container_policy"] = {
+                "network": "none",
+                "root_filesystem": "read_only",
+                "capabilities": "all_dropped",
+                "repository_mount": False,
+                "provider_credentials_passed": False,
+                "memory_limit": "512m",
+                "cpu_limit": 1,
+                "pid_limit": 64,
+            }
         except Exception:
             self.close()
             raise
@@ -209,13 +210,18 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
             audited_map = {
                 item["occurrence"]: item["native_edge_id"] for item in edges
             }
-            if audited_map != self._edge_ids:
-                raise SNAPWorkerProtocolError("snap_worker_edge_identity_map_changed_after_audit")
+            if set(audited_map) != set(range(len(self._projection.edges))):
+                raise SNAPWorkerProtocolError("snap_worker_edge_identity_map_incomplete")
+            self._edge_ids = audited_map
             self._audit_cache = {
                 "nodes": deepcopy(nodes),
                 "edges": deepcopy(edges),
             }
         return self._audit_cache
+
+    def identity_mapping(self):
+        self._ensure_audit()
+        return super().identity_mapping()
 
     def iter_native_nodes(self):
         return iter(deepcopy(self._ensure_audit()["nodes"]))
