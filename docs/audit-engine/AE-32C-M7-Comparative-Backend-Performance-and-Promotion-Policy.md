@@ -238,7 +238,7 @@ The verifier consumes detached reports, run/verification logs and a GitHub Actio
 - expected native query mode, preflight parity counts/failures, native adjacency telemetry and campaign-wide sample arithmetic;
 - a descriptive environment-strata summary without pooling or ranking timings.
 
-The dossier records the GitHub artifact digest metadata and SHA-256 values of extracted report/log files. The GitHub artifact metadata is the provenance authority for the detached archive identity; the report's internal digest is an integrity check, not a signature. The verifier does not claim to re-execute historical timing samples or independently authenticate the physical runner.
+The dossier records the GitHub artifact digest metadata and SHA-256 values of extracted report/log files. The workflow obtains the artifact metadata from the GitHub Actions API and downloads each exact backend artifact for the selected run attempt. The verifier validates the metadata's presence and format and records it; it does not independently re-hash the ZIP archive bytes. The report's internal digest is an integrity check, not a signature. The verifier does not claim to re-execute historical timing samples or independently authenticate the physical runner.
 
 The tests include missing/expired artifacts, mixed source revisions, configuration mismatch, authority escalation, injected selection fields and detached-log mismatch. The G9.42 profile now includes this test module.
 
