@@ -1,7 +1,7 @@
 # Branch architecture comparison
 
-- Base: main at 0d6cf9b034cb5360ead88d893cfca48972c5aa91
-- Compared branch: stage1/section-uuids at 3e19b6eca06b12c39c35efb4ba8d986899310b93
+- Base: main at 9e7dcd0a377cce723311e30614a0de2a1ec04628
+- Compared branch: stage1/section-uuids at bb325a89466ecfca875c50284cd186c0e417f96b
 - Merge base: 2713797451965a14b2512cdf497f2619d844749f
 
 ## Graphify code-structure counts
@@ -24,8 +24,8 @@ Detailed identity lists are in architecture-delta.json. Graphify IDs and extract
 
 ## Git divergence
 
-- Commits unique to main: 317
-- Commits unique to stage1/section-uuids: 1186
+- Commits unique to main: 319
+- Commits unique to stage1/section-uuids: 1188
 - Files changed from merge base on main: 158
 - Files changed from merge base on stage1/section-uuids: 1705
 

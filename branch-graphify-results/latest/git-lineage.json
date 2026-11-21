@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "0d6cf9b034cb5360ead88d893cfca48972c5aa91",
-  "compare_sha": "3e19b6eca06b12c39c35efb4ba8d986899310b93",
+  "base_sha": "9e7dcd0a377cce723311e30614a0de2a1ec04628",
+  "compare_sha": "bb325a89466ecfca875c50284cd186c0e417f96b",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 317,
-  "compare_only_commit_count": 1186,
+  "base_only_commit_count": 319,
+  "compare_only_commit_count": 1188,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -7463,6 +7463,26 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": ">",
+      "sha": "bb325a89466ecfca875c50284cd186c0e417f96b",
+      "subject": "Verify both detached campaign and verification logs"
+    },
+    {
+      "side": "<",
+      "sha": "9e7dcd0a377cce723311e30614a0de2a1ec04628",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": "<",
+      "sha": "2ebe2dc55038363357d2c540e561f08f5254d311",
+      "subject": "Download only the five exact backend artifacts for the selected attempt"
+    },
+    {
+      "side": ">",
+      "sha": "788950d97e33883d5077167aa388437d48c3831e",
+      "subject": "Bind each detached artifact to its backend directory"
+    },
     {
       "side": "<",
       "sha": "0d6cf9b034cb5360ead88d893cfca48972c5aa91",
