@@ -100,7 +100,28 @@ def test_repository_conformance_runner_requires_native_context_tool_routing():
         "networkx_native_successor_predecessor_adjacency"
     )
     assert report["backend_queries"]["find_workflow_context"]["telemetry"]["native_adjacency_lookups"] >= 1
-    assert report["backend_execution"]["context_operation_telemetry"]
+
+    # Context-tool counters belong to RepositoryEvidenceTools, not the
+    # traversal engine's backend_execution counter set. The runner must
+    # publish them as a separate top-level report section.
+    context_telemetry = report["context_operation_telemetry"]
+    assert set(context_telemetry) == {
+        "trace_execution_context",
+        "trace_execution_context.workflow_context",
+        "find_workflow_context",
+    }
+    for operation in (
+        "trace_execution_context",
+        "trace_execution_context.workflow_context",
+        "find_workflow_context",
+    ):
+        observed = context_telemetry[operation]
+        assert observed["adjacency_queries_attempted"] >= 1
+        assert observed["adjacency_queries_succeeded"] == observed["adjacency_queries_attempted"]
+        assert observed["adjacency_queries_failed"] == 0
+        assert observed["native_adjacency_lookups"] >= 1
+        assert observed["parity_verified"] >= 1
+        assert observed["parity_failures"] == 0
 
 
 def test_context_tools_use_backend_neutral_graph_queries(monkeypatch):
