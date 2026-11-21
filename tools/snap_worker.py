@@ -16,7 +16,8 @@ import sys
 PROTOCOL = "ae32c/snap-worker/v1"
 MAX_LINE_BYTES = 16 * 1024 * 1024
 MAX_NODES = 200000
-MAX_EDGES = 1000000\nMAX_ADJACENCY_OCCURRENCES = 100000
+MAX_EDGES = 1000000
+MAX_ADJACENCY_OCCURRENCES = 100000
 
 # Reserve stdout exclusively for protocol frames. Native-library diagnostics
 # must never corrupt the JSON-lines channel.
