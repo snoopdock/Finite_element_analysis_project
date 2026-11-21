@@ -445,3 +445,6 @@ def test_scipy_repository_conformance_routes_context_tools_through_native_adjace
     assert report["context_operation_telemetry"]["trace_execution_context"]["native_edge_occurrences_read"] >= 1
     assert report["context_operation_telemetry"]["find_workflow_context"]["native_adjacency_lookups"] >= 1
     assert report["context_operation_telemetry"]["find_workflow_context"]["native_edge_occurrences_read"] >= 1
+    assert report["backend_queries"]["trace_execution_context"]["backend_execution"] == "scipy_csr_csc_adjacency"
+    assert report["backend_queries"]["trace_nested_find_workflow_context"]["backend_execution"] == "scipy_csr_csc_adjacency"
+    assert report["backend_queries"]["find_workflow_context"]["backend_execution"] == "scipy_csr_csc_adjacency"
