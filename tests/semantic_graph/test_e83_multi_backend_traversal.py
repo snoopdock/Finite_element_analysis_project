@@ -286,6 +286,10 @@ def test_scipy_backend_uses_csr_and_preserves_parallel_edge_occurrences():
     assert runtime["backend_parity_mode"] == "strict_per_query_reference_comparison"
     assert runtime["backend_loss_assessment"]["lossless"] is False
     assert runtime["backend_execution"]["parity_verified_queries"] == 1
+    if backend == "igraph":
+        assert runtime["backend_native_query_mode"] == "igraph_incident_edge_ids"
+        assert runtime["native_adjacency"]["native_adjacency_lookups"] >= 1
+        assert runtime["native_adjacency"]["native_edge_occurrences_read"] >= 1
 
 
 @pytest.mark.parametrize("backend", ["igraph", "graph-tool", "snap"])
@@ -348,6 +352,43 @@ def test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_sca
     assert runtime["native_adjacency"]["incoming_incident_edge_lookups"] == 2
     assert runtime["native_adjacency"]["native_edge_occurrences_read"] == 5
     assert runtime["backend_execution"]["parity_verified_queries"] == 3
+
+
+def test_igraph_repository_conformance_routes_context_tools_through_native_adjacency():
+    import importlib.util
+    if importlib.util.find_spec("igraph") is None:
+        pytest.skip("igraph native library is not installed in this interpreter")
+    from pathlib import Path
+    from tools.gb04_repository_backend_conformance import run_repository_conformance
+
+    fixture = (
+        Path(__file__).resolve().parents[1]
+        / "semantic_audit"
+        / "fixtures"
+        / "ae32c_provider_interface_incident"
+    )
+    report = run_repository_conformance(fixture, "igraph")
+    assert report["status"] == "passed"
+    assert report["graph_to_repository_follow_through"]["verified_read_count"] == 2
+    assert report["backend_execution"]["parity_verified_queries"] >= 3
+    for operation in (
+        "trace_execution_context",
+        "trace_execution_context.workflow_context",
+        "find_workflow_context",
+    ):
+        telemetry = report["context_operation_telemetry"][operation]
+        assert telemetry["native_adjacency_lookups"] >= 1
+        assert telemetry["native_edge_occurrences_read"] >= 1
+        assert telemetry["parity_verified"] >= 1
+        assert telemetry["parity_failures"] == 0
+    for operation in (
+        "trace_execution_context",
+        "trace_nested_find_workflow_context",
+        "find_workflow_context",
+    ):
+        assert report["backend_queries"][operation]["backend_execution"] == (
+            "igraph_incident_edge_ids"
+        )
 
 
 def test_native_projection_mutation_fails_closed(monkeypatch):
