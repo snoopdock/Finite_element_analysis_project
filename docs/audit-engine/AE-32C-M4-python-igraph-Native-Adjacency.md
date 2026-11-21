@@ -60,6 +60,20 @@ The existing conditional real-library test remains the actual python-igraph API 
 
 The inspected G9.42 artifact for M3 showed that python-igraph was absent: both real-igraph tests were skipped with the explicit reason `igraph native library is not installed in this interpreter`. Inspection of the G9.42 job log established that the dispatcher installs `source/requirements.txt` directly; it does not install the `graph-core` project extra. Therefore adding igraph only to `pyproject.toml` would not fix the validation environment. The dependency is now included in both the optional `graph-core` extra (for package users) and `requirements.txt` (the exact dependency manifest installed by G9.42). The next G9.42 artifact must confirm that the real tests execute rather than skip.
 
+## 4.1 G9.42 validation attempt and corrective review
+
+G9.42 run [44899514712](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44899514712) checked the exact M4 implementation SHA `01983f38dd811577c43a5c35436d83ceecbb8587` on `stage1/section-uuids`, with CPython 3.11.18 and python-igraph 1.0.0. The real-library query test, native conformance test and repository context-routing test all executed and passed. The run nevertheless failed: 676/685 targeted tests passed (4 skipped, 5 failed), and 3,606/3,624 regression tests passed (12 skipped, 6 failed).
+
+Four failures exposed an incomplete fake igraph graph lacking the documented `Graph.ecount()` method. One exposed a test monkeypatch applied to the source module rather than the imported symbol used by `capability_registry`. The remaining stale M1 assertion still expected igraph to be `not_implemented`, despite M4 correctly declaring it `implemented_unvalidated`.
+
+The review concluded that no production adapter change was warranted. The test double now implements `ecount()`; the availability test patches the registry's actual imported symbol; and the M1 test distinguishes igraph's implemented-but-unvalidated state from graph-tool/SNAP, which remain unimplemented. Corrections:
+- `0405f4f9ddd4d9142d43c5e65cf1c2ecc60955b1`
+- `49a8f66489b798bc6e21a15a0bbf3b85fbe1fe89`
+
+Detailed evidence, root-cause analysis, and rerun criteria: [M4 G9.42 Validation Failure Review — run 44899514712](AE-32C-M4-G9.42-Validation-Failure-44899514712.md).
+
+The failed run's evidence integrity verification passed and its immutable bundle was published, but provenance catalog publication/verification correctly stopped because the validation outcome was failed. These corrections have not yet been validated by a subsequent G9.42 run. M4 remains unaccepted.
+
 ## 5. Technical limitations and acceptance boundary
 
 This is an implementation milestone, not backend acceptance. In particular:
