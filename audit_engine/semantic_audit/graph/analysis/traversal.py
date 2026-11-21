@@ -132,7 +132,6 @@ class GraphTraversalEngine:
             values.sort(
                 key=lambda edge: (
                     edge.target_id, edge.relation_type, edge.source_id,
-                    edge_fingerprint(edge),
                 )
             )
         return outgoing, incoming
@@ -164,7 +163,7 @@ class GraphTraversalEngine:
         candidates.sort(
             key=lambda item: (
                 item[1], item[0].relation_type, item[0].source_id,
-                item[0].target_id, edge_fingerprint(item[0]),
+                item[0].target_id,
             )
         )
         return candidates

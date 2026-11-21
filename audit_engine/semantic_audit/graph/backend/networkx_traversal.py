@@ -291,7 +291,7 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
         candidates.sort(
             key=lambda item: (
                 item[1], item[0].relation_type, item[0].source_id,
-                item[0].target_id, edge_fingerprint(item[0]),
+                item[0].target_id,
             )
         )
         return candidates

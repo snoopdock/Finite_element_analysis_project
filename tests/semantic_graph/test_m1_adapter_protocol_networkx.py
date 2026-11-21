@@ -48,7 +48,7 @@ def test_contract_records_are_typed_and_occurrences_are_unique(graph):
 def test_native_local_adjacency_preserves_occurrences_and_self_loop_once(graph, direction, expected):
     adapter = NetworkXAdapter(graph)
     actual = list(adapter.iter_adjacent_edge_occurrences("B", direction))
-    assert sorted(item.occurrence_id for item in actual) == expected
+    assert [item.occurrence_id for item in actual] == expected
     assert len(actual) == len(set(item.occurrence_id for item in actual))
 
 
