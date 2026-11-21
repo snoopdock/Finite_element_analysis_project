@@ -58,7 +58,7 @@ The E.8.3 test module adds a fake-API contract test covering:
 
 The existing conditional real-library test remains the actual python-igraph API smoke/conformance gate when the dependency is installed. A separate conditional repository-runner test now checks all three context operations, native execution-mode labels, native lookup/occurrence telemetry and source follow-through. A fake module is not accepted as proof of binary/API compatibility.
 
-The inspected G9.42 artifact for M3 showed that python-igraph was absent: both real-igraph tests were skipped with the explicit reason `igraph native library is not installed in this interpreter`. Since SciPy was present through the optional `graph-core` dependency group, `pyproject.toml` now includes `igraph>=0.11,<2.0` in that same group. This keeps igraph optional for base installations while ensuring the graph-core validation environment installs it. The next G9.42 artifact must confirm that the real tests execute rather than skip.
+The inspected G9.42 artifact for M3 showed that python-igraph was absent: both real-igraph tests were skipped with the explicit reason `igraph native library is not installed in this interpreter`. Inspection of the G9.42 job log established that the dispatcher installs `source/requirements.txt` directly; it does not install the `graph-core` project extra. Therefore adding igraph only to `pyproject.toml` would not fix the validation environment. The dependency is now included in both the optional `graph-core` extra (for package users) and `requirements.txt` (the exact dependency manifest installed by G9.42). The next G9.42 artifact must confirm that the real tests execute rather than skip.
 
 ## 5. Technical limitations and acceptance boundary
 
@@ -83,6 +83,7 @@ The fake-adapter test establishes the intended interface behavior only. It does 
 - `ed3a2a11d47931848694c32ea16b08845ff3a3c6` — include igraph in the optional `graph-core` validation dependency set.
 - `8be9e5d7ecd4475f08c8602d391ce8d424502187` — place real-library assertions in the conditional real-igraph test.
 - `992670dba9ff12a48d85f0a97181cbccc1af749e` — align native projection-mutation errors with the traversal integrity contract.
+- `8ff22ea2020e86758cad7a5215771d90f6688f0a` — add igraph to the requirements manifest actually installed by G9.42.
 
 No local tests or workflows were run by the implementer. The next step is a user-run G9.42 validation against the latest Stage1 head.
 
