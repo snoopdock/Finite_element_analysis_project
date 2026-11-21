@@ -66,7 +66,12 @@ def _init(message):
         _fail("snapshot_nodes_or_edges_invalid")
     if len(nodes) > MAX_NODES or len(edges) > MAX_EDGES:
         _fail("snapshot_exceeds_worker_limits")
-    if not isinstance(fingerprint, str) or len(fingerprint) != 64:
+    if (
+        not isinstance(fingerprint, str)
+        or len(fingerprint) != 38
+        or not fingerprint.startswith("graph:")
+        or any(character not in "0123456789abcdef" for character in fingerprint[6:])
+    ):
         _fail("graph_fingerprint_invalid")
 
     node_ids = set()
