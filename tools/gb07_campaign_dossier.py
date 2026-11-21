@@ -157,6 +157,10 @@ def markdown(d):
         e=g["environment"]; out.append(f"| {', '.join(g['backends'])} | {e['python']} | {e['platform']} | {e['machine']} |")
     out += ["","Runner environments are disclosed separately. Timings are descriptive and are not pooled or ranked across backends.","","## Artifact identities","","| Backend | Artifact ID | Artifact SHA-256 | Report SHA-256 |","|---|---:|---|---|"]
     for a in d["artifacts"]: out.append(f"| {a['backend']} | {a['artifact_id']} | {a['artifact_sha256']} | {a['report_sha256']} |")
+    out += ["", "Backend implementation details:"]
+    for a in d["artifacts"]:
+        out.append(f"- {a['backend']}: {a.get('backend_library')} {a.get('backend_library_version')}; projection={a.get('projection_type')}")
+
     out += ["","## Conclusions","",
       "- All five expected artifacts were present, unexpired and bound to the campaign run, attempt and one workflow-controller revision.",
       "- Each report passed the M7.2 verifier; detached verification logs agreed with report digests.",
