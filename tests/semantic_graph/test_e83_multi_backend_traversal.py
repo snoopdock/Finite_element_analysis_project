@@ -351,3 +351,83 @@ def test_e85_conformance_runner_contract_with_adapter_test_double(monkeypatch, b
     assert report["case_count"] == 7
     assert report["backend_execution"]["parity_verified_queries"] == 14
     assert report["backend_execution"]["parity_failures"] == 0
+
+
+
+def test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans(monkeypatch):
+    graph = graph_fixture()
+    engine = NativeAdapterGraphTraversalEngine(graph, "scipy")
+    adapter = engine.adapter
+    initial_projection_reads = engine.runtime_report()["backend_execution"]["native_projection_reads"]
+    assert initial_projection_reads == len(graph.nodes) + len(graph.edges)
+
+    def forbidden_full_nodes():
+        raise AssertionError("scipy_full_node_enumeration_during_query_or_report")
+
+    def forbidden_full_edges():
+        raise AssertionError("scipy_full_edge_enumeration_during_query_or_report")
+
+    monkeypatch.setattr(adapter, "iter_native_nodes", forbidden_full_nodes)
+    monkeypatch.setattr(adapter, "iter_native_edges", forbidden_full_edges)
+
+    outgoing = engine.walk("A", direction="outgoing", max_depth=1)
+    assert [(step.source_id, step.target_id, step.relation_type) for step in outgoing.steps] == [
+        ("A", "B", "DEPENDS_ON"), ("A", "B", "IMPORTS"),
+    ]
+    assert outgoing.examined_edges == 2
+
+    incoming = engine.walk("A", direction="incoming", max_depth=1)
+    assert [(step.source_id, step.target_id, step.relation_type) for step in incoming.steps] == [
+        ("D", "A", "IMPORTS"),
+    ]
+
+    runtime = engine.runtime_report()
+    assert runtime["projection_node_count"] == len(graph.nodes)
+    assert runtime["projection_edge_occurrence_count"] == len(graph.edges)
+    assert runtime["backend_execution"]["native_adjacency_lookups"] == 2
+    assert runtime["native_adjacency"]["csr_row_lookups"] == 1
+    assert runtime["native_adjacency"]["csc_column_lookups"] == 1
+    assert runtime["native_adjacency"]["native_edge_occurrences_read"] == 3
+    assert runtime["backend_execution"]["parity_verified_queries"] == 2
+
+
+def test_scipy_both_direction_returns_self_loop_occurrence_once():
+    engine = NativeAdapterGraphTraversalEngine(graph_fixture(), "scipy")
+    result = engine.walk("C", direction="both", max_depth=1)
+    self_loops = [
+        step for step in result.steps
+        if step.source_id == "C" and step.target_id == "C"
+    ]
+    assert len(self_loops) == 1
+    assert result.examined_edges == 2
+    runtime = engine.runtime_report()
+    assert runtime["native_adjacency"]["csr_row_lookups"] == 1
+    assert runtime["native_adjacency"]["csc_column_lookups"] == 1
+
+
+def test_scipy_query_is_bounded_to_reached_node_adjacency():
+    engine = NativeAdapterGraphTraversalEngine(graph_fixture(), "scipy")
+    result = engine.walk("A", direction="outgoing", max_depth=1)
+    assert result.visited_nodes == ("B",)
+    runtime = engine.runtime_report()
+    assert runtime["backend_execution"]["native_adjacency_lookups"] == 1
+    assert runtime["native_adjacency"]["csr_row_lookups"] == 1
+    assert runtime["native_adjacency"]["csc_column_lookups"] == 0
+
+
+def test_scipy_repository_conformance_routes_context_tools_through_native_adjacency():
+    from pathlib import Path
+    from tools.gb04_repository_backend_conformance import run_repository_conformance
+
+    fixture = (
+        Path(__file__).resolve().parents[1]
+        / "semantic_audit"
+        / "fixtures"
+        / "ae32c_provider_interface_incident"
+    )
+    report = run_repository_conformance(fixture, "scipy")
+    assert report["status"] == "passed"
+    assert report["graph_to_repository_follow_through"]["verified_read_count"] == 2
+    assert report["backend_execution"]["parity_verified_queries"] >= 3
+    assert report["context_operation_telemetry"]["trace_execution_context"]["native_adjacency_lookups"] >= 1
+    assert report["context_operation_telemetry"]["find_workflow_context"]["native_adjacency_lookups"] >= 1
