@@ -1,10 +1,10 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "ddd23418076a178778586d0079356a41d64754e3",
+  "base_sha": "0ad4a054125e5f66af083d840ce57dcaece66a83",
   "compare_sha": "c02eaaae23187a05152aca94b1c529b12df9b34f",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 265,
+  "base_only_commit_count": 268,
   "compare_only_commit_count": 1100,
   "base_changes_since_merge_base": [
     {
@@ -7399,6 +7399,21 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "0ad4a054125e5f66af083d840ce57dcaece66a83",
+      "subject": "Recreate native graph backend conformance workflow with explicit manual trigger"
+    },
+    {
+      "side": "<",
+      "sha": "ac42c879e8f034b98ee84fca7266b691b45ff61c",
+      "subject": "Remove native graph backend conformance workflow for clean recreation"
+    },
+    {
+      "side": "<",
+      "sha": "5175b90daed90b331e10798efb8d3124f0b86f33",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "ddd23418076a178778586d0079356a41d64754e3",
