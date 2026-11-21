@@ -145,3 +145,35 @@ def test_networkx_traversal_calls_the_typed_adapter_adjacency_operation(graph, m
     monkeypatch.setattr(engine.adapter, "iter_adjacent_edge_occurrences", observed)
     engine.walk("B", direction=TraversalDirection.BOTH, max_depth=1)
     assert calls == [("B", TraversalDirection.BOTH)]
+
+
+def test_projection_is_directed_multigraph_and_keeps_isolated_nodes(graph):
+    adapter = NetworkXAdapter(graph)
+    native = adapter.export()
+    assert native.is_directed()
+    assert native.is_multigraph()
+    assert native.number_of_nodes() == 4
+    assert native.number_of_edges() == 5
+    assert "isolated" in native
+
+
+def test_native_edge_mapping_corruption_fails_closed(graph):
+    adapter = NetworkXAdapter(graph)
+    source, target, key = adapter.identity_mapping()["semantic_edge_occurrence_to_backend"][0]
+    adapter.export()[source][target][key]["__ae32_semantic_edge_occurrence__"] = 99
+    with pytest.raises(ValueError, match="occurrence_mapping_invalid"):
+        list(adapter.iter_adjacent_edge_occurrences("B", TraversalDirection.BOTH))
+
+
+def test_native_payload_mutation_is_detected_by_traversal_engine(graph):
+    engine = NetworkXGraphTraversalEngine(graph, verify_parity=False)
+    engine.native_graph["A"]["B"][0]["relation"] = "CORRUPTED"
+    with pytest.raises(RuntimeError, match="semantic_payload_mismatch"):
+        engine.walk("B", direction=TraversalDirection.BOTH, max_depth=1)
+
+
+def test_capability_declaration_never_implies_acceptance(graph):
+    adapter = NetworkXAdapter(graph)
+    capabilities = adapter.capabilities()
+    assert capabilities["acceptance_status"] == "not_established_by_capability_declaration"
+    assert capabilities["native_adjacency_directions"] == ["outgoing", "incoming", "both"]

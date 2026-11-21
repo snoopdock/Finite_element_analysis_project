@@ -20,14 +20,30 @@ class BackendCapabilityRegistry:
         return {name: dict(item["capabilities"]) for name, item in self._backends.items()}
 
 
+def _acceptance_state(adjacency_implementation):
+    """Separate implementation/discoverability from conformance and approval."""
+    return {
+        "implementation": "present",
+        "module_discoverable": None,
+        "api_compatibility": "not_checked",
+        "structural_conformance": "not_run",
+        "native_adjacency_conformance": "not_run",
+        "native_adjacency_implementation": adjacency_implementation,
+        "repository_conformance": "not_run",
+        "production_approval": False,
+    }
+
+
 def create_default_registry():
     registry = BackendCapabilityRegistry()
     registry.register("networkx", "NetworkXAdapter", {
+        "acceptance_state": _acceptance_state("implemented_unvalidated"),
         "lossless": True, "metadata": True, "multiedges": True,
         "directed": True, "semantic_traversal": True,
         "available": backend_available("networkx"),
     })
     registry.register("scipy", "SciPyAdapter", {
+        "acceptance_state": _acceptance_state("not_implemented"),
         # CSR is a hybrid backend: the matrix indexes connectivity while
         # exact typed edge occurrences and metadata are preserved separately.
         "lossless": False, "sparse_matrix": True, "metadata": False,
@@ -38,6 +54,7 @@ def create_default_registry():
     for name, klass in (("igraph", "IGraphAdapter"),
                         ("graph-tool", "GraphToolAdapter"), ("snap", "SNAPAdapter")):
         registry.register(name, klass, {
+            "acceptance_state": _acceptance_state("not_implemented"),
             "lossless": True, "metadata": True, "multiedges": True,
             "directed": True, "semantic_traversal": True,
             "available": backend_available(name),

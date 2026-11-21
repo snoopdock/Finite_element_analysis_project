@@ -105,10 +105,14 @@ class NetworkXAdapter(SemanticGraphAdapter):
     def loss_report(self) -> dict[str, Any]:
         return {"lossless": True, "lost": [], "transformed": []}
 
-    @staticmethod
-    def _edge_record(source, target, key, data) -> NativeEdgeOccurrence:
+    def _edge_record(self, source, target, key, data) -> NativeEdgeOccurrence:
         occurrence = data.get(_EDGE_OCCURRENCE_KEY)
-        if type(occurrence) is not int or occurrence < 0:
+        native_ref = (source, target, key)
+        if (
+            type(occurrence) is not int
+            or occurrence < 0
+            or self._occurrence_to_backend.get(occurrence) != native_ref
+        ):
             raise ValueError("networkx_edge_occurrence_mapping_invalid")
         return NativeEdgeOccurrence(
             occurrence_id=occurrence,
@@ -146,11 +150,15 @@ class NetworkXAdapter(SemanticGraphAdapter):
             for neighbor, keyed in self.graph.succ[node_id].items():
                 for key, data in keyed.items():
                     record = self._edge_record(node_id, neighbor, key, data)
+                    if record.occurrence_id in found:
+                        raise ValueError("networkx_edge_occurrence_mapping_duplicate")
                     found[record.occurrence_id] = record
         if direction in (TraversalDirection.INCOMING, TraversalDirection.BOTH):
             for neighbor, keyed in self.graph.pred[node_id].items():
                 for key, data in keyed.items():
                     record = self._edge_record(neighbor, node_id, key, data)
+                    if record.occurrence_id in found:
+                        raise ValueError("networkx_edge_occurrence_mapping_duplicate")
                     found[record.occurrence_id] = record
 
         records = list(found.values())
