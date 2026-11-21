@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots. M7.1 five-backend smoke validation passed in run `44937517812` on source SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`. M7.2 five-backend bounded traversal campaign passed exact-source G9.42 run `44940231437` and campaign run `44940960831`; M7.3 detached-dossier implementation is committed and awaits exact-source G9.42 plus its manual verification run. Production approval remains false  
+**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots. M7.1 five-backend smoke validation passed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier verified and accepted by exact-source G9.42 run `44943859099` and manual verification run `44945256220`. M7.4 task-suitability assessment contract defined at Stage1 code baseline `47eb1ae6777e1d34c445af219c96840797739f23`; task/backend verdicts remain pending. Production approval remains false  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -720,4 +720,13 @@ M7.3 implementation adds:
 
 The verifier generates JSON and Markdown dossiers. It records the GitHub Actions artifact digest metadata and extracted report/log file hashes. It does not claim that an internal report hash authenticates its source, that historical timing samples can be re-executed, or that measurements from separate hosted runners are directly comparable.
 
-**Current state:** M7.2 accepted for bounded semantic traversal. M7.3 verifier source snapshot 3aee9dcadd46348a80bb5a7433276e8ce655a122 committed; exact-source G9.42 and manual detached-dossier execution pending. M7.4 remains blocked on M7.3 closure. Preserve production_approval=false.
+**Current state:** M7.2 accepted for bounded semantic traversal. M7.3 is closed for its stated detached-artifact consistency scope: exact-source G9.42 run `44943859099` and manual detached-dossier run `44945256220` passed, and the generated dossier was inspected. M7.4 is unblocked. Its task-specific assessment contract is recorded in [AE-32C M7.4 Task-Specific Backend Suitability Assessment Contract](AE-32C-M7.4-Task-Suitability-Assessment-Contract.md). No task/backend suitability verdict is issued yet. Preserve `production_approval=false`.
+
+
+## 17. M7.3 closure and M7.4 assessment-contract freeze — 2026-11-21
+
+M7.3 detached dossier verification completed successfully in [run 44945256220](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44945256220). Both workflow jobs passed: workflow-definition lint/actionlint and independent verification of the five detached backend artifacts. The verifier used controller revision `cafa0d1be5c09eb092c1bc2467b540f20acb22b9` and exact Stage1 verifier source revision `47eb1ae6777e1d34c445af219c96840797739f23`; the underlying M7.2 campaign was run `44940960831`, attempt 1, source SHA `1122916e8a56abec43cf3d42f8b2d252533e81c1`. The published dossier was inspected. M7.3 is accepted only as detached artifact/report/log provenance and internal-consistency verification; it does not re-execute historical timings or independently authenticate physical runners.
+
+M7.4 begins with the contract in [AE-32C M7.4 Task-Specific Backend Suitability Assessment Contract](AE-32C-M7.4-Task-Suitability-Assessment-Contract.md), committed on `stage1/section-uuids`. The contract inventories the four public graph-analysis query paths (STRUCTURAL, DEPENDENCY, PATH and IMPACT), defines the required evidence record and outcome vocabulary, and separates generic traversal evidence from higher-level operation acceptance. It identifies additional evidence needs for multi-source impact/cycle analysis, SciPy's semantic side channels, and SNAP worker identity/timeout/recovery. The contract commit is `4bc5718674e4b406face788bce513c4a17eaa56f`; the reviewed code baseline is `47eb1ae6777e1d34c445af219c96840797739f23`.
+
+**M7.4 status:** assessment contract defined; implementation-level task/backend suitability assessments and verdicts remain pending. Do not infer suitability from M7.2 parity alone. Keep `production_approval=false`, do not rank libraries, and do not activate automatic backend selection.
