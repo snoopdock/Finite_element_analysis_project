@@ -1,6 +1,6 @@
 # AE-32C M3 — SciPy Native Sparse Adjacency Implementation Record
 
-**Status:** Corrective implementation committed on `stage1/section-uuids`; G9.42 rerun pending  
+**Status:** Corrective implementation committed on `stage1/section-uuids`; G9.42 rerun pending after NetworkX conformance-label test correction  
 **Milestone:** M3 — SciPy native sparse adjacency  
 **Predecessor:** M2 validated by G9.42 run [44894696688](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44894696688) against source SHA `9dd02f7f98e0ad25d2225c638ed14bad4bd5d4e6`  
 **Scope:** SciPy only. No acceptance or runtime promotion is claimed for igraph, graph-tool or SNAP.
@@ -98,6 +98,12 @@ The first user-run G9.42 validation, [run 44895368283](https://github.com/snoopd
 The review also found hard-coded NetworkX execution-mode labels in the repository conformance report. These would have misrepresented SciPy context execution even after the telemetry assertion was corrected.
 
 The failure analysis and corrective commits are recorded in [M3 G9.42 Validation Failure Review](AE-32C-M3-Validation-Failure-44895368283.md). Corrections normalize traversal direction at the reference API boundary, expose per-walk SciPy native adjacency metrics, report the actual selected backend mode, and update/add regression assertions. These corrections have been committed but **have not yet been executed by a workflow**.
+
+## 5. Second G9.42 validation and correction
+
+The next user-run validation, [run 44896382956](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44896382956), tested Stage1 source SHA `60192a96dafef2e8f1381719950578d061114c2f`. It reported 676 passed, 6 skipped and 1 failed in the targeted suite; full regression reported 3,607 passed, 14 skipped and 1 failed. The sole failure was a stale NetworkX context-mode string in `test_e88_networkx_repository_backend.py`: the test expected `networkx_native_successor_predecessor_adjacency`, while the backend runtime and direct adapter test correctly report `networkx_successor_predecessor_adjacency`.
+
+The assertion was corrected without changing production code. The failure analysis is recorded in [G9.42 Validation Failure Review — run 44896382956](AE-32C-G9.42-Validation-Failure-44896382956.md). The correction is committed as `4dc1a40681dab18b55f4fc4af0d45adbd21c8c83`; the documentation update follows in the same Stage1 branch. The SciPy-specific assertions passed in that run, but the overall validation failed and the provenance catalog was correctly blocked. Therefore M3 remains unvalidated.
 
 ## 5. Acceptance boundary
 
