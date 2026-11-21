@@ -66,7 +66,7 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
         self.worker_info: dict[str, Any] = {}
         command = [
             docker, "run", "--rm", "--pull=never", "-i",
-            "--network=none", "--read-only",
+            "--network=none", "--ipc=none", "--read-only",
             "--cap-drop=ALL", "--security-opt=no-new-privileges",
             "--pids-limit=64", "--memory=512m", "--cpus=1",
             "--user=65534:65534",
@@ -131,6 +131,7 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
             )
             self.worker_info["container_policy"] = {
                 "network": "none",
+                "ipc": "none",
                 "root_filesystem": "read_only",
                 "writable_mounts": [],
                 "capabilities": "all_dropped",
