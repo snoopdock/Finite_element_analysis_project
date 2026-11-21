@@ -1,10 +1,10 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "75bf9cc4aa608fcbb8854363906d57f8b28dc2f7",
+  "base_sha": "f608d4f83272cb0260be64163d08dcdcaf20fd68",
   "compare_sha": "c02eaaae23187a05152aca94b1c529b12df9b34f",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 273,
+  "base_only_commit_count": 275,
   "compare_only_commit_count": 1100,
   "base_changes_since_merge_base": [
     {
@@ -7403,6 +7403,16 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "f608d4f83272cb0260be64163d08dcdcaf20fd68",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": "<",
+      "sha": "efbb01fe1d15ee42b460e4d40f2eb8dfd0f508e0",
+      "subject": "Fix YAML parsing of SNAP binary-only install command"
+    },
     {
       "side": "<",
       "sha": "75bf9cc4aa608fcbb8854363906d57f8b28dc2f7",
