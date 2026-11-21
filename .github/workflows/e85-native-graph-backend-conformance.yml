@@ -2,20 +2,12 @@ name: AE-32C Native Graph Backend Conformance (E.8.5 / E.8.8)
 
 on:
   workflow_dispatch:
-    inputs:
-      source_ref:
-        description: "Stage1 source branch to test (the workflow controller remains on main)"
-        required: true
-        type: choice
-        default: stage1/section-uuids
-        options:
-          - stage1/section-uuids
 
 permissions:
   contents: read
 
 concurrency:
-  group: e85-native-graph-backend-conformance-${{ inputs.source_ref }}
+  group: e85-native-graph-backend-conformance-stage1/section-uuids
   cancel-in-progress: false
 
 jobs:
@@ -28,17 +20,17 @@ jobs:
       matrix:
         backend: [networkx, scipy, igraph]
     steps:
-      - name: Checkout selected Stage1 source branch
+      - name: Checkout Stage1 source branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.source_ref }}
+          ref: stage1/section-uuids
       - name: Record selected source revision
         shell: bash
         run: |
-          echo "Selected source ref: ${{ inputs.source_ref }}"
+          echo "Selected source ref: stage1/section-uuids"
           echo "Checked-out source SHA: $(git rev-parse HEAD)"
           {
-            echo "Selected source ref: ${{ inputs.source_ref }}"
+            echo "Selected source ref: stage1/section-uuids"
             echo "Checked-out source SHA: $(git rev-parse HEAD)"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Set up Python 3.11
@@ -92,17 +84,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - name: Checkout selected Stage1 source branch
+      - name: Checkout Stage1 source branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.source_ref }}
+          ref: stage1/section-uuids
       - name: Record selected source revision
         shell: bash
         run: |
-          echo "Selected source ref: ${{ inputs.source_ref }}"
+          echo "Selected source ref: stage1/section-uuids"
           echo "Checked-out source SHA: $(git rev-parse HEAD)"
           {
-            echo "Selected source ref: ${{ inputs.source_ref }}"
+            echo "Selected source ref: stage1/section-uuids"
             echo "Checked-out source SHA: $(git rev-parse HEAD)"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Provision graph-tool Python 3.11 environment
@@ -150,17 +142,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Checkout selected Stage1 source branch
+      - name: Checkout Stage1 source branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.source_ref }}
+          ref: stage1/section-uuids
       - name: Record selected source revision
         shell: bash
         run: |
-          echo "Selected source ref: ${{ inputs.source_ref }}"
+          echo "Selected source ref: stage1/section-uuids"
           echo "Checked-out source SHA: $(git rev-parse HEAD)"
           {
-            echo "Selected source ref: ${{ inputs.source_ref }}"
+            echo "Selected source ref: stage1/section-uuids"
             echo "Checked-out source SHA: $(git rev-parse HEAD)"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Set up isolated CPython 3.9 worker runtime
@@ -224,7 +216,7 @@ jobs:
           GRAPH_TOOL: ${{ needs.graph-tool-native.result }}
           SNAP_JOB: ${{ needs.snap-python39-compatibility-probe.result }}
           SNAP_NATIVE: ${{ needs.snap-python39-compatibility-probe.outputs.native_status }}
-          SOURCE_REF: ${{ inputs.source_ref }}
+          SOURCE_REF: stage1/section-uuids
         run: |
           {
             echo "## Native graph backend conformance"
