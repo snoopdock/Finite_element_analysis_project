@@ -187,4 +187,4 @@ This avoids timing the reference oracle as if it were native backend work. It al
 
 The smoke test uses NetworkX in the general G9.42 environment. Full execution of the harness against SciPy, igraph, graph-tool and SNAP requires the same supported environments already used by E.8.5/E.8.8. A dedicated manual benchmark workflow is a separate M7.1 follow-up; timing is intentionally not mixed into the correctness-conformance workflow.
 
-**Next:** run G9.42 against the latest Stage1 head `23870825c1737ac0a9d0fe2ace3cb72c39e748f0`. If the new benchmark tests pass, implement the dedicated manual M7 benchmark controller and execute the same harness in each backend's supported environment. Keep the E.8.5/E.8.8 workflow a correctness gate, not a performance gate.
+**Next:** run G9.42 against the Stage1 head current at dispatch time and verify that the evidence report's `target_commit_sha` matches that exact head. If the new benchmark tests pass, implement the dedicated manual M7 benchmark controller and execute the same harness in each backend's supported environment. Keep the E.8.5/E.8.8 workflow a correctness gate, not a performance gate.
