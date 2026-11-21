@@ -88,13 +88,12 @@ jobs:
           python tools/gb03_native_backend_conformance.py \
             --backend graph-tool \
             --output e85-graph-tool.json
-      - name: Record deferred graph-tool repository gate
+      - name: Run graph-tool repository-backed context and source conformance
         shell: micromamba-shell {0}
         run: |
-          {
-            echo "### Repository-backed conformance"
-            echo "NOT RUN: graph-tool native local edge-occurrence adjacency is not implemented; repository/tool-routing acceptance is deferred to its backend milestone."
-          } >> "$GITHUB_STEP_SUMMARY"
+          python tools/gb04_repository_backend_conformance.py \
+            --backend graph-tool \
+            --output e88-graph-tool-repository.json
       - name: Upload graph-tool conformance evidence
         if: always()
         uses: actions/upload-artifact@v4
