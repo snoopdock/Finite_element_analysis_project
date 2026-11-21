@@ -366,6 +366,7 @@ def test_igraph_repository_conformance_routes_context_tools_through_native_adjac
     )
     report = run_repository_conformance(fixture, "igraph")
     assert report["status"] == "passed"
+    assert report["backend_library_version"]
     assert report["graph_to_repository_follow_through"]["verified_read_count"] == 2
     assert report["backend_execution"]["parity_verified_queries"] >= 3
     for operation in (
@@ -434,6 +435,7 @@ def test_real_optional_native_backend_query_when_installed(backend, module_name)
     assert runtime["backend_execution"]["parity_verified_queries"] == 1
     if backend == "igraph":
         assert runtime["backend_native_query_mode"] == "igraph_incident_edge_ids"
+        assert runtime["backend_library_version"]
         assert runtime["native_adjacency"]["native_adjacency_lookups"] >= 1
         assert runtime["native_adjacency"]["native_edge_occurrences_read"] >= 1
 
