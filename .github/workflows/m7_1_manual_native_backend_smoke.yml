@@ -1,26 +1,22 @@
 name: AE-32C M7.1 Five-Backend Native Smoke Benchmark
-run-name: AE-32C M7.1 five-backend native smoke
-
 on:
   workflow_dispatch:
     inputs:
       source_ref:
-        description: Stage1 branch, tag, or full commit SHA to benchmark
+        description: "Stage1 branch, tag, or full commit SHA to benchmark"
         required: true
         type: string
-        default: stage1/section-uuids
+        default: "stage1/section-uuids"
       repeats:
-        description: Timed repetitions per query (3–15)
+        description: "Timed repetitions per query (allowed: 3, 5, 7, 10, 15)"
         required: true
-        type: choice
-        options: ['3', '5', '7', '10', '15']
-        default: '5'
+        type: string
+        default: "5"
       warmup:
-        description: Warm-up calls per query (0–5)
+        description: "Warm-up calls per query (allowed: 0, 1, 2, 3, 5)"
         required: true
-        type: choice
-        options: ['0', '1', '2', '3', '5']
-        default: '2'
+        type: string
+        default: "2"
 
 permissions:
   contents: read
@@ -40,14 +36,15 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Validate workflow YAML syntax without external tool installation
-        run: ruby -e 'require "yaml"; YAML.parse_file(".github/workflows/m7_1_manual_native_backend_smoke.yml"); puts "Workflow YAML syntax: valid"'
-      - name: Confirm manual dispatch declaration is present
-        run: |
-          set -euo pipefail
-          grep -Eq "^'on':|^on:" .github/workflows/m7_1_manual_native_backend_smoke.yml
-          grep -Eq '^  workflow_dispatch:' .github/workflows/m7_1_manual_native_backend_smoke.yml
-          echo "workflow_dispatch declaration: present"
+      - name: Set up Go for actionlint
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache: false
+      - name: Install pinned actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+      - name: Validate complete GitHub Actions workflow
+        run: "$(go env GOPATH)/bin/actionlint" -color -verbose .github/workflows/m7_1_manual_native_backend_smoke.yml
 
   resolve-source:
     needs: workflow-lint
@@ -67,9 +64,13 @@ jobs:
         shell: bash
         env:
           REQUESTED_REF: ${{ inputs.source_ref }}
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
         run: |
           set -euo pipefail
           test -n "$REQUESTED_REF"
+          case "$REPEATS" in 3|5|7|10|15) ;; *) echo "Invalid repeats: $REPEATS" >&2; exit 2 ;; esac
+          case "$WARMUP" in 0|1|2|3|5) ;; *) echo "Invalid warmup: $WARMUP" >&2; exit 2 ;; esac
           SOURCE_SHA="$(git rev-parse HEAD)"
           [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
           echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
