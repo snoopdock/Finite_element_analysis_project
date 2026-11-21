@@ -390,14 +390,14 @@ Checks still required to close M0:
 
 The following findings refine the initial inventory. They are based on the source files at the reviewed Stage1 snapshot, not on Graphify inference.
 
-### 11.1 Factory and service wiring
+### 9.1 Factory and service wiring
 
 - `BackendFactory` contains a lazy module/class registry for NetworkX, SciPy, igraph, graph-tool and SNAP. It imports the selected adapter class and constructs it from the supplied execution context.
 - `BackendPipeline.execute()` selects a candidate using the registry, creates the adapter and records projection provenance/transformation/loss assessment. It does not itself verify API version compatibility or a conformance state.
 - `RepositoryEvidenceTools` constructs `SemanticGraphAnalysisService` with the configured `graph_backend` and `verify_backend_parity=True`. Its runtime report identifies the selected engine and execution counters. This confirms the service-level wiring exists; it does not establish that every individual graph tool actually invokes that engine.
 - The backend remains configuration selected, not selected by LLM tool arguments. This is consistent with ADR-045.
 
-### 11.2 Full-read behavior in the non-NetworkX path
+### 9.2 Full-read behavior in the non-NetworkX path
 
 The source confirms a significant interaction/performance issue:
 
@@ -410,14 +410,14 @@ Consequently, non-NetworkX queries do not yet use native, reached-node adjacency
 
 The M1/M3–M6 tests must prove that full enumeration is limited to explicit projection audit/construction and that ordinary query execution and runtime reporting do not trigger hidden full scans.
 
-### 11.3 Adapter-specific observations
+### 9.3 Adapter-specific observations
 
 - **NetworkX:** `NetworkXGraphTraversalEngine` validates the full projection at construction and reads node-local `succ`/`pred` adjacency during queries. It maps native edge data back to the canonical edge tuple by a reserved occurrence field. `NetworkXAdapter` itself assigns node/edge attribute and metadata dictionaries from its input graph without independently deep-copying them. The traversal engine clones the validated graph before constructing the adapter, but direct adapter use still deserves snapshot-isolation tests.
 - **SciPy:** `SciPyAdapter.iter_native_edges()` walks all CSR rows and joins each matrix pair to its exact occurrence side channels. That is appropriate for a complete projection audit, but it is not a local adjacency query. Its current `neighbors()` method reads a CSR row, but returns distinct neighbor node IDs, not exact edge occurrences with their semantic payloads; it is not yet the traversal contract.
 - **igraph and graph-tool:** both preserve semantic occurrence identifiers as edge attributes/property maps, but their current `iter_native_edges()` methods enumerate the complete native edge set. Their native incident-edge/vertex adjacency APIs are not yet exposed through the common adapter interface.
 - **SNAP:** the adapter preserves occurrence identity and stores nested attributes/metadata as canonical JSON strings, but its readback method also iterates the complete edge set. Exact node-local edge retrieval and occurrence mapping under parallel edges remain to be established.
 
-### 11.4 Current conformance coverage and its boundary
+### 9.4 Current conformance coverage and its boundary
 
 The inspected E.8.5 test module verifies fixture structure (five nodes, eight directed edge occurrences, three parallel edges between one pair, one self-loop and Unicode values) and, when a real library is installed, checks projection round-trip, seven query cases repeated twice, 14 reference-parity checks, zero query/parity failures, and no provider/network calls.
 
@@ -425,12 +425,53 @@ This is a sound base. It does not by itself prove that the adapter invokes the i
 
 The deterministic reference traversal currently builds both outgoing and incoming candidate lists for a `BOTH` query. A self-loop is therefore included once through each list. The traversal loop appends a step and increments `examined_edges` before checking whether the neighbor was already visited; the self-loop can consequently appear twice in `steps` and be counted twice, although its evidence record is deduplicated by evidence ID. This is an observed reference behavior, not yet a settled contract. M1 must decide whether `BOTH` means one visit per edge occurrence (recommended) or preserves this double observation, then test the decision independently and update the reference and native paths together.
 
-### 11.5 CI evidence boundary
+### 9.5 CI evidence boundary
 
 The E.8.5/E.8.8 workflow is manually dispatched. It provisions NetworkX/SciPy/igraph in Python 3.11, graph-tool in its Conda environment, and a separate Python 3.9 SNAP compatibility smoke. Its summary correctly says the SNAP smoke is not adapter acceptance and requires synthetic plus repository reports for the other backends.
 
 The reviewed baseline's combined commit status query returned an empty status list. No exact-commit CI result was established in this source pass. Do not infer a pass from the workflow file existing or from older local test records.
 
+
+### 9.6 Existing test coverage — what is already strong
+
+The existing suite contains meaningful structural, behavioral and integration checks. This roadmap does not discard them or describe the project as having only input/output tests.
+
+| Test file | Current evidence already covered | Remaining limitation relevant to this roadmap |
+|---|---|---|
+| [test_e82_networkx_traversal_backend.py](../../tests/semantic_graph/test_e82_networkx_traversal_backend.py) | Native object is a directed MultiDiGraph; node/edge counts and three parallel edges; canonical graph unchanged after projection; backend/reference parity across directions, depths and relation filters; fail-closed behavior when canonical graph changes or contains a dangling edge; service-level selected-backend metadata | Self-loop behavior is compared to the reference, not asserted against an independent expected occurrence count. It does not test every native adjacency API or runtime-report side effects. |
+| [test_e88_networkx_repository_backend.py](../../tests/semantic_graph/test_e88_networkx_repository_backend.py) | Query path explicitly forbids full NetworkX `edges` enumeration after construction; checks native successor/predecessor mode and adjacency/read counters; repository graph-to-source reads are hash-bound; runner reports current context/workflow routing exceptions; snapshot and side-effect declarations are checked | The anti-full-scan proof is NetworkX-specific. No corresponding per-node-native-adjacency proof exists for SciPy, igraph, graph-tool or SNAP. The repository runner's overall `passed` status is scoped despite known tool bypasses. |
+| [test_e85_native_backend_conformance.py](../../tests/semantic_graph/test_e85_native_backend_conformance.py) and [gb03_native_backend_conformance.py](../../tools/gb03_native_backend_conformance.py) | Five-node/eight-occurrence adversarial graph; parallel edges including same labels; self-loop, cycle, isolated node, Unicode and nested values; full projection round-trip; seven query cases repeated twice; 14 exact reference-parity checks when a real library is installed | The fixture and parity checks do not prove query-time native local adjacency or guard against common-mode semantic errors. Optional-library skips remain skips; fake libraries do not count as native conformance. |
+| [test_e83_multi_backend_traversal.py](../../tests/semantic_graph/test_e83_multi_backend_traversal.py) | Exercises service selection, fake module API behavior, sidecar/projection corruption rejection, explicit selection failure and real-library tests when installed | The fake adapters are contract doubles, not native libraries. A test currently asserts `semantic_traversal=True` for every registered adapter; M1 must replace that premature capability assertion with explicit conformance states. |
+| [test_ae32b_backend_runtime.py](../../tests/semantic_audit/test_ae32b_backend_runtime.py) | Verifies trusted backend selection, observed queries and counters for NetworkX/SciPy; checks no silent model selection and runtime side-effect declarations | Query counters prove that the traversal engine was attempted; they do not prove which native data-structure APIs were called or whether the query enumerated the full graph. |
+| [test_ae32b_evidence_tools.py](../../tests/semantic_audit/test_ae32b_evidence_tools.py), [test_ae32b_impact_dependency_tools.py](../../tests/semantic_audit/test_ae32b_impact_dependency_tools.py) | Exercises graph_neighbors, graph_path, related tests, static execution context and workflow context behavior; checks bounds, provenance, source hashes and static-only qualification | The context/workflow tests validate result semantics, not whether the selected backend served those operations. Current source confirms that those two tools still use their own canonical-graph walks. |
+| [test_ae32c_patch2_graph_workflow_fidelity.py](../../tests/semantic_audit/test_ae32c_patch2_graph_workflow_fidelity.py) | Tests workflow command parsing, unresolved working directories, source-root/module resolution, type-checking-only import classification, related-test matching and traversal budget reporting | Good static semantics tests, but they do not cover backend routing or native adjacency. |
+| [test_ae32c_graph_utilization.py](../../tests/semantic_audit/test_ae32c_graph_utilization.py), [test_ae32c_graph_pilot.py](../../tests/semantic_audit/test_ae32c_graph_pilot.py) | Measures graph-derived tool use, source follow-through, hash matching, claim linkage, matched control/ablation and cost/resource observations | These assess tool-use and evidence follow-through. They are not a substitute for deterministic adapter conformance, and they must keep model-requested calls separate from orchestrator prefetch. |
+
+### 9.7 M0 tool-routing traceability
+
+The current source and tests support the following more precise routing map:
+
+| Evidence tool | Current behavior | M0/M2 assessment |
+|---|---|---|
+| `graph_neighbors` | Builds a `GraphQuery` and calls `_query_graph` | Routed through `SemanticGraphAnalysisService` and selected traversal engine |
+| dependency/dependent and impact variants of `graph_neighbors` | Build dependency/impact `GraphQuery` instances and call `_query_graph` | Routed through selected traversal engine; verify each direction/relation/bounds combination in repository tests |
+| `graph_path` | Builds a path `GraphQuery` and calls `_query_graph` | Routed through selected traversal engine |
+| `find_related_tests` | Graph-backed `TESTS` queries use `_query_graph`; it also scans indexed source text for references | Hybrid tool: only its graph-query portion is backend-routed. Report graph and lexical/text-reference evidence separately |
+| `trace_execution_context` | Builds its own import-edge adjacency, excludes `type_checking_only`, performs bounded context BFS | Not routed through selected traversal engine; retain its special filtering and provenance while migrating |
+| `find_workflow_context` | Builds import/package-entrypoint/invocation adjacency and performs its own bounded path search | Not routed through selected traversal engine; retain workflow-specific semantics while migrating |
+
+M2 should not simply replace these private walks with a generic neighbor call. It must preserve the domain-specific behavior: for execution context, exclusion of type-checking-only imports, source-line provenance, caller/dependency orientation, truncation and entrypoint derivation; for workflow context, `IMPORTS`, `PACKAGE_ENTRYPOINT` and `INVOKES` relationship handling, active-workflow scope, dynamic working-directory exclusions and bounded import-path search. Tests in `test_ae32b_evidence_tools.py` and `test_ae32c_patch2_graph_workflow_fidelity.py` supply valuable expected behavior for that migration.
+
+### 9.8 M0 status
+
+**First-pass M0 source-to-test traceability is complete. M0 as a whole is not yet closed.** The remaining work is:
+
+- reconcile ADR numbering, status, supersession and cross-references;
+- inspect the complete test invocation and artifact verification chain for each workflow;
+- map test names and test IDs to each specific adapter contract requirement;
+- review all adapter-specific optional-library API assumptions and package/environment pins;
+- decide how the repository runner should encode scoped versus full graph-tool routing acceptance;
+- finalize the M1 semantics, especially `BOTH` self-loop counting, before modifying the Python reference or native paths.
 
 ## 10. Immediate next work
 
