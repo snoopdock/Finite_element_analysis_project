@@ -1,12 +1,13 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0 closed; M1 accepted for NetworkX; M2 context/workflow routing implementation in progress and awaiting exact-commit validation  
+**Status:** M0 closed; M1 accepted for NetworkX; M2 validated on exact Stage1 source commit; M3 SciPy native sparse adjacency implemented and awaiting G9.42 validation  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
 **M1 accepted implementation snapshot:** `fb3f26e0600c5abe894fb54c9b0cecefed2476f2` — typed protocol, NetworkX native adjacency, `BOTH` self-loop correction and conformance states; validated by G9.42 run `44892453883`  
 **M1 validation record:** [AE-32C M1 NetworkX Validation Record](AE-32C-M1-NetworkX-Validation-Record.md) — exact source SHA, 18 focused protocol tests passed, E.8.5/E.8.8 test gates passed, skips and artifact digests recorded  
-**M2 implementation snapshot:** `9a78eb7dcc7c45a5443d2a71565f94dda6007e30` — context adjacency uses backend-neutral `GraphQuery` service operations; repository conformance now publishes context telemetry separately; initial G9.42 run `44893673258` exposed a report-schema assertion failure, corrected and awaiting rerun  
+**M2 implementation snapshot:** `9dd02f7f98e0ad25d2225c638ed14bad4bd5d4e6` — backend-neutral `GraphQuery` routing for repository context tools; validated by G9.42 run `44894696688` (672 targeted passed, 6 skipped; 3,603 regression passed, 14 skipped; evidence and provenance verified)  
+**M3 implementation snapshot:** pending final documentation commit — SciPy CSR outgoing and CSC incoming local edge-occurrence access; exact occurrence side-channel joins; full projection audit isolated to construction; G9.42 validation pending  
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
 **Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
 
@@ -290,7 +291,15 @@ Work:
 - tests that forbid full edge readback during query execution;
 - repository-backed parity and bounded access tests.
 
-**Exit:** SciPy passes the same acceptance gates as NetworkX, with native sparse access demonstrated by instrumentation.
+**Implementation now present on Stage1:**
+- `SciPyAdapter` constructs a CSR connectivity/multiplicity matrix and a CSC incoming index once.
+- Query adjacency reads only the selected CSR row, CSC column, or both; exact semantic occurrences, relation labels, attributes and metadata are joined from the side channels.
+- `BOTH` deduplicates by occurrence ID, so a self-loop is returned once.
+- The generic native traversal engine performs complete node/edge projection validation at construction, then skips repeated full readback for SciPy queries and obtains candidates through the SciPy adapter's local adjacency method.
+- Runtime reporting uses cached projection counts and adjacency counters; it does not enumerate the full sparse graph.
+- Tests were added for outgoing/incoming parity, parallel occurrences, self-loop union semantics, bounded reached-node access, query-time full-enumeration prohibition and repository context-tool routing.
+
+**Exit:** SciPy passes the same acceptance gates as NetworkX, with native sparse access demonstrated by instrumentation. Implementation is not acceptance: exact-commit G9.42 evidence remains required.
 
 ### M4 — python-igraph native adjacency
 
