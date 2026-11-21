@@ -23,7 +23,7 @@ permissions:
 
 concurrency:
   group: e85-native-graph-backend-conformance-stage1
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   pip-native-backends:
