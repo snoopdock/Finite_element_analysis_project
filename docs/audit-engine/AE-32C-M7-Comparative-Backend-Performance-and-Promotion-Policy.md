@@ -1,11 +1,11 @@
 # AE-32C M7 — Task Suitability and Operational Characterization
 
-**Status:** M7.0 protocol/gap analysis complete. M7.1 five-backend native smoke validation passed in [run 44937517812](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44937517812). M7.2 task-suitability workload generator, per-backend campaign runner, verifier and tests are committed; exact-source G9.42 validation and the five-backend campaign execution remain pending.  
+**Status:** M7.0 protocol complete; M7.1 closed; M7.2 five-backend campaign executed successfully and exact-source G9.42 passed; M7.3 detached-dossier verifier, adversarial tests and manual workflow controller are implemented, with exact-source G9.42 and detached-dossier execution pending.  
 **M7.1 workflow revision:** `main` SHA `182d0009f1c759c46813e3a1cbbf34d22c247acb`  
 **M7.1 benchmark source:** Stage1 SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`  
 **M7.2 implementation:** `tools/gb06_task_suitability_campaign.py`  
 **M7.2 tests:** `tests/semantic_graph/test_m72_task_suitability_campaign.py`  
-**Current M7.2 Stage1 implementation head:** `2638c9cda2acaf5b26b29c427f662f9c921a1176`  
+**M7.2 campaign source SHA:** `1122916e8a56abec43cf3d42f8b2d252533e81c1`  
 **Manual campaign controller:** [m7_2_manual_task_suitability_campaign.yml](https://github.com/snoopdock/Finite_element_analysis_project/blob/main/.github/workflows/m7_2_manual_task_suitability_campaign.yml), committed to `main` at `64fa7e662ffa5359fe4430b9273aa4a1bf6691f5`  
 **Target branch:** `stage1/section-uuids` only.  
 **Authority boundary:** `production_approval=false`; no automatic backend selection, scientific approval, graph mutation, or task-suitability decision is granted by M7.
@@ -195,6 +195,51 @@ M7.2 is accepted only when:
 - `tools/gb06_task_suitability_campaign.py` — M7.2 seeded workload campaign.
 - `tests/semantic_graph/test_m7_native_backend_performance_benchmark.py`.
 - `tests/semantic_graph/test_m72_task_suitability_campaign.py`.
+- `tools/gb07_campaign_dossier.py` — M7.3 detached campaign verifier and dossier generator.
+- `tests/semantic_graph/test_m73_campaign_dossier.py` — M7.3 adversarial dossier tests.
+- `.github/workflows/m7_3_detached_campaign_dossier.yml` — manual M7.3 detached-artifact verification controller on main.
 - `validation/profiles/G9.42.yaml` — deterministic validation profile.
 
 Historical G6.1/G6.2 artifacts remain valid for their original NetworkX/SciPy exported-representation workloads. They are not substituted for M7 native-path or task-suitability evidence.
+
+
+## 15.5 M7.2 exact-source execution and acceptance — 2026-11-21
+
+The M7.2 five-option campaign completed in [run 44940960831](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940960831). All eight workflow jobs passed: actionlint, immutable source resolution, five backend campaign/report jobs and the final summary gate.
+
+- Workflow controller revision on main: cafa0d1be5c09eb092c1bc2467b540f20acb22b9.
+- Immutable Stage1 campaign source: 1122916e8a56abec43cf3d42f8b2d252533e81c1.
+- Exact-source G9.42 validation: [run 44940231437](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940231437), successful against the same Stage1 SHA.
+- All five reports used seeds 20261101, 20261102, five workload families, 15 measured repetitions and 5 warm-up calls per query. The 15/5 values were intentionally selected and are within the declared bounds.
+- Each backend report contains 10 workload/seed cases, 50 query records, 750 timed observations and 250 warm-up calls.
+- Across all five reports: 3,750 timed observations and 1,250 warm-up calls.
+- All five reports share the same source revision, run ID and attempt. Graph digests/fingerprints and corresponding query result digests match across backends. Each report records five preflight parity queries per case, zero parity failures, its expected native query mode and nonzero native adjacency telemetry.
+- The reports retain backend-specific library versions and runner provenance. NetworkX, SciPy, igraph and graph-tool ran on Azure-hosted Linux runners; SNAP ran on an AWS-hosted Linux runner with its isolated CPython 3.9 worker. These are separate execution environments. No cross-runner timing ranking or winner is inferred.
+
+The five GitHub artifact identities and report digests are retained in the campaign evidence:
+- NetworkX artifact 14721960675; report SHA-256 7226f66f86543de652d53df1479b67b2b1e51769eba08ff4658f78147a39700a.
+- SciPy artifact 14722110390; report SHA-256 802d874c5d2941d67cbdf061e5a9a7e4298bc8ee2b56f87de7073469173b26da.
+- igraph artifact 14721840765; report SHA-256 41ef8303906197169a440822143f67bee7bbfe9940275e3d24d94bf7b03feb4b.
+- graph-tool artifact 14721268701; report SHA-256 92b83c4028bb2d64a1915e748c091ced4cf944cdc96e6723b4380185e265767a.
+- SNAP artifact 14721029139; report SHA-256 43f6d57416a213d8f79f6f5c19d19adc5d5c0668aa1c54ba2393ecc2867b6565.
+
+**Decision:** M7.2 is accepted for its defined bounded semantic traversal scope. This does not qualify numerical linear algebra, solvers, centrality, community detection, ontology reasoning, full repository evidence reconstruction or end-to-end audit-engine latency. It does not establish a backend winner, automatic selector, scientific approval or production approval.
+
+## 15.6 M7.3 independent detached-artifact dossier — implementation
+
+M7.3 adds tools/gb07_campaign_dossier.py, tests/semantic_graph/test_m73_campaign_dossier.py, and the G9.42 profile entry for the new test module. The manual controller is .github/workflows/m7_3_detached_campaign_dossier.yml on main, committed at b7e05d92f040952bae210961eaa38d383ac2f65f.
+
+The verifier consumes detached reports, run/verification logs and a GitHub Actions artifact metadata manifest. It checks:
+- exactly one unexpired artifact for each of the five backends, with artifact IDs, GitHub SHA-256 metadata, campaign run/attempt naming and one controller revision;
+- exact report schema, source revision, workflow name, run ID and attempt;
+- each report through the M7.2 deterministic report verifier and agreement with its detached verification log;
+- complete five-family workload and seed coverage, identical configuration and task scope;
+- canonical graph digest/fingerprint equality and corresponding query-result digest equality across all backends;
+- expected native query mode, preflight parity counts/failures, native adjacency telemetry and campaign-wide sample arithmetic;
+- a descriptive environment-strata summary without pooling or ranking timings.
+
+The dossier records the GitHub artifact digest metadata and SHA-256 values of extracted report/log files. The GitHub artifact metadata is the provenance authority for the detached archive identity; the report's internal digest is an integrity check, not a signature. The verifier does not claim to re-execute historical timing samples or independently authenticate the physical runner.
+
+The tests include missing/expired artifacts, mixed source revisions, configuration mismatch, authority escalation, injected selection fields and detached-log mismatch. The G9.42 profile now includes this test module.
+
+**M7.3 status:** implementation and workflow definition are committed. Exact-source G9.42 validation and a manual detached-dossier run remain pending. Do not mark M7.3 closed until both pass and the generated Markdown/JSON dossier has been inspected. Keep production_approval=false.
