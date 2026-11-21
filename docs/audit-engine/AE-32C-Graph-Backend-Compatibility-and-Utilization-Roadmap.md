@@ -12,6 +12,8 @@
 **M3 implementation and validation record:** [AE-32C M3 SciPy Native Sparse Adjacency](AE-32C-M3-SciPy-Native-Sparse-Adjacency.md) — G9.42 run `44898320570`: 677 targeted passed, 6 skipped; 3,608 regression passed, 14 skipped; evidence and provenance verified  
 **M4 accepted snapshot:** `c6d4fda93897a3b7022d28cba177fc5c453940b3` — G9.42 run `44901309538`, python-igraph 1.0.0; 682/686 targeted passed (4 skipped), 3,613/3,625 regression passed (12 skipped), 53 validation-engine tests passed; real igraph query, native conformance, repository context routing, evidence integrity, immutable bundle and provenance catalog all passed. Report SHA-256 `27e6714ca1a8160cb4c29078f187a1a2d071ee3e0b72a4b3bdccb1a866aec784`; bundle SHA-256 `aabd4edc501bb2cdec425dfa3f769a3b09467172d1d361736b497293b8226d19`  
 **M4 implementation and acceptance record:** [AE-32C M4 python-igraph Native Adjacency](AE-32C-M4-python-igraph-Native-Adjacency.md) — exact-commit acceptance evidence for run `44901309538`; earlier failure reviews `44899514712` and `44900752438` retain the test-double diagnosis and correction history.
+**M5 implementation snapshot:** graph-tool native per-vertex `out_edges()`/`in_edges()` traversal, explicit graph-tool edge-index to semantic-occurrence mapping, BOTH self-loop deduplication, payload verification, cached projection counts and native telemetry; real-library and repository gates added; implementation commit sequence begins `b91f439a79fff9b8c4b09aa6e0a16e0abf8b5dee` and latest recorded implementation commit `cdcf91ee60d148652e2c054d286224019344ce63`; G9.42 plus dedicated conda-forge E.8.5/E.8.8 validation pending  
+**M5 implementation record:** [AE-32C M5 graph-tool Native Adjacency](AE-32C-M5-graph-tool-Native-Adjacency.md) — API rationale, projection identity contract, local traversal, property-map limitations, tests, real-library workflow and exact-commit acceptance gates.
 
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
 **Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
@@ -332,6 +334,16 @@ Validation still required:
 **Status:** IN PROGRESS — implementation and fake/real-library/repository conformance work started after M4 acceptance.
 
 **Purpose:** qualify graph-tool's native vertex/edge iteration and property-map model.
+
+**Implementation now present on Stage1:**
+- `GraphToolAdapter` constructs a directed graph-tool multigraph with vertex/edge property maps for semantic IDs, relation labels, attributes, metadata and occurrence IDs.
+- Native edge indices are explicitly mapped to canonical semantic occurrence IDs; the implementation does not assume endpoint pairs or contiguous edge indices identify an occurrence.
+- Per-vertex `out_edges()` and `in_edges()` supply local native candidates. `BOTH` unions by occurrence ID, so self-loops are emitted once and parallel edges remain distinct.
+- Query-time endpoint, relation, attribute and metadata checks fail closed against the immutable projection; deterministic reference parity remains enabled.
+- Full projection validation is performed once during construction. Query and runtime reporting use cached projection counts and graph-tool local iterators, with native adjacency and occurrence-read telemetry.
+- Fake API tests, conditional real-library tests, native mutation tests and repository-backed context-tool conformance tests have been added.
+- The dedicated conda-forge E.8.5/E.8.8 workflow now runs graph-tool adapter tests, synthetic native conformance and repository-backed context/source conformance.
+
 
 Work:
 - use per-vertex incoming/outgoing edge iterators or equivalent indexed APIs;
