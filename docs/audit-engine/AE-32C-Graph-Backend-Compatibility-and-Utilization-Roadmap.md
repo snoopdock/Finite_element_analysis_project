@@ -462,9 +462,30 @@ The current source and tests support the following more precise routing map:
 
 M2 should not simply replace these private walks with a generic neighbor call. It must preserve the domain-specific behavior: for execution context, exclusion of type-checking-only imports, source-line provenance, caller/dependency orientation, truncation and entrypoint derivation; for workflow context, `IMPORTS`, `PACKAGE_ENTRYPOINT` and `INVOKES` relationship handling, active-workflow scope, dynamic working-directory exclusions and bounded import-path search. Tests in `test_ae32b_evidence_tools.py` and `test_ae32c_patch2_graph_workflow_fidelity.py` supply valuable expected behavior for that migration.
 
-### 9.8 M0 status
+### 9.8 Decision-record inventory findings
 
-**First-pass M0 source-to-test traceability is complete. M0 as a whole is not yet closed.** The remaining work is:
+The current `docs/decisions/` directory contains **83 direct files**. Its filename inventory has ten reused ADR identifiers, with two distinct files for each identifier:
+
+- ADR-035: graph-visualization boundary / verification boundary;
+- ADR-036: evidence state machine / semantic verification boundary;
+- ADR-037: candidate-knowledge isolation / evidence-state and verification decision;
+- ADR-038: candidate-knowledge isolation / verification receipts;
+- ADR-039: semantic-context versioning / verification receipts as immutable artifacts;
+- ADR-044: impact-aware invalidation / NetworkX query runtime integration;
+- ADR-045: append-only audit-memory ledger / unified native graph-adapter traversal;
+- ADR-046: evidence-bound graph-impact analysis / impact propagation model;
+- ADR-047: SciPy side-channel parity / incremental reverification boundary;
+- ADR-048: audit-memory query model / native graph-backend conformance.
+
+Additional anomalies:
+- `ADR-016-backend-execution-context.md` contains one newline byte and no decision content.
+- `ADR-079-bounded-multi-source-impact-and-dependency-cycles.md` has the heading `ADR-049` inside its body, while the filename and surrounding sequence identify it as ADR-079.
+
+These findings do not establish which record should be canonical, superseded, or renumbered. M0 must compare dates, status, referenced implementation commits, inbound/outbound cross-references and decision scope before proposing a registry or correction. No ADR has been renamed or altered in this work.
+
+### 9.9 M0 status
+
+**First-pass M0 source-to-test and decision-record inventory are complete. M0 as a whole is not yet closed.** The remaining work is:
 
 - reconcile ADR numbering, status, supersession and cross-references;
 - inspect the complete test invocation and artifact verification chain for each workflow;
