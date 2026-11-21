@@ -2,16 +2,16 @@
   "identity_note": "Node keys use the first available id/node_id/key/name/label field. Edge keys use source/target/relation-like fields. These are structural comparison keys, not proof of semantic equivalence.",
   "base": {
     "branch": "main",
-    "node_count": 4989,
-    "edge_count": 7762
+    "node_count": 4930,
+    "edge_count": 7691
   },
   "compare": {
     "branch": "stage1-section-uuids",
-    "node_count": 17847,
-    "edge_count": 45535
+    "node_count": 17788,
+    "edge_count": 45464
   },
   "nodes": {
-    "common_count": 2497,
+    "common_count": 2438,
     "base_only_count": 2492,
     "compare_only_count": 15350,
     "base_only": [
@@ -17862,7 +17862,7 @@
     ]
   },
   "edges": {
-    "common_count": 4778,
+    "common_count": 4707,
     "base_only_count": 2984,
     "compare_only_count": 40757,
     "base_only": [

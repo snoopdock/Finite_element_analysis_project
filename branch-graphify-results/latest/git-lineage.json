@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "dfabd1a6df326ad2f0f7598253cdb47f4552441c",
-  "compare_sha": "9adc99b9511d0281b18be76d60865dcf13bb16b0",
+  "base_sha": "e8b6b324fce5476e70459a040302ecc8d97975a3",
+  "compare_sha": "c02eaaae23187a05152aca94b1c529b12df9b34f",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 259,
-  "compare_only_commit_count": 1091,
+  "base_only_commit_count": 261,
+  "compare_only_commit_count": 1100,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -628,6 +628,10 @@
     {
       "status": "A",
       "path": ".github/environments/e85-graph-tool.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/environments/e85-snap-python39-requirements.txt"
     },
     {
       "status": "A",
@@ -2944,6 +2948,14 @@
     {
       "status": "A",
       "path": "docs/audit-engine/AE-32C-E8.8.1-NetworkX-Native-Adjacency-and-Repository-Conformance.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-E85-Validation-Failure-44905580330.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-E85-Validation-Failure-44907031239.md"
     },
     {
       "status": "A",
@@ -7387,6 +7399,61 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": ">",
+      "sha": "c02eaaae23187a05152aca94b1c529b12df9b34f",
+      "subject": "Record wrong-branch E.8.5 dispatch and selector correction"
+    },
+    {
+      "side": ">",
+      "sha": "5ca0ed46ebf6c7ecd800fdb47a3e9befffc884fd",
+      "subject": "Analyze wrong-branch E.8.5 workflow dispatch"
+    },
+    {
+      "side": "<",
+      "sha": "e8b6b324fce5476e70459a040302ecc8d97975a3",
+      "subject": "Add explicit Stage1 source selector to native conformance dispatcher"
+    },
+    {
+      "side": ">",
+      "sha": "017dae867a96f35acc9e86729b53ff625b52a377",
+      "subject": "Reconcile historical M5 pending note with acceptance"
+    },
+    {
+      "side": ">",
+      "sha": "e694bb05449390e6c822eb695ee22719fdd28f06",
+      "subject": "Reconcile M5 record with exact-commit acceptance"
+    },
+    {
+      "side": ">",
+      "sha": "131784087e1ed593c7b6ca6afc3d797effca27cf",
+      "subject": "Review E.8.5 run and SNAP worker provisioning failure"
+    },
+    {
+      "side": ">",
+      "sha": "c6ef894a113705b6ae88069223cb31eb612ac5f8",
+      "subject": "Record M5 acceptance and SNAP worker correction"
+    },
+    {
+      "side": ">",
+      "sha": "85282b41b4ebc383d0bb057d7e01c3d39e687f20",
+      "subject": "Record exact-commit graph-tool M5 acceptance"
+    },
+    {
+      "side": ">",
+      "sha": "7d7e9205432816e4c30e72cb71a693b67a9335d6",
+      "subject": "Pin isolated SNAP Python 3.9 worker dependency"
+    },
+    {
+      "side": ">",
+      "sha": "85f28cdc328e606dccb46659fc9fa2af45db4032",
+      "subject": "Use compatible isolated runtime for SNAP compatibility probe"
+    },
+    {
+      "side": "<",
+      "sha": "c54919c39bf656ef4562320008f6aa7df8b2e844",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "dfabd1a6df326ad2f0f7598253cdb47f4552441c",

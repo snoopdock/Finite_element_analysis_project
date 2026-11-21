@@ -1,22 +1,22 @@
 # Branch architecture comparison
 
-- Base: main at dfabd1a6df326ad2f0f7598253cdb47f4552441c
-- Compared branch: stage1/section-uuids at 9adc99b9511d0281b18be76d60865dcf13bb16b0
+- Base: main at e8b6b324fce5476e70459a040302ecc8d97975a3
+- Compared branch: stage1/section-uuids at c02eaaae23187a05152aca94b1c529b12df9b34f
 - Merge base: 2713797451965a14b2512cdf497f2619d844749f
 
 ## Graphify code-structure counts
 
 | Metric | Base branch | Comparison branch |
 |---|---:|---:|
-| Nodes | 4989 | 17847 |
-| Edges | 7762 | 45535 |
+| Nodes | 4930 | 17788 |
+| Edges | 7691 | 45464 |
 
 ## Identity-based graph delta
 
-- Common nodes: 2497
+- Common nodes: 2438
 - Nodes only in main: 2492
 - Nodes only in stage1/section-uuids: 15350
-- Common relationships: 4778
+- Common relationships: 4707
 - Relationships only in main: 2984
 - Relationships only in stage1/section-uuids: 40757
 
@@ -24,9 +24,9 @@ Detailed identity lists are in architecture-delta.json. Graphify IDs and extract
 
 ## Git divergence
 
-- Commits unique to main: 259
-- Commits unique to stage1/section-uuids: 1091
+- Commits unique to main: 261
+- Commits unique to stage1/section-uuids: 1100
 - Files changed from merge base on main: 154
-- Files changed from merge base on stage1/section-uuids: 1690
+- Files changed from merge base on stage1/section-uuids: 1693
 
 See git-lineage.json for complete file inventories and the symmetric commit list.
