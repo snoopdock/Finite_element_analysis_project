@@ -25,6 +25,7 @@ _PROTOCOL_OUT = sys.stdout
 sys.stdout = sys.stderr
 
 _GRAPH = None
+_REVERSE_GRAPH = None
 _NODE_ID_TO_NATIVE = {}
 _NATIVE_TO_NODE_ID = {}
 _EDGE_ID_TO_OCCURRENCE = {}
@@ -53,7 +54,7 @@ def _json_value(value, label):
 
 
 def _init(message):
-    global _GRAPH, _NODE_ID_TO_NATIVE, _NATIVE_TO_NODE_ID
+    global _GRAPH, _REVERSE_GRAPH, _NODE_ID_TO_NATIVE, _NATIVE_TO_NODE_ID
     global _EDGE_ID_TO_OCCURRENCE, _OCCURRENCE_TO_EDGE_ID
     global _NODES, _EDGES, _GRAPH_FINGERPRINT, _METRICS
 
@@ -106,6 +107,7 @@ def _init(message):
     # Import SNAP only inside the isolated worker runtime.
     import snap
     graph = snap.TNEANet.New()
+    reverse_graph = snap.TNEANet.New()
     for name in ("semantic_id", "entity_type", "attributes_json", "metadata_json"):
         graph.AddStrAttrN(name)
     for name in ("relation", "attributes_json", "metadata_json"):
@@ -116,6 +118,7 @@ def _init(message):
     native_to_node = {}
     for index, node in enumerate(nodes):
         graph.AddNode(index)
+        reverse_graph.AddNode(index)
         node_to_native[node["id"]] = index
         native_to_node[index] = node["id"]
         graph.AddStrAttrDatN(index, node["id"], "semantic_id")
@@ -130,6 +133,17 @@ def _init(message):
     for edge in edges:
         native_id = int(graph.AddEdge(node_to_native[edge["source"]],
                                       node_to_native[edge["target"]]))
+        # A second native TNEANet with reversed endpoints makes incoming
+        # incidence available through the documented Snap.py GetOutEdges()
+        # iterator without scanning all edges or depending on an unbound
+        # C++-only GetInEId wrapper.
+        reverse_native_id = int(reverse_graph.AddEdge(
+            node_to_native[edge["target"]],
+            node_to_native[edge["source"]],
+            native_id,
+        ))
+        if reverse_native_id != native_id:
+            _fail("reverse_native_edge_id_mismatch")
         occurrence = edge["occurrence"]
         if native_id in edge_to_occurrence or occurrence in occurrence_to_edge:
             _fail("native_edge_identity_duplicate")
@@ -144,8 +158,12 @@ def _init(message):
 
     if int(graph.GetNodes()) != len(nodes) or int(graph.GetEdges()) != len(edges):
         _fail("native_projection_count_mismatch")
+    if (int(reverse_graph.GetNodes()) != len(nodes)
+            or int(reverse_graph.GetEdges()) != len(edges)):
+        _fail("reverse_native_projection_count_mismatch")
 
     _GRAPH = graph
+    _REVERSE_GRAPH = reverse_graph
     _NODE_ID_TO_NATIVE = node_to_native
     _NATIVE_TO_NODE_ID = native_to_node
     _EDGE_ID_TO_OCCURRENCE = edge_to_occurrence
@@ -240,12 +258,13 @@ def _adjacency(message):
     _METRICS["native_adjacency_lookups"] += 1
     if direction in ("outgoing", "both"):
         _METRICS["outgoing_native_edge_id_lookups"] += 1
-        for index in range(int(node.GetOutDeg())):
-            edge_ids.add(int(node.GetOutEId(index)))
+        for native_edge_id in node.GetOutEdges():
+            edge_ids.add(int(native_edge_id))
     if direction in ("incoming", "both"):
         _METRICS["incoming_native_edge_id_lookups"] += 1
-        for index in range(int(node.GetInDeg())):
-            edge_ids.add(int(node.GetInEId(index)))
+        reverse_node = _REVERSE_GRAPH.GetNI(_NODE_ID_TO_NATIVE[node_id])
+        for native_edge_id in reverse_node.GetOutEdges():
+            edge_ids.add(int(native_edge_id))
     if len(edge_ids) > MAX_ADJACENCY_OCCURRENCES:
         _fail("adjacency_result_exceeds_worker_limit")
     records = [_edge_record(edge_id) for edge_id in sorted(edge_ids)]
