@@ -140,6 +140,9 @@ Until then, graph-tool remains `implemented_unvalidated`, production approval fa
 - `280dfccb427824e71dca61c90bc7e19f1a03219e` and `137b74bcb5f2908c8379e3ec72584a260492cd7e` — report the installed `graph-tool-base` distribution version consistently in runtime and synthetic conformance evidence.
 - `80f72b680b5f9b5e9bb15c1cf739cdd7d39cccd1` — update the legacy graph-tool projection fake to expose the edge-index property map consumed by the adapter.
 - `7becea4463b9276cbcdd49ad83f12a65d82806b7` — update the registry contract test to distinguish graph-tool's `implemented_unvalidated` state from SNAP's `not_implemented` state.
+- `beb4b80b00361aa882c00d97707090e2c0b651a6` — strengthen the graph-tool fake to exercise non-contiguous native edge indices and explicit occurrence mapping.
+- `5d8c050450ff0a77cd88938d06d26e48ccfa08dc` — clarify the scope of the legacy graph-tool fake.
+- `17be6d8069a5776f4974dadd0a006a847f56c74c` — record sparse-index contract coverage.
 - `5ebd3d9771cd3a61c7d997f5b0c1bea62bdbc946` — document the G9.42 failure review, evidence chain and correction rationale.
 
 No local tests or workflows were run by the implementer. M5 implementation remains subject to user-run G9.42 and graph-tool-native workflow validation.
