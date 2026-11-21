@@ -103,3 +103,31 @@ def test_legacy_adapter_fails_explicitly_instead_of_scanning_projection():
             return {}
     with pytest.raises(NativeAdjacencyNotSupportedError):
         list(LegacyAdapter().iter_adjacent_edge_occurrences("n", TraversalDirection.OUTGOING))
+
+
+def test_native_query_and_runtime_report_do_not_call_full_edge_enumerator(graph, monkeypatch):
+    engine = NetworkXGraphTraversalEngine(graph, verify_parity=False)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("full native edge enumeration is forbidden after projection validation")
+
+    monkeypatch.setattr(engine.native_graph, "edges", forbidden)
+    result = engine.walk("B", direction=TraversalDirection.BOTH, max_depth=1)
+    report = engine.runtime_report()
+    assert result.examined_edges == 5
+    metrics = report["backend_execution"]
+    assert metrics["native_adjacency_lookups"] == 1
+    assert metrics["native_edge_occurrences_read"] == 5
+    assert metrics["native_edge_occurrences_returned"] == 5
+    assert metrics["native_edge_occurrences_validated"] == 5
+
+
+def test_native_query_does_not_rebuild_python_reference_adjacency(graph, monkeypatch):
+    engine = NetworkXGraphTraversalEngine(graph, verify_parity=False)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("reference Python adjacency scan must not run in native-only mode")
+
+    monkeypatch.setattr(GraphTraversalEngine, "_build_adjacency", forbidden)
+    result = engine.walk("B", direction=TraversalDirection.BOTH, max_depth=1)
+    assert result.examined_edges == 5

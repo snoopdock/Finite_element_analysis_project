@@ -1,6 +1,6 @@
 # AE-32C M1 — Native Graph Adapter Protocol and Conformance Contract
 
-**Status:** Proposed M1 specification; implementation not yet started  
+**Status:** M1 implementation in progress; typed protocol and NetworkX-first implementation committed; validation and remaining M1 gates pending  
 **Target branch:** `stage1/section-uuids` only  
 **Depends on:** AE-32C Graph Backend Compatibility and Utilization Roadmap; M0 source baseline  
 **Primary objective:** define one verifiable contract for native graph projection and per-node native adjacency before changing adapter implementations.
@@ -8,6 +8,30 @@
 ---
 
 ## 1. Purpose
+
+### 1.1 Implementation record (2026-11-21)
+
+The first implementation slice is committed on `stage1/section-uuids`:
+
+- `SemanticGraphAdapter` now declares typed `NativeNodeRecord` and
+  `NativeEdgeOccurrence` records, explicit full-projection inspection methods,
+  and `iter_adjacent_edge_occurrences(node_id, direction)`.
+- Unimplemented adapter adjacency fails explicitly with
+  `NativeAdjacencyNotSupportedError`; the base contract does not silently scan
+  the saved Python projection.
+- `NetworkXAdapter` implements occurrence-preserving local adjacency through
+  `MultiDiGraph.succ` and `pred`, preserving parallel edges and returning a
+  self-loop once for `BOTH`.
+- The Python reference and NetworkX traversal paths now use the same
+  one-occurrence self-loop rule for `BOTH`.
+- A focused NetworkX protocol test module asserts explicit occurrence IDs,
+  direction semantics, unknown/isolated-node behavior, payload isolation,
+  independent self-loop expectations, and observational runtime reporting.
+
+This is implementation evidence only. No local tests or workflows were run
+for this commit; NetworkX native acceptance and M1 closure remain pending until
+the exact-commit validation gates in Section 9 are executed and reviewed.
+
 
 The current adapter interface describes projection export, capabilities, identity mapping and loss reporting. The traversal path additionally expects native node/edge iteration, while true native query execution requires a per-node adjacency operation. These runtime expectations are not yet expressed as one typed and testable contract.
 
@@ -83,7 +107,7 @@ iter_adjacent_edge_occurrences(
 ) -> Iterable[NativeEdgeOccurrence]
 ```
 
-The first two operations support explicit full-projection validation. The third is the query-time operation. It must be implemented using the selected library's native indexed adjacency or incident-edge API.
+The first two operations support explicit full-projection validation. The third is the query-time operation. The implemented method names are `iter_native_nodes()`, `iter_native_edge_occurrences()`, and `iter_adjacent_edge_occurrences(node_id, direction)`. It must be implemented using the selected library's native indexed adjacency or incident-edge API.
 
 The per-node method must:
 
@@ -136,7 +160,7 @@ Every parallel occurrence remains distinct, even where two or more occurrences h
 
 ### 4.5 Ordering
 
-The adapter must not rely on undocumented native iteration order. The query layer must apply a stable ordering derived from canonical data, including neighbor ID, relation type, source ID, target ID and a canonical occurrence discriminator/fingerprint. The precise sort key must be shared by the reference and native paths and asserted by expected-result tests.
+The adapter must not rely on undocumented native iteration order. The NetworkX adapter normalizes records with `(traversal_neighbor_id, relation_type, source_id, target_id, occurrence_id)`. The occurrence ID is a canonical edge-sequence index and is therefore snapshot-scoped, not durable across graph rebuilds. The reference traversal uses the same semantic ordering fields; where two edge payloads are byte-for-byte identical, their snapshot occurrence IDs distinguish the occurrences. Tests must assert explicit occurrence identities and expected order within the pinned graph snapshot.
 
 ## 5. Capability and acceptance model
 
@@ -318,7 +342,7 @@ M1 is complete only when:
 2. Direction, parallel-edge, self-loop, edge-occurrence and ordering semantics are explicit.
 3. Runtime reporting is observational and counters distinguish projection audit from local query work.
 4. Reusable structural, behavioral, interaction and fault-injection contract tests exist.
-5. The contract suite passes for NetworkX against its real native library.
+5. The contract suite passes for NetworkX against its real native library (not yet established; tests have been committed but were not run in this implementation session).
 6. Tests demonstrably fail when native adjacency is replaced by full-graph enumeration or a Python projection scan.
 7. No repository-backed or live acceptance claim is made until the relevant integration gate has run on the exact Stage1 commit.
 

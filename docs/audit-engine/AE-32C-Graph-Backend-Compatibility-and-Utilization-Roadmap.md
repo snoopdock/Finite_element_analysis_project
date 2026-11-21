@@ -1,9 +1,10 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0 closed as a source-to-test traceability baseline; M1 protocol/test specification drafted; M1 implementation not started  
+**Status:** M0 closed; M1 typed protocol and NetworkX-first implementation committed; exact-commit validation and remaining M1 gates pending  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
+**M1 implementation snapshot:** `b214c8b474239fa6186680002eec36e1c244ab09` — typed protocol, NetworkX adapter adjacency and `BOTH` self-loop correction; validation not run  
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
 **Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
 
@@ -496,13 +497,13 @@ M0 closure does not imply that every backend has native query conformance. The o
 
 Proceed with **M1**. M0's source-to-test traceability baseline is closed and recorded in [AE-32C M0 — Architecture Baseline and Traceability Close-out](AE-32C-M0-Closure-and-Traceability.md).
 
-The initial M1 specification is drafted in [AE-32C M1 — Native Graph Adapter Protocol and Conformance Contract](AE-32C-M1-Adapter-Protocol-and-Conformance-Contract.md). It remains a proposed contract, not an accepted implementation or a claim that its tests have run. It defines exact edge-occurrence adjacency, direction/self-loop semantics, capability/acceptance states, observational telemetry, and structural/behavioral/interaction/fault-injection tests.
+The M1 specification and implementation record are in [AE-32C M1 — Native Graph Adapter Protocol and Conformance Contract](AE-32C-M1-Adapter-Protocol-and-Conformance-Contract.md). The typed adapter interface, NetworkX local adjacency, and `BOTH` self-loop correction are committed; exact-commit tests have not been run, so M1 is not accepted or closed. It defines exact edge-occurrence adjacency, direction/self-loop semantics, capability/acceptance states, observational telemetry, and structural/behavioral/interaction/fault-injection tests.
 
 Next:
-1. Review and finalize the M1 protocol and test matrix, including independent expected results for `BOTH` self-loop handling and deterministic ordering.
-2. Implement the protocol and reusable contract tests with NetworkX first.
-3. Run the real NetworkX structural, behavioral and native-interaction tests on the exact Stage1 commit.
-4. Only after those gates pass, extend the contract to SciPy, igraph, graph-tool and SNAP individually.
+1. Review the committed typed protocol and NetworkX implementation, especially occurrence identity and the `BOTH` self-loop rule.
+2. Run the new `test_m1_adapter_protocol_networkx.py` plus E.8.2/E.8.8 anti-full-scan and repository tests on the exact Stage1 commit.
+3. Fix any failures and complete the remaining M1 lifecycle/fault-injection and reusable conformance gates.
+4. Only after real NetworkX structural, behavioral and native-interaction evidence passes, extend the contract to SciPy, igraph, graph-tool and SNAP individually.
 
 Do not begin E.8.8.3/SciPy native adjacency before the M1 contract and its NetworkX proof are accepted. No live provider test should compensate for missing deterministic conformance.
 
