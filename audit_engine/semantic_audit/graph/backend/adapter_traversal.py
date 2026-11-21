@@ -334,6 +334,11 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
             "backend_library_version": _library_version(self._backend_name, self.adapter),
             "backend_projection_type": _PROJECTION_TYPES[self._backend_name],
             "backend_projection_fingerprint": self._source_fingerprint,
+            "backend_native_query_mode": (
+                "scipy_csr_csc_adjacency"
+                if self._backend_name == "scipy"
+                else "canonical_python_adjacency_fallback"
+            ),
             "backend_parity_mode": (
                 "strict_per_query_reference_comparison"
                 if self.verify_parity else "disabled"
