@@ -187,6 +187,7 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
         "backend": backend,
         "backend_library": final_runtime.get("backend_library"),
         "backend_library_version": final_runtime.get("backend_library_version"),
+        "native_worker": final_runtime.get("backend_worker_info"),
         "repository_snapshot": {
             "evidence_index_status": summary.get("evidence_index_status"),
             "indexed_file_count": summary.get("indexed_file_count"),
