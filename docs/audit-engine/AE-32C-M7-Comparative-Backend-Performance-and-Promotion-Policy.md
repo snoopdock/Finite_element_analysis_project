@@ -1,14 +1,16 @@
 # AE-32C M7 — Comparative Backend Performance and Promotion Policy
 
-**Status:** M7 opened; protocol design is committed and the M7.1 single-backend benchmark scaffold plus integrity tests are implemented. Exact G9.42 validation of the scaffold is pending. No performance winner is claimed and no backend is promoted.  
+**Status:** M7.0 protocol/gap analysis complete. M7.1 harness and integrity tests passed exact-source G9.42 validation on `31179eb4457907f276edba3666f72153c049a138` (run `44920211022`). The five-environment smoke controller is committed on `main`; its first execution is pending. No performance winner is claimed and no backend is promoted.  
 **Prerequisite acceptance snapshot:** Stage1 `81eb77aff35afe297a596a91826e016048515c0f`  
 **Exact-source E.8.5/E.8.8 run:** [44917397347](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44917397347) — all five backends passed.  
-**Exact-source G9.42 run:** [44917571217](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44917571217) — passed; 53 engine tests, 690 targeted tests, 3,629 regression tests.  
+**Historical prerequisite G9.42 run:** [44917571217](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44917571217) — passed on the earlier M5/M6 acceptance snapshot.  
+**M7.1 exact-source G9.42 run:** [44920211022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44920211022) — Stage1 SHA `31179eb4457907f276edba3666f72153c049a138`; 53 engine tests, 704 targeted tests (5 skipped), 3,643 regression tests (13 skipped), zero failures/errors; M7.1 test module included in both targeted and full-regression manifests.  
 **Target branch:** `stage1/section-uuids` only.  
 **M7.1 implementation commit:** `367a58981fa679f14db2b755fa496672f2647e51`  
 **M7.1 integrity-test commit:** `6db8eeabcb1869c809cfdea50bbd41042673d68d`  
 **G9.42 profile inclusion commit:** `23870825c1737ac0a9d0fe2ace3cb72c39e748f0`  
 **E.8.5/E.8.8 regression guard:** [run 44918337178](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44918337178) — all five backend jobs passed on commit `6db8eeabcb1869c809cfdea50bbd41042673d68d`; this run did not execute the new M7.1 benchmark test.  
+**M7.1 workflow controller:** `.github/workflows/m7_1_manual_native_backend_smoke.yml`, committed on `main` at `59ab8aabc10939b5d262cc5f2e175a1216c939cc`; resolves the requested source ref once, pins all five backend jobs to the same immutable SHA, verifies each report independently, and uploads separate runner/environment evidence. First execution pending.  
 **Authority boundary:** `production_approval=false`; no automatic backend selection, scientific approval, or graph mutation.
 
 ---
@@ -138,14 +140,14 @@ M7 does not itself change the registry's production approval state. Any later pr
 - define workload, measurement, telemetry and authority contracts;
 - identify existing native instrumentation that can be reused without changing adapter semantics.
 
-**M7.1 — Backend-neutral benchmark harness (initial scaffold implemented; exact-profile validation pending):**
+**M7.1 — Backend-neutral benchmark harness (implemented; exact-profile tests passed; five-environment smoke execution pending):**
 - `tools/gb05_native_backend_performance_benchmark.py` supports all five accepted backend identifiers and their exact native query-mode labels;
 - it consumes the fixed adversarial E.8.5 canonical fixture and a shared seven-query manifest;
 - it runs a parity-enabled preflight, then times a separate parity-disabled engine only after comparing every result with the accepted preflight digest and the independent reference replay;
 - it records construction time, per-query raw timings, descriptive median/p95/min/max/MAD, native adjacency lookups and edge-occurrence reads, backend/library versions, platform and worker provenance;
 - the verifier reconstructs the fixture and reference results, recomputes timing aggregates, and rejects rehashed result/aggregate forgery or authority escalation;
 - `tests/semantic_graph/test_m7_native_backend_performance_benchmark.py` covers the NetworkX smoke path, native telemetry, rehashed result/aggregate tampering, authority boundary and invalid inputs; G9.42 now includes this test.
-- This is deliberately a smoke scaffold, not yet the M7 multi-workload campaign: it does not yet measure process-level memory, separate evidence reconstruction, or SNAP cold-start/IPC components.
+- This is deliberately a smoke scaffold, not yet the M7 multi-workload campaign: it does not yet measure process-level memory, separate evidence reconstruction, or SNAP cold-start/IPC components. The dedicated workflow runs the fixed fixture in five separate runner jobs; these results are smoke evidence only and must not be ranked across different runner instances.
 
 **M7.2 — Controlled workload and campaign runner:**
 - add bounded graph topology/scale families and multi-seed repeated measurements;
@@ -173,7 +175,9 @@ M7 does not itself change the registry's production approval state. Any later pr
 - G6.1 design: `docs/architecture/G6_01_Graph_Backend_Benchmarking.md`
 - G6.2 acceptance: `docs/architecture/G6_02_Multi_Seed_Benchmark_Acceptance.md`
 - M5/M6 native conformance: [E.8.5/E.8.8 run 44917397347](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44917397347)
-- Exact-commit validation: [G9.42 run 44917571217](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44917571217)
+- Historical M5/M6 exact-commit validation: [G9.42 run 44917571217](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44917571217)
+- M7.1 exact-source validation: [G9.42 run 44920211022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44920211022)
+- M7.1 five-backend smoke controller: [workflow file on main](https://github.com/snoopdock/Finite_element_analysis_project/blob/main/.github/workflows/m7_1_manual_native_backend_smoke.yml)
 - GitHub workflow-dispatch behavior: [GitHub Actions manual workflow documentation](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)
 
 The run artifacts are retained as evidence of correctness and native execution, not as performance measurements.
@@ -185,6 +189,8 @@ The first implementation is deliberately narrow. It reuses the same E.8.5 advers
 
 This avoids timing the reference oracle as if it were native backend work. It also means the current measurements are end-to-end calls to `engine.walk`, including canonical result/evidence construction; they are not yet isolated native-kernel timings. That boundary is stated in the report interpretation and must not be silently relabeled.
 
-The smoke test uses NetworkX in the general G9.42 environment. Full execution of the harness against SciPy, igraph, graph-tool and SNAP requires the same supported environments already used by E.8.5/E.8.8. A dedicated manual benchmark workflow is a separate M7.1 follow-up; timing is intentionally not mixed into the correctness-conformance workflow.
+The exact-source G9.42 run `44920211022` passed on Stage1 SHA `31179eb4457907f276edba3666f72153c049a138`. Its targeted manifest and full-regression JUnit report each contain all 14 cases from `test_m7_native_backend_performance_benchmark.py`; both suites have zero failures and errors. The detached evidence bundle and provenance catalog were verified.
 
-**Next:** run G9.42 against the Stage1 head current at dispatch time and verify that the evidence report's `target_commit_sha` matches that exact head. If the new benchmark tests pass, implement the dedicated manual M7 benchmark controller and execute the same harness in each backend's supported environment. Keep the E.8.5/E.8.8 workflow a correctness gate, not a performance gate.
+The dedicated manual controller is now committed on `main` as `.github/workflows/m7_1_manual_native_backend_smoke.yml` (commit `59ab8aabc10939b5d262cc5f2e175a1216c939cc`). It resolves the requested Stage1 ref once and pins NetworkX, SciPy, igraph, graph-tool and SNAP jobs to the resulting immutable SHA. Each backend report is independently verified and uploaded with runner/environment metadata. Since the five jobs use separate hosted runner instances, their timing values are not a controlled cross-backend ranking; this workflow only verifies that the harness executes through each supported native path on the fixed adversarial fixture. SNAP remains an isolated worker.
+
+**Next:** manually dispatch the new M7.1 workflow from `main`, using `source_ref=stage1/section-uuids`, `repeats=5`, and `warmup=2`. Inspect all five JSON reports, exact source SHA, native query modes, telemetry, and environment manifests. Only after all five smoke reports verify should M7.1 be closed and M7.2's controlled workload matrix be implemented. Keep the E.8.5/E.8.8 workflow a correctness gate, not a performance gate.
