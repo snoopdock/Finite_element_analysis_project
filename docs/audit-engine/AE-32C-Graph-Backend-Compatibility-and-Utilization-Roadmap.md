@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots; M5 graph-tool and M6 SNAP exact-current implementation snapshot `81eb77aff35afe297a596a91826e016048515c0f` passed full five-backend E.8.5/E.8.8 run `44917397347` and exact-commit G9.42 run `44917571217`; AE-32C M7 comparative performance and promotion policy is OPEN; production approval remains false  
+**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots; M5 graph-tool and M6 SNAP exact-current implementation snapshot `81eb77aff35afe297a596a91826e016048515c0f` passed full five-backend E.8.5/E.8.8 run `44917397347` and exact-commit G9.42 run `44917571217`; AE-32C M7 comparative performance and promotion policy is OPEN; M7.1 smoke harness and integrity tests are committed, exact-profile validation pending; production approval remains false  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -678,4 +678,6 @@ The M7 protocol and implementation sequence are defined in [AE-32C M7 — Compar
 
 All comparisons must use equivalent canonical graph snapshots and semantic queries, verify parity before timing, prove the actual native path, retain raw samples and environment provenance, and report SNAP cold-start/IPC costs separately from warm native traversal. Mixed runner environments must be stratified rather than ranked together. No timing threshold, benchmark result or M7 report may automatically change backend selection or production approval.
 
-**Immediate next action:** implement M7.1 as a backend-neutral, parity-gated harness. Do not change adapter semantics or registry approval as part of the benchmark scaffold.
+**M7.1 initial scaffold:** `tools/gb05_native_backend_performance_benchmark.py` and `tests/semantic_graph/test_m7_native_backend_performance_benchmark.py` are committed; G9.42 includes the new test. The scaffold exercises the fixed E.8.5 fixture, preflights reference parity, measures a separate native engine path, records native adjacency telemetry and verifies report aggregates/authority. It is not yet a full five-environment campaign and does not yet report process-level memory or separated SNAP startup/IPC costs. E.8.5/E.8.8 regression run [44918337178](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44918337178) passed on code/test SHA `6db8eeabcb1869c809cfdea50bbd41042673d68d`; the M7 test itself was not executed by that workflow.
+
+**Immediate next action:** run G9.42 against the latest Stage1 head `9c09abf50561ee159113006bb6642c2cae53e243`. If the M7.1 test passes, add a dedicated manual M7 benchmark controller that runs the same harness in the five supported environments. Do not mix performance timing into the E.8.5/E.8.8 correctness workflow. Do not change adapter semantics or registry approval as part of the benchmark scaffold.
