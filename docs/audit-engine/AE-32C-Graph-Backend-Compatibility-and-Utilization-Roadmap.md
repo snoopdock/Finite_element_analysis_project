@@ -5,6 +5,7 @@
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
 **M1 implementation snapshot:** `251cab427ba2d6c395dafe9910007ffcc3dd918f` — typed protocol, NetworkX traversal routed through adapter adjacency, `BOTH` self-loop correction, explicit conformance states, and cached observational runtime counts; validation not run  
+**M1 workflow scope update:** `f9299754e14274a918eb2d8893b31de602405f08` — run the new protocol suite in the NetworkX job and defer non-NetworkX repository acceptance until native local adjacency exists  
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
 **Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
 
@@ -502,7 +503,7 @@ The M1 specification and implementation record are in [AE-32C M1 — Native Grap
 Next:
 1. Review the committed typed protocol and NetworkX implementation, especially occurrence identity and the `BOTH` self-loop rule.
 2. Run the new `test_m1_adapter_protocol_networkx.py` plus E.8.2/E.8.8 anti-full-scan and repository tests on the exact Stage1 commit.
-3. The E.8.5/E.8.8 workflow now runs the M1 protocol tests in its NetworkX job. Run it on this exact branch head; inspect NetworkX results separately from the known not-yet-implemented optional-backend adjacency gates.
+3. The E.8.5/E.8.8 workflow now runs the M1 protocol tests in its NetworkX job. Run it on this exact branch head; inspect NetworkX results separately; the workflow intentionally does not run repository acceptance for non-NetworkX adapters until their native local adjacency exists.
 4. Fix any failures and complete the remaining M1 lifecycle/fault-injection and reusable conformance gates.
 5. Only after real NetworkX structural, behavioral and native-interaction evidence passes, extend the contract to SciPy, igraph, graph-tool and SNAP individually.
 
