@@ -130,6 +130,10 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
         self._projection_validated = False
         self._projection_node_count = 0
         self._projection_edge_occurrence_count = 0
+        self._last_query_native_metrics = {
+            "native_adjacency_lookups": 0,
+            "native_edge_occurrences_read": 0,
+        }
         self._metrics = {
             "queries_attempted": 0,
             "queries_succeeded": 0,
@@ -264,6 +268,8 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
 
     def walk(self, *args: Any, **kwargs: Any) -> TraversalResult:
         self._metrics["queries_attempted"] += 1
+        native_lookups_before = self._metrics["native_adjacency_lookups"]
+        native_occurrences_before = self._metrics["native_edge_occurrences_read"]
         try:
             if graph_fingerprint(self.graph) != self._source_fingerprint:
                 raise NativeAdapterProjectionError("canonical_graph_changed_before_native_query")
@@ -280,6 +286,14 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
                         f"{self._backend_name}_reference_traversal_parity_mismatch"
                     )
                 self._metrics["parity_verified_queries"] += 1
+            self._last_query_native_metrics = {
+                "native_adjacency_lookups": (
+                    self._metrics["native_adjacency_lookups"] - native_lookups_before
+                ),
+                "native_edge_occurrences_read": (
+                    self._metrics["native_edge_occurrences_read"] - native_occurrences_before
+                ),
+            }
             self._metrics["queries_succeeded"] += 1
             self._metrics["total_examined_edges"] += result.examined_edges
             self._metrics["total_visited_nodes"] += len(result.visited_nodes) + 1
@@ -289,7 +303,7 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
             raise
 
     def result_metadata(self) -> dict:
-        return {
+        metadata = {
             "computation_backend": self._backend_name,
             "computation_algorithm": self.ALGORITHM,
             "backend_library": self._backend_name,
@@ -307,6 +321,10 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
                 else "native_projection_verified_against_canonical_semantic_graph"
             ),
         }
+        if self._backend_name == "scipy":
+            metadata["backend_native_query_mode"] = "scipy_csr_csc_adjacency"
+            metadata["backend_native_query_metrics"] = dict(self._last_query_native_metrics)
+        return metadata
 
     def runtime_report(self) -> dict:
         return {
