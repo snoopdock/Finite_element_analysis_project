@@ -804,6 +804,7 @@ class RepositoryEvidenceTools:
             self.evidence_index_status = "incomplete"
         self.graph_fingerprint = self._graph_fingerprint()
         self._context_backend_bypasses: Counter[str] = Counter()
+        self._context_operation_telemetry: dict[str, dict[str, int]] = {}
         self.graph_service = SemanticGraphAnalysisService(
             self.graph,
             semantic_context=SemanticContext(
@@ -1513,6 +1514,10 @@ class RepositoryEvidenceTools:
         runtime.update({
             "context_backend_bypasses": dict(sorted(self._context_backend_bypasses.items())),
             "context_backend_bypass_count": sum(self._context_backend_bypasses.values()),
+            "context_operation_telemetry": {
+                key: dict(value)
+                for key, value in sorted(self._context_operation_telemetry.items())
+            },
             "canonical_model": "SemanticGraph",
             "query_service": "SemanticGraphAnalysisService",
             "backend_pipeline_wired_into_ae32b_query_path": backend_is_external,
@@ -1531,32 +1536,88 @@ class RepositoryEvidenceTools:
         relation_types: set[str],
         operation: str,
     ) -> list[SemanticEdge]:
-        """Read local context adjacency through the selected graph backend."""
-        engine = self.graph_service.engine.traversal_engine
-        native_query = getattr(engine, "context_edges", None)
-        if callable(native_query):
-            from audit_engine.semantic_audit.graph.analysis import TraversalDirection
-            return native_query(
-                node_id,
-                direction=TraversalDirection(direction),
-                relation_types=relation_types,
-                operation=operation,
-            )
+        """Read one node's context adjacency through the backend-neutral query service.
 
-        # Other adapters do not yet expose the context adjacency contract.
-        # Preserve legacy behavior, but record every canonical-graph bypass.
-        self._context_backend_bypasses[operation] += 1
-        if direction == "outgoing":
-            return [
-                edge for edge in self.graph.edges
-                if edge.source_id == node_id and edge.relation_type in relation_types
-            ]
-        if direction == "incoming":
-            return [
-                edge for edge in self.graph.edges
-                if edge.target_id == node_id and edge.relation_type in relation_types
-            ]
-        raise EvidenceToolError("unsupported_context_direction", "Unsupported context adjacency direction")
+        Context tools retain their domain-specific BFS, filtering and evidence
+        formatting. This method delegates each local adjacency request to a
+        one-hop GraphQuery, so the selected traversal backend—not a private
+        backend hook or a canonical-edge fallback—serves the request.
+        """
+        if direction not in {"outgoing", "incoming"}:
+            raise EvidenceToolError("unsupported_context_direction", "Unsupported context adjacency direction")
+        if not isinstance(operation, str) or not operation.strip():
+            raise EvidenceToolError("invalid_context_operation", "Context operation name must be non-empty")
+
+        counters = self._context_operation_telemetry.setdefault(
+            operation,
+            {
+                "adjacency_queries_attempted": 0,
+                "adjacency_queries_succeeded": 0,
+                "adjacency_queries_failed": 0,
+                "native_adjacency_lookups": 0,
+                "native_edge_occurrences_read": 0,
+                "parity_verified": 0,
+                "parity_failures": 0,
+            },
+        )
+        counters["adjacency_queries_attempted"] += 1
+        query_payload = {
+            "node": node_id,
+            "direction": direction,
+            "relation_types": sorted(relation_types),
+            "max_depth": 1,
+            "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
+            "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS,
+            "operation": operation,
+            "graph_fingerprint": self.graph_fingerprint,
+        }
+        query = GraphQuery(
+            query_id=self._query_id("context-adjacency", query_payload),
+            query_type=QueryType.DEPENDENCY,
+            source_entities=[node_id],
+            constraints={
+                "direction": direction,
+                "relation_types": sorted(relation_types),
+                "max_depth": 1,
+                "max_visited_nodes": MAX_GRAPH_VISITED_NODES,
+                "max_traversal_steps": MAX_GRAPH_TRAVERSAL_STEPS,
+            },
+        )
+        try:
+            result = self.graph_service.analyze(query)
+            if bool(result.metadata.get("truncated", False)):
+                raise EvidenceToolError(
+                    "context_adjacency_incomplete",
+                    "The selected graph backend could not return complete local context adjacency within its bounds",
+                )
+            backend_metrics = result.metadata.get("backend_native_query_metrics", {})
+            if isinstance(backend_metrics, Mapping):
+                for key in ("native_adjacency_lookups", "native_edge_occurrences_read"):
+                    value = backend_metrics.get(key, 0)
+                    if isinstance(value, int) and not isinstance(value, bool):
+                        counters[key] += value
+            if result.metadata.get("backend_parity_status") == "verified_against_reference_per_query":
+                counters["parity_verified"] += 1
+
+            edges: list[SemanticEdge] = []
+            for evidence in result.evidence:
+                provenance = evidence.provenance if isinstance(evidence.provenance, Mapping) else {}
+                attributes = provenance.get("edge_attributes", {})
+                metadata = provenance.get("edge_metadata", {})
+                edges.append(SemanticEdge(
+                    source_id=evidence.subject_id,
+                    target_id=evidence.object_id,
+                    relation_type=evidence.predicate,
+                    attributes=dict(attributes) if isinstance(attributes, Mapping) else {},
+                    metadata=dict(metadata) if isinstance(metadata, Mapping) else {},
+                ))
+            counters["adjacency_queries_succeeded"] += 1
+            return edges
+        except Exception as exc:
+            counters["adjacency_queries_failed"] += 1
+            if "parity" in str(exc).lower():
+                counters["parity_failures"] += 1
+            raise
 
     def _repository_summary(self, args: dict[str, Any]) -> dict[str, Any]:
         self._check_keys(args, set())
