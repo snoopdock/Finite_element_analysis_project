@@ -170,6 +170,16 @@ In particular:
 
 Any future runtime selection policy requires a separate explicit architectural decision, with task requirements and failure behavior defined independently of M7 timing observations.
 
+### 8.1 Existing selector behavior is not an approval mechanism
+
+The Stage1 code currently has a policy/implementation distinction that must remain visible during M7.4:
+
+- `BackendCapabilityRegistry` marks `semantic_traversal=True` for the five registered options while each `acceptance_state` still reports API compatibility and conformance as `not_checked` / `not_run`.
+- `BackendSelectionPolicy.find_backends()` filters on availability and requested capability values; it does not require the corresponding acceptance-state gates to have passed.
+- `BackendSelectionPolicy.select()` returns the first matching candidate when `preferred_backend` is omitted. That is an implicit first-match selection behavior in the current implementation.
+
+This contract does **not** treat that behavior as authorized automatic selection or as evidence that the first candidate is suitable. The native traversal engine currently supplies an explicit preferred backend for its backend-specific execution path, but the generic selector API remains capable of implicit selection. Before any runtime selector is relied upon, a separate correction/ADR must define task-to-capability requirements, require task-specific acceptance evidence, define deterministic failure behavior, and remove or explicitly govern implicit first-match selection. M7.4 itself will not silently change this runtime behavior; it will record the mismatch and keep the authority boundary explicit.
+
 ## 9. Initial assessment hypotheses — not decisions
 
 The following are test priorities, not suitability conclusions:
