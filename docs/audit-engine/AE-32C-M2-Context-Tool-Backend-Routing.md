@@ -1,9 +1,10 @@
 # AE-32C M2 — Context and Workflow Tool Backend Routing
 
-**Status:** Initial implementation committed; exact-commit validation pending  
+**Status:** Initial implementation and validation-driven report correction committed; exact-commit validation pending  
 **Target branch:** `stage1/section-uuids`  
 **M1 prerequisite:** NetworkX acceptance recorded in [M1 NetworkX Validation Record](AE-32C-M1-NetworkX-Validation-Record.md)  
-**Implementation snapshot:** `7e9a680e41dfb4fd322aeba29ddd18e10b3b490f`
+**Initial implementation snapshot:** `7e9a680e41dfb4fd322aeba29ddd18e10b3b490f`  
+**Correction snapshot:** `9a78eb7dcc7c45a5443d2a71565f94dda6007e30`
 
 ---
 
@@ -45,18 +46,28 @@ The counters are exposed through `graph_runtime_report()` under `context_operati
 
 A new test in `tests/semantic_graph/test_e88_networkx_repository_backend.py` replaces the old NetworkX-specific context hook with a function that raises. It then invokes both context tools and asserts successful results, zero bypasses, native adjacency telemetry and per-query parity verification. This makes the backend-neutral routing requirement executable rather than documentary.
 
+### 2.5 Validation-report telemetry boundary correction
+
+G9.42 run `44893673258` exposed a report-contract mismatch. The context operation counters are accumulated by `RepositoryEvidenceTools`, while `backend_execution` is emitted by the traversal engine. The runner validated the context counters internally and included them in the per-query sections, but did not publish the complete operation map in its report. A regression assertion incorrectly expected that map under `backend_execution`.
+
+The correction preserves these ownership boundaries: `tools/gb04_repository_backend_conformance.py` now emits `context_operation_telemetry` as a separate top-level field. The test now asserts the direct trace, nested workflow-context and direct workflow operation records, including successful counts, native adjacency use and parity results. The traversal engine's `backend_execution` object remains unchanged.
+
+The full technical review, exact failed-run evidence and correction rationale are recorded in [AE-32C M2 Validation Failure Review](AE-32C-M2-Validation-Failure-44893673258.md).
+
 ## 3. Commits
 
 | Commit | Change |
 |---|---|
 | `7d9e8f1aac3b873e689a45f525060c60420314bc` | Route context adjacency through `GraphQuery` and the graph analysis service |
 | `7e9a680e41dfb4fd322aeba29ddd18e10b3b490f` | Add regression assertion that context tools do not call the backend-specific hook |
+| `aefb44dae998acfc04662a4172c9e389908bd859` | Publish context operation telemetry separately in the repository-conformance report |
+| `9a78eb7dcc7c45a5443d2a71565f94dda6007e30` | Assert the corrected report schema and all three operation telemetry records |
 
 The implementation was committed directly to `stage1/section-uuids`. No changes were made to `main`.
 
 ## 4. Validation boundary
 
-No tests or workflows have been run for the M2 commits. The prior G9.42 result validates source commit `fb3f26e...` only; it must not be carried forward as validation of these M2 changes.
+G9.42 run `44893673258` tested source SHA `3ef096e0320eb5d80c6e5b47531f9dcee75f76f7` and failed one report-schema assertion. The failure was reviewed and corrected; see the dedicated failure review. No tests or workflows have been run after the corrective commits. The prior G9.42 result for M1 validates source commit `fb3f26e...` only and must not be carried forward as validation of M2.
 
 M2 remains open until an exact-commit validation confirms:
 
@@ -71,7 +82,7 @@ M2 remains open until an exact-commit validation confirms:
 - Review and test domain-specific semantic parity for execution-context and workflow-context outputs.
 - Verify nested `trace_execution_context.workflow_context` telemetry and direct `find_workflow_context` telemetry independently.
 - Verify failure behavior for an unavailable/unaccepted backend and for incomplete local adjacency.
-- Run the exact-commit G9.42 validation after the implementation snapshot is ready.
+- Run the exact-commit G9.42 validation against the corrected branch head; verify the report's top-level `context_operation_telemetry` field and all three operation records.
 - Update this record and the roadmap with the run ID, source SHA, artifact digests and result.
 
 M2 does not implement SciPy CSR/CSC adjacency and does not accept non-NetworkX backends. Those remain separate roadmap milestones.
