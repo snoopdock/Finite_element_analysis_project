@@ -103,6 +103,41 @@ def test_repository_conformance_runner_requires_native_context_tool_routing():
     assert report["backend_execution"]["context_operation_telemetry"]
 
 
+def test_context_tools_use_backend_neutral_graph_queries(monkeypatch):
+    def forbidden_context_hook(*args, **kwargs):
+        raise AssertionError("backend_specific_context_hook_must_not_be_used")
+
+    monkeypatch.setattr(NetworkXGraphTraversalEngine, "context_edges", forbidden_context_hook)
+    tools = RepositoryEvidenceTools(FIXTURE, graph_backend="networkx")
+
+    trace = tools.invoke("trace_execution_context", {
+        "target": "pipeline/extractor.py",
+        "max_depth": 4,
+        "max_results": 20,
+    })
+    workflow = tools.invoke("find_workflow_context", {
+        "target": "pipeline/extractor.py",
+        "max_results": 20,
+    })
+    assert trace["status"] == "ok"
+    assert workflow["status"] == "ok"
+
+    runtime = tools.graph_runtime_report()
+    assert runtime["context_backend_bypass_count"] == 0
+    telemetry = runtime["context_operation_telemetry"]
+    for operation in ("trace_execution_context", "find_workflow_context"):
+        observed = telemetry[operation]
+        assert observed["adjacency_queries_attempted"] >= 1
+        assert observed["adjacency_queries_succeeded"] == observed["adjacency_queries_attempted"]
+        assert observed["adjacency_queries_failed"] == 0
+        assert observed["native_adjacency_lookups"] >= observed["adjacency_queries_attempted"]
+        assert observed["parity_verified"] == observed["adjacency_queries_succeeded"]
+        assert observed["parity_failures"] == 0
+    nested = telemetry["trace_execution_context.workflow_context"]
+    assert nested["adjacency_queries_attempted"] >= 1
+    assert nested["native_adjacency_lookups"] >= nested["adjacency_queries_attempted"]
+
+
 def test_repository_conformance_runner_reports_snapshot_and_source_manifest():
     from tools.gb04_repository_backend_conformance import run_repository_conformance
 
