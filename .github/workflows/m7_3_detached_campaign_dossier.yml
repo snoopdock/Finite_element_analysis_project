@@ -1,5 +1,10 @@
 name: AE-32C M7.3 Detached Campaign Dossier Verification
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/m7_3_detached_campaign_dossier.yml
   workflow_dispatch:
     inputs:
       campaign_run_id:
@@ -48,6 +53,7 @@ jobs:
         run: "$(go env GOPATH)/bin/actionlint" -color -verbose .github/workflows/m7_3_detached_campaign_dossier.yml
 
   verify:
+    if: github.event_name == 'workflow_dispatch'
     needs: lint
     name: Independently verify detached five-backend dossier
     runs-on: ubuntu-24.04
