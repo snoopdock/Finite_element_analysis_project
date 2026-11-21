@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0 closed; M1 accepted for NetworkX; M2 validated on exact Stage1 source commit; M3 SciPy native sparse adjacency implemented and awaiting G9.42 validation  
+**Status:** M0 closed; M1 accepted for NetworkX; M2 accepted for tested NetworkX repository context routing; M3 accepted for tested SciPy CSR/CSC repository path; M4 python-igraph native adjacency implemented and awaiting G9.42 validation  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -8,8 +8,11 @@
 **M1 validation record:** [AE-32C M1 NetworkX Validation Record](AE-32C-M1-NetworkX-Validation-Record.md) — exact source SHA, 18 focused protocol tests passed, E.8.5/E.8.8 test gates passed, skips and artifact digests recorded  
 **M2 validation record:** [AE-32C M2 NetworkX Context Routing Validation](AE-32C-M2-NetworkX-Context-Routing-Validation.md) — G9.42 run `44894696688`, exact source SHA `9dd02f7f98e0ad25d2225c638ed14bad4bd5d4e6`, all three context operations verified, evidence/provenance catalog passed  
 **M2 implementation snapshot:** `9dd02f7f98e0ad25d2225c638ed14bad4bd5d4e6` — backend-neutral `GraphQuery` routing for repository context tools; validated by G9.42 run `44894696688` (672 targeted passed, 6 skipped; 3,603 regression passed, 14 skipped; evidence and provenance verified)  
-**M3 implementation snapshot:** `56562f32892451c5ddaa8b94f6c877519ec1fdbd` — SciPy CSR outgoing and CSC incoming local edge-occurrence access; exact occurrence side-channel joins; full projection audit isolated to construction; G9.42 validation pending  
-**M3 implementation record:** [AE-32C M3 SciPy Native Sparse Adjacency](AE-32C-M3-SciPy-Native-Sparse-Adjacency.md) — implementation and acceptance boundary recorded; no local tests/workflows run  
+**M3 implementation snapshot:** SciPy CSR outgoing and CSC incoming local edge-occurrence access; exact occurrence side-channel joins; full projection audit isolated to construction; accepted by G9.42 run `44898320570` against Stage1 SHA `c40a258f627a1678036521e2474fccdd5537e46a`  
+**M3 implementation and validation record:** [AE-32C M3 SciPy Native Sparse Adjacency](AE-32C-M3-SciPy-Native-Sparse-Adjacency.md) — G9.42 run `44898320570`: 677 targeted passed, 6 skipped; 3,608 regression passed, 14 skipped; evidence and provenance verified  
+**M4 implementation snapshot:** `6fc8b19c55bdbce81429148427c9a92057f470bd` — python-igraph native incident-edge ID lookup, exact semantic occurrence joins, direction-aware access, self-loop deduplication, cached projection counts and native-query telemetry; validation pending  
+**M4 implementation record:** [AE-32C M4 python-igraph Native Adjacency](AE-32C-M4-python-igraph-Native-Adjacency.md) — implementation details, API basis, tests and real-library acceptance boundary recorded
+
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
 **Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
 
@@ -305,15 +308,24 @@ Work:
 
 ### M4 — python-igraph native adjacency
 
+**Status:** Native incident-edge implementation committed; exact-commit G9.42 validation pending.
+
 **Purpose:** use native incident-edge indexes rather than full edge enumeration.
 
-Work:
-- investigate and use edge-ID-returning incident/incoming/outgoing APIs;
-- preserve edge IDs and semantic occurrence IDs across parallel edges;
-- test direction filtering, self-loops, vertex identity mapping and attribute round trips;
-- run native and repository-backed tests in the declared Python 3.11 environment.
+Implemented on Stage1:
+- `Graph.incident(vertex_id, mode="out"|"in")` supplies native edge IDs;
+- edge IDs are checked against canonical semantic occurrence IDs and full payloads;
+- `BOTH` unions IDs, so self-loops are returned once and parallel edges remain distinct;
+- traversal queries use native local adjacency after a one-time projection audit;
+- projection counts are cached and runtime reports expose `igraph_incident_edge_ids` without full enumeration;
+- fake-API structural/behavioral tests and registry-state assertions are added.
 
-**Exit:** exact occurrence-level native adjacency and all shared acceptance gates pass.
+Validation still required:
+- run G9.42 on the latest Stage1 head;
+- ensure the real python-igraph test executes (not skips) and record the installed version;
+- verify repository context-tool routing, native counters, source follow-through, full regression, evidence integrity and provenance catalog.
+
+**Exit:** real python-igraph occurrence-level native adjacency and all shared acceptance gates pass. Fake-module tests alone are not acceptance.
 
 ### M5 — graph-tool native adjacency
 
