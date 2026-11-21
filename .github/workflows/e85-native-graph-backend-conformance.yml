@@ -158,8 +158,8 @@ jobs:
         run: |
           {
             echo "## Native graph backend conformance"
-            echo "- NetworkX / SciPy / igraph synthetic + repository matrix: ${PIP_BACKENDS}"
-            echo "- graph-tool synthetic + repository job: ${GRAPH_TOOL}"
+            echo "- NetworkX / SciPy / igraph matrix job execution: ${PIP_BACKENDS}"
+            echo "- graph-tool synthetic job execution: ${GRAPH_TOOL}"
             echo "- SNAP isolated Python 3.9 compatibility job: ${SNAP_JOB}"
             echo "- SNAP compatibility status: ${SNAP_NATIVE}"
             echo "- SNAP AE-32C adapter acceptance: NOT YET ACCEPTED; isolated worker protocol and repository parity remain required."
