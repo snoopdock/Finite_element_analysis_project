@@ -103,7 +103,7 @@ The M7.2 implementation does not claim process-level memory attribution. The ini
 
 ### 5.3 CLI
 
-Run one backend in an environment where that backend's declared dependencies and, for SNAP, its isolated worker are configured:
+Run one backend in an environment where that backend's declared dependencies and, for SNAP, its isolated worker are configured. The manual five-option controller is [m7_2_manual_task_suitability_campaign.yml on main](https://github.com/snoopdock/Finite_element_analysis_project/blob/main/.github/workflows/m7_2_manual_task_suitability_campaign.yml). It resolves the Stage1 source ref once and runs each backend in its own dependency environment:
 
 ```bash
 python tools/gb06_task_suitability_campaign.py run \
@@ -116,7 +116,7 @@ python tools/gb06_task_suitability_campaign.py verify \
   --report reports/m7-2-networkx.json
 ```
 
-Replace `networkx` with one of `scipy`, `igraph`, `graph-tool` or `snap` for the corresponding backend environment. Workload families can be restricted with `--workloads` using a comma-separated subset of the declared workload IDs.
+Replace `networkx` with one of `scipy`, `igraph`, `graph-tool` or `snap` for the corresponding backend environment. Workload families can be restricted with `--workloads` using a comma-separated subset of the declared workload IDs. The workflow's default configuration runs the complete five-family, two-seed campaign for each backend. The jobs are intentionally separate; the workflow does not compare or rank their timings.
 
 ### 5.4 Independent verification
 
