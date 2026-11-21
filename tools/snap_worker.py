@@ -16,7 +16,7 @@ import sys
 PROTOCOL = "ae32c/snap-worker/v1"
 MAX_LINE_BYTES = 16 * 1024 * 1024
 MAX_NODES = 200000
-MAX_EDGES = 1000000
+MAX_EDGES = 1000000\nMAX_ADJACENCY_OCCURRENCES = 100000
 
 # Reserve stdout exclusively for protocol frames. Native-library diagnostics
 # must never corrupt the JSON-lines channel.
@@ -250,7 +250,19 @@ def _handle(message):
         _fail("request_not_object")
     if message.get("schema_version") != PROTOCOL:
         _fail("protocol_version_mismatch")
+    if not isinstance(message.get("request_id"), str) or not message.get("request_id"):
+        _fail("request_id_invalid")
     operation = message.get("operation")
+    common = {"schema_version", "request_id", "operation", "graph_fingerprint"}
+    allowed = {
+        "init": common | {"nodes", "edges"},
+        "audit": common,
+        "adjacency": common | {"node_id", "direction"},
+        "metrics": common,
+        "close": common,
+    }
+    if operation not in allowed or set(message) != allowed[operation]:
+        _fail("request_schema_invalid")
     if operation == "init":
         return _init(message)
     if _GRAPH is None:
@@ -269,7 +281,11 @@ def _handle(message):
 
 
 def main():
-    for raw in sys.stdin:
+    while True:
+        raw = sys.stdin.readline(MAX_LINE_BYTES + 1)
+        if not raw:
+            break
+        request = None
         if len(raw.encode("utf-8")) > MAX_LINE_BYTES:
             response = {"status": "error", "error_code": "request_too_large"}
         else:
@@ -286,7 +302,7 @@ def main():
             except Exception as exc:
                 response = {
                     "schema_version": PROTOCOL,
-                    "request_id": request.get("request_id") if isinstance(locals().get("request"), dict) else None,
+                    "request_id": request.get("request_id") if isinstance(request, dict) else None,
                     "status": "error",
                     "error_code": str(exc)[:300],
                     "error_type": type(exc).__name__,
@@ -294,7 +310,7 @@ def main():
         _PROTOCOL_OUT.write(json.dumps(response, ensure_ascii=False, sort_keys=True,
                                        separators=(",", ":"), allow_nan=False) + "\n")
         _PROTOCOL_OUT.flush()
-        if response.get("status") == "ok" and isinstance(locals().get("request"), dict) and request.get("operation") == "close":
+        if response.get("status") == "ok" and isinstance(request, dict) and request.get("operation") == "close":
             return 0
     return 0
 
