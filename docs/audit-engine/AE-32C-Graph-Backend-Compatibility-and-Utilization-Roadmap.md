@@ -10,8 +10,8 @@
 **M2 implementation snapshot:** `9dd02f7f98e0ad25d2225c638ed14bad4bd5d4e6` — backend-neutral `GraphQuery` routing for repository context tools; validated by G9.42 run `44894696688` (672 targeted passed, 6 skipped; 3,603 regression passed, 14 skipped; evidence and provenance verified)  
 **M3 implementation snapshot:** SciPy CSR outgoing and CSC incoming local edge-occurrence access; exact occurrence side-channel joins; full projection audit isolated to construction; accepted by G9.42 run `44898320570` against Stage1 SHA `c40a258f627a1678036521e2474fccdd5537e46a`  
 **M3 implementation and validation record:** [AE-32C M3 SciPy Native Sparse Adjacency](AE-32C-M3-SciPy-Native-Sparse-Adjacency.md) — G9.42 run `44898320570`: 677 targeted passed, 6 skipped; 3,608 regression passed, 14 skipped; evidence and provenance verified  
-**M4 implementation snapshot:** `6fc8b19c55bdbce81429148427c9a92057f470bd` — python-igraph native incident-edge ID lookup, exact semantic occurrence joins, direction-aware access, self-loop deduplication, cached projection counts and native-query telemetry; validation pending  
-**M4 implementation record:** [AE-32C M4 python-igraph Native Adjacency](AE-32C-M4-python-igraph-Native-Adjacency.md) — implementation details, API basis, tests and real-library acceptance boundary recorded
+**M4 implementation snapshot:** `ed3a2a11d47931848694c32ea16b08845ff3a3c6` — python-igraph native incident-edge ID lookup, exact semantic occurrence joins, direction-aware access, self-loop deduplication, cached projection counts and native-query telemetry; validation pending  
+**M4 implementation record:** [AE-32C M4 python-igraph Native Adjacency](AE-32C-M4-python-igraph-Native-Adjacency.md) — implementation details, API basis, fake and real-library/repository test gates, dependency setup and acceptance boundary recorded
 
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
 **Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
@@ -321,7 +321,7 @@ Implemented on Stage1:
 - fake-API structural/behavioral tests and registry-state assertions are added.
 
 Validation still required:
-- run G9.42 on the latest Stage1 head;
+- run G9.42 on the latest Stage1 head (the graph-core optional dependency group now includes python-igraph);
 - ensure the real python-igraph test executes (not skips) and record the installed version;
 - verify repository context-tool routing, native counters, source follow-through, full regression, evidence integrity and provenance catalog.
 
