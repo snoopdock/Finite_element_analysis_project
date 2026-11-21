@@ -386,7 +386,7 @@ Checks still required to close M0:
 
 
 
-## 11. M0 traceability findings from the source pass
+## 9. M0 traceability findings from the source pass
 
 The following findings refine the initial inventory. They are based on the source files at the reviewed Stage1 snapshot, not on Graphify inference.
 
@@ -432,7 +432,7 @@ The E.8.5/E.8.8 workflow is manually dispatched. It provisions NetworkX/SciPy/ig
 The reviewed baseline's combined commit status query returned an empty status list. No exact-commit CI result was established in this source pass. Do not infer a pass from the workflow file existing or from older local test records.
 
 
-## 12. Immediate next work
+## 10. Immediate next work
 
 Proceed with **M1**, after completing the remaining M0 traceability checks. Do not start by implementing all backends at once.
 
@@ -440,7 +440,7 @@ The first M1 deliverable is a written adapter protocol and conformance matrix. T
 
 No live provider test should be used to compensate for a missing deterministic structural or behavioral test.
 
-## 13. Change and evidence discipline
+## 11. Change and evidence discipline
 
 - All repository writes for this work target `stage1/section-uuids` explicitly.
 - Do not create another branch or modify `main`.
