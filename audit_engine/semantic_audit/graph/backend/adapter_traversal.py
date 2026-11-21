@@ -14,6 +14,7 @@ from audit_engine.semantic_audit.core.semantic_graph import (
     SemanticEdge, SemanticGraph, SemanticNode,
 )
 from audit_engine.semantic_audit.graph.analysis.identity import graph_fingerprint
+from audit_engine.semantic_audit.graph.analysis.models import TraversalDirection
 from audit_engine.semantic_audit.graph.analysis.traversal import (
     GraphTraversalEngine, TraversalResult,
 )
