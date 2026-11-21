@@ -85,6 +85,15 @@ def probe_backend(backend: str) -> dict[str, Any]:
     if backend not in BACKENDS:
         raise ValueError(f"Unknown backend: {backend}")
     module_name = MODULES[backend]
+    if backend == "snap" and os.environ.get("AE32C_SNAP_WORKER_IMAGE", "").strip() and shutil.which("docker"):
+        return {
+            "backend": backend,
+            "module": "isolated-worker:" + os.environ["AE32C_SNAP_WORKER_IMAGE"].strip(),
+            "distribution": DISTRIBUTIONS[backend],
+            "status": "available",
+            "worker_transport": "docker_network_none_read_only",
+            "native_conformance": "not_run",
+        }
     try:
         discoverable = find_spec(module_name) is not None
     except (ImportError, ValueError):
@@ -347,6 +356,8 @@ def run(backend: str) -> dict[str, Any]:
 
     graph = fixture()
     engine = _make_engine(graph, backend)
+    if backend == "snap" and not getattr(engine.adapter, "is_isolated_worker", False):
+        raise RuntimeError("snap_native_conformance_requires_isolated_worker")
     reference = GraphTraversalEngine(graph)
     projection = _verify_round_trip(backend, engine, graph)
     scenarios = []
@@ -384,6 +395,14 @@ def run(backend: str) -> dict[str, Any]:
         raise RuntimeError(f"{backend}: runtime_projection_node_count_mismatch")
     if runtime.get("projection_edge_occurrence_count") != len(graph.edges):
         raise RuntimeError(f"{backend}: runtime_projection_edge_count_mismatch")
+    if backend == "snap":
+        if runtime.get("backend_native_query_mode") != "snap_isolated_worker_tneanet_edge_ids":
+            raise RuntimeError("snap_native_worker_adjacency_not_observed")
+        native = runtime.get("native_adjacency") or {}
+        if native.get("native_adjacency_lookups", 0) < expected_query_count:
+            raise RuntimeError("snap_native_worker_adjacency_counter_mismatch")
+        if native.get("native_edge_occurrences_read", 0) < 1:
+            raise RuntimeError("snap_native_worker_edge_occurrences_not_observed")
 
     return {
         "schema_version": "ae32c/e85-native-backend-conformance/v1",
@@ -399,6 +418,11 @@ def run(backend: str) -> dict[str, Any]:
         "case_count": len(scenarios),
         "repeated_query_count": expected_query_count,
         "backend_execution": metrics,
+        "native_adjacency": runtime.get("native_adjacency"),
+        "native_worker": (
+            dict(engine.adapter.worker_info)
+            if backend == "snap" else None
+        ),
         "backend_loss_assessment": runtime.get("backend_loss_assessment"),
         "repository_code_executed": False,
         "provider_calls": 0,
