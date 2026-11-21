@@ -1,6 +1,6 @@
 # AE-32C M7 — Task Suitability and Operational Characterization
 
-**Status:** M7.0 protocol complete; M7.1 closed; M7.2 five-backend campaign executed successfully and exact-source G9.42 passed; M7.3 detached-dossier verifier, adversarial tests and manual workflow controller are implemented, with exact-source G9.42 and detached-dossier execution pending.  
+**Status:** M7.0 protocol complete; M7.1 closed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier accepted for its stated verification scope (G9.42 run `44943859099`, manual run `44945256220`); M7.4 assessment contract defined, task/backend verdicts pending.  
 **M7.1 workflow revision:** `main` SHA `182d0009f1c759c46813e3a1cbbf34d22c247acb`  
 **M7.1 benchmark source:** Stage1 SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`  
 **M7.2 implementation:** `tools/gb06_task_suitability_campaign.py`  
@@ -243,4 +243,11 @@ The dossier records the GitHub artifact digest metadata and SHA-256 values of ex
 
 The tests include missing/expired artifacts, mixed source revisions, configuration mismatch, authority escalation, injected selection fields and detached-log mismatch. The G9.42 profile now includes this test module.
 
-**M7.3 status:** implementation and workflow definition are committed. Exact-source G9.42 validation and a manual detached-dossier run remain pending. Do not mark M7.3 closed until both pass and the generated Markdown/JSON dossier has been inspected. Keep production_approval=false.
+**M7.3 status:** closed for the bounded detached-artifact verification scope. Exact-source G9.42 run `44943859099` and manual detached-dossier run `44945256220` passed; the generated Markdown/JSON dossier was inspected. The verifier checks report/log/artifact identity and consistency, not historical re-execution or physical-runner attestation. Keep `production_approval=false`.
+
+
+## 11. M7.4 assessment contract
+
+The task-specific assessment contract is maintained in [AE-32C M7.4 Task-Specific Backend Suitability Assessment Contract](AE-32C-M7.4-Task-Suitability-Assessment-Contract.md). It treats STRUCTURAL, DEPENDENCY, PATH and IMPACT as distinct operations and requires each backend/task pair to be assessed against the actual public analyzer/service path, semantic/evidence invariants, workload envelope and operational environment. The four possible outcomes are suitable, conditionally suitable, not suitable and insufficient evidence. The contract explicitly forbids extrapolating higher-level task suitability from the M7.2 traversal campaign alone.
+
+The contract is not a runtime selector and grants no promotion authority. The libraries remain computational options serving different problem classes. A future selector requires a separate architectural decision. `production_approval=false` remains invariant.
