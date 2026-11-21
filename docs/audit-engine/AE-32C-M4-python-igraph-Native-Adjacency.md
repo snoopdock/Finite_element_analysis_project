@@ -81,6 +81,8 @@ The fake-adapter test establishes the intended interface behavior only. It does 
 - `6fc8b19c55bdbce81429148427c9a92057f470bd` — correct the expected one-time projection read count.
 - `0094c6be1b8e47b2b68782c43ee4760b56e43281` — add real-library telemetry assertions and repository context-tool conformance coverage.
 - `ed3a2a11d47931848694c32ea16b08845ff3a3c6` — include igraph in the optional `graph-core` validation dependency set.
+- `8be9e5d7ecd4475f08c8602d391ce8d424502187` — place real-library assertions in the conditional real-igraph test.
+- `992670dba9ff12a48d85f0a97181cbccc1af749e` — align native projection-mutation errors with the traversal integrity contract.
 
 No local tests or workflows were run by the implementer. The next step is a user-run G9.42 validation against the latest Stage1 head.
 
