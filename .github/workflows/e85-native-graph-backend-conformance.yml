@@ -22,7 +22,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: e85-native-graph-backend-conformance-stage1
+  group: e85-native-graph-backend-conformance-stage1-final
   cancel-in-progress: true
 
 jobs:
