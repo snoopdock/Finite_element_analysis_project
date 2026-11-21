@@ -2,10 +2,6 @@ name: AE-32C M7.1 Five-Backend Native Smoke Benchmark
 run-name: AE-32C M7.1 five-backend native smoke
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/m7_1_manual_native_backend_smoke.yml'
   workflow_dispatch:
     inputs:
       source_ref:
