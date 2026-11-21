@@ -240,6 +240,8 @@ def _adjacency(message):
         _METRICS["incoming_native_edge_id_lookups"] += 1
         for index in range(int(node.GetInDeg())):
             edge_ids.add(int(node.GetInEId(index)))
+    if len(edge_ids) > MAX_ADJACENCY_OCCURRENCES:
+        _fail("adjacency_result_exceeds_worker_limit")
     records = [_edge_record(edge_id) for edge_id in sorted(edge_ids)]
     _METRICS["native_edge_occurrences_read"] += len(records)
     return {"records": records, "metrics": dict(_METRICS)}
