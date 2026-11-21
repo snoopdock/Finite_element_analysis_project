@@ -150,7 +150,8 @@ class NetworkXAdapter(SemanticGraphAdapter):
             for neighbor, keyed in self.graph.succ[node_id].items():
                 for key, data in keyed.items():
                     record = self._edge_record(node_id, neighbor, key, data)
-                    if record.occurrence_id in found:
+                    existing = found.get(record.occurrence_id)
+                    if existing is not None and existing.backend_edge_ref != record.backend_edge_ref:
                         raise ValueError("networkx_edge_occurrence_mapping_duplicate")
                     found[record.occurrence_id] = record
         if direction in (TraversalDirection.INCOMING, TraversalDirection.BOTH):
