@@ -43,7 +43,7 @@ WORKLOADS = {
     "sparse_dependency": {
         "nodes": 48, "edges": 96, "family": "sparse_directed_dependency",
         "purpose": "bounded dependency and reachability queries",
-        "characteristics": ["sparse", "directed", "cycles", "isolated_tail"],
+        "characteristics": ["sparse", "directed", "cycles"],
     },
     "hub_impact": {
         "nodes": 48, "edges": 176, "family": "hub_heavy_impact",
@@ -58,7 +58,7 @@ WORKLOADS = {
     "disconnected_components": {
         "nodes": 64, "edges": 128, "family": "disconnected_components",
         "purpose": "bounded queries across disconnected audit subgraphs",
-        "characteristics": ["disconnected", "small_components", "isolated_nodes"],
+        "characteristics": ["disconnected", "small_components"],
     },
     "dense_local_neighborhood": {
         "nodes": 32, "edges": 256, "family": "dense_local_neighborhood",
@@ -351,13 +351,13 @@ def verify_report(report: dict) -> dict:
         raise BenchmarkError("report_must_not_select_backend_or_task_winner")
     config = payload.get("configuration", {})
     seeds, workload_ids = config.get("seeds"), config.get("workload_ids")
-    if not isinstance(seeds, list) or not 2 <= len(seeds) <= 5 or seeds != sorted(set(seeds)):
+    if not isinstance(seeds, list) or not 2 <= len(seeds) <= 5 or any(type(x) is not int or not 0 <= x <= 2**32 - 1 for x in seeds) or seeds != sorted(set(seeds)):
         raise BenchmarkError("configuration_seed_set_invalid")
     if type(config.get("repeats")) is not int or not 3 <= config["repeats"] <= 15:
         raise BenchmarkError("configuration_repeat_count_invalid")
     if type(config.get("warmup")) is not int or not 0 <= config["warmup"] <= 5:
         raise BenchmarkError("configuration_warmup_invalid")
-    if not isinstance(workload_ids, list) or not workload_ids or any(x not in WORKLOADS for x in workload_ids):
+    if not isinstance(workload_ids, list) or not workload_ids or len(workload_ids) != len(set(workload_ids)) or any(x not in WORKLOADS for x in workload_ids):
         raise BenchmarkError("configuration_workload_set_invalid")
     cases = payload.get("cases")
     expected_keys = [(wid, seed) for wid in workload_ids for seed in seeds]
@@ -382,6 +382,12 @@ def verify_report(report: dict) -> dict:
             raise BenchmarkError("case_native_mode_mismatch")
         if case.get("native_execution", {}).get("preflight_parity_failures") != 0:
             raise BenchmarkError("case_parity_failure")
+        if case.get("native_execution", {}).get("preflight_parity_queries") != len(_queries(graph)):
+            raise BenchmarkError("case_parity_query_count_invalid")
+        case_env = case.get("environment", {})
+        report_env = payload.get("environment", {})
+        if any(case_env.get(key) != report_env.get(key) for key in ("python", "platform", "machine")):
+            raise BenchmarkError("mixed_environment_within_backend_report")
         queries = case.get("measurements", {}).get("queries")
         specs = _queries(graph)
         if not isinstance(queries, list) or [q.get("query_id") for q in queries] != [x[0] for x in specs]:
