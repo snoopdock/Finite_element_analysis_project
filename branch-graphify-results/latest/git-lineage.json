@@ -1,10 +1,10 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "8f7ec8e27416f9ef1bb4ce8d0a098d1196467668",
+  "base_sha": "ada28e9906426a3face0942770370a55cef8dbe4",
   "compare_sha": "342c9d55b1dc49ccf93759d0dce203723485ef17",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 298,
+  "base_only_commit_count": 304,
   "compare_only_commit_count": 1168,
   "base_changes_since_merge_base": [
     {
@@ -7439,6 +7439,36 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "ada28e9906426a3face0942770370a55cef8dbe4",
+      "subject": "Fix malformed actionlint YAML command and validate M7.1 workflow"
+    },
+    {
+      "side": "<",
+      "sha": "72989d306d7763a16c938fd8e749dd389ed505f9",
+      "subject": "Isolate M7.1 workflow registration with minimal valid definition"
+    },
+    {
+      "side": "<",
+      "sha": "4be55de219369f4a3f35483a5299bcfef200e9e7",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": "<",
+      "sha": "cbf53d2a2bab5bdf7221ae1009c2cfef565f10e6",
+      "subject": "Temporarily test minimal M7.1 workflow registration"
+    },
+    {
+      "side": "<",
+      "sha": "dd587baed48210ce4b7eaf24b0cdd11d84d03061",
+      "subject": "Simplify M7.1 workflow to minimal manual dispatch contract"
+    },
+    {
+      "side": "<",
+      "sha": "2b961cc1d4246c16fcd324d25fe9ce14635406a5",
+      "subject": "Temporarily validate M7.1 workflow registration on main"
+    },
     {
       "side": "<",
       "sha": "8f7ec8e27416f9ef1bb4ce8d0a098d1196467668",
