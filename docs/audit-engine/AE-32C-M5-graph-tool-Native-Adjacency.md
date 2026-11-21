@@ -135,5 +135,8 @@ Until then, graph-tool remains `implemented_unvalidated`, production approval fa
 - `d77bd4055234d2f2230fea9679960fa71df11315` — run graph-tool repository conformance in the dedicated native workflow.
 - `25161900a8197a98db06734865d793ad1a5d8427` — update native workflow acceptance summary.
 - `cdcf91ee60d148652e2c054d286224019344ce63` — execute graph-tool adapter tests in the dedicated conformance environment.
+- `8f308d75e2cf2fd32d4c813988cec1eef98280ed` — align the GB-01 architecture note with the M5 implementation.
+- `9768be5813ec5fa003820ff0291424c710ed0205` — clarify M5 remaining validation and acceptance gates.
+- `280dfccb427824e71dca61c90bc7e19f1a03219e` and `137b74bcb5f2908c8379e3ec72584a260492cd7e` — report the installed `graph-tool-base` distribution version consistently in runtime and synthetic conformance evidence.
 
 No local tests or workflows were run by the implementer. M5 implementation remains subject to user-run G9.42 and graph-tool-native workflow validation.
