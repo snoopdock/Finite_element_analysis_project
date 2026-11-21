@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${ github.sha }
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-go@v5
         with:
@@ -56,22 +56,22 @@ jobs:
       - name: Checkout workflow controller
         uses: actions/checkout@v4
         with:
-          ref: ${ github.sha }
+          ref: ${{ github.sha }}
           path: controller
           persist-credentials: false
       - name: Checkout exact verifier source
         uses: actions/checkout@v4
         with:
-          ref: ${ inputs.verifier_ref }
+          ref: ${{ inputs.verifier_ref }}
           path: source
           persist-credentials: false
       - name: Resolve and validate source identity
         id: source
         env:
-          VERIFIER_REF: ${ inputs.verifier_ref }
-          CAMPAIGN_SOURCE_SHA: ${ inputs.campaign_source_sha }
-          CAMPAIGN_RUN_ID: ${ inputs.campaign_run_id }
-          CAMPAIGN_ATTEMPT: ${ inputs.campaign_attempt }
+          VERIFIER_REF: ${{ inputs.verifier_ref }}
+          CAMPAIGN_SOURCE_SHA: ${{ inputs.campaign_source_sha }}
+          CAMPAIGN_RUN_ID: ${{ inputs.campaign_run_id }}
+          CAMPAIGN_ATTEMPT: ${{ inputs.campaign_attempt }}
         run: |
           set -euo pipefail
           [[ "$CAMPAIGN_RUN_ID" =~ ^[0-9]+$ ]]
@@ -99,9 +99,9 @@ jobs:
           python -m pip check
       - name: Retrieve GitHub artifact identity manifest
         env:
-          GH_TOKEN: ${ github.token }
-          CAMPAIGN_RUN_ID: ${ inputs.campaign_run_id }
-          CAMPAIGN_ATTEMPT: ${ inputs.campaign_attempt }
+          GH_TOKEN: ${{ github.token }}
+          CAMPAIGN_RUN_ID: ${{ inputs.campaign_run_id }}
+          CAMPAIGN_ATTEMPT: ${{ inputs.campaign_attempt }}
         run: |
           set -euo pipefail
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CAMPAIGN_RUN_ID/artifacts?per_page=100" > artifacts-api.json
@@ -133,17 +133,17 @@ jobs:
       - name: Download detached campaign artifacts
         uses: actions/download-artifact@v4
         with:
-          github-token: ${ github.token }
-          repository: ${ github.repository }
-          run-id: ${ inputs.campaign_run_id }
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.campaign_run_id }}
           pattern: m7-2-task-suitability-*
           path: detached-artifacts
           merge-multiple: true
       - name: Verify reports, artifact provenance and cross-backend invariants
         env:
-          CAMPAIGN_RUN_ID: ${ inputs.campaign_run_id }
-          CAMPAIGN_ATTEMPT: ${ inputs.campaign_attempt }
-          CAMPAIGN_SOURCE_SHA: ${ inputs.campaign_source_sha }
+          CAMPAIGN_RUN_ID: ${{ inputs.campaign_run_id }}
+          CAMPAIGN_ATTEMPT: ${{ inputs.campaign_attempt }}
+          CAMPAIGN_SOURCE_SHA: ${{ inputs.campaign_source_sha }}
           PYTHONPATH: source
         run: |
           set -euo pipefail
@@ -158,7 +158,7 @@ jobs:
           {
             echo "## M7.3 detached campaign dossier"
             cat dossier/m7-3-verification.log
-            echo "- Verifier source SHA: ${ steps.source.outputs.verifier_sha }"
+            echo "- Verifier source SHA: ${{ steps.source.outputs.verifier_sha }}"
             echo "- Dossier JSON and Markdown were generated from detached M7.2 artifacts."
             echo "- No timing ranking, backend winner, automatic selection or production approval is established."
           } >> "$GITHUB_STEP_SUMMARY"
@@ -166,7 +166,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: m7-3-independent-campaign-dossier-${ inputs.campaign_run_id }-${ inputs.campaign_attempt }
+          name: m7-3-independent-campaign-dossier-${{ inputs.campaign_run_id }}-${{ inputs.campaign_attempt }}
           path: dossier/
           if-no-files-found: warn
           retention-days: 90
