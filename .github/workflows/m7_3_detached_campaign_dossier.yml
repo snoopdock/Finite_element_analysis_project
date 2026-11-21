@@ -1,0 +1,172 @@
+name: AE-32C M7.3 Detached Campaign Dossier Verification
+on:
+  workflow_dispatch:
+    inputs:
+      campaign_run_id:
+        description: "Successful M7.2 campaign workflow run ID"
+        required: true
+        type: string
+      campaign_attempt:
+        description: "Campaign workflow attempt number"
+        required: true
+        type: string
+        default: "1"
+      campaign_source_sha:
+        description: "Exact Stage1 source SHA used by all five M7.2 reports"
+        required: true
+        type: string
+        default: "1122916e8a56abec43cf3d42f8b2d252533e81c1"
+      verifier_ref:
+        description: "Stage1 commit/ref containing the M7.3 verifier"
+        required: true
+        type: string
+        default: "stage1/section-uuids"
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ae32c-m7-3-dossier
+  cancel-in-progress: false
+
+jobs:
+  lint:
+    name: Lint M7.3 workflow definition
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${ github.sha }
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache: false
+      - run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+      - name: Validate workflow
+        run: "$(go env GOPATH)/bin/actionlint" -color -verbose .github/workflows/m7_3_detached_campaign_dossier.yml
+
+  verify:
+    needs: lint
+    name: Independently verify detached five-backend dossier
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout workflow controller
+        uses: actions/checkout@v4
+        with:
+          ref: ${ github.sha }
+          path: controller
+          persist-credentials: false
+      - name: Checkout exact verifier source
+        uses: actions/checkout@v4
+        with:
+          ref: ${ inputs.verifier_ref }
+          path: source
+          persist-credentials: false
+      - name: Resolve and validate source identity
+        id: source
+        env:
+          VERIFIER_REF: ${ inputs.verifier_ref }
+          CAMPAIGN_SOURCE_SHA: ${ inputs.campaign_source_sha }
+          CAMPAIGN_RUN_ID: ${ inputs.campaign_run_id }
+          CAMPAIGN_ATTEMPT: ${ inputs.campaign_attempt }
+        run: |
+          set -euo pipefail
+          [[ "$CAMPAIGN_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$CAMPAIGN_ATTEMPT" =~ ^[1-9][0-9]*$ ]]
+          [[ "$CAMPAIGN_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          VERIFIER_SHA="$(git -C source rev-parse HEAD)"
+          [[ "$VERIFIER_SHA" =~ ^[0-9a-f]{40}$ ]]
+          echo "verifier_sha=$VERIFIER_SHA" >> "$GITHUB_OUTPUT"
+          {
+            echo "## M7.3 source identity"
+            echo "- Verifier ref: $VERIFIER_REF"
+            echo "- Verifier source SHA: $VERIFIER_SHA"
+            echo "- M7.2 campaign source SHA expected: $CAMPAIGN_SOURCE_SHA"
+            echo "- Campaign run/attempt: $CAMPAIGN_RUN_ID / $CAMPAIGN_ATTEMPT"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install verifier dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r source/requirements.txt
+          python -m pip install 'igraph>=0.11,<2.0'
+          python -m pip check
+      - name: Retrieve GitHub artifact identity manifest
+        env:
+          GH_TOKEN: ${ github.token }
+          CAMPAIGN_RUN_ID: ${ inputs.campaign_run_id }
+          CAMPAIGN_ATTEMPT: ${ inputs.campaign_attempt }
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CAMPAIGN_RUN_ID/artifacts?per_page=100" > artifacts-api.json
+          python - <<'PY'
+          import json, os, re
+          run_id = int(os.environ["CAMPAIGN_RUN_ID"])
+          attempt = int(os.environ["CAMPAIGN_ATTEMPT"])
+          payload = json.load(open("artifacts-api.json", encoding="utf-8"))
+          artifacts = []
+          for item in payload.get("artifacts", []):
+              match = re.fullmatch(
+                  r"m7-2-task-suitability-(networkx|scipy|igraph|graph-tool|snap)-(\d+)-(\d+)",
+                  item.get("name", ""),
+              )
+              if match:
+                  backend, named_run, named_attempt = match.groups()
+                  if int(named_run) == run_id and int(named_attempt) == attempt:
+                      artifacts.append(item)
+          manifest = {"run_id": run_id, "artifacts": artifacts}
+          with open("artifact-manifest.json", "w", encoding="utf-8") as stream:
+              json.dump(manifest, stream, indent=2, sort_keys=True)
+          print(json.dumps({
+              "run_id": run_id,
+              "artifact_count": len(artifacts),
+              "artifact_names": sorted(x["name"] for x in artifacts),
+          }, sort_keys=True))
+          assert len(artifacts) == 5, "expected exactly five backend artifacts for this run/attempt"
+          PY
+      - name: Download detached campaign artifacts
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${ github.token }
+          repository: ${ github.repository }
+          run-id: ${ inputs.campaign_run_id }
+          pattern: m7-2-task-suitability-*
+          path: detached-artifacts
+          merge-multiple: true
+      - name: Verify reports, artifact provenance and cross-backend invariants
+        env:
+          CAMPAIGN_RUN_ID: ${ inputs.campaign_run_id }
+          CAMPAIGN_ATTEMPT: ${ inputs.campaign_attempt }
+          CAMPAIGN_SOURCE_SHA: ${ inputs.campaign_source_sha }
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p dossier
+          python source/tools/gb07_campaign_dossier.py \
+            --artifact-dir detached-artifacts \
+            --manifest artifact-manifest.json \
+            --run-id "$CAMPAIGN_RUN_ID" \
+            --attempt "$CAMPAIGN_ATTEMPT" \
+            --source-revision "$CAMPAIGN_SOURCE_SHA" \
+            --output-dir dossier 2>&1 | tee dossier/m7-3-verification.log
+          {
+            echo "## M7.3 detached campaign dossier"
+            cat dossier/m7-3-verification.log
+            echo "- Verifier source SHA: ${ steps.source.outputs.verifier_sha }"
+            echo "- Dossier JSON and Markdown were generated from detached M7.2 artifacts."
+            echo "- No timing ranking, backend winner, automatic selection or production approval is established."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish independent dossier
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m7-3-independent-campaign-dossier-${ inputs.campaign_run_id }-${ inputs.campaign_attempt }
+          path: dossier/
+          if-no-files-found: warn
+          retention-days: 90
