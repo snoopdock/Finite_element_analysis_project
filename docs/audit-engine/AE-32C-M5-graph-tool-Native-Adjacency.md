@@ -165,7 +165,7 @@ The detached evidence digest check passed and the immutable evidence bundle was 
 
 The two test-contract defects were corrected in commits `80f72b680b5f9b5e9bb15c1cf739cdd7d39cccd1` and `7becea4463b9276cbcdd49ad83f12a65d82806b7`. See [M5 G9.42 Validation Failure Review — run 44902653878](AE-32C-M5-G9.42-Validation-Failure-44902653878.md) for the failure traces and technical rationale.
 
-**Disposition:** corrections are committed but not yet validated. M5 remains `implemented_unvalidated`; production approval remains false. The next G9.42 run must test the latest Stage1 head. M5 acceptance still additionally requires the dedicated real graph-tool E.8.5/E.8.8 workflow to pass on the same exact source SHA.
+**Historical disposition at the time of the initial implementation record:** corrections were committed but awaited exact-commit validation. The subsequent G9.42 and dedicated graph-tool results are recorded in Section 9 and supersede this earlier pending state. Production approval remains false.
 
 
 ## 9. Exact-commit validation — G9.42 and dedicated native workflow
