@@ -1,6 +1,6 @@
 # AE-32C M4 — python-igraph Native Adjacency Implementation Record
 
-**Status:** Implementation committed; G9.42 validation required  
+**Status:** Implementation committed; G9.42 validation remains required after test-double correction  
 **Milestone:** M4 — python-igraph native adjacency  
 **Target branch:** `stage1/section-uuids` only  
 **Predecessor:** M3 accepted by G9.42 run [44898320570](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44898320570), exact Stage1 source SHA `c40a258f627a1678036521e2474fccdd5537e46a`  
@@ -73,6 +73,39 @@ The review concluded that no production adapter change was warranted. The test d
 Detailed evidence, root-cause analysis, and rerun criteria: [M4 G9.42 Validation Failure Review — run 44899514712](AE-32C-M4-G9.42-Validation-Failure-44899514712.md).
 
 The failed run's evidence integrity verification passed and its immutable bundle was published, but provenance catalog publication/verification correctly stopped because the validation outcome was failed. These corrections have not yet been validated by a subsequent G9.42 run. M4 remains unaccepted.
+
+## 4.2 G9.42 rerun and second test-double correction — run 44900752438
+
+G9.42 run [44900752438](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44900752438) tested Stage1 source SHA `932acd150bd4a0b296003b203042b372211135e1` on `stage1/section-uuids`, using CPython 3.11.18 and python-igraph 1.0.0. The independent validation-engine suite passed (53 tests). The targeted suite reported 677 passed, 4 skipped and 4 failed; full regression reported 3,608 passed, 12 skipped and 4 failed.
+
+The remaining four failures all originated from the fake igraph `_EdgeSeq` test double. The earlier correction had added `ecount()`, but the fake still lacked integer indexing. The adapter's documented native query path obtains the edge ID from `Graph.incident()` and then reads the corresponding edge with `self.graph.es[edge_id]`. Real python-igraph supports this: its analysis guide explicitly demonstrates indexing the edge sequence (for example, `g.es[3]`) and explains that edge IDs range from zero to `ecount()-1` ([official analysis guide](https://python.igraph.org/en/latest/analysis.html)). The fake implemented iteration and attribute assignment, but not `__getitem__`, so the fake-only tests raised `TypeError: '_EdgeSeq' object is not subscriptable` before exercising their assertions.
+
+Importantly, the real-library and repository conformance tests passed in this run:
+- `test_real_optional_native_backend_query_when_installed[igraph-igraph]` — passed;
+- `test_native_backend_conformance_when_library_is_installed[igraph]` — passed;
+- `test_igraph_repository_conformance_routes_context_tools_through_native_adjacency` — passed.
+
+Other real igraph projection tests in the full regression suite also passed. This evidence isolates the four failures to an incomplete test double; it does not indicate a defect in the production adapter or a reason to weaken edge-ID validation.
+
+### Correction
+
+The fake `_EdgeSeq` now implements integer indexing and returns an `_Edge` carrying the indexed edge's source, target and attribute access, matching the interface actually consumed by the adapter. A focused test, `test_fake_igraph_edge_sequence_supports_indexed_edge_access`, asserts that behavior directly. No production adapter code, query semantics, integrity checks, registry state or dependency constraints were changed.
+
+Correction commit: `fc66b89428c774f45ac899c6bb154afe5a0379b2`.
+
+### Evidence and disposition
+
+- Targeted: 685 total; 677 passed, 4 skipped, 4 failed.
+- Regression: 3,624 total; 3,608 passed, 12 skipped, 4 failed.
+- python-igraph: 1.0.0 installed; real query, native conformance and repository context routing tests passed.
+- Validation report SHA-256: `3043c62cdd46dedd7a97bb8bd5130e868268cfc4d8efd95afc1d270dd8750cdf`.
+- Immutable evidence bundle SHA-256: `c29a10941642d4a25056615487eb21cde7647a69b3452a85bec447418a373c6a`.
+- Uploaded artifact SHA-256: `c48e007582f9bd29070bf2bc20760df4c5bf76a89639e4427f31308fa2191f4d`.
+- Artifact: `manual-validation-evidence-44900752438-1.zip` (ID `14705977695`).
+
+Evidence integrity verification and immutable bundle publication passed. Provenance catalog build/verification correctly failed because the underlying test report was failed. M4 remains unaccepted until a new G9.42 run passes against the exact corrected Stage1 commit, including the newly added focused fake-interface test, real python-igraph checks, repository context conformance, full regression, evidence integrity and provenance catalog verification.
+
+Detailed review: [M4 G9.42 Validation Failure Review — run 44900752438](AE-32C-M4-G9.42-Validation-Failure-44900752438.md).
 
 ## 5. Technical limitations and acceptance boundary
 
