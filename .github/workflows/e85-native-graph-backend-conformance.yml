@@ -1,7 +1,8 @@
 name: AE-32C Native Graph Backend Conformance (E.8.5 / E.8.8)
 run-name: AE-32C native graph backend conformance — Stage1
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
 
 permissions:
   contents: read
