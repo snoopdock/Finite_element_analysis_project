@@ -4,7 +4,7 @@
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
-**M1 implementation snapshot:** `b214c8b474239fa6186680002eec36e1c244ab09` — typed protocol, NetworkX adapter adjacency and `BOTH` self-loop correction; validation not run  
+**M1 implementation snapshot:** `e6e4c50f13af99f2cdcd1d4596aa95c60b1bebdb` — typed protocol, NetworkX traversal routed through adapter adjacency, and `BOTH` self-loop correction; validation not run  
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
 **Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
 

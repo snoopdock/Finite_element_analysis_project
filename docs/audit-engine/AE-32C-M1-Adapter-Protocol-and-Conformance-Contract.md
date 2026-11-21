@@ -20,13 +20,14 @@ The first implementation slice is committed on `stage1/section-uuids`:
   `NativeAdjacencyNotSupportedError`; the base contract does not silently scan
   the saved Python projection.
 - `NetworkXAdapter` implements occurrence-preserving local adjacency through
-  `MultiDiGraph.succ` and `pred`, preserving parallel edges and returning a
-  self-loop once for `BOTH`.
+  `MultiDiGraph.succ` and `pred`. `NetworkXGraphTraversalEngine` now invokes
+  that typed adapter operation rather than duplicating direct native access,
+  preserving parallel edges and returning a self-loop once for `BOTH`.
 - The Python reference and NetworkX traversal paths now use the same
   one-occurrence self-loop rule for `BOTH`.
 - A focused NetworkX protocol test module asserts explicit occurrence IDs,
   direction semantics, unknown/isolated-node behavior, payload isolation,
-  independent self-loop expectations, and observational runtime reporting.
+  independent self-loop expectations, observational runtime reporting, and proof that the traversal engine invokes the typed adapter method.
 
 This is implementation evidence only. No local tests or workflows were run
 for this commit; NetworkX native acceptance and M1 closure remain pending until

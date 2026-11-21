@@ -131,3 +131,17 @@ def test_native_query_does_not_rebuild_python_reference_adjacency(graph, monkeyp
     monkeypatch.setattr(GraphTraversalEngine, "_build_adjacency", forbidden)
     result = engine.walk("B", direction=TraversalDirection.BOTH, max_depth=1)
     assert result.examined_edges == 5
+
+
+def test_networkx_traversal_calls_the_typed_adapter_adjacency_operation(graph, monkeypatch):
+    engine = NetworkXGraphTraversalEngine(graph, verify_parity=False)
+    original = engine.adapter.iter_adjacent_edge_occurrences
+    calls = []
+
+    def observed(node_id, direction):
+        calls.append((node_id, direction))
+        return original(node_id, direction)
+
+    monkeypatch.setattr(engine.adapter, "iter_adjacent_edge_occurrences", observed)
+    engine.walk("B", direction=TraversalDirection.BOTH, max_depth=1)
+    assert calls == [("B", TraversalDirection.BOTH)]
