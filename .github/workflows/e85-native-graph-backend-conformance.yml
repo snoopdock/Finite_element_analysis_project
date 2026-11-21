@@ -158,7 +158,9 @@ jobs:
           docker build --pull \
             --file .github/snap-worker/Dockerfile \
             --tag "$AE32C_SNAP_WORKER_IMAGE" .
-          docker image inspect "$AE32C_SNAP_WORKER_IMAGE" --format '{{.Id}}'
+          IMAGE_ID="$(docker image inspect "$AE32C_SNAP_WORKER_IMAGE" --format '{{.Id}}')"
+          echo "AE32C_SNAP_WORKER_IMAGE_ID=$IMAGE_ID" >> "$GITHUB_ENV"
+          echo "SNAP worker image ID: $IMAGE_ID" >> "$GITHUB_STEP_SUMMARY"
       - name: Verify worker adapter protocol and container restrictions
         run: python -m pytest -q tests/semantic_graph/test_snap_worker_adapter.py
       - name: Run SNAP synthetic native E.8.5 conformance
