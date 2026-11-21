@@ -599,11 +599,26 @@ The manual E85 workflow controller on `main` and the branch-local Stage1 workflo
 
 This removes the earlier deliberate deferral of SciPy and igraph repository-level parity. In run [44914650206](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914650206), at Stage1 SHA `7771d637cd613bf5cfc8c847108cd0c6eb28c98f`, NetworkX, SciPy, igraph and graph-tool each passed both E.8.5 and E.8.8. The graph-tool E.8.8 step also passed. The SNAP Docker image built successfully and the worker-adapter protocol test passed, but SNAP E.8.5 failed before native graph construction; SNAP E.8.8 was therefore skipped. The workflow's overall failure is correctly retained.
 
-### 14.2 SNAP failure diagnosis and correction
+### 14.2 SNAP failure diagnosis, correction and successful real-worker validation
 
-The first real worker launch returned `snap_worker_error:graph_fingerprint_invalid`. This was an orchestrator/worker contract mismatch, not evidence of a SNAP API incompatibility: `graph_fingerprint()` returns the canonical identity form `graph:` followed by 32 lowercase hexadecimal characters, while the first worker implementation incorrectly required a raw 64-character SHA-256 string.
+Two defects were found and corrected during the first real worker attempts:
 
-The worker validator was corrected to enforce the actual canonical fingerprint format in commit `9f0125738759be4bb80026d9aa86d59a01e915b8`. Retry run [44914749858](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914749858) was started against that corrected implementation. At the time of this roadmap update it had not completed; no SNAP acceptance is claimed.
+1. The worker validator initially required a raw 64-character SHA-256 string, while the canonical graph identity function returns `graph:` followed by 32 lowercase hexadecimal characters. Commit `9f0125738759be4bb80026d9aa86d59a01e915b8` corrected the format check.
+2. The next attempt passed fingerprint validation but could not load SNAP because `libgomp.so.1` was missing from the slim Python 3.9 image. Commit `97f78060923a9ab7daea8ed4b48971c0314b3616` added Debian `libgomp1` to the worker image.
+
+The worker then required and probed the actual SNAP Python binding for TNEANet `GetOutEId` and `GetInEId` accessors. The installed SNAP 6.0.0 / CPython 3.9.25 runtime exposed both, and the full run [44914959176](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914959176) completed successfully at Stage1 SHA `425c0f7378bfe190da81b10b0f6e0b22c3df4f41`.
+
+Results from that run:
+
+- NetworkX: E.8.5 and E.8.8 passed.
+- SciPy: E.8.5 and E.8.8 passed.
+- igraph: E.8.5 and E.8.8 passed.
+- graph-tool: E.8.5 and E.8.8 passed.
+- SNAP 6.0 isolated worker: E.8.5 and E.8.8 passed.
+
+For SNAP, E.8.5 verified 14/14 repeated queries with zero parity failures, 34 native adjacency lookups and 96 native edge occurrences read. E.8.8 verified 43/43 repository queries with zero parity failures, 45 native adjacency lookups and 86 native edge occurrences read. The graph-to-source follow-through verified two source reads against SHA-256 hashes. The worker image ID was `sha256:55b531951c9f7f70bc0414ce4a59059d6602df3ec15e17bf0732099bd602f593`.
+
+The E.8.5/E.8.8 runner reports and workflow now also stamp the actual checked-out Stage1 source SHA, workflow run ID and attempt. A provenance-stamped run is triggered on the current Stage1 head by the workflow/documentation commit. G9.42 exact-commit validation remains the final milestone gate.
 
 ### 14.3 M6 implementation record
 
