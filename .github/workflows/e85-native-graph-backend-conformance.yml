@@ -193,7 +193,7 @@ jobs:
           {
             echo "### SNAP isolated worker conformance"
             echo "- Worker image: $AE32C_SNAP_WORKER_IMAGE"
-            echo "- Container policy: network disabled; read-only root; no capabilities; no repository mount; bounded memory/CPU/PID limits."
+            echo "- Container policy: network disabled; read-only root; no writable mounts; no capabilities; no repository mount; bounded memory/CPU/PID limits."
             echo "- Python 3.9 and SNAP 6.0 execute only inside the worker image."
             echo "- Python 3.11 orchestrator validates the worker projection, native edge IDs, occurrence mapping, reference parity and repository source hashes."
             echo "- E.8.5 synthetic report: e85-snap.json"
