@@ -2,8 +2,8 @@
   "identity_note": "Node keys use the first available id/node_id/key/name/label field. Edge keys use source/target/relation-like fields. These are structural comparison keys, not proof of semantic equivalence.",
   "base": {
     "branch": "main",
-    "node_count": 5104,
-    "edge_count": 7904
+    "node_count": 5119,
+    "edge_count": 7919
   },
   "compare": {
     "branch": "stage1-section-uuids",
@@ -12,7 +12,7 @@
   },
   "nodes": {
     "common_count": 2499,
-    "base_only_count": 2605,
+    "base_only_count": 2620,
     "compare_only_count": 15434,
     "base_only": [
       "abc",
@@ -2015,6 +2015,9 @@
       "github_workflows_m7_1_manual_native_backend_smoke_graph_tool_native_runs_on",
       "github_workflows_m7_1_manual_native_backend_smoke_graph_tool_native_steps",
       "github_workflows_m7_1_manual_native_backend_smoke_graph_tool_native_timeout_minutes",
+      "github_workflows_m7_1_manual_native_backend_smoke_inputs_repeats",
+      "github_workflows_m7_1_manual_native_backend_smoke_inputs_source_ref",
+      "github_workflows_m7_1_manual_native_backend_smoke_inputs_warmup",
       "github_workflows_m7_1_manual_native_backend_smoke_jobs",
       "github_workflows_m7_1_manual_native_backend_smoke_jobs_benchmark_summary",
       "github_workflows_m7_1_manual_native_backend_smoke_jobs_graph_tool_native",
@@ -2025,7 +2028,6 @@
       "github_workflows_m7_1_manual_native_backend_smoke_matrix_backend",
       "github_workflows_m7_1_manual_native_backend_smoke_name",
       "github_workflows_m7_1_manual_native_backend_smoke_on",
-      "github_workflows_m7_1_manual_native_backend_smoke_on_push",
       "github_workflows_m7_1_manual_native_backend_smoke_on_workflow_dispatch",
       "github_workflows_m7_1_manual_native_backend_smoke_outputs_source_sha",
       "github_workflows_m7_1_manual_native_backend_smoke_permissions",
@@ -2036,8 +2038,11 @@
       "github_workflows_m7_1_manual_native_backend_smoke_pip_native_backends_steps",
       "github_workflows_m7_1_manual_native_backend_smoke_pip_native_backends_strategy",
       "github_workflows_m7_1_manual_native_backend_smoke_pip_native_backends_timeout_minutes",
-      "github_workflows_m7_1_manual_native_backend_smoke_push_branches",
-      "github_workflows_m7_1_manual_native_backend_smoke_push_paths",
+      "github_workflows_m7_1_manual_native_backend_smoke_repeats_default",
+      "github_workflows_m7_1_manual_native_backend_smoke_repeats_description",
+      "github_workflows_m7_1_manual_native_backend_smoke_repeats_options",
+      "github_workflows_m7_1_manual_native_backend_smoke_repeats_required",
+      "github_workflows_m7_1_manual_native_backend_smoke_repeats_type",
       "github_workflows_m7_1_manual_native_backend_smoke_resolve_source_name",
       "github_workflows_m7_1_manual_native_backend_smoke_resolve_source_needs",
       "github_workflows_m7_1_manual_native_backend_smoke_resolve_source_outputs",
@@ -2050,6 +2055,10 @@
       "github_workflows_m7_1_manual_native_backend_smoke_snap_isolated_worker_runs_on",
       "github_workflows_m7_1_manual_native_backend_smoke_snap_isolated_worker_steps",
       "github_workflows_m7_1_manual_native_backend_smoke_snap_isolated_worker_timeout_minutes",
+      "github_workflows_m7_1_manual_native_backend_smoke_source_ref_default",
+      "github_workflows_m7_1_manual_native_backend_smoke_source_ref_description",
+      "github_workflows_m7_1_manual_native_backend_smoke_source_ref_required",
+      "github_workflows_m7_1_manual_native_backend_smoke_source_ref_type",
       "github_workflows_m7_1_manual_native_backend_smoke_steps_env",
       "github_workflows_m7_1_manual_native_backend_smoke_steps_id",
       "github_workflows_m7_1_manual_native_backend_smoke_steps_if",
@@ -2060,6 +2069,11 @@
       "github_workflows_m7_1_manual_native_backend_smoke_steps_with",
       "github_workflows_m7_1_manual_native_backend_smoke_strategy_fail_fast",
       "github_workflows_m7_1_manual_native_backend_smoke_strategy_matrix",
+      "github_workflows_m7_1_manual_native_backend_smoke_warmup_default",
+      "github_workflows_m7_1_manual_native_backend_smoke_warmup_description",
+      "github_workflows_m7_1_manual_native_backend_smoke_warmup_options",
+      "github_workflows_m7_1_manual_native_backend_smoke_warmup_required",
+      "github_workflows_m7_1_manual_native_backend_smoke_warmup_type",
       "github_workflows_m7_1_manual_native_backend_smoke_with_cache",
       "github_workflows_m7_1_manual_native_backend_smoke_with_cache_environment",
       "github_workflows_m7_1_manual_native_backend_smoke_with_environment_file",
@@ -2073,6 +2087,7 @@
       "github_workflows_m7_1_manual_native_backend_smoke_with_python_version",
       "github_workflows_m7_1_manual_native_backend_smoke_with_ref",
       "github_workflows_m7_1_manual_native_backend_smoke_with_retention_days",
+      "github_workflows_m7_1_manual_native_backend_smoke_workflow_dispatch_inputs",
       "github_workflows_m7_1_manual_native_backend_smoke_workflow_lint_name",
       "github_workflows_m7_1_manual_native_backend_smoke_workflow_lint_runs_on",
       "github_workflows_m7_1_manual_native_backend_smoke_workflow_lint_steps",
@@ -18060,7 +18075,7 @@
   },
   "edges": {
     "common_count": 4781,
-    "base_only_count": 3123,
+    "base_only_count": 3138,
     "compare_only_count": 41015,
     "base_only": [
       [
@@ -28394,6 +28409,76 @@
         "contains"
       ],
       [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_repeats",
+        "github_workflows_m7_1_manual_native_backend_smoke_repeats_default",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_repeats",
+        "github_workflows_m7_1_manual_native_backend_smoke_repeats_description",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_repeats",
+        "github_workflows_m7_1_manual_native_backend_smoke_repeats_options",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_repeats",
+        "github_workflows_m7_1_manual_native_backend_smoke_repeats_required",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_repeats",
+        "github_workflows_m7_1_manual_native_backend_smoke_repeats_type",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_source_ref",
+        "github_workflows_m7_1_manual_native_backend_smoke_source_ref_default",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_source_ref",
+        "github_workflows_m7_1_manual_native_backend_smoke_source_ref_description",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_source_ref",
+        "github_workflows_m7_1_manual_native_backend_smoke_source_ref_required",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_source_ref",
+        "github_workflows_m7_1_manual_native_backend_smoke_source_ref_type",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_warmup",
+        "github_workflows_m7_1_manual_native_backend_smoke_warmup_default",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_warmup",
+        "github_workflows_m7_1_manual_native_backend_smoke_warmup_description",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_warmup",
+        "github_workflows_m7_1_manual_native_backend_smoke_warmup_options",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_warmup",
+        "github_workflows_m7_1_manual_native_backend_smoke_warmup_required",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_warmup",
+        "github_workflows_m7_1_manual_native_backend_smoke_warmup_type",
+        "contains"
+      ],
+      [
         "github_workflows_m7_1_manual_native_backend_smoke_jobs",
         "github_workflows_m7_1_manual_native_backend_smoke_jobs_benchmark_summary",
         "contains"
@@ -28585,22 +28670,12 @@
       ],
       [
         "github_workflows_m7_1_manual_native_backend_smoke_on",
-        "github_workflows_m7_1_manual_native_backend_smoke_on_push",
-        "contains"
-      ],
-      [
-        "github_workflows_m7_1_manual_native_backend_smoke_on",
         "github_workflows_m7_1_manual_native_backend_smoke_on_workflow_dispatch",
         "contains"
       ],
       [
-        "github_workflows_m7_1_manual_native_backend_smoke_on_push",
-        "github_workflows_m7_1_manual_native_backend_smoke_push_branches",
-        "contains"
-      ],
-      [
-        "github_workflows_m7_1_manual_native_backend_smoke_on_push",
-        "github_workflows_m7_1_manual_native_backend_smoke_push_paths",
+        "github_workflows_m7_1_manual_native_backend_smoke_on_workflow_dispatch",
+        "github_workflows_m7_1_manual_native_backend_smoke_workflow_dispatch_inputs",
         "contains"
       ],
       [
@@ -28851,6 +28926,21 @@
       [
         "github_workflows_m7_1_manual_native_backend_smoke_strategy_matrix",
         "github_workflows_m7_1_manual_native_backend_smoke_matrix_backend",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_workflow_dispatch_inputs",
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_repeats",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_workflow_dispatch_inputs",
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_source_ref",
+        "contains"
+      ],
+      [
+        "github_workflows_m7_1_manual_native_backend_smoke_workflow_dispatch_inputs",
+        "github_workflows_m7_1_manual_native_backend_smoke_inputs_warmup",
         "contains"
       ],
       [
