@@ -39,7 +39,7 @@ class NativeAdapterParityError(RuntimeError):
 _DISTRIBUTIONS = {
     "scipy": "scipy",
     "igraph": "igraph",
-    "graph-tool": "graph-tool",
+    "graph-tool": "graph-tool-base",
     "snap": "snap-stanford",
 }
 _PROJECTION_TYPES = {
