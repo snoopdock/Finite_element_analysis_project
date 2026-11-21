@@ -15,6 +15,8 @@ from importlib import metadata as importlib_metadata
 from importlib.util import find_spec
 import json
 import platform
+import os
+import shutil
 from pathlib import Path
 import sys
 from typing import Any
