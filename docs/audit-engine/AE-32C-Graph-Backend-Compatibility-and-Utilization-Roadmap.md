@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots. M7.1 five-backend smoke validation passed in run `44937517812` on source SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`. M7.2 task-suitability campaign implementation and tests are committed on Stage1; exact-source G9.42 validation and the five-backend campaign execution remain pending. Production approval remains false  
+**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots. M7.1 five-backend smoke validation passed in run `44937517812` on source SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`. M7.2 five-backend bounded traversal campaign passed exact-source G9.42 run `44940231437` and campaign run `44940960831`; M7.3 detached-dossier implementation is committed and awaits exact-source G9.42 plus its manual verification run. Production approval remains false  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -706,3 +706,18 @@ The new M7.2 test module has been added to `validation/profiles/G9.42.yaml`. The
 The current Stage1 head after these documentation updates is `10c6be6014d05e7d6d2d36870a44d9ccab1fc949`.
 
 **Next acceptance gates:** run G9.42 against the current Stage1 head; correct any failures before dispatching the five backend campaign reports. Then run each backend against the same Stage1 source SHA, seeds, workload family set, repetitions and warm-up settings; inspect all artifacts and verify each report independently. Environment differences must be disclosed, and measurements must not be ranked across unmatched runner environments. Keep `production_approval=false`.
+
+
+## 16. AE-32C M7.2 campaign closure and M7.3 dossier implementation — 2026-11-21
+
+M7.2 was executed against the exact Stage1 source SHA 1122916e8a56abec43cf3d42f8b2d252533e81c1. G9.42 run [44940231437](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940231437) and the five-backend campaign run [44940960831](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940960831) both succeeded. All five backend reports used the same two seeds and five workload families with the intentionally selected 15 repetitions and 5 warm-up calls per query. All graph and query-result digests matched across backends; native-path and preflight parity evidence was present. Azure and AWS runner strata are retained separately; no timing ranking is valid.
+
+M7.3 implementation adds:
+- tools/gb07_campaign_dossier.py for detached report, artifact metadata, provenance, workload/seed matrix, cross-backend graph/result digest, native-path, parity and aggregate checks;
+- tests/semantic_graph/test_m73_campaign_dossier.py for adversarial dossier-integrity tests;
+- a G9.42 profile entry for the M7.3 tests;
+- the manual main controller .github/workflows/m7_3_detached_campaign_dossier.yml, commit b7e05d92f040952bae210961eaa38d383ac2f65f.
+
+The verifier generates JSON and Markdown dossiers. It records the GitHub Actions artifact digest metadata and extracted report/log file hashes. It does not claim that an internal report hash authenticates its source, that historical timing samples can be re-executed, or that measurements from separate hosted runners are directly comparable.
+
+**Current state:** M7.2 accepted for bounded semantic traversal. M7.3 implementation committed; exact-source G9.42 and manual detached-dossier execution pending. M7.4 remains blocked on M7.3 closure. Preserve production_approval=false.
