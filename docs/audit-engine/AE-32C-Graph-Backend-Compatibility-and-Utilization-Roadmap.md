@@ -351,7 +351,7 @@ Validation still required:
 - Two failures came from a legacy graph-tool fake that lacked the `edge_index` property map; one was a stale M1 registry assertion that still expected graph-tool to be unimplemented.
 - Corrections are committed to Stage1: `80f72b680b5f9b5e9bb15c1cf739cdd7d39cccd1` adds the missing fake edge-index mapping; `7becea4463b9276cbcdd49ad83f12a65d82806b7` asserts graph-tool `implemented_unvalidated` separately from SNAP `not_implemented`. The M5 fake was also strengthened in `beb4b80b00361aa882c00d97707090e2c0b651a6` to exercise non-contiguous native edge indices.
 - Evidence integrity and immutable bundle publication passed. Provenance catalog build/verification correctly failed closed because regression failed. See [M5 G9.42 failure review](AE-32C-M5-G9.42-Validation-Failure-44902653878.md).
-- Corrections are not yet validated; M5 remains in progress and no acceptance claim is made.
+- At the time of this failure review, corrections were not yet validated. This pending status is superseded by the exact-commit G9.42 and dedicated graph-tool acceptance recorded in Section 12.
 
 **Remaining validation work:**
 - execute the dedicated conda-forge E.8.5/E.8.8 workflow against the exact latest Stage1 SHA and record graph-tool version;
