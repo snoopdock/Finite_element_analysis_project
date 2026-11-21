@@ -68,6 +68,8 @@ def _clone_validated_graph(graph: SemanticGraph) -> SemanticGraph:
 
 def _library_version(name: str, adapter: Any) -> str | None:
     try:
+        if name == "snap" and getattr(adapter, "is_isolated_worker", False):
+            return str(adapter.worker_info.get("snap_version", "unknown"))
         return importlib_metadata.version(_DISTRIBUTIONS[name])
     except importlib_metadata.PackageNotFoundError:
         module = {
@@ -126,6 +128,10 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
         )
         self.adapter = self.backend_execution.output
         self.native_graph = self.adapter.export()
+        self._uses_native_local_adjacency = (
+            backend_name in {"scipy", "igraph", "graph-tool"}
+            or bool(getattr(self.adapter, "is_isolated_worker", False))
+        )
         self._edge_occurrences = tuple(graph.edges)
         self._projection_validated = False
         self._projection_node_count = 0
@@ -216,7 +222,7 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
             raise NativeAdapterProjectionError("canonical_graph_changed_during_native_projection_read")
         self._projection_node_count = len(native_nodes)
         self._projection_edge_occurrence_count = len(seen)
-        if self._backend_name in {"scipy", "igraph", "graph-tool"}:
+        if self._uses_native_local_adjacency:
             self._projection_validated = True
         return dict(outgoing), dict(incoming)
 
@@ -229,7 +235,7 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
         outgoing: dict[str, list[SemanticEdge]],
         incoming: dict[str, list[SemanticEdge]],
     ):
-        if self._backend_name not in {"scipy", "igraph", "graph-tool"}:
+        if not self._uses_native_local_adjacency:
             return super()._candidate_edges(
                 node_id, direction=direction, relation_types=relation_types,
                 outgoing=outgoing, incoming=incoming,
@@ -324,11 +330,12 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
                 else "native_projection_verified_against_canonical_semantic_graph"
             ),
         }
-        if self._backend_name in {"scipy", "igraph", "graph-tool"}:
+        if self._uses_native_local_adjacency:
             metadata["backend_native_query_mode"] = {
                 "scipy": "scipy_csr_csc_adjacency",
                 "igraph": "igraph_incident_edge_ids",
                 "graph-tool": "graph_tool_vertex_edge_iterators",
+                "snap": "snap_isolated_worker_tneanet_edge_ids",
             }[self._backend_name]
             metadata["backend_native_query_metrics"] = dict(self._last_query_native_metrics)
         return metadata
@@ -341,10 +348,15 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
             "backend_library_version": _library_version(self._backend_name, self.adapter),
             "backend_projection_type": _PROJECTION_TYPES[self._backend_name],
             "backend_projection_fingerprint": self._source_fingerprint,
+            "backend_worker_info": (
+                dict(self.adapter.worker_info)
+                if getattr(self.adapter, "is_isolated_worker", False) else None
+            ),
             "backend_native_query_mode": {
                 "scipy": "scipy_csr_csc_adjacency",
                 "igraph": "igraph_incident_edge_ids",
                 "graph-tool": "graph_tool_vertex_edge_iterators",
+                "snap": "snap_isolated_worker_tneanet_edge_ids",
             }.get(self._backend_name, "canonical_python_adjacency_fallback"),
             "backend_parity_mode": (
                 "strict_per_query_reference_comparison"
@@ -365,17 +377,17 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
             ),
             "projection_node_count": (
                 self._projection_node_count
-                if self._backend_name in {"scipy", "igraph", "graph-tool"}
+                if self._uses_native_local_adjacency
                 else len(list(self.adapter.iter_native_nodes()))
             ),
             "projection_edge_occurrence_count": (
                 self._projection_edge_occurrence_count
-                if self._backend_name in {"scipy", "igraph", "graph-tool"}
+                if self._uses_native_local_adjacency
                 else len(list(self.adapter.iter_native_edges()))
             ),
             "native_adjacency": (
                 self.adapter.native_adjacency_report()
-                if self._backend_name in {"scipy", "igraph", "graph-tool"} else None
+                if self._uses_native_local_adjacency else None
             ),
             "backend_execution": dict(self._metrics),
         }
