@@ -10,4 +10,4 @@ RUN python -m pip install --no-cache-dir --only-binary=:all: -r /tmp/requirement
 COPY tools/snap_worker.py /opt/ae32c/snap_worker.py
 WORKDIR /opt/ae32c
 USER 65534:65534
-ENTRYPOINT ["python", "-I", "/opt/ae32c/snap_worker.py"]
+ENTRYPOINT ["python", "-I", "-B", "/opt/ae32c/snap_worker.py"]
