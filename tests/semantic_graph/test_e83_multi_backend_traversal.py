@@ -95,6 +95,10 @@ class _FakeIGraph:
     def add_edges(self, pairs):
         self.es.pairs.extend(tuple(pair) for pair in pairs)
 
+    def ecount(self):
+        """Match python-igraph's edge-count API used to validate native edge IDs."""
+        return len(self.es.pairs)
+
     def incident(self, vertex, mode="all"):
         result = []
         for edge_id, (source, target) in enumerate(self.es.pairs):
@@ -401,10 +405,14 @@ def test_native_projection_mutation_fails_closed(monkeypatch):
 def test_explicit_backend_selection_never_silently_falls_back(monkeypatch):
     from audit_engine.semantic_audit.graph.backend.adapter_traversal import NativeAdapterGraphTraversalEngine
     from audit_engine.semantic_audit.graph.backend.optional_backend_support import BackendUnavailableError
-    from audit_engine.semantic_audit.graph.backend import optional_backend_support as support
-    monkeypatch.setattr(support, "backend_available", lambda name: False if name == "igraph" else True)
-    # The registry reads backend_available at construction time; explicit igraph
-    # selection must fail instead of falling back to NetworkX.
+    from audit_engine.semantic_audit.graph.backend import capability_registry as registry_module
+    # create_default_registry imports backend_available into capability_registry;
+    # patch the symbol actually consulted when the per-engine registry is created.
+    monkeypatch.setattr(
+        registry_module, "backend_available",
+        lambda name: False if name == "igraph" else True,
+    )
+    # Explicit igraph selection must fail instead of falling back to NetworkX.
     with pytest.raises(BackendUnavailableError, match="not installed"):
         NativeAdapterGraphTraversalEngine(graph_fixture(), "igraph")
 
