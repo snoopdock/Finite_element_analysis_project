@@ -158,6 +158,7 @@ def test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol(mo
     command = process.command
     assert "--network=none" in command
     assert "--read-only" in command
+    assert "--tmpfs" not in command
     assert "--cap-drop=ALL" in command
     assert "--security-opt=no-new-privileges" in command
     assert "--pull=never" in command
