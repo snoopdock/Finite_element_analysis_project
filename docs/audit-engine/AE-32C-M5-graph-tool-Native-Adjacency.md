@@ -1,6 +1,6 @@
 # AE-32C M5 — graph-tool Native Adjacency Implementation Record
 
-**Status:** Implementation committed; real graph-tool and exact-commit validation pending  
+**Status:** Accepted for the tested graph-tool-base 3.9 / CPython 3.11.18 repository path; production approval remains false  
 **Milestone:** M5 — graph-tool native adjacency  
 **Target branch:** `stage1/section-uuids` only  
 **Predecessor:** M4 accepted by G9.42 run [44901309538](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44901309538), exact Stage1 SHA `c6d4fda93897a3b7022d28cba177fc5c453940b3`  
@@ -112,7 +112,12 @@ A G9.42 run where graph-tool tests are skipped is necessary for broad regression
 
 ## 6. Acceptance boundary
 
-Do not mark M5 accepted until:
+The required exact-source validation has now passed for Stage1 SHA `9adc99b9511d0281b18be76d60865dcf13bb16b0`: G9.42 run `44904263386` and dedicated E.8.5/E.8.8 run `44905580330` both tested that exact SHA. The graph-tool job installed graph-tool-base 3.9 under CPython 3.11.18, ran four real adapter tests, and produced passing synthetic and repository-backed reports with positive native-adjacency telemetry. See Section 9 and the run failure review for the SNAP-only workflow failure.
+
+Do not interpret this milestone acceptance as production approval or a performance claim. The runtime registry intentionally remains `production_approval=false`.
+
+The acceptance gates were:
+
 1. Real graph-tool tests execute in the supported conda-forge environment rather than skip.
 2. The adapter preserves every node and edge occurrence, including parallel edges and self-loops.
 3. Outgoing, incoming and `BOTH` results match the canonical reference exactly.
@@ -121,7 +126,7 @@ Do not mark M5 accepted until:
 6. Repository conformance verifies `graph_tool_vertex_edge_iterators` for all three context operations, with positive native lookup/occurrence telemetry, zero parity failures and verified source follow-through.
 7. The complete G9.42 targeted and regression suites pass on the same exact source SHA, and evidence integrity, bundle publication and provenance verification pass.
 
-Until then, graph-tool remains `implemented_unvalidated`, production approval false, and M6 SNAP work remains deferred.
+**Disposition:** M5 is accepted for the tested graph-tool-base 3.9 / CPython 3.11.18 environment and repository context path. The capability registry's `implemented_unvalidated` state and `production_approval=false` are intentionally retained until a separate runtime approval decision. M6 SNAP work remains deferred pending its isolated compatibility probe and later worker/adapter implementation.
 
 ## 7. Implementation commits
 
@@ -161,3 +166,46 @@ The detached evidence digest check passed and the immutable evidence bundle was 
 The two test-contract defects were corrected in commits `80f72b680b5f9b5e9bb15c1cf739cdd7d39cccd1` and `7becea4463b9276cbcdd49ad83f12a65d82806b7`. See [M5 G9.42 Validation Failure Review — run 44902653878](AE-32C-M5-G9.42-Validation-Failure-44902653878.md) for the failure traces and technical rationale.
 
 **Disposition:** corrections are committed but not yet validated. M5 remains `implemented_unvalidated`; production approval remains false. The next G9.42 run must test the latest Stage1 head. M5 acceptance still additionally requires the dedicated real graph-tool E.8.5/E.8.8 workflow to pass on the same exact source SHA.
+
+
+## 9. Exact-commit validation — G9.42 and dedicated native workflow
+
+Both acceptance workflows tested Stage1 source SHA `9adc99b9511d0281b18be76d60865dcf13bb16b0`.
+
+### 9.1 G9.42 regression and evidence
+
+Run [44904263386](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44904263386) passed:
+- validation engine: 53 passed;
+- targeted suite: 684 passed, 5 skipped, 0 failures/errors;
+- regression suite: 3,615 passed, 13 skipped, 0 failures/errors;
+- evidence integrity passed;
+- immutable evidence bundle published and verified;
+- provenance catalog built and verified.
+
+### 9.2 Real graph-tool environment and conformance
+
+Run [44905580330](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44905580330) installed `graph-tool-base 3.9` from conda-forge under CPython 3.11.18. The real graph-tool adapter/API tests reported **4 passed, 20 deselected**.
+
+Synthetic E.8.5 report:
+- `status=passed`;
+- 34 native adjacency lookups;
+- 96 native edge occurrences read;
+- all seven fixture conformance cases passed;
+- projection round-trip exact, including three parallel occurrences and one self-loop.
+
+Repository-backed E.8.8 report:
+- `status=passed`;
+- 45 native adjacency lookups and 86 native edge occurrences read;
+- zero query/parity failures;
+- `trace_execution_context`, `find_workflow_context` and nested workflow-context execution reported `graph_tool_vertex_edge_iterators`;
+- positive native lookup/occurrence-read telemetry and source follow-through verified.
+
+The overall workflow was marked failed solely because the separate SNAP Python 3.9 setup step requested CPython 3.9.19 on Ubuntu 26.04. SNAP installation and smoke steps were skipped. This does not invalidate the graph-tool reports or the matching G9.42 evidence.
+
+**M5 acceptance:** satisfied for the tested graph-tool-base 3.9 / CPython 3.11.18 environment and repository context path. No performance superiority is inferred. The runtime registry remains unapproved for production.
+
+## 10. SNAP compatibility workflow correction
+
+The SNAP failure review is recorded in [AE-32C E.8.5/E.8.8 Run 44905580330 — Failure Review and Corrective Action](AE-32C-E85-Validation-Failure-44905580330.md).
+
+The isolated SNAP job is now pinned to `ubuntu-24.04`, requests the CPython `3.9` minor line, and installs only the pinned `snap-stanford==6.0.0` binary wheel from `.github/environments/e85-snap-python39-requirements.txt`. It records setup/install/smoke outcomes for diagnostic artifacts. This change corrects runner provisioning; it does not assert that the smoke has passed. SNAP adapter implementation and repository acceptance remain future work.
