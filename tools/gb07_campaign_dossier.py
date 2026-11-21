@@ -96,7 +96,8 @@ def verify_campaign(artifact_dir,manifest,run_id,attempt,source_revision):
         require(cfg.get("workload_ids")==list(m72.WORKLOADS),"workload_coverage_incomplete:"+backend)
         require(cfg.get("case_count")==len(m72.WORKLOADS)*len(cfg.get("seeds",[])),"case_matrix_incomplete:"+backend)
         reports[backend]=report
-        records.append({"backend":backend,"artifact_id":item["id"],"artifact_name":item["name"],"artifact_sha256":item["digest"][7:],"report_sha256":report["report_sha256"],"report_file_sha256":file_sha(rp),"verify_log_sha256":file_sha(vp),"run_log_sha256":file_sha(lp)})
+        backend_env=report["cases"][0]["environment"]
+        records.append({"backend":backend,"artifact_id":item["id"],"artifact_name":item["name"],"artifact_sha256":item["digest"][7:],"report_sha256":report["report_sha256"],"report_file_sha256":file_sha(rp),"verify_log_sha256":file_sha(vp),"run_log_sha256":file_sha(lp),"backend_library":backend_env.get("backend_library"),"backend_library_version":backend_env.get("backend_library_version"),"projection_type":backend_env.get("projection_type"),"worker":backend_env.get("worker")})
     base=reports[BACKENDS[0]]
     cfg=base["configuration"]
     maps={}
