@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "182d0009f1c759c46813e3a1cbbf34d22c247acb",
-  "compare_sha": "342c9d55b1dc49ccf93759d0dce203723485ef17",
+  "base_sha": "64fa7e662ffa5359fe4430b9273aa4a1bf6691f5",
+  "compare_sha": "ab942db734ea4e51492ff1c0c3e1a219ee821056",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 311,
-  "compare_only_commit_count": 1168,
+  "base_only_commit_count": 313,
+  "compare_only_commit_count": 1173,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -230,6 +230,10 @@
     {
       "status": "A",
       "path": ".github/workflows/m7_1_manual_native_backend_smoke.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/m7_2_manual_task_suitability_campaign.yml"
     },
     {
       "status": "A",
@@ -6179,6 +6183,10 @@
     },
     {
       "status": "A",
+      "path": "tests/semantic_graph/test_m72_task_suitability_campaign.py"
+    },
+    {
+      "status": "A",
       "path": "tests/semantic_graph/test_m7_native_backend_performance_benchmark.py"
     },
     {
@@ -6975,6 +6983,10 @@
     },
     {
       "status": "A",
+      "path": "tools/gb06_task_suitability_campaign.py"
+    },
+    {
+      "status": "A",
       "path": "tools/publish_validation_evidence_bundle.py"
     },
     {
@@ -7439,6 +7451,41 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "64fa7e662ffa5359fe4430b9273aa4a1bf6691f5",
+      "subject": "Add manual M7.2 task-suitability campaign workflow"
+    },
+    {
+      "side": ">",
+      "sha": "ab942db734ea4e51492ff1c0c3e1a219ee821056",
+      "subject": "Record M7.1 closure and M7.2 task-suitability implementation"
+    },
+    {
+      "side": ">",
+      "sha": "0265f0548ee742f0533287978ec9b29889fec614",
+      "subject": "Reframe M7 around task suitability and operational characterization"
+    },
+    {
+      "side": ">",
+      "sha": "ffeb99b9dac2646f5da232510ab5553d6647db0a",
+      "subject": "Include M7.2 task-suitability tests in G9.42"
+    },
+    {
+      "side": ">",
+      "sha": "d205f0b881312edf1b930d07cca66df152f22ac6",
+      "subject": "Test M7.2 task-suitability campaign and report integrity"
+    },
+    {
+      "side": ">",
+      "sha": "6d579da8e613274b41123eed64405859b07235a5",
+      "subject": "Add M7.2 task-suitability campaign scaffold"
+    },
+    {
+      "side": "<",
+      "sha": "6d959e101e21a1b4f600faa657e09f001a88d906",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "182d0009f1c759c46813e3a1cbbf34d22c247acb",
