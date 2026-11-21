@@ -1,0 +1,254 @@
+name: AE-32C M7.2 Task-Suitability Workload Campaign
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "Stage1 branch or full commit SHA"
+        required: true
+        type: string
+        default: "stage1/section-uuids"
+      seeds:
+        description: "2–5 distinct ascending integer seeds, comma-separated"
+        required: true
+        type: string
+        default: "20261101,20261102"
+      repeats:
+        description: "Timed repetitions per query"
+        required: true
+        type: choice
+        options: ["3", "5", "7", "10", "15"]
+        default: "3"
+      warmup:
+        description: "Warm-up calls per query"
+        required: true
+        type: choice
+        options: ["0", "1", "2", "3", "5"]
+        default: "1"
+      workloads:
+        description: "Comma-separated workload IDs"
+        required: true
+        type: string
+        default: "sparse_dependency,hub_impact,parallel_evidence,disconnected_components,dense_local_neighborhood"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7-2-task-suitability
+  cancel-in-progress: false
+
+jobs:
+  lint:
+    name: Lint M7.2 workflow definition
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache: false
+      - run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+      - name: Validate workflow
+        run: |
+          "$(go env GOPATH)/bin/actionlint" -color -verbose .github/workflows/m7_2_manual_task_suitability_campaign.yml
+
+  resolve:
+    needs: lint
+    name: Resolve immutable Stage1 source
+    runs-on: ubuntu-24.04
+    outputs:
+      source_sha: ${{ steps.resolve.outputs.source_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+          persist-credentials: false
+      - id: resolve
+        env:
+          REQUESTED_REF: ${{ inputs.source_ref }}
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
+          SEEDS: ${{ inputs.seeds }}
+          WORKLOADS: ${{ inputs.workloads }}
+        run: |
+          set -euo pipefail
+          test -n "$REQUESTED_REF"
+          test -n "$SEEDS"
+          test -n "$WORKLOADS"
+          case "$REPEATS" in 3|5|7|10|15) ;; *) exit 2 ;; esac
+          case "$WARMUP" in 0|1|2|3|5) ;; *) exit 2 ;; esac
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          {
+            echo "## M7.2 source resolution"
+            echo "- Requested ref: $REQUESTED_REF"
+            echo "- Immutable source SHA: $SOURCE_SHA"
+            echo "- Seeds: $SEEDS"
+            echo "- Repeats/warm-up: $REPEATS/$WARMUP"
+            echo "- Workloads: $WORKLOADS"
+            echo "- These are per-option task-suitability reports, not a performance contest."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  campaign:
+    name: M7.2 campaign — ${{ matrix.backend }}
+    needs: resolve
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [networkx, scipy, igraph, graph-tool, snap]
+    env:
+      AE32C_SNAP_WORKER_IMAGE: ${{ matrix.backend == 'snap' && 'ae32c-snap-worker:m72' || '' }}
+    steps:
+      - name: Checkout exact resolved source SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.source_sha }}
+          path: source
+          persist-credentials: false
+      - name: Verify source identity
+        env:
+          SOURCE_SHA: ${{ needs.resolve.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
+          echo "AE32C_SOURCE_REVISION=$SOURCE_SHA" >> "$GITHUB_ENV"
+      - name: Set up Python 3.11
+        if: ${{ matrix.backend != 'graph-tool' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Provision graph-tool environment
+        if: ${{ matrix.backend == 'graph-tool' }}
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: source/.github/environments/e85-graph-tool.yml
+          environment-name: ae32c-m7-2-graph-tool
+          cache-environment: true
+          init-shell: bash
+      - name: Install backend dependencies
+        if: ${{ matrix.backend != 'graph-tool' }}
+        env:
+          BACKEND: ${{ matrix.backend }}
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r source/requirements.txt
+          if [[ "$BACKEND" == igraph ]]; then python -m pip install 'igraph>=0.11,<2.0'; fi
+          python -m pip check
+      - name: Build isolated SNAP worker
+        if: ${{ matrix.backend == 'snap' }}
+        run: |
+          set -euo pipefail
+          docker build --pull --file source/.github/snap-worker/Dockerfile --tag "$AE32C_SNAP_WORKER_IMAGE" source
+          docker image inspect "$AE32C_SNAP_WORKER_IMAGE" --format 'worker_image_id={{.Id}}' > worker-image.txt
+      - name: Capture pip environment
+        if: ${{ matrix.backend != 'graph-tool' }}
+        env:
+          BACKEND: ${{ matrix.backend }}
+          SEEDS: ${{ inputs.seeds }}
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
+          WORKLOADS: ${{ inputs.workloads }}
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          {
+            echo "source_sha=$AE32C_SOURCE_REVISION"
+            echo "backend=$BACKEND"
+            echo "seeds=$SEEDS"
+            echo "repeats=$REPEATS"
+            echo "warmup=$WARMUP"
+            echo "workloads=$WORKLOADS"
+            echo "python=$(python --version 2>&1)"
+            echo "uname=$(uname -a)"
+            echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2- | xargs || true)"
+            if [[ -f worker-image.txt ]]; then cat worker-image.txt; fi
+          } > reports/runner-environment.txt
+          python -m pip freeze > reports/pip-freeze.txt
+      - name: Capture graph-tool environment
+        if: ${{ matrix.backend == 'graph-tool' }}
+        shell: micromamba-shell {0}
+        env:
+          SEEDS: ${{ inputs.seeds }}
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
+          WORKLOADS: ${{ inputs.workloads }}
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          {
+            echo "source_sha=$AE32C_SOURCE_REVISION"
+            echo "backend=graph-tool"
+            echo "seeds=$SEEDS"
+            echo "repeats=$REPEATS"
+            echo "warmup=$WARMUP"
+            echo "workloads=$WORKLOADS"
+            echo "python=$(python --version 2>&1)"
+            echo "uname=$(uname -a)"
+            echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2- | xargs || true)"
+          } > reports/runner-environment.txt
+          conda list --explicit > reports/conda-explicit.txt
+      - name: Run and verify pip backend campaign
+        if: ${{ matrix.backend != 'graph-tool' }}
+        env:
+          PYTHONPATH: source
+          BACKEND: ${{ matrix.backend }}
+          SEEDS: ${{ inputs.seeds }}
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
+          WORKLOADS: ${{ inputs.workloads }}
+        run: |
+          set -euo pipefail
+          python source/tools/gb06_task_suitability_campaign.py run --backend "$BACKEND" --seeds "$SEEDS" --repeats "$REPEATS" --warmup "$WARMUP" --workloads "$WORKLOADS" --report "reports/m7-2-$BACKEND.json" 2>&1 | tee "reports/m7-2-$BACKEND-run.log"
+          python -c 'import json, os; p=json.load(open("reports/m7-2-"+os.environ["BACKEND"]+".json", encoding="utf-8")); c=p["configuration"]; assert c["seeds"] == [int(x) for x in os.environ["SEEDS"].split(",")]; assert c["repeats"] == int(os.environ["REPEATS"]); assert c["warmup"] == int(os.environ["WARMUP"]); assert c["workload_ids"] == os.environ["WORKLOADS"].split(",")'
+          python source/tools/gb06_task_suitability_campaign.py verify --report "reports/m7-2-$BACKEND.json" 2>&1 | tee "reports/m7-2-$BACKEND-verify.log"
+      - name: Run and verify graph-tool campaign
+        if: ${{ matrix.backend == 'graph-tool' }}
+        shell: micromamba-shell {0}
+        env:
+          PYTHONPATH: source
+          SEEDS: ${{ inputs.seeds }}
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
+          WORKLOADS: ${{ inputs.workloads }}
+        run: |
+          set -euo pipefail
+          python source/tools/gb06_task_suitability_campaign.py run --backend graph-tool --seeds "$SEEDS" --repeats "$REPEATS" --warmup "$WARMUP" --workloads "$WORKLOADS" --report reports/m7-2-graph-tool.json 2>&1 | tee reports/m7-2-graph-tool-run.log
+          python source/tools/gb06_task_suitability_campaign.py verify --report reports/m7-2-graph-tool.json 2>&1 | tee reports/m7-2-graph-tool-verify.log
+      - name: Upload task-suitability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m7-2-task-suitability-${{ matrix.backend }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            reports/
+            worker-image.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+  summary:
+    name: Five-option M7.2 campaign summary
+    if: always()
+    needs: [resolve, campaign]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Enforce five per-option campaign jobs
+        env:
+          RESOLVE_RESULT: ${{ needs.resolve.result }}
+          CAMPAIGN_RESULT: ${{ needs.campaign.result }}
+          SOURCE_SHA: ${{ needs.resolve.outputs.source_sha }}
+        run: |
+          {
+            echo "## M7.2 task-suitability outcome"
+            echo "- Immutable source SHA: $SOURCE_SHA"
+            echo "- Five-option campaign matrix: $CAMPAIGN_RESULT"
+            echo "- Each backend has its own workload/seed report and environment provenance."
+            echo "- No cross-environment ranking, winner, automatic selection or production approval is established."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$RESOLVE_RESULT" != success || "$CAMPAIGN_RESULT" != success ]]; then exit 1; fi
