@@ -53,8 +53,9 @@ def create_default_registry():
     })
     for name, klass in (("igraph", "IGraphAdapter"),
                         ("graph-tool", "GraphToolAdapter"), ("snap", "SNAPAdapter")):
+        adjacency_state = "implemented_unvalidated" if name == "igraph" else "not_implemented"
         registry.register(name, klass, {
-            "acceptance_state": _acceptance_state(name, "not_implemented"),
+            "acceptance_state": _acceptance_state(name, adjacency_state),
             "lossless": True, "metadata": True, "multiedges": True,
             "directed": True, "semantic_traversal": True,
             "available": backend_available(name),
