@@ -191,7 +191,9 @@ class _FakeGraphTool:
             len(self._edges), self.vertex(source_index), self.vertex(target_index),
         )
         self._edges.append(edge)
-        self.edge_index[edge] = edge.index
+        # Deliberately sparse native indices exercise the adapter's explicit
+        # edge-index map rather than accidental list-position assumptions.
+        self.edge_index[edge] = edge.index * 2 + 11
         return edge
 
 
@@ -398,6 +400,7 @@ def test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_
     graph = graph_fixture()
     engine = NativeAdapterGraphTraversalEngine(graph, "graph-tool")
     adapter = engine.adapter
+    assert sorted(adapter._native_edge_id_to_occurrence) == [11, 13, 15, 17, 19]
     assert engine.runtime_report()["backend_execution"]["native_projection_reads"] == 9
 
     def forbidden_full_nodes():
