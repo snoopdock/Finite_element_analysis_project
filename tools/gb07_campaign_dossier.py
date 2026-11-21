@@ -69,12 +69,13 @@ def verify_campaign(artifact_dir,manifest,run_id,attempt,source_revision):
     artifacts=index_artifacts(manifest,run_id,attempt)
     reports={}
     records=[]
+    report_root = artifact_dir/"reports" if (artifact_dir/"reports").is_dir() else artifact_dir
     for backend in BACKENDS:
         item=artifacts[backend]
-        rp=artifact_dir/f"m7-2-{backend}.json"
-        lp=artifact_dir/f"m7-2-{backend}-run.log"
-        vp=artifact_dir/f"m7-2-{backend}-verify.log"
-        ep=artifact_dir/"runner-environment.txt"
+        rp=report_root/f"m7-2-{backend}.json"
+        lp=report_root/f"m7-2-{backend}-run.log"
+        vp=report_root/f"m7-2-{backend}-verify.log"
+        ep=report_root/"runner-environment.txt"
         for p in (rp,lp,vp,ep): require(p.is_file(),"artifact_file_missing:"+backend+":"+p.name)
         report=read_json(rp)
         require(set(report)==KEYS,"report_schema_keys_invalid:"+backend)
