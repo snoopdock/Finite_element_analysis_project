@@ -177,3 +177,17 @@ def test_capability_declaration_never_implies_acceptance(graph):
     capabilities = adapter.capabilities()
     assert capabilities["acceptance_status"] == "not_established_by_capability_declaration"
     assert capabilities["native_adjacency_directions"] == ["outgoing", "incoming", "both"]
+
+def test_registry_separates_discovery_from_conformance_and_approval():
+    from audit_engine.semantic_audit.graph.backend.capability_registry import create_default_registry
+
+    capabilities = create_default_registry().describe()
+    networkx_state = capabilities["networkx"]["acceptance_state"]
+    assert networkx_state["implementation"] == "present"
+    assert networkx_state["native_adjacency_implementation"] == "implemented_unvalidated"
+    assert networkx_state["native_adjacency_conformance"] == "not_run"
+    assert networkx_state["production_approval"] is False
+    for backend in ("scipy", "igraph", "graph-tool", "snap"):
+        state = capabilities[backend]["acceptance_state"]
+        assert state["native_adjacency_implementation"] == "not_implemented"
+        assert state["production_approval"] is False
