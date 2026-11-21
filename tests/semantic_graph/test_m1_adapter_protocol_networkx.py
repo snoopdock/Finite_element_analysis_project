@@ -1,0 +1,105 @@
+"""M1 protocol and independent NetworkX native-adjacency contract tests."""
+from __future__ import annotations
+
+import pytest
+
+from audit_engine.semantic_audit.core.semantic_graph import SemanticEdge, SemanticGraph, SemanticNode
+from audit_engine.semantic_audit.graph.analysis.models import TraversalDirection
+from audit_engine.semantic_audit.graph.analysis.traversal import GraphTraversalEngine
+from audit_engine.semantic_audit.graph.backend.adapter_interface import (
+    NativeAdjacencyNotSupportedError, NativeEdgeOccurrence, NativeNodeRecord, SemanticGraphAdapter,
+)
+from audit_engine.semantic_audit.graph.backend.networkx_adapter import NetworkXAdapter
+from audit_engine.semantic_audit.graph.backend.networkx_traversal import NetworkXGraphTraversalEngine
+
+
+@pytest.fixture
+def graph():
+    value = SemanticGraph()
+    for node_id in ("A", "B", "C", "isolated"):
+        value.add_node(SemanticNode(node_id, "Module", {"node": node_id}, {"fixture": "M1"}))
+    value.add_edge(SemanticEdge("A", "B", "CALLS", {"ordinal": 1}, {"line": 10}))
+    value.add_edge(SemanticEdge("A", "B", "CALLS", {"ordinal": 2}, {"line": 11}))
+    value.add_edge(SemanticEdge("B", "A", "IMPORTS", {"ordinal": 3}, {"line": 12}))
+    value.add_edge(SemanticEdge("B", "B", "SELF", {"ordinal": 4}, {"line": 13}))
+    value.add_edge(SemanticEdge("B", "C", "CALLS", {"ordinal": 5}, {"line": 14}))
+    return value
+
+
+def test_contract_records_are_typed_and_occurrences_are_unique(graph):
+    adapter = NetworkXAdapter(graph)
+    nodes = list(adapter.iter_native_nodes())
+    edges = list(adapter.iter_native_edge_occurrences())
+    assert all(isinstance(item, NativeNodeRecord) for item in nodes)
+    assert all(isinstance(item, NativeEdgeOccurrence) for item in edges)
+    assert [item.occurrence_id for item in edges] == list(range(5))
+    assert len({item.occurrence_id for item in edges}) == 5
+    assert len([item for item in edges if item.source_id == "A" and item.target_id == "B"]) == 2
+
+
+@pytest.mark.parametrize(
+    ("direction", "expected"),
+    [
+        (TraversalDirection.OUTGOING, [0, 1, 3, 4]),
+        (TraversalDirection.INCOMING, [2, 3]),
+        (TraversalDirection.BOTH, [0, 1, 2, 3, 4]),
+    ],
+)
+def test_native_local_adjacency_preserves_occurrences_and_self_loop_once(graph, direction, expected):
+    adapter = NetworkXAdapter(graph)
+    actual = list(adapter.iter_adjacent_edge_occurrences("B", direction))
+    assert sorted(item.occurrence_id for item in actual) == expected
+    assert len(actual) == len(set(item.occurrence_id for item in actual))
+
+
+def test_unknown_and_isolated_node_semantics(graph):
+    adapter = NetworkXAdapter(graph)
+    assert list(adapter.iter_adjacent_edge_occurrences("isolated", TraversalDirection.BOTH)) == []
+    with pytest.raises(KeyError):
+        list(adapter.iter_adjacent_edge_occurrences("missing", TraversalDirection.OUTGOING))
+
+
+def test_native_records_do_not_leak_mutable_projection_payloads(graph):
+    adapter = NetworkXAdapter(graph)
+    record = next(adapter.iter_native_edge_occurrences())
+    record.attributes["ordinal"] = 999
+    assert next(adapter.iter_native_edge_occurrences()).attributes["ordinal"] == 1
+    assert graph.edges[0].attributes["ordinal"] == 1
+
+
+def test_reference_both_direction_counts_self_loop_once(graph):
+    result = GraphTraversalEngine(graph).walk("B", direction=TraversalDirection.BOTH, max_depth=1)
+    loops = [s for s in result.steps if s.source_id == "B" and s.target_id == "B"]
+    assert len(loops) == 1
+    assert result.examined_edges == 5
+
+
+def test_networkx_both_direction_counts_self_loop_once(graph):
+    engine = NetworkXGraphTraversalEngine(graph, verify_parity=True)
+    result = engine.walk("B", direction=TraversalDirection.BOTH, max_depth=1)
+    loops = [s for s in result.steps if s.source_id == "B" and s.target_id == "B"]
+    assert len(loops) == 1
+    assert result.examined_edges == 5
+
+
+def test_runtime_report_does_not_enumerate_native_projection(graph, monkeypatch):
+    engine = NetworkXGraphTraversalEngine(graph)
+    def forbidden(*args, **kwargs):
+        raise AssertionError("runtime_report must not enumerate native edges")
+    monkeypatch.setattr(engine.native_graph, "edges", forbidden)
+    report = engine.runtime_report()
+    assert report["projection_edge_occurrence_count"] == 5
+
+
+def test_legacy_adapter_fails_explicitly_instead_of_scanning_projection():
+    class LegacyAdapter(SemanticGraphAdapter):
+        def export(self):
+            return object()
+        def capabilities(self):
+            return {}
+        def identity_mapping(self):
+            return {}
+        def loss_report(self):
+            return {}
+    with pytest.raises(NativeAdjacencyNotSupportedError):
+        list(LegacyAdapter().iter_adjacent_edge_occurrences("n", TraversalDirection.OUTGOING))

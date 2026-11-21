@@ -151,8 +151,16 @@ class GraphTraversalEngine:
             candidates.extend((edge, edge.target_id) for edge in outgoing.get(node_id, [])
                               if relation_types is None or edge.relation_type in relation_types)
         if direction in (TraversalDirection.INCOMING, TraversalDirection.BOTH):
-            candidates.extend((edge, edge.source_id) for edge in incoming.get(node_id, [])
-                              if relation_types is None or edge.relation_type in relation_types)
+            candidates.extend(
+                (edge, edge.source_id)
+                for edge in incoming.get(node_id, [])
+                if not (
+                    direction is TraversalDirection.BOTH
+                    and edge.source_id == node_id
+                    and edge.target_id == node_id
+                )
+                and (relation_types is None or edge.relation_type in relation_types)
+            )
         candidates.sort(
             key=lambda item: (
                 item[1], item[0].relation_type, item[0].source_id,

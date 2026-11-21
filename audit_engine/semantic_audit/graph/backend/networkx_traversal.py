@@ -128,6 +128,8 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             "total_visited_nodes": 0,
             "native_adjacency_lookups": 0,
             "native_edge_occurrences_read": 0,
+            "native_edge_occurrences_returned": 0,
+            "native_edge_occurrences_validated": 0,
             "projection_validation_nodes": 0,
             "projection_validation_edge_occurrences": 0,
             "context_operation_telemetry": {},
@@ -259,14 +261,22 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             for neighbor, keyed_edges in self.native_graph.succ[node_id].items():
                 for data in keyed_edges.values():
                     self._metrics["native_edge_occurrences_read"] += 1
+                    self._metrics["native_edge_occurrences_returned"] += 1
                     edge = self._validated_native_edge(node_id, neighbor, data)
+                    self._metrics["native_edge_occurrences_validated"] += 1
                     if relation_types is None or edge.relation_type in relation_types:
                         candidates.append((edge, neighbor))
         if direction in (TraversalDirection.INCOMING, TraversalDirection.BOTH):
             for neighbor, keyed_edges in self.native_graph.pred[node_id].items():
                 for data in keyed_edges.values():
+                    # A BOTH expansion is a set of incident occurrences:
+                    # a self-loop is already included by the outgoing index.
+                    if direction is TraversalDirection.BOTH and neighbor == node_id:
+                        continue
                     self._metrics["native_edge_occurrences_read"] += 1
+                    self._metrics["native_edge_occurrences_returned"] += 1
                     edge = self._validated_native_edge(neighbor, node_id, data)
+                    self._metrics["native_edge_occurrences_validated"] += 1
                     if relation_types is None or edge.relation_type in relation_types:
                         candidates.append((edge, neighbor))
 
@@ -369,6 +379,9 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
                 self._metrics["parity_verified_queries"] += 1
             self._metrics["queries_succeeded"] += 1
             self._metrics["total_examined_edges"] += result.examined_edges
+            self._metrics["total_examined_edge_occurrences"] = (
+                self._metrics.get("total_examined_edge_occurrences", 0) + result.examined_edges
+            )
             self._metrics["total_visited_nodes"] += len(result.visited_nodes) + 1
             self._last_query_native_metrics = {
                 key: self._metrics[key] - native_before[key] for key in native_before
