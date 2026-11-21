@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "9e7dcd0a377cce723311e30614a0de2a1ec04628",
-  "compare_sha": "bb325a89466ecfca875c50284cd186c0e417f96b",
+  "base_sha": "bd5260926d468876dc58182e2c310237ffe9e5c9",
+  "compare_sha": "b4442f9ffbef00a2ceb8af915faddbbc1dbeca79",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 319,
-  "compare_only_commit_count": 1188,
+  "base_only_commit_count": 321,
+  "compare_only_commit_count": 1197,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -7463,6 +7463,61 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": ">",
+      "sha": "b4442f9ffbef00a2ceb8af915faddbbc1dbeca79",
+      "subject": "Refresh M7.3 verifier and controller revision references"
+    },
+    {
+      "side": ">",
+      "sha": "7baaea2add9046c2f605d8d8d8e7679db9fd1a7a",
+      "subject": "Refresh M7.3 verifier and controller revision references"
+    },
+    {
+      "side": "<",
+      "sha": "bd5260926d468876dc58182e2c310237ffe9e5c9",
+      "subject": "Keep M7.3 verifier environment limited to required project dependencies"
+    },
+    {
+      "side": ">",
+      "sha": "3aee9dcadd46348a80bb5a7433276e8ce655a122",
+      "subject": "Expose backend library versions in the M7.3 Markdown dossier"
+    },
+    {
+      "side": ">",
+      "sha": "46badf1cb2ef3bdd13f7c823f65a97697aa32942",
+      "subject": "Record exact M7.3 source and controller revisions in roadmap"
+    },
+    {
+      "side": ">",
+      "sha": "4ded7d0e76b7feba7fd0895d607e022cf98827a9",
+      "subject": "Record exact M7.3 verifier and workflow controller revisions"
+    },
+    {
+      "side": ">",
+      "sha": "3c1f06578e229b67d1eb8d3af199f0320bdfb1e6",
+      "subject": "Include backend package and projection provenance in M7.3 dossier"
+    },
+    {
+      "side": "<",
+      "sha": "87d78800fcc05037e433b2b03f57a30e19bf8946",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": ">",
+      "sha": "17240938d3690e3a671aef593bcdc7e196e1c917",
+      "subject": "Clarify M7.3 detached artifact digest verification boundary"
+    },
+    {
+      "side": ">",
+      "sha": "88e39868294d596339a54779e55ddc55fa2167de",
+      "subject": "Fix newline in detached campaign log fixture"
+    },
+    {
+      "side": ">",
+      "sha": "5f5ec2f236553e2c8ad4cdef728cd91619a1feb3",
+      "subject": "Require matching campaign-run log evidence in M7.3 tests"
+    },
     {
       "side": ">",
       "sha": "bb325a89466ecfca875c50284cd186c0e417f96b",
