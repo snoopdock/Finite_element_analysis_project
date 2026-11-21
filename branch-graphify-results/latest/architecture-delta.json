@@ -2,8 +2,8 @@
   "identity_note": "Node keys use the first available id/node_id/key/name/label field. Edge keys use source/target/relation-like fields. These are structural comparison keys, not proof of semantic equivalence.",
   "base": {
     "branch": "main",
-    "node_count": 4930,
-    "edge_count": 7691
+    "node_count": 4956,
+    "edge_count": 7716
   },
   "compare": {
     "branch": "stage1-section-uuids",
@@ -12,7 +12,7 @@
   },
   "nodes": {
     "common_count": 2438,
-    "base_only_count": 2492,
+    "base_only_count": 2518,
     "compare_only_count": 15350,
     "base_only": [
       "abc",
@@ -1322,6 +1322,32 @@
       "github_workflows_branch_graphify_analysis_with_fetch_depth",
       "github_workflows_branch_graphify_analysis_with_python_version",
       "github_workflows_branch_graphify_analysis_with_ref",
+      "github_workflows_e85_workflow_definition_check",
+      "github_workflows_e85_workflow_definition_check_actionlint_name",
+      "github_workflows_e85_workflow_definition_check_actionlint_runs_on",
+      "github_workflows_e85_workflow_definition_check_actionlint_steps",
+      "github_workflows_e85_workflow_definition_check_actionlint_timeout_minutes",
+      "github_workflows_e85_workflow_definition_check_concurrency",
+      "github_workflows_e85_workflow_definition_check_concurrency_cancel_in_progress",
+      "github_workflows_e85_workflow_definition_check_concurrency_group",
+      "github_workflows_e85_workflow_definition_check_jobs",
+      "github_workflows_e85_workflow_definition_check_jobs_actionlint",
+      "github_workflows_e85_workflow_definition_check_name",
+      "github_workflows_e85_workflow_definition_check_on",
+      "github_workflows_e85_workflow_definition_check_on_push",
+      "github_workflows_e85_workflow_definition_check_on_workflow_dispatch",
+      "github_workflows_e85_workflow_definition_check_permissions",
+      "github_workflows_e85_workflow_definition_check_permissions_contents",
+      "github_workflows_e85_workflow_definition_check_push_branches",
+      "github_workflows_e85_workflow_definition_check_push_paths",
+      "github_workflows_e85_workflow_definition_check_steps_name",
+      "github_workflows_e85_workflow_definition_check_steps_run",
+      "github_workflows_e85_workflow_definition_check_steps_uses",
+      "github_workflows_e85_workflow_definition_check_steps_with",
+      "github_workflows_e85_workflow_definition_check_with_cache",
+      "github_workflows_e85_workflow_definition_check_with_go_version",
+      "github_workflows_e85_workflow_definition_check_with_persist_credentials",
+      "github_workflows_e85_workflow_definition_check_with_ref",
       "github_workflows_g4_manual_rdf_export",
       "github_workflows_g4_manual_rdf_export_branch_default",
       "github_workflows_g4_manual_rdf_export_branch_description",
@@ -17863,7 +17889,7 @@
   },
   "edges": {
     "common_count": 4707,
-    "base_only_count": 2984,
+    "base_only_count": 3009,
     "compare_only_count": 40757,
     "base_only": [
       [
@@ -24799,6 +24825,131 @@
       [
         "github_workflows_branch_graphify_analysis_steps_with",
         "github_workflows_branch_graphify_analysis_with_ref",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check",
+        "github_workflows_e85_workflow_definition_check_concurrency",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check",
+        "github_workflows_e85_workflow_definition_check_jobs",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check",
+        "github_workflows_e85_workflow_definition_check_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check",
+        "github_workflows_e85_workflow_definition_check_on",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check",
+        "github_workflows_e85_workflow_definition_check_permissions",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_actionlint_steps",
+        "github_workflows_e85_workflow_definition_check_steps_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_actionlint_steps",
+        "github_workflows_e85_workflow_definition_check_steps_run",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_actionlint_steps",
+        "github_workflows_e85_workflow_definition_check_steps_uses",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_actionlint_steps",
+        "github_workflows_e85_workflow_definition_check_steps_with",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_concurrency",
+        "github_workflows_e85_workflow_definition_check_concurrency_cancel_in_progress",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_concurrency",
+        "github_workflows_e85_workflow_definition_check_concurrency_group",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_jobs",
+        "github_workflows_e85_workflow_definition_check_jobs_actionlint",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_jobs_actionlint",
+        "github_workflows_e85_workflow_definition_check_actionlint_name",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_jobs_actionlint",
+        "github_workflows_e85_workflow_definition_check_actionlint_runs_on",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_jobs_actionlint",
+        "github_workflows_e85_workflow_definition_check_actionlint_steps",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_jobs_actionlint",
+        "github_workflows_e85_workflow_definition_check_actionlint_timeout_minutes",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_on",
+        "github_workflows_e85_workflow_definition_check_on_push",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_on",
+        "github_workflows_e85_workflow_definition_check_on_workflow_dispatch",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_on_push",
+        "github_workflows_e85_workflow_definition_check_push_branches",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_on_push",
+        "github_workflows_e85_workflow_definition_check_push_paths",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_permissions",
+        "github_workflows_e85_workflow_definition_check_permissions_contents",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_steps_with",
+        "github_workflows_e85_workflow_definition_check_with_cache",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_steps_with",
+        "github_workflows_e85_workflow_definition_check_with_go_version",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_steps_with",
+        "github_workflows_e85_workflow_definition_check_with_persist_credentials",
+        "contains"
+      ],
+      [
+        "github_workflows_e85_workflow_definition_check_steps_with",
+        "github_workflows_e85_workflow_definition_check_with_ref",
         "contains"
       ],
       [

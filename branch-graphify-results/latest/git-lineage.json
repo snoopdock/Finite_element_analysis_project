@@ -1,10 +1,10 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "90e7faa6c29098bdd82a2e6495bbe912f9fdfa84",
+  "base_sha": "75bf9cc4aa608fcbb8854363906d57f8b28dc2f7",
   "compare_sha": "c02eaaae23187a05152aca94b1c529b12df9b34f",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 271,
+  "base_only_commit_count": 273,
   "compare_only_commit_count": 1100,
   "base_changes_since_merge_base": [
     {
@@ -166,6 +166,10 @@
     {
       "status": "A",
       "path": ".github/workflows/e85-native-graph-backend-conformance.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/e85-workflow-definition-check.yml"
     },
     {
       "status": "A",
@@ -7399,6 +7403,16 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "75bf9cc4aa608fcbb8854363906d57f8b28dc2f7",
+      "subject": "Add isolated actionlint check for E85 workflow definition"
+    },
+    {
+      "side": "<",
+      "sha": "f8b6c467cffec68f57e368e5c9693a480c9427e6",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "90e7faa6c29098bdd82a2e6495bbe912f9fdfa84",
