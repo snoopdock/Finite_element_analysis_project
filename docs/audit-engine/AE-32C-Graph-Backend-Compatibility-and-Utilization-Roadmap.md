@@ -1,0 +1,403 @@
+# AE-32C — Graph Backend Compatibility and Utilization Roadmap
+
+**Status:** Baseline roadmap; M0 architecture inventory started  
+**Target branch:** `stage1/section-uuids` only  
+**Baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
+**Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
+**Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
+
+---
+
+## 1. Executive position
+
+The project has progressed beyond placeholder adapters. It has a canonical `SemanticGraph`, projection code for five computational backends, a deterministic Python reference traversal, a NetworkX-native query path, a native conformance fixture, and a repository-backed conformance runner.
+
+However, the existence of an adapter, the ability to construct a native graph, and an exact result match on a small fixture do **not** establish that the library is being used in the intended way or that its adapter is robust in the repository's real execution path.
+
+The principal current distinction is:
+
+- **NetworkX:** the strongest integration. The E.8.8.1 record describes complete projection validation followed by node-local access through `MultiDiGraph.succ` and `pred`, while AE-32 retains deterministic BFS ordering, evidence construction and parity checking.
+- **SciPy, igraph, graph-tool and SNAP:** projection/readback support exists, but the shared non-NetworkX traversal path currently enumerates the complete native node and edge sets and reconstructs Python adjacency dictionaries. That is not yet the intended per-query, native-adjacency execution model.
+- **Graph-tool routing:** not every graph-derived evidence tool uses the selected backend. E.8.8.1 explicitly records that `trace_execution_context` and `find_workflow_context` still perform bounded walks over the canonical graph.
+- **Acceptance state:** package discoverability and a hard-coded `semantic_traversal` capability are weaker than a proven, version-compatible, behaviorally conformant native adapter. These states must be separated.
+
+The next step is therefore not to add more adapters or to start a live LLM experiment. It is to make the adapter contract, its structural invariants, its observable behavior and its acceptance evidence precise. We will then qualify each backend individually.
+
+## 2. Where the architecture stands
+
+### 2.1 Authority and data flow
+
+The canonical semantic graph remains the source of truth. A backend is a computational projection, not an authority over semantic identities, evidence, provenance or repository files.
+
+The intended boundary is:
+
+```text
+Repository snapshot
+    -> deterministic evidence/source index
+    -> canonical SemanticGraph
+    -> selected backend projection
+    -> bounded graph query
+    -> canonical semantic edge occurrences and evidence
+    -> validated source-file follow-through
+    -> investigator / LLM interpretation
+```
+
+A backend may provide native adjacency and computation. AE-32 retains query validation, deterministic ordering, bounds, provenance/evidence interpretation and the reference comparison. A backend must not read arbitrary repository paths, execute repository code, make provider calls or modify repository content.
+
+### 2.2 Adapter contract gap
+
+The current abstract `SemanticGraphAdapter` requires only:
+
+- `export()`
+- `capabilities()`
+- `identity_mapping()`
+- `loss_report()`
+
+Traversal also expects `iter_native_nodes()` and `iter_native_edges()`, which are not part of the abstract interface. A class can therefore satisfy the formal base class while still failing the runtime expectations of the traversal layer.
+
+The shared `NativeAdapterMixin.neighbors()` implementation scans the stored Python projection and returns distinct neighbor IDs. It does not establish native per-node adjacency access and it does not preserve individual parallel edge occurrences as query results.
+
+**Required direction:** define one typed, backend-independent adapter contract for native projection inspection and exact per-node adjacency. The adjacency operation must return edge-occurrence records, not merely neighboring node IDs. It must express direction and preserve the canonical occurrence identity, endpoints, relation, attributes and metadata needed by the query service.
+
+The complete projection audit and the query-time adjacency operation should remain separate:
+
+1. A **projection conformance operation** may inspect the complete native graph during construction or an explicit audit.
+2. A **query adjacency operation** must inspect only the native adjacency of reached nodes and must not silently rebuild the whole graph for each query.
+
+### 2.3 Availability is not acceptance
+
+Current code uses `find_spec()` to establish package discoverability and checks a small number of symbols after import. The capability registry marks several optional backends as `semantic_traversal=True` independently of whether their real API and behavior have passed native conformance.
+
+We will separate at least these states:
+
+1. adapter implementation present;
+2. package discoverable;
+3. package importable in the declared environment;
+4. required API/version compatible;
+5. projection structurally conformant;
+6. native adjacency behavior conformant;
+7. canonical query semantics conformant;
+8. repository-backed graph/evidence behavior conformant;
+9. integrated graph-derived tools routed through the selected backend;
+10. explicitly approved for the intended runtime.
+
+Normal selection must fail closed unless the required states for that environment and task have been established. There must be no silent fallback to Python traversal while reporting the optional backend as active.
+
+## 3. Current backend position
+
+| Backend | Current implementation position | Main gap before acceptance |
+|---|---|---|
+| NetworkX | Native `MultiDiGraph`; E.8.8.1 describes per-node `succ`/`pred` access, occurrence mapping and canonical parity | Verify exact-commit structural tests, finish tool routing, verify mutation isolation and repository-level behavior |
+| SciPy | Hybrid CSR connectivity plus exact semantic edge side channels | Query-time CSR row access for outgoing and CSC column access for incoming; occurrence-level joins; structural proof that whole-graph enumeration is not used |
+| python-igraph | Directed native graph with vertex/edge attributes and semantic occurrence IDs | Use native incident-edge indexes (for example, edge-ID lists) for reached vertices; verify parallel-edge identity and direction |
+| graph-tool | Directed native graph with vertex/edge property maps | Use native vertex in/out edge iterators or indexes; prove exact occurrence identity and property-map semantics in the supported environment |
+| SNAP | TNEANet projection with JSON-encoded attributes | Treat CPython 3.9 as an isolated worker candidate, not project-runtime acceptance; implement bounded worker protocol and prove exact parallel-edge association |
+| RDFLib | Separate RDF interchange/SPARQL subsystem | Keep outside the five-backend traversal matrix unless a separate architectural decision changes the scope |
+
+SciPy's matrix representation does not itself contain all semantic edge metadata; the hybrid design must be assessed as a complete adapter, including side channels. SNAP's JSON serialization is a representation transformation and must be explicitly tested and reported. Graph-tool's object-valued property maps are in-memory structures and must not be described as portable serialized graph data.
+
+## 4. Testing policy — structural, behavioral and interaction evidence
+
+This project will not accept an adapter based only on a test that feeds it a graph and compares a returned traversal result. Input/output parity is necessary, but insufficient.
+
+The test strategy must establish **what the adapter is**, **what it does**, **how it interacts with the native library**, **which path the application actually executes**, and **what it does when assumptions fail**.
+
+### 4.1 Layer A — structural contract tests
+
+Verify the actual native representation and its invariants, not just the adapter's reported capability dictionary.
+
+Required checks include:
+
+- correct native graph class and directedness;
+- parallel-edge and self-loop representation;
+- one-to-one semantic-node identity mapping;
+- one-to-one edge-occurrence mapping, including parallel edges with identical endpoints and relation labels;
+- no missing, duplicated or silently collapsed nodes/edge occurrences;
+- complete node and edge attributes, relation labels and metadata;
+- exact side-channel/native-payload association where the library cannot natively represent the complete semantic payload;
+- matrix shape, index arrays, pointer/index consistency and multiplicity for sparse representations;
+- explicit type/serialization transformations and loss reports;
+- snapshot isolation: later mutation of the caller's canonical graph must not mutate the adapter's source snapshot, and mutation of returned mutable objects must not unexpectedly mutate canonical data;
+- adapter construction and export do not mutate the canonical graph.
+
+Tests must inspect the resulting native object and its occurrence/index maps. A method returning `lossless=True` is not proof that the projection is lossless.
+
+### 4.2 Layer B — behavioral contract tests
+
+Use independent, explicit expected outcomes in addition to differential comparison with the Python reference engine.
+
+Cover:
+
+- outgoing, incoming and bidirectional traversal;
+- multiple parallel edges, including identical relation labels;
+- self-loops, cycles, isolated nodes and disconnected components;
+- relation filters and combinations of filters;
+- depth, visited-node, result and examined-step bounds;
+- deterministic ordering and repeatability;
+- exact evidence payloads and edge occurrence identities;
+- stop reason, truncation and coverage status;
+- invalid and unknown node identifiers;
+- empty graphs, singleton graphs and high-degree nodes;
+- stale canonical snapshots and corrupted native projections;
+- exception propagation and fail-closed behavior.
+
+The reference traversal remains a valuable differential oracle, but it must not be the only oracle. If the native and reference paths share an erroneous semantic assumption, exact parity can reproduce the same defect. The test suite must assert independently specified expected results for critical cases.
+
+**Open semantic point:** bidirectional traversal around a self-loop must have a written occurrence-counting rule. The tests must assert that rule directly rather than merely copying whatever the current reference implementation happens to do.
+
+### 4.3 Layer C — native-library interaction and execution-path tests
+
+These tests establish that a backend is genuinely used when the application claims it is active.
+
+Examples:
+
+- instrument or spy on the backend's native adjacency API and prove it is called for reached nodes;
+- disable or make the full-graph edge enumerator fail after the one-time projection audit, then prove bounded queries still work;
+- prove outgoing and incoming queries use the correct native adjacency direction;
+- prove the returned records map back to exact canonical edge occurrences;
+- assert native adjacency counters, edge-occurrence read counts and reference-parity counters against independently known expected values;
+- prove query-time work is tied to reached-node adjacency rather than a repeated full-node/full-edge scan;
+- assert that no generic Python adjacency fallback is used while the runtime reports a native backend;
+- assert that explicit backend selection either uses that backend or fails; it must not silently change backends;
+- test all relevant registered graph tools, not only a single low-level traversal method.
+
+Do not overfit tests to private method names when an observable contract is available. It is appropriate, however, to instrument a concrete library API when the architectural claim is specifically that the adapter uses that API.
+
+### 4.4 Layer D — lifecycle, fault-injection and side-effect tests
+
+Exercise the adapter under failure and mutation, not only on a valid happy path.
+
+Include missing packages, import errors, incompatible versions, missing API methods, malformed native objects, failed projection construction, corrupted attributes, duplicate/missing occurrence IDs, invalid side-channel references, and failures during a query.
+
+Verify:
+
+- errors are explicit and actionable;
+- partially built state is not exposed as a usable adapter;
+- backend selection fails closed;
+- canonical graph and repository files remain unchanged;
+- provider calls and network access remain absent from deterministic conformance runners;
+- no repository code is executed by graph construction or query tests;
+- optional libraries are imported lazily where the architecture requires it.
+
+### 4.5 Layer E — repository-backed integration tests
+
+Synthetic graph fixtures are necessary but do not prove repository behavior. Each backend promoted beyond the synthetic stage must also run the controlled repository fixture and demonstrate:
+
+- complete evidence indexing;
+- required graph relationships and source paths;
+- graph query results and paths;
+- graph-to-source follow-through;
+- source hashes matching the graph evidence snapshot;
+- related-test discovery;
+- selected backend and native API counters for each routed operation;
+- no repository-code execution, provider calls, network calls or source modifications.
+
+The test must distinguish a result prefetched by the orchestrator from an operation actually requested by the investigator/LLM. These are different integration claims.
+
+### 4.6 Layer F — controlled live evaluation
+
+Only after deterministic structural, behavioral, interaction and repository-backed gates pass should we use live provider experiments.
+
+A live report must make it possible to answer:
+
+- Which backend was selected, and which native library/version was loaded?
+- Which graph-derived tools were invoked?
+- Which tool calls were selected by the model, and which were prefetched by orchestration?
+- Which native adjacency APIs were used, on which reached nodes, and for how many edge occurrences?
+- Were reference-parity checks run and passed?
+- Did graph-surfaced paths lead to complete, hash-matching source reads?
+- Were bounds, exclusions and failure policies respected?
+- Were there provider, network, filesystem or repository side effects outside the declared policy?
+
+A live LLM response that looks plausible is not an adapter conformance result. Diagnostic correctness, tool-selection quality and backend correctness must be measured as separate outcomes.
+
+## 5. Acceptance rule
+
+A backend is not accepted merely because its import succeeds, a graph object can be constructed, or one traversal result matches the reference.
+
+The minimum promotion gates are:
+
+1. **Environment gate:** declared Python/platform and dependency versions are installed and recorded.
+2. **Structure gate:** actual native graph and identity/occurrence structures satisfy the adapter contract.
+3. **Projection gate:** exact canonical-to-native-to-canonical readback, including every edge occurrence and payload.
+4. **Behavior gate:** independent expected results and reference parity pass across the adversarial query matrix.
+5. **Interaction gate:** tests prove native per-node adjacency APIs are called and whole-graph query-time readback/fallback is absent.
+6. **Lifecycle gate:** fault injection, immutability, isolation and fail-closed tests pass.
+7. **Repository gate:** graph query, evidence provenance and source follow-through pass on the controlled repository fixture.
+8. **Tool-routing gate:** every in-scope graph-derived tool either uses the selected backend or has an explicit documented exception.
+9. **CI gate:** all applicable tests pass on the exact Stage1 commit; skips are reported as skips, not passes.
+10. **Operational gate:** controlled live evidence confirms the runtime path and usage telemetry without conflating model behavior with deterministic correctness.
+11. **Approval gate:** only then may the backend be promoted for the specified runtime and task.
+
+Performance is measured only after correctness and actual native usage are demonstrated. Benchmarking must compare equivalent semantics and include graph construction, projection memory, query setup, adjacency access, traversal, evidence reconstruction and end-to-end query cost.
+
+## 6. Milestone roadmap
+
+### M0 — Architecture baseline and traceability
+
+**Purpose:** freeze what exists before changing adapter code.
+
+Work:
+- pin the reviewed Stage1 commit and inventory relevant modules, tests, workflows and ADRs;
+- map each adapter from factory/registry through projection, query, evidence construction and tool entry point;
+- distinguish implemented, tested, native-tested, repository-tested and live-used behavior;
+- map each architectural statement in ADR-008 onward to implementation and test evidence;
+- reconcile duplicate ADR identifiers, the effectively empty ADR-016 and the ADR-079 title/identifier mismatch;
+- identify the exact tests and workflows that support each claim.
+
+**Exit:** a traceable adapter matrix with evidence references, unresolved questions and no claims based solely on documentation.
+
+### M1 — Formal adapter contract and capability/acceptance model
+
+**Purpose:** eliminate implicit duck-typed runtime requirements.
+
+Work:
+- formalize native node/edge inspection and per-node exact-edge adjacency in the typed interface;
+- define direction, self-loop, parallel-edge and edge-occurrence semantics;
+- separate native representation capabilities from end-to-end semantic preservation;
+- replace availability-only promotion with explicit compatibility and conformance states;
+- define runtime reports that distinguish projection audit work from query-time native adjacency work;
+- write structural, behavioral and interaction contract tests before implementation changes.
+
+**Exit:** a backend-neutral protocol specification and a failing/passing conformance suite that can be applied to each adapter.
+
+### M2 — Complete NetworkX and graph-tool routing
+
+**Purpose:** finish the strongest adapter first and establish a reference-quality integration pattern.
+
+Work:
+- verify E.8.8.1 native `succ`/`pred` access and its tests at the exact baseline;
+- prove occurrence-level parity, self-loop handling, deterministic ordering and defensive-copy behavior;
+- route `trace_execution_context` and `find_workflow_context` through backend-independent `GraphQuery` operations;
+- preserve type-checking import exclusions, bounds, line provenance, evidence shape and error behavior;
+- expand repository conformance so each in-scope graph tool is checked for backend query deltas.
+
+**Exit:** NetworkX passes all structural, behavior, interaction and repository gates; no undocumented graph-tool bypass remains.
+
+### M3 — SciPy native sparse adjacency
+
+**Purpose:** use the sparse representation for actual query access.
+
+Work:
+- CSR row-based outgoing adjacency;
+- CSC column-based incoming adjacency, or a measured and justified alternative;
+- exact pair-to-occurrence side-channel joins for parallel edges and same-label duplicate occurrences;
+- matrix structure and side-channel consistency checks;
+- tests that forbid full edge readback during query execution;
+- repository-backed parity and bounded access tests.
+
+**Exit:** SciPy passes the same acceptance gates as NetworkX, with native sparse access demonstrated by instrumentation.
+
+### M4 — python-igraph native adjacency
+
+**Purpose:** use native incident-edge indexes rather than full edge enumeration.
+
+Work:
+- investigate and use edge-ID-returning incident/incoming/outgoing APIs;
+- preserve edge IDs and semantic occurrence IDs across parallel edges;
+- test direction filtering, self-loops, vertex identity mapping and attribute round trips;
+- run native and repository-backed tests in the declared Python 3.11 environment.
+
+**Exit:** exact occurrence-level native adjacency and all shared acceptance gates pass.
+
+### M5 — graph-tool native adjacency
+
+**Purpose:** qualify graph-tool's native vertex/edge iteration and property-map model.
+
+Work:
+- use per-vertex incoming/outgoing edge iterators or equivalent indexed APIs;
+- verify property-map types, object-valued payload behavior and mutation semantics;
+- test parallel edges, self-loops, semantic IDs and occurrence identity;
+- use a reproducible supported graph-tool environment and record exact versions.
+
+**Exit:** graph-tool passes all shared acceptance gates in its supported environment; serialization limitations remain explicit.
+
+### M6 — SNAP isolated worker and compatibility
+
+**Purpose:** qualify SNAP without weakening the main project's runtime.
+
+Work:
+- keep the main orchestrator on the declared Python runtime;
+- verify the Python 3.9 SNAP candidate in a restricted worker;
+- define a bounded, versioned JSON-lines protocol and strict input/output schemas;
+- pass only an immutable graph snapshot and bounded query request;
+- prove exact edge-ID/semantic-occurrence association, especially with parallel edges;
+- enforce no provider credentials, repository access, network access or write access in the worker;
+- validate returned results against the canonical Python reference in the orchestrator.
+
+**Exit:** isolated worker protocol and repository-level parity pass. A Python 3.9 import smoke test alone is not acceptance.
+
+### M7 — Comparative performance and promotion policy
+
+**Purpose:** determine whether native adapters provide useful operational value.
+
+Work:
+- benchmark equivalent graph snapshots and query matrices;
+- measure construction time, peak memory, projection size, one-time validation cost, native adjacency calls, edge occurrences inspected, traversal time and end-to-end result time;
+- test sparse/dense, small/large, low/high-degree and different query-bound distributions;
+- record warm/cold behavior and environment versions;
+- promote backends only for workloads where correctness is accepted and performance/operational trade-offs are measured.
+
+**Exit:** reproducible benchmark dossier and explicit per-backend/task approval policy. No assumed winner.
+
+### M8 — Full repository graph interaction audit
+
+**Purpose:** after the adapters themselves are trustworthy, audit how the graph represents and connects the repository.
+
+Work:
+- inspect source inventory, symbol/import/call edges, dynamic imports and framework entry points;
+- examine graph coverage and false-positive/false-negative patterns;
+- validate test and workflow links, dependency/impact paths and source provenance;
+- compare graph-derived findings with independent source-level evidence;
+- inspect LLM tool selection and evidence follow-through using the accepted backend;
+- use Graphify for navigation and candidate discovery, not as the correctness authority.
+
+**Exit:** a source-backed map of graph coverage, graph/runtime interactions, omissions and known limitations.
+
+## 7. Graphify policy and current freshness
+
+Graphify is useful for navigation: locating hubs, candidate modules, symbol relationships and possible call/import paths. It is not evidence that a native adapter executes, that an edge is correct, or that a live tool uses a particular library.
+
+The latest available Stage1 Graphify report inspected during this review identifies its source as commit `f55f10d5`. The baseline used for this roadmap is `5a881c57cafc9ff17c3e01d3e1401ea9daf49225`; therefore that report is not accepted as a current snapshot. The report may be used only as a navigation hint until regenerated from the pinned Stage1 commit.
+
+The Graphify workflow and its runner are not present on `stage1/section-uuids`. A remote clone attempt from this execution environment could not resolve `github.com`, and the available GitHub actions do not expose a workflow-dispatch operation. No workflow was triggered and no Graphify artifact was written to another branch. Refresh Graphify locally or add a branch-local, explicitly scoped runner in a later task; do not make a run that publishes to `main` as part of this work.
+
+## 8. Initial M0 findings and open checks
+
+Confirmed in the Stage1 source/documentation reviewed for this roadmap:
+
+- E.8.8.1 describes NetworkX's one-time complete projection validation followed by native indexed `succ`/`pred` adjacency for reached nodes.
+- E.8.8.1 identifies `trace_execution_context` and `find_workflow_context` as not yet backend-routed.
+- `SemanticGraphAdapter` does not formally declare the native iteration/adjacency methods required by traversal.
+- `NativeAdapterGraphTraversalEngine` performs complete native node/edge readback to reconstruct adjacency; this happens at construction and is the current non-NetworkX traversal design.
+- The capability registry's package availability and `semantic_traversal` flags do not encode the full conformance ladder.
+- The E.8.5 fixture already covers directed edges, parallel edge occurrences, a self-loop, a cycle, an isolated node, nested attributes and seven query cases repeated twice.
+- The E.8.5 test asserts native round-trip and reference-parity results when the library is installed. Those tests are valuable, but the new policy additionally requires structural invariants, native API interaction proof, lifecycle/fault injection and per-tool runtime routing evidence.
+- The E.8.8.1 repository runner reports the two known tool-routing exceptions, but currently returns an overall `status: passed` when those operations remain canonical-graph walks. Acceptance summaries must preserve that scope limitation; a passing scoped runner is not evidence that every graph tool is backend-routed.
+- The E.8.5/E.8.8 native workflow is manually dispatched. The combined commit status lookup for the reviewed baseline returned no status entries in this audit. This is not evidence of a passing current-commit CI run.
+
+Checks still required to close M0:
+- locate and inspect the exact E.8.8.1 NetworkX anti-full-enumeration test and its invocation in the workflow;
+- map the adapter factory and all registered graph tools to backend query services;
+- inspect every backend adapter's native API/version assumptions and its existing tests;
+- verify current workflow job conditions, artifacts and exact-commit evidence;
+- reconcile ADR identifiers/statuses and the implementation/test links;
+- record the actual dependency versions and supported platforms for each native backend.
+
+## 9. Immediate next work
+
+Proceed with **M1**, after completing the remaining M0 traceability checks. Do not start by implementing all backends at once.
+
+The first M1 deliverable is a written adapter protocol and conformance matrix. The test specification must be reviewed before modifying adapter implementations. NetworkX then serves as the first implementation of that contract; SciPy, igraph, graph-tool and SNAP follow one at a time.
+
+No live provider test should be used to compensate for a missing deterministic structural or behavioral test.
+
+## 10. Change and evidence discipline
+
+- All repository writes for this work target `stage1/section-uuids` explicitly.
+- Do not create another branch or modify `main`.
+- Do not rewrite history, force-push, or change the branch base.
+- Keep implementation, test, documentation and CI changes traceable to a milestone.
+- Run tests on the exact commit being reported; distinguish not-run, skipped, failed and passed.
+- Record package versions, Python/platform details, commit SHA, workflow/run ID and artifact hashes where relevant.
+- Keep Graphify as a discovery/indexing aid; source code, executable tests and runtime instrumentation remain the evidence authorities.
