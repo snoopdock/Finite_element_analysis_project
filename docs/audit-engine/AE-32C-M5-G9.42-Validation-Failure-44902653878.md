@@ -46,7 +46,7 @@ This was a test-double defect introduced by the M5 adapter's explicit native-edg
 - [Graph API — `edge_index`](https://graph-tool.skewed.de/static/docs/stable/autosummary/graph_tool.Graph.html)
 - [Quick start — edge indices and property maps](https://graph-tool.skewed.de/static/docs/stable/quickstart.html)
 
-**Correction:** the legacy fake now exposes an `edge_index` property map and records the allocated edge descriptor/index association in `add_edge()`. Its comment makes the scope explicit: it models the simple contiguous-index case used by this legacy projection test. M5's dedicated graph-tool fake remains responsible for non-contiguous index behavior after removals. This keeps the test double aligned with the API consumed by the adapter without weakening the production mapping contract.
+**Correction:** the legacy fake now exposes an `edge_index` property map and records the allocated edge descriptor/index association in `add_edge()`. It models the simple contiguous-index case used by this legacy projection test. Separately, the M5 graph-tool fake was strengthened to return deliberately non-contiguous native edge indices and assert the adapter's explicit index-to-occurrence mapping. This tests that the adapter does not accidentally depend on list positions; it remains a fake API contract test, not real-library conformance.
 
 ### 3.2 M1 registry test retained a pre-M5 graph-tool expectation
 
@@ -69,6 +69,9 @@ Both changes were committed to `stage1/section-uuids`:
 
 - `80f72b680b5f9b5e9bb15c1cf739cdd7d39cccd1` — model graph-tool's edge-index property map in the legacy fake backend.
 - `7becea4463b9276cbcdd49ad83f12a65d82806b7` — align the M1 registry-state assertion with M5's implemented-but-unvalidated graph-tool state.
+- `beb4b80b00361aa882c00d97707090e2c0b651a6` — strengthen the M5 graph-tool fake to use sparse native edge indices and assert explicit occurrence mapping.
+- `5d8c050450ff0a77cd88938d06d26e48ccfa08dc` — clarify the legacy fake's contiguous-index scope.
+- `17be6d8069a5776f4974dadd0a006a847f56c74c` — record sparse-index contract coverage in the M5 implementation record.
 
 No production adapter behavior was relaxed. No test was skipped, xfailed, or weakened to suppress the failures.
 
