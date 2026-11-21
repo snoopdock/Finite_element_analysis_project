@@ -1,6 +1,6 @@
 # GB-01 — Optional Native Graph Backend Adapter Extensions
 
-Status: **Implementation ready for GitHub validation; native backends not yet acceptance-tested on an installed real library in the local environment.**
+Status: **igraph native adjacency accepted for its tested scope; graph-tool native adjacency implemented but real-library/repository acceptance pending; SNAP native query adjacency remains unimplemented.**
 
 This is an **extension of the completed G6 backend infrastructure**, not a new G8 roadmap milestone. The compatibility profile identifier is `G8.1`; the roadmap remains G3/GE/G4/G5/G6/G7 as previously closed. No changes to scientific inference/verification or publication authority are introduced.
 
@@ -11,7 +11,7 @@ The source of truth remains `audit_engine.semantic_audit.core.semantic_graph.Sem
 | Backend key | Python package/import | Native graph type | Attribute encoding | Limits |
 |---|---|---|---|---|
 | `igraph` | `igraph` / `igraph` | `igraph.Graph(directed=True)` | native Python node/edge attributes | Native integer vertex/edge IDs, mapping supplied; Python object attr persistence not guaranteed for every output format |
-| `graph-tool` | `graph-tool` / `graph_tool` | `graph_tool.Graph(directed=True)` | `string`, `object`, `int64_t` property maps | `object` maps are **in-memory**, not guaranteed portable through a graph-tool save/load |
+| `graph-tool` | `graph-tool` / `graph_tool` | `graph_tool.Graph(directed=True)` | `string`, `object`, `int64_t` property maps; native per-vertex `out_edges()` / `in_edges()` | Native local adjacency is implemented but unvalidated; `object` maps are **in-memory**, not guaranteed portable through a graph-tool save/load |
 | `snap` | `snap-stanford` / `snap` | `snap.TNEANet` | node/edge scalar attr columns, canonical JSON strings for nested attrs | Only JSON-compatible dictionaries, unsupported Python objects rejected explicitly |
 
 Each adapter projects all edges as **distinct occurrences**, including two edges with the same endpoints and type. The mapping retains semantic node identifiers and an occurrence-to-native edge identifier index. `neighbors` produces distinct *outgoing* semantic neighbors matching the NetworkX adapter's semantics. Empty graph, detached in-memory copy, metadata preservation, invalid graph invariants, and missing libraries have tests.
@@ -31,7 +31,7 @@ Each adapter projects all edges as **distinct occurrences**, including two edges
 ## Workflow acceptance gates
 
 1. Add branch-specific files from the release patch. Run **Manual Validation Dispatcher** from `main`, profile `G8.1`, branch `stage1/section-uuids`, regression mode `profile`. This executes fake-native contract tests and full existing regression without installing the optional libraries.
-2. Run **GB-01 Manual Optional Native Graph Backend Smoke** from `main` three times, selecting `igraph`, `graph-tool`, then `snap` on each manual invocation. The workflow installs only the requested native dependency and runs `source/tools/gb01_native_smoke.py` against the actual native graph API.
+2. Run the Stage1 **AE-32C Native Graph Backend Conformance (E.8.5 / E.8.8)** workflow for the relevant backend. The graph-tool job provisions the dedicated conda-forge environment and runs adapter tests, synthetic native conformance and repository-backed context/source conformance.
 3. A backend is **native accepted only when its corresponding real-library smoke workflow passes**. If SNAP 3.9 binaries are unavailable on the runner, report it as **implementation-ready / native-unverified**, not a successful smoke check. Use a compatible Python/platform runner to complete it.
 
 The native smoke verifies actual native vertex/edge counts, duplicate edge retention, self-loop, semantic IDs, typed relation labels and metadata. Artifacts capture the report and test log. Neither workflow commits, publishes, or modifies graph state; both are `workflow_dispatch` only.
