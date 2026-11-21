@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "6c78049b7732f33829c8f88610a18ccad9202fcc",
-  "compare_sha": "1ed0471832b660e8c29a946e4655e1ed981106bf",
+  "base_sha": "dfabd1a6df326ad2f0f7598253cdb47f4552441c",
+  "compare_sha": "9adc99b9511d0281b18be76d60865dcf13bb16b0",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 257,
-  "compare_only_commit_count": 970,
+  "base_only_commit_count": 259,
+  "compare_only_commit_count": 1091,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -162,6 +162,10 @@
     {
       "status": "A",
       "path": ".github/workflows/branch-graphify-analysis.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/e85-native-graph-backend-conformance.yml"
     },
     {
       "status": "A",
@@ -2943,6 +2947,10 @@
     },
     {
       "status": "A",
+      "path": "docs/audit-engine/AE-32C-G9.42-Validation-Failure-44896382956.md"
+    },
+    {
+      "status": "A",
       "path": "docs/audit-engine/AE-32C-Graph-Backend-Compatibility-and-Utilization-Roadmap.md"
     },
     {
@@ -2955,7 +2963,55 @@
     },
     {
       "status": "A",
+      "path": "docs/audit-engine/AE-32C-M0-Closure-and-Traceability.md"
+    },
+    {
+      "status": "A",
       "path": "docs/audit-engine/AE-32C-M1-Adapter-Protocol-and-Conformance-Contract.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M1-NetworkX-Validation-Record.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M2-Context-Tool-Backend-Routing.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M2-NetworkX-Context-Routing-Validation.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M2-Validation-Failure-44893673258.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M3-SciPy-Native-Sparse-Adjacency.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M3-Validation-Failure-44895368283.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M4-G9.42-Validation-Failure-44899514712.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M4-G9.42-Validation-Failure-44900752438.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M4-python-igraph-Native-Adjacency.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M5-G9.42-Validation-Failure-44902653878.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M5-graph-tool-Native-Adjacency.md"
     },
     {
       "status": "A",
@@ -6083,6 +6139,10 @@
     },
     {
       "status": "A",
+      "path": "tests/semantic_graph/test_m1_adapter_protocol_networkx.py"
+    },
+    {
+      "status": "A",
       "path": "tests/semantic_graph/test_path_analysis.py"
     },
     {
@@ -7327,6 +7387,621 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "dfabd1a6df326ad2f0f7598253cdb47f4552441c",
+      "subject": "Add AE-32C native graph backend conformance workflow"
+    },
+    {
+      "side": ">",
+      "sha": "9adc99b9511d0281b18be76d60865dcf13bb16b0",
+      "subject": "Trace sparse graph-tool edge-index test hardening in roadmap"
+    },
+    {
+      "side": ">",
+      "sha": "0e7477c24f50667b1de2a71212e4d829e9c85f5f",
+      "subject": "Record sparse graph-tool edge-index test hardening"
+    },
+    {
+      "side": ">",
+      "sha": "5d7594ee1ab6bb2312b76f0c443feb583bcf1691",
+      "subject": "Refine M5 failure review with sparse edge-index test hardening"
+    },
+    {
+      "side": ">",
+      "sha": "17be6d8069a5776f4974dadd0a006a847f56c74c",
+      "subject": "Record sparse graph-tool edge-index contract coverage"
+    },
+    {
+      "side": ">",
+      "sha": "5d8c050450ff0a77cd88938d06d26e48ccfa08dc",
+      "subject": "Clarify scope of graph-tool fake edge-index contract"
+    },
+    {
+      "side": ">",
+      "sha": "beb4b80b00361aa882c00d97707090e2c0b651a6",
+      "subject": "Exercise sparse graph-tool edge indices in native adjacency fake"
+    },
+    {
+      "side": ">",
+      "sha": "b357c9a5ccda81f7746639a36bba67df4719999f",
+      "subject": "Update M5 roadmap with G9.42 failure and corrections"
+    },
+    {
+      "side": ">",
+      "sha": "ed87ce470ed4289e66cdd42f02ee9fdcd840bdbb",
+      "subject": "Record M5 G9.42 failure analysis and corrective commits"
+    },
+    {
+      "side": ">",
+      "sha": "5ebd3d9771cd3a61c7d997f5b0c1bea62bdbc946",
+      "subject": "Document M5 G9.42 failure analysis and corrections"
+    },
+    {
+      "side": ">",
+      "sha": "7becea4463b9276cbcdd49ad83f12a65d82806b7",
+      "subject": "Align backend registry test with graph-tool M5 implementation state"
+    },
+    {
+      "side": ">",
+      "sha": "80f72b680b5f9b5e9bb15c1cf739cdd7d39cccd1",
+      "subject": "Fix graph-tool edge-index test double in legacy backend contracts"
+    },
+    {
+      "side": ">",
+      "sha": "e979b17b081d5e0a3cf120b184c7016de6dfd3e1",
+      "subject": "Update M5 roadmap implementation snapshot"
+    },
+    {
+      "side": ">",
+      "sha": "3ac2a5203efcbb702a2f2c66077dcc91969ee555",
+      "subject": "Complete M5 record with environment and version evidence details"
+    },
+    {
+      "side": ">",
+      "sha": "137b74bcb5f2908c8379e3ec72584a260492cd7e",
+      "subject": "Report graph-tool-base conda distribution version"
+    },
+    {
+      "side": ">",
+      "sha": "280dfccb427824e71dca61c90bc7e19f1a03219e",
+      "subject": "Report graph-tool-base conda distribution version"
+    },
+    {
+      "side": ">",
+      "sha": "9768be5813ec5fa003820ff0291424c710ed0205",
+      "subject": "Clarify M5 remaining validation and acceptance gates"
+    },
+    {
+      "side": ">",
+      "sha": "8f308d75e2cf2fd32d4c813988cec1eef98280ed",
+      "subject": "Align graph backend architecture note with M5 implementation"
+    },
+    {
+      "side": ">",
+      "sha": "363d0ee548eac9cdef558d125ad20a32e07e722a",
+      "subject": "Record M5 graph-tool native adjacency implementation progress"
+    },
+    {
+      "side": ">",
+      "sha": "08010544a3b7ea6541c7dfc0180f4a1db3ae8c32",
+      "subject": "Document M5 graph-tool native adjacency implementation"
+    },
+    {
+      "side": ">",
+      "sha": "cdcf91ee60d148652e2c054d286224019344ce63",
+      "subject": "Run graph-tool adapter tests in native conformance environment"
+    },
+    {
+      "side": ">",
+      "sha": "25161900a8197a98db06734865d793ad1a5d8427",
+      "subject": "Update native backend workflow summary for graph-tool gates"
+    },
+    {
+      "side": ">",
+      "sha": "d77bd4055234d2f2230fea9679960fa71df11315",
+      "subject": "Enable graph-tool repository conformance in native workflow"
+    },
+    {
+      "side": ">",
+      "sha": "b6b59b2124d29e8171b77628e2eb00d783510cf0",
+      "subject": "Add graph-tool native traversal and repository conformance tests"
+    },
+    {
+      "side": ">",
+      "sha": "3f5577a8ffc0b288565890ea13fd6acb645afaa9",
+      "subject": "Model graph-tool vertex descriptors in native adapter test double"
+    },
+    {
+      "side": ">",
+      "sha": "7cc826cc27b144169a002be8fcb4642f0895433b",
+      "subject": "Use graph-tool vertex descriptor indices for edge identity"
+    },
+    {
+      "side": ">",
+      "sha": "d4a94d8d74ce01677cd49f6f98036c055869be48",
+      "subject": "Add graph-tool native adjacency fake contract coverage"
+    },
+    {
+      "side": ">",
+      "sha": "97c05098b462ab5ec9c9b95f0a3665deab813e93",
+      "subject": "Mark graph-tool native adjacency implemented but unvalidated"
+    },
+    {
+      "side": ">",
+      "sha": "7d638b55163c3113c0727dd0308680c258cc7e42",
+      "subject": "Route graph-tool traversal through native edge iterators"
+    },
+    {
+      "side": ">",
+      "sha": "b91f439a79fff9b8c4b09aa6e0a16e0abf8b5dee",
+      "subject": "Implement graph-tool native local edge adjacency"
+    },
+    {
+      "side": ">",
+      "sha": "def809e7b76cdfa125a1ac76e557c1f3ba5eb536",
+      "subject": "Accept M4 and open M5 graph-tool milestone"
+    },
+    {
+      "side": ">",
+      "sha": "b454a7f2a31b6db796a0515a7c783b27b64cceb5",
+      "subject": "Accept M4 against exact G9.42 evidence 44901309538"
+    },
+    {
+      "side": ">",
+      "sha": "c6d4fda93897a3b7022d28cba177fc5c453940b3",
+      "subject": "Update graph backend roadmap after M4 validation review"
+    },
+    {
+      "side": ">",
+      "sha": "7e4f21add15702cd29bb25ab962ba95db47ef8a6",
+      "subject": "Document M4 G9.42 edge-sequence test-double failure"
+    },
+    {
+      "side": ">",
+      "sha": "ba37cd9214809253bda6bc8ee78f630cded0d118",
+      "subject": "Record M4 G9.42 edge-sequence test-double review"
+    },
+    {
+      "side": ">",
+      "sha": "fc66b89428c774f45ac899c6bb154afe5a0379b2",
+      "subject": "Fix fake igraph edge-sequence indexing contract"
+    },
+    {
+      "side": ">",
+      "sha": "932acd150bd4a0b296003b203042b372211135e1",
+      "subject": "Update graph backend roadmap with M4 validation failure and corrections"
+    },
+    {
+      "side": ">",
+      "sha": "ab8c815738636c051409e7f2f0068c423ef30388",
+      "subject": "Record M4 validation findings and test-only corrections"
+    },
+    {
+      "side": ">",
+      "sha": "01a4b3d989f4b36068f0bdfa6fcc478b008a09a1",
+      "subject": "Document M4 G9.42 validation failure and test corrections"
+    },
+    {
+      "side": ">",
+      "sha": "49a8f66489b798bc6e21a15a0bbf3b85fbe1fe89",
+      "subject": "Align M1 registry test with igraph implementation state"
+    },
+    {
+      "side": ">",
+      "sha": "0405f4f9ddd4d9142d43c5e65cf1c2ecc60955b1",
+      "subject": "Fix igraph test double and availability isolation test"
+    },
+    {
+      "side": ">",
+      "sha": "01983f38dd811577c43a5c35436d83ceecbb8587",
+      "subject": "Pin roadmap to latest M4 code and test snapshot"
+    },
+    {
+      "side": ">",
+      "sha": "977d575ee6b1f40b3824944661675e4ec6224f2c",
+      "subject": "Record python-igraph version evidence assertion"
+    },
+    {
+      "side": ">",
+      "sha": "fc7e6e92e91764d59c5f4bca5762d073a71d2601",
+      "subject": "Require real igraph version in conformance runtime evidence"
+    },
+    {
+      "side": ">",
+      "sha": "18d19eff44595337ec2755d8e2d2299c4de6f7b8",
+      "subject": "Correct roadmap dependency-installation path for G9.42"
+    },
+    {
+      "side": ">",
+      "sha": "14a04e86523ee0b0800d3c7fd793f4c54fd4d5d5",
+      "subject": "Correct M4 validation dependency installation record"
+    },
+    {
+      "side": ">",
+      "sha": "8ff22ea2020e86758cad7a5215771d90f6688f0a",
+      "subject": "Install python-igraph in manual validation environment"
+    },
+    {
+      "side": ">",
+      "sha": "125373fc8f1b615ee768c2929a9f9bef8576f948",
+      "subject": "Pin M4 roadmap to reviewed implementation and test coverage"
+    },
+    {
+      "side": ">",
+      "sha": "273790ff03e91788f559411669ad85f2400c9180",
+      "subject": "Complete M4 implementation record commit traceability"
+    },
+    {
+      "side": ">",
+      "sha": "992670dba9ff12a48d85f0a97181cbccc1af749e",
+      "subject": "Keep igraph mutation failures aligned with projection error contract"
+    },
+    {
+      "side": ">",
+      "sha": "8be9e5d7ecd4475f08c8602d391ce8d424502187",
+      "subject": "Place igraph runtime assertions in the real optional-backend test"
+    },
+    {
+      "side": ">",
+      "sha": "6647ad1dfc0778c3da622135e610f407f8f99b8f",
+      "subject": "Normalize native adjacency integrity failures at traversal boundary"
+    },
+    {
+      "side": ">",
+      "sha": "4df2f701caf661aaba3efa2a41aeb3cf132d73f6",
+      "subject": "Refresh roadmap with M4 implementation and validation prerequisites"
+    },
+    {
+      "side": ">",
+      "sha": "f8c40139ba0f593090b8c0230aace76b6a96d69e",
+      "subject": "Document real igraph validation requirements and dependency setup"
+    },
+    {
+      "side": ">",
+      "sha": "ed3a2a11d47931848694c32ea16b08845ff3a3c6",
+      "subject": "Include python-igraph in graph-core validation dependencies"
+    },
+    {
+      "side": ">",
+      "sha": "0094c6be1b8e47b2b68782c43ee4760b56e43281",
+      "subject": "Add real igraph repository-routing acceptance tests"
+    },
+    {
+      "side": ">",
+      "sha": "86c35b6f8c244b08288501475c3559a81191a7a8",
+      "subject": "Accept M3 and advance roadmap to M4 validation"
+    },
+    {
+      "side": ">",
+      "sha": "563933379460e5233a4eb2a7e06e27e638524214",
+      "subject": "Document M4 python-igraph native adjacency implementation"
+    },
+    {
+      "side": ">",
+      "sha": "51814e0d8dcaea0cf28c5751e47371003aef5e20",
+      "subject": "Record exact-commit G9.42 acceptance for M3"
+    },
+    {
+      "side": ">",
+      "sha": "6fc8b19c55bdbce81429148427c9a92057f470bd",
+      "subject": "Correct igraph projection-read test baseline"
+    },
+    {
+      "side": ">",
+      "sha": "9b3599f66dcc3afc3563e8e7ba667afa8cb888c0",
+      "subject": "Add igraph native adjacency conformance coverage"
+    },
+    {
+      "side": ">",
+      "sha": "785cddde1b3ed4defd40cc609c7a0c317f18dcd9",
+      "subject": "Record igraph native adjacency implementation state"
+    },
+    {
+      "side": ">",
+      "sha": "ff94815f5f60b24b471dfc76d16f3a089380a4df",
+      "subject": "Validate igraph edge-ID to semantic-occurrence mapping"
+    },
+    {
+      "side": ">",
+      "sha": "bc7c2b003786f463a40d290a96ffa85aa466a1df",
+      "subject": "Route igraph traversal through native incident edge IDs"
+    },
+    {
+      "side": ">",
+      "sha": "f54ea1c3239af9d336ded271a43893bea431323b",
+      "subject": "Implement igraph native incident-edge adjacency"
+    },
+    {
+      "side": ">",
+      "sha": "c40a258f627a1678036521e2474fccdd5537e46a",
+      "subject": "Update backend roadmap with second M3 validation result"
+    },
+    {
+      "side": ">",
+      "sha": "0744de62859a8224ac3a6b488069ba43780fa493",
+      "subject": "Record second G9.42 result and stale NetworkX label correction in M3 record"
+    },
+    {
+      "side": ">",
+      "sha": "33e73d4cc0409d43d72130da1ebab0d001c3896e",
+      "subject": "Document G9.42 run 44896382956 failure analysis and correction"
+    },
+    {
+      "side": ">",
+      "sha": "4dc1a40681dab18b55f4fc4af0d45adbd21c8c83",
+      "subject": "Align NetworkX context conformance expectations with runtime mode"
+    },
+    {
+      "side": ">",
+      "sha": "60192a96dafef2e8f1381719950578d061114c2f",
+      "subject": "Clarify M2 validation evidence reference in roadmap"
+    },
+    {
+      "side": ">",
+      "sha": "013cad5518f9f0beeece60aea52ecbb745fee42a",
+      "subject": "Update roadmap with M2 acceptance and M3 validation correction status"
+    },
+    {
+      "side": ">",
+      "sha": "ef934464186701a72f13885b648a1d86f59f66c5",
+      "subject": "Record M3 workflow failure analysis and corrective scope in implementation record"
+    },
+    {
+      "side": ">",
+      "sha": "b93be7dc5f8aa3e4701ea1e3e4b8bb46ce47f55b",
+      "subject": "Document M3 G9.42 failure analysis and corrective actions"
+    },
+    {
+      "side": ">",
+      "sha": "32f20bda4e6535ac90a9ad165a2a47f95d622b81",
+      "subject": "Assert repository conformance labels all SciPy context operations with the actual CSR/CSC path"
+    },
+    {
+      "side": ">",
+      "sha": "5cde812d63db340c14f28c0b50dff44bab551524",
+      "subject": "Make repository conformance report the selected backend's real context execution mode"
+    },
+    {
+      "side": ">",
+      "sha": "d7af14c111c109584e6a0098e2e05b59701fc166",
+      "subject": "Report the actual native adjacency mode in SciPy runtime telemetry"
+    },
+    {
+      "side": ">",
+      "sha": "71230791382d3d1fdbed20c376dd3e46186ae34e",
+      "subject": "Add reference self-loop contract test and strengthen SciPy repository telemetry assertions"
+    },
+    {
+      "side": ">",
+      "sha": "99bf99b25a63f329fd8094a475e9c0397fcdf34d",
+      "subject": "Update M1 registry test to distinguish implemented-but-unvalidated SciPy from unimplemented backends"
+    },
+    {
+      "side": ">",
+      "sha": "d8f4023973d4b923bbd9811e51cffd9c24fa524f",
+      "subject": "Expose per-query SciPy native adjacency metrics in graph-analysis result metadata"
+    },
+    {
+      "side": ">",
+      "sha": "946faa6e3a9357b24f5e08c4ba35f02d95590720",
+      "subject": "Normalize traversal direction before reference BFS and parity"
+    },
+    {
+      "side": ">",
+      "sha": "78ece9ccdab4b4597930ba315d4c019175089119",
+      "subject": "AE-32C: link M2 validation and M3 implementation records"
+    },
+    {
+      "side": ">",
+      "sha": "0cfe271741b498f81639573c8ea39cf68a7412d3",
+      "subject": "AE-32C M2: record successful NetworkX context routing validation"
+    },
+    {
+      "side": ">",
+      "sha": "56562f32892451c5ddaa8b94f6c877519ec1fdbd",
+      "subject": "AE-32C M3: import traversal direction for SciPy adjacency"
+    },
+    {
+      "side": ">",
+      "sha": "ff5c4cd1eebfa49b7bdea9e8354c2e47872823e1",
+      "subject": "AE-32C M3: document SciPy native sparse adjacency implementation"
+    },
+    {
+      "side": ">",
+      "sha": "82543edb450c5d772ead097ff8abf5aaac6ca86d",
+      "subject": "AE-32C: close M2 and record M3 SciPy implementation"
+    },
+    {
+      "side": ">",
+      "sha": "fb025cd4a89bc77f8a1ee1fded0c7c236e3a753b",
+      "subject": "AE-32C M3: add SciPy native sparse adjacency conformance tests"
+    },
+    {
+      "side": ">",
+      "sha": "d720d05f02b2a5cd37bf2f6a5098e13f3ca60764",
+      "subject": "AE-32C M3: mark SciPy native adjacency implementation present"
+    },
+    {
+      "side": ">",
+      "sha": "446ac13ea9f4f8e03293b4810de1951211653461",
+      "subject": "AE-32C M3: route SciPy traversal through local sparse adjacency"
+    },
+    {
+      "side": ">",
+      "sha": "335f5303e883a852e6deb7faecf8fd5ee568d48c",
+      "subject": "AE-32C M3: add SciPy CSR/CSC native edge-occurrence adjacency"
+    },
+    {
+      "side": ">",
+      "sha": "9dd02f7f98e0ad25d2225c638ed14bad4bd5d4e6",
+      "subject": "AE-32C M2: clarify telemetry ownership in failure review"
+    },
+    {
+      "side": ">",
+      "sha": "c40d30fe9a1c4862f0fc01d98dc795044071a18c",
+      "subject": "AE-32C roadmap: record M2 validation failure and correction"
+    },
+    {
+      "side": ">",
+      "sha": "971a6ca1dbf5f48b70f896a84638ea12e760256b",
+      "subject": "AE-32C M2: record failure analysis and telemetry correction"
+    },
+    {
+      "side": ">",
+      "sha": "2d85393930933263d91e7298dc9f4eaa903b6801",
+      "subject": "AE-32C M2: document validation failure and technical correction"
+    },
+    {
+      "side": ">",
+      "sha": "9a78eb7dcc7c45a5443d2a71565f94dda6007e30",
+      "subject": "AE-32C M2: assert published context telemetry schema"
+    },
+    {
+      "side": ">",
+      "sha": "aefb44dae998acfc04662a4172c9e389908bd859",
+      "subject": "AE-32C M2: expose context operation telemetry in conformance report"
+    },
+    {
+      "side": ">",
+      "sha": "3ef096e0320eb5d80c6e5b47531f9dcee75f76f7",
+      "subject": "AE-32C roadmap: close M1 and record M2 implementation"
+    },
+    {
+      "side": ">",
+      "sha": "3361b52e11c60fa2fc65f6df39b037f65cfd591c",
+      "subject": "AE-32C M2: add context routing implementation record"
+    },
+    {
+      "side": ">",
+      "sha": "13f082ccff8323b7f5d216f4b3a474c519938c15",
+      "subject": "AE-32C M1: add exact-commit NetworkX validation record"
+    },
+    {
+      "side": ">",
+      "sha": "c6b132044ae79bd49f5713e1f7302014c94e93f9",
+      "subject": "AE-32C M1: record exact-commit NetworkX acceptance"
+    },
+    {
+      "side": ">",
+      "sha": "7e9a680e41dfb4fd322aeba29ddd18e10b3b490f",
+      "subject": "AE-32C M2: assert backend-neutral context query routing"
+    },
+    {
+      "side": ">",
+      "sha": "7d9e8f1aac3b873e689a45f525060c60420314bc",
+      "subject": "AE-32C M2: route context adjacency through GraphQuery service"
+    },
+    {
+      "side": ">",
+      "sha": "fb3f26e0600c5abe894fb54c9b0cecefed2476f2",
+      "subject": "docs(ci): clarify backend matrix job versus acceptance status"
+    },
+    {
+      "side": ">",
+      "sha": "afbd4e305a6a49568805d0548680db05454842b4",
+      "subject": "docs(ae32c): document M1 workflow acceptance scope"
+    },
+    {
+      "side": ">",
+      "sha": "f9299754e14274a918eb2d8893b31de602405f08",
+      "subject": "ci(ae32c): scope repository conformance to implemented native adjacency"
+    },
+    {
+      "side": ">",
+      "sha": "3de84f9478a830b5b5e3237eeb23cfa5dd65acaa",
+      "subject": "docs(ae32c): pin current M1 implementation snapshot"
+    },
+    {
+      "side": ">",
+      "sha": "251cab427ba2d6c395dafe9910007ffcc3dd918f",
+      "subject": "refactor(ae32c): remove obsolete adjacency helper and pin M1 source snapshot"
+    },
+    {
+      "side": ">",
+      "sha": "3858f6294ac1c8f92e1303d5dd7682a6949eee0d",
+      "subject": "fix(ae32c): deduplicate incoming self-loop occurrence in BOTH adjacency"
+    },
+    {
+      "side": ">",
+      "sha": "c8c254b338b835d843e69e0b462cdfad716c9335",
+      "subject": "fix(ae32c): align reference and native edge occurrence ordering"
+    },
+    {
+      "side": ">",
+      "sha": "b5ec91f1d35951cd6d2a42904f73360de5e0d277",
+      "subject": "test(ae32c): enforce observational runtime reporting"
+    },
+    {
+      "side": ">",
+      "sha": "3003e2c599e70f14d7656f85fac128cf66d38b0b",
+      "subject": "fix(ae32c): make NetworkX runtime reporting use cached projection counts"
+    },
+    {
+      "side": ">",
+      "sha": "4391d4a0650415dd02049fd459f71b6d8aa3788c",
+      "subject": "ci(ae32c): add NetworkX M1 protocol tests to conformance workflow"
+    },
+    {
+      "side": ">",
+      "sha": "5c3d5ec0905b78c1486787f1bd01153cc81a606f",
+      "subject": "feat(ae32c): expose explicit backend conformance and approval states"
+    },
+    {
+      "side": ">",
+      "sha": "523237b60b8bb25998925bbdb0179435dc0b0129",
+      "subject": "fix(ae32c): deduplicate BOTH self-loop by native edge identity"
+    },
+    {
+      "side": ">",
+      "sha": "f9bc163c2f7a685259cf02b54dc31c0f53372347",
+      "subject": "feat(ae32c): separate backend availability from conformance state"
+    },
+    {
+      "side": ">",
+      "sha": "9c32c3ba4667887db3dee4623b014274a5a39318",
+      "subject": "test(ae32c): assert NetworkX engine uses typed native adjacency"
+    },
+    {
+      "side": ">",
+      "sha": "e6e4c50f13af99f2cdcd1d4596aa95c60b1bebdb",
+      "subject": "refactor(ae32c): route NetworkX traversal through typed adjacency protocol"
+    },
+    {
+      "side": ">",
+      "sha": "cfea8d2b0c55d548a5dc5e3629eba387d7dac06b",
+      "subject": "fix(ae32c): validate adapter-provided NetworkX occurrence mapping"
+    },
+    {
+      "side": ">",
+      "sha": "7be7e9d7c262323159643723db88805bb33c7006",
+      "subject": "docs(ae32c): record M1 protocol implementation and validation boundary"
+    },
+    {
+      "side": ">",
+      "sha": "b214c8b474239fa6186680002eec36e1c244ab09",
+      "subject": "fix(ae32c): preserve adapter compatibility and correct adjacency expectations"
+    },
+    {
+      "side": ">",
+      "sha": "0d7ec59addefb5a76b63c5d506f37083a3043aa6",
+      "subject": "feat(ae32c): formalize adapter protocol and NetworkX adjacency semantics"
+    },
+    {
+      "side": ">",
+      "sha": "c9d49c1f00a809c86f1b7c0493692a79266cc9ee",
+      "subject": "docs(ae32c): mark M0 traceability baseline closed"
+    },
+    {
+      "side": ">",
+      "sha": "793be4801152bdf71af840993fc4f284b8348074",
+      "subject": "docs(ae32c): record M0 graph backend traceability close-out"
+    },
+    {
+      "side": "<",
+      "sha": "cecf208419887b70c532b57362e6933ac97f72cb",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "6c78049b7732f33829c8f88610a18ccad9202fcc",

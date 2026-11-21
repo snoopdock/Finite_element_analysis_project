@@ -2,18 +2,18 @@
   "identity_note": "Node keys use the first available id/node_id/key/name/label field. Edge keys use source/target/relation-like fields. These are structural comparison keys, not proof of semantic equivalence.",
   "base": {
     "branch": "main",
-    "node_count": 4930,
-    "edge_count": 7691
+    "node_count": 4989,
+    "edge_count": 7762
   },
   "compare": {
     "branch": "stage1-section-uuids",
-    "node_count": 17765,
-    "edge_count": 45281
+    "node_count": 17847,
+    "edge_count": 45535
   },
   "nodes": {
-    "common_count": 2438,
+    "common_count": 2497,
     "base_only_count": 2492,
-    "compare_only_count": 15327,
+    "compare_only_count": 15350,
     "base_only": [
       "abc",
       "analysis_citation_validator_rationale_128",
@@ -3908,17 +3908,17 @@
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_103",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_108",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_123",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1411",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1438",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1508",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1534",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2156",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2203",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2341",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2535",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1412",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1439",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1509",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1539",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2217",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2264",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2402",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_255",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2814",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2596",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_282",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2875",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_306",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_316",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_330",
@@ -3928,8 +3928,8 @@
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_691",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_748",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_91",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_915",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_971",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_916",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_972",
       "audit_engine_semantic_audit_ae32b_evidence_tools_read_snapshot_file",
       "audit_engine_semantic_audit_ae32b_evidence_tools_redact_then_truncate",
       "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_build_decision_memory_graph_safe_review_field",
@@ -4730,18 +4730,30 @@
       "audit_engine_semantic_audit_graph_analysis_traversal_traversalstep",
       "audit_engine_semantic_audit_graph_analysis_traversal_traversalstep_to_dict",
       "audit_engine_semantic_audit_graph_backend_adapter_interface",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeadjacencynotsupportederror",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_nativenoderecord",
       "audit_engine_semantic_audit_graph_backend_adapter_interface_py_abc",
       "audit_engine_semantic_audit_graph_backend_adapter_interface_py_any",
       "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_1",
-      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_20",
-      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_26",
-      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_34",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_18",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_27",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_38",
       "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_42",
-      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_50",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_51",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_55",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_59",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_63",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_66",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_72",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_80",
       "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
       "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_capabilities",
       "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_export",
       "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_identity_mapping",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_adjacent_edge_occurrences",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_native_edge_occurrences",
+      "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_native_nodes",
       "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_loss_report",
       "audit_engine_semantic_audit_graph_backend_adapter_traversal",
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_clone_validated_graph",
@@ -4749,6 +4761,7 @@
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_backend_name",
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_build_adjacency",
+      "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_candidate_edges",
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_init",
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_result_metadata",
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_runtime_report",
@@ -4758,9 +4771,9 @@
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_py_any",
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_py_runtimeerror",
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_1",
-      "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_31",
-      "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_35",
-      "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_84",
+      "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_32",
+      "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_36",
+      "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_85",
       "audit_engine_semantic_audit_graph_backend_artifact_metadata",
       "audit_engine_semantic_audit_graph_backend_artifact_metadata_artifactmetadata",
       "audit_engine_semantic_audit_graph_backend_artifact_metadata_artifactmetadata_init",
@@ -4821,6 +4834,7 @@
       "audit_engine_semantic_audit_graph_backend_backend_selector_backendselectionpolicy_select",
       "audit_engine_semantic_audit_graph_backend_backend_selector_rationale_1",
       "audit_engine_semantic_audit_graph_backend_capability_registry",
+      "audit_engine_semantic_audit_graph_backend_capability_registry_acceptance_state",
       "audit_engine_semantic_audit_graph_backend_capability_registry_backendcapabilityregistry",
       "audit_engine_semantic_audit_graph_backend_capability_registry_backendcapabilityregistry_describe",
       "audit_engine_semantic_audit_graph_backend_capability_registry_backendcapabilityregistry_get",
@@ -4829,6 +4843,7 @@
       "audit_engine_semantic_audit_graph_backend_capability_registry_backendcapabilityregistry_register",
       "audit_engine_semantic_audit_graph_backend_capability_registry_create_default_registry",
       "audit_engine_semantic_audit_graph_backend_capability_registry_rationale_1",
+      "audit_engine_semantic_audit_graph_backend_capability_registry_rationale_24",
       "audit_engine_semantic_audit_graph_backend_execution_context",
       "audit_engine_semantic_audit_graph_backend_execution_context_backendexecutioncontext",
       "audit_engine_semantic_audit_graph_backend_execution_result",
@@ -4839,16 +4854,23 @@
       "audit_engine_semantic_audit_graph_backend_graph_tool_adapter",
       "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter",
       "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_init",
+      "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_iter_adjacent_edge_occurrences",
+      "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_iter_adjacent_edge_occurrences_collect",
       "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_iter_native_edges",
       "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_iter_native_nodes",
       "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_loss_report",
+      "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_native_adjacency_report",
       "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_rationale_1",
+      "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_rationale_109",
       "audit_engine_semantic_audit_graph_backend_igraph_adapter",
       "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter",
       "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_init",
+      "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_iter_adjacent_edge_occurrences",
       "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_iter_native_edges",
       "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_iter_native_nodes",
+      "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_native_adjacency_report",
       "audit_engine_semantic_audit_graph_backend_igraph_adapter_rationale_1",
+      "audit_engine_semantic_audit_graph_backend_igraph_adapter_rationale_67",
       "audit_engine_semantic_audit_graph_backend_init",
       "audit_engine_semantic_audit_graph_backend_init_rationale_1",
       "audit_engine_semantic_audit_graph_backend_networkx_adapter",
@@ -4856,24 +4878,20 @@
       "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_backend_graph",
       "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_build",
       "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_capabilities",
+      "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_edge_record",
       "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_edges",
       "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_export",
       "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_identity_mapping",
       "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_init",
+      "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_adjacent_edge_occurrences",
+      "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_native_edge_occurrences",
+      "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_native_nodes",
       "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_loss_report",
       "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_neighbors",
       "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_nodes",
       "audit_engine_semantic_audit_graph_backend_networkx_adapter_py_any",
-      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_103",
-      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_113",
-      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_12",
-      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_134",
-      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_146",
-      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_172",
-      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_192",
-      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_47",
-      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_87",
-      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_95",
+      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_1",
+      "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_19",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendparityerror",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendprojectionerror",
@@ -4887,17 +4905,16 @@
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_init",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_result_metadata",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_runtime_report",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_verify_projection",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_walk",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_py_any",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_py_runtimeerror",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_1",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_147",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_161",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_208",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_242",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_289",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_150",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_165",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_212",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_227",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_288",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_48",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_52",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_56",
@@ -4947,7 +4964,10 @@
       "audit_engine_semantic_audit_graph_backend_scipy_adapter",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_py_any",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_rationale_1",
-      "audit_engine_semantic_audit_graph_backend_scipy_adapter_rationale_16",
+      "audit_engine_semantic_audit_graph_backend_scipy_adapter_rationale_149",
+      "audit_engine_semantic_audit_graph_backend_scipy_adapter_rationale_185",
+      "audit_engine_semantic_audit_graph_backend_scipy_adapter_rationale_19",
+      "audit_engine_semantic_audit_graph_backend_scipy_adapter_rationale_228",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_backend_graph",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_capabilities",
@@ -4955,12 +4975,15 @@
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_export",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_identity_mapping",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_init",
+      "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_iter_adjacent_edge_occurrences",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_iter_native_edges",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_iter_native_nodes",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_loss_report",
+      "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_native_adjacency_report",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_neighbors",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_node_payload",
       "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_nodes",
+      "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_occurrences_for_pair",
       "audit_engine_semantic_audit_graph_backend_snap_adapter",
       "audit_engine_semantic_audit_graph_backend_snap_adapter_as_json",
       "audit_engine_semantic_audit_graph_backend_snap_adapter_rationale_1",
@@ -6685,65 +6708,6 @@
       "github_workflows_archive_11_semantic_audit_orchestration_validation_with_name",
       "github_workflows_archive_11_semantic_audit_orchestration_validation_with_path",
       "github_workflows_archive_11_semantic_audit_orchestration_validation_with_python_version",
-      "github_workflows_e85_native_graph_backend_conformance",
-      "github_workflows_e85_native_graph_backend_conformance_concurrency",
-      "github_workflows_e85_native_graph_backend_conformance_concurrency_cancel_in_progress",
-      "github_workflows_e85_native_graph_backend_conformance_concurrency_group",
-      "github_workflows_e85_native_graph_backend_conformance_conformance_summary_if",
-      "github_workflows_e85_native_graph_backend_conformance_conformance_summary_name",
-      "github_workflows_e85_native_graph_backend_conformance_conformance_summary_needs",
-      "github_workflows_e85_native_graph_backend_conformance_conformance_summary_runs_on",
-      "github_workflows_e85_native_graph_backend_conformance_conformance_summary_steps",
-      "github_workflows_e85_native_graph_backend_conformance_env_graph_tool",
-      "github_workflows_e85_native_graph_backend_conformance_env_pip_backends",
-      "github_workflows_e85_native_graph_backend_conformance_env_snap_job",
-      "github_workflows_e85_native_graph_backend_conformance_env_snap_native",
-      "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_name",
-      "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_runs_on",
-      "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
-      "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_timeout_minutes",
-      "github_workflows_e85_native_graph_backend_conformance_jobs",
-      "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
-      "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
-      "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
-      "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-      "github_workflows_e85_native_graph_backend_conformance_matrix_backend",
-      "github_workflows_e85_native_graph_backend_conformance_name",
-      "github_workflows_e85_native_graph_backend_conformance_on",
-      "github_workflows_e85_native_graph_backend_conformance_on_workflow_dispatch",
-      "github_workflows_e85_native_graph_backend_conformance_outputs_native_status",
-      "github_workflows_e85_native_graph_backend_conformance_permissions",
-      "github_workflows_e85_native_graph_backend_conformance_permissions_contents",
-      "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_name",
-      "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_runs_on",
-      "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
-      "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_strategy",
-      "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_timeout_minutes",
-      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_name",
-      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_outputs",
-      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_runs_on",
-      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_timeout_minutes",
-      "github_workflows_e85_native_graph_backend_conformance_steps_env",
-      "github_workflows_e85_native_graph_backend_conformance_steps_id",
-      "github_workflows_e85_native_graph_backend_conformance_steps_if",
-      "github_workflows_e85_native_graph_backend_conformance_steps_name",
-      "github_workflows_e85_native_graph_backend_conformance_steps_run",
-      "github_workflows_e85_native_graph_backend_conformance_steps_shell",
-      "github_workflows_e85_native_graph_backend_conformance_steps_uses",
-      "github_workflows_e85_native_graph_backend_conformance_steps_with",
-      "github_workflows_e85_native_graph_backend_conformance_strategy_fail_fast",
-      "github_workflows_e85_native_graph_backend_conformance_strategy_matrix",
-      "github_workflows_e85_native_graph_backend_conformance_with_cache",
-      "github_workflows_e85_native_graph_backend_conformance_with_cache_environment",
-      "github_workflows_e85_native_graph_backend_conformance_with_environment_file",
-      "github_workflows_e85_native_graph_backend_conformance_with_environment_name",
-      "github_workflows_e85_native_graph_backend_conformance_with_if_no_files_found",
-      "github_workflows_e85_native_graph_backend_conformance_with_init_shell",
-      "github_workflows_e85_native_graph_backend_conformance_with_name",
-      "github_workflows_e85_native_graph_backend_conformance_with_path",
-      "github_workflows_e85_native_graph_backend_conformance_with_python_version",
-      "github_workflows_e85_native_graph_backend_conformance_with_retention_days",
       "github_workflows_fea_llm_provider_benchmark_env_benchmark_source_commit",
       "github_workflows_fea_llm_provider_benchmark_env_benchmark_workflow_commit",
       "github_workflows_fea_llm_provider_benchmark_env_fea_source_commit",
@@ -6767,6 +6731,7 @@
       "networkx",
       "node",
       "nonlocal",
+      "notimplementederror",
       "numpy",
       "paragraphinline",
       "pathlike",
@@ -14715,6 +14680,7 @@
       "tests_semantic_graph_test_e83_multi_backend_traversal_edge_getitem",
       "tests_semantic_graph_test_e83_multi_backend_traversal_edge_init",
       "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq_getitem",
       "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq_init",
       "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq_iter",
       "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq_setitem",
@@ -14731,9 +14697,16 @@
       "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtooledge_init",
       "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtooledge_source",
       "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtooledge_target",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex_in_edges",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex_init",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex_int",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex_out_edges",
       "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph",
       "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph_add_edges",
       "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph_add_vertices",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph_ecount",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph_incident",
       "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph_init",
       "tests_semantic_graph_test_e83_multi_backend_traversal_fakeproperty",
       "tests_semantic_graph_test_e83_multi_backend_traversal_fakeproperty_getitem",
@@ -14761,7 +14734,9 @@
       "tests_semantic_graph_test_e83_multi_backend_traversal_py_parametrize",
       "tests_semantic_graph_test_e83_multi_backend_traversal_query_result",
       "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_1",
-      "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_344",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_104",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_598",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_87",
       "tests_semantic_graph_test_e83_multi_backend_traversal_snapedge",
       "tests_semantic_graph_test_e83_multi_backend_traversal_snapedge_getdstnid",
       "tests_semantic_graph_test_e83_multi_backend_traversal_snapedge_getid",
@@ -14773,10 +14748,27 @@
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_backend_registry_marks_all_adapters_as_semantic_query_capable",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_e85_conformance_runner_contract_with_adapter_test_double",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_explicit_backend_selection_never_silently_falls_back",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_fake_igraph_edge_sequence_supports_indexed_edge_access",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_projection_mutation_fails_closed",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans_forbidden_full_edges",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans_forbidden_full_nodes",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_repository_conformance_routes_context_tools_through_native_adjacency",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans_forbidden_full_edges",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans_forbidden_full_nodes",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_repository_conformance_routes_context_tools_through_native_adjacency",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_native_projection_mutation_fails_closed",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_optional_native_adapter_is_used_by_live_query_path",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_real_optional_native_backend_query_when_installed",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_reference_both_direction_returns_self_loop_occurrence_once",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_backend_uses_csr_and_preserves_parallel_edge_occurrences",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_both_direction_returns_self_loop_occurrence_once",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans_forbidden_full_edges",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans_forbidden_full_nodes",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_query_is_bounded_to_reached_node_adjacency",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_repository_conformance_routes_context_tools_through_native_adjacency",
       "tests_semantic_graph_test_e83_multi_backend_traversal_vertex",
       "tests_semantic_graph_test_e83_multi_backend_traversal_vertex_getitem",
       "tests_semantic_graph_test_e83_multi_backend_traversal_vertex_init",
@@ -14822,6 +14814,8 @@
       "tests_semantic_graph_test_e86_change_set_impact_write",
       "tests_semantic_graph_test_e88_networkx_repository_backend",
       "tests_semantic_graph_test_e88_networkx_repository_backend_graph",
+      "tests_semantic_graph_test_e88_networkx_repository_backend_test_context_tools_use_backend_neutral_graph_queries",
+      "tests_semantic_graph_test_e88_networkx_repository_backend_test_context_tools_use_backend_neutral_graph_queries_forbidden_context_hook",
       "tests_semantic_graph_test_e88_networkx_repository_backend_test_native_backend_workflow_avoids_flat_layout_editable_install_and_adds_repo_runner",
       "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency",
       "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency_forbidden_edges",
@@ -15359,6 +15353,35 @@
       "tests_semantic_graph_test_ge04_section_impact_integration_tweak_doc",
       "tests_semantic_graph_test_ge04_section_impact_integration_tweak_link",
       "tests_semantic_graph_test_ge04_section_impact_integration_write",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_graph",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_py_fixture",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_py_parametrize",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_rationale_1",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_capability_declaration_never_implies_acceptance",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_contract_records_are_typed_and_occurrences_are_unique",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection_capabilities",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection_export",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection_identity_mapping",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection_loss_report",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_edge_mapping_corruption_fails_closed",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_local_adjacency_preserves_occurrences_and_self_loop_once",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_payload_mutation_is_detected_by_traversal_engine",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_and_runtime_report_do_not_call_full_edge_enumerator",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_and_runtime_report_do_not_call_full_edge_enumerator_forbidden",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_does_not_rebuild_python_reference_adjacency",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_does_not_rebuild_python_reference_adjacency_forbidden",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_records_do_not_leak_mutable_projection_payloads",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_both_direction_counts_self_loop_once",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_traversal_calls_the_typed_adapter_adjacency_operation",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_traversal_calls_the_typed_adapter_adjacency_operation_observed",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_projection_is_directed_multigraph_and_keeps_isolated_nodes",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_reference_both_direction_counts_self_loop_once",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_registry_separates_discovery_from_conformance_and_approval",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_runtime_report_does_not_enumerate_native_projection",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_runtime_report_does_not_enumerate_native_projection_forbidden",
+      "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_unknown_and_isolated_node_semantics",
       "tests_semantic_graph_test_path_analysis",
       "tests_semantic_graph_test_path_analysis_test_path_analysis_reports_no_match",
       "tests_semantic_graph_test_path_analysis_test_path_analysis_returns_shortest_observed_path",
@@ -17839,9 +17862,9 @@
     ]
   },
   "edges": {
-    "common_count": 4707,
+    "common_count": 4778,
     "base_only_count": 2984,
-    "compare_only_count": 40574,
+    "compare_only_count": 40757,
     "base_only": [
       [
         "analysis_citation_validator",
@@ -57377,11 +57400,6 @@
       ],
       [
         "audit_engine_semantic_audit_ae32b_evidence_tools",
-        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
-        "imports"
-      ],
-      [
-        "audit_engine_semantic_audit_ae32b_evidence_tools",
         "audit_engine_semantic_audit_graph_queries_init",
         "imports_from"
       ],
@@ -57606,43 +57624,38 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1411",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1412",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_finalize_response",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1438",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1439",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_invoke",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1508",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1509",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_graph_runtime_report",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1534",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1539",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2156",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2217",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_pytest_python_file_patterns",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2203",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2264",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_pytest_static_assessment",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2341",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2402",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_trace_execution_context",
-        "rationale_for"
-      ],
-      [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2535",
-        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_discover_case_context",
         "rationale_for"
       ],
       [
@@ -57651,13 +57664,18 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2814",
-        "audit_engine_semantic_audit_ae32b_evidence_tools_create_tool_server",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2596",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_discover_case_context",
         "rationale_for"
       ],
       [
         "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_282",
         "audit_engine_semantic_audit_ae32b_evidence_tools_contains_identifier_reference",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2875",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_create_tool_server",
         "rationale_for"
       ],
       [
@@ -57706,12 +57724,12 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_915",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_916",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_collect_import_bindings",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_971",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_972",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_build_static_call_graph",
         "rationale_for"
       ],
@@ -57937,18 +57955,23 @@
       ],
       [
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
-        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
-        "references"
-      ],
-      [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
-        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_query_id",
         "calls"
       ],
       [
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
-        "indirect_call"
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
+        "audit_engine_semantic_audit_graph_queries_models_graphquery",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
+        "audit_engine_semantic_audit_graph_service_semanticgraphanalysisservice_analyze",
+        "calls"
       ],
       [
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_discover_case_context",
@@ -71277,11 +71300,6 @@
       ],
       [
         "audit_engine_semantic_audit_graph_analysis_traversal",
-        "audit_engine_semantic_audit_graph_analysis_identity_edge_fingerprint",
-        "imports"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_analysis_traversal",
         "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
         "imports"
       ],
@@ -71396,19 +71414,9 @@
         "references"
       ],
       [
-        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine_build_adjacency",
-        "audit_engine_semantic_audit_graph_analysis_identity_edge_fingerprint",
-        "calls"
-      ],
-      [
         "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine_candidate_edges",
         "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
         "references"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine_candidate_edges",
-        "audit_engine_semantic_audit_graph_analysis_identity_edge_fingerprint",
-        "calls"
       ],
       [
         "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine_candidate_edges",
@@ -71448,7 +71456,7 @@
       [
         "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine_walk",
         "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
-        "references"
+        "calls"
       ],
       [
         "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine_walk",
@@ -71542,6 +71550,31 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_adapter_interface",
+        "audit_engine_semantic_audit_graph_analysis_models",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeadjacencynotsupportederror",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativenoderecord",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface",
         "audit_engine_semantic_audit_graph_backend_adapter_interface_py_abc",
         "imports_from"
       ],
@@ -71552,8 +71585,18 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_adapter_interface",
+        "dataclasses",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface",
         "typing",
         "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeadjacencynotsupportederror",
+        "notimplementederror",
+        "inherits"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_1",
@@ -71561,29 +71604,64 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_20",
-        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_18",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativenoderecord",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_26",
-        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_export",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_27",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_34",
-        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_capabilities",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_38",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeadjacencynotsupportederror",
         "rationale_for"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_42",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_51",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_export",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_55",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_capabilities",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_59",
         "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_identity_mapping",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_50",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_63",
         "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_loss_report",
         "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_66",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_native_nodes",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_72",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_native_edge_occurrences",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_rationale_80",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_adjacent_edge_occurrences",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
@@ -71607,6 +71685,21 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_adjacent_edge_occurrences",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_native_edge_occurrences",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_native_nodes",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
         "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_loss_report",
         "method"
       ],
@@ -71623,6 +71716,41 @@
       [
         "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_identity_mapping",
         "audit_engine_semantic_audit_graph_backend_adapter_interface_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeadjacencynotsupportederror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_native_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeadjacencynotsupportederror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_native_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_native_nodes",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeadjacencynotsupportederror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter_iter_native_nodes",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativenoderecord",
         "references"
       ],
       [
@@ -71658,6 +71786,16 @@
       [
         "audit_engine_semantic_audit_graph_backend_adapter_traversal",
         "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal",
+        "audit_engine_semantic_audit_graph_analysis_models",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
         "imports"
       ],
       [
@@ -71807,7 +71945,17 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
         "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
         "uses"
       ],
       [
@@ -71828,6 +71976,11 @@
       [
         "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
         "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_build_adjacency",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_candidate_edges",
         "method"
       ],
       [
@@ -71882,6 +72035,26 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_build_adjacency",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadapterprojectionerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_candidate_edges",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_candidate_edges",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_candidate_edges",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine_candidate_edges",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_candidate_edges",
         "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadapterprojectionerror",
         "calls"
       ],
@@ -72006,17 +72179,17 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_31",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_32",
         "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadapterprojectionerror",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_35",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_36",
         "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadapterparityerror",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_84",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_85",
         "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
         "rationale_for"
       ],
@@ -73062,6 +73235,11 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_capability_registry",
+        "audit_engine_semantic_audit_graph_backend_capability_registry_acceptance_state",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_capability_registry",
         "audit_engine_semantic_audit_graph_backend_capability_registry_backendcapabilityregistry",
         "contains"
       ],
@@ -73079,6 +73257,11 @@
         "audit_engine_semantic_audit_graph_backend_capability_registry",
         "audit_engine_semantic_audit_graph_backend_optional_backend_support_backend_available",
         "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_capability_registry_acceptance_state",
+        "audit_engine_semantic_audit_graph_backend_optional_backend_support_backend_available",
+        "calls"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_capability_registry_backendcapabilityregistry",
@@ -73107,6 +73290,11 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_capability_registry_create_default_registry",
+        "audit_engine_semantic_audit_graph_backend_capability_registry_acceptance_state",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_capability_registry_create_default_registry",
         "audit_engine_semantic_audit_graph_backend_capability_registry_backendcapabilityregistry",
         "calls"
       ],
@@ -73123,6 +73311,11 @@
       [
         "audit_engine_semantic_audit_graph_backend_capability_registry_rationale_1",
         "audit_engine_semantic_audit_graph_backend_capability_registry",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_capability_registry_rationale_24",
+        "audit_engine_semantic_audit_graph_backend_capability_registry_acceptance_state",
         "rationale_for"
       ],
       [
@@ -73162,8 +73355,23 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_graph_tool_adapter",
+        "audit_engine_semantic_audit_graph_analysis_models",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter",
         "audit_engine_semantic_audit_graph_backend_adapter_interface",
         "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "imports"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_graph_tool_adapter",
@@ -73196,6 +73404,21 @@
         "imports"
       ],
       [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter",
+        "copy",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "uses"
+      ],
+      [
         "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter",
         "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
         "inherits"
@@ -73203,6 +73426,11 @@
       [
         "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter",
         "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_init",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter",
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_iter_adjacent_edge_occurrences",
         "method"
       ],
       [
@@ -73222,6 +73450,11 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter",
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_native_adjacency_report",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter",
         "audit_engine_semantic_audit_graph_backend_optional_backend_support_nativeadaptermixin",
         "inherits"
       ],
@@ -73236,14 +73469,49 @@
         "calls"
       ],
       [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_iter_adjacent_edge_occurrences_collect",
+        "contains"
+      ],
+      [
         "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_rationale_1",
         "audit_engine_semantic_audit_graph_backend_graph_tool_adapter",
         "rationale_for"
       ],
       [
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_rationale_109",
+        "audit_engine_semantic_audit_graph_backend_graph_tool_adapter_graphtooladapter_iter_adjacent_edge_occurrences",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter",
+        "audit_engine_semantic_audit_graph_analysis_models",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "imports"
+      ],
+      [
         "audit_engine_semantic_audit_graph_backend_igraph_adapter",
         "audit_engine_semantic_audit_graph_backend_adapter_interface",
         "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "imports"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_igraph_adapter",
@@ -73276,6 +73544,21 @@
         "imports"
       ],
       [
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter",
+        "copy",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "uses"
+      ],
+      [
         "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter",
         "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
         "inherits"
@@ -73287,12 +73570,22 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter",
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_iter_adjacent_edge_occurrences",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter",
         "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_iter_native_edges",
         "method"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter",
         "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_iter_native_nodes",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter",
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_native_adjacency_report",
         "method"
       ],
       [
@@ -73311,8 +73604,23 @@
         "calls"
       ],
       [
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "calls"
+      ],
+      [
         "audit_engine_semantic_audit_graph_backend_igraph_adapter_rationale_1",
         "audit_engine_semantic_audit_graph_backend_igraph_adapter",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter_rationale_67",
+        "audit_engine_semantic_audit_graph_backend_igraph_adapter_igraphadapter_iter_adjacent_edge_occurrences",
         "rationale_for"
       ],
       [
@@ -73332,8 +73640,28 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_adapter",
+        "audit_engine_semantic_audit_graph_analysis_models",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter",
         "audit_engine_semantic_audit_graph_backend_adapter_interface",
         "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativenoderecord",
+        "imports"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_adapter",
@@ -73344,6 +73672,11 @@
         "audit_engine_semantic_audit_graph_backend_networkx_adapter",
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
         "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter",
+        "copy",
+        "imports_from"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_adapter",
@@ -73358,6 +73691,21 @@
       [
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
         "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativenoderecord",
         "uses"
       ],
       [
@@ -73382,6 +73730,11 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_edge_record",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_edges",
         "method"
       ],
@@ -73398,6 +73751,21 @@
       [
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_init",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_adjacent_edge_occurrences",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_native_edge_occurrences",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_native_nodes",
         "method"
       ],
       [
@@ -73424,6 +73792,11 @@
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_capabilities",
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_py_any",
         "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_edge_record",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "calls"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_export",
@@ -73446,58 +73819,38 @@
         "calls"
       ],
       [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_edge_record",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_native_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_edge_record",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_native_nodes",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativenoderecord",
+        "calls"
+      ],
+      [
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_loss_report",
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_py_any",
         "references"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_103",
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_nodes",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_1",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_113",
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_edges",
-        "rationale_for"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_12",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_19",
         "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
-        "rationale_for"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_134",
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_neighbors",
-        "rationale_for"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_146",
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_capabilities",
-        "rationale_for"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_172",
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_identity_mapping",
-        "rationale_for"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_192",
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_loss_report",
-        "rationale_for"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_47",
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_build",
-        "rationale_for"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_87",
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_export",
-        "rationale_for"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_rationale_95",
-        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_backend_graph",
         "rationale_for"
       ],
       [
@@ -73777,11 +74130,6 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
-        "method"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_verify_projection",
         "method"
       ],
@@ -73822,22 +74170,17 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
-        "audit_engine_semantic_audit_graph_analysis_identity_edge_fingerprint",
-        "calls"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
         "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
         "calls"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendprojectionerror",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
         "calls"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendprojectionerror",
         "calls"
       ],
       [
@@ -73946,21 +74289,6 @@
         "calls"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
-        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
-        "references"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendprojectionerror",
-        "calls"
-      ],
-      [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_py_any",
-        "references"
-      ],
-      [
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_verify_projection",
         "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
         "calls"
@@ -74011,27 +74339,27 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_147",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_150",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_attach_edge_occurrence_ids",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_161",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_165",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_verify_projection",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_208",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_212",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_build_adjacency",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_242",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_227",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_289",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_288",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
         "rationale_for"
       ],
@@ -74367,8 +74695,23 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_scipy_adapter",
+        "audit_engine_semantic_audit_graph_analysis_models",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter",
         "audit_engine_semantic_audit_graph_backend_adapter_interface",
         "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "imports"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_scipy_adapter",
@@ -74421,13 +74764,38 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_scipy_adapter_rationale_16",
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_rationale_149",
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_occurrences_for_pair",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_rationale_185",
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_iter_adjacent_edge_occurrences",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_rationale_19",
         "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_rationale_228",
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_native_adjacency_report",
         "rationale_for"
       ],
       [
         "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter",
         "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
         "uses"
       ],
       [
@@ -74467,6 +74835,11 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter",
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_iter_adjacent_edge_occurrences",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter",
         "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_iter_native_edges",
         "method"
       ],
@@ -74478,6 +74851,11 @@
       [
         "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter",
         "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_loss_report",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter",
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_native_adjacency_report",
         "method"
       ],
       [
@@ -74496,6 +74874,11 @@
         "method"
       ],
       [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter",
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_occurrences_for_pair",
+        "method"
+      ],
+      [
         "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_capabilities",
         "audit_engine_semantic_audit_graph_backend_scipy_adapter_py_any",
         "references"
@@ -74511,8 +74894,23 @@
         "calls"
       ],
       [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_occurrences_for_pair",
+        "calls"
+      ],
+      [
         "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_iter_native_nodes",
         "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_node_payload",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_scipy_adapter_scipyadapter_occurrences_for_pair",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
         "calls"
       ],
       [
@@ -101203,361 +101601,6 @@
       [
         "github_workflows_archive_11_semantic_audit_orchestration_validation_validate_steps",
         "github_workflows_archive_11_semantic_audit_orchestration_validation_steps_with",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance",
-        "github_workflows_e85_native_graph_backend_conformance_concurrency",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance",
-        "github_workflows_e85_native_graph_backend_conformance_jobs",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance",
-        "github_workflows_e85_native_graph_backend_conformance_name",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance",
-        "github_workflows_e85_native_graph_backend_conformance_on",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance",
-        "github_workflows_e85_native_graph_backend_conformance_permissions",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_concurrency",
-        "github_workflows_e85_native_graph_backend_conformance_concurrency_cancel_in_progress",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_concurrency",
-        "github_workflows_e85_native_graph_backend_conformance_concurrency_group",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_env",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_name",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_run",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_if",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_name",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_run",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_shell",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_uses",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs",
-        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs",
-        "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs",
-        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs",
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
-        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_if",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
-        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_name",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
-        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_needs",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
-        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_runs_on",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
-        "github_workflows_e85_native_graph_backend_conformance_conformance_summary_steps",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
-        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_name",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
-        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_runs_on",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
-        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_steps",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
-        "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_timeout_minutes",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_name",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_runs_on",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_strategy",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_timeout_minutes",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_name",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_outputs",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_runs_on",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_timeout_minutes",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_on",
-        "github_workflows_e85_native_graph_backend_conformance_on_workflow_dispatch",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_permissions",
-        "github_workflows_e85_native_graph_backend_conformance_permissions_contents",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_if",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_name",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_run",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_uses",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_strategy",
-        "github_workflows_e85_native_graph_backend_conformance_strategy_fail_fast",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_strategy",
-        "github_workflows_e85_native_graph_backend_conformance_strategy_matrix",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_outputs",
-        "github_workflows_e85_native_graph_backend_conformance_outputs_native_status",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_id",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_if",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_name",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_run",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_shell",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_uses",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_env",
-        "github_workflows_e85_native_graph_backend_conformance_env_graph_tool",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_env",
-        "github_workflows_e85_native_graph_backend_conformance_env_pip_backends",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_env",
-        "github_workflows_e85_native_graph_backend_conformance_env_snap_job",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_env",
-        "github_workflows_e85_native_graph_backend_conformance_env_snap_native",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "github_workflows_e85_native_graph_backend_conformance_with_cache",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "github_workflows_e85_native_graph_backend_conformance_with_cache_environment",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "github_workflows_e85_native_graph_backend_conformance_with_environment_file",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "github_workflows_e85_native_graph_backend_conformance_with_environment_name",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "github_workflows_e85_native_graph_backend_conformance_with_if_no_files_found",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "github_workflows_e85_native_graph_backend_conformance_with_init_shell",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "github_workflows_e85_native_graph_backend_conformance_with_name",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "github_workflows_e85_native_graph_backend_conformance_with_path",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "github_workflows_e85_native_graph_backend_conformance_with_python_version",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_with",
-        "github_workflows_e85_native_graph_backend_conformance_with_retention_days",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_strategy_matrix",
-        "github_workflows_e85_native_graph_backend_conformance_matrix_backend",
         "contains"
       ],
       [
@@ -182697,6 +182740,11 @@
       ],
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "audit_engine_semantic_audit_graph_backend_capability_registry",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
         "audit_engine_semantic_audit_graph_backend_capability_registry_create_default_registry",
         "imports"
       ],
@@ -182772,6 +182820,11 @@
       ],
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
         "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph",
         "contains"
       ],
@@ -182827,6 +182880,36 @@
       ],
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_fake_igraph_edge_sequence_supports_indexed_edge_access",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_projection_mutation_fails_closed",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_repository_conformance_routes_context_tools_through_native_adjacency",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_repository_conformance_routes_context_tools_through_native_adjacency",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
         "tests_semantic_graph_test_e83_multi_backend_traversal_test_native_projection_mutation_fails_closed",
         "contains"
       ],
@@ -182842,7 +182925,32 @@
       ],
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_reference_both_direction_returns_self_loop_occurrence_once",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
         "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_backend_uses_csr_and_preserves_parallel_edge_occurrences",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_both_direction_returns_self_loop_occurrence_once",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_query_is_bounded_to_reached_node_adjacency",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_repository_conformance_routes_context_tools_through_native_adjacency",
         "contains"
       ],
       [
@@ -182867,6 +182975,11 @@
       ],
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
         "types",
         "imports"
       ],
@@ -182878,6 +182991,11 @@
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal_edge",
         "tests_semantic_graph_test_e83_multi_backend_traversal_edge_init",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq_getitem",
         "method"
       ],
       [
@@ -182894,6 +183012,11 @@
         "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq",
         "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq_setitem",
         "method"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq_getitem",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_edge",
+        "calls"
       ],
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq_iter",
@@ -182942,7 +183065,17 @@
       ],
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtool_add_edge",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtool_vertex",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtool_add_edge",
         "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtooledge",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtool_init",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakeproperty",
         "calls"
       ],
       [
@@ -182953,6 +183086,16 @@
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtool_new_vertex_property",
         "tests_semantic_graph_test_e83_multi_backend_traversal_fakeproperty",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtool_vertex",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtool_vertices",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtool_vertex",
         "calls"
       ],
       [
@@ -182971,6 +183114,26 @@
         "method"
       ],
       [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex_in_edges",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex_init",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex_int",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakegraphtoolvertex_out_edges",
+        "method"
+      ],
+      [
         "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph",
         "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph_add_edges",
         "method"
@@ -182978,6 +183141,16 @@
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph",
         "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph_add_vertices",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph_ecount",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph_incident",
         "method"
       ],
       [
@@ -183156,8 +183329,18 @@
         "rationale_for"
       ],
       [
-        "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_344",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_104",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph_ecount",
+        "rationale_for"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_598",
         "tests_semantic_graph_test_e83_multi_backend_traversal_test_e85_conformance_runner_contract_with_adapter_test_double",
+        "rationale_for"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_rationale_87",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_edgeseq_getitem",
         "rationale_for"
       ],
       [
@@ -183223,6 +183406,131 @@
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal_test_explicit_backend_selection_never_silently_falls_back",
         "tests_semantic_graph_test_e83_multi_backend_traversal_graph_fixture",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_fake_igraph_edge_sequence_supports_indexed_edge_access",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_fakeigraph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_fake_igraph_edge_sequence_supports_indexed_edge_access",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_install_fake",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_projection_mutation_fails_closed",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_projection_mutation_fails_closed",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_projection_mutation_fails_closed",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadapterprojectionerror",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_projection_mutation_fails_closed",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_graph_fixture",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_projection_mutation_fails_closed",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_install_fake",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_runtime_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_graph_fixture",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_install_fake",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans_forbidden_full_edges",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans_forbidden_full_nodes",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_repository_conformance_routes_context_tools_through_native_adjacency",
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_runtime_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_graph_fixture",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_install_fake",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans_forbidden_full_edges",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans_forbidden_full_nodes",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans_forbidden_full_edges",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans_forbidden_full_nodes",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_igraph_repository_conformance_routes_context_tools_through_native_adjacency",
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
         "calls"
       ],
       [
@@ -183296,6 +183604,16 @@
         "calls"
       ],
       [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_reference_both_direction_returns_self_loop_occurrence_once",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_reference_both_direction_returns_self_loop_occurrence_once",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_graph_fixture",
+        "calls"
+      ],
+      [
         "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_backend_uses_csr_and_preserves_parallel_edge_occurrences",
         "audit_engine_semantic_audit_graph_queries_models_graphquery",
         "calls"
@@ -183313,6 +183631,91 @@
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_backend_uses_csr_and_preserves_parallel_edge_occurrences",
         "tests_semantic_graph_test_e83_multi_backend_traversal_query_result",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_both_direction_returns_self_loop_occurrence_once",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_both_direction_returns_self_loop_occurrence_once",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_runtime_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_both_direction_returns_self_loop_occurrence_once",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_both_direction_returns_self_loop_occurrence_once",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_graph_fixture",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_runtime_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_graph_fixture",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans_forbidden_full_edges",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans_forbidden_full_nodes",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans_forbidden_full_edges",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans_forbidden_full_nodes",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_query_is_bounded_to_reached_node_adjacency",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_query_is_bounded_to_reached_node_adjacency",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_runtime_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_query_is_bounded_to_reached_node_adjacency",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_query_is_bounded_to_reached_node_adjacency",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_graph_fixture",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_repository_conformance_routes_context_tools_through_native_adjacency",
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
         "calls"
       ],
       [
@@ -184177,6 +184580,11 @@
       ],
       [
         "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_context_tools_use_backend_neutral_graph_queries",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
         "tests_semantic_graph_test_e88_networkx_repository_backend_test_native_backend_workflow_avoids_flat_layout_editable_install_and_adds_repo_runner",
         "contains"
       ],
@@ -184229,6 +184637,31 @@
         "tests_semantic_graph_test_e88_networkx_repository_backend_graph",
         "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
         "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_context_tools_use_backend_neutral_graph_queries",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_context_tools_use_backend_neutral_graph_queries",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_graph_runtime_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_context_tools_use_backend_neutral_graph_queries",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_invoke",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_context_tools_use_backend_neutral_graph_queries",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_context_tools_use_backend_neutral_graph_queries",
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_context_tools_use_backend_neutral_graph_queries_forbidden_context_hook",
+        "indirect_call"
       ],
       [
         "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency",
@@ -191361,6 +191794,11 @@
         "method"
       ],
       [
+        "tests_semantic_graph_test_gb01_optional_native_backends_faketoolgraph_init",
+        "tests_semantic_graph_test_gb01_optional_native_backends_fakeproperty",
+        "calls"
+      ],
+      [
         "tests_semantic_graph_test_gb01_optional_native_backends_faketoolgraph_new_edge_property",
         "tests_semantic_graph_test_gb01_optional_native_backends_fakeproperty",
         "calls"
@@ -194878,6 +195316,506 @@
       [
         "tests_semantic_graph_test_ge04_section_impact_integration_tweak_link",
         "tests_semantic_graph_test_ge04_section_impact_integration_write",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_core_semantic_graph",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_analysis_models",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_analysis_traversal",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeadjacencynotsupportederror",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativenoderecord",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_backend_capability_registry_create_default_registry",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "pytest",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_graph",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_capability_declaration_never_implies_acceptance",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_contract_records_are_typed_and_occurrences_are_unique",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_edge_mapping_corruption_fails_closed",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_local_adjacency_preserves_occurrences_and_self_loop_once",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_payload_mutation_is_detected_by_traversal_engine",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_and_runtime_report_do_not_call_full_edge_enumerator",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_does_not_rebuild_python_reference_adjacency",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_records_do_not_leak_mutable_projection_payloads",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_both_direction_counts_self_loop_once",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_traversal_calls_the_typed_adapter_adjacency_operation",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_projection_is_directed_multigraph_and_keeps_isolated_nodes",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_reference_both_direction_counts_self_loop_once",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_registry_separates_discovery_from_conformance_and_approval",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_runtime_report_does_not_enumerate_native_projection",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_unknown_and_isolated_node_semantics",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_add_edge",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_add_node",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_graph",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_py_fixture",
+        "references"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_rationale_1",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx",
+        "rationale_for"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_capability_declaration_never_implies_acceptance",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_capability_declaration_never_implies_acceptance",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_capabilities",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_contract_records_are_typed_and_occurrences_are_unique",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_contract_records_are_typed_and_occurrences_are_unique",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativenoderecord",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_contract_records_are_typed_and_occurrences_are_unique",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_contract_records_are_typed_and_occurrences_are_unique",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_native_edge_occurrences",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_contract_records_are_typed_and_occurrences_are_unique",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_native_nodes",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeadjacencynotsupportederror",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection_capabilities",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection_export",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection_identity_mapping",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_legacy_adapter_fails_explicitly_instead_of_scanning_projection_loss_report",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_edge_mapping_corruption_fails_closed",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_edge_mapping_corruption_fails_closed",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_edge_mapping_corruption_fails_closed",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_export",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_edge_mapping_corruption_fails_closed",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_identity_mapping",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_edge_mapping_corruption_fails_closed",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_adjacent_edge_occurrences",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_local_adjacency_preserves_occurrences_and_self_loop_once",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_local_adjacency_preserves_occurrences_and_self_loop_once",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_adjacent_edge_occurrences",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_local_adjacency_preserves_occurrences_and_self_loop_once",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_py_parametrize",
+        "references"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_payload_mutation_is_detected_by_traversal_engine",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_payload_mutation_is_detected_by_traversal_engine",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_payload_mutation_is_detected_by_traversal_engine",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_and_runtime_report_do_not_call_full_edge_enumerator",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_and_runtime_report_do_not_call_full_edge_enumerator",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_and_runtime_report_do_not_call_full_edge_enumerator",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_runtime_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_and_runtime_report_do_not_call_full_edge_enumerator",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_and_runtime_report_do_not_call_full_edge_enumerator",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_and_runtime_report_do_not_call_full_edge_enumerator_forbidden",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_and_runtime_report_do_not_call_full_edge_enumerator",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_runtime_report_does_not_enumerate_native_projection_forbidden",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_does_not_rebuild_python_reference_adjacency",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_does_not_rebuild_python_reference_adjacency",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_does_not_rebuild_python_reference_adjacency",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_does_not_rebuild_python_reference_adjacency",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_does_not_rebuild_python_reference_adjacency",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_does_not_rebuild_python_reference_adjacency_forbidden",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_query_does_not_rebuild_python_reference_adjacency",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_runtime_report_does_not_enumerate_native_projection_forbidden",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_records_do_not_leak_mutable_projection_payloads",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_native_records_do_not_leak_mutable_projection_payloads",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_native_edge_occurrences",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_both_direction_counts_self_loop_once",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_both_direction_counts_self_loop_once",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_both_direction_counts_self_loop_once",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_traversal_calls_the_typed_adapter_adjacency_operation",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_traversal_calls_the_typed_adapter_adjacency_operation",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_traversal_calls_the_typed_adapter_adjacency_operation",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_traversal_calls_the_typed_adapter_adjacency_operation",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_networkx_traversal_calls_the_typed_adapter_adjacency_operation_observed",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_projection_is_directed_multigraph_and_keeps_isolated_nodes",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_projection_is_directed_multigraph_and_keeps_isolated_nodes",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_export",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_reference_both_direction_counts_self_loop_once",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_reference_both_direction_counts_self_loop_once",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_registry_separates_discovery_from_conformance_and_approval",
+        "audit_engine_semantic_audit_graph_backend_capability_registry_create_default_registry",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_runtime_report_does_not_enumerate_native_projection",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_runtime_report_does_not_enumerate_native_projection",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_runtime_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_runtime_report_does_not_enumerate_native_projection",
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_runtime_report_does_not_enumerate_native_projection_forbidden",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_unknown_and_isolated_node_semantics",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_unknown_and_isolated_node_semantics",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m1_adapter_protocol_networkx_test_unknown_and_isolated_node_semantics",
+        "audit_engine_semantic_audit_graph_backend_networkx_adapter_networkxadapter_iter_adjacent_edge_occurrences",
         "calls"
       ],
       [
