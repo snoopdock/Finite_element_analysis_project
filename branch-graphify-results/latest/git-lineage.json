@@ -1,10 +1,10 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "ab570792bd690b6effc1e478058ff9babd7090ce",
+  "base_sha": "dfbeb82c1149dda34404418cac656d1a71a1d092",
   "compare_sha": "342c9d55b1dc49ccf93759d0dce203723485ef17",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 307,
+  "base_only_commit_count": 309,
   "compare_only_commit_count": 1168,
   "base_changes_since_merge_base": [
     {
@@ -7439,6 +7439,16 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "dfbeb82c1149dda34404418cac656d1a71a1d092",
+      "subject": "Fix M7.1 benchmark input propagation and report checks"
+    },
+    {
+      "side": "<",
+      "sha": "4c46ca191b3dfe2d11fb09d4e21078c5425ecdc5",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "ab570792bd690b6effc1e478058ff9babd7090ce",
