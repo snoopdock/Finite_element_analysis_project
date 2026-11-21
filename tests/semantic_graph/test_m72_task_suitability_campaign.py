@@ -116,3 +116,20 @@ def test_unknown_backend_and_workload_are_rejected():
         m72.make_report("auto", seeds=[1, 2])
     with pytest.raises(m72.BenchmarkError, match="invalid_workload"):
         m72.make_report("networkx", seeds=[1, 2], workload_ids=["unknown"])
+
+
+
+def test_rehashed_mixed_environment_inside_backend_report_is_rejected(networkx_report):
+    forged = deepcopy(networkx_report)
+    forged["cases"][1]["environment"]["python"] = "0.0"
+    _rehash(forged)
+    with pytest.raises(m72.BenchmarkError, match="mixed_environment"):
+        m72.verify_report(forged)
+
+
+def test_rehashed_workload_description_forgery_is_rejected(networkx_report):
+    forged = deepcopy(networkx_report)
+    forged["cases"][0]["workload"]["purpose"] = "fabricated task"
+    _rehash(forged)
+    with pytest.raises(m72.BenchmarkError, match="workload_reconstruction_mismatch"):
+        m72.verify_report(forged)
