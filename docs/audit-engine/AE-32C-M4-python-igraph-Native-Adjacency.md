@@ -56,7 +56,9 @@ The E.8.3 test module adds a fake-API contract test covering:
 - native lookup and occurrence-read telemetry;
 - failure if full native node/edge enumeration is attempted after construction, including during runtime reporting.
 
-The existing conditional real-library test remains the actual python-igraph API smoke/conformance gate when the dependency is installed. A fake module is not accepted as proof of binary/API compatibility.
+The existing conditional real-library test remains the actual python-igraph API smoke/conformance gate when the dependency is installed. A separate conditional repository-runner test now checks all three context operations, native execution-mode labels, native lookup/occurrence telemetry and source follow-through. A fake module is not accepted as proof of binary/API compatibility.
+
+The inspected G9.42 artifact for M3 showed that python-igraph was absent: both real-igraph tests were skipped with the explicit reason `igraph native library is not installed in this interpreter`. Since SciPy was present through the optional `graph-core` dependency group, `pyproject.toml` now includes `igraph>=0.11,<2.0` in that same group. This keeps igraph optional for base installations while ensuring the graph-core validation environment installs it. The next G9.42 artifact must confirm that the real tests execute rather than skip.
 
 ## 5. Technical limitations and acceptance boundary
 
@@ -77,6 +79,8 @@ The fake-adapter test establishes the intended interface behavior only. It does 
 - `ff94815f5f60b24b471dfc76d16f3a089380a4df` — tighten edge-ID/occurrence mapping validation and registry state.
 - `785cddde1b3ed4defd40cc609c7a0c317f18dcd9` — add fake-native adjacency coverage and registry assertions.
 - `6fc8b19c55bdbce81429148427c9a92057f470bd` — correct the expected one-time projection read count.
+- `0094c6be1b8e47b2b68782c43ee4760b56e43281` — add real-library telemetry assertions and repository context-tool conformance coverage.
+- `ed3a2a11d47931848694c32ea16b08845ff3a3c6` — include igraph in the optional `graph-core` validation dependency set.
 
 No local tests or workflows were run by the implementer. The next step is a user-run G9.42 validation against the latest Stage1 head.
 
