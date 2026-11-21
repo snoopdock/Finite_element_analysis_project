@@ -40,8 +40,8 @@ def test_contract_records_are_typed_and_occurrences_are_unique(graph):
 @pytest.mark.parametrize(
     ("direction", "expected"),
     [
-        (TraversalDirection.OUTGOING, [0, 1, 3, 4]),
-        (TraversalDirection.INCOMING, [2, 3]),
+        (TraversalDirection.OUTGOING, [2, 3, 4]),
+        (TraversalDirection.INCOMING, [0, 1, 3]),
         (TraversalDirection.BOTH, [0, 1, 2, 3, 4]),
     ],
 )

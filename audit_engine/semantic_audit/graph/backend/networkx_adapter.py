@@ -64,7 +64,10 @@ class NetworkXAdapter(SemanticGraphAdapter):
         return list(self.graph.nodes)
 
     def edges(self):
-        return [deepcopy(data) for _, _, _, data in self.graph.edges(keys=True, data=True)]
+        return [
+            {key: deepcopy(value) for key, value in data.items() if key != _EDGE_OCCURRENCE_KEY}
+            for _, _, _, data in self.graph.edges(keys=True, data=True)
+        ]
 
     def neighbors(self, node_id: str):
         if node_id not in self.graph:
@@ -77,6 +80,9 @@ class NetworkXAdapter(SemanticGraphAdapter):
             "package": "networkx",
             "native_graph_type": "MultiDiGraph",
             "directed": True,
+            "directed_graph": True,
+            "multiedges": True,
+            "metadata": True,
             "native_parallel_edges": True,
             "native_self_loops": True,
             "native_node_attributes": True,
