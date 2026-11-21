@@ -16,3 +16,5 @@ rdflib>=7.0,<8.0
 # G6 backend benchmarking: runtime adapters used by the existing graph system
 networkx>=3.2,<4.0
 scipy>=1.11,<2.0
+# M4 native graph backend conformance (G9.42 installs this file directly)
+igraph>=0.11,<2.0
