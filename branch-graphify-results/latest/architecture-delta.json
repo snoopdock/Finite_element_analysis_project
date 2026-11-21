@@ -2,18 +2,18 @@
   "identity_note": "Node keys use the first available id/node_id/key/name/label field. Edge keys use source/target/relation-like fields. These are structural comparison keys, not proof of semantic equivalence.",
   "base": {
     "branch": "main",
-    "node_count": 5021,
-    "edge_count": 7795
+    "node_count": 5017,
+    "edge_count": 7790
   },
   "compare": {
     "branch": "stage1-section-uuids",
-    "node_count": 17798,
-    "edge_count": 45489
+    "node_count": 17837,
+    "edge_count": 45597
   },
   "nodes": {
     "common_count": 2438,
-    "base_only_count": 2583,
-    "compare_only_count": 15360,
+    "base_only_count": 2579,
+    "compare_only_count": 15399,
     "base_only": [
       "abc",
       "analysis_citation_validator_rationale_128",
@@ -1331,13 +1331,11 @@
       "github_workflows_e85_native_graph_backend_conformance_conformance_summary_needs",
       "github_workflows_e85_native_graph_backend_conformance_conformance_summary_runs_on",
       "github_workflows_e85_native_graph_backend_conformance_conformance_summary_steps",
+      "github_workflows_e85_native_graph_backend_conformance_env_ae32c_snap_worker_image",
       "github_workflows_e85_native_graph_backend_conformance_env_graph_tool",
       "github_workflows_e85_native_graph_backend_conformance_env_pip_backends",
-      "github_workflows_e85_native_graph_backend_conformance_env_python39_setup",
-      "github_workflows_e85_native_graph_backend_conformance_env_snap_install",
       "github_workflows_e85_native_graph_backend_conformance_env_snap_job",
       "github_workflows_e85_native_graph_backend_conformance_env_snap_native",
-      "github_workflows_e85_native_graph_backend_conformance_env_snap_smoke",
       "github_workflows_e85_native_graph_backend_conformance_env_source_ref",
       "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_name",
       "github_workflows_e85_native_graph_backend_conformance_graph_tool_native_runs_on",
@@ -1347,12 +1345,11 @@
       "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
       "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
       "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
-      "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
+      "github_workflows_e85_native_graph_backend_conformance_jobs_snap_isolated_worker_conformance",
       "github_workflows_e85_native_graph_backend_conformance_matrix_backend",
       "github_workflows_e85_native_graph_backend_conformance_name",
       "github_workflows_e85_native_graph_backend_conformance_on",
       "github_workflows_e85_native_graph_backend_conformance_on_workflow_dispatch",
-      "github_workflows_e85_native_graph_backend_conformance_outputs_native_status",
       "github_workflows_e85_native_graph_backend_conformance_permissions",
       "github_workflows_e85_native_graph_backend_conformance_permissions_contents",
       "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_name",
@@ -1361,13 +1358,12 @@
       "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_strategy",
       "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_timeout_minutes",
       "github_workflows_e85_native_graph_backend_conformance_run_name",
-      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_name",
-      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_outputs",
-      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_runs_on",
-      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_timeout_minutes",
+      "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_env",
+      "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_name",
+      "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_runs_on",
+      "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_steps",
+      "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_timeout_minutes",
       "github_workflows_e85_native_graph_backend_conformance_steps_env",
-      "github_workflows_e85_native_graph_backend_conformance_steps_id",
       "github_workflows_e85_native_graph_backend_conformance_steps_if",
       "github_workflows_e85_native_graph_backend_conformance_steps_name",
       "github_workflows_e85_native_graph_backend_conformance_steps_run",
@@ -5084,6 +5080,27 @@
       "audit_engine_semantic_audit_graph_backend_snap_adapter_snapadapter_iter_native_edges",
       "audit_engine_semantic_audit_graph_backend_snap_adapter_snapadapter_iter_native_nodes",
       "audit_engine_semantic_audit_graph_backend_snap_adapter_snapadapter_loss_report",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_py_any",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_py_runtimeerror",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_rationale_1",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_rationale_32",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_rationale_36",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_backend_graph",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_capabilities",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_close",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_del",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_ensure_audit",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_export",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_init",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_adjacent_edge_occurrences",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_native_edges",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_native_nodes",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_loss_report",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_native_adjacency_report",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_request",
+      "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkerprotocolerror",
       "audit_engine_semantic_audit_graph_builder",
       "audit_engine_semantic_audit_graph_builder_rationale_10",
       "audit_engine_semantic_audit_graph_builder_rationale_114",
@@ -14860,6 +14877,7 @@
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans_forbidden_full_nodes",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_query_is_bounded_to_reached_node_adjacency",
       "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_repository_conformance_routes_context_tools_through_native_adjacency",
+      "tests_semantic_graph_test_e83_multi_backend_traversal_test_snap_fake_module_is_not_accepted_as_isolated_worker_conformance",
       "tests_semantic_graph_test_e83_multi_backend_traversal_vertex",
       "tests_semantic_graph_test_e83_multi_backend_traversal_vertex_getitem",
       "tests_semantic_graph_test_e83_multi_backend_traversal_vertex_init",
@@ -15604,6 +15622,23 @@
       "tests_semantic_graph_test_ri04_production_integration_test_rehash_cannot_forge_campaign_authority",
       "tests_semantic_graph_test_ri04_production_integration_test_rehash_cannot_forge_replay_shape",
       "tests_semantic_graph_test_ri04_production_integration_test_self_rehashed_campaign_with_fake_count_is_rejected",
+      "tests_semantic_graph_test_snap_worker_adapter",
+      "tests_semantic_graph_test_snap_worker_adapter_fakeprocess",
+      "tests_semantic_graph_test_snap_worker_adapter_fakeprocess_init",
+      "tests_semantic_graph_test_snap_worker_adapter_fakeprocess_kill",
+      "tests_semantic_graph_test_snap_worker_adapter_fakeprocess_poll",
+      "tests_semantic_graph_test_snap_worker_adapter_fakeprocess_wait",
+      "tests_semantic_graph_test_snap_worker_adapter_fakestdin",
+      "tests_semantic_graph_test_snap_worker_adapter_fakestdin_close",
+      "tests_semantic_graph_test_snap_worker_adapter_fakestdin_flush",
+      "tests_semantic_graph_test_snap_worker_adapter_fakestdin_init",
+      "tests_semantic_graph_test_snap_worker_adapter_fakestdin_write",
+      "tests_semantic_graph_test_snap_worker_adapter_fakestdout",
+      "tests_semantic_graph_test_snap_worker_adapter_fakestdout_init",
+      "tests_semantic_graph_test_snap_worker_adapter_fakestdout_readline",
+      "tests_semantic_graph_test_snap_worker_adapter_graph",
+      "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol",
+      "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol_fake_popen",
       "tests_semantic_graph_test_traversal",
       "tests_semantic_graph_test_traversal_test_cycle_safe_traversal",
       "tests_semantic_graph_test_traversal_test_incoming_traversal",
@@ -17196,9 +17231,9 @@
       "tools_gb03_native_backend_conformance_probe_backend",
       "tools_gb03_native_backend_conformance_py_any",
       "tools_gb03_native_backend_conformance_py_path",
-      "tools_gb03_native_backend_conformance_rationale_127",
+      "tools_gb03_native_backend_conformance_rationale_136",
       "tools_gb03_native_backend_conformance_rationale_2",
-      "tools_gb03_native_backend_conformance_rationale_339",
+      "tools_gb03_native_backend_conformance_rationale_348",
       "tools_gb03_native_backend_conformance_rationale_84",
       "tools_gb03_native_backend_conformance_result_summary",
       "tools_gb03_native_backend_conformance_run",
@@ -17964,8 +17999,8 @@
   },
   "edges": {
     "common_count": 4707,
-    "base_only_count": 3088,
-    "compare_only_count": 40782,
+    "base_only_count": 3083,
+    "compare_only_count": 40890,
     "base_only": [
       [
         "analysis_citation_validator",
@@ -25004,7 +25039,7 @@
       ],
       [
         "github_workflows_e85_native_graph_backend_conformance_jobs",
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_isolated_worker_conformance",
         "contains"
       ],
       [
@@ -25078,28 +25113,28 @@
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_name",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_isolated_worker_conformance",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_env",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_outputs",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_isolated_worker_conformance",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_name",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_runs_on",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_isolated_worker_conformance",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_runs_on",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_isolated_worker_conformance",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_steps",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_timeout_minutes",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_isolated_worker_conformance",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_timeout_minutes",
         "contains"
       ],
       [
@@ -25153,47 +25188,37 @@
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_outputs",
-        "github_workflows_e85_native_graph_backend_conformance_outputs_native_status",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_env",
+        "github_workflows_e85_native_graph_backend_conformance_env_ae32c_snap_worker_image",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_env",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
-        "github_workflows_e85_native_graph_backend_conformance_steps_id",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_if",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_name",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_run",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_shell",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_uses",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_isolated_worker_conformance_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_with",
         "contains"
       ],
@@ -25209,27 +25234,12 @@
       ],
       [
         "github_workflows_e85_native_graph_backend_conformance_steps_env",
-        "github_workflows_e85_native_graph_backend_conformance_env_python39_setup",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_env",
-        "github_workflows_e85_native_graph_backend_conformance_env_snap_install",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_env",
         "github_workflows_e85_native_graph_backend_conformance_env_snap_job",
         "contains"
       ],
       [
         "github_workflows_e85_native_graph_backend_conformance_steps_env",
         "github_workflows_e85_native_graph_backend_conformance_env_snap_native",
-        "contains"
-      ],
-      [
-        "github_workflows_e85_native_graph_backend_conformance_steps_env",
-        "github_workflows_e85_native_graph_backend_conformance_env_snap_smoke",
         "contains"
       ],
       [
@@ -73880,6 +73890,16 @@
         "imports"
       ],
       [
+        "audit_engine_semantic_audit_graph_backend_capability_registry",
+        "os",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_capability_registry",
+        "shutil",
+        "imports"
+      ],
+      [
         "audit_engine_semantic_audit_graph_backend_capability_registry_acceptance_state",
         "audit_engine_semantic_audit_graph_backend_optional_backend_support_backend_available",
         "calls"
@@ -75638,6 +75658,321 @@
         "audit_engine_semantic_audit_graph_backend_snap_adapter_snapadapter_init",
         "audit_engine_semantic_audit_graph_backend_snap_adapter_as_json",
         "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_core_semantic_graph",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_analysis_identity",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_analysis_models",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_backend_optional_backend_support",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_backend_optional_backend_support_make_projection",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_backend_optional_backend_support_nativeadaptermixin",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkerprotocolerror",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "copy",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "json",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "os",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "shutil",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "subprocess",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "tempfile",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "typing",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_rationale_1",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_rationale_32",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkerprotocolerror",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_rationale_36",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_semanticgraphadapter",
+        "inherits"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_optional_backend_support_nativeadaptermixin",
+        "inherits"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_backend_graph",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_capabilities",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_close",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_del",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_ensure_audit",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_export",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_init",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_adjacent_edge_occurrences",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_native_edges",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_native_nodes",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_loss_report",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_native_adjacency_report",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_request",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_backend_graph",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_export",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_del",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_close",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_ensure_audit",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_ensure_audit",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_request",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_ensure_audit",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkerprotocolerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_init",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_init",
+        "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_init",
+        "audit_engine_semantic_audit_graph_backend_optional_backend_support_make_projection",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_init",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_close",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_init",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_request",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_init",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkerprotocolerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_adapter_interface_nativeedgeoccurrence",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_request",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_adjacent_edge_occurrences",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkerprotocolerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_native_edges",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_ensure_audit",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_native_nodes",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_ensure_audit",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_native_adjacency_report",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_request",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_request",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_request",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkerprotocolerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkerprotocolerror",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_py_runtimeerror",
+        "inherits"
       ],
       [
         "audit_engine_semantic_audit_graph_builder",
@@ -106516,6 +106851,11 @@
       ],
       [
         "providers_cloudflare_cloudflareprovider_chat",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_close",
+        "indirect_call"
+      ],
+      [
+        "providers_cloudflare_cloudflareprovider_chat",
         "providers_base_providerresponse",
         "calls"
       ],
@@ -107163,6 +107503,11 @@
         "providers_response_limits",
         "typing",
         "imports_from"
+      ],
+      [
+        "providers_response_limits_close_response",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_close",
+        "indirect_call"
       ],
       [
         "providers_response_limits_load_bounded_json",
@@ -143168,11 +143513,6 @@
         "tests_semantic_audit_test_ae04_campaign_test_failure_injected_final_pointer_commit_marks_attempt_failed",
         "tests_semantic_audit_test_ae04_campaign_test_failure_injected_final_pointer_commit_marks_attempt_failed_glitch",
         "indirect_call"
-      ],
-      [
-        "tests_semantic_audit_test_ae04_campaign_test_failure_injected_final_pointer_commit_marks_attempt_failed_glitch",
-        "tests_semantic_graph_test_ge04_section_impact_integration_write",
-        "calls"
       ],
       [
         "tests_semantic_audit_test_ae04_campaign_test_failure_is_not_hidden_on_wrong_mutation_root",
@@ -183576,6 +183916,11 @@
       ],
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_snap_fake_module_is_not_accepted_as_isolated_worker_conformance",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal",
         "tests_semantic_graph_test_e83_multi_backend_traversal_vertex",
         "contains"
       ],
@@ -184337,6 +184682,16 @@
       [
         "tests_semantic_graph_test_e83_multi_backend_traversal_test_scipy_repository_conformance_routes_context_tools_through_native_adjacency",
         "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_snap_fake_module_is_not_accepted_as_isolated_worker_conformance",
+        "tests_semantic_graph_test_e83_multi_backend_traversal_install_fake",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e83_multi_backend_traversal_test_snap_fake_module_is_not_accepted_as_isolated_worker_conformance",
+        "tools_gb03_native_backend_conformance_run",
         "calls"
       ],
       [
@@ -198487,6 +198842,201 @@
       [
         "tests_semantic_graph_test_ri04_production_integration_test_self_rehashed_campaign_with_fake_count_is_rejected",
         "audit_engine_semantic_audit_graph_rdflib_interoperability_campaign_verify_campaign",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "audit_engine_semantic_audit_core_semantic_graph",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "json",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "os",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdin",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdout",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "tests_semantic_graph_test_snap_worker_adapter_graph",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter",
+        "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess",
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess_init",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess",
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess_kill",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess",
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess_poll",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess",
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess_wait",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess_init",
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdin",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess_init",
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdout",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdin",
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdin_close",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdin",
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdin_flush",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdin",
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdin_init",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdin",
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdin_write",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdout",
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdout_init",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdout",
+        "tests_semantic_graph_test_snap_worker_adapter_fakestdout_readline",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_add_edge",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_add_node",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_close",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_adjacent_edge_occurrences",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_native_edges",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_iter_native_nodes",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol",
+        "audit_engine_semantic_audit_graph_backend_snap_worker_adapter_snapworkeradapter_native_adjacency_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol",
+        "tests_semantic_graph_test_snap_worker_adapter_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol",
+        "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol_fake_popen",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_snap_worker_adapter_test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol_fake_popen",
+        "tests_semantic_graph_test_snap_worker_adapter_fakeprocess",
         "calls"
       ],
       [
@@ -228820,7 +229370,7 @@
         "references"
       ],
       [
-        "tools_gb03_native_backend_conformance_rationale_127",
+        "tools_gb03_native_backend_conformance_rationale_136",
         "tools_gb03_native_backend_conformance_fixture",
         "rationale_for"
       ],
@@ -228830,7 +229380,7 @@
         "rationale_for"
       ],
       [
-        "tools_gb03_native_backend_conformance_rationale_339",
+        "tools_gb03_native_backend_conformance_rationale_348",
         "tools_gb03_native_backend_conformance_run",
         "rationale_for"
       ],

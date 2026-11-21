@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "952c3e2a713abe34bca3259b20354897352f2271",
-  "compare_sha": "6d198138dcc3c5e7bd87de64d9b7d9594b785509",
+  "base_sha": "2a916109dd64a7761faeeeee5a5af28bb26becaa",
+  "compare_sha": "e9300e94818f1e4b2caa2c76f3945bc2c23f4d2b",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 277,
-  "compare_only_commit_count": 1103,
+  "base_only_commit_count": 280,
+  "compare_only_commit_count": 1111,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -1896,6 +1896,10 @@
     {
       "status": "A",
       "path": "audit_engine/semantic_audit/graph/backend/snap_adapter.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/backend/snap_worker_adapter.py"
     },
     {
       "status": "A",
@@ -6187,6 +6191,10 @@
     },
     {
       "status": "A",
+      "path": "tests/semantic_graph/test_snap_worker_adapter.py"
+    },
+    {
+      "status": "A",
       "path": "tests/semantic_graph/test_traversal.py"
     },
     {
@@ -7411,6 +7419,61 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "2a916109dd64a7761faeeeee5a5af28bb26becaa",
+      "subject": "Pull pinned Python worker base image during isolated SNAP build"
+    },
+    {
+      "side": ">",
+      "sha": "e9300e94818f1e4b2caa2c76f3945bc2c23f4d2b",
+      "subject": "Harden SNAP worker protocol schemas and adjacency bounds"
+    },
+    {
+      "side": "<",
+      "sha": "bf937910f1fdcec55c9c52c712790de0f5f27f6e",
+      "subject": "Add isolated SNAP worker E.8.5 and E.8.8 validation"
+    },
+    {
+      "side": ">",
+      "sha": "fc29cc5f9f6bdcbdcdb9c78a932429845415d340",
+      "subject": "Distinguish SNAP fake tests from isolated native conformance"
+    },
+    {
+      "side": ">",
+      "sha": "25c1cc9b194950356dd17f0b20d8b79e2873df52",
+      "subject": "Test isolated SNAP worker protocol and container restrictions"
+    },
+    {
+      "side": ">",
+      "sha": "721ba03d17a922a3b16ed57ee7bbd603f7e0d99f",
+      "subject": "Require isolated native SNAP worker for E.8.5 conformance"
+    },
+    {
+      "side": ">",
+      "sha": "fb2c86658c34e9be69b021c4ddeee6160171e902",
+      "subject": "Integrate isolated SNAP worker into native traversal engine"
+    },
+    {
+      "side": ">",
+      "sha": "46504ab9e9ca6c0a0a2f39f246d38d21aa518f7f",
+      "subject": "Expose SNAP worker availability and implementation state"
+    },
+    {
+      "side": "<",
+      "sha": "e1e8e40e78fd2b9f55c01e433370f5ad461ba8ae",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": ">",
+      "sha": "0c1103733535f53604247d2088afa1d2c27874c4",
+      "subject": "Route configured SNAP backend through isolated worker"
+    },
+    {
+      "side": ">",
+      "sha": "bb3ae6e53a888b92661c03eb41e3df135b2e7204",
+      "subject": "Add Python 3.11 proxy for isolated SNAP worker"
+    },
     {
       "side": ">",
       "sha": "6d198138dcc3c5e7bd87de64d9b7d9594b785509",
