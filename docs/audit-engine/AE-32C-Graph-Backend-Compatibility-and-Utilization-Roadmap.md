@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0 closed; M1 accepted for NetworkX; M2 accepted for tested NetworkX repository context routing; M3 accepted for tested SciPy CSR/CSC repository path; M4 python-igraph native adjacency accepted for the tested python-igraph 1.0.0 repository context path by G9.42 run 44901309538 against exact Stage1 SHA `c6d4fda93897a3b7022d28cba177fc5c453940b3`; M5 graph-tool native adjacency accepted for the tested graph-tool-base 3.9 / CPython 3.11.18 repository path by exact-SHA G9.42 run `44904263386` plus dedicated E.8.5/E.8.8 run `44905580330`; runtime production approval remains false  
+**Status:** M0 closed; M1 NetworkX accepted; M2 NetworkX repository context routing accepted; M3 SciPy and M4 python-igraph accepted for their recorded exact Stage1 snapshots; M5 graph-tool accepted for exact SHA `9adc99b9511d0281b18be76d60865dcf13bb16b0`; E.8.8 is now extended to NetworkX, SciPy, igraph, graph-tool and SNAP; M6 SNAP isolated-worker implementation is present but real worker conformance is pending retry after a graph-fingerprint format correction; production approval remains false  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -15,8 +15,8 @@
 **M5 implementation snapshot:** graph-tool native per-vertex `out_edges()`/`in_edges()` traversal, explicit graph-tool edge-index to semantic-occurrence mapping, BOTH self-loop deduplication, payload verification, cached projection counts and native telemetry; real-library and repository gates added; implementation commit sequence begins `b91f439a79fff9b8c4b09aa6e0a16e0abf8b5dee` and latest recorded implementation commit `137b74bcb5f2908c8379e3ec72584a260492cd7e`; G9.42 plus dedicated conda-forge E.8.5/E.8.8 validation passed at exact Stage1 SHA `9adc99b9511d0281b18be76d60865dcf13bb16b0` (runs `44904263386` and `44905580330`); production approval remains false  
 **M5 implementation record:** [AE-32C M5 graph-tool Native Adjacency](AE-32C-M5-graph-tool-Native-Adjacency.md) — API rationale, projection identity contract, local traversal, property-map limitations, tests, real-library workflow and exact-commit acceptance gates. The dedicated graph-tool job uses the conda-forge `graph-tool-base` package and reports its installed version.
 
-**Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
-**Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
+**Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool and SNAP worker routing, repository-backed conformance and later runtime utilization  
+**Change policy:** No branch creation or history rewriting. Application source, tests and milestone documentation are changed only on `stage1/section-uuids`. `main` may receive only narrowly scoped E85 workflow-controller/validator updates needed to validate Stage1; no application source changes or backend promotion occur on `main`.
 
 ---
 
@@ -571,8 +571,8 @@ The same dedicated workflow failed overall only because the SNAP compatibility j
 
 ## 11. Change and evidence discipline
 
-- All repository writes for this work target `stage1/section-uuids` explicitly.
-- Do not create another branch or modify `main`.
+- Application implementation, tests and documentation target `stage1/section-uuids` explicitly.
+- `main` is limited to the E85 workflow controller/definition validator; no application implementation changes are made there.
 - Do not rewrite history, force-push, or change the branch base.
 - Keep implementation, test, documentation and CI changes traceable to a milestone.
 - Run tests on the exact commit being reported; distinguish not-run, skipped, failed and passed.
@@ -585,3 +585,49 @@ The same dedicated workflow failed overall only because the SNAP compatibility j
 Run [44907031239](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44907031239) was dispatched from `main` at controller/source SHA `c54919c39bf656ef4562320008f6aa7df8b2e844`, not from Stage1. Logs confirm the old main workflow: SNAP requested CPython 3.9.19 on Ubuntu 26.04; NetworkX could not find the Stage1 M1 test; SciPy/igraph could not find the E.8.5 runner; graph-tool could not find its conda environment file. These are wrong-branch content failures and do not invalidate the Stage1 adapter implementation or its earlier exact-source graph-tool acceptance.
 
 To avoid dependence on the Actions mobile branch selector, the workflow controller on `main` now exposes a constrained `source_ref` workflow-dispatch input and passes it explicitly to every checkout. It is intended to be dispatched from main with `source_ref=stage1/section-uuids`; each job logs the actual checked-out source SHA. See [run 44907031239 analysis](AE-32C-E85-Validation-Failure-44907031239.md). The next run must verify the checked-out Stage1 SHA before any job result is used as conformance evidence.
+
+
+## 14. E.8.8 expansion and M6 isolated SNAP worker implementation — 2026-11-21
+
+### 14.1 E.8.8 scope expansion
+
+The manual E85 workflow controller on `main` and the branch-local Stage1 workflow now run the repository-backed E.8.8 gate for all executable backend jobs:
+
+- NetworkX, SciPy and igraph in the Python 3.11 pip matrix;
+- graph-tool in its dedicated conda-forge environment;
+- SNAP through a restricted CPython 3.9 worker with a Python 3.11 orchestrator.
+
+This removes the earlier deliberate deferral of SciPy and igraph repository-level parity. In run [44914650206](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914650206), at Stage1 SHA `7771d637cd613bf5cfc8c847108cd0c6eb28c98f`, NetworkX, SciPy, igraph and graph-tool each passed both E.8.5 and E.8.8. The graph-tool E.8.8 step also passed. The SNAP Docker image built successfully and the worker-adapter protocol test passed, but SNAP E.8.5 failed before native graph construction; SNAP E.8.8 was therefore skipped. The workflow's overall failure is correctly retained.
+
+### 14.2 SNAP failure diagnosis and correction
+
+The first real worker launch returned `snap_worker_error:graph_fingerprint_invalid`. This was an orchestrator/worker contract mismatch, not evidence of a SNAP API incompatibility: `graph_fingerprint()` returns the canonical identity form `graph:` followed by 32 lowercase hexadecimal characters, while the first worker implementation incorrectly required a raw 64-character SHA-256 string.
+
+The worker validator was corrected to enforce the actual canonical fingerprint format in commit `9f0125738759be4bb80026d9aa86d59a01e915b8`. Retry run [44914749858](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914749858) was started against that corrected implementation. At the time of this roadmap update it had not completed; no SNAP acceptance is claimed.
+
+### 14.3 M6 implementation record
+
+The M6 worker implementation consists of:
+
+- `tools/snap_worker.py`: Python 3.9-compatible, versioned JSON-lines worker; strict operation schemas; one-time TNEANet projection audit; native outgoing/incoming edge-ID queries; explicit semantic occurrence mapping; bounded input, graph and adjacency sizes.
+- `audit_engine/semantic_audit/graph/backend/snap_worker_adapter.py`: Python 3.11 proxy that launches the worker container, minimizes the child environment, binds requests to the canonical graph fingerprint, validates responses and maps native edge records back to canonical occurrences.
+- `.github/snap-worker/Dockerfile`: pinned SNAP distribution and worker-only image contents; the repository source is not copied into the runtime image.
+- `tests/semantic_graph/test_snap_worker_adapter.py`: protocol and container-launch contract test using a fake process. This is a unit test, not SNAP native acceptance.
+- `tools/gb03_native_backend_conformance.py`: refuses to mark SNAP E.8.5 as passed unless the isolated worker adapter is active and native adjacency telemetry is observed.
+- `tools/gb04_repository_backend_conformance.py`: includes worker image/runtime provenance in the E.8.8 report.
+
+The worker container is launched with network disabled, a read-only root filesystem, no repository bind mount, dropped Linux capabilities, no-new-privileges, a non-root identity and explicit CPU/memory/PID limits. The Docker build itself needs network access to fetch its base image and the pinned binary wheel; the runtime worker container does not have network access. The Docker image ID is recorded in the workflow environment and worker evidence.
+
+SNAP's TNEANet native incident edge IDs are used through `GetOutEId` and `GetInEId`; each is resolved with `GetEI` and checked against a stored `semantic_occurrence` attribute. This preserves parallel edge occurrences and allows a bidirectional query to deduplicate a self-loop by native edge identity. Attributes are stored as canonical JSON strings, an explicit reversible representation transformation for JSON-compatible payloads.
+
+See [AE-32C M6 SNAP Isolated Worker — Implementation and Acceptance](AE-32C-M6-SNAP-Isolated-Worker-Implementation-and-Acceptance.md) for the protocol, container policy, evidence schema, API references, limitations and acceptance gates.
+
+### 14.4 Milestone state and next gates
+
+| Milestone | Current state | Remaining acceptance requirement |
+|---|---|---|
+| M5 graph-tool | Previously accepted at exact SHA `9adc99b...`; E.8.5/E.8.8 passed again at SHA `7771d637...` | If declaring M5 complete for the current Stage1 head, rerun G9.42 at the exact same SHA as the final dedicated E.8.5/E.8.8 run. |
+| M6 SNAP | Worker implementation and fake-process protocol test present; real E.8.5 failed once due to the corrected fingerprint-format bug | Corrected real E.8.5 and E.8.8 must both pass; then run G9.42 against that same exact Stage1 SHA. |
+| M3 SciPy / M4 igraph | Their historical exact-SHA acceptance records remain valid; E.8.5/E.8.8 also passed together at SHA `7771d637...` | No promotion; preserve `production_approval=false`. |
+
+Do not infer M6 completion from a successful Docker build, a fake-process test, or a green overall workflow if the SNAP job is not green. Do not change registry acceptance state or production approval until the exact-SHA gates pass.
