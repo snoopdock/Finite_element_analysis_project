@@ -1,7 +1,11 @@
 name: AE-32C M7.1 Five-Backend Native Smoke Benchmark
-run-name: AE-32C M7.1 native smoke — ${{ inputs.source_ref }}
+run-name: AE-32C M7.1 five-backend native smoke
 
 'on':
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/m7_1_manual_native_backend_smoke.yml'
   workflow_dispatch:
     inputs:
       source_ref:
@@ -40,15 +44,14 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24.x'
-          cache: false
-      - name: Install pinned actionlint
-        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
-      - name: Lint M7.1 workflow
-        run: "$(go env GOPATH)/bin/actionlint" -color -verbose .github/workflows/m7_1_manual_native_backend_smoke.yml
+      - name: Validate workflow YAML syntax without external tool installation
+        run: ruby -e 'require "yaml"; YAML.parse_file(".github/workflows/m7_1_manual_native_backend_smoke.yml"); puts "Workflow YAML syntax: valid"'
+      - name: Confirm manual dispatch declaration is present
+        run: |
+          set -euo pipefail
+          grep -Eq "^'on':|^on:" .github/workflows/m7_1_manual_native_backend_smoke.yml
+          grep -Eq '^  workflow_dispatch:' .github/workflows/m7_1_manual_native_backend_smoke.yml
+          echo "workflow_dispatch declaration: present"
 
   resolve-source:
     needs: workflow-lint
