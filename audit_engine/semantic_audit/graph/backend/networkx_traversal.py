@@ -242,7 +242,7 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
         outgoing: dict[str, list[SemanticEdge]],
         incoming: dict[str, list[SemanticEdge]],
     ) -> list[tuple[SemanticEdge, str]]:
-        """Read only the selected node's native NetworkX adjacency entries."""
+        """Use the adapter's typed native local-adjacency contract only."""
         if graph_fingerprint(self.graph) != self._source_fingerprint:
             raise BackendProjectionError("canonical_graph_changed_after_networkx_projection")
         if node_id not in self.native_graph:
@@ -256,30 +256,36 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
         }:
             raise BackendProjectionError("networkx_projection_node_payload_mismatch")
 
+        if isinstance(direction, str):
+            direction = TraversalDirection(direction)
         self._metrics["native_adjacency_lookups"] += 1
+        records = list(self.adapter.iter_adjacent_edge_occurrences(node_id, direction))
+        self._metrics["native_edge_occurrences_read"] += len(records)
+        self._metrics["native_edge_occurrences_returned"] += len(records)
+
         candidates: list[tuple[SemanticEdge, str]] = []
-        if direction in (TraversalDirection.OUTGOING, TraversalDirection.BOTH):
-            for neighbor, keyed_edges in self.native_graph.succ[node_id].items():
-                for data in keyed_edges.values():
-                    self._metrics["native_edge_occurrences_read"] += 1
-                    self._metrics["native_edge_occurrences_returned"] += 1
-                    edge = self._validated_native_edge(node_id, neighbor, data)
-                    self._metrics["native_edge_occurrences_validated"] += 1
-                    if relation_types is None or edge.relation_type in relation_types:
-                        candidates.append((edge, neighbor))
-        if direction in (TraversalDirection.INCOMING, TraversalDirection.BOTH):
-            for neighbor, keyed_edges in self.native_graph.pred[node_id].items():
-                for data in keyed_edges.values():
-                    # A BOTH expansion is a set of incident occurrences:
-                    # a self-loop is already included by the outgoing index.
-                    if direction is TraversalDirection.BOTH and neighbor == node_id:
-                        continue
-                    self._metrics["native_edge_occurrences_read"] += 1
-                    self._metrics["native_edge_occurrences_returned"] += 1
-                    edge = self._validated_native_edge(neighbor, node_id, data)
-                    self._metrics["native_edge_occurrences_validated"] += 1
-                    if relation_types is None or edge.relation_type in relation_types:
-                        candidates.append((edge, neighbor))
+        seen_occurrences: set[int] = set()
+        for record in records:
+            occurrence = record.occurrence_id
+            if type(occurrence) is not int or not 0 <= occurrence < len(self._edge_occurrences):
+                raise BackendProjectionError("networkx_edge_occurrence_mapping_invalid")
+            if occurrence in seen_occurrences:
+                raise BackendProjectionError("networkx_edge_occurrence_mapping_duplicate")
+            seen_occurrences.add(occurrence)
+            edge = self._edge_occurrences[occurrence]
+            if (
+                edge.source_id != record.source_id
+                or edge.target_id != record.target_id
+                or edge.relation_type != record.relation_type
+                or edge.attributes != record.attributes
+                or edge.metadata != record.metadata
+            ):
+                raise BackendProjectionError("networkx_projection_semantic_payload_mismatch")
+            self._metrics["native_edge_occurrences_validated"] += 1
+            if relation_types is not None and edge.relation_type not in relation_types:
+                continue
+            neighbor = edge.target_id if edge.source_id == node_id else edge.source_id
+            candidates.append((edge, neighbor))
 
         candidates.sort(
             key=lambda item: (
