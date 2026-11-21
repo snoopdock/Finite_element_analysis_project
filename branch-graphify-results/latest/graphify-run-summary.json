@@ -1,11 +1,11 @@
 {
   "main": {
     "branch": "main",
-    "commit": "d2b15b166611d62d638887318edc289ff8a7f73e",
+    "commit": "aeed218ce297efa93d45ccb0c955ac3e93fc4d19",
     "graphify_version": "0.9.112",
     "node_count": 5017,
     "edge_count": 7790,
-    "graph_json_sha256": "02775c3f8c555cb1f3b063a3ae182d76b9b4d28df24279cf43243c4fc4014ef4",
+    "graph_json_sha256": "4587f0fd0a56f545354dc106dcd2763daee7244a647ef3b6ed686023c2f9c6c2",
     "artifacts": {
       "html": "graph.html",
       "json": "graph.json",
@@ -14,11 +14,11 @@
   },
   "stage1/section-uuids": {
     "branch": "stage1/section-uuids",
-    "commit": "bfaa7a8d627237b12fff3b1f5f90ce6bece9a250",
+    "commit": "342c9d55b1dc49ccf93759d0dce203723485ef17",
     "graphify_version": "0.9.112",
     "node_count": 17933,
     "edge_count": 45796,
-    "graph_json_sha256": "baa711c74eda4d41e89586dfe99b4ea6a5240be6c4792d086c58b870a18f4050",
+    "graph_json_sha256": "21bf28c029e82f76b403cf42b27c1095b96de31fd3bb075836461017b85bca03",
     "artifacts": {
       "html": "graph.html",
       "json": "graph.json",

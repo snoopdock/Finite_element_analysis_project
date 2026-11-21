@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "d2b15b166611d62d638887318edc289ff8a7f73e",
-  "compare_sha": "bfaa7a8d627237b12fff3b1f5f90ce6bece9a250",
+  "base_sha": "aeed218ce297efa93d45ccb0c955ac3e93fc4d19",
+  "compare_sha": "342c9d55b1dc49ccf93759d0dce203723485ef17",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 291,
-  "compare_only_commit_count": 1167,
+  "base_only_commit_count": 294,
+  "compare_only_commit_count": 1168,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -7439,6 +7439,26 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "aeed218ce297efa93d45ccb0c955ac3e93fc4d19",
+      "subject": "Use canonical unquoted GitHub Actions event key"
+    },
+    {
+      "side": "<",
+      "sha": "2b60f7f85a28b0e2791432cf6db05dcc9d9a0ba8",
+      "subject": "Make M7.1 smoke workflow dispatch visible and validate on push"
+    },
+    {
+      "side": "<",
+      "sha": "f88c12687aa51c5bded9871660335f377750bba9",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": ">",
+      "sha": "342c9d55b1dc49ccf93759d0dce203723485ef17",
+      "subject": "Record M7.1 workflow lint preflight revision"
+    },
     {
       "side": ">",
       "sha": "bfaa7a8d627237b12fff3b1f5f90ce6bece9a250",
