@@ -1,11 +1,14 @@
 # AE-32C M6 — SNAP Isolated Worker: Implementation and Acceptance
 
-**Status:** worker implementation and protocol unit test are present. The first real SNAP E.8.5 attempt failed at worker initialization because the worker incorrectly expected a 64-character SHA-256 value; the canonical graph fingerprint is `graph:` plus 32 hexadecimal characters. That validation was corrected. The retry is pending; this record is not an acceptance declaration.  
+**Status:** worker implementation and protocol unit test are present. Two real-worker attempts have exposed and corrected environment/contract defects; native SNAP conformance is still pending. The current retry is pending. This record is not an acceptance declaration.  
 **Target branch:** `stage1/section-uuids`  
 **Implementation snapshot:** `7771d637cd613bf5cfc8c847108cd0c6eb28c98f`  
 **Fingerprint correction:** `9f0125738759be4bb80026d9aa86d59a01e915b8`  
+**SNAP native runtime dependency correction:** `97f78060923a9ab7daea8ed4b48971c0314b3616`  
+**Native edge-ID accessor gate:** `425c0f7378bfe190da81b10b0f6e0b22c3df4f41`  
 **First full-matrix run:** [44914650206](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914650206) — NetworkX, SciPy, igraph and graph-tool E.8.5/E.8.8 passed; SNAP image build and adapter protocol test passed; SNAP E.8.5 failed at fingerprint validation, so SNAP E.8.8 was skipped.  
-**Fingerprint-correction retry:** [44914749858](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914749858) — in progress at the time of this revision.  
+**Fingerprint-correction retry:** [44914749858](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914749858) — fingerprint validation passed, then SNAP import failed because `libgomp.so.1` was absent from the slim worker image.  
+**Current retry:** [44914959176](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914959176) — queued at the time of this revision, after adding Debian `libgomp1` and requiring the TNEANet native edge-ID accessors.  
 **Main-branch change boundary:** only the E85 workflow controller was updated to launch the Stage1 implementation; SNAP adapter and worker source remain on Stage1.
 
 ---
@@ -112,6 +115,8 @@ The native edge ID is not treated as a semantic identity. Each edge carries an i
 For a bidirectional query, the worker unions incoming and outgoing native edge IDs. A self-loop is consequently returned once. Parallel edges remain distinct because the union key is the native edge ID, not the endpoint pair.
 
 The worker stores attribute dictionaries as canonical JSON strings in SNAP string attributes. This is an explicit representation transformation; it is not permission to discard or coerce values. Unsupported non-JSON values fail before worker launch. The E.8.5 fixture exercises Unicode, nested values, booleans, nulls, parallel occurrences and a self-loop.
+
+At worker startup, the adapter requires both `GetOutEId` and `GetInEId` to be callable on a real TNEANet node iterator. The SNAP 6.0 C++ developer reference documents these methods; the Snap.py 6.0 Python reference does not enumerate them in its node-iterator method list. This makes the exact Python binding check in the next real worker run a deliberate compatibility gate, not an assumption.
 
 Official API references:
 
