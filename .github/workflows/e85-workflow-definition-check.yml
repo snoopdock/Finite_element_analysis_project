@@ -1,0 +1,42 @@
+name: E85 Workflow Definition Check
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/e85-native-graph-backend-conformance.yml"
+      - ".github/workflows/e85-workflow-definition-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e85-workflow-definition-check
+  cancel-in-progress: false
+
+jobs:
+  actionlint:
+    name: Validate E85 workflow definition
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache: false
+
+      - name: Install pinned actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+
+      - name: Lint target workflow
+        run: |
+          "$(go env GOPATH)/bin/actionlint" -color -verbose .github/workflows/e85-native-graph-backend-conformance.yml
