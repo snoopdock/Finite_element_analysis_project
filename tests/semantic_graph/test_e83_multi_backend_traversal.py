@@ -336,6 +336,10 @@ def test_optional_native_adapter_is_used_by_live_query_path(monkeypatch, backend
     assert runtime["backend_library"] == backend
     assert runtime["backend_execution"]["parity_verified_queries"] == 1
     assert runtime["backend_pipeline"]["backend"] == backend
+    if backend == "graph-tool":
+        assert runtime["backend_native_query_mode"] == "graph_tool_vertex_edge_iterators"
+        assert runtime["native_adjacency"]["native_adjacency_lookups"] >= 1
+        assert runtime["native_adjacency"]["native_edge_occurrences_read"] >= 1
 
 
 def test_fake_igraph_edge_sequence_supports_indexed_edge_access(monkeypatch):
@@ -349,6 +353,44 @@ def test_fake_igraph_edge_sequence_supports_indexed_edge_access(monkeypatch):
     assert edge.source == 0
     assert edge.target == 1
     assert edge["relation"] == "IMPORTS"
+
+
+def test_graph_tool_repository_conformance_routes_context_tools_through_native_adjacency():
+    import importlib.util
+    if importlib.util.find_spec("graph_tool") is None:
+        pytest.skip("graph-tool native library is not installed in this interpreter")
+    from pathlib import Path
+    from tools.gb04_repository_backend_conformance import run_repository_conformance
+
+    fixture = (
+        Path(__file__).resolve().parents[1]
+        / "semantic_audit"
+        / "fixtures"
+        / "ae32c_provider_interface_incident"
+    )
+    report = run_repository_conformance(fixture, "graph-tool")
+    assert report["status"] == "passed"
+    assert report["backend_library_version"]
+    assert report["graph_to_repository_follow_through"]["verified_read_count"] == 2
+    assert report["backend_execution"]["parity_verified_queries"] >= 3
+    for operation in (
+        "trace_execution_context",
+        "trace_execution_context.workflow_context",
+        "find_workflow_context",
+    ):
+        telemetry = report["context_operation_telemetry"][operation]
+        assert telemetry["native_adjacency_lookups"] >= 1
+        assert telemetry["native_edge_occurrences_read"] >= 1
+        assert telemetry["parity_verified"] >= 1
+        assert telemetry["parity_failures"] == 0
+    for operation in (
+        "trace_execution_context",
+        "trace_nested_find_workflow_context",
+        "find_workflow_context",
+    ):
+        assert report["backend_queries"][operation]["backend_execution"] == (
+            "graph_tool_vertex_edge_iterators"
+        )
 
 
 def test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans(monkeypatch):
@@ -472,6 +514,19 @@ def test_igraph_repository_conformance_routes_context_tools_through_native_adjac
         assert report["backend_queries"][operation]["backend_execution"] == (
             "igraph_incident_edge_ids"
         )
+
+
+def test_graph_tool_native_projection_mutation_fails_closed(monkeypatch):
+    install_fake(monkeypatch, "graph-tool")
+    engine = NativeAdapterGraphTraversalEngine(graph_fixture(), "graph-tool")
+    engine.adapter.graph.edge_properties["relation"][
+        next(iter(engine.adapter.graph.edges()))
+    ] = "CORRUPTED"
+    with pytest.raises(
+        NativeAdapterProjectionError,
+        match="native_edge_projection_semantic_mismatch",
+    ):
+        engine.walk("A", max_depth=2)
 
 
 def test_native_projection_mutation_fails_closed(monkeypatch):
