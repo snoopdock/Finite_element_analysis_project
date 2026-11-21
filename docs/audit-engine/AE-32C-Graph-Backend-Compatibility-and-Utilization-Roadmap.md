@@ -716,8 +716,8 @@ M7.3 implementation adds:
 - tools/gb07_campaign_dossier.py for detached report, artifact metadata, provenance, workload/seed matrix, cross-backend graph/result digest, native-path, parity and aggregate checks;
 - tests/semantic_graph/test_m73_campaign_dossier.py for adversarial dossier-integrity tests;
 - a G9.42 profile entry for the M7.3 tests;
-- the manual main controller .github/workflows/m7_3_detached_campaign_dossier.yml, updated through main controller commit 2ebe2dc55038363357d2c540e561f08f5254d311.
+- the manual main controller .github/workflows/m7_3_detached_campaign_dossier.yml, updated through main controller commit bd5260926d468876dc58182e2c310237ffe9e5c9.
 
 The verifier generates JSON and Markdown dossiers. It records the GitHub Actions artifact digest metadata and extracted report/log file hashes. It does not claim that an internal report hash authenticates its source, that historical timing samples can be re-executed, or that measurements from separate hosted runners are directly comparable.
 
-**Current state:** M7.2 accepted for bounded semantic traversal. M7.3 verifier source snapshot 3c1f06578e229b67d1eb8d3af199f0320bdfb1e6 committed; exact-source G9.42 and manual detached-dossier execution pending. M7.4 remains blocked on M7.3 closure. Preserve production_approval=false.
+**Current state:** M7.2 accepted for bounded semantic traversal. M7.3 verifier source snapshot 3aee9dcadd46348a80bb5a7433276e8ce655a122 committed; exact-source G9.42 and manual detached-dossier execution pending. M7.4 remains blocked on M7.3 closure. Preserve production_approval=false.
