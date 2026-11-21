@@ -237,7 +237,10 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
         if isinstance(direction, str):
             direction = TraversalDirection(direction)
         self._metrics["native_adjacency_lookups"] += 1
-        records = self.adapter.iter_adjacent_edge_occurrences(node_id, direction)
+        try:
+            records = self.adapter.iter_adjacent_edge_occurrences(node_id, direction)
+        except ValueError as exc:
+            raise NativeAdapterProjectionError(str(exc)) from exc
         self._metrics["native_edge_occurrences_read"] += len(records)
         candidates = []
         seen = set()
