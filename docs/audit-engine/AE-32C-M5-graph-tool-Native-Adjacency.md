@@ -138,5 +138,23 @@ Until then, graph-tool remains `implemented_unvalidated`, production approval fa
 - `8f308d75e2cf2fd32d4c813988cec1eef98280ed` — align the GB-01 architecture note with the M5 implementation.
 - `9768be5813ec5fa003820ff0291424c710ed0205` — clarify M5 remaining validation and acceptance gates.
 - `280dfccb427824e71dca61c90bc7e19f1a03219e` and `137b74bcb5f2908c8379e3ec72584a260492cd7e` — report the installed `graph-tool-base` distribution version consistently in runtime and synthetic conformance evidence.
+- `80f72b680b5f9b5e9bb15c1cf739cdd7d39cccd1` — update the legacy graph-tool projection fake to expose the edge-index property map consumed by the adapter.
+- `7becea4463b9276cbcdd49ad83f12a65d82806b7` — update the registry contract test to distinguish graph-tool's `implemented_unvalidated` state from SNAP's `not_implemented` state.
+- `5ebd3d9771cd3a61c7d997f5b0c1bea62bdbc946` — document the G9.42 failure review, evidence chain and correction rationale.
 
 No local tests or workflows were run by the implementer. M5 implementation remains subject to user-run G9.42 and graph-tool-native workflow validation.
+
+
+## 8. G9.42 validation attempt and correction
+
+G9.42 run [44902653878](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44902653878) checked out Stage1 source SHA `e979b17b081d5e0a3cf120b184c7016de6dfd3e1`. The dispatcher itself was launched from `main`, but the workflow explicitly checked out `stage1/section-uuids`; the report and checkout log agree on the tested source SHA. No source changes were made to `main`.
+
+The targeted suite passed (689 tests, 5 skipped). Full regression had 3 failures (3,628 total; 3,612 passed; 13 skipped):
+- two legacy graph-tool fake tests lacked the `Graph.edge_index` property map now consumed by `GraphToolAdapter`;
+- one M1 registry assertion still expected graph-tool to be `not_implemented` after M5 had registered it as `implemented_unvalidated`.
+
+The detached evidence digest check passed and the immutable evidence bundle was published and verified. Provenance catalog build and verification correctly failed closed because the validation report had a failed test outcome. Artifact SHA-256: `f10d5dcf2091311418dc74a29499486c33440e6d94d721d681daa465956e363e`; report SHA-256: `d5d7b7c86d6bd7238ce438acd3d9b50a9983ef1df703524d76a2e85e6c34bb75`; bundle SHA-256: `5e0546da43d5b0c5b8ce7e37d80b90b5c0292400939c8d2f05e7250c3693eb51`.
+
+The two test-contract defects were corrected in commits `80f72b680b5f9b5e9bb15c1cf739cdd7d39cccd1` and `7becea4463b9276cbcdd49ad83f12a65d82806b7`. See [M5 G9.42 Validation Failure Review — run 44902653878](AE-32C-M5-G9.42-Validation-Failure-44902653878.md) for the failure traces and technical rationale.
+
+**Disposition:** corrections are committed but not yet validated. M5 remains `implemented_unvalidated`; production approval remains false. The next G9.42 run must test the latest Stage1 head. M5 acceptance still additionally requires the dedicated real graph-tool E.8.5/E.8.8 workflow to pass on the same exact source SHA.
