@@ -83,6 +83,11 @@ class _EdgeSeq:
             for i, (source, target) in enumerate(self.pairs)
         ])
 
+    def __getitem__(self, index):
+        """Match python-igraph EdgeSeq integer indexing (graph.es[edge_id])."""
+        source, target = self.pairs[index]
+        return _Edge(self, index, source, target)
+
 
 class _FakeIGraph:
     def __init__(self, directed=True):
@@ -311,6 +316,19 @@ def test_optional_native_adapter_is_used_by_live_query_path(monkeypatch, backend
     assert runtime["backend_library"] == backend
     assert runtime["backend_execution"]["parity_verified_queries"] == 1
     assert runtime["backend_pipeline"]["backend"] == backend
+
+
+def test_fake_igraph_edge_sequence_supports_indexed_edge_access(monkeypatch):
+    install_fake(monkeypatch, "igraph")
+    graph = _FakeIGraph(directed=True)
+    graph.add_vertices(2)
+    graph.add_edges([(0, 1)])
+    graph.es["relation"] = ["IMPORTS"]
+
+    edge = graph.es[0]
+    assert edge.source == 0
+    assert edge.target == 1
+    assert edge["relation"] == "IMPORTS"
 
 
 def test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans(monkeypatch):
