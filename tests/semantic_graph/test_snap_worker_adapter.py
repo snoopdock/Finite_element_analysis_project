@@ -22,6 +22,7 @@ class _FakeStdin:
                 "graph_fingerprint": request["graph_fingerprint"],
                 "node_count": len(request["nodes"]),
                 "edge_occurrence_count": len(request["edges"]),
+                "occurrence_to_native_edge_id": [[0, 17]],
                 "snap_version": "6.0.0-test-double",
                 "python_version": "3.9.test-double",
                 "platform": "isolated-test",
