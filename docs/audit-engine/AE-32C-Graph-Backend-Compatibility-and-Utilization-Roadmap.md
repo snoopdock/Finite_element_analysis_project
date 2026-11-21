@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0 closed; M1 NetworkX accepted; M2 NetworkX repository context routing accepted; M3 SciPy and M4 python-igraph accepted for their recorded exact Stage1 snapshots; M5 graph-tool accepted for exact SHA `9adc99b9511d0281b18be76d60865dcf13bb16b0`; E.8.8 is now extended to NetworkX, SciPy, igraph, graph-tool and SNAP; M6 SNAP isolated-worker E.8.5 and E.8.8 conformance passed on final provenance-stamped Stage1 SHA `c7fe14c52ded38eafbf3153137bf163efaa3f0e6`; exact-commit G9.42 validation remains pending; production approval remains false  
+**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots; M5 graph-tool and M6 SNAP exact-current implementation snapshot `81eb77aff35afe297a596a91826e016048515c0f` passed full five-backend E.8.5/E.8.8 run `44917397347` and exact-commit G9.42 run `44917571217`; AE-32C M7 comparative performance and promotion policy is OPEN; production approval remains false  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -648,3 +648,34 @@ See [AE-32C M6 SNAP Isolated Worker — Implementation and Acceptance](AE-32C-M6
 | M3 SciPy / M4 igraph | Their historical exact-SHA acceptance records remain valid; E.8.5/E.8.8 also passed together at SHA `425c0f7...` | No promotion; preserve `production_approval=false`. |
 
 Do not infer final milestone closure from a successful Docker build or fake-process test alone. The real E.8.5/E.8.8 gates for all five backends are green on exact Stage1 SHA `c7fe14c52ded38eafbf3153137bf163efaa3f0e6`; the remaining closure gate is a successful G9.42 Manual Validation Dispatcher report for that same SHA. Do not change registry production approval.
+
+
+## 15. M5/M6 closure and AE-32C M7 opening — 2026-11-21
+
+### 15.1 Exact-commit M5/M6 closure
+
+The Stage1 acceptance snapshot is `81eb77aff35afe297a596a91826e016048515c0f`.
+
+- Full five-backend E.8.5/E.8.8 run [44917397347](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44917397347) passed on that exact SHA. NetworkX, SciPy, python-igraph, graph-tool and SNAP each passed 14/14 synthetic E.8.5 queries and 43/43 repository-backed E.8.8 queries, with zero query failures and zero parity failures. All ten reports carry the same source SHA, run ID and attempt.
+- Exact-commit G9.42 run [44917571217](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44917571217) passed on the same exact SHA: 53 validation-engine tests, 690 targeted tests (5 skipped), 3,629 regression tests (13 skipped), evidence digest/checksum verification, immutable bundle publication/verification and independent provenance catalog verification.
+- The detailed evidence and acceptance boundary are recorded in [M6 implementation and acceptance record](AE-32C-M6-SNAP-Isolated-Worker-Implementation-and-Acceptance.md).
+
+**Decision:** M5 graph-tool and M6 SNAP are accepted for the tested Stage1 runtime, backend implementations and repository fixture. This is not production approval, a universal performance claim or a claim of live LLM diagnostic quality. Keep `production_approval=false`.
+
+### 15.2 AE-32C M7 — Comparative backend performance and promotion policy
+
+M7 is now OPEN. Its purpose is to determine whether the five accepted native paths provide workload-specific operational value, without weakening semantic correctness or promoting a backend by assumption.
+
+The existing G6.1/G6.2 benchmark infrastructure compares NetworkX and SciPy using exported representations and directed reachability. It does not yet compare the five M1–M6 native query paths, does not separate all setup/validation/traversal/evidence/IPC costs, and does not provide comparable process-level memory measurements. Existing G6.1/G6.2 results therefore remain useful historical evidence but are not sufficient M7 acceptance.
+
+The M7 protocol and implementation sequence are defined in [AE-32C M7 — Comparative Backend Performance and Promotion Policy](AE-32C-M7-Comparative-Backend-Performance-and-Promotion-Policy.md). Work is staged:
+
+1. M7.0 baseline freeze and benchmark-gap analysis — completed in the protocol record.
+2. M7.1 backend-neutral harness over the five accepted native adapters.
+3. M7.2 controlled workload matrix and bounded multi-seed campaign.
+4. M7.3 independent report verifier and descriptive analysis.
+5. M7.4 benchmark dossier and explicit task-specific promotion policy.
+
+All comparisons must use equivalent canonical graph snapshots and semantic queries, verify parity before timing, prove the actual native path, retain raw samples and environment provenance, and report SNAP cold-start/IPC costs separately from warm native traversal. Mixed runner environments must be stratified rather than ranked together. No timing threshold, benchmark result or M7 report may automatically change backend selection or production approval.
+
+**Immediate next action:** implement M7.1 as a backend-neutral, parity-gated harness. Do not change adapter semantics or registry approval as part of the benchmark scaffold.
