@@ -46,7 +46,7 @@ _PROJECTION_TYPES = {
     "scipy": "scipy.sparse.csr_matrix",
     "igraph": "igraph.Graph",
     "graph-tool": "graph_tool.Graph",
-    "snap": "snap.TNEANet",
+    "snap": "snap.TNEANet (isolated CPython 3.9 worker)",
 }
 
 
@@ -159,7 +159,7 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
         # SciPy's complete projection is validated once at construction.
         # Every subsequent walk receives empty Python indexes and must obtain
         # candidates from CSR/CSC local adjacency.
-        if self._backend_name in {"scipy", "igraph", "graph-tool"} and self._projection_validated:
+        if self._uses_native_local_adjacency and self._projection_validated:
             return {}, {}
 
         expected_nodes = {
