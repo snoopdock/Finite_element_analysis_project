@@ -1,7 +1,7 @@
 name: AE-32C M7.1 Five-Backend Native Smoke Benchmark
 run-name: AE-32C M7.1 five-backend native smoke
 
-'on':
+on:
   push:
     branches: [main]
     paths:
