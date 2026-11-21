@@ -189,7 +189,11 @@ def test_registry_separates_discovery_from_conformance_and_approval():
     assert networkx_state["native_adjacency_implementation"] == "implemented_unvalidated"
     assert networkx_state["native_adjacency_conformance"] == "not_run"
     assert networkx_state["production_approval"] is False
-    for backend in ("scipy", "igraph", "graph-tool", "snap"):
+    scipy_state = capabilities["scipy"]["acceptance_state"]
+    assert scipy_state["native_adjacency_implementation"] == "implemented_unvalidated"
+    assert scipy_state["native_adjacency_conformance"] == "not_run"
+    assert scipy_state["production_approval"] is False
+    for backend in ("igraph", "graph-tool", "snap"):
         state = capabilities[backend]["acceptance_state"]
         assert state["native_adjacency_implementation"] == "not_implemented"
         assert state["production_approval"] is False
