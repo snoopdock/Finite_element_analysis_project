@@ -56,7 +56,7 @@ def detached_campaign(tmp_path):
             json.dumps({
                 "status": "verified", "backend": backend,
                 "report_sha256": report["report_sha256"],
-            }) + "\\n", encoding="utf-8"
+            }) + "\n", encoding="utf-8"
         )
         (artifact_dir / f"m7-2-{backend}-verify.log").write_text(
             json.dumps({
