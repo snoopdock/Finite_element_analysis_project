@@ -349,7 +349,7 @@ Validation still required:
 - The dispatcher was launched from `main`, but it checked out and validated `stage1/section-uuids` at exact source SHA `e979b17b081d5e0a3cf120b184c7016de6dfd3e1`. No source changes were made to `main`.
 - Targeted suite: 689 tests, 684 passed, 5 skipped, 0 failed. Full regression: 3,628 tests, 3,612 passed, 13 skipped, 3 failed.
 - Two failures came from a legacy graph-tool fake that lacked the `edge_index` property map; one was a stale M1 registry assertion that still expected graph-tool to be unimplemented.
-- Corrections are committed to Stage1: `80f72b680b5f9b5e9bb15c1cf739cdd7d39cccd1` adds the missing fake edge-index mapping; `7becea4463b9276cbcdd49ad83f12a65d82806b7` asserts graph-tool `implemented_unvalidated` separately from SNAP `not_implemented`.
+- Corrections are committed to Stage1: `80f72b680b5f9b5e9bb15c1cf739cdd7d39cccd1` adds the missing fake edge-index mapping; `7becea4463b9276cbcdd49ad83f12a65d82806b7` asserts graph-tool `implemented_unvalidated` separately from SNAP `not_implemented`. The M5 fake was also strengthened in `beb4b80b00361aa882c00d97707090e2c0b651a6` to exercise non-contiguous native edge indices.
 - Evidence integrity and immutable bundle publication passed. Provenance catalog build/verification correctly failed closed because regression failed. See [M5 G9.42 failure review](AE-32C-M5-G9.42-Validation-Failure-44902653878.md).
 - Corrections are not yet validated; M5 remains in progress and no acceptance claim is made.
 
