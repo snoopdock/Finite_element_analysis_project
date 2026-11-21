@@ -1,6 +1,6 @@
 # AE-32C M3 — SciPy Native Sparse Adjacency Implementation Record
 
-**Status:** Implemented on `stage1/section-uuids`; G9.42 validation pending  
+**Status:** Corrective implementation committed on `stage1/section-uuids`; G9.42 rerun pending  
 **Milestone:** M3 — SciPy native sparse adjacency  
 **Predecessor:** M2 validated by G9.42 run [44894696688](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44894696688) against source SHA `9dd02f7f98e0ad25d2225c638ed14bad4bd5d4e6`  
 **Scope:** SciPy only. No acceptance or runtime promotion is claimed for igraph, graph-tool or SNAP.
@@ -87,7 +87,19 @@ The E.8.3 multi-backend test module now includes tests for:
 
 These tests have been committed but **have not been executed locally or through a workflow by the implementer**. The user-run G9.42 workflow is the acceptance gate.
 
-## 4. Acceptance boundary
+## 4. First G9.42 validation and corrective review
+
+The first user-run G9.42 validation, [run 44895368283](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44895368283), checked out source SHA `78ece9ccdab4b4597930ba315d4c019175089119` and failed. The targeted suite reported 674 passed, 6 skipped and 2 failed; full regression reported 3,604 passed, 14 skipped and 3 failed. The three failures were:
+
+1. Reference/native parity mismatch for `direction="both"` with a self-loop, caused by raw-string versus enum identity handling in the reference traversal.
+2. SciPy repository context telemetry reporting zero native lookups because native-adapter result metadata omitted the per-query `backend_native_query_metrics` contract consumed by `RepositoryEvidenceTools._context_edges()`.
+3. A stale M1 test expecting SciPy to remain `not_implemented`.
+
+The review also found hard-coded NetworkX execution-mode labels in the repository conformance report. These would have misrepresented SciPy context execution even after the telemetry assertion was corrected.
+
+The failure analysis and corrective commits are recorded in [M3 G9.42 Validation Failure Review](AE-32C-M3-Validation-Failure-44895368283.md). Corrections normalize traversal direction at the reference API boundary, expose per-walk SciPy native adjacency metrics, report the actual selected backend mode, and update/add regression assertions. These corrections have been committed but **have not yet been executed by a workflow**.
+
+## 5. Acceptance boundary
 
 M3 is not closed yet. The following remain unproven until exact-commit validation:
 
@@ -99,15 +111,19 @@ M3 is not closed yet. The following remain unproven until exact-commit validatio
 
 A successful synthetic or mocked test alone would not establish native SciPy acceptance. The workflow must run with the real SciPy dependency installed and the report must identify the exact Stage1 source SHA.
 
-## 5. Files changed
+## 6. Files changed
 
 - `audit_engine/semantic_audit/graph/backend/scipy_adapter.py`
 - `audit_engine/semantic_audit/graph/backend/adapter_traversal.py`
+- `audit_engine/semantic_audit/graph/analysis/traversal.py`
 - `audit_engine/semantic_audit/graph/backend/capability_registry.py`
+- `tools/gb04_repository_backend_conformance.py`
 - `tests/semantic_graph/test_e83_multi_backend_traversal.py`
+- `tests/semantic_graph/test_m1_adapter_protocol_networkx.py`
+- `docs/audit-engine/AE-32C-M3-Validation-Failure-44895368283.md`
 - `docs/audit-engine/AE-32C-Graph-Backend-Compatibility-and-Utilization-Roadmap.md`
 
-## 6. Validation protocol
+## 7. Validation protocol
 
 Run the existing manual validation dispatcher against:
 
