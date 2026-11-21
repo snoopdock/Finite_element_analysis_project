@@ -1,6 +1,24 @@
 name: AE-32C M7.1 Five-Backend Native Smoke Benchmark
 on:
   workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "Stage1 branch, tag, or full commit SHA to benchmark"
+        required: true
+        type: string
+        default: "stage1/section-uuids"
+      repeats:
+        description: "Timed repetitions per query (allowed: 3, 5, 7, 10, 15)"
+        required: true
+        type: choice
+        options: ["3", "5", "7", "10", "15"]
+        default: "5"
+      warmup:
+        description: "Warm-up calls per query (allowed: 0, 1, 2, 3, 5)"
+        required: true
+        type: choice
+        options: ["0", "1", "2", "3", "5"]
+        default: "2"
 
 permissions:
   contents: read
@@ -42,15 +60,15 @@ jobs:
       - name: Checkout requested source ref
         uses: actions/checkout@v4
         with:
-          ref: stage1/section-uuids
+          ref: ${{ inputs.source_ref }}
           persist-credentials: false
       - name: Resolve and publish exact source SHA
         id: resolve
         shell: bash
         env:
-          REQUESTED_REF: stage1/section-uuids
-          REPEATS: 5
-          WARMUP: 2
+          REQUESTED_REF: ${{ inputs.source_ref }}
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
         run: |
           set -euo pipefail
           test -n "$REQUESTED_REF"
