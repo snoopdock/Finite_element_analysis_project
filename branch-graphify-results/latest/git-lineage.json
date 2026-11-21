@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "0b6a3ed68da2e42509493504c88851c06d64bedd",
-  "compare_sha": "7771d637cd613bf5cfc8c847108cd0c6eb28c98f",
+  "base_sha": "21c13b0b7c951bbacbd63a1fd2546c450f4fc8c7",
+  "compare_sha": "c1f97a9402d0d98490eb6ad7efff5f1ae0179c6a",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 285,
-  "compare_only_commit_count": 1131,
+  "base_only_commit_count": 287,
+  "compare_only_commit_count": 1147,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -3036,6 +3036,10 @@
     {
       "status": "A",
       "path": "docs/audit-engine/AE-32C-M5-graph-tool-Native-Adjacency.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M6-SNAP-Isolated-Worker-Implementation-and-Acceptance.md"
     },
     {
       "status": "A",
@@ -7419,6 +7423,96 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": ">",
+      "sha": "c1f97a9402d0d98490eb6ad7efff5f1ae0179c6a",
+      "subject": "Record exact Stage1 source revision in backend evidence"
+    },
+    {
+      "side": "<",
+      "sha": "21c13b0b7c951bbacbd63a1fd2546c450f4fc8c7",
+      "subject": "Record exact Stage1 source revision in backend evidence"
+    },
+    {
+      "side": ">",
+      "sha": "9ff30230527f749a9d13d0fcd8ef89275d0f8b7f",
+      "subject": "Bind E.8.8 evidence to checked-out source and workflow run"
+    },
+    {
+      "side": ">",
+      "sha": "fa4df0d3a673e65ab4273dd58ef7931b97c0bde4",
+      "subject": "Bind E.8.5 evidence to checked-out source and workflow run"
+    },
+    {
+      "side": ">",
+      "sha": "f510231da7b2b90ca82bac69ff95dc14e5dd409e",
+      "subject": "Include isolated SNAP worker protocol test in G9.42 profile"
+    },
+    {
+      "side": ">",
+      "sha": "fecb466985d719e2ac40f9839a141124740ab37a",
+      "subject": "Update M6 status with libgomp and native API validation findings"
+    },
+    {
+      "side": ">",
+      "sha": "6b4178de86784d8f5764d380af5782199cf21919",
+      "subject": "Record SNAP libgomp dependency failure and current retry"
+    },
+    {
+      "side": ">",
+      "sha": "0ff25db24e7e51618430594f640dc4c10ced5070",
+      "subject": "Align SNAP worker capability report with native edge-ID accessors"
+    },
+    {
+      "side": ">",
+      "sha": "425c0f7378bfe190da81b10b0f6e0b22c3df4f41",
+      "subject": "Require SNAP native incident edge-ID accessors and remove reverse-graph workaround"
+    },
+    {
+      "side": ">",
+      "sha": "92e4334c79ac4c19400e27b6ab8eadef85399244",
+      "subject": "Use documented SNAP native GetOutEdges API for forward and reverse adjacency"
+    },
+    {
+      "side": ">",
+      "sha": "963abe13372634418d6ac7e112eeaade4cb6a5c9",
+      "subject": "Test SNAP worker has no shared-memory mount"
+    },
+    {
+      "side": ">",
+      "sha": "b397607d87200d436bb31e8f97943ee30223fa34",
+      "subject": "Disable shared-memory mounts in isolated SNAP worker"
+    },
+    {
+      "side": ">",
+      "sha": "97f78060923a9ab7daea8ed4b48971c0314b3616",
+      "subject": "Install GNU OpenMP runtime required by SNAP 6.0 wheel"
+    },
+    {
+      "side": ">",
+      "sha": "b6041f4cac64f1be5ebf24d84ce4bbedb4697aab",
+      "subject": "Record E.8.8 expansion and M6 isolated SNAP worker implementation"
+    },
+    {
+      "side": ">",
+      "sha": "870f7341383d33d272b74039885623a993e6ddf7",
+      "subject": "Record SNAP fingerprint failure diagnosis and corrected retry"
+    },
+    {
+      "side": ">",
+      "sha": "9f0125738759be4bb80026d9aa86d59a01e915b8",
+      "subject": "Validate canonical graph fingerprint format in SNAP worker"
+    },
+    {
+      "side": "<",
+      "sha": "9e1ce6ddb5966b88d861c3c6f7cc61297c5f55e1",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": ">",
+      "sha": "0ce5b2848b7e214dc39fd2869c49c834169d8587",
+      "subject": "Document M6 isolated SNAP worker implementation and acceptance gates"
+    },
     {
       "side": ">",
       "sha": "1a09f73cac4e2484ff14bd1eb6812d77f8f6611c",
