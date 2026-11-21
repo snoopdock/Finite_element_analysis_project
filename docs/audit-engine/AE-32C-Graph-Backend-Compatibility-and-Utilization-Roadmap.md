@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0 closed; M1 accepted for NetworkX; M2 accepted for tested NetworkX repository context routing; M3 accepted for tested SciPy CSR/CSC repository path; M4 python-igraph native adjacency implemented and awaiting G9.42 validation  
+**Status:** M0 closed; M1 accepted for NetworkX; M2 accepted for tested NetworkX repository context routing; M3 accepted for tested SciPy CSR/CSC repository path; M4 python-igraph native adjacency implemented but not yet accepted: G9.42 run 44899514712 exposed test-harness failures, corrections committed, rerun pending  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -10,8 +10,8 @@
 **M2 implementation snapshot:** `9dd02f7f98e0ad25d2225c638ed14bad4bd5d4e6` — backend-neutral `GraphQuery` routing for repository context tools; validated by G9.42 run `44894696688` (672 targeted passed, 6 skipped; 3,603 regression passed, 14 skipped; evidence and provenance verified)  
 **M3 implementation snapshot:** SciPy CSR outgoing and CSC incoming local edge-occurrence access; exact occurrence side-channel joins; full projection audit isolated to construction; accepted by G9.42 run `44898320570` against Stage1 SHA `c40a258f627a1678036521e2474fccdd5537e46a`  
 **M3 implementation and validation record:** [AE-32C M3 SciPy Native Sparse Adjacency](AE-32C-M3-SciPy-Native-Sparse-Adjacency.md) — G9.42 run `44898320570`: 677 targeted passed, 6 skipped; 3,608 regression passed, 14 skipped; evidence and provenance verified  
-**M4 implementation snapshot:** `fc7e6e92e91764d59c5f4bca5762d073a71d2601` — python-igraph native incident-edge ID lookup, exact semantic occurrence joins, direction-aware access, self-loop deduplication, cached projection counts and native-query telemetry; validation pending  
-**M4 implementation record:** [AE-32C M4 python-igraph Native Adjacency](AE-32C-M4-python-igraph-Native-Adjacency.md) — implementation details, API basis, fake and real-library/repository test gates, dependency setup and acceptance boundary recorded
+**M4 implementation snapshot:** `fc7e6e92e91764d59c5f4bca5762d073a71d2601` — python-igraph native incident-edge ID lookup, exact semantic occurrence joins, direction-aware access, self-loop deduplication, cached projection counts and native-query telemetry; G9.42 run 44899514712 confirmed real python-igraph 1.0.0 tests execute, but failed six test assertions; test-only corrections committed as `0405f4f9ddd4d9142d43c5e65cf1c2ecc60955b1` and `49a8f66489b798bc6e21a15a0bbf3b85fbe1fe89`; rerun required  
+**M4 implementation record:** [AE-32C M4 python-igraph Native Adjacency](AE-32C-M4-python-igraph-Native-Adjacency.md) — implementation details, API basis, fake and real-library/repository test gates, dependency setup and acceptance boundary recorded. [G9.42 failure review 44899514712](AE-32C-M4-G9.42-Validation-Failure-44899514712.md) records exact failures, technical review, corrections and rerun gate.
 
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
 **Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
