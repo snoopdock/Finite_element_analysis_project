@@ -88,7 +88,7 @@ class IGraphAdapter(NativeAdapterMixin, SemanticGraphAdapter):
                 raise ValueError("igraph_native_edge_id_invalid")
             edge = self.graph.es[edge_id]
             occurrence = edge["semantic_occurrence"]
-            if type(occurrence) is not int or occurrence != self._edge_ids.get(occurrence):
+            if type(occurrence) is not int or self._edge_ids.get(occurrence) != edge_id:
                 raise ValueError("igraph_semantic_occurrence_mapping_invalid")
             source = self.graph.vs[edge.source]["semantic_id"]
             target = self.graph.vs[edge.target]["semantic_id"]
