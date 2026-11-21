@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** Baseline roadmap; M0 architecture inventory started  
+**Status:** M0 first-pass source/test and ADR inventory complete; M1 protocol/test specification drafted; M1 implementation not started  
 **Target branch:** `stage1/section-uuids` only  
 **Baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
