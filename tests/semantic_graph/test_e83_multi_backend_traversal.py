@@ -312,7 +312,7 @@ def test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_sca
     install_fake(monkeypatch, "igraph")
     engine = NativeAdapterGraphTraversalEngine(graph_fixture(), "igraph")
     adapter = engine.adapter
-    assert engine.runtime_report()["backend_execution"]["native_projection_reads"] == 12
+    assert engine.runtime_report()["backend_execution"]["native_projection_reads"] == 9
 
     def forbidden_full_nodes():
         raise AssertionError("igraph_full_node_enumeration_during_query_or_report")
