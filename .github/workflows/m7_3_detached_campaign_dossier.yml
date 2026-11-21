@@ -50,7 +50,8 @@ jobs:
           cache: false
       - run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
       - name: Validate workflow
-        run: "$(go env GOPATH)/bin/actionlint" -color -verbose .github/workflows/m7_3_detached_campaign_dossier.yml
+        run: |
+          "$(go env GOPATH)/bin/actionlint" -color -verbose .github/workflows/m7_3_detached_campaign_dossier.yml
 
   verify:
     if: github.event_name == 'workflow_dispatch'
