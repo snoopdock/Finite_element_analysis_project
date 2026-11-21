@@ -163,10 +163,10 @@ jobs:
             echo "- SNAP compatibility status: ${SNAP_NATIVE}"
             echo "- SNAP AE-32C adapter acceptance: NOT YET ACCEPTED; isolated worker protocol and repository parity remain required."
             echo "- NetworkX: M1 protocol tests run in the NetworkX matrix job; acceptance still requires their pass plus the repository report."
-            echo "- SciPy / igraph / graph-tool: synthetic projection jobs are diagnostic only; native local adjacency and repository acceptance are NOT IMPLEMENTED / NOT RUN."
+            echo "- graph-tool: dedicated conda-forge environment runs both synthetic E.8.5 and repository-backed E.8.8 conformance; acceptance requires both reports to pass."
             echo "- A green workflow job status is not, by itself, backend acceptance."
             echo ""
-            echo "A backend is accepted only when both synthetic and repository-backed reports show status=passed. SNAP's Python 3.9 import/adjacency smoke is not native adapter acceptance."
+            echo "A backend is accepted only when both synthetic and repository-backed reports show status=passed. graph-tool runs in its dedicated conda-forge environment. SNAP's Python 3.9 import/adjacency smoke is not native adapter acceptance."
           } >> "$GITHUB_STEP_SUMMARY"
           if [[ "${PIP_BACKENDS}" != "success" || "${GRAPH_TOOL}" != "success" || "${SNAP_JOB}" != "success" ]]; then
             exit 1
