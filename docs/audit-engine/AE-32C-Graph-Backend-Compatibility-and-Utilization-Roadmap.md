@@ -696,8 +696,13 @@ The first M7.2 scope is intentionally limited to bounded semantic traversal unde
 
 The new M7.2 test module has been added to `validation/profiles/G9.42.yaml`. The manual five-option campaign controller is committed on `main` at `64fa7e662ffa5359fe4430b9273aa4a1bf6691f5` as `.github/workflows/m7_2_manual_task_suitability_campaign.yml`. It resolves the requested source once and pins five separate backend jobs to the same SHA; graph-tool uses the existing conda-forge environment and SNAP uses the restricted worker. The workflow has an actionlint preflight but has not yet been dispatched. Current Stage1 implementation commits:
 - `6d579da8e613274b41123eed64405859b07235a5` — campaign runner and deterministic workload generator.
-- `d205f0b881312edf1b930d07cca66df152f22ac6` — campaign integrity and workload tests.
+- `d205f0b881312edf1b930d07cca66df152f22ac6` — initial campaign integrity and workload tests.
 - `ffeb99b9dac2646f5da232510ab5553d6647db0a` — G9.42 profile inclusion.
-- `0265f0548ee742f0533287978ec9b29889fec614` — M7 task-suitability protocol and milestone status update.
+- `0265f0548ee742f0533287978ec9b29889fec614` — M7 task-suitability protocol update.
+- `9b3a67651d323601fd8763361ee28c58c843766f` and `e354d5e6023fd1d3a2e26c7312b3df10d47af339` — hardened workload descriptor and environment verification.
+- `2638c9cda2acaf5b26b29c427f662f9c921a1176` — tests for environment and workload descriptor integrity.
+- `ab942db734ea4e51492ff1c0c3e1a219ee821056` and `10c6be6014d05e7d6d2d36870a44d9ccab1fc949` — milestone/roadmap evidence updates.
+
+The current Stage1 head after these documentation updates is `10c6be6014d05e7d6d2d36870a44d9ccab1fc949`.
 
 **Next acceptance gates:** run G9.42 against the current Stage1 head; correct any failures before dispatching the five backend campaign reports. Then run each backend against the same Stage1 source SHA, seeds, workload family set, repetitions and warm-up settings; inspect all artifacts and verify each report independently. Environment differences must be disclosed, and measurements must not be ranked across unmatched runner environments. Keep `production_approval=false`.
