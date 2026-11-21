@@ -21,6 +21,7 @@ on:
 permissions:
   contents: read
 
+# The final source SHA is stamped into every E.8.5/E.8.8 report; docs-only edits do not retrigger this expensive matrix.
 concurrency:
   group: e85-native-graph-backend-conformance-stage1-final
   cancel-in-progress: true
