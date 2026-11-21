@@ -56,7 +56,7 @@ DISTRIBUTIONS = {
     "networkx": "networkx",
     "scipy": "scipy",
     "igraph": "igraph",
-    "graph-tool": "graph-tool",
+    "graph-tool": "graph-tool-base",
     "snap": "snap-stanford",
 }
 PROJECTION_TYPES = {
