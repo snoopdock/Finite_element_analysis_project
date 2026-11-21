@@ -69,9 +69,10 @@ def verify_campaign(artifact_dir,manifest,run_id,attempt,source_revision):
     artifacts=index_artifacts(manifest,run_id,attempt)
     reports={}
     records=[]
-    report_root = artifact_dir/"reports" if (artifact_dir/"reports").is_dir() else artifact_dir
     for backend in BACKENDS:
         item=artifacts[backend]
+        backend_dir = artifact_dir/backend if (artifact_dir/backend).is_dir() else artifact_dir
+        report_root = backend_dir/"reports" if (backend_dir/"reports").is_dir() else backend_dir
         rp=report_root/f"m7-2-{backend}.json"
         lp=report_root/f"m7-2-{backend}-run.log"
         vp=report_root/f"m7-2-{backend}-verify.log"
