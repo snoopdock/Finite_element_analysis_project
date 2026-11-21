@@ -44,6 +44,11 @@ class FakeToolGraph:
         self.vertex_properties, self.edge_properties = {}, {}
         self.n = 0
         self.edge_list = []
+        # graph-tool edge indices are exposed through an EdgePropertyMap.
+        # This lightweight projection fake uses edge descriptors equal to
+        # their allocated indices; M5's dedicated fake covers non-contiguous
+        # indices after removals.
+        self.edge_index = FakeProperty()
 
     def add_vertex(self, n):
         self.n += n
@@ -62,6 +67,7 @@ class FakeToolGraph:
     def add_edge(self, source, target):
         edge_id = len(self.edge_list)
         self.edge_list.append((source, target))
+        self.edge_index[edge_id] = edge_id
         return edge_id
 
 
