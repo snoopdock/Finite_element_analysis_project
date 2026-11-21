@@ -384,7 +384,55 @@ Checks still required to close M0:
 - reconcile ADR identifiers/statuses and the implementation/test links;
 - record the actual dependency versions and supported platforms for each native backend.
 
-## 9. Immediate next work
+
+
+## 11. M0 traceability findings from the source pass
+
+The following findings refine the initial inventory. They are based on the source files at the reviewed Stage1 snapshot, not on Graphify inference.
+
+### 11.1 Factory and service wiring
+
+- `BackendFactory` contains a lazy module/class registry for NetworkX, SciPy, igraph, graph-tool and SNAP. It imports the selected adapter class and constructs it from the supplied execution context.
+- `BackendPipeline.execute()` selects a candidate using the registry, creates the adapter and records projection provenance/transformation/loss assessment. It does not itself verify API version compatibility or a conformance state.
+- `RepositoryEvidenceTools` constructs `SemanticGraphAnalysisService` with the configured `graph_backend` and `verify_backend_parity=True`. Its runtime report identifies the selected engine and execution counters. This confirms the service-level wiring exists; it does not establish that every individual graph tool actually invokes that engine.
+- The backend remains configuration selected, not selected by LLM tool arguments. This is consistent with ADR-045.
+
+### 11.2 Full-read behavior in the non-NetworkX path
+
+The source confirms a significant interaction/performance issue:
+
+1. `NativeAdapterGraphTraversalEngine.__init__()` calls `_build_adjacency()` to validate the native projection.
+2. Each `walk()` calls the inherited traversal implementation, which calls `_build_adjacency()` again.
+3. The non-NetworkX `_build_adjacency()` materializes all values from `iter_native_nodes()` and `iter_native_edges()`, validates them, and reconstructs Python outgoing/incoming dictionaries.
+4. `runtime_report()` independently materializes `iter_native_nodes()` and `iter_native_edges()` again to calculate projection counts.
+
+Consequently, non-NetworkX queries do not yet use native, reached-node adjacency. Runtime reporting can also cause additional complete native graph reads. The latter reads are not represented by the same `native_projection_reads` counter used by `_build_adjacency()`, so telemetry can under-report actual native enumeration.
+
+The M1/M3–M6 tests must prove that full enumeration is limited to explicit projection audit/construction and that ordinary query execution and runtime reporting do not trigger hidden full scans.
+
+### 11.3 Adapter-specific observations
+
+- **NetworkX:** `NetworkXGraphTraversalEngine` validates the full projection at construction and reads node-local `succ`/`pred` adjacency during queries. It maps native edge data back to the canonical edge tuple by a reserved occurrence field. `NetworkXAdapter` itself assigns node/edge attribute and metadata dictionaries from its input graph without independently deep-copying them. The traversal engine clones the validated graph before constructing the adapter, but direct adapter use still deserves snapshot-isolation tests.
+- **SciPy:** `SciPyAdapter.iter_native_edges()` walks all CSR rows and joins each matrix pair to its exact occurrence side channels. That is appropriate for a complete projection audit, but it is not a local adjacency query. Its current `neighbors()` method reads a CSR row, but returns distinct neighbor node IDs, not exact edge occurrences with their semantic payloads; it is not yet the traversal contract.
+- **igraph and graph-tool:** both preserve semantic occurrence identifiers as edge attributes/property maps, but their current `iter_native_edges()` methods enumerate the complete native edge set. Their native incident-edge/vertex adjacency APIs are not yet exposed through the common adapter interface.
+- **SNAP:** the adapter preserves occurrence identity and stores nested attributes/metadata as canonical JSON strings, but its readback method also iterates the complete edge set. Exact node-local edge retrieval and occurrence mapping under parallel edges remain to be established.
+
+### 11.4 Current conformance coverage and its boundary
+
+The inspected E.8.5 test module verifies fixture structure (five nodes, eight directed edge occurrences, three parallel edges between one pair, one self-loop and Unicode values) and, when a real library is installed, checks projection round-trip, seven query cases repeated twice, 14 reference-parity checks, zero query/parity failures, and no provider/network calls.
+
+This is a sound base. It does not by itself prove that the adapter invokes the intended native local-adjacency API, that query-time whole-graph enumeration is absent, that runtime reporting is observational rather than computational, or that every graph-derived evidence tool is routed through the backend. The expanded Layer A–F test policy above is intended to close those gaps.
+
+The deterministic reference traversal currently builds both outgoing and incoming candidate lists for a `BOTH` query. A self-loop is therefore included once through each list. The traversal loop appends a step and increments `examined_edges` before checking whether the neighbor was already visited; the self-loop can consequently appear twice in `steps` and be counted twice, although its evidence record is deduplicated by evidence ID. This is an observed reference behavior, not yet a settled contract. M1 must decide whether `BOTH` means one visit per edge occurrence (recommended) or preserves this double observation, then test the decision independently and update the reference and native paths together.
+
+### 11.5 CI evidence boundary
+
+The E.8.5/E.8.8 workflow is manually dispatched. It provisions NetworkX/SciPy/igraph in Python 3.11, graph-tool in its Conda environment, and a separate Python 3.9 SNAP compatibility smoke. Its summary correctly says the SNAP smoke is not adapter acceptance and requires synthetic plus repository reports for the other backends.
+
+The reviewed baseline's combined commit status query returned an empty status list. No exact-commit CI result was established in this source pass. Do not infer a pass from the workflow file existing or from older local test records.
+
+
+## 12. Immediate next work
 
 Proceed with **M1**, after completing the remaining M0 traceability checks. Do not start by implementing all backends at once.
 
@@ -392,7 +440,7 @@ The first M1 deliverable is a written adapter protocol and conformance matrix. T
 
 No live provider test should be used to compensate for a missing deterministic structural or behavioral test.
 
-## 10. Change and evidence discipline
+## 13. Change and evidence discipline
 
 - All repository writes for this work target `stage1/section-uuids` explicitly.
 - Do not create another branch or modify `main`.
