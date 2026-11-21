@@ -437,8 +437,8 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             "backend_pipeline_transformations": [
                 item.to_dict() for item in self.backend_execution.transformation_records
             ],
-            "projection_node_count": self.native_graph.number_of_nodes(),
-            "projection_edge_occurrence_count": self.native_graph.number_of_edges(),
+            "projection_node_count": self._metrics["projection_validation_nodes"],
+            "projection_edge_occurrence_count": self._metrics["projection_validation_edge_occurrences"],
             "backend_native_query_mode": "networkx_successor_predecessor_adjacency",
             "backend_execution": dict(self._metrics),
             "context_operation_telemetry": {
