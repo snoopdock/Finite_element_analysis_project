@@ -578,3 +578,10 @@ The same dedicated workflow failed overall only because the SNAP compatibility j
 - Run tests on the exact commit being reported; distinguish not-run, skipped, failed and passed.
 - Record package versions, Python/platform details, commit SHA, workflow/run ID and artifact hashes where relevant.
 - Keep Graphify as a discovery/indexing aid; source code, executable tests and runtime instrumentation remain the evidence authorities.
+
+
+## 13. Wrong-branch manual dispatch — run 44907031239
+
+Run [44907031239](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44907031239) was dispatched from `main` at controller/source SHA `c54919c39bf656ef4562320008f6aa7df8b2e844`, not from Stage1. Logs confirm the old main workflow: SNAP requested CPython 3.9.19 on Ubuntu 26.04; NetworkX could not find the Stage1 M1 test; SciPy/igraph could not find the E.8.5 runner; graph-tool could not find its conda environment file. These are wrong-branch content failures and do not invalidate the Stage1 adapter implementation or its earlier exact-source graph-tool acceptance.
+
+To avoid dependence on the Actions mobile branch selector, the workflow controller on `main` now exposes a constrained `source_ref` workflow-dispatch input and passes it explicitly to every checkout. It is intended to be dispatched from main with `source_ref=stage1/section-uuids`; each job logs the actual checked-out source SHA. See [run 44907031239 analysis](AE-32C-E85-Validation-Failure-44907031239.md). The next run must verify the checked-out Stage1 SHA before any job result is used as conformance evidence.
