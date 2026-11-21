@@ -156,6 +156,9 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
     trace_telemetry = context_telemetry.get("trace_execution_context", {})
     nested_telemetry = context_telemetry.get("trace_execution_context.workflow_context", {})
     workflow_telemetry = context_telemetry.get("find_workflow_context", {})
+    context_backend_execution = final_runtime.get(
+        "backend_native_query_mode", "backend_native_query_mode_unreported"
+    )
     if execution.get("parity_failures", 0) != 0:
         raise RuntimeError("backend_reference_parity_failure")
     if execution.get("parity_verified_queries", 0) < 3:
@@ -198,16 +201,16 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
             "find_related_tests": "selected_backend_and_reference_parity_verified",
             "trace_execution_context": {
                 "status": trace_context.get("coverage_status"),
-                "backend_execution": "networkx_native_successor_predecessor_adjacency",
+                "backend_execution": context_backend_execution,
                 "telemetry": trace_telemetry,
             },
             "trace_nested_find_workflow_context": {
-                "backend_execution": "networkx_native_successor_predecessor_adjacency",
+                "backend_execution": context_backend_execution,
                 "telemetry": nested_telemetry,
             },
             "find_workflow_context": {
                 "status": workflow_context.get("coverage_status"),
-                "backend_execution": "networkx_native_successor_predecessor_adjacency",
+                "backend_execution": context_backend_execution,
                 "telemetry": workflow_telemetry,
             },
         },
