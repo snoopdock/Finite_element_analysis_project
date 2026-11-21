@@ -345,6 +345,14 @@ Validation still required:
 - The dedicated conda-forge E.8.5/E.8.8 workflow now runs graph-tool adapter tests, synthetic native conformance and repository-backed context/source conformance.
 
 
+**G9.42 validation attempt — run 44902653878:**
+- The dispatcher was launched from `main`, but it checked out and validated `stage1/section-uuids` at exact source SHA `e979b17b081d5e0a3cf120b184c7016de6dfd3e1`. No source changes were made to `main`.
+- Targeted suite: 689 tests, 684 passed, 5 skipped, 0 failed. Full regression: 3,628 tests, 3,612 passed, 13 skipped, 3 failed.
+- Two failures came from a legacy graph-tool fake that lacked the `edge_index` property map; one was a stale M1 registry assertion that still expected graph-tool to be unimplemented.
+- Corrections are committed to Stage1: `80f72b680b5f9b5e9bb15c1cf739cdd7d39cccd1` adds the missing fake edge-index mapping; `7becea4463b9276cbcdd49ad83f12a65d82806b7` asserts graph-tool `implemented_unvalidated` separately from SNAP `not_implemented`.
+- Evidence integrity and immutable bundle publication passed. Provenance catalog build/verification correctly failed closed because regression failed. See [M5 G9.42 failure review](AE-32C-M5-G9.42-Validation-Failure-44902653878.md).
+- Corrections are not yet validated; M5 remains in progress and no acceptance claim is made.
+
 **Remaining validation work:**
 - execute the dedicated conda-forge E.8.5/E.8.8 workflow against the exact latest Stage1 SHA and record graph-tool version;
 - resolve any real-library incompatibilities without weakening occurrence identity, payload validation or bounded local adjacency;
