@@ -1,14 +1,15 @@
 # AE-32C M6 — SNAP Isolated Worker: Implementation and Acceptance
 
-**Status:** real SNAP worker E.8.5 and E.8.8 conformance passed. The remaining milestone gate is the exact-commit G9.42 Manual Validation Dispatcher run. Production approval remains false.  
+**Status:** all five backends passed provenance-stamped E.8.5 and E.8.8 validation on the current Stage1 source SHA. M5 and M6 technical conformance gates are complete; the remaining milestone-closure gate is the exact-commit G9.42 Manual Validation Dispatcher run. Production approval remains false.  
 **Target branch:** `stage1/section-uuids`  
-**Worker implementation/conformance snapshot:** `425c0f7378bfe190da81b10b0f6e0b22c3df4f41`  
+**Final provenance-stamped validation snapshot:** `c7fe14c52ded38eafbf3153137bf163efaa3f0e6`  
 **Fingerprint correction:** `9f0125738759be4bb80026d9aa86d59a01e915b8`  
 **SNAP native runtime dependency correction:** `97f78060923a9ab7daea8ed4b48971c0314b3616`  
 **Native edge-ID accessor gate:** `425c0f7378bfe190da81b10b0f6e0b22c3df4f41`  
 **Evidence source-revision stamping:** `fa4df0d3a673e65ab4273dd58ef7931b97c0bde4`, `9ff30230527f749a9d13d0fcd8ef89275d0f8b7f`, `c1f97a9402d0d98490eb6ad7efff5f1ae0179c6a`  
+**Final validation workflow commit:** `c7fe14c52ded38eafbf3153137bf163efaa3f0e6`  
 **First full-matrix run:** [44914650206](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914650206) — NetworkX, SciPy, igraph and graph-tool E.8.5/E.8.8 passed; SNAP image build and adapter protocol test passed; SNAP E.8.5 failed at fingerprint validation, so SNAP E.8.8 was skipped.  
-**First complete real-worker pass:** [44914959176](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914959176) — success for all five backends at Stage1 SHA `425c0f7378bfe190da81b10b0f6e0b22c3df4f41`. The provenance-stamped current-head rerun is initiated by the workflow/documentation commit accompanying this revision.  
+**Final provenance-stamped E.8.5 / E.8.8 run:** [44915634551](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44915634551) — success for all five backends at Stage1 SHA `c7fe14c52ded38eafbf3153137bf163efaa3f0e6`; every report records source revision, workflow run ID `44915634551` and attempt `1`.  
 **Main-branch change boundary:** only the E85 workflow controller was updated to launch the Stage1 implementation; SNAP adapter and worker source remain on Stage1.
 
 ---
@@ -158,7 +159,7 @@ The protocol test `tests/semantic_graph/test_snap_worker_adapter.py` uses a fake
 
 The decisive real-worker evidence is run [44914959176](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914959176). Its E.8.5 report shows 14/14 repeated queries passed, zero parity failures, 34 native adjacency lookups and 96 edge occurrences read. Its E.8.8 report shows 43/43 repository queries passed, zero parity failures, 45 native adjacency lookups, 86 edge occurrences read, and two source reads verified against SHA-256 hashes. The worker reports CPython 3.9.25, SNAP 6.0.0 and image ID `sha256:55b531951c9f7f70bc0414ce4a59059d6602df3ec15e17bf0732099bd602f593`. The E.8.8 repository graph contained 26 nodes, 41 edge occurrences and 9 indexed files.
 
-The reports in that first successful run did not yet carry explicit `source_revision` fields. The E.8.5 and E.8.8 runners and workflow now stamp the checked-out Stage1 SHA, workflow run ID and attempt into each JSON report. The final push-triggered run on the current Stage1 head is intended to validate that provenance addition. After it succeeds, run the manual G9.42 dispatcher against the same exact Stage1 SHA.
+The final run also verifies that all ten E.8.5/E.8.8 JSON reports carry the same checked-out source SHA, workflow run ID and attempt. The repository-backed reports share graph fingerprint `graph:1aca2caea6acabcf695a6118f7202b6e`, source-manifest SHA-256 `5d186a8801781c0c63ea29bc102a0c67f08bf8bd8358888cc96de381a24cb0cf`, 26 nodes, 41 edge occurrences and 9 indexed files. The final exact-commit G9.42 manual validation is now the only remaining milestone-closure gate.
 
 After the provenance-stamped E.8.5 / E.8.8 run passes, dispatch [Manual Validation Dispatcher](https://github.com/snoopdock/Finite_element_analysis_project/actions/workflows/00_manual_validation_dispatcher.yml) from `main` with branch `stage1/section-uuids`, profile `G9.42`, and regression mode `profile`. The G9.42 profile now explicitly includes `tests/semantic_graph/test_snap_worker_adapter.py`. Verify that the dispatcher evidence records the same exact Stage1 SHA as the E.8.5 / E.8.8 run. Only then can M6 be recorded as accepted. Keep `production_approval=false`.
 
