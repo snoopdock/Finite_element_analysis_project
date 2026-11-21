@@ -369,6 +369,9 @@ def verify_report(report: dict) -> dict:
         manifest = case.get("workload", {})
         if (
             manifest.get("id") != workload_id or manifest.get("seed") != seed
+            or manifest.get("family") != WORKLOADS[workload_id]["family"]
+            or manifest.get("purpose") != WORKLOADS[workload_id]["purpose"]
+            or manifest.get("characteristics") != WORKLOADS[workload_id]["characteristics"]
             or manifest.get("generator") != GENERATOR
             or manifest.get("nodes") != len(graph.nodes)
             or manifest.get("edge_occurrences") != len(graph.edges)
