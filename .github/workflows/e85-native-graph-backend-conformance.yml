@@ -44,11 +44,19 @@ jobs:
           python tools/gb03_native_backend_conformance.py \
             --backend "${{ matrix.backend }}" \
             --output "e85-${{ matrix.backend }}.json"
-      - name: Run repository-backed graph and source conformance
+      - name: Run repository-backed graph and source conformance (NetworkX only)
+        if: matrix.backend == 'networkx'
         run: |
           python tools/gb04_repository_backend_conformance.py \
             --backend "${{ matrix.backend }}" \
             --output "e88-${{ matrix.backend }}-repository.json"
+      - name: Record deferred repository gate for non-NetworkX backends
+        if: matrix.backend != 'networkx'
+        run: |
+          {
+            echo "### Repository-backed conformance"
+            echo "NOT RUN: native local edge-occurrence adjacency is not implemented for this backend; repository/tool-routing acceptance is deferred to its backend milestone."
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload conformance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -80,12 +88,13 @@ jobs:
           python tools/gb03_native_backend_conformance.py \
             --backend graph-tool \
             --output e85-graph-tool.json
-      - name: Run repository-backed graph-tool conformance
+      - name: Record deferred graph-tool repository gate
         shell: micromamba-shell {0}
         run: |
-          python tools/gb04_repository_backend_conformance.py \
-            --backend graph-tool \
-            --output e88-graph-tool-repository.json
+          {
+            echo "### Repository-backed conformance"
+            echo "NOT RUN: graph-tool native local edge-occurrence adjacency is not implemented; repository/tool-routing acceptance is deferred to its backend milestone."
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload graph-tool conformance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -154,6 +163,9 @@ jobs:
             echo "- SNAP isolated Python 3.9 compatibility job: ${SNAP_JOB}"
             echo "- SNAP compatibility status: ${SNAP_NATIVE}"
             echo "- SNAP AE-32C adapter acceptance: NOT YET ACCEPTED; isolated worker protocol and repository parity remain required."
+            echo "- NetworkX: M1 protocol tests run in the NetworkX matrix job; acceptance still requires their pass plus the repository report."
+            echo "- SciPy / igraph / graph-tool: synthetic projection jobs are diagnostic only; native local adjacency and repository acceptance are NOT IMPLEMENTED / NOT RUN."
+            echo "- A green workflow job status is not, by itself, backend acceptance."
             echo ""
             echo "A backend is accepted only when both synthetic and repository-backed reports show status=passed. SNAP's Python 3.9 import/adjacency smoke is not native adapter acceptance."
           } >> "$GITHUB_STEP_SUMMARY"
