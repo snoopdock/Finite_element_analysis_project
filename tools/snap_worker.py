@@ -162,6 +162,10 @@ def _init(message):
         "graph_fingerprint": fingerprint,
         "node_count": len(nodes),
         "edge_occurrence_count": len(edges),
+        "occurrence_to_native_edge_id": [
+            [occurrence, native_id]
+            for occurrence, native_id in sorted(occurrence_to_edge.items())
+        ],
         "snap_version": snap_version,
         "python_version": sys.version.split()[0],
         "platform": platform.platform(),
