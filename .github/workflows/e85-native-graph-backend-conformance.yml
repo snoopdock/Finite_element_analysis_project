@@ -2,12 +2,20 @@ name: AE-32C Native Graph Backend Conformance (E.8.5 / E.8.8)
 
 on:
   workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "Stage1 source branch to test (the workflow controller remains on main)"
+        required: true
+        type: choice
+        default: stage1/section-uuids
+        options:
+          - stage1/section-uuids
 
 permissions:
   contents: read
 
 concurrency:
-  group: e85-native-graph-backend-conformance-${{ github.ref }}
+  group: e85-native-graph-backend-conformance-${{ inputs.source_ref }}
   cancel-in-progress: false
 
 jobs:
@@ -20,8 +28,19 @@ jobs:
       matrix:
         backend: [networkx, scipy, igraph]
     steps:
-      - name: Checkout selected Stage1 commit
+      - name: Checkout selected Stage1 source branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+      - name: Record selected source revision
+        shell: bash
+        run: |
+          echo "Selected source ref: ${{ inputs.source_ref }}"
+          echo "Checked-out source SHA: $(git rev-parse HEAD)"
+          {
+            echo "Selected source ref: ${{ inputs.source_ref }}"
+            echo "Checked-out source SHA: $(git rev-parse HEAD)"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -113,17 +132,26 @@ jobs:
     name: SNAP isolated Python 3.9 compatibility probe
     outputs:
       native_status: ${{ steps.snap.outputs.status }}
-    runs-on: ubuntu-latest
+    # SNAP 6.0 publishes a CPython 3.9 wheel. Ubuntu 26.04 does not
+    # currently provide CPython 3.9 through setup-python; keep this worker
+    # on the supported Ubuntu 24.04 image and isolate it from the project
+    # Python 3.11 jobs.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout selected Stage1 commit
         uses: actions/checkout@v4
-      - name: Set up isolated Python 3.9 worker runtime
+      - name: Set up isolated CPython 3.9 worker runtime
+        id: python39
         uses: actions/setup-python@v5
         with:
-          python-version: "3.9.19"
-      - name: Install published SNAP 6.0 binary
-        run: python -m pip install 'snap-stanford==6.0.0'
+          python-version: "3.9"
+      - name: Verify isolated interpreter
+        run: |
+          python -c 'import platform, sys; assert sys.version_info[:2] == (3, 9), sys.version; assert platform.machine() == "x86_64", platform.machine(); print(sys.version); print(platform.platform())'
+      - name: Install published SNAP 6.0 binary wheel only
+        id: snap_install
+        run: python -m pip install --only-binary=:all: -r .github/environments/e85-snap-python39-requirements.txt
       - name: Verify TNEANet directed multigraph and adjacency APIs
         id: snap
         shell: bash
@@ -137,13 +165,29 @@ jobs:
             echo "The isolated CPython 3.9 SNAP 6.0 TNEANet smoke passed."
             echo "This is not AE-32C native adapter acceptance: the Python 3.11 worker protocol and repository-level parity gate remain to be implemented."
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Record SNAP worker step outcomes
+        if: always()
+        shell: bash
+        env:
+          PYTHON39_SETUP: ${{ steps.python39.outcome }}
+          SNAP_INSTALL: ${{ steps.snap_install.outcome }}
+          SNAP_SMOKE: ${{ steps.snap.outcome }}
+        run: |
+          mkdir -p e85-snap-evidence
+          {
+            echo "python39_setup=${PYTHON39_SETUP:-not_run}"
+            echo "snap_install=${SNAP_INSTALL:-not_run}"
+            echo "snap_smoke=${SNAP_SMOKE:-not_run}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+          } > e85-snap-evidence/worker-step-outcomes.txt
       - name: Upload SNAP compatibility evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: e85-snap-python39-compatibility
-          path: e85-snap-evidence/e85-snap-python39.json
-          if-no-files-found: warn
+          path: e85-snap-evidence/
+          if-no-files-found: error
           retention-days: 30
 
   conformance-summary:
@@ -158,9 +202,11 @@ jobs:
           GRAPH_TOOL: ${{ needs.graph-tool-native.result }}
           SNAP_JOB: ${{ needs.snap-python39-compatibility-probe.result }}
           SNAP_NATIVE: ${{ needs.snap-python39-compatibility-probe.outputs.native_status }}
+          SOURCE_REF: ${{ inputs.source_ref }}
         run: |
           {
             echo "## Native graph backend conformance"
+            echo "- Selected source branch: ${SOURCE_REF}"
             echo "- NetworkX / SciPy / igraph matrix job execution: ${PIP_BACKENDS}"
             echo "- graph-tool synthetic job execution: ${GRAPH_TOOL}"
             echo "- SNAP isolated Python 3.9 compatibility job: ${SNAP_JOB}"
