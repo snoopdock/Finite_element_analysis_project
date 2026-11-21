@@ -593,7 +593,7 @@ def test_real_optional_native_backend_query_when_installed(backend, module_name)
         assert runtime["native_adjacency"]["native_edge_occurrences_read"] >= 1
 
 
-@pytest.mark.parametrize("backend", ["igraph", "graph-tool", "snap"])
+@pytest.mark.parametrize("backend", ["igraph", "graph-tool"])
 def test_e85_conformance_runner_contract_with_adapter_test_double(monkeypatch, backend):
     """Exercise the E.8.5 runner contract; this is not native-library acceptance."""
     install_fake(monkeypatch, backend)
@@ -606,6 +606,15 @@ def test_e85_conformance_runner_contract_with_adapter_test_double(monkeypatch, b
     assert report["backend_execution"]["parity_verified_queries"] == 14
     assert report["backend_execution"]["parity_failures"] == 0
 
+
+
+
+def test_snap_fake_module_is_not_accepted_as_isolated_worker_conformance(monkeypatch):
+    install_fake(monkeypatch, "snap")
+    from tools.gb03_native_backend_conformance import run
+
+    with pytest.raises(RuntimeError, match="snap_native_conformance_requires_isolated_worker"):
+        run("snap")
 
 
 def test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans(monkeypatch):
