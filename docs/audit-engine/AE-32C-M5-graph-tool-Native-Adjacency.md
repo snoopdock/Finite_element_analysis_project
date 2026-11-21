@@ -78,7 +78,7 @@ The adapter uses graph-tool `string`, `int64_t` and `object` property maps. grap
 The E.8.3 test module now covers:
 
 - fake graph-tool vertex descriptors with `out_edges()` and `in_edges()`;
-- explicit native edge-index to semantic-occurrence mapping;
+- explicit native edge-index to semantic-occurrence mapping, including non-contiguous native indices in the fake API contract;
 - outgoing and incoming local adjacency;
 - two parallel A→B occurrences with distinct relations;
 - incoming B→C and a C→C self-loop in `BOTH`, with the loop returned once;
