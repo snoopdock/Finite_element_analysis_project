@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "2a916109dd64a7761faeeeee5a5af28bb26becaa",
-  "compare_sha": "e9300e94818f1e4b2caa2c76f3945bc2c23f4d2b",
+  "base_sha": "c6805fad67fa1d42be4050260bbf240df4b91475",
+  "compare_sha": "8066c6db6717a0fa3aa866dbf1cb61572ee67292",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 280,
-  "compare_only_commit_count": 1111,
+  "base_only_commit_count": 281,
+  "compare_only_commit_count": 1118,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -7419,6 +7419,46 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": ">",
+      "sha": "8066c6db6717a0fa3aa866dbf1cb61572ee67292",
+      "subject": "Update SNAP worker test for audit-bound edge identity mapping"
+    },
+    {
+      "side": ">",
+      "sha": "c073a481ddc3e646b7a3c180aedbd63ebaa97f9c",
+      "subject": "Bind SNAP worker edge identities during bounded projection audit"
+    },
+    {
+      "side": "<",
+      "sha": "c6805fad67fa1d42be4050260bbf240df4b91475",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": ">",
+      "sha": "e48731495511d7cb72419e7d48c48d9bb051d52f",
+      "subject": "Keep worker initialization response bounded; defer edge mapping to audit"
+    },
+    {
+      "side": ">",
+      "sha": "8fa571a82c2ddbf7f5d9826139ee2e2dbc36c2b3",
+      "subject": "Assert SNAP worker occurrence mapping in adapter test"
+    },
+    {
+      "side": ">",
+      "sha": "c8f4d0e420cd9cf28abb1fc3a6eda4757bc9ab6b",
+      "subject": "Validate SNAP worker edge identity map before and after projection audit"
+    },
+    {
+      "side": ">",
+      "sha": "eccfc2fe64c2f6171766e139abad8ee7996da590",
+      "subject": "Expose explicit SNAP edge-ID to semantic occurrence mapping"
+    },
+    {
+      "side": ">",
+      "sha": "0af98aa24f4cabcb7d8ff4d04d67586cec304296",
+      "subject": "Enable Stage1 push validation for E.8.5 and E.8.8 backend changes"
+    },
     {
       "side": "<",
       "sha": "2a916109dd64a7761faeeeee5a5af28bb26becaa",
