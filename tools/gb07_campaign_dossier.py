@@ -89,8 +89,8 @@ def verify_campaign(artifact_dir,manifest,run_id,attempt,source_revision):
         verified=m72.verify_report(report)
         run_result=last_json(lp)
         log=last_json(vp)
-        for evidence_log in (run_result,log):
-            require(evidence_log.get("status")=="verified" and evidence_log.get("backend")==backend and evidence_log.get("report_sha256")==report.get("report_sha256"),"detached_run_or_verify_log_mismatch:"+backend)
+        require(run_result.get("status")=="verified" and run_result.get("backend")==backend and run_result.get("report_sha256")==report.get("report_sha256"),"detached_run_log_mismatch:"+backend)
+        require(log.get("status")=="verified" and log.get("backend")==backend and log.get("report_sha256")==report.get("report_sha256"),"detached_verify_log_mismatch:"+backend)
         require(verified.get("report_sha256")==report.get("report_sha256"),"report_verification_mismatch:"+backend)
         cfg=report["configuration"]
         require(cfg.get("workload_ids")==list(m72.WORKLOADS),"workload_coverage_incomplete:"+backend)
