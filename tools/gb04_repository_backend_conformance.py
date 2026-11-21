@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import sys
 from typing import Any
@@ -185,8 +186,13 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
         "schema_version": "ae32c/repository-backend-conformance/v1",
         "status": "passed",
         "backend": backend,
+        "source_revision": os.environ.get("AE32C_SOURCE_REVISION"),
+        "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+        "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+        "workflow_name": os.environ.get("GITHUB_WORKFLOW"),
         "backend_library": final_runtime.get("backend_library"),
         "backend_library_version": final_runtime.get("backend_library_version"),
+        "backend_native_query_mode": final_runtime.get("backend_native_query_mode"),
         "native_worker": final_runtime.get("backend_worker_info"),
         "repository_snapshot": {
             "evidence_index_status": summary.get("evidence_index_status"),
