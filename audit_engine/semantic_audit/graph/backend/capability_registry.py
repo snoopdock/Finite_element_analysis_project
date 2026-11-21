@@ -1,6 +1,6 @@
 """Graph backend capabilities and optional dependency availability."""
 
-from audit_engine.semantic_audit.graph.backend.optional_backend_support import backend_available
+from audit_engine.semantic_audit.graph.backend.optional_backend_support import backend_available\nimport os\nimport shutil
 
 
 class BackendCapabilityRegistry:
@@ -62,7 +62,7 @@ def create_default_registry():
             "acceptance_state": _acceptance_state(name, adjacency_state),
             "lossless": True, "metadata": True, "multiedges": True,
             "directed": True, "semantic_traversal": True,
-            "available": backend_available(name),
+            "available": available,
             "optional": True,
             "json_attributes_only": name == "snap",
         })
