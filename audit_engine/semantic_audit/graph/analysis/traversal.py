@@ -178,6 +178,16 @@ class GraphTraversalEngine:
         max_visited_nodes: int | None = None,
         max_steps: int | None = None,
     ) -> TraversalResult:
+        # Normalize string inputs once at the public boundary. BOTH self-loop
+        # de-duplication relies on enum identity; a raw string otherwise makes
+        # the reference oracle disagree with native adapters that normalize it.
+        if not isinstance(direction, TraversalDirection):
+            try:
+                direction = TraversalDirection(direction)
+            except (TypeError, ValueError) as exc:
+                raise GraphTraversalError(
+                    "direction must be outgoing, incoming, or both."
+                ) from exc
         if not self.graph.has_node(start_node):
             raise GraphTraversalError(
                 f"Traversal start node is absent from graph: {start_node!r}"
