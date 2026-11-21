@@ -7,13 +7,13 @@
   },
   "compare": {
     "branch": "stage1-section-uuids",
-    "node_count": 17681,
-    "edge_count": 44971
+    "node_count": 17765,
+    "edge_count": 45281
   },
   "nodes": {
     "common_count": 2438,
     "base_only_count": 2492,
-    "compare_only_count": 15243,
+    "compare_only_count": 15327,
     "base_only": [
       "abc",
       "analysis_citation_validator_rationale_128",
@@ -3908,15 +3908,16 @@
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_103",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_108",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_123",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1410",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1437",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1507",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2118",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2165",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2303",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2491",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1411",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1438",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1508",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1534",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2156",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2203",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2341",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2535",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_255",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2757",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2814",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_282",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_306",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_316",
@@ -3927,13 +3928,14 @@
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_691",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_748",
       "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_91",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_914",
-      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_970",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_915",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_971",
       "audit_engine_semantic_audit_ae32b_evidence_tools_read_snapshot_file",
       "audit_engine_semantic_audit_ae32b_evidence_tools_redact_then_truncate",
       "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_build_decision_memory_graph_safe_review_field",
       "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_build_static_call_graph",
       "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_collect_import_bindings",
+      "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
       "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_discover_case_context",
       "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_finalize_response",
       "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_graph_dependencies",
@@ -4020,11 +4022,11 @@
       "audit_engine_semantic_audit_ae32c_evaluation_py_any",
       "audit_engine_semantic_audit_ae32c_evaluation_py_path",
       "audit_engine_semantic_audit_ae32c_evaluation_rationale_1",
-      "audit_engine_semantic_audit_ae32c_evaluation_rationale_263",
-      "audit_engine_semantic_audit_ae32c_evaluation_rationale_31",
-      "audit_engine_semantic_audit_ae32c_evaluation_rationale_396",
-      "audit_engine_semantic_audit_ae32c_evaluation_rationale_483",
-      "audit_engine_semantic_audit_ae32c_evaluation_rationale_89",
+      "audit_engine_semantic_audit_ae32c_evaluation_rationale_269",
+      "audit_engine_semantic_audit_ae32c_evaluation_rationale_32",
+      "audit_engine_semantic_audit_ae32c_evaluation_rationale_407",
+      "audit_engine_semantic_audit_ae32c_evaluation_rationale_504",
+      "audit_engine_semantic_audit_ae32c_evaluation_rationale_90",
       "audit_engine_semantic_audit_ae32c_evaluation_render_comparison_markdown",
       "audit_engine_semantic_audit_ae32c_evaluation_safe_request_diagnostics",
       "audit_engine_semantic_audit_ae32c_evaluation_safe_text",
@@ -4069,48 +4071,71 @@
       "audit_engine_semantic_audit_ae32c_graph_pilot_write_checksums",
       "audit_engine_semantic_audit_ae32c_graph_pilot_write_comparison_markdown",
       "audit_engine_semantic_audit_ae32c_graph_pilot_write_json",
+      "audit_engine_semantic_audit_ae32c_graph_utilization",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_aggregate_graph_utilization_runs",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_bounded_count",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_complete_source_read",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_discovery_paths_and_hashes",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_discovery_paths_and_hashes_add",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_entry_result",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_get",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_mapping",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_path_hashes",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_rationale_1",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_rationale_201",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_rationale_482",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_rationale_520",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_rationale_90",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_runtime_backend",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_source_paths",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_strings",
+      "audit_engine_semantic_audit_ae32c_graph_utilization_summarize_graph_utilization_assessment",
       "audit_engine_semantic_audit_ae32c_init",
       "audit_engine_semantic_audit_ae32c_init_rationale_1",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_105",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1121",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_116",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1175",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1210",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1380",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1388",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1395",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1425",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1477",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1565",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1597",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1721",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1736",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_1888",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2049",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_209",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2139",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2192",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2257",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2305",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2332",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2366",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2378",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2464",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2709",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2749",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_2789",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_3303",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_3326",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_3713",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_4235",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_4719",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_5786",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_5794",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_5895",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_59",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_611",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_624",
-      "audit_engine_semantic_audit_ae32c_investigator_rationale_867",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_106",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1145",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_117",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1199",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1234",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1293",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1340",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1508",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1516",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1523",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1553",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1605",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1733",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1765",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1889",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_1904",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2056",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_210",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2217",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2307",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2360",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2425",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2473",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2500",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2534",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2546",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2632",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2877",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2917",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_2957",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_3471",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_3494",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_3899",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_4421",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_4913",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_5985",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_5993",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_60",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_6094",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_635",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_648",
+      "audit_engine_semantic_audit_ae32c_investigator_rationale_891",
       "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_assistant_action_history_message",
       "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_downgrade_structured_response_mode",
       "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_finalization_future_reserve_tokens",
@@ -4122,6 +4147,8 @@
       "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_investigation_context_coverage_entry_matches_required_target",
       "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_investigation_context_coverage_string_paths",
       "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_model_response_view",
+      "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prefetch_required_context_evidence",
+      "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prefetch_required_graph_evidence",
       "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prepare_provider_request",
       "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_record_provider_response_mode",
       "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_reserve_plain_text_fallback",
@@ -4141,10 +4168,10 @@
       "audit_engine_semantic_audit_ae32c_live_evaluation_py_any",
       "audit_engine_semantic_audit_ae32c_live_evaluation_py_path",
       "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_1",
-      "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_130",
-      "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_221",
-      "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_271",
-      "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_86",
+      "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_131",
+      "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_222",
+      "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_272",
+      "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_87",
       "audit_engine_semantic_audit_ae32c_live_evaluation_required_source_contract",
       "audit_engine_semantic_audit_ae32c_live_evaluation_safe_text",
       "audit_engine_semantic_audit_ae32c_live_evaluation_usage_summary",
@@ -4855,19 +4882,26 @@
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_attach_edge_occurrence_ids",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_backend_name",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_build_adjacency",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_init",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_result_metadata",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_runtime_report",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_verify_projection",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_walk",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_py_any",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_py_runtimeerror",
       "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_1",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_135",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_151",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_47",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_51",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_55",
-      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_80",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_147",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_161",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_208",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_242",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_289",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_48",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_52",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_56",
+      "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_81",
       "audit_engine_semantic_audit_graph_backend_optional_backend_support",
       "audit_engine_semantic_audit_graph_backend_optional_backend_support_backend_available",
       "audit_engine_semantic_audit_graph_backend_optional_backend_support_backendunavailableerror",
@@ -6672,7 +6706,7 @@
       "github_workflows_e85_native_graph_backend_conformance_jobs_conformance_summary",
       "github_workflows_e85_native_graph_backend_conformance_jobs_graph_tool_native",
       "github_workflows_e85_native_graph_backend_conformance_jobs_pip_native_backends",
-      "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
+      "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
       "github_workflows_e85_native_graph_backend_conformance_matrix_backend",
       "github_workflows_e85_native_graph_backend_conformance_name",
       "github_workflows_e85_native_graph_backend_conformance_on",
@@ -6685,11 +6719,11 @@
       "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_steps",
       "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_strategy",
       "github_workflows_e85_native_graph_backend_conformance_pip_native_backends_timeout_minutes",
-      "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_name",
-      "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_outputs",
-      "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_runs_on",
-      "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
-      "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_timeout_minutes",
+      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_name",
+      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_outputs",
+      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_runs_on",
+      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
+      "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_timeout_minutes",
       "github_workflows_e85_native_graph_backend_conformance_steps_env",
       "github_workflows_e85_native_graph_backend_conformance_steps_id",
       "github_workflows_e85_native_graph_backend_conformance_steps_if",
@@ -7035,6 +7069,7 @@
       "providers_cloudflare_cloudflareprovider_chat_text",
       "providers_cloudflare_cloudflareprovider_chat_with_response_tool",
       "providers_cloudflare_cloudflareprovider_get_capabilities",
+      "providers_cloudflare_cloudflareprovider_preserve_invalid_native_tool_call",
       "providers_cloudflare_cloudflareprovider_record_stream_progress",
       "providers_cloudflare_consume_openai_sse",
       "providers_cloudflare_env_flag",
@@ -7044,18 +7079,19 @@
       "providers_cloudflare_py_baseexception",
       "providers_cloudflare_py_valueerror",
       "providers_cloudflare_rationale_117",
-      "providers_cloudflare_rationale_1493",
-      "providers_cloudflare_rationale_1513",
-      "providers_cloudflare_rationale_1549",
-      "providers_cloudflare_rationale_1559",
-      "providers_cloudflare_rationale_1572",
+      "providers_cloudflare_rationale_1533",
+      "providers_cloudflare_rationale_1554",
+      "providers_cloudflare_rationale_1590",
+      "providers_cloudflare_rationale_1600",
+      "providers_cloudflare_rationale_1613",
       "providers_cloudflare_rationale_197",
       "providers_cloudflare_rationale_475",
       "providers_cloudflare_rationale_505",
       "providers_cloudflare_rationale_563",
       "providers_cloudflare_rationale_60",
       "providers_cloudflare_rationale_76",
-      "providers_cloudflare_rationale_789",
+      "providers_cloudflare_rationale_780",
+      "providers_cloudflare_rationale_832",
       "providers_cloudflare_reject_duplicate_tool_keys",
       "providers_cloudflare_reject_tool_constant",
       "providers_cloudflare_safe_cloudflare_error_diagnostics",
@@ -14026,6 +14062,22 @@
       "tests_semantic_audit_test_ae32c_graph_pilot_test_model_runtime_limits_are_provider_model_profile_driven",
       "tests_semantic_audit_test_ae32c_graph_pilot_test_nemotron_and_qwen_profiles_keep_separate_runtime_budgets",
       "tests_semantic_audit_test_ae32c_graph_pilot_test_provider_model_cost_profiles_are_generic_and_extensible",
+      "tests_semantic_audit_test_ae32c_graph_utilization",
+      "tests_semantic_audit_test_ae32c_graph_utilization_aggregate",
+      "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_load_cli",
+      "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_test_cli_aggregates_published_comparison_without_provider_calls",
+      "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_test_cli_rejects_duplicate_evaluation_ids",
+      "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_test_live_evaluation_help_exposes_trusted_graph_backend_selection",
+      "tests_semantic_audit_test_ae32c_graph_utilization_complete_read",
+      "tests_semantic_audit_test_ae32c_graph_utilization_entry",
+      "tests_semantic_audit_test_ae32c_graph_utilization_test_comparison_record_surfaces_graph_utilization_and_keeps_accuracy_unassessed",
+      "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_derived_discovery_tool_follow_through_is_measured_without_neighbors_query",
+      "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_disabled_and_policy_violation_states_are_explicit",
+      "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_utilization_measures_queries_follow_through_claim_linkage_and_cost",
+      "tests_semantic_audit_test_ae32c_graph_utilization_test_incomplete_read_and_hash_mismatch_are_not_verified",
+      "tests_semantic_audit_test_ae32c_graph_utilization_test_partial_or_truncated_graph_result_does_not_create_verified_follow_through",
+      "tests_semantic_audit_test_ae32c_graph_utilization_test_partial_read_before_graph_surfacing_does_not_block_verified_follow_through",
+      "tests_semantic_audit_test_ae32c_graph_utilization_test_summary_is_compact_and_aggregate_groups_by_snapshot_and_backend",
       "tests_semantic_audit_test_ae32c_investigator_action_tool",
       "tests_semantic_audit_test_ae32c_investigator_fakeevidencetools",
       "tests_semantic_audit_test_ae32c_investigator_fakeevidencetools_init",
@@ -14077,6 +14129,8 @@
       "tests_semantic_audit_test_ae32c_investigator_test_invalid_tool_action_envelope_reports_top_level_keys_and_recovers_safely",
       "tests_semantic_audit_test_ae32c_investigator_test_investigation_prompt_uses_only_condition_available_discovery_tools",
       "tests_semantic_audit_test_ae32c_investigator_test_legacy_source_tuple_is_rebound_only_to_unique_observed_manifest_line",
+      "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through",
+      "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through_read_action",
       "tests_semantic_audit_test_ae32c_investigator_test_malformed_json_gets_one_bounded_recovery_and_can_continue",
       "tests_semantic_audit_test_ae32c_investigator_test_markdown_report_does_not_claim_diagnosis_is_independently_proven",
       "tests_semantic_audit_test_ae32c_investigator_test_mismatched_tool_arguments_feedback_suggests_the_matching_registered_tool",
@@ -14142,6 +14196,7 @@
       "tests_semantic_audit_test_ae32c_native_response_tool_integration_nativecloudflarefakeprovider_get_capabilities",
       "tests_semantic_audit_test_ae32c_native_response_tool_integration_nativecloudflarefakeprovider_init",
       "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_investigator_uses_native_response_tool_and_keeps_existing_action_validation",
+      "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_malformed_native_arguments_are_recoverable_model_rejections_not_provider_failures",
       "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_native_response_tool_does_not_bypass_finalization_no_tool_rule",
       "tests_semantic_audit_test_ae32c_native_response_tool_integration_wrap_action",
       "tests_semantic_audit_test_ae32c_operational_failure_modes",
@@ -14765,6 +14820,14 @@
       "tests_semantic_graph_test_e86_change_set_impact_test_multi_source_impact_merges_candidates_and_attributes_sources",
       "tests_semantic_graph_test_e86_change_set_impact_test_self_loop_is_reported_as_dependency_cycle",
       "tests_semantic_graph_test_e86_change_set_impact_write",
+      "tests_semantic_graph_test_e88_networkx_repository_backend",
+      "tests_semantic_graph_test_e88_networkx_repository_backend_graph",
+      "tests_semantic_graph_test_e88_networkx_repository_backend_test_native_backend_workflow_avoids_flat_layout_editable_install_and_adds_repo_runner",
+      "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency",
+      "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency_forbidden_edges",
+      "tests_semantic_graph_test_e88_networkx_repository_backend_test_repository_backend_query_surfaces_and_reads_hash_bound_source_files",
+      "tests_semantic_graph_test_e88_networkx_repository_backend_test_repository_conformance_runner_reports_snapshot_and_source_manifest",
+      "tests_semantic_graph_test_e88_networkx_repository_backend_test_repository_conformance_runner_requires_native_context_tool_routing",
       "tests_semantic_graph_test_g3_architecture_boundaries",
       "tests_semantic_graph_test_g3_architecture_boundaries_imports",
       "tests_semantic_graph_test_g3_architecture_boundaries_py_path",
@@ -16281,8 +16344,8 @@
       "tests_test_cloudflare_native_tool_calls_fakestreamresponse_init",
       "tests_test_cloudflare_native_tool_calls_fakestreamresponse_iter_content",
       "tests_test_cloudflare_native_tool_calls_fakestreamresponse_iter_lines",
-      "tests_test_cloudflare_native_tool_calls_rationale_494",
-      "tests_test_cloudflare_native_tool_calls_rationale_628",
+      "tests_test_cloudflare_native_tool_calls_rationale_535",
+      "tests_test_cloudflare_native_tool_calls_rationale_669",
       "tests_test_cloudflare_native_tool_calls_sse_event",
       "tests_test_cloudflare_native_tool_calls_test_cloudflare_chat_text_uses_plain_openai_compatible_request",
       "tests_test_cloudflare_native_tool_calls_test_cloudflare_does_not_retry_hard_quota_429",
@@ -16315,8 +16378,9 @@
       "tests_test_cloudflare_native_tool_calls_test_qwen_native_request_coalesces_initial_system_messages_without_reordering",
       "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_can_fall_back_to_text_for_normalizer",
       "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_parses_openai_style_choices_response",
+      "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_duplicate_key_arguments_for_local_rejection",
+      "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_non_object_arguments_for_local_rejection",
       "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_reasoning_content_and_qwen_template_defaults",
-      "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_rejects_duplicate_keys_in_string_arguments",
       "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_rejects_forced_named_tool_choice",
       "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_rejects_multiple_calls_before_returning",
       "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_uses_openai_compatible_chat_completions_contract",
@@ -16924,6 +16988,14 @@
       "tools_ae32d_verify_branch_unbound_candidate_rationale_2",
       "tools_ae32d_verify_branch_unbound_candidate_sha256",
       "tools_ae32d_verify_branch_unbound_candidate_verify",
+      "tools_aggregate_ae32c_graph_utilization",
+      "tools_aggregate_ae32c_graph_utilization_load_comparison",
+      "tools_aggregate_ae32c_graph_utilization_main",
+      "tools_aggregate_ae32c_graph_utilization_markdown",
+      "tools_aggregate_ae32c_graph_utilization_publish",
+      "tools_aggregate_ae32c_graph_utilization_py_any",
+      "tools_aggregate_ae32c_graph_utilization_py_path",
+      "tools_aggregate_ae32c_graph_utilization_rationale_2",
       "tools_check_ae021_patch",
       "tools_check_ae021_patch_check_package",
       "tools_check_ae021_patch_main",
@@ -17019,6 +17091,14 @@
       "tools_gb03_native_backend_conformance_scenario_definitions",
       "tools_gb03_native_backend_conformance_verify_round_trip",
       "tools_gb03_native_backend_conformance_write_report",
+      "tools_gb04_repository_backend_conformance",
+      "tools_gb04_repository_backend_conformance_main",
+      "tools_gb04_repository_backend_conformance_py_any",
+      "tools_gb04_repository_backend_conformance_py_path",
+      "tools_gb04_repository_backend_conformance_rationale_2",
+      "tools_gb04_repository_backend_conformance_run_repository_conformance",
+      "tools_gb04_repository_backend_conformance_runtime",
+      "tools_gb04_repository_backend_conformance_unwrap",
       "tools_publish_validation_evidence_bundle",
       "tools_publish_validation_evidence_bundle_main",
       "tools_publish_validation_evidence_bundle_rationale_1",
@@ -17054,6 +17134,10 @@
       "tools_run_pipeline_with_document_snapshot",
       "tools_run_pipeline_with_document_snapshot_main",
       "tools_run_pipeline_with_document_snapshot_rationale_2",
+      "tools_snap_python39_compatibility_smoke",
+      "tools_snap_python39_compatibility_smoke_main",
+      "tools_snap_python39_compatibility_smoke_rationale_2",
+      "tools_snap_python39_compatibility_smoke_run",
       "tools_validate_ae32c_e7_graph",
       "tools_validate_ae32c_e7_graph_main",
       "tools_validate_ae32c_e7_graph_rationale_2",
@@ -17757,7 +17841,7 @@
   "edges": {
     "common_count": 4707,
     "base_only_count": 2984,
-    "compare_only_count": 40264,
+    "compare_only_count": 40574,
     "base_only": [
       [
         "analysis_citation_validator",
@@ -57293,6 +57377,11 @@
       ],
       [
         "audit_engine_semantic_audit_ae32b_evidence_tools",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32b_evidence_tools",
         "audit_engine_semantic_audit_graph_queries_init",
         "imports_from"
       ],
@@ -57517,37 +57606,42 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1410",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1411",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_finalize_response",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1437",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1438",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_invoke",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1507",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1508",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_graph_runtime_report",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2118",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_1534",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2156",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_pytest_python_file_patterns",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2165",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2203",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_pytest_static_assessment",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2303",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2341",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_trace_execution_context",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2491",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2535",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_discover_case_context",
         "rationale_for"
       ],
@@ -57557,7 +57651,7 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2757",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_2814",
         "audit_engine_semantic_audit_ae32b_evidence_tools_create_tool_server",
         "rationale_for"
       ],
@@ -57612,12 +57706,12 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_914",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_915",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_collect_import_bindings",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_970",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_rationale_971",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_build_static_call_graph",
         "rationale_for"
       ],
@@ -57639,6 +57733,11 @@
       [
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_collect_import_bindings",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
         "method"
       ],
       [
@@ -57832,6 +57931,26 @@
         "references"
       ],
       [
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_evidencetoolerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
+        "indirect_call"
+      ],
+      [
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_discover_case_context",
         "audit_engine_semantic_audit_ae32b_evidence_tools_is_sensitive_path",
         "calls"
@@ -57919,6 +58038,11 @@
       [
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_find_related_tests",
         "audit_engine_semantic_audit_graph_queries_models_graphquery",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_find_workflow_context",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
         "calls"
       ],
       [
@@ -58194,6 +58318,11 @@
       [
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_trace_execution_context",
         "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_check_keys",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_trace_execution_context",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_context_edges",
         "calls"
       ],
       [
@@ -59193,6 +59322,16 @@
       ],
       [
         "audit_engine_semantic_audit_ae32c_evaluation",
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_evaluation",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_summarize_graph_utilization_assessment",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_evaluation",
         "collections_abc",
         "imports_from"
       ],
@@ -59302,27 +59441,27 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_evaluation_rationale_263",
+        "audit_engine_semantic_audit_ae32c_evaluation_rationale_269",
         "audit_engine_semantic_audit_ae32c_evaluation_build_comparison_record",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_evaluation_rationale_31",
+        "audit_engine_semantic_audit_ae32c_evaluation_rationale_32",
         "audit_engine_semantic_audit_ae32c_evaluation_safe_request_diagnostics",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_evaluation_rationale_396",
+        "audit_engine_semantic_audit_ae32c_evaluation_rationale_407",
         "audit_engine_semantic_audit_ae32c_evaluation_render_comparison_markdown",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_evaluation_rationale_483",
+        "audit_engine_semantic_audit_ae32c_evaluation_rationale_504",
         "audit_engine_semantic_audit_ae32c_evaluation_write_comparison_artifacts",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_evaluation_rationale_89",
+        "audit_engine_semantic_audit_ae32c_evaluation_rationale_90",
         "audit_engine_semantic_audit_ae32c_evaluation_summarize_graph_report",
         "rationale_for"
       ],
@@ -59384,6 +59523,11 @@
       [
         "audit_engine_semantic_audit_ae32c_evaluation_summarize_graph_report",
         "audit_engine_semantic_audit_ae32c_evaluation_source_reference_count",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_evaluation_summarize_graph_report",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_summarize_graph_utilization_assessment",
         "calls"
       ],
       [
@@ -60207,6 +60351,296 @@
         "calls"
       ],
       [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_aggregate_graph_utilization_runs",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_bounded_count",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_complete_source_read",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_discovery_paths_and_hashes",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_entry_result",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_get",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_mapping",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_path_hashes",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_runtime_backend",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_source_paths",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_strings",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_summarize_graph_utilization_assessment",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_tool_policy",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "collections",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "collections_abc",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "math",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "typing",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_aggregate_graph_utilization_runs",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_aggregate_graph_utilization_runs",
+        "math",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_bounded_count",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_complete_source_read",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_discovery_paths_and_hashes",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_entry_result",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_get",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_mapping",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_runtime_backend",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_source_paths",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_strings",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "math",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_complete_source_read",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_discovery_paths_and_hashes",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_discovery_paths_and_hashes_add",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_discovery_paths_and_hashes",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_path_hashes",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_discovery_paths_and_hashes",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_discovery_paths_and_hashes",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_source_paths",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_entry_result",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_get",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_entry_result",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_mapping",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_entry_result",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_get",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_mapping",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_path_hashes",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_mapping",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_path_hashes",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_rationale_1",
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_rationale_201",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_rationale_482",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_summarize_graph_utilization_assessment",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_rationale_520",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_aggregate_graph_utilization_runs",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_rationale_90",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_discovery_paths_and_hashes",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_runtime_backend",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_bounded_count",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_runtime_backend",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_mapping",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_runtime_backend",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_runtime_backend",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_strings",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_source_paths",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_mapping",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_source_paths",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_source_paths",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_strings",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_strings",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_summarize_graph_utilization_assessment",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_mapping",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_graph_utilization_summarize_graph_utilization_assessment",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
         "audit_engine_semantic_audit_ae32c_init",
         "audit_engine_semantic_audit_ae32c_claim_evidence",
         "re_exports"
@@ -60274,6 +60708,16 @@
       [
         "audit_engine_semantic_audit_ae32c_investigator",
         "audit_engine_semantic_audit_ae32c_claim_evidence_build_claim_evidence_assessment",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator",
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
         "imports"
       ],
       [
@@ -60402,202 +60846,212 @@
         "imports"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_105",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_106",
         "audit_engine_semantic_audit_ae32c_investigator_investigationerror",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1121",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1145",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_model_response_view",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_116",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_117",
         "audit_engine_semantic_audit_ae32c_investigator_investigationlimits",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1175",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1199",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_required_source_evidence_view",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1210",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1234",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prefetch_required_source_evidence",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1380",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1293",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prefetch_required_graph_evidence",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1340",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prefetch_required_context_evidence",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1508",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_finalization_start_round",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1388",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1516",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_response_token_limit",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1395",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1523",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_latest_finalization_feedback",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1425",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1553",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_provider_protocol_guidance",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1477",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1605",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_finalization_context_messages",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1565",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1733",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_finalization_future_reserve_tokens",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1597",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1765",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_compact_finalization_context",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1721",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1889",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_register_finalization_rejection",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1736",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_1904",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_append_finalization_notice",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_1888",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2056",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_tool_validation_feedback",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2049",
-        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_source_path_recovery_feedback",
-        "rationale_for"
-      ],
-      [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_209",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_210",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2139",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2217",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_source_path_recovery_feedback",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2307",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_required_source_coverage",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2192",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2360",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_required_source_anchor_support",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2257",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2425",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_required_anchor_reference_candidates",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2305",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2473",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_available_source_reference_candidates",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2332",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2500",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_source_reference_candidate_index",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2366",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2534",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_resolve_source_reference_candidate",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2378",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2546",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_validate_source_reference",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2464",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2632",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_shape_diagnostics",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2709",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2877",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_reserve_plain_text_fallback",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2749",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2917",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_downgrade_structured_response_mode",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_2789",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_2957",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prepare_provider_request",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_3303",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_3471",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_assistant_action_history_message",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_3326",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_3494",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_graph_interaction_coverage",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_3713",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_3899",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_investigation_context_coverage",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_4235",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_4421",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_interaction_diagnostics",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_4719",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_4913",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_run",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_5786",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_5985",
         "audit_engine_semantic_audit_ae32c_investigator_markdown_safe",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_5794",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_5993",
         "audit_engine_semantic_audit_ae32c_investigator_render_markdown_report",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_5895",
-        "audit_engine_semantic_audit_ae32c_investigator_write_report_artifacts",
-        "rationale_for"
-      ],
-      [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_59",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_60",
         "audit_engine_semantic_audit_ae32c_investigator_source_reference_candidate_id",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_611",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_6094",
+        "audit_engine_semantic_audit_ae32c_investigator_write_report_artifacts",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_635",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_provider_http_attempt_count",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_624",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_648",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_verify_snapshot",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_investigator_rationale_867",
+        "audit_engine_semantic_audit_ae32c_investigator_rationale_891",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_graph_neighbors_model_view",
         "rationale_for"
       ],
@@ -60634,6 +61088,16 @@
       [
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_model_response_view",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prefetch_required_context_evidence",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prefetch_required_graph_evidence",
         "method"
       ],
       [
@@ -60778,6 +61242,11 @@
       ],
       [
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_finalize_report",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_finalize_report",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_graph_interaction_coverage",
         "calls"
       ],
@@ -60879,6 +61348,16 @@
       [
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_model_view",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_model_response_view",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prefetch_required_context_evidence",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_invoke_tool",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prefetch_required_graph_evidence",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_invoke_tool",
         "calls"
       ],
       [
@@ -61054,6 +61533,16 @@
       [
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_run",
         "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_investigation_context_coverage",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_run",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prefetch_required_context_evidence",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_run",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_prefetch_required_graph_evidence",
         "calls"
       ],
       [
@@ -61412,22 +61901,22 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_130",
+        "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_131",
         "audit_engine_semantic_audit_ae32c_live_evaluation_build_live_investigation_limits",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_221",
+        "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_222",
         "audit_engine_semantic_audit_ae32c_live_evaluation_call_baseline_text",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_271",
+        "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_272",
         "audit_engine_semantic_audit_ae32c_live_evaluation_required_source_contract",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_86",
+        "audit_engine_semantic_audit_ae32c_live_evaluation_rationale_87",
         "audit_engine_semantic_audit_ae32c_live_evaluation_build_live_cost_estimator",
         "rationale_for"
       ],
@@ -73038,7 +73527,22 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_traversal",
+        "audit_engine_semantic_audit_graph_analysis_identity_edge_fingerprint",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal",
         "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal",
+        "audit_engine_semantic_audit_graph_analysis_models",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
         "imports"
       ],
       [
@@ -73198,6 +73702,11 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "uses"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
         "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine",
         "inherits"
       ],
@@ -73243,6 +73752,16 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_init",
         "method"
       ],
@@ -73254,6 +73773,16 @@
       [
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_runtime_report",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
+        "method"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_verify_projection",
         "method"
       ],
       [
@@ -73284,6 +73813,71 @@
       [
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_build_adjacency",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendprojectionerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
+        "audit_engine_semantic_audit_graph_analysis_identity_edge_fingerprint",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
+        "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendprojectionerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
+        "audit_engine_semantic_audit_graph_analysis_identity_edge_fingerprint",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine_build_adjacency",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine_candidate_edges",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendparityerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
         "calls"
       ],
       [
@@ -73343,7 +73937,37 @@
       ],
       [
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_init",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_verify_projection",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_init",
         "audit_engine_semantic_audit_graph_backend_optional_backend_support_backendunavailableerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendprojectionerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_validated_native_edge",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_verify_projection",
+        "audit_engine_semantic_audit_graph_analysis_identity_graph_fingerprint",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_verify_projection",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendprojectionerror",
         "calls"
       ],
       [
@@ -73387,32 +74011,47 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_135",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_147",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_attach_edge_occurrence_ids",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_151",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_161",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_verify_projection",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_208",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_build_adjacency",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_47",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_242",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_candidate_edges",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_289",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_context_edges",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_48",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendprojectionerror",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_51",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_52",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_backendparityerror",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_55",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_56",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_clone_validated_graph",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_80",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_rationale_81",
         "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
         "rationale_for"
       ],
@@ -100663,7 +101302,7 @@
       ],
       [
         "github_workflows_e85_native_graph_backend_conformance_jobs",
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
         "contains"
       ],
       [
@@ -100737,28 +101376,28 @@
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_name",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_name",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_outputs",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_outputs",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_runs_on",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_runs_on",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_compatibility_probe",
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_timeout_minutes",
+        "github_workflows_e85_native_graph_backend_conformance_jobs_snap_python39_compatibility_probe",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_timeout_minutes",
         "contains"
       ],
       [
@@ -100807,42 +101446,42 @@
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_outputs",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_outputs",
         "github_workflows_e85_native_graph_backend_conformance_outputs_native_status",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_id",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_if",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_name",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_run",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_shell",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_uses",
         "contains"
       ],
       [
-        "github_workflows_e85_native_graph_backend_conformance_snap_compatibility_probe_steps",
+        "github_workflows_e85_native_graph_backend_conformance_snap_python39_compatibility_probe_steps",
         "github_workflows_e85_native_graph_backend_conformance_steps_with",
         "contains"
       ],
@@ -105198,6 +105837,11 @@
       ],
       [
         "providers_cloudflare_cloudflareprovider",
+        "providers_cloudflare_cloudflareprovider_preserve_invalid_native_tool_call",
+        "method"
+      ],
+      [
+        "providers_cloudflare_cloudflareprovider",
         "providers_cloudflare_cloudflareprovider_record_stream_progress",
         "method"
       ],
@@ -105219,6 +105863,11 @@
       [
         "providers_cloudflare_cloudflareprovider_chat",
         "providers_cloudflare_cloudflare_retry_after_seconds",
+        "calls"
+      ],
+      [
+        "providers_cloudflare_cloudflareprovider_chat",
+        "providers_cloudflare_cloudflareprovider_preserve_invalid_native_tool_call",
         "calls"
       ],
       [
@@ -105282,6 +105931,11 @@
         "calls"
       ],
       [
+        "providers_cloudflare_cloudflareprovider_preserve_invalid_native_tool_call",
+        "providers_base_providertoolcall",
+        "calls"
+      ],
+      [
         "providers_cloudflare_consume_openai_sse",
         "hashlib",
         "calls"
@@ -105342,27 +105996,27 @@
         "rationale_for"
       ],
       [
-        "providers_cloudflare_rationale_1493",
+        "providers_cloudflare_rationale_1533",
         "providers_cloudflare_cloudflareprovider_get_capabilities",
         "rationale_for"
       ],
       [
-        "providers_cloudflare_rationale_1513",
+        "providers_cloudflare_rationale_1554",
         "providers_cloudflare_cloudflareprovider_chat_with_response_tool",
         "rationale_for"
       ],
       [
-        "providers_cloudflare_rationale_1549",
+        "providers_cloudflare_rationale_1590",
         "providers_cloudflare_cloudflareprovider_chat_openai_compatible",
         "rationale_for"
       ],
       [
-        "providers_cloudflare_rationale_1559",
+        "providers_cloudflare_rationale_1600",
         "providers_cloudflare_cloudflareprovider_chat_text",
         "rationale_for"
       ],
       [
-        "providers_cloudflare_rationale_1572",
+        "providers_cloudflare_rationale_1613",
         "providers_cloudflare_cloudflareprovider_chat_structured",
         "rationale_for"
       ],
@@ -105397,7 +106051,12 @@
         "rationale_for"
       ],
       [
-        "providers_cloudflare_rationale_789",
+        "providers_cloudflare_rationale_780",
+        "providers_cloudflare_cloudflareprovider_preserve_invalid_native_tool_call",
+        "rationale_for"
+      ],
+      [
+        "providers_cloudflare_rationale_832",
         "providers_cloudflare_cloudflareprovider_chat",
         "rationale_for"
       ],
@@ -169227,6 +169886,271 @@
         "calls"
       ],
       [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_evaluation",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_evaluation_build_comparison_record",
+        "imports"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_evaluation_render_comparison_markdown",
+        "imports"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_aggregate_graph_utilization_runs",
+        "imports"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "imports"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_summarize_graph_utilization_assessment",
+        "imports"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "tests_semantic_audit_test_ae32c_graph_utilization_complete_read",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "tests_semantic_audit_test_ae32c_graph_utilization_entry",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_comparison_record_surfaces_graph_utilization_and_keeps_accuracy_unassessed",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_derived_discovery_tool_follow_through_is_measured_without_neighbors_query",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_disabled_and_policy_violation_states_are_explicit",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_utilization_measures_queries_follow_through_claim_linkage_and_cost",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_incomplete_read_and_hash_mismatch_are_not_verified",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_partial_or_truncated_graph_result_does_not_create_verified_follow_through",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_partial_read_before_graph_surfacing_does_not_block_verified_follow_through",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_summary_is_compact_and_aggregate_groups_by_snapshot_and_backend",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization",
+        "types",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate",
+        "audit_engine_semantic_audit_ae32c_live_evaluation_main",
+        "imports"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate",
+        "importlib_util",
+        "imports"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate",
+        "json",
+        "imports"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate",
+        "pathlib",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate",
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_load_cli",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate",
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_test_cli_aggregates_published_comparison_without_provider_calls",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate",
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_test_cli_rejects_duplicate_evaluation_ids",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate",
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_test_live_evaluation_help_exposes_trusted_graph_backend_selection",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_test_cli_aggregates_published_comparison_without_provider_calls",
+        "json",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_test_cli_aggregates_published_comparison_without_provider_calls",
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_load_cli",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_test_cli_rejects_duplicate_evaluation_ids",
+        "json",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_test_cli_rejects_duplicate_evaluation_ids",
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_load_cli",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_aggregate_test_live_evaluation_help_exposes_trusted_graph_backend_selection",
+        "audit_engine_semantic_audit_ae32c_live_evaluation_main",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_comparison_record_surfaces_graph_utilization_and_keeps_accuracy_unassessed",
+        "audit_engine_semantic_audit_ae32c_evaluation_build_comparison_record",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_comparison_record_surfaces_graph_utilization_and_keeps_accuracy_unassessed",
+        "audit_engine_semantic_audit_ae32c_evaluation_render_comparison_markdown",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_derived_discovery_tool_follow_through_is_measured_without_neighbors_query",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_derived_discovery_tool_follow_through_is_measured_without_neighbors_query",
+        "tests_semantic_audit_test_ae32c_graph_utilization_complete_read",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_derived_discovery_tool_follow_through_is_measured_without_neighbors_query",
+        "tests_semantic_audit_test_ae32c_graph_utilization_entry",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_disabled_and_policy_violation_states_are_explicit",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_disabled_and_policy_violation_states_are_explicit",
+        "tests_semantic_audit_test_ae32c_graph_utilization_entry",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_utilization_measures_queries_follow_through_claim_linkage_and_cost",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_utilization_measures_queries_follow_through_claim_linkage_and_cost",
+        "tests_semantic_audit_test_ae32c_graph_utilization_complete_read",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_graph_utilization_measures_queries_follow_through_claim_linkage_and_cost",
+        "tests_semantic_audit_test_ae32c_graph_utilization_entry",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_incomplete_read_and_hash_mismatch_are_not_verified",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_incomplete_read_and_hash_mismatch_are_not_verified",
+        "tests_semantic_audit_test_ae32c_graph_utilization_complete_read",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_incomplete_read_and_hash_mismatch_are_not_verified",
+        "tests_semantic_audit_test_ae32c_graph_utilization_entry",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_partial_or_truncated_graph_result_does_not_create_verified_follow_through",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_partial_or_truncated_graph_result_does_not_create_verified_follow_through",
+        "tests_semantic_audit_test_ae32c_graph_utilization_complete_read",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_partial_or_truncated_graph_result_does_not_create_verified_follow_through",
+        "tests_semantic_audit_test_ae32c_graph_utilization_entry",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_partial_read_before_graph_surfacing_does_not_block_verified_follow_through",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_partial_read_before_graph_surfacing_does_not_block_verified_follow_through",
+        "tests_semantic_audit_test_ae32c_graph_utilization_complete_read",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_partial_read_before_graph_surfacing_does_not_block_verified_follow_through",
+        "tests_semantic_audit_test_ae32c_graph_utilization_entry",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_summary_is_compact_and_aggregate_groups_by_snapshot_and_backend",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_aggregate_graph_utilization_runs",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_summary_is_compact_and_aggregate_groups_by_snapshot_and_backend",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_build_graph_utilization_assessment",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_graph_utilization_test_summary_is_compact_and_aggregate_groups_by_snapshot_and_backend",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_summarize_graph_utilization_assessment",
+        "calls"
+      ],
+      [
         "tests_semantic_audit_test_ae32c_investigator",
         "audit_engine_semantic_audit_ae32b_evidence_tools",
         "imports_from"
@@ -169479,6 +170403,11 @@
       [
         "tests_semantic_audit_test_ae32c_investigator",
         "tests_semantic_audit_test_ae32c_investigator_test_legacy_source_tuple_is_rebound_only_to_unique_observed_manifest_line",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_investigator",
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through",
         "contains"
       ],
       [
@@ -170374,6 +171303,56 @@
       [
         "tests_semantic_audit_test_ae32c_investigator_test_legacy_source_tuple_is_rebound_only_to_unique_observed_manifest_line",
         "tests_semantic_audit_test_ae32c_investigator_make_investigator",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through",
+        "audit_engine_semantic_audit_ae32c_investigator_investigationlimits",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_run",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through",
+        "audit_engine_semantic_audit_ae32c_investigator_source_reference_candidate_id",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through",
+        "json",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through",
+        "tests_semantic_audit_test_ae32c_investigator_action_tool",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through",
+        "tests_semantic_audit_test_ae32c_investigator_fakeprovider",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through",
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through_read_action",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_investigator_test_live_prefetch_uses_incoming_calls_and_requires_model_source_follow_through_read_action",
+        "tests_semantic_audit_test_ae32c_investigator_action_tool",
         "calls"
       ],
       [
@@ -171473,6 +172452,11 @@
       ],
       [
         "tests_semantic_audit_test_ae32c_native_response_tool_integration",
+        "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_malformed_native_arguments_are_recoverable_model_rejections_not_provider_failures",
+        "contains"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_native_response_tool_integration",
         "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_native_response_tool_does_not_bypass_finalization_no_tool_rule",
         "contains"
       ],
@@ -171559,6 +172543,46 @@
       [
         "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_investigator_uses_native_response_tool_and_keeps_existing_action_validation",
         "tests_semantic_audit_test_ae32c_native_response_tool_integration_wrap_action",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_malformed_native_arguments_are_recoverable_model_rejections_not_provider_failures",
+        "audit_engine_semantic_audit_ae32c_investigator_investigationlimits",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_malformed_native_arguments_are_recoverable_model_rejections_not_provider_failures",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_malformed_native_arguments_are_recoverable_model_rejections_not_provider_failures",
+        "audit_engine_semantic_audit_ae32c_investigator_repositoryinvestigator_run",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_malformed_native_arguments_are_recoverable_model_rejections_not_provider_failures",
+        "providers_base_providertoolcall",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_malformed_native_arguments_are_recoverable_model_rejections_not_provider_failures",
+        "tests_semantic_audit_test_ae32c_investigator_action_tool",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_malformed_native_arguments_are_recoverable_model_rejections_not_provider_failures",
+        "tests_semantic_audit_test_ae32c_investigator_fakeevidencetools",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_malformed_native_arguments_are_recoverable_model_rejections_not_provider_failures",
+        "tests_semantic_audit_test_ae32c_investigator_final_action",
+        "calls"
+      ],
+      [
+        "tests_semantic_audit_test_ae32c_native_response_tool_integration_test_malformed_native_arguments_are_recoverable_model_rejections_not_provider_failures",
+        "tests_semantic_audit_test_ae32c_native_response_tool_integration_nativecloudflarefakeprovider",
         "calls"
       ],
       [
@@ -183080,6 +184104,186 @@
         "tests_semantic_graph_test_e86_change_set_impact_write",
         "tests_semantic_graph_test_e86_change_set_impact_py_path",
         "references"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "audit_engine_semantic_audit_ae32b_evidence_tools",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "audit_engine_semantic_audit_core_semantic_graph",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "audit_engine_semantic_audit_graph_analysis_init",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "audit_engine_semantic_audit_graph_analysis_models_traversaldirection",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "pathlib",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "pytest",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "tests_semantic_graph_test_e88_networkx_repository_backend_graph",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_native_backend_workflow_avoids_flat_layout_editable_install_and_adds_repo_runner",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_repository_backend_query_surfaces_and_reads_hash_bound_source_files",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_repository_conformance_runner_reports_snapshot_and_source_manifest",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_repository_conformance_runner_requires_native_context_tool_routing",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend",
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticedge",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_add_edge",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticgraph_add_node",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_graph",
+        "audit_engine_semantic_audit_core_semantic_graph_semanticnode",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency",
+        "audit_engine_semantic_audit_graph_analysis_traversal_graphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_runtime_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency",
+        "audit_engine_semantic_audit_graph_backend_networkx_traversal_networkxgraphtraversalengine_walk",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency",
+        "tests_semantic_graph_test_e88_networkx_repository_backend_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency",
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_networkx_query_uses_native_successor_predecessor_adjacency_forbidden_edges",
+        "indirect_call"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_repository_backend_query_surfaces_and_reads_hash_bound_source_files",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_repository_backend_query_surfaces_and_reads_hash_bound_source_files",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_graph_runtime_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_repository_backend_query_surfaces_and_reads_hash_bound_source_files",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_invoke",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_repository_conformance_runner_reports_snapshot_and_source_manifest",
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_e88_networkx_repository_backend_test_repository_conformance_runner_requires_native_context_tool_routing",
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "calls"
       ],
       [
         "tests_semantic_graph_test_g3_architecture_boundaries",
@@ -211663,12 +212867,17 @@
       ],
       [
         "tests_test_cloudflare_native_tool_calls",
-        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_reasoning_content_and_qwen_template_defaults",
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_duplicate_key_arguments_for_local_rejection",
         "contains"
       ],
       [
         "tests_test_cloudflare_native_tool_calls",
-        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_rejects_duplicate_keys_in_string_arguments",
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_non_object_arguments_for_local_rejection",
+        "contains"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls",
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_reasoning_content_and_qwen_template_defaults",
         "contains"
       ],
       [
@@ -211882,12 +213091,12 @@
         "calls"
       ],
       [
-        "tests_test_cloudflare_native_tool_calls_rationale_494",
+        "tests_test_cloudflare_native_tool_calls_rationale_535",
         "tests_test_cloudflare_native_tool_calls_test_qwen_native_request_coalesces_initial_system_messages_without_reordering",
         "rationale_for"
       ],
       [
-        "tests_test_cloudflare_native_tool_calls_rationale_628",
+        "tests_test_cloudflare_native_tool_calls_rationale_669",
         "tests_test_cloudflare_native_tool_calls_test_live_preflight_shape_single_system_fallback_success_after_native_400",
         "rationale_for"
       ],
@@ -212462,6 +213671,86 @@
         "calls"
       ],
       [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_duplicate_key_arguments_for_local_rejection",
+        "audit_engine_semantic_audit_ae32c_response_normalizer_normalize_provider_tool_call",
+        "calls"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_duplicate_key_arguments_for_local_rejection",
+        "audit_engine_semantic_audit_ae32c_response_normalizer_responsenormalizationerror",
+        "uses"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_duplicate_key_arguments_for_local_rejection",
+        "audit_engine_semantic_audit_ae32c_response_protocol_build_response_tool_definition",
+        "calls"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_duplicate_key_arguments_for_local_rejection",
+        "providers_base_providertoolcall",
+        "uses"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_duplicate_key_arguments_for_local_rejection",
+        "providers_cloudflare_cloudflareprovider",
+        "calls"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_duplicate_key_arguments_for_local_rejection",
+        "providers_cloudflare_cloudflareprovider_chat_with_response_tool",
+        "calls"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_duplicate_key_arguments_for_local_rejection",
+        "providers_cloudflare_cloudflareprovider_get_stats",
+        "calls"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_duplicate_key_arguments_for_local_rejection",
+        "tests_test_cloudflare_native_tool_calls_fakeresponse",
+        "calls"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_non_object_arguments_for_local_rejection",
+        "audit_engine_semantic_audit_ae32c_response_normalizer_normalize_provider_tool_call",
+        "calls"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_non_object_arguments_for_local_rejection",
+        "audit_engine_semantic_audit_ae32c_response_normalizer_responsenormalizationerror",
+        "uses"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_non_object_arguments_for_local_rejection",
+        "audit_engine_semantic_audit_ae32c_response_protocol_build_response_tool_definition",
+        "calls"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_non_object_arguments_for_local_rejection",
+        "providers_base_providertoolcall",
+        "uses"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_non_object_arguments_for_local_rejection",
+        "providers_cloudflare_cloudflareprovider",
+        "calls"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_non_object_arguments_for_local_rejection",
+        "providers_cloudflare_cloudflareprovider_chat_with_response_tool",
+        "calls"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_non_object_arguments_for_local_rejection",
+        "providers_cloudflare_cloudflareprovider_get_stats",
+        "calls"
+      ],
+      [
+        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_non_object_arguments_for_local_rejection",
+        "tests_test_cloudflare_native_tool_calls_fakeresponse",
+        "calls"
+      ],
+      [
         "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_reasoning_content_and_qwen_template_defaults",
         "audit_engine_semantic_audit_ae32c_response_protocol_build_response_tool_definition",
         "calls"
@@ -212493,31 +213782,6 @@
       ],
       [
         "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_preserves_reasoning_content_and_qwen_template_defaults",
-        "tests_test_cloudflare_native_tool_calls_fakeresponse",
-        "calls"
-      ],
-      [
-        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_rejects_duplicate_keys_in_string_arguments",
-        "audit_engine_semantic_audit_ae32c_response_protocol_build_response_tool_definition",
-        "calls"
-      ],
-      [
-        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_rejects_duplicate_keys_in_string_arguments",
-        "providers_cloudflare_cloudflareprovider",
-        "calls"
-      ],
-      [
-        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_rejects_duplicate_keys_in_string_arguments",
-        "providers_cloudflare_cloudflareprovider_chat_with_response_tool",
-        "calls"
-      ],
-      [
-        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_rejects_duplicate_keys_in_string_arguments",
-        "providers_cloudflare_cloudflareprovider_get_stats",
-        "calls"
-      ],
-      [
-        "tests_test_cloudflare_native_tool_calls_test_qwen_native_tool_call_rejects_duplicate_keys_in_string_arguments",
         "tests_test_cloudflare_native_tool_calls_fakeresponse",
         "calls"
       ],
@@ -224227,6 +225491,186 @@
         "calls"
       ],
       [
+        "tools_aggregate_ae32c_graph_utilization",
+        "argparse",
+        "imports"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization",
+        "imports_from"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_aggregate_graph_utilization_runs",
+        "imports"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_summarize_graph_utilization_assessment",
+        "imports"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "hashlib",
+        "imports"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "json",
+        "imports"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "os",
+        "imports"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "pathlib",
+        "imports_from"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "re",
+        "imports"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "sys",
+        "imports"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "tools_aggregate_ae32c_graph_utilization_load_comparison",
+        "contains"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "tools_aggregate_ae32c_graph_utilization_main",
+        "contains"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "tools_aggregate_ae32c_graph_utilization_markdown",
+        "contains"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "tools_aggregate_ae32c_graph_utilization_publish",
+        "contains"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "typing",
+        "imports_from"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization",
+        "uuid",
+        "imports"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_load_comparison",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_summarize_graph_utilization_assessment",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_load_comparison",
+        "json",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_load_comparison",
+        "re",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_load_comparison",
+        "tools_aggregate_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_load_comparison",
+        "tools_aggregate_ae32c_graph_utilization_py_path",
+        "references"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_main",
+        "argparse",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_main",
+        "audit_engine_semantic_audit_ae32c_graph_utilization_aggregate_graph_utilization_runs",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_main",
+        "hashlib",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_main",
+        "json",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_main",
+        "tools_aggregate_ae32c_graph_utilization_load_comparison",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_main",
+        "tools_aggregate_ae32c_graph_utilization_publish",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_markdown",
+        "tools_aggregate_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_publish",
+        "hashlib",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_publish",
+        "json",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_publish",
+        "os",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_publish",
+        "tools_aggregate_ae32c_graph_utilization_markdown",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_publish",
+        "tools_aggregate_ae32c_graph_utilization_py_any",
+        "references"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_publish",
+        "tools_aggregate_ae32c_graph_utilization_py_path",
+        "references"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_publish",
+        "uuid",
+        "calls"
+      ],
+      [
+        "tools_aggregate_ae32c_graph_utilization_rationale_2",
+        "tools_aggregate_ae32c_graph_utilization",
+        "rationale_for"
+      ],
+      [
         "tools_check_ae021_patch",
         "argparse",
         "imports"
@@ -225947,6 +227391,136 @@
         "references"
       ],
       [
+        "tools_gb04_repository_backend_conformance",
+        "argparse",
+        "imports"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance",
+        "audit_engine_semantic_audit_ae32b_evidence_tools",
+        "imports_from"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "imports"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance",
+        "json",
+        "imports"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance",
+        "pathlib",
+        "imports_from"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance",
+        "sys",
+        "imports"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance",
+        "tools_gb04_repository_backend_conformance_main",
+        "contains"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance",
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "contains"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance",
+        "tools_gb04_repository_backend_conformance_runtime",
+        "contains"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance",
+        "tools_gb04_repository_backend_conformance_unwrap",
+        "contains"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance",
+        "typing",
+        "imports_from"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_main",
+        "argparse",
+        "calls"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_main",
+        "json",
+        "calls"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_main",
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "calls"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_rationale_2",
+        "tools_gb04_repository_backend_conformance",
+        "rationale_for"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "calls"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_invoke",
+        "calls"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_resolve_node",
+        "calls"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "tools_gb04_repository_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "tools_gb04_repository_backend_conformance_py_path",
+        "references"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "tools_gb04_repository_backend_conformance_runtime",
+        "calls"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_run_repository_conformance",
+        "tools_gb04_repository_backend_conformance_unwrap",
+        "calls"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_runtime",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools",
+        "uses"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_runtime",
+        "audit_engine_semantic_audit_ae32b_evidence_tools_repositoryevidencetools_graph_runtime_report",
+        "calls"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_runtime",
+        "tools_gb04_repository_backend_conformance_py_any",
+        "references"
+      ],
+      [
+        "tools_gb04_repository_backend_conformance_unwrap",
+        "tools_gb04_repository_backend_conformance_py_any",
+        "references"
+      ],
+      [
         "tools_publish_validation_evidence_bundle",
         "argparse",
         "imports"
@@ -226635,6 +228209,66 @@
         "tools_run_pipeline_with_document_snapshot_rationale_2",
         "tools_run_pipeline_with_document_snapshot",
         "rationale_for"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke",
+        "argparse",
+        "imports"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke",
+        "json",
+        "imports"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke",
+        "pathlib",
+        "imports_from"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke",
+        "platform",
+        "imports"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke",
+        "sys",
+        "imports"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke",
+        "tools_snap_python39_compatibility_smoke_main",
+        "contains"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke",
+        "tools_snap_python39_compatibility_smoke_run",
+        "contains"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke_main",
+        "argparse",
+        "calls"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke_main",
+        "json",
+        "calls"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke_main",
+        "tools_snap_python39_compatibility_smoke_run",
+        "calls"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke_rationale_2",
+        "tools_snap_python39_compatibility_smoke",
+        "rationale_for"
+      ],
+      [
+        "tools_snap_python39_compatibility_smoke_run",
+        "platform",
+        "calls"
       ],
       [
         "tools_validate_ae32c_e7_graph",

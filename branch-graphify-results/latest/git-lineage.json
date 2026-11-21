@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "5fb0b5de6357e5746d71a1d9f8cdc985aa6599b0",
-  "compare_sha": "f55f10d5438b297b423f7e5d456f7eff6969d8ad",
+  "base_sha": "6476e7dbae7edd98c8e483974e56668c84037371",
+  "compare_sha": "1ed0471832b660e8c29a946e4655e1ed981106bf",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 255,
-  "compare_only_commit_count": 957,
+  "base_only_commit_count": 256,
+  "compare_only_commit_count": 970,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -1583,6 +1583,10 @@
     },
     {
       "status": "A",
+      "path": "audit_engine/semantic_audit/ae32c/graph_utilization.py"
+    },
+    {
+      "status": "A",
       "path": "audit_engine/semantic_audit/ae32c/investigator.py"
     },
     {
@@ -2927,11 +2931,31 @@
     },
     {
       "status": "A",
+      "path": "docs/audit-engine/AE-32C-E8.6.1-Live-Investigation-Completion-and-Graph-Follow-Through.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-E8.7-Live-LLM-Graph-Utilization-Evaluation.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-E8.8.1-NetworkX-Native-Adjacency-and-Repository-Conformance.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-Graph-Backend-Compatibility-and-Utilization-Roadmap.md"
+    },
+    {
+      "status": "A",
       "path": "docs/audit-engine/AE-32C-Live-Failure-Analysis-and-Next-Decision.md"
     },
     {
       "status": "A",
       "path": "docs/audit-engine/AE-32C-Live-Run-40503324230-Assessment.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M1-Adapter-Protocol-and-Conformance-Contract.md"
     },
     {
       "status": "A",
@@ -3344,6 +3368,10 @@
     {
       "status": "A",
       "path": "docs/decisions/ADR-079-bounded-multi-source-impact-and-dependency-cycles.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/decisions/ADR-080-evidence-bound-graph-utilization-telemetry.md"
     },
     {
       "status": "A",
@@ -3764,6 +3792,10 @@
     {
       "status": "A",
       "path": "evaluation/ae32c/graph_pilot_profiles.json"
+    },
+    {
+      "status": "A",
+      "path": "evaluation/ae32c/graph_utilization_metric_contract.json"
     },
     {
       "status": "A",
@@ -5787,6 +5819,14 @@
     },
     {
       "status": "A",
+      "path": "tests/semantic_audit/test_ae32c_graph_utilization.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_audit/test_ae32c_graph_utilization_aggregate.py"
+    },
+    {
+      "status": "A",
       "path": "tests/semantic_audit/test_ae32c_investigator.py"
     },
     {
@@ -5964,6 +6004,10 @@
     {
       "status": "A",
       "path": "tests/semantic_graph/test_e86_change_set_impact.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_e88_networkx_repository_backend.py"
     },
     {
       "status": "A",
@@ -6743,6 +6787,10 @@
     },
     {
       "status": "A",
+      "path": "tools/aggregate_ae32c_graph_utilization.py"
+    },
+    {
+      "status": "A",
       "path": "tools/check_ae021_patch.py"
     },
     {
@@ -6815,6 +6863,10 @@
     },
     {
       "status": "A",
+      "path": "tools/gb04_repository_backend_conformance.py"
+    },
+    {
+      "status": "A",
       "path": "tools/publish_validation_evidence_bundle.py"
     },
     {
@@ -6860,6 +6912,10 @@
     {
       "status": "A",
       "path": "tools/run_pipeline_with_document_snapshot.py"
+    },
+    {
+      "status": "A",
+      "path": "tools/snap_python39_compatibility_smoke.py"
     },
     {
       "status": "A",
@@ -7271,6 +7327,76 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": ">",
+      "sha": "1ed0471832b660e8c29a946e4655e1ed981106bf",
+      "subject": "feat(ae32c): route repository context through native NetworkX adjacency"
+    },
+    {
+      "side": ">",
+      "sha": "ec89ef24cc425614d516bf76ede0db667b2f4dab",
+      "subject": "docs(audit-engine): update graph backend roadmap status"
+    },
+    {
+      "side": ">",
+      "sha": "1b28c84fe69f6f1864c6396bcb1317674a136b89",
+      "subject": "docs(audit-engine): record ADR inventory anomalies"
+    },
+    {
+      "side": ">",
+      "sha": "3c3cd74c71aab967cfcac6bbcc94abb58d7ba4cb",
+      "subject": "docs(audit-engine): map adapter tests and graph tool routing"
+    },
+    {
+      "side": ">",
+      "sha": "2448a947ad95ae2693f6395c1a370308d8e61a29",
+      "subject": "docs(audit-engine): link M1 adapter contract specification"
+    },
+    {
+      "side": ">",
+      "sha": "af0c2b10ae9ffba566e36f06a3f68089c26b5c70",
+      "subject": "docs(audit-engine): specify M1 adapter protocol and tests"
+    },
+    {
+      "side": ">",
+      "sha": "eb699353813a4a36d0d91fe56e63f6fbee904ee2",
+      "subject": "docs(audit-engine): normalize roadmap section numbering"
+    },
+    {
+      "side": ">",
+      "sha": "5472ccac1da57e9895b16a1e70b64670b103b5c0",
+      "subject": "docs(audit-engine): record graph adapter baseline findings"
+    },
+    {
+      "side": ">",
+      "sha": "84c0429813abfc46d540ee95a51e630a9b28eecf",
+      "subject": "docs(audit-engine): add graph backend compatibility roadmap"
+    },
+    {
+      "side": ">",
+      "sha": "5a881c57cafc9ff17c3e01d3e1401ea9daf49225",
+      "subject": "AE-32C E.8.8.1"
+    },
+    {
+      "side": ">",
+      "sha": "196704669f7f4517d0252c8779d420290e87d4ec",
+      "subject": "AE-32C E.8.8.1"
+    },
+    {
+      "side": ">",
+      "sha": "e01177aeab41936d691f90066dcbd2f4daf29bcc",
+      "subject": "AE-32C E.8.7.1"
+    },
+    {
+      "side": ">",
+      "sha": "f7c2dc66f2972d9d6976f486e580de7a3f6df555",
+      "subject": "AE-32C E.8.6.1"
+    },
+    {
+      "side": "<",
+      "sha": "6476e7dbae7edd98c8e483974e56668c84037371",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "5fb0b5de6357e5746d71a1d9f8cdc985aa6599b0",
