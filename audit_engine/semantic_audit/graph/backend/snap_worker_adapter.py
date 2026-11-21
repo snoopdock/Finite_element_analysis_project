@@ -67,7 +67,6 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
         command = [
             docker, "run", "--rm", "--pull=never", "-i",
             "--network=none", "--read-only",
-            "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m",
             "--cap-drop=ALL", "--security-opt=no-new-privileges",
             "--pids-limit=64", "--memory=512m", "--cpus=1",
             "--user=65534:65534",
@@ -78,7 +77,7 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
         ]
         host_env = {
             "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
-            "HOME": tempfile.gettempdir(),
+            "HOME": "/nonexistent",
         }
         self._process = subprocess.Popen(
             command,
@@ -133,6 +132,7 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
             self.worker_info["container_policy"] = {
                 "network": "none",
                 "root_filesystem": "read_only",
+                "writable_mounts": [],
                 "capabilities": "all_dropped",
                 "repository_mount": False,
                 "provider_credentials_passed": False,
