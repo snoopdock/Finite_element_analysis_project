@@ -87,6 +87,8 @@ def test_runtime_report_does_not_enumerate_native_projection(graph, monkeypatch)
     def forbidden(*args, **kwargs):
         raise AssertionError("runtime_report must not enumerate native edges")
     monkeypatch.setattr(engine.native_graph, "edges", forbidden)
+    monkeypatch.setattr(engine.native_graph, "number_of_nodes", forbidden)
+    monkeypatch.setattr(engine.native_graph, "number_of_edges", forbidden)
     report = engine.runtime_report()
     assert report["projection_edge_occurrence_count"] == 5
 
