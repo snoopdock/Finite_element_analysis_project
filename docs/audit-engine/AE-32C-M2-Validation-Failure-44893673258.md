@@ -43,7 +43,7 @@ The precise failed assertion was:
 assert report["backend_execution"]["context_operation_telemetry"]
 ```
 
-The actual value was an empty dictionary because the key was absent from the intended report location and the test's indexed lookup resolved to an empty/missing value in the observed output.
+The actual value was an empty dictionary. The traversal-engine `backend_execution` subobject exposed an empty `context_operation_telemetry` placeholder, while the populated operation map was a sibling field on the complete `graph_runtime_report()` result. The runner serialized only the `backend_execution` subobject and therefore discarded the populated sibling map.
 
 ## 3. Technical review
 
@@ -68,7 +68,7 @@ Two telemetry domains have distinct owners:
 1. `backend_execution` is emitted by the selected graph traversal engine. It reports backend traversal counters such as native adjacency lookups, native edge occurrences, and parity checks.
 2. `context_operation_telemetry` is accumulated by `RepositoryEvidenceTools` around context-tool `GraphQuery` calls. It records per-operation attempted/succeeded/failed adjacency calls and operation-attributed parity/native lookup counters.
 
-`RepositoryEvidenceTools.graph_runtime_report()` already returned `context_operation_telemetry` as a separate sibling field. The repository conformance runner read that field and used it to validate each context operation, but its serialized report only copied `final_runtime["backend_execution"]`; it omitted the separate context telemetry object.
+`RepositoryEvidenceTools.graph_runtime_report()` already returned `context_operation_telemetry` as a separate sibling field. The repository conformance runner read that field and used it to validate each context operation, but its serialized report only copied `final_runtime["backend_execution"]`. That nested traversal-engine object carried an empty placeholder with the same telemetry key; it was not the populated `RepositoryEvidenceTools` operation map. The report therefore lost the actual populated sibling field.
 
 The new test then asserted that the context telemetry was nested inside `report["backend_execution"]`. That expectation was incorrect: it conflated two independently maintained counter sets.
 
