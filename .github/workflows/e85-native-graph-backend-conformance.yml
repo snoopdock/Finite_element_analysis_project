@@ -28,11 +28,14 @@ jobs:
       - name: Record selected source revision
         shell: bash
         run: |
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          echo "AE32C_SOURCE_REVISION=$SOURCE_SHA" >> "$GITHUB_ENV"
           echo "Selected source ref: stage1/section-uuids"
-          echo "Checked-out source SHA: $(git rev-parse HEAD)"
+          echo "Checked-out source SHA: $SOURCE_SHA"
           {
             echo "Selected source ref: stage1/section-uuids"
-            echo "Checked-out source SHA: $(git rev-parse HEAD)"
+            echo "Checked-out source SHA: $SOURCE_SHA"
+            echo "Evidence source revision: $SOURCE_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -84,11 +87,14 @@ jobs:
       - name: Record selected source revision
         shell: bash
         run: |
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          echo "AE32C_SOURCE_REVISION=$SOURCE_SHA" >> "$GITHUB_ENV"
           echo "Selected source ref: stage1/section-uuids"
-          echo "Checked-out source SHA: $(git rev-parse HEAD)"
+          echo "Checked-out source SHA: $SOURCE_SHA"
           {
             echo "Selected source ref: stage1/section-uuids"
-            echo "Checked-out source SHA: $(git rev-parse HEAD)"
+            echo "Checked-out source SHA: $SOURCE_SHA"
+            echo "Evidence source revision: $SOURCE_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Provision graph-tool Python 3.11 environment
         uses: mamba-org/setup-micromamba@v2
@@ -138,11 +144,14 @@ jobs:
       - name: Record selected source revision
         shell: bash
         run: |
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          echo "AE32C_SOURCE_REVISION=$SOURCE_SHA" >> "$GITHUB_ENV"
           echo "Selected source ref: stage1/section-uuids"
-          echo "Checked-out source SHA: $(git rev-parse HEAD)"
+          echo "Checked-out source SHA: $SOURCE_SHA"
           {
             echo "Selected source ref: stage1/section-uuids"
-            echo "Checked-out source SHA: $(git rev-parse HEAD)"
+            echo "Checked-out source SHA: $SOURCE_SHA"
+            echo "Evidence source revision: $SOURCE_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Set up Python 3.11 orchestrator
         uses: actions/setup-python@v5
