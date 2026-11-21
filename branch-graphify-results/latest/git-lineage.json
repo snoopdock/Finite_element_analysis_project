@@ -1,10 +1,10 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "faddf9f957dd37a9bbf6107e6a0d73ef8f00733b",
+  "base_sha": "ddd23418076a178778586d0079356a41d64754e3",
   "compare_sha": "c02eaaae23187a05152aca94b1c529b12df9b34f",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 263,
+  "base_only_commit_count": 265,
   "compare_only_commit_count": 1100,
   "base_changes_since_merge_base": [
     {
@@ -7399,6 +7399,16 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "ddd23418076a178778586d0079356a41d64754e3",
+      "subject": "Make Stage1 conformance workflow dispatchable from main"
+    },
+    {
+      "side": "<",
+      "sha": "44009a9bdf7e0a2b11bd1b7aad92cc3543e93070",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "faddf9f957dd37a9bbf6107e6a0d73ef8f00733b",

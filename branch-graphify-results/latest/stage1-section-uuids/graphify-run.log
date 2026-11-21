@@ -1,5 +1,5 @@
 [graphify extract] --force: full re-scan, semantic cache reads skipped
-[graphify extract] scanning /tmp/branch-graphify-worktrees-e_brcrt9/stage1-section-uuids
+[graphify extract] scanning /tmp/branch-graphify-worktrees-uet6v1j7/stage1-section-uuids
 [graphify extract] --code-only: skipping 410 non-code file(s) (410 docs, 0 papers, 0 images) — no LLM extraction
 [graphify extract] found 1433 code, 0 docs, 0 papers, 0 images
 [graphify extract] 46 file(s) not classified (no supported extension or shebang), skipped: .git, .gitignore, .gitkeep, BasicTest.lean, Contracts.lean, Convergence.lean (+40 more)
@@ -21,7 +21,7 @@
   AST extraction: 1400/1433 uncached files (97%) [4 workers]
   AST extraction: 1433/1433 uncached files (100%) [4 workers]
   warning: 16 code file(s) yielded no symbols (0.00 MB) — a data file, or source this extractor models no symbols for: audit_engine/semantic_audit/graph/analysis/__init__.py, audit_engine/semantic_audit/graph/queries/__init__.py, pyproject.toml, tests/fixtures/ae08_gold/app.py, tests/fixtures/ae08_gold/control.py (+11 more)
-[graphify extract] AST extraction incomplete for 2 source(s): /tmp/branch-graphify-worktrees-e_brcrt9/stage1-section-uuids/.github/workflows/e85-native-graph-backend-conformance.yml, /tmp/branch-graphify-worktrees-e_brcrt9/stage1-section-uuids/specs/decisions/R8.9.0_runtime_integration_boundary_decision.yaml; failed sources will not replace saved AST records and remain pending for retry.
+[graphify extract] AST extraction incomplete for 2 source(s): /tmp/branch-graphify-worktrees-uet6v1j7/stage1-section-uuids/.github/workflows/e85-native-graph-backend-conformance.yml, /tmp/branch-graphify-worktrees-uet6v1j7/stage1-section-uuids/specs/decisions/R8.9.0_runtime_integration_boundary_decision.yaml; failed sources will not replace saved AST records and remain pending for retry.
 [graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/stage1-section-uuids/graphify-out/graph.json: 17788 nodes, 45464 edges, 991 communities
 [graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/stage1-section-uuids/graphify-out/.graphify_analysis.json
 [graphify extract] next: run `graphify cluster-only /home/runner/work/_temp/branch-graphify-results/latest/stage1-section-uuids` to generate GRAPH_REPORT.md and name communities
