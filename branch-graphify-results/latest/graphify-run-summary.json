@@ -1,11 +1,11 @@
 {
   "main": {
     "branch": "main",
-    "commit": "dfbeb82c1149dda34404418cac656d1a71a1d092",
+    "commit": "182d0009f1c759c46813e3a1cbbf34d22c247acb",
     "graphify_version": "0.9.112",
     "node_count": 5119,
     "edge_count": 7919,
-    "graph_json_sha256": "6055bc7263e4199279a96306f41e5111f2d2028bad8180513403c76e2ba1031f",
+    "graph_json_sha256": "9e19a385136c91def73bcad22ad1901107b428f2109effde0fa7767bfa782280",
     "artifacts": {
       "html": "graph.html",
       "json": "graph.json",
