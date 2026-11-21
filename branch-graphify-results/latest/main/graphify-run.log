@@ -1,5 +1,5 @@
 [graphify extract] --force: full re-scan, semantic cache reads skipped
-[graphify extract] scanning /tmp/branch-graphify-worktrees-08p1rv6u/main
+[graphify extract] scanning /tmp/branch-graphify-worktrees-2zu_snck/main
 [graphify extract] --code-only: skipping 38 non-code file(s) (38 docs, 0 papers, 0 images) — no LLM extraction
 [graphify extract] found 315 code, 0 docs, 0 papers, 0 images
 [graphify extract] 28 file(s) not classified (no supported extension or shebang), skipped: .git, .gitignore, .gitkeep, BasicTest.lean, Contracts.lean, Convergence.lean (+22 more)
@@ -10,7 +10,7 @@
   AST extraction: 300/315 uncached files (95%) [4 workers]
   AST extraction: 315/315 uncached files (100%) [4 workers]
   warning: 1 code file(s) yielded no symbols (0.00 MB) — a data file, or source this extractor models no symbols for: pyproject.toml
-[graphify extract] AST extraction incomplete for 3 source(s): /tmp/branch-graphify-worktrees-08p1rv6u/main/branch-graphify-results/latest/architecture-delta.json, /tmp/branch-graphify-worktrees-08p1rv6u/main/branch-graphify-results/latest/main/graph.json, /tmp/branch-graphify-worktrees-08p1rv6u/main/branch-graphify-results/latest/stage1-section-uuids/graph.json; failed sources will not replace saved AST records and remain pending for retry.
+[graphify extract] AST extraction incomplete for 3 source(s): /tmp/branch-graphify-worktrees-2zu_snck/main/branch-graphify-results/latest/architecture-delta.json, /tmp/branch-graphify-worktrees-2zu_snck/main/branch-graphify-results/latest/main/graph.json, /tmp/branch-graphify-worktrees-2zu_snck/main/branch-graphify-results/latest/stage1-section-uuids/graph.json; failed sources will not replace saved AST records and remain pending for retry.
 [graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/main/graphify-out/graph.json: 5017 nodes, 7790 edges, 384 communities
 [graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/main/graphify-out/.graphify_analysis.json
 [graphify extract] next: run `graphify cluster-only /home/runner/work/_temp/branch-graphify-results/latest/main` to generate GRAPH_REPORT.md and name communities

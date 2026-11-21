@@ -1,9 +1,9 @@
 # Branch Graphify analysis
 
-- Generated (UTC): 2026-11-21T14:32:29.222996+00:00
+- Generated (UTC): 2026-11-21T14:33:56.352599+00:00
 - Graphify version: 0.9.112
-- Base branch: main at c6805fad67fa1d42be4050260bbf240df4b91475
-- Comparison branch: stage1/section-uuids at 8066c6db6717a0fa3aa866dbf1cb61572ee67292
+- Base branch: main at d0c88b3f7a1d65e46908f94fe293b863805b4c94
+- Comparison branch: stage1/section-uuids at f3ca30397a5c303746d8a4cb7c1c6da3dd3d7c9e
 - Merge base: 2713797451965a14b2512cdf497f2619d844749f
 
 ## Start here
@@ -21,8 +21,8 @@
 
 | Branch | Commit | Nodes | Edges |
 |---|---|---:|---:|
-| main | c6805fad67fa | 5017 | 7790 |
-| stage1/section-uuids | 8066c6db6717 | 17902 | 45676 |
+| main | d0c88b3f7a1d | 5017 | 7790 |
+| stage1/section-uuids | f3ca30397a5c | 17902 | 45677 |
 
 ## Interpretation
 

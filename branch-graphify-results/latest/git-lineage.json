@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "c6805fad67fa1d42be4050260bbf240df4b91475",
-  "compare_sha": "8066c6db6717a0fa3aa866dbf1cb61572ee67292",
+  "base_sha": "d0c88b3f7a1d65e46908f94fe293b863805b4c94",
+  "compare_sha": "f3ca30397a5c303746d8a4cb7c1c6da3dd3d7c9e",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 281,
-  "compare_only_commit_count": 1118,
+  "base_only_commit_count": 283,
+  "compare_only_commit_count": 1122,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -7419,6 +7419,26 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": ">",
+      "sha": "cb66a6e66ee808334b0cd324f3a469c72034684a",
+      "subject": "Include isolated SNAP worker provenance in E.8.8 report"
+    },
+    {
+      "side": "<",
+      "sha": "23b2872e318c019ff5bd7c69701c1537f6448320",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": ">",
+      "sha": "e93ba1a6fe254fcd283f6c17b930326086c61492",
+      "subject": "Wire isolated SNAP worker into native traversal and runtime evidence"
+    },
+    {
+      "side": ">",
+      "sha": "d02ad4ba0ed91d90447e7ce10de0ced620248dac",
+      "subject": "Repair SNAP worker capability registration and availability"
+    },
     {
       "side": ">",
       "sha": "8066c6db6717a0fa3aa866dbf1cb61572ee67292",

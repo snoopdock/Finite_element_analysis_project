@@ -8,7 +8,7 @@
   "compare": {
     "branch": "stage1-section-uuids",
     "node_count": 17902,
-    "edge_count": 45676
+    "edge_count": 45677
   },
   "nodes": {
     "common_count": 2499,
@@ -4799,7 +4799,7 @@
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_1",
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_32",
       "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_36",
-      "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_85",
+      "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_87",
       "audit_engine_semantic_audit_graph_backend_artifact_metadata",
       "audit_engine_semantic_audit_graph_backend_artifact_metadata_artifactmetadata",
       "audit_engine_semantic_audit_graph_backend_artifact_metadata_artifactmetadata_init",
@@ -4869,7 +4869,7 @@
       "audit_engine_semantic_audit_graph_backend_capability_registry_backendcapabilityregistry_register",
       "audit_engine_semantic_audit_graph_backend_capability_registry_create_default_registry",
       "audit_engine_semantic_audit_graph_backend_capability_registry_rationale_1",
-      "audit_engine_semantic_audit_graph_backend_capability_registry_rationale_24",
+      "audit_engine_semantic_audit_graph_backend_capability_registry_rationale_27",
       "audit_engine_semantic_audit_graph_backend_execution_context",
       "audit_engine_semantic_audit_graph_backend_execution_context_backendexecutioncontext",
       "audit_engine_semantic_audit_graph_backend_execution_result",
@@ -17943,7 +17943,7 @@
   "edges": {
     "common_count": 4781,
     "base_only_count": 3009,
-    "compare_only_count": 40895,
+    "compare_only_count": 40896,
     "base_only": [
       [
         "analysis_citation_validator",
@@ -72393,7 +72393,7 @@
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_85",
+        "audit_engine_semantic_audit_graph_backend_adapter_traversal_rationale_87",
         "audit_engine_semantic_audit_graph_backend_adapter_traversal_nativeadaptergraphtraversalengine",
         "rationale_for"
       ],
@@ -73523,12 +73523,17 @@
         "calls"
       ],
       [
+        "audit_engine_semantic_audit_graph_backend_capability_registry_create_default_registry",
+        "shutil",
+        "calls"
+      ],
+      [
         "audit_engine_semantic_audit_graph_backend_capability_registry_rationale_1",
         "audit_engine_semantic_audit_graph_backend_capability_registry",
         "rationale_for"
       ],
       [
-        "audit_engine_semantic_audit_graph_backend_capability_registry_rationale_24",
+        "audit_engine_semantic_audit_graph_backend_capability_registry_rationale_27",
         "audit_engine_semantic_audit_graph_backend_capability_registry_acceptance_state",
         "rationale_for"
       ],
