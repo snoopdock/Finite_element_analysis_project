@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "64fa7e662ffa5359fe4430b9273aa4a1bf6691f5",
-  "compare_sha": "ab942db734ea4e51492ff1c0c3e1a219ee821056",
+  "base_sha": "b7e05d92f040952bae210961eaa38d383ac2f65f",
+  "compare_sha": "8db792e79c7e87fe9667af72f5b0eb7f4240d132",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 313,
-  "compare_only_commit_count": 1173,
+  "base_only_commit_count": 315,
+  "compare_only_commit_count": 1184,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -234,6 +234,10 @@
     {
       "status": "A",
       "path": ".github/workflows/m7_2_manual_task_suitability_campaign.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/m7_3_detached_campaign_dossier.yml"
     },
     {
       "status": "A",
@@ -6187,6 +6191,10 @@
     },
     {
       "status": "A",
+      "path": "tests/semantic_graph/test_m73_campaign_dossier.py"
+    },
+    {
+      "status": "A",
       "path": "tests/semantic_graph/test_m7_native_backend_performance_benchmark.py"
     },
     {
@@ -6987,6 +6995,10 @@
     },
     {
       "status": "A",
+      "path": "tools/gb07_campaign_dossier.py"
+    },
+    {
+      "status": "A",
       "path": "tools/publish_validation_evidence_bundle.py"
     },
     {
@@ -7451,6 +7463,71 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "b7e05d92f040952bae210961eaa38d383ac2f65f",
+      "subject": "Add M7.3 detached campaign dossier workflow"
+    },
+    {
+      "side": ">",
+      "sha": "8db792e79c7e87fe9667af72f5b0eb7f4240d132",
+      "subject": "Support detached Actions artifact directory layout"
+    },
+    {
+      "side": ">",
+      "sha": "df110911f123822b5f4aacda9d6958f2f8146522",
+      "subject": "Include M7.3 dossier integrity tests in G9.42"
+    },
+    {
+      "side": ">",
+      "sha": "8dcc929575df7a1744c810980214b4e5f383e006",
+      "subject": "Add M7.3 detached campaign dossier tests"
+    },
+    {
+      "side": ">",
+      "sha": "dca23be5784dce8476430a694e33f34c4701fa16",
+      "subject": "Add independent M7.3 campaign dossier verifier"
+    },
+    {
+      "side": ">",
+      "sha": "1122916e8a56abec43cf3d42f8b2d252533e81c1",
+      "subject": "Record final M7.2 implementation commits and current head"
+    },
+    {
+      "side": ">",
+      "sha": "10c6be6014d05e7d6d2d36870a44d9ccab1fc949",
+      "subject": "Record M7.2 campaign controller and current source snapshot"
+    },
+    {
+      "side": "<",
+      "sha": "cafa0d1be5c09eb092c1bc2467b540f20acb22b9",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": ">",
+      "sha": "2638c9cda2acaf5b26b29c427f662f9c921a1176",
+      "subject": "Test M7.2 environment and workload descriptor integrity"
+    },
+    {
+      "side": ">",
+      "sha": "e354d5e6023fd1d3a2e26c7312b3df10d47af339",
+      "subject": "Verify M7.2 workload descriptors against generator manifest"
+    },
+    {
+      "side": ">",
+      "sha": "9b3a67651d323601fd8763361ee28c58c843766f",
+      "subject": "Harden M7.2 workload and environment verification"
+    },
+    {
+      "side": ">",
+      "sha": "340b345e893921f4f2f24b061185bbce4e5a6288",
+      "subject": "Record M7.2 five-option manual campaign controller"
+    },
+    {
+      "side": ">",
+      "sha": "7832366a2df17c0e7cdd71711cebc2dcd93608bd",
+      "subject": "Document M7.2 manual five-option campaign controller"
+    },
     {
       "side": "<",
       "sha": "64fa7e662ffa5359fe4430b9273aa4a1bf6691f5",

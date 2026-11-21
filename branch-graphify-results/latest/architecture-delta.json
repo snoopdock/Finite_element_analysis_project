@@ -7,13 +7,13 @@
   },
   "compare": {
     "branch": "stage1-section-uuids",
-    "node_count": 17960,
-    "edge_count": 45925
+    "node_count": 17987,
+    "edge_count": 46018
   },
   "nodes": {
     "common_count": 2499,
     "base_only_count": 2718,
-    "compare_only_count": 15461,
+    "compare_only_count": 15488,
     "base_only": [
       "abc",
       "analysis_citation_validator_rationale_128",
@@ -15644,13 +15644,28 @@
       "tests_semantic_graph_test_m72_task_suitability_campaign_test_invalid_measurement_budgets_are_rejected",
       "tests_semantic_graph_test_m72_task_suitability_campaign_test_invalid_seed_sets_are_rejected",
       "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_authority_escalation_is_rejected",
+      "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_mixed_environment_inside_backend_report_is_rejected",
       "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_timing_aggregate_forgery_is_rejected",
+      "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_workload_description_forgery_is_rejected",
       "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_workload_forgery_is_rejected",
       "tests_semantic_graph_test_m72_task_suitability_campaign_test_report_does_not_rank_libraries_or_decide_task_suitability",
       "tests_semantic_graph_test_m72_task_suitability_campaign_test_report_reconstructs_seeded_workloads_and_reference_results",
       "tests_semantic_graph_test_m72_task_suitability_campaign_test_seeded_workloads_are_reproducible_and_seed_sensitive",
       "tests_semantic_graph_test_m72_task_suitability_campaign_test_unknown_backend_and_workload_are_rejected",
       "tests_semantic_graph_test_m72_task_suitability_campaign_test_workload_families_encode_distinct_audit_shapes",
+      "tests_semantic_graph_test_m73_campaign_dossier",
+      "tests_semantic_graph_test_m73_campaign_dossier_detached_campaign",
+      "tests_semantic_graph_test_m73_campaign_dossier_py_fixture",
+      "tests_semantic_graph_test_m73_campaign_dossier_rationale_1",
+      "tests_semantic_graph_test_m73_campaign_dossier_rehash",
+      "tests_semantic_graph_test_m73_campaign_dossier_test_authority_escalation_is_rejected",
+      "tests_semantic_graph_test_m73_campaign_dossier_test_cross_backend_configuration_mismatch_is_rejected",
+      "tests_semantic_graph_test_m73_campaign_dossier_test_detached_verification_log_must_match_report",
+      "tests_semantic_graph_test_m73_campaign_dossier_test_expired_or_unbound_artifact_is_rejected",
+      "tests_semantic_graph_test_m73_campaign_dossier_test_five_backend_detached_campaign_verifies",
+      "tests_semantic_graph_test_m73_campaign_dossier_test_injected_top_level_selection_field_is_rejected",
+      "tests_semantic_graph_test_m73_campaign_dossier_test_missing_backend_artifact_is_rejected",
+      "tests_semantic_graph_test_m73_campaign_dossier_test_mixed_source_revision_is_rejected",
       "tests_semantic_graph_test_m7_native_backend_performance_benchmark",
       "tests_semantic_graph_test_m7_native_backend_performance_benchmark_networkx_report",
       "tests_semantic_graph_test_m7_native_backend_performance_benchmark_py_fixture",
@@ -17449,6 +17464,18 @@
       "tools_gb06_task_suitability_campaign_rationale_2",
       "tools_gb06_task_suitability_campaign_timing",
       "tools_gb06_task_suitability_campaign_verify_report",
+      "tools_gb07_campaign_dossier",
+      "tools_gb07_campaign_dossier_dossiererror",
+      "tools_gb07_campaign_dossier_file_sha",
+      "tools_gb07_campaign_dossier_index_artifacts",
+      "tools_gb07_campaign_dossier_last_json",
+      "tools_gb07_campaign_dossier_main",
+      "tools_gb07_campaign_dossier_markdown",
+      "tools_gb07_campaign_dossier_py_valueerror",
+      "tools_gb07_campaign_dossier_rationale_2",
+      "tools_gb07_campaign_dossier_read_json",
+      "tools_gb07_campaign_dossier_require",
+      "tools_gb07_campaign_dossier_verify_campaign",
       "tools_publish_validation_evidence_bundle",
       "tools_publish_validation_evidence_bundle_main",
       "tools_publish_validation_evidence_bundle_rationale_1",
@@ -18201,7 +18228,7 @@
   "edges": {
     "common_count": 4781,
     "base_only_count": 3246,
-    "compare_only_count": 41144,
+    "compare_only_count": 41237,
     "base_only": [
       [
         "analysis_citation_validator",
@@ -197882,7 +197909,17 @@
       ],
       [
         "tests_semantic_graph_test_m72_task_suitability_campaign",
+        "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_mixed_environment_inside_backend_report_is_rejected",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m72_task_suitability_campaign",
         "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_timing_aggregate_forgery_is_rejected",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m72_task_suitability_campaign",
+        "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_workload_description_forgery_is_rejected",
         "contains"
       ],
       [
@@ -197981,6 +198018,21 @@
         "calls"
       ],
       [
+        "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_mixed_environment_inside_backend_report_is_rejected",
+        "pytest",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_mixed_environment_inside_backend_report_is_rejected",
+        "tests_semantic_graph_test_m72_task_suitability_campaign_rehash",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_mixed_environment_inside_backend_report_is_rejected",
+        "tools_gb06_task_suitability_campaign_verify_report",
+        "calls"
+      ],
+      [
         "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_timing_aggregate_forgery_is_rejected",
         "pytest",
         "calls"
@@ -197992,6 +198044,21 @@
       ],
       [
         "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_timing_aggregate_forgery_is_rejected",
+        "tools_gb06_task_suitability_campaign_verify_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_workload_description_forgery_is_rejected",
+        "pytest",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_workload_description_forgery_is_rejected",
+        "tests_semantic_graph_test_m72_task_suitability_campaign_rehash",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m72_task_suitability_campaign_test_rehashed_workload_description_forgery_is_rejected",
         "tools_gb06_task_suitability_campaign_verify_report",
         "calls"
       ],
@@ -198038,6 +198105,226 @@
       [
         "tests_semantic_graph_test_m72_task_suitability_campaign_test_workload_families_encode_distinct_audit_shapes",
         "tools_gb06_task_suitability_campaign_make_graph",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "copy",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "json",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "pytest",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tests_semantic_graph_test_m73_campaign_dossier_detached_campaign",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tests_semantic_graph_test_m73_campaign_dossier_rehash",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tests_semantic_graph_test_m73_campaign_dossier_test_authority_escalation_is_rejected",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tests_semantic_graph_test_m73_campaign_dossier_test_cross_backend_configuration_mismatch_is_rejected",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tests_semantic_graph_test_m73_campaign_dossier_test_detached_verification_log_must_match_report",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tests_semantic_graph_test_m73_campaign_dossier_test_expired_or_unbound_artifact_is_rejected",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tests_semantic_graph_test_m73_campaign_dossier_test_five_backend_detached_campaign_verifies",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tests_semantic_graph_test_m73_campaign_dossier_test_injected_top_level_selection_field_is_rejected",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tests_semantic_graph_test_m73_campaign_dossier_test_missing_backend_artifact_is_rejected",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tests_semantic_graph_test_m73_campaign_dossier_test_mixed_source_revision_is_rejected",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tools_gb06_task_suitability_campaign",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "tools_gb07_campaign_dossier",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_detached_campaign",
+        "json",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_detached_campaign",
+        "tests_semantic_graph_test_m73_campaign_dossier_py_fixture",
+        "references"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_detached_campaign",
+        "tests_semantic_graph_test_m73_campaign_dossier_rehash",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_detached_campaign",
+        "tools_gb06_task_suitability_campaign_make_report",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_rationale_1",
+        "tests_semantic_graph_test_m73_campaign_dossier",
+        "rationale_for"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_authority_escalation_is_rejected",
+        "json",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_authority_escalation_is_rejected",
+        "pytest",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_authority_escalation_is_rejected",
+        "tests_semantic_graph_test_m73_campaign_dossier_rehash",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_authority_escalation_is_rejected",
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_cross_backend_configuration_mismatch_is_rejected",
+        "json",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_cross_backend_configuration_mismatch_is_rejected",
+        "pytest",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_cross_backend_configuration_mismatch_is_rejected",
+        "tests_semantic_graph_test_m73_campaign_dossier_rehash",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_cross_backend_configuration_mismatch_is_rejected",
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_detached_verification_log_must_match_report",
+        "json",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_detached_verification_log_must_match_report",
+        "pytest",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_detached_verification_log_must_match_report",
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_expired_or_unbound_artifact_is_rejected",
+        "pytest",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_expired_or_unbound_artifact_is_rejected",
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_five_backend_detached_campaign_verifies",
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_injected_top_level_selection_field_is_rejected",
+        "json",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_injected_top_level_selection_field_is_rejected",
+        "pytest",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_injected_top_level_selection_field_is_rejected",
+        "tests_semantic_graph_test_m73_campaign_dossier_rehash",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_injected_top_level_selection_field_is_rejected",
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_missing_backend_artifact_is_rejected",
+        "pytest",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_missing_backend_artifact_is_rejected",
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_mixed_source_revision_is_rejected",
+        "json",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_mixed_source_revision_is_rejected",
+        "pytest",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_mixed_source_revision_is_rejected",
+        "tests_semantic_graph_test_m73_campaign_dossier_rehash",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_m73_campaign_dossier_test_mixed_source_revision_is_rejected",
+        "tools_gb07_campaign_dossier_verify_campaign",
         "calls"
       ],
       [
@@ -231913,6 +232200,211 @@
       [
         "tools_gb06_task_suitability_campaign_verify_report",
         "tools_gb06_task_suitability_campaign_timing",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "argparse",
+        "imports"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "collections",
+        "imports_from"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "hashlib",
+        "imports"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "json",
+        "imports"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "pathlib",
+        "imports_from"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "re",
+        "imports"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "tools_gb06_task_suitability_campaign",
+        "imports_from"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "tools_gb07_campaign_dossier_dossiererror",
+        "contains"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "tools_gb07_campaign_dossier_file_sha",
+        "contains"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "tools_gb07_campaign_dossier_index_artifacts",
+        "contains"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "tools_gb07_campaign_dossier_last_json",
+        "contains"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "tools_gb07_campaign_dossier_main",
+        "contains"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "tools_gb07_campaign_dossier_markdown",
+        "contains"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "tools_gb07_campaign_dossier_read_json",
+        "contains"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "tools_gb07_campaign_dossier_require",
+        "contains"
+      ],
+      [
+        "tools_gb07_campaign_dossier",
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "contains"
+      ],
+      [
+        "tools_gb07_campaign_dossier_dossiererror",
+        "tools_gb07_campaign_dossier_py_valueerror",
+        "inherits"
+      ],
+      [
+        "tools_gb07_campaign_dossier_file_sha",
+        "hashlib",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_index_artifacts",
+        "re",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_index_artifacts",
+        "tools_gb07_campaign_dossier_require",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_last_json",
+        "json",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_last_json",
+        "tools_gb07_campaign_dossier_dossiererror",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_last_json",
+        "tools_gb07_campaign_dossier_require",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_main",
+        "argparse",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_main",
+        "json",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_main",
+        "tools_gb07_campaign_dossier_markdown",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_main",
+        "tools_gb07_campaign_dossier_read_json",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_main",
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_rationale_2",
+        "tools_gb07_campaign_dossier",
+        "rationale_for"
+      ],
+      [
+        "tools_gb07_campaign_dossier_read_json",
+        "json",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_read_json",
+        "tools_gb07_campaign_dossier_dossiererror",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_read_json",
+        "tools_gb07_campaign_dossier_require",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_require",
+        "tools_gb07_campaign_dossier_dossiererror",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "json",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "re",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "tools_gb06_task_suitability_campaign_verify_report",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "tools_gb07_campaign_dossier_file_sha",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "tools_gb07_campaign_dossier_index_artifacts",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "tools_gb07_campaign_dossier_last_json",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "tools_gb07_campaign_dossier_read_json",
+        "calls"
+      ],
+      [
+        "tools_gb07_campaign_dossier_verify_campaign",
+        "tools_gb07_campaign_dossier_require",
         "calls"
       ],
       [

@@ -1,16 +1,16 @@
 [graphify extract] --force: full re-scan, semantic cache reads skipped
-[graphify extract] scanning /tmp/branch-graphify-worktrees-vl7ll38r/main
+[graphify extract] scanning /tmp/branch-graphify-worktrees-22o1lqvs/main
 [graphify extract] --code-only: skipping 38 non-code file(s) (38 docs, 0 papers, 0 images) — no LLM extraction
-[graphify extract] found 317 code, 0 docs, 0 papers, 0 images
+[graphify extract] found 318 code, 0 docs, 0 papers, 0 images
 [graphify extract] 28 file(s) not classified (no supported extension or shebang), skipped: .git, .gitignore, .gitkeep, BasicTest.lean, Contracts.lean, Convergence.lean (+22 more)
-[graphify extract] AST extraction on 317 code files...
-  AST cache: 0/317 files served from cache (0%); 317 to extract
-  AST extraction: 100/317 uncached files (31%) [4 workers]
-  AST extraction: 200/317 uncached files (63%) [4 workers]
-  AST extraction: 300/317 uncached files (94%) [4 workers]
-  AST extraction: 317/317 uncached files (100%) [4 workers]
+[graphify extract] AST extraction on 318 code files...
+  AST cache: 0/318 files served from cache (0%); 318 to extract
+  AST extraction: 100/318 uncached files (31%) [4 workers]
+  AST extraction: 200/318 uncached files (62%) [4 workers]
+  AST extraction: 300/318 uncached files (94%) [4 workers]
+  AST extraction: 318/318 uncached files (100%) [4 workers]
   warning: 1 code file(s) yielded no symbols (0.00 MB) — a data file, or source this extractor models no symbols for: pyproject.toml
-[graphify extract] AST extraction incomplete for 3 source(s): /tmp/branch-graphify-worktrees-vl7ll38r/main/branch-graphify-results/latest/architecture-delta.json, /tmp/branch-graphify-worktrees-vl7ll38r/main/branch-graphify-results/latest/main/graph.json, /tmp/branch-graphify-worktrees-vl7ll38r/main/branch-graphify-results/latest/stage1-section-uuids/graph.json; failed sources will not replace saved AST records and remain pending for retry.
+[graphify extract] AST extraction incomplete for 4 source(s): /tmp/branch-graphify-worktrees-22o1lqvs/main/.github/workflows/m7_3_detached_campaign_dossier.yml, /tmp/branch-graphify-worktrees-22o1lqvs/main/branch-graphify-results/latest/architecture-delta.json, /tmp/branch-graphify-worktrees-22o1lqvs/main/branch-graphify-results/latest/main/graph.json, /tmp/branch-graphify-worktrees-22o1lqvs/main/branch-graphify-results/latest/stage1-section-uuids/graph.json; failed sources will not replace saved AST records and remain pending for retry.
 [graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/main/graphify-out/graph.json: 5217 nodes, 8027 edges, 408 communities
 [graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/main/graphify-out/.graphify_analysis.json
 [graphify extract] next: run `graphify cluster-only /home/runner/work/_temp/branch-graphify-results/latest/main` to generate GRAPH_REPORT.md and name communities
