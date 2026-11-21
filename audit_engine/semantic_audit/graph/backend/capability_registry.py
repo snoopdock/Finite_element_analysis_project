@@ -43,7 +43,7 @@ def create_default_registry():
         "available": backend_available("networkx"),
     })
     registry.register("scipy", "SciPyAdapter", {
-        "acceptance_state": _acceptance_state("scipy", "not_implemented"),
+        "acceptance_state": _acceptance_state("scipy", "implemented_unvalidated"),
         # CSR is a hybrid backend: the matrix indexes connectivity while
         # exact typed edge occurrences and metadata are preserved separately.
         "lossless": False, "sparse_matrix": True, "metadata": False,
