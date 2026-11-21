@@ -694,7 +694,7 @@ For each backend, the campaign records separate workload/seed cases, canonical g
 
 The first M7.2 scope is intentionally limited to bounded semantic traversal under varied graph shapes. It does not claim to qualify sparse numerical linear algebra, centrality, community detection, ontology reasoning or end-to-end evidence reconstruction. Those require distinct task contracts and workload oracles. The five libraries remain computational options; M7.2 does not calculate a global ranking or select a winner.
 
-The new M7.2 test module has been added to `validation/profiles/G9.42.yaml`. Current Stage1 implementation commits:
+The new M7.2 test module has been added to `validation/profiles/G9.42.yaml`. The manual five-option campaign controller is committed on `main` at `64fa7e662ffa5359fe4430b9273aa4a1bf6691f5` as `.github/workflows/m7_2_manual_task_suitability_campaign.yml`. It resolves the requested source once and pins five separate backend jobs to the same SHA; graph-tool uses the existing conda-forge environment and SNAP uses the restricted worker. The workflow has an actionlint preflight but has not yet been dispatched. Current Stage1 implementation commits:
 - `6d579da8e613274b41123eed64405859b07235a5` — campaign runner and deterministic workload generator.
 - `d205f0b881312edf1b930d07cca66df152f22ac6` — campaign integrity and workload tests.
 - `ffeb99b9dac2646f5da232510ab5553d6647db0a` — G9.42 profile inclusion.
