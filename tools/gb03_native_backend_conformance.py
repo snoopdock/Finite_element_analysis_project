@@ -14,6 +14,7 @@ from collections.abc import Mapping
 from importlib import metadata as importlib_metadata
 from importlib.util import find_spec
 import json
+import os
 import platform
 import os
 import shutil
@@ -410,7 +411,12 @@ def run(backend: str) -> dict[str, Any]:
         "schema_version": "ae32c/e85-native-backend-conformance/v1",
         "status": "passed",
         "backend": backend,
+        "source_revision": os.environ.get("AE32C_SOURCE_REVISION"),
+        "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+        "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+        "workflow_name": os.environ.get("GITHUB_WORKFLOW"),
         "native_library_version": runtime.get("backend_library_version"),
+        "backend_native_query_mode": runtime.get("backend_native_query_mode"),
         "projection_type": runtime.get("backend_projection_type"),
         "python_version": platform.python_version(),
         "platform": platform.platform(),
