@@ -81,6 +81,8 @@ jobs:
             echo "### M7.1 source resolution"
             echo "- Requested ref: $REQUESTED_REF"
             echo "- Immutable source SHA: $SOURCE_SHA"
+            echo "- Requested timed repetitions per query: $REPEATS"
+            echo "- Requested warm-up calls per query: $WARMUP"
             echo "- Benchmark scope: fixed E.8.5 adversarial fixture; seven shared queries"
             echo "- This workflow is a five-backend smoke comparison, not the M7.2 workload campaign."
           } >> "$GITHUB_STEP_SUMMARY"
@@ -127,11 +129,16 @@ jobs:
           python -m pip check
       - name: Capture runner and dependency provenance
         shell: bash
+        env:
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
           {
             echo "source_sha=$AE32C_SOURCE_REVISION"
+            echo "requested_repeats=$REPEATS"
+            echo "requested_warmup=$WARMUP"
             echo "runner_os=$RUNNER_OS"
             echo "runner_arch=$RUNNER_ARCH"
             echo "python=$(python --version 2>&1)"
@@ -144,14 +151,15 @@ jobs:
         shell: bash
         env:
           BACKEND: ${{ matrix.backend }}
-          REPEATS: 5
-          WARMUP: 2
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
           PYTHONPATH=source python source/tools/gb05_native_backend_performance_benchmark.py run \
             --backend "$BACKEND" --repeats "$REPEATS" --warmup "$WARMUP" \
             --report "reports/m7-$BACKEND.json" 2>&1 | tee "reports/m7-$BACKEND-run.log"
+          python -c 'import json, os; p=json.load(open("reports/m7-"+os.environ["BACKEND"]+".json", encoding="utf-8")); c=p.get("configuration", {}); expected={"repeats": int(os.environ["REPEATS"]), "warmup": int(os.environ["WARMUP"])}; assert c == expected, f"report configuration mismatch: expected {expected}, got {c}"'
           PYTHONPATH=source python source/tools/gb05_native_backend_performance_benchmark.py verify \
             --report "reports/m7-$BACKEND.json" 2>&1 | tee "reports/m7-$BACKEND-verify.log"
       - name: Publish backend result summary
@@ -206,11 +214,16 @@ jobs:
           init-shell: bash
       - name: Capture runner and dependency provenance
         shell: micromamba-shell {0}
+        env:
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
           {
             echo "source_sha=$AE32C_SOURCE_REVISION"
+            echo "requested_repeats=$REPEATS"
+            echo "requested_warmup=$WARMUP"
             echo "runner_os=$RUNNER_OS"
             echo "runner_arch=$RUNNER_ARCH"
             echo "python=$(python --version 2>&1)"
@@ -223,14 +236,15 @@ jobs:
         shell: micromamba-shell {0}
         env:
           PYTHONPATH: source
-          REPEATS: 5
-          WARMUP: 2
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
           python source/tools/gb05_native_backend_performance_benchmark.py run \
             --backend graph-tool --repeats "$REPEATS" --warmup "$WARMUP" \
             --report reports/m7-graph-tool.json 2>&1 | tee reports/m7-graph-tool-run.log
+          python -c 'import json, os; p=json.load(open("reports/m7-graph-tool.json", encoding="utf-8")); c=p.get("configuration", {}); expected={"repeats": int(os.environ["REPEATS"]), "warmup": int(os.environ["WARMUP"])}; assert c == expected, f"report configuration mismatch: expected {expected}, got {c}"'
           python source/tools/gb05_native_backend_performance_benchmark.py verify \
             --report reports/m7-graph-tool.json 2>&1 | tee reports/m7-graph-tool-verify.log
       - name: Upload graph-tool benchmark evidence
@@ -285,11 +299,16 @@ jobs:
             --format 'worker_image_id={{.Id}}' > worker-image.txt
       - name: Capture runner and dependency provenance
         shell: bash
+        env:
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
           {
             echo "source_sha=$AE32C_SOURCE_REVISION"
+            echo "requested_repeats=$REPEATS"
+            echo "requested_warmup=$WARMUP"
             echo "runner_os=$RUNNER_OS"
             echo "runner_arch=$RUNNER_ARCH"
             echo "python=$(python --version 2>&1)"
@@ -303,14 +322,15 @@ jobs:
         shell: bash
         env:
           PYTHONPATH: source
-          REPEATS: 5
-          WARMUP: 2
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
           python source/tools/gb05_native_backend_performance_benchmark.py run \
             --backend snap --repeats "$REPEATS" --warmup "$WARMUP" \
             --report reports/m7-snap.json 2>&1 | tee reports/m7-snap-run.log
+          python -c 'import json, os; p=json.load(open("reports/m7-snap.json", encoding="utf-8")); c=p.get("configuration", {}); expected={"repeats": int(os.environ["REPEATS"]), "warmup": int(os.environ["WARMUP"])}; assert c == expected, f"report configuration mismatch: expected {expected}, got {c}"'
           python source/tools/gb05_native_backend_performance_benchmark.py verify \
             --report reports/m7-snap.json 2>&1 | tee reports/m7-snap-verify.log
       - name: Upload SNAP worker benchmark evidence
@@ -342,6 +362,8 @@ jobs:
           {
             echo "## M7.1 five-backend smoke outcome"
             echo "- Immutable source SHA: $SOURCE_SHA"
+            echo "- Requested timed repetitions per query: ${{ inputs.repeats }}"
+            echo "- Requested warm-up calls per query: ${{ inputs.warmup }}"
             echo "- NetworkX / SciPy / igraph job: $PIP_BACKENDS"
             echo "- graph-tool job: $GRAPH_TOOL"
             echo "- SNAP isolated-worker job: $SNAP"
