@@ -29,7 +29,7 @@ The first implementation slice is committed on `stage1/section-uuids`:
   direction semantics, unknown/isolated-node behavior, payload isolation,
   independent self-loop expectations, observational runtime reporting, and proof that the traversal engine invokes the typed adapter method.
 
-This is implementation evidence only. No local tests or workflows were run
+This is implementation evidence only. The workflow now includes a NetworkX-only invocation of the focused contract test module. No local tests or workflows were run
 for this commit; NetworkX native acceptance and M1 closure remain pending until
 the exact-commit validation gates in Section 9 are executed and reviewed.
 

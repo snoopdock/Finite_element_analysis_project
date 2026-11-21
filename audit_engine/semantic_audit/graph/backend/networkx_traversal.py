@@ -125,6 +125,7 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             "parity_verified_queries": 0,
             "parity_failures": 0,
             "total_examined_edges": 0,
+            "total_examined_edge_occurrences": 0,
             "total_visited_nodes": 0,
             "native_adjacency_lookups": 0,
             "native_edge_occurrences_read": 0,

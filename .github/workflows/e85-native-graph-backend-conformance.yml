@@ -31,6 +31,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
+      - name: Run M1 NetworkX adapter protocol contract
+        if: matrix.backend == 'networkx'
+        run: |
+          python -m pip install pytest
+          python -m pytest -q tests/semantic_graph/test_m1_adapter_protocol_networkx.py
       - name: Install igraph native library
         if: matrix.backend == 'igraph'
         run: python -m pip install 'igraph>=0.11,<2.0'
