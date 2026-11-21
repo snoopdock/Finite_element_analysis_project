@@ -155,7 +155,7 @@ jobs:
           python -m pip install -r requirements.txt
       - name: Build isolated SNAP 6.0 CPython 3.9 worker image
         run: |
-          docker build --pull=false \
+          docker build --pull \
             --file .github/snap-worker/Dockerfile \
             --tag "$AE32C_SNAP_WORKER_IMAGE" .
           docker image inspect "$AE32C_SNAP_WORKER_IMAGE" --format '{{.Id}}'
