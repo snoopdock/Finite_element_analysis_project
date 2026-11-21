@@ -130,14 +130,50 @@ jobs:
           }, sort_keys=True))
           assert len(artifacts) == 5, "expected exactly five backend artifacts for this run/attempt"
           PY
-      - name: Download detached campaign artifacts
+      - name: Download detached networkx artifact for the selected attempt
         uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.campaign_run_id }}
-          pattern: m7-2-task-suitability-*
-          path: detached-artifacts
+          name: m7-2-task-suitability-networkx-${{ inputs.campaign_run_id }}-${{ inputs.campaign_attempt }}
+          path: detached-artifacts/networkx
+          merge-multiple: true
+      - name: Download detached scipy artifact for the selected attempt
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.campaign_run_id }}
+          name: m7-2-task-suitability-scipy-${{ inputs.campaign_run_id }}-${{ inputs.campaign_attempt }}
+          path: detached-artifacts/scipy
+          merge-multiple: true
+      - name: Download detached igraph artifact for the selected attempt
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.campaign_run_id }}
+          name: m7-2-task-suitability-igraph-${{ inputs.campaign_run_id }}-${{ inputs.campaign_attempt }}
+          path: detached-artifacts/igraph
+          merge-multiple: true
+      - name: Download detached graph-tool artifact for the selected attempt
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.campaign_run_id }}
+          name: m7-2-task-suitability-graph-tool-${{ inputs.campaign_run_id }}-${{ inputs.campaign_attempt }}
+          path: detached-artifacts/graph-tool
+          merge-multiple: true
+      - name: Download detached snap artifact for the selected attempt
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.campaign_run_id }}
+          name: m7-2-task-suitability-snap-${{ inputs.campaign_run_id }}-${{ inputs.campaign_attempt }}
+          path: detached-artifacts/snap
           merge-multiple: true
       - name: Verify reports, artifact provenance and cross-backend invariants
         env:
