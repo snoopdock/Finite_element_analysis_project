@@ -1,6 +1,6 @@
 # AE-32C M4 — python-igraph Native Adjacency Implementation Record
 
-**Status:** Implementation committed; G9.42 validation remains required after test-double correction  
+**Status:** ACCEPTED for the tested python-igraph 1.0.0 native adjacency and repository context path; exact scope limited to G9.42 run 44901309538  
 **Milestone:** M4 — python-igraph native adjacency  
 **Target branch:** `stage1/section-uuids` only  
 **Predecessor:** M3 accepted by G9.42 run [44898320570](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44898320570), exact Stage1 source SHA `c40a258f627a1678036521e2474fccdd5537e46a`  
@@ -107,6 +107,34 @@ Evidence integrity verification and immutable bundle publication passed. Provena
 
 Detailed review: [M4 G9.42 Validation Failure Review — run 44900752438](AE-32C-M4-G9.42-Validation-Failure-44900752438.md).
 
+
+## 4.3 Exact-commit acceptance — G9.42 run 44901309538
+
+G9.42 run [44901309538](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44901309538) tested the exact latest Stage1 source SHA `c6d4fda93897a3b7022d28cba177fc5c453940b3` on `stage1/section-uuids`. The independent validation engine ran from `cecf208419887b70c532b57362e6933ac97f72cb`. Environment: CPython 3.11.18; python-igraph 1.0.0.
+
+**Test results from the immutable report and JUnit XML:**
+- Validation-engine tests: 53 passed.
+- Targeted suite: 686 total; 682 passed, 4 skipped, 0 failed, 0 errors.
+- Full regression: 3,625 total; 3,613 passed, 12 skipped, 0 failed, 0 errors.
+- The focused fake edge-sequence indexing test passed.
+- Real igraph query test, native conformance test and repository context-routing test executed and passed; none were skipped.
+- Graph-tool and SNAP real-library tests were skipped because those libraries were not installed in the G9.42 Python interpreter. This does not affect M4 acceptance, but does mean M5 still requires a graph-tool-capable validation environment.
+
+**Evidence chain:**
+- Validation report SHA-256: `27e6714ca1a8160cb4c29078f187a1a2d071ee3e0b72a4b3bdccb1a866aec784`.
+- Immutable evidence bundle SHA-256: `aabd4edc501bb2cdec425dfa3f769a3b09467172d1d361736b497293b8226d19`.
+- Uploaded artifact SHA-256: `152661987cab2b0c46bb46364e7a46997003f85e61b6e92661bd3b8b9ce4c853`.
+- Artifact: `manual-validation-evidence-44901309538-1.zip`, ID `14706435458`.
+- Evidence integrity/outcome verification: passed.
+- Immutable bundle publication: passed.
+- Provenance catalog build and independent verification: passed.
+- Catalog entry binds run `44901309538`, profile `G9.42`, branch `stage1/section-uuids`, tested source SHA `c6d4fda93897a3b7022d28cba177fc5c453940b3`, report digest and bundle digest.
+
+The workflow dispatcher's top-level run SHA is the unchanged main validation-engine commit; the receipt and catalog explicitly bind the target source SHA above. Main remains unchanged. The artifact's JUnit reports independently confirm all four previously failing fake-igraph tests now pass.
+
+**Acceptance decision:** M4 is accepted for the tested python-igraph 1.0.0 environment and the repository-backed semantic graph context path. Acceptance does not establish performance superiority, production approval for arbitrary workloads, or compatibility with untested python-igraph versions. The registry remains `implemented_unvalidated` with `production_approval: false` until the project's later promotion policy (M7) is completed. M5 may now proceed.
+
+
 ## 5. Technical limitations and acceptance boundary
 
 This is an implementation milestone, not backend acceptance. In particular:
@@ -133,5 +161,5 @@ The fake-adapter test establishes the intended interface behavior only. It does 
 - `8ff22ea2020e86758cad7a5215771d90f6688f0a` — add igraph to the requirements manifest actually installed by G9.42.
 - `fc7e6e92e91764d59c5f4bca5762d073a71d2601` — require the real python-igraph version in native and repository conformance runtime evidence.
 
-No local tests or workflows were run by the implementer. The next step is a user-run G9.42 validation against the latest Stage1 head.
+No local tests or workflows were run by the implementer. M4 is accepted for the exact tested scope. No local tests or workflows were run by the implementer.
 
