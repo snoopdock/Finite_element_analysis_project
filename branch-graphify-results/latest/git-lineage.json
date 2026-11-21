@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "21c13b0b7c951bbacbd63a1fd2546c450f4fc8c7",
-  "compare_sha": "c1f97a9402d0d98490eb6ad7efff5f1ae0179c6a",
+  "base_sha": "59ab8aabc10939b5d262cc5f2e175a1216c939cc",
+  "compare_sha": "31179eb4457907f276edba3666f72153c049a138",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 287,
-  "compare_only_commit_count": 1147,
+  "base_only_commit_count": 289,
+  "compare_only_commit_count": 1164,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -226,6 +226,10 @@
     {
       "status": "A",
       "path": ".github/workflows/latex-audit.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/m7_1_manual_native_backend_smoke.yml"
     },
     {
       "status": "A",
@@ -3040,6 +3044,10 @@
     {
       "status": "A",
       "path": "docs/audit-engine/AE-32C-M6-SNAP-Isolated-Worker-Implementation-and-Acceptance.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M7-Comparative-Backend-Performance-and-Promotion-Policy.md"
     },
     {
       "status": "A",
@@ -6171,6 +6179,10 @@
     },
     {
       "status": "A",
+      "path": "tests/semantic_graph/test_m7_native_backend_performance_benchmark.py"
+    },
+    {
+      "status": "A",
       "path": "tests/semantic_graph/test_path_analysis.py"
     },
     {
@@ -6959,6 +6971,10 @@
     },
     {
       "status": "A",
+      "path": "tools/gb05_native_backend_performance_benchmark.py"
+    },
+    {
+      "status": "A",
       "path": "tools/publish_validation_evidence_bundle.py"
     },
     {
@@ -7423,6 +7439,101 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "59ab8aabc10939b5d262cc5f2e175a1216c939cc",
+      "subject": "Add manual five-backend M7.1 smoke benchmark workflow"
+    },
+    {
+      "side": ">",
+      "sha": "31179eb4457907f276edba3666f72153c049a138",
+      "subject": "docs: bind M7 validation to current Stage1 head"
+    },
+    {
+      "side": ">",
+      "sha": "9df6313d7a1ea4c1e2da0d7ce0a854c4d68782c9",
+      "subject": "docs: make M7 validation target resolve at dispatch time"
+    },
+    {
+      "side": ">",
+      "sha": "2a8a63ef40fb5590d8c84985d696ce23b03816f7",
+      "subject": "docs: advance AE-32C M7.1 implementation status"
+    },
+    {
+      "side": ">",
+      "sha": "9c09abf50561ee159113006bb6642c2cae53e243",
+      "subject": "docs: record M7.1 benchmark scaffold and validation boundary"
+    },
+    {
+      "side": ">",
+      "sha": "23870825c1737ac0a9d0fe2ace3cb72c39e748f0",
+      "subject": "test: include M7 benchmark scaffold in G9.42"
+    },
+    {
+      "side": ">",
+      "sha": "6db8eeabcb1869c809cfdea50bbd41042673d68d",
+      "subject": "test: cover M7 native backend benchmark integrity"
+    },
+    {
+      "side": ">",
+      "sha": "367a58981fa679f14db2b755fa496672f2647e51",
+      "subject": "feat: add parity-gated M7 native backend benchmark harness"
+    },
+    {
+      "side": ">",
+      "sha": "cbf6b526a10010f41f9f3258f64797dc8e4c8340",
+      "subject": "docs: close M5 M6 and open AE-32C M7"
+    },
+    {
+      "side": ">",
+      "sha": "7efb1cd122dcbba83c6eb58efacd14e2010b28b2",
+      "subject": "docs: record exact-commit M5 and M6 acceptance"
+    },
+    {
+      "side": ">",
+      "sha": "11c8c8e950391f16ddb2404d5b5c30ad29948b84",
+      "subject": "docs: open AE-32C M7 comparative backend benchmark protocol"
+    },
+    {
+      "side": ">",
+      "sha": "81eb77aff35afe297a596a91826e016048515c0f",
+      "subject": "test: align graph workflow contract with isolated SNAP worker"
+    },
+    {
+      "side": ">",
+      "sha": "b778f7a4a185e8e8af5bea00659fac5001c65c8d",
+      "subject": "Bind final documentation and profile snapshot to backend conformance run"
+    },
+    {
+      "side": ">",
+      "sha": "aa629427258d63226b03a543f0af4915dc379f5e",
+      "subject": "Record final all-backend E.8.5/E.8.8 success and G9.42 closure gate"
+    },
+    {
+      "side": ">",
+      "sha": "23791bed2e258c203a7bec05ced458cecd867fd7",
+      "subject": "Record final provenance-stamped five-backend conformance success"
+    },
+    {
+      "side": ">",
+      "sha": "c7fe14c52ded38eafbf3153137bf163efaa3f0e6",
+      "subject": "Isolate final Stage1 conformance queue after superseded runner backlog"
+    },
+    {
+      "side": ">",
+      "sha": "02767287a9d5d42034b60e58e6ccacd6012b598c",
+      "subject": "Correct M6 roadmap with successful real SNAP worker conformance evidence"
+    },
+    {
+      "side": ">",
+      "sha": "7b1947bde7e9b81a92355817eb5cb6c2078fbbc0",
+      "subject": "Record successful E.8.5/E.8.8 evidence and exact-commit G9.42 gate"
+    },
+    {
+      "side": "<",
+      "sha": "2af13ec18a655c73d42b3263aaed7f1cad55eb03",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": ">",
       "sha": "c1f97a9402d0d98490eb6ad7efff5f1ae0179c6a",
