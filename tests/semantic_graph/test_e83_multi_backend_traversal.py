@@ -391,6 +391,18 @@ def test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_sc
     assert runtime["backend_execution"]["parity_verified_queries"] == 2
 
 
+def test_reference_both_direction_returns_self_loop_occurrence_once():
+    from audit_engine.semantic_audit.graph.analysis.traversal import GraphTraversalEngine
+
+    result = GraphTraversalEngine(graph_fixture()).walk("C", direction="both", max_depth=1)
+    self_loops = [
+        step for step in result.steps
+        if step.source_id == "C" and step.target_id == "C"
+    ]
+    assert len(self_loops) == 1
+    assert result.examined_edges == 2
+
+
 def test_scipy_both_direction_returns_self_loop_occurrence_once():
     engine = NativeAdapterGraphTraversalEngine(graph_fixture(), "scipy")
     result = engine.walk("C", direction="both", max_depth=1)
@@ -430,4 +442,6 @@ def test_scipy_repository_conformance_routes_context_tools_through_native_adjace
     assert report["graph_to_repository_follow_through"]["verified_read_count"] == 2
     assert report["backend_execution"]["parity_verified_queries"] >= 3
     assert report["context_operation_telemetry"]["trace_execution_context"]["native_adjacency_lookups"] >= 1
+    assert report["context_operation_telemetry"]["trace_execution_context"]["native_edge_occurrences_read"] >= 1
     assert report["context_operation_telemetry"]["find_workflow_context"]["native_adjacency_lookups"] >= 1
+    assert report["context_operation_telemetry"]["find_workflow_context"]["native_edge_occurrences_read"] >= 1
