@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "d0c88b3f7a1d65e46908f94fe293b863805b4c94",
-  "compare_sha": "f3ca30397a5c303746d8a4cb7c1c6da3dd3d7c9e",
+  "base_sha": "0b6a3ed68da2e42509493504c88851c06d64bedd",
+  "compare_sha": "7771d637cd613bf5cfc8c847108cd0c6eb28c98f",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 283,
-  "compare_only_commit_count": 1122,
+  "base_only_commit_count": 285,
+  "compare_only_commit_count": 1131,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -7419,6 +7419,51 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": ">",
+      "sha": "1a09f73cac4e2484ff14bd1eb6812d77f8f6611c",
+      "subject": "Assert SNAP worker has no writable mounts"
+    },
+    {
+      "side": ">",
+      "sha": "bbd408da902bc9444e4facadab2843d64d9de42f",
+      "subject": "Use non-writable home in SNAP worker image"
+    },
+    {
+      "side": ">",
+      "sha": "c8d18077041db5a8cdac164ca31441f4c3deb26e",
+      "subject": "Remove writable temporary mount from SNAP worker container"
+    },
+    {
+      "side": ">",
+      "sha": "5e210acc7050f3da8a7bce57c703916a172d62a2",
+      "subject": "Cancel superseded Stage1 backend conformance pushes"
+    },
+    {
+      "side": ">",
+      "sha": "bc011543230bfa70dfbb5a0f6410b969f28b0a36",
+      "subject": "Fix SNAP worker Python syntax and bounded adjacency constant"
+    },
+    {
+      "side": "<",
+      "sha": "1cae91f51f9632a2643a144b65f092fc3241338c",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": ">",
+      "sha": "71203869e91427b6259d53c6c4f5f0ca2a0ced39",
+      "subject": "Disable Python bytecode writes in read-only SNAP worker"
+    },
+    {
+      "side": ">",
+      "sha": "de90df7b18b5564f308969550df140a783f1763c",
+      "subject": "Enforce hard limit on SNAP worker adjacency response size"
+    },
+    {
+      "side": ">",
+      "sha": "eb0da5580f109818bd8a70e5fa2e3c96672a891a",
+      "subject": "Import worker configuration dependencies in E.8.5 runner"
+    },
     {
       "side": ">",
       "sha": "cb66a6e66ee808334b0cd324f3a469c72034684a",

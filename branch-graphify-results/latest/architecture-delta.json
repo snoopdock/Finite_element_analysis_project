@@ -8,7 +8,7 @@
   "compare": {
     "branch": "stage1-section-uuids",
     "node_count": 17902,
-    "edge_count": 45677
+    "edge_count": 45680
   },
   "nodes": {
     "common_count": 2499,
@@ -17174,10 +17174,10 @@
       "tools_gb03_native_backend_conformance_probe_backend",
       "tools_gb03_native_backend_conformance_py_any",
       "tools_gb03_native_backend_conformance_py_path",
-      "tools_gb03_native_backend_conformance_rationale_136",
+      "tools_gb03_native_backend_conformance_rationale_138",
       "tools_gb03_native_backend_conformance_rationale_2",
-      "tools_gb03_native_backend_conformance_rationale_348",
-      "tools_gb03_native_backend_conformance_rationale_84",
+      "tools_gb03_native_backend_conformance_rationale_350",
+      "tools_gb03_native_backend_conformance_rationale_86",
       "tools_gb03_native_backend_conformance_result_summary",
       "tools_gb03_native_backend_conformance_run",
       "tools_gb03_native_backend_conformance_scenario_definitions",
@@ -17943,7 +17943,7 @@
   "edges": {
     "common_count": 4781,
     "base_only_count": 3009,
-    "compare_only_count": 40896,
+    "compare_only_count": 40899,
     "base_only": [
       [
         "analysis_citation_validator",
@@ -228764,12 +228764,22 @@
       ],
       [
         "tools_gb03_native_backend_conformance",
+        "os",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
         "pathlib",
         "imports_from"
       ],
       [
         "tools_gb03_native_backend_conformance",
         "platform",
+        "imports"
+      ],
+      [
+        "tools_gb03_native_backend_conformance",
+        "shutil",
         "imports"
       ],
       [
@@ -228969,11 +228979,16 @@
       ],
       [
         "tools_gb03_native_backend_conformance_probe_backend",
+        "shutil",
+        "calls"
+      ],
+      [
+        "tools_gb03_native_backend_conformance_probe_backend",
         "tools_gb03_native_backend_conformance_py_any",
         "references"
       ],
       [
-        "tools_gb03_native_backend_conformance_rationale_136",
+        "tools_gb03_native_backend_conformance_rationale_138",
         "tools_gb03_native_backend_conformance_fixture",
         "rationale_for"
       ],
@@ -228983,12 +228998,12 @@
         "rationale_for"
       ],
       [
-        "tools_gb03_native_backend_conformance_rationale_348",
+        "tools_gb03_native_backend_conformance_rationale_350",
         "tools_gb03_native_backend_conformance_run",
         "rationale_for"
       ],
       [
-        "tools_gb03_native_backend_conformance_rationale_84",
+        "tools_gb03_native_backend_conformance_rationale_86",
         "tools_gb03_native_backend_conformance_probe_backend",
         "rationale_for"
       ],
