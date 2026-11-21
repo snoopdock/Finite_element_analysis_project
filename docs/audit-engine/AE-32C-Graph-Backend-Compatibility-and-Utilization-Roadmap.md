@@ -6,8 +6,10 @@
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
 **M1 accepted implementation snapshot:** `fb3f26e0600c5abe894fb54c9b0cecefed2476f2` — typed protocol, NetworkX native adjacency, `BOTH` self-loop correction and conformance states; validated by G9.42 run `44892453883`  
 **M1 validation record:** [AE-32C M1 NetworkX Validation Record](AE-32C-M1-NetworkX-Validation-Record.md) — exact source SHA, 18 focused protocol tests passed, E.8.5/E.8.8 test gates passed, skips and artifact digests recorded  
+**M2 validation record:** [AE-32C M2 NetworkX Context Routing Validation](AE-32C-M2-NetworkX-Context-Routing-Validation.md) — G9.42 run `44894696688`, exact source SHA `9dd02f7f98e0ad25d2225c638ed14bad4bd5d4e6`, all three context operations verified, evidence/provenance catalog passed  
 **M2 implementation snapshot:** `9dd02f7f98e0ad25d2225c638ed14bad4bd5d4e6` — backend-neutral `GraphQuery` routing for repository context tools; validated by G9.42 run `44894696688` (672 targeted passed, 6 skipped; 3,603 regression passed, 14 skipped; evidence and provenance verified)  
-**M3 implementation snapshot:** pending final documentation commit — SciPy CSR outgoing and CSC incoming local edge-occurrence access; exact occurrence side-channel joins; full projection audit isolated to construction; G9.42 validation pending  
+**M3 implementation snapshot:** `56562f32892451c5ddaa8b94f6c877519ec1fdbd` — SciPy CSR outgoing and CSC incoming local edge-occurrence access; exact occurrence side-channel joins; full projection audit isolated to construction; G9.42 validation pending  
+**M3 implementation record:** [AE-32C M3 SciPy Native Sparse Adjacency](AE-32C-M3-SciPy-Native-Sparse-Adjacency.md) — implementation and acceptance boundary recorded; no local tests/workflows run  
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
 **Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
 
