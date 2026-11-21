@@ -1,10 +1,10 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "e8b6b324fce5476e70459a040302ecc8d97975a3",
+  "base_sha": "faddf9f957dd37a9bbf6107e6a0d73ef8f00733b",
   "compare_sha": "c02eaaae23187a05152aca94b1c529b12df9b34f",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 261,
+  "base_only_commit_count": 263,
   "compare_only_commit_count": 1100,
   "base_changes_since_merge_base": [
     {
@@ -7399,6 +7399,16 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "faddf9f957dd37a9bbf6107e6a0d73ef8f00733b",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
+    {
+      "side": "<",
+      "sha": "39854d06c50951c379d37fbad6ed5618990772d6",
+      "subject": "Ensure every backend job checks out selected Stage1 source"
+    },
     {
       "side": ">",
       "sha": "c02eaaae23187a05152aca94b1c529b12df9b34f",
