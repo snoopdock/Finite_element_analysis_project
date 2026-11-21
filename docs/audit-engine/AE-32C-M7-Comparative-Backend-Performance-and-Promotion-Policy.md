@@ -1,10 +1,14 @@
 # AE-32C M7 — Comparative Backend Performance and Promotion Policy
 
-**Status:** M7 opened; protocol design and benchmark-gap analysis only. No performance winner is claimed and no backend is promoted.  
+**Status:** M7 opened; protocol design is committed and the M7.1 single-backend benchmark scaffold plus integrity tests are implemented. Exact G9.42 validation of the scaffold is pending. No performance winner is claimed and no backend is promoted.  
 **Prerequisite acceptance snapshot:** Stage1 `81eb77aff35afe297a596a91826e016048515c0f`  
 **Exact-source E.8.5/E.8.8 run:** [44917397347](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44917397347) — all five backends passed.  
 **Exact-source G9.42 run:** [44917571217](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44917571217) — passed; 53 engine tests, 690 targeted tests, 3,629 regression tests.  
 **Target branch:** `stage1/section-uuids` only.  
+**M7.1 implementation commit:** `367a58981fa679f14db2b755fa496672f2647e51`  
+**M7.1 integrity-test commit:** `6db8eeabcb1869c809cfdea50bbd41042673d68d`  
+**G9.42 profile inclusion commit:** `23870825c1737ac0a9d0fe2ace3cb72c39e748f0`  
+**E.8.5/E.8.8 regression guard:** [run 44918337178](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44918337178) — all five backend jobs passed on commit `6db8eeabcb1869c809cfdea50bbd41042673d68d`; this run did not execute the new M7.1 benchmark test.  
 **Authority boundary:** `production_approval=false`; no automatic backend selection, scientific approval, or graph mutation.
 
 ---
@@ -134,11 +138,14 @@ M7 does not itself change the registry's production approval state. Any later pr
 - define workload, measurement, telemetry and authority contracts;
 - identify existing native instrumentation that can be reused without changing adapter semantics.
 
-**M7.1 — Backend-neutral benchmark harness:**
-- add a harness over the five already-accepted adapters;
-- consume immutable canonical graph fixtures and a shared query manifest;
-- reject missing parity, missing native telemetry or backend fallback;
-- separate setup, validation, traversal, reconstruction and end-to-end timing.
+**M7.1 — Backend-neutral benchmark harness (initial scaffold implemented; exact-profile validation pending):**
+- `tools/gb05_native_backend_performance_benchmark.py` supports all five accepted backend identifiers and their exact native query-mode labels;
+- it consumes the fixed adversarial E.8.5 canonical fixture and a shared seven-query manifest;
+- it runs a parity-enabled preflight, then times a separate parity-disabled engine only after comparing every result with the accepted preflight digest and the independent reference replay;
+- it records construction time, per-query raw timings, descriptive median/p95/min/max/MAD, native adjacency lookups and edge-occurrence reads, backend/library versions, platform and worker provenance;
+- the verifier reconstructs the fixture and reference results, recomputes timing aggregates, and rejects rehashed result/aggregate forgery or authority escalation;
+- `tests/semantic_graph/test_m7_native_backend_performance_benchmark.py` covers the NetworkX smoke path, native telemetry, rehashed result/aggregate tampering, authority boundary and invalid inputs; G9.42 now includes this test.
+- This is deliberately a smoke scaffold, not yet the M7 multi-workload campaign: it does not yet measure process-level memory, separate evidence reconstruction, or SNAP cold-start/IPC components.
 
 **M7.2 — Controlled workload and campaign runner:**
 - add bounded graph topology/scale families and multi-seed repeated measurements;
@@ -170,3 +177,14 @@ M7 does not itself change the registry's production approval state. Any later pr
 - GitHub workflow-dispatch behavior: [GitHub Actions manual workflow documentation](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)
 
 The run artifacts are retained as evidence of correctness and native execution, not as performance measurements.
+
+
+## 11. M7.1 implementation review and immediate validation
+
+The first implementation is deliberately narrow. It reuses the same E.8.5 adversarial fixture and semantic traversal engine as the accepted conformance path rather than creating a second graph/query semantics implementation. The timed engine disables duplicate reference traversal only after a separate parity-enabled preflight; every measured result is compared with the preflight digest, and the verifier independently reconstructs the expected result through `GraphTraversalEngine`.
+
+This avoids timing the reference oracle as if it were native backend work. It also means the current measurements are end-to-end calls to `engine.walk`, including canonical result/evidence construction; they are not yet isolated native-kernel timings. That boundary is stated in the report interpretation and must not be silently relabeled.
+
+The smoke test uses NetworkX in the general G9.42 environment. Full execution of the harness against SciPy, igraph, graph-tool and SNAP requires the same supported environments already used by E.8.5/E.8.8. A dedicated manual benchmark workflow is a separate M7.1 follow-up; timing is intentionally not mixed into the correctness-conformance workflow.
+
+**Next:** run G9.42 against the latest Stage1 head `23870825c1737ac0a9d0fe2ace3cb72c39e748f0`. If the new benchmark tests pass, implement the dedicated manual M7 benchmark controller and execute the same harness in each backend's supported environment. Keep the E.8.5/E.8.8 workflow a correctness gate, not a performance gate.
