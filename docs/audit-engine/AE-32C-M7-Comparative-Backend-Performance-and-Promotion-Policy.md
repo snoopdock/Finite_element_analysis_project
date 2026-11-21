@@ -5,6 +5,8 @@
 **M7.1 benchmark source:** Stage1 SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`  
 **M7.2 implementation:** `tools/gb06_task_suitability_campaign.py`  
 **M7.2 tests:** `tests/semantic_graph/test_m72_task_suitability_campaign.py`  
+**Current M7.2 Stage1 implementation head:** `2638c9cda2acaf5b26b29c427f662f9c921a1176`  
+**Manual campaign controller:** [m7_2_manual_task_suitability_campaign.yml](https://github.com/snoopdock/Finite_element_analysis_project/blob/main/.github/workflows/m7_2_manual_task_suitability_campaign.yml), committed to `main` at `64fa7e662ffa5359fe4430b9273aa4a1bf6691f5`  
 **Target branch:** `stage1/section-uuids` only.  
 **Authority boundary:** `production_approval=false`; no automatic backend selection, scientific approval, graph mutation, or task-suitability decision is granted by M7.
 
