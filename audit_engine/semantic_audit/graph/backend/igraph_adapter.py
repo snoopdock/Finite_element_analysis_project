@@ -100,7 +100,7 @@ class IGraphAdapter(NativeAdapterMixin, SemanticGraphAdapter):
                 or edge["attributes"] != canonical["attributes"]
                 or edge["metadata"] != canonical["metadata"]
             ):
-                raise ValueError("igraph_native_edge_occurrence_semantic_mismatch")
+                raise ValueError("native_edge_projection_semantic_mismatch")
             records.append(NativeEdgeOccurrence(
                 occurrence_id=occurrence,
                 source_id=source,
