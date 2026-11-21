@@ -358,12 +358,14 @@ jobs:
           GRAPH_TOOL: ${{ needs.graph-tool-native.result }}
           SNAP: ${{ needs.snap-isolated-worker.result }}
           SOURCE_SHA: ${{ needs.resolve-source.outputs.source_sha }}
+          REPEATS: ${{ inputs.repeats }}
+          WARMUP: ${{ inputs.warmup }}
         run: |
           {
             echo "## M7.1 five-backend smoke outcome"
             echo "- Immutable source SHA: $SOURCE_SHA"
-            echo "- Requested timed repetitions per query: ${{ inputs.repeats }}"
-            echo "- Requested warm-up calls per query: ${{ inputs.warmup }}"
+            echo "- Requested timed repetitions per query: $REPEATS"
+            echo "- Requested warm-up calls per query: $WARMUP"
             echo "- NetworkX / SciPy / igraph job: $PIP_BACKENDS"
             echo "- graph-tool job: $GRAPH_TOOL"
             echo "- SNAP isolated-worker job: $SNAP"
