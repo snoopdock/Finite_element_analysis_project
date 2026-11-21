@@ -1,6 +1,6 @@
 # AE-32C M1 — Native Graph Adapter Protocol and Conformance Contract
 
-**Status:** M1 implementation in progress; typed protocol and NetworkX-first implementation committed; validation and remaining M1 gates pending  
+**Status:** M1 accepted for the NetworkX adapter contract on the validated Stage1 snapshot; other backend adapters remain unaccepted  
 **Target branch:** `stage1/section-uuids` only  
 **Depends on:** AE-32C Graph Backend Compatibility and Utilization Roadmap; M0 source baseline  
 **Primary objective:** define one verifiable contract for native graph projection and per-node native adjacency before changing adapter implementations.
@@ -29,9 +29,14 @@ The first implementation slice is committed on `stage1/section-uuids`:
   direction semantics, unknown/isolated-node behavior, payload isolation,
   independent self-loop expectations, observational runtime reporting, and proof that the traversal engine invokes the typed adapter method.
 
-This is implementation evidence only. The workflow now includes a NetworkX-only invocation of the focused contract test module. No local tests or workflows were run
-for this commit; NetworkX native acceptance and M1 closure remain pending until
-the exact-commit validation gates in Section 9 are executed and reviewed.
+The implementation was validated on the exact Stage1 source commit by the
+G9.42 Manual Validation Dispatcher run 44892453883. The full regression suite
+includes all 18 tests in `test_m1_adapter_protocol_networkx.py`; the targeted
+profile also executed the E.8.5 and E.8.8 test modules, including the
+repository-conformance runner assertions. The validation record is
+[AE-32C M1 NetworkX Validation Record](AE-32C-M1-NetworkX-Validation-Record.md).
+This acceptance is scoped to the NetworkX protocol and repository path; it does
+not accept SciPy, igraph, graph-tool or SNAP.
 
 
 The current adapter interface describes projection export, capabilities, identity mapping and loss reporting. The traversal path additionally expects native node/edge iteration, while true native query execution requires a per-node adjacency operation. These runtime expectations are not yet expressed as one typed and testable contract.
@@ -337,17 +342,20 @@ No adapter may pass by emulating this operation with a full scan of its saved Py
 
 ## 9. M1 deliverables and exit criteria
 
-M1 is complete only when:
+M1 acceptance review (2026-11-21):
 
-1. The typed adapter protocol and capability schema are finalized.
-2. Direction, parallel-edge, self-loop, edge-occurrence and ordering semantics are explicit.
-3. Runtime reporting is observational and counters distinguish projection audit from local query work.
-4. Reusable structural, behavioral, interaction and fault-injection contract tests exist.
-5. The contract suite passes for NetworkX against its real native library (not yet established; tests have been committed but were not run in this implementation session).
-6. Tests demonstrably fail when native adjacency is replaced by full-graph enumeration or a Python projection scan.
-7. No repository-backed or live acceptance claim is made until the relevant integration gate has run on the exact Stage1 commit.
+1. The typed adapter protocol and capability schema are implemented.
+2. Direction, parallel-edge, self-loop, edge-occurrence and ordering semantics are explicit and independently asserted.
+3. Runtime reporting is observational; projection validation and local query counters are distinct.
+4. Structural, behavioral, interaction and mutation/failure-path tests are present in the focused NetworkX contract module.
+5. All 18 focused NetworkX contract tests passed in the exact-commit G9.42 full regression run.
+6. The tests prohibit full native-edge enumeration and query-time Python reference-adjacency reconstruction; those assertions passed.
+7. The targeted E.8.5/E.8.8 test modules passed. The E.8.8 repository-conformance tests invoked the repository runner and asserted a passing report, hash-bound source reads, backend parity and zero context bypasses.
 
-After M1, M2 completes NetworkX and routes the remaining context/workflow tools. Other adapters are migrated one at a time under the same contract.
+The exact source SHA, test counts, skips, artifact digests and scope limitations are recorded in
+[AE-32C M1 NetworkX Validation Record](AE-32C-M1-NetworkX-Validation-Record.md).
+
+**Acceptance boundary:** M1 is accepted for the NetworkX adapter protocol and its tested repository path. This does not mean all registered backends are accepted, nor does it close the separate SciPy/igraph/graph-tool/SNAP native-adjacency milestones. The standalone E.8.5/E.8.8 workflow was not separately dispatched; equivalent NetworkX and repository-runner test assertions were executed under G9.42 on the exact source SHA.
 
 ## 10. Non-goals
 
