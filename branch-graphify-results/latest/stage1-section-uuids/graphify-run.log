@@ -1,37 +1,37 @@
 [graphify extract] --force: full re-scan, semantic cache reads skipped
-[graphify extract] scanning /tmp/branch-graphify-worktrees-ry3g_zca/stage1-section-uuids
+[graphify extract] scanning /tmp/branch-graphify-worktrees-zx__pd1g/stage1-section-uuids
 [graphify extract] --code-only: skipping 410 non-code file(s) (410 docs, 0 papers, 0 images) — no LLM extraction
-[graphify extract] found 1433 code, 0 docs, 0 papers, 0 images
-[graphify extract] 46 file(s) not classified (no supported extension or shebang), skipped: .git, .gitignore, .gitkeep, BasicTest.lean, Contracts.lean, Convergence.lean (+40 more)
-[graphify extract] AST extraction on 1433 code files...
-  AST cache: 0/1433 files served from cache (0%); 1433 to extract
-  AST extraction: 100/1433 uncached files (6%) [4 workers]
-  AST extraction: 200/1433 uncached files (13%) [4 workers]
-  AST extraction: 300/1433 uncached files (20%) [4 workers]
-  AST extraction: 400/1433 uncached files (27%) [4 workers]
-  AST extraction: 500/1433 uncached files (34%) [4 workers]
-  AST extraction: 600/1433 uncached files (41%) [4 workers]
-  AST extraction: 700/1433 uncached files (48%) [4 workers]
-  AST extraction: 800/1433 uncached files (55%) [4 workers]
-  AST extraction: 900/1433 uncached files (62%) [4 workers]
-  AST extraction: 1000/1433 uncached files (69%) [4 workers]
-  AST extraction: 1100/1433 uncached files (76%) [4 workers]
-  AST extraction: 1200/1433 uncached files (83%) [4 workers]
-  AST extraction: 1300/1433 uncached files (90%) [4 workers]
-  AST extraction: 1400/1433 uncached files (97%) [4 workers]
-  AST extraction: 1433/1433 uncached files (100%) [4 workers]
+[graphify extract] found 1434 code, 0 docs, 0 papers, 0 images
+[graphify extract] 47 file(s) not classified (no supported extension or shebang), skipped: .git, .gitignore, .gitkeep, BasicTest.lean, Contracts.lean, Convergence.lean (+41 more)
+[graphify extract] AST extraction on 1434 code files...
+  AST cache: 0/1434 files served from cache (0%); 1434 to extract
+  AST extraction: 100/1434 uncached files (6%) [4 workers]
+  AST extraction: 200/1434 uncached files (13%) [4 workers]
+  AST extraction: 300/1434 uncached files (20%) [4 workers]
+  AST extraction: 400/1434 uncached files (27%) [4 workers]
+  AST extraction: 500/1434 uncached files (34%) [4 workers]
+  AST extraction: 600/1434 uncached files (41%) [4 workers]
+  AST extraction: 700/1434 uncached files (48%) [4 workers]
+  AST extraction: 800/1434 uncached files (55%) [4 workers]
+  AST extraction: 900/1434 uncached files (62%) [4 workers]
+  AST extraction: 1000/1434 uncached files (69%) [4 workers]
+  AST extraction: 1100/1434 uncached files (76%) [4 workers]
+  AST extraction: 1200/1434 uncached files (83%) [4 workers]
+  AST extraction: 1300/1434 uncached files (90%) [4 workers]
+  AST extraction: 1400/1434 uncached files (97%) [4 workers]
+  AST extraction: 1434/1434 uncached files (100%) [4 workers]
   warning: 16 code file(s) yielded no symbols (0.00 MB) — a data file, or source this extractor models no symbols for: audit_engine/semantic_audit/graph/analysis/__init__.py, audit_engine/semantic_audit/graph/queries/__init__.py, pyproject.toml, tests/fixtures/ae08_gold/app.py, tests/fixtures/ae08_gold/control.py (+11 more)
-[graphify extract] AST extraction incomplete for 2 source(s): /tmp/branch-graphify-worktrees-ry3g_zca/stage1-section-uuids/.github/workflows/e85-native-graph-backend-conformance.yml, /tmp/branch-graphify-worktrees-ry3g_zca/stage1-section-uuids/specs/decisions/R8.9.0_runtime_integration_boundary_decision.yaml; failed sources will not replace saved AST records and remain pending for retry.
-[graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/stage1-section-uuids/graphify-out/graph.json: 17788 nodes, 45464 edges, 991 communities
+[graphify extract] AST extraction incomplete for 2 source(s): /tmp/branch-graphify-worktrees-zx__pd1g/stage1-section-uuids/.github/workflows/e85-native-graph-backend-conformance.yml, /tmp/branch-graphify-worktrees-zx__pd1g/stage1-section-uuids/specs/decisions/R8.9.0_runtime_integration_boundary_decision.yaml; failed sources will not replace saved AST records and remain pending for retry.
+[graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/stage1-section-uuids/graphify-out/graph.json: 17798 nodes, 45489 edges, 1004 communities
 [graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/stage1-section-uuids/graphify-out/.graphify_analysis.json
 [graphify extract] next: run `graphify cluster-only /home/runner/work/_temp/branch-graphify-results/latest/stage1-section-uuids` to generate GRAPH_REPORT.md and name communities
 
 
 --- cluster-only ---
 Loading existing graph...
-Graph: 17788 nodes, 45464 edges
+Graph: 17798 nodes, 45489 edges
 Re-clustering...
-Graph has 17788 nodes (above 5000 limit). Building aggregated community view...
-graph.html written (aggregated: 991 community nodes, 1914 cross-community edges)
+Graph has 17798 nodes (above 5000 limit). Building aggregated community view...
+graph.html written (aggregated: 1004 community nodes, 2151 cross-community edges)
 Tip: run with --obsidian for full node-level detail.
-Done - 991 communities. GRAPH_REPORT.md, graph.json and graph.html updated.
+Done - 1004 communities. GRAPH_REPORT.md, graph.json and graph.html updated.

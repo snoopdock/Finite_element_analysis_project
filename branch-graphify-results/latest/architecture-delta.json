@@ -7,13 +7,13 @@
   },
   "compare": {
     "branch": "stage1-section-uuids",
-    "node_count": 17788,
-    "edge_count": 45464
+    "node_count": 17798,
+    "edge_count": 45489
   },
   "nodes": {
     "common_count": 2438,
     "base_only_count": 2583,
-    "compare_only_count": 15350,
+    "compare_only_count": 15360,
     "base_only": [
       "abc",
       "analysis_citation_validator_rationale_128",
@@ -17252,6 +17252,16 @@
       "tools_snap_python39_compatibility_smoke_main",
       "tools_snap_python39_compatibility_smoke_rationale_2",
       "tools_snap_python39_compatibility_smoke_run",
+      "tools_snap_worker",
+      "tools_snap_worker_adjacency",
+      "tools_snap_worker_audit",
+      "tools_snap_worker_edge_record",
+      "tools_snap_worker_fail",
+      "tools_snap_worker_handle",
+      "tools_snap_worker_init",
+      "tools_snap_worker_json_value",
+      "tools_snap_worker_main",
+      "tools_snap_worker_rationale_3",
       "tools_validate_ae32c_e7_graph",
       "tools_validate_ae32c_e7_graph_main",
       "tools_validate_ae32c_e7_graph_rationale_2",
@@ -17955,7 +17965,7 @@
   "edges": {
     "common_count": 4707,
     "base_only_count": 3088,
-    "compare_only_count": 40757,
+    "compare_only_count": 40782,
     "base_only": [
       [
         "analysis_citation_validator",
@@ -229818,6 +229828,131 @@
         "tools_snap_python39_compatibility_smoke_run",
         "platform",
         "calls"
+      ],
+      [
+        "tools_snap_worker",
+        "json",
+        "imports"
+      ],
+      [
+        "tools_snap_worker",
+        "platform",
+        "imports"
+      ],
+      [
+        "tools_snap_worker",
+        "sys",
+        "imports"
+      ],
+      [
+        "tools_snap_worker",
+        "tools_snap_worker_adjacency",
+        "contains"
+      ],
+      [
+        "tools_snap_worker",
+        "tools_snap_worker_audit",
+        "contains"
+      ],
+      [
+        "tools_snap_worker",
+        "tools_snap_worker_edge_record",
+        "contains"
+      ],
+      [
+        "tools_snap_worker",
+        "tools_snap_worker_fail",
+        "contains"
+      ],
+      [
+        "tools_snap_worker",
+        "tools_snap_worker_handle",
+        "contains"
+      ],
+      [
+        "tools_snap_worker",
+        "tools_snap_worker_init",
+        "contains"
+      ],
+      [
+        "tools_snap_worker",
+        "tools_snap_worker_json_value",
+        "contains"
+      ],
+      [
+        "tools_snap_worker",
+        "tools_snap_worker_main",
+        "contains"
+      ],
+      [
+        "tools_snap_worker_adjacency",
+        "tools_snap_worker_edge_record",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_adjacency",
+        "tools_snap_worker_fail",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_audit",
+        "tools_snap_worker_edge_record",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_audit",
+        "tools_snap_worker_fail",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_edge_record",
+        "tools_snap_worker_fail",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_handle",
+        "tools_snap_worker_adjacency",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_handle",
+        "tools_snap_worker_audit",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_handle",
+        "tools_snap_worker_fail",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_handle",
+        "tools_snap_worker_init",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_init",
+        "tools_snap_worker_fail",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_init",
+        "tools_snap_worker_json_value",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_json_value",
+        "tools_snap_worker_fail",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_main",
+        "tools_snap_worker_handle",
+        "calls"
+      ],
+      [
+        "tools_snap_worker_rationale_3",
+        "tools_snap_worker",
+        "rationale_for"
       ],
       [
         "tools_validate_ae32c_e7_graph",

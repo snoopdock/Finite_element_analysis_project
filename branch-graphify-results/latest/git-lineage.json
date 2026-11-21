@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "f608d4f83272cb0260be64163d08dcdcaf20fd68",
-  "compare_sha": "c02eaaae23187a05152aca94b1c529b12df9b34f",
+  "base_sha": "952c3e2a713abe34bca3259b20354897352f2271",
+  "compare_sha": "6d198138dcc3c5e7bd87de64d9b7d9594b785509",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 275,
-  "compare_only_commit_count": 1100,
+  "base_only_commit_count": 277,
+  "compare_only_commit_count": 1103,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -636,6 +636,10 @@
     {
       "status": "A",
       "path": ".github/environments/e85-snap-python39-requirements.txt"
+    },
+    {
+      "status": "A",
+      "path": ".github/snap-worker/Dockerfile"
     },
     {
       "status": "A",
@@ -6995,6 +6999,10 @@
     },
     {
       "status": "A",
+      "path": "tools/snap_worker.py"
+    },
+    {
+      "status": "A",
       "path": "tools/validate_ae32c_e7_graph.py"
     },
     {
@@ -7403,6 +7411,31 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": ">",
+      "sha": "6d198138dcc3c5e7bd87de64d9b7d9594b785509",
+      "subject": "Add isolated Python 3.9 SNAP worker image"
+    },
+    {
+      "side": ">",
+      "sha": "e3ea2f006548d88194fca4147696831090933c88",
+      "subject": "Add restricted SNAP 6.0 JSON-lines adjacency worker"
+    },
+    {
+      "side": "<",
+      "sha": "952c3e2a713abe34bca3259b20354897352f2271",
+      "subject": "Extend E.8.8 repository conformance to SciPy and igraph"
+    },
+    {
+      "side": ">",
+      "sha": "c96e98b4b5d984b3999f821ced6c2491a98d1711",
+      "subject": "Extend E.8.8 repository conformance to SciPy and igraph"
+    },
+    {
+      "side": "<",
+      "sha": "0b67d78b1c6ae3366e51330dccfac70407d13d6c",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "f608d4f83272cb0260be64163d08dcdcaf20fd68",
