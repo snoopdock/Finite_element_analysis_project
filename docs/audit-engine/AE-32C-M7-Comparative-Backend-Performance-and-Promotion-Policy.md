@@ -6,7 +6,7 @@
 **M7.2 implementation:** `tools/gb06_task_suitability_campaign.py`  
 **M7.2 tests:** `tests/semantic_graph/test_m72_task_suitability_campaign.py`  
 **M7.2 campaign source SHA:** `1122916e8a56abec43cf3d42f8b2d252533e81c1`  
-**M7.3 verifier source snapshot:** `3c1f06578e229b67d1eb8d3af199f0320bdfb1e6`  
+**M7.3 verifier source snapshot:** `3aee9dcadd46348a80bb5a7433276e8ce655a122`  
 **Manual campaign controller:** [m7_2_manual_task_suitability_campaign.yml](https://github.com/snoopdock/Finite_element_analysis_project/blob/main/.github/workflows/m7_2_manual_task_suitability_campaign.yml), committed to `main` at `64fa7e662ffa5359fe4430b9273aa4a1bf6691f5`  
 **Target branch:** `stage1/section-uuids` only.  
 **Authority boundary:** `production_approval=false`; no automatic backend selection, scientific approval, graph mutation, or task-suitability decision is granted by M7.
@@ -228,7 +228,7 @@ The five GitHub artifact identities and report digests are retained in the campa
 
 ## 15.6 M7.3 independent detached-artifact dossier — implementation
 
-M7.3 adds tools/gb07_campaign_dossier.py, tests/semantic_graph/test_m73_campaign_dossier.py, and the G9.42 profile entry for the new test module. The manual controller is .github/workflows/m7_3_detached_campaign_dossier.yml on main, updated on main through 2ebe2dc55038363357d2c540e561f08f5254d311.
+M7.3 adds tools/gb07_campaign_dossier.py, tests/semantic_graph/test_m73_campaign_dossier.py, and the G9.42 profile entry for the new test module. The manual controller is .github/workflows/m7_3_detached_campaign_dossier.yml on main, updated on main through bd5260926d468876dc58182e2c310237ffe9e5c9.
 
 The verifier consumes detached reports, run/verification logs and a GitHub Actions artifact metadata manifest. It checks:
 - exactly one unexpired artifact for each of the five backends, with artifact IDs, GitHub SHA-256 metadata, campaign run/attempt naming and one controller revision;
