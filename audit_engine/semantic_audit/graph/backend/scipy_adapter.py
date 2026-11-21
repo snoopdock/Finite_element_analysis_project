@@ -5,7 +5,10 @@ from copy import deepcopy
 from typing import Any, Dict
 
 import numpy as np
-from scipy.sparse import csr_matrix
+from scipy.sparse import csc_matrix, csr_matrix
+
+from audit_engine.semantic_audit.graph.analysis.models import TraversalDirection
+from audit_engine.semantic_audit.graph.backend.adapter_interface import NativeEdgeOccurrence
 
 from audit_engine.semantic_audit.core.semantic_graph import SemanticGraph
 from audit_engine.semantic_audit.graph.backend.adapter_interface import SemanticGraphAdapter
@@ -69,6 +72,17 @@ class SciPyAdapter(SemanticGraphAdapter):
         )
         self.matrix.sum_duplicates()
         self.matrix.sort_indices()
+        # CSR is the authoritative outgoing index. CSC is a one-time native
+        # transpose index for incoming queries; neither query path scans edges.
+        self.matrix_csc = self.matrix.tocsc(copy=True)
+        self.matrix_csc.sort_indices()
+        self._adjacency_metrics = {
+            "native_adjacency_lookups": 0,
+            "csr_row_lookups": 0,
+            "csc_column_lookups": 0,
+            "native_pair_entries_read": 0,
+            "native_edge_occurrences_read": 0,
+        }
 
     def _node_payload(self, node_id: str) -> dict:
         item = self.metadata["nodes"][node_id]
@@ -87,8 +101,13 @@ class SciPyAdapter(SemanticGraphAdapter):
     def iter_native_edges(self):
         if not isinstance(self.matrix, csr_matrix):
             raise ValueError("scipy_projection_not_csr")
-        if self.matrix.shape != (len(self.node_to_index), len(self.node_to_index)):
+        if not isinstance(self.matrix_csc, csc_matrix):
+            raise ValueError("scipy_projection_not_csc")
+        expected_shape = (len(self.node_to_index), len(self.node_to_index))
+        if self.matrix.shape != expected_shape or self.matrix_csc.shape != expected_shape:
             raise ValueError("scipy_projection_shape_mismatch")
+        if (self.matrix.tocsc() != self.matrix_csc).nnz:
+            raise ValueError("scipy_csr_csc_index_mismatch")
         seen = set()
         for source_index in range(self.matrix.shape[0]):
             start = int(self.matrix.indptr[source_index])
@@ -124,6 +143,90 @@ class SciPyAdapter(SemanticGraphAdapter):
                     }
         if len(seen) != len(self._projection.edges):
             raise ValueError("scipy_projection_edge_count_mismatch")
+
+
+    def _occurrences_for_pair(self, source_index: int, target_index: int, stored_count: int):
+        """Resolve one native sparse coordinate to its exact edge occurrences."""
+        if isinstance(stored_count, bool) or stored_count < 1:
+            raise ValueError("scipy_projection_multiplicity_invalid")
+        occurrences = self._pair_occurrences.get((source_index, target_index), ())
+        if len(occurrences) != stored_count:
+            raise ValueError("scipy_projection_multiplicity_mismatch")
+        source_id = self.index_to_node[source_index]
+        target_id = self.index_to_node[target_index]
+        records = []
+        for occurrence in occurrences:
+            if type(occurrence) is not int or not 0 <= occurrence < len(self.metadata["edges"]):
+                raise ValueError("scipy_projection_occurrence_invalid")
+            relation = self.relations[occurrence]
+            payload = self.metadata["edges"][occurrence]
+            if (
+                relation.get("occurrence") != occurrence
+                or relation.get("source") != source_id
+                or relation.get("target") != target_id
+                or payload.get("occurrence") != occurrence
+                or payload.get("source") != source_id
+                or payload.get("target") != target_id
+                or payload.get("relation") != relation.get("relation")
+            ):
+                raise ValueError("scipy_projection_side_channel_identity_mismatch")
+            records.append(NativeEdgeOccurrence(
+                occurrence_id=occurrence,
+                source_id=source_id,
+                target_id=target_id,
+                relation_type=relation["relation"],
+                attributes=deepcopy(payload["attributes"]),
+                metadata=deepcopy(payload["metadata"]),
+                backend_edge_ref=("scipy", source_index, target_index, occurrence),
+            ))
+        return records
+
+    def iter_adjacent_edge_occurrences(self, node_id: str, direction: TraversalDirection):
+        """Read only the requested CSR row and/or CSC column.
+
+        Parallel edges are expanded through the occurrence side channel. BOTH
+        is a set union by occurrence ID, so a self-loop is returned once.
+        """
+        if node_id not in self.node_to_index:
+            raise KeyError(node_id)
+        if isinstance(direction, str):
+            direction = TraversalDirection(direction)
+        if not isinstance(direction, TraversalDirection):
+            raise ValueError("scipy_adjacency_direction_invalid")
+
+        self._adjacency_metrics["native_adjacency_lookups"] += 1
+        index = self.node_to_index[node_id]
+        records_by_occurrence = {}
+
+        if direction in (TraversalDirection.OUTGOING, TraversalDirection.BOTH):
+            self._adjacency_metrics["csr_row_lookups"] += 1
+            start = int(self.matrix.indptr[index])
+            stop = int(self.matrix.indptr[index + 1])
+            for position in range(start, stop):
+                target_index = int(self.matrix.indices[position])
+                count = int(self.matrix.data[position])
+                self._adjacency_metrics["native_pair_entries_read"] += 1
+                for record in self._occurrences_for_pair(index, target_index, count):
+                    records_by_occurrence[record.occurrence_id] = record
+
+        if direction in (TraversalDirection.INCOMING, TraversalDirection.BOTH):
+            self._adjacency_metrics["csc_column_lookups"] += 1
+            start = int(self.matrix_csc.indptr[index])
+            stop = int(self.matrix_csc.indptr[index + 1])
+            for position in range(start, stop):
+                source_index = int(self.matrix_csc.indices[position])
+                count = int(self.matrix_csc.data[position])
+                self._adjacency_metrics["native_pair_entries_read"] += 1
+                for record in self._occurrences_for_pair(source_index, index, count):
+                    records_by_occurrence[record.occurrence_id] = record
+
+        records = [records_by_occurrence[key] for key in sorted(records_by_occurrence)]
+        self._adjacency_metrics["native_edge_occurrences_read"] += len(records)
+        return tuple(records)
+
+    def native_adjacency_report(self) -> dict:
+        """Return counters only; reporting never enumerates the sparse graph."""
+        return dict(self._adjacency_metrics)
 
     def export(self):
         return self.matrix
