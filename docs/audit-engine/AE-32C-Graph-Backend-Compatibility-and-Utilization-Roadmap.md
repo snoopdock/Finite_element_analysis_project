@@ -1,11 +1,12 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0 closed; M1 typed protocol and NetworkX-first implementation committed; exact-commit validation and remaining M1 gates pending  
+**Status:** M0 closed; M1 accepted for NetworkX; M2 context/workflow routing implementation in progress and awaiting exact-commit validation  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
-**M1 implementation snapshot:** `251cab427ba2d6c395dafe9910007ffcc3dd918f` — typed protocol, NetworkX traversal routed through adapter adjacency, `BOTH` self-loop correction, explicit conformance states, and cached observational runtime counts; validation not run  
-**M1 workflow scope update:** `f9299754e14274a918eb2d8893b31de602405f08` — run the new protocol suite in the NetworkX job and defer non-NetworkX repository acceptance until native local adjacency exists  
+**M1 accepted implementation snapshot:** `fb3f26e0600c5abe894fb54c9b0cecefed2476f2` — typed protocol, NetworkX native adjacency, `BOTH` self-loop correction and conformance states; validated by G9.42 run `44892453883`  
+**M1 validation record:** [AE-32C M1 NetworkX Validation Record](AE-32C-M1-NetworkX-Validation-Record.md) — exact source SHA, 18 focused protocol tests passed, E.8.5/E.8.8 test gates passed, skips and artifact digests recorded  
+**M2 implementation snapshot:** `7e9a680e41dfb4fd322aeba29ddd18e10b3b490f` — context adjacency now uses backend-neutral `GraphQuery` service operations; backend-specific hook bypass regression test added; validation pending  
 **Scope:** Semantic graph adapters, native-library compatibility, traversal behavior, graph-tool routing, repository-backed conformance and later runtime utilization  
 **Change policy:** No branch creation, no work on `main`, no history rewriting, and no backend promotion without evidence-based acceptance.
 
@@ -264,9 +265,9 @@ Work:
 
 **Exit:** a backend-neutral protocol specification and a failing/passing conformance suite that can be applied to each adapter.
 
-### M2 — Complete NetworkX and graph-tool routing
+### M2 — Complete NetworkX-backed routing for repository graph tools
 
-**Purpose:** finish the strongest adapter first and establish a reference-quality integration pattern.
+**Purpose:** finish the strongest adapter first and establish a reference-quality integration pattern. This milestone concerns routing the repository's graph-derived tools through the selected backend; it does not mean the separate graph-tool native library is accepted (that remains M5).
 
 Work:
 - verify E.8.8.1 native `succ`/`pred` access and its tests at the exact baseline;
@@ -275,7 +276,7 @@ Work:
 - preserve type-checking import exclusions, bounds, line provenance, evidence shape and error behavior;
 - expand repository conformance so each in-scope graph tool is checked for backend query deltas.
 
-**Exit:** NetworkX passes all structural, behavior, interaction and repository gates; no undocumented graph-tool bypass remains.
+**Exit:** NetworkX passes all structural, behavioral, interaction and repository gates; `trace_execution_context` and `find_workflow_context` use backend-neutral graph queries with preserved domain semantics; no graph-derived tool silently bypasses the selected backend.
 
 ### M3 — SciPy native sparse adjacency
 
@@ -496,18 +497,18 @@ M0 closure does not imply that every backend has native query conformance. The o
 
 ## 10. Immediate next work
 
-Proceed with **M1**. M0's source-to-test traceability baseline is closed and recorded in [AE-32C M0 — Architecture Baseline and Traceability Close-out](AE-32C-M0-Closure-and-Traceability.md).
+**M1 is accepted for the NetworkX adapter contract and its tested repository-backed path.** The exact-commit evidence is recorded in [AE-32C M1 NetworkX Validation Record](AE-32C-M1-NetworkX-Validation-Record.md). G9.42 run `44892453883` checked out source SHA `fb3f26e0600c5abe894fb54c9b0cecefed2476f2`; all 18 focused M1 tests passed in regression, and the targeted E.8.5/E.8.8 modules passed. This acceptance does not extend to other native backends.
 
-The M1 specification and implementation record are in [AE-32C M1 — Native Graph Adapter Protocol and Conformance Contract](AE-32C-M1-Adapter-Protocol-and-Conformance-Contract.md). The typed adapter interface, NetworkX local adjacency, and `BOTH` self-loop correction are committed; exact-commit tests have not been run, so M1 is not accepted or closed. It defines exact edge-occurrence adjacency, direction/self-loop semantics, capability/acceptance states, observational telemetry, and structural/behavioral/interaction/fault-injection tests.
+**M2 is now in progress.** The initial implementation is documented in [AE-32C M2 — Context and Workflow Tool Backend Routing](AE-32C-M2-Context-Tool-Backend-Routing.md). Commits `7d9e8f1aac3b873e689a45f525060c60420314bc` and `7e9a680e41dfb4fd322aeba29ddd18e10b3b490f` replace the backend-specific context adjacency hook and canonical-edge fallback with backend-neutral one-hop `GraphQuery` operations, preserve context-tool-owned BFS semantics, add operation-level telemetry, and add a regression guard.
 
 Next:
-1. Review the committed typed protocol and NetworkX implementation, especially occurrence identity and the `BOTH` self-loop rule.
-2. Run the new `test_m1_adapter_protocol_networkx.py` plus E.8.2/E.8.8 anti-full-scan and repository tests on the exact Stage1 commit.
-3. The E.8.5/E.8.8 workflow now runs the M1 protocol tests in its NetworkX job. Run it on this exact branch head; inspect NetworkX results separately; the workflow intentionally does not run repository acceptance for non-NetworkX adapters until their native local adjacency exists.
-4. Fix any failures and complete the remaining M1 lifecycle/fault-injection and reusable conformance gates.
-5. Only after real NetworkX structural, behavioral and native-interaction evidence passes, extend the contract to SciPy, igraph, graph-tool and SNAP individually.
+1. Validate the current M2 branch head with G9.42; no local tests or workflows have been run for the M2 commits.
+2. Review the new context routing test and inspect the exact run's operation-level telemetry for direct and nested context operations.
+3. Confirm type-checking-only import exclusion, source-line provenance, workflow relationship handling, active-workflow scope, traversal bounds and truncation semantics.
+4. If validation passes, close M2 with a separate exact-commit validation record. If it fails, correct the implementation and rerun.
+5. Proceed to M3 only after M2 acceptance. M3 is the separate SciPy CSR/CSC native adjacency milestone.
 
-Do not begin E.8.8.3/SciPy native adjacency before the M1 contract and its NetworkX proof are accepted. No live provider test should compensate for missing deterministic conformance.
+The dedicated E.8.5/E.8.8 workflow was not separately dispatched for M1; the equivalent M1 and repository-runner test assertions passed under G9.42. Do not infer SciPy, igraph, graph-tool or SNAP acceptance from this result. No live provider test substitutes for deterministic adapter conformance.
 
 ## 11. Change and evidence discipline
 
