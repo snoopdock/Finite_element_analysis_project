@@ -345,11 +345,11 @@ Validation still required:
 - The dedicated conda-forge E.8.5/E.8.8 workflow now runs graph-tool adapter tests, synthetic native conformance and repository-backed context/source conformance.
 
 
-Work:
-- use per-vertex incoming/outgoing edge iterators or equivalent indexed APIs;
-- verify property-map types, object-valued payload behavior and mutation semantics;
-- test parallel edges, self-loops, semantic IDs and occurrence identity;
-- use a reproducible supported graph-tool environment and record exact versions.
+**Remaining validation work:**
+- execute the dedicated conda-forge E.8.5/E.8.8 workflow against the exact latest Stage1 SHA and record graph-tool version;
+- resolve any real-library incompatibilities without weakening occurrence identity, payload validation or bounded local adjacency;
+- run G9.42 on that same exact Stage1 SHA and verify complete regression, evidence integrity, immutable bundle and provenance catalog;
+- accept only when both reports bind to the same source commit and all repository context operations show native graph-tool execution.
 
 **Exit:** graph-tool passes all shared acceptance gates in its supported environment; serialization limitations remain explicit.
 
