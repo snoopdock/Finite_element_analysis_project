@@ -197,7 +197,10 @@ def test_registry_separates_discovery_from_conformance_and_approval():
     assert igraph_state["native_adjacency_implementation"] == "implemented_unvalidated"
     assert igraph_state["native_adjacency_conformance"] == "not_run"
     assert igraph_state["production_approval"] is False
-    for backend in ("graph-tool", "snap"):
-        state = capabilities[backend]["acceptance_state"]
-        assert state["native_adjacency_implementation"] == "not_implemented"
-        assert state["production_approval"] is False
+    graph_tool_state = capabilities["graph-tool"]["acceptance_state"]
+    assert graph_tool_state["native_adjacency_implementation"] == "implemented_unvalidated"
+    assert graph_tool_state["native_adjacency_conformance"] == "not_run"
+    assert graph_tool_state["production_approval"] is False
+    snap_state = capabilities["snap"]["acceptance_state"]
+    assert snap_state["native_adjacency_implementation"] == "not_implemented"
+    assert snap_state["production_approval"] is False
