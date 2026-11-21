@@ -92,12 +92,12 @@ def test_repository_conformance_runner_requires_native_context_tool_routing():
     assert report["graph_to_repository_follow_through"]["verified_read_count"] == 2
     assert report["backend_execution"]["parity_verified_queries"] >= 3
     assert report["backend_queries"]["trace_execution_context"]["backend_execution"] == (
-        "networkx_native_successor_predecessor_adjacency"
+        "networkx_successor_predecessor_adjacency"
     )
     assert report["backend_queries"]["trace_execution_context"]["telemetry"]["native_adjacency_lookups"] >= 1
     assert report["backend_queries"]["trace_nested_find_workflow_context"]["telemetry"]["parity_verified"] >= 1
     assert report["backend_queries"]["find_workflow_context"]["backend_execution"] == (
-        "networkx_native_successor_predecessor_adjacency"
+        "networkx_successor_predecessor_adjacency"
     )
     assert report["backend_queries"]["find_workflow_context"]["telemetry"]["native_adjacency_lookups"] >= 1
 
