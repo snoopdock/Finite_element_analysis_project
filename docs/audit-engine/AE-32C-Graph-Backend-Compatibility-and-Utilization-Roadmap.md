@@ -436,7 +436,13 @@ The reviewed baseline's combined commit status query returned an empty status li
 
 Proceed with **M1**, after completing the remaining M0 traceability checks. Do not start by implementing all backends at once.
 
-The first M1 deliverable is a written adapter protocol and conformance matrix. The test specification must be reviewed before modifying adapter implementations. NetworkX then serves as the first implementation of that contract; SciPy, igraph, graph-tool and SNAP follow one at a time.
+The initial M1 specification is now drafted in [AE-32C M1 — Native Graph Adapter Protocol and Conformance Contract](AE-32C-M1-Adapter-Protocol-and-Conformance-Contract.md). It is a proposed contract, not an accepted implementation or a claim that its tests have run. It defines exact edge-occurrence adjacency, explicit direction/self-loop semantics, capability/acceptance states, observational telemetry, and structural/behavioral/interaction/fault-injection tests.
+
+Next:
+1. Finish the remaining M0 source-to-test and tool-routing traceability checks.
+2. Review/finalize the M1 protocol and test matrix.
+3. Implement the protocol and contract tests with NetworkX first.
+4. Only after the real NetworkX tests pass, migrate other backends individually.
 
 No live provider test should be used to compensate for a missing deterministic structural or behavioral test.
 
