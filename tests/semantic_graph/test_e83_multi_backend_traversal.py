@@ -95,6 +95,17 @@ class _FakeIGraph:
     def add_edges(self, pairs):
         self.es.pairs.extend(tuple(pair) for pair in pairs)
 
+    def incident(self, vertex, mode="all"):
+        result = []
+        for edge_id, (source, target) in enumerate(self.es.pairs):
+            if mode == "out" and source == vertex:
+                result.append(edge_id)
+            elif mode == "in" and target == vertex:
+                result.append(edge_id)
+            elif mode == "all" and (source == vertex or target == vertex):
+                result.append(edge_id)
+        return result
+
 
 class _FakeProperty(dict):
     @staticmethod
@@ -297,6 +308,48 @@ def test_optional_native_adapter_is_used_by_live_query_path(monkeypatch, backend
     assert runtime["backend_pipeline"]["backend"] == backend
 
 
+def test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans(monkeypatch):
+    install_fake(monkeypatch, "igraph")
+    engine = NativeAdapterGraphTraversalEngine(graph_fixture(), "igraph")
+    adapter = engine.adapter
+    assert engine.runtime_report()["backend_execution"]["native_projection_reads"] == 12
+
+    def forbidden_full_nodes():
+        raise AssertionError("igraph_full_node_enumeration_during_query_or_report")
+
+    def forbidden_full_edges():
+        raise AssertionError("igraph_full_edge_enumeration_during_query_or_report")
+
+    monkeypatch.setattr(adapter, "iter_native_nodes", forbidden_full_nodes)
+    monkeypatch.setattr(adapter, "iter_native_edges", forbidden_full_edges)
+
+    outgoing = engine.walk("A", direction="outgoing", max_depth=1)
+    assert [(step.source_id, step.target_id, step.relation_type) for step in outgoing.steps] == [
+        ("A", "B", "DEPENDS_ON"), ("A", "B", "IMPORTS"),
+    ]
+    incoming = engine.walk("A", direction="incoming", max_depth=1)
+    assert [(step.source_id, step.target_id, step.relation_type) for step in incoming.steps] == [
+        ("D", "A", "IMPORTS"),
+    ]
+    both = engine.walk("C", direction="both", max_depth=1)
+    self_loops = [
+        step for step in both.steps
+        if step.source_id == "C" and step.target_id == "C"
+    ]
+    assert len(self_loops) == 1
+    assert both.examined_edges == 2
+
+    runtime = engine.runtime_report()
+    assert runtime["backend_native_query_mode"] == "igraph_incident_edge_ids"
+    assert runtime["projection_node_count"] == len(graph_fixture().nodes)
+    assert runtime["projection_edge_occurrence_count"] == len(graph_fixture().edges)
+    assert runtime["native_adjacency"]["native_adjacency_lookups"] == 3
+    assert runtime["native_adjacency"]["outgoing_incident_edge_lookups"] == 2
+    assert runtime["native_adjacency"]["incoming_incident_edge_lookups"] == 2
+    assert runtime["native_adjacency"]["native_edge_occurrences_read"] == 5
+    assert runtime["backend_execution"]["parity_verified_queries"] == 3
+
+
 def test_native_projection_mutation_fails_closed(monkeypatch):
     install_fake(monkeypatch, "igraph")
     graph = graph_fixture()
@@ -322,6 +375,10 @@ def test_backend_registry_marks_all_adapters_as_semantic_query_capable():
     registry = create_default_registry()
     for backend in ("networkx", "scipy", "igraph", "graph-tool", "snap"):
         assert registry.get(backend)["capabilities"]["semantic_traversal"] is True
+    assert registry.get("igraph")["capabilities"]["acceptance_state"]["native_adjacency_implementation"] == "implemented_unvalidated"
+    assert registry.get("igraph")["capabilities"]["acceptance_state"]["production_approval"] is False
+    assert registry.get("graph-tool")["capabilities"]["acceptance_state"]["native_adjacency_implementation"] == "not_implemented"
+    assert registry.get("snap")["capabilities"]["acceptance_state"]["native_adjacency_implementation"] == "not_implemented"
 
 
 @pytest.mark.parametrize(
