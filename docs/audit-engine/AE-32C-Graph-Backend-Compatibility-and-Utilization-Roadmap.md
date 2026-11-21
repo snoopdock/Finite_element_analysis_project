@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0 closed; M1 NetworkX accepted; M2 NetworkX repository context routing accepted; M3 SciPy and M4 python-igraph accepted for their recorded exact Stage1 snapshots; M5 graph-tool accepted for exact SHA `9adc99b9511d0281b18be76d60865dcf13bb16b0`; E.8.8 is now extended to NetworkX, SciPy, igraph, graph-tool and SNAP; M6 SNAP isolated-worker implementation is present but real worker conformance is pending retry after a graph-fingerprint format correction; production approval remains false  
+**Status:** M0 closed; M1 NetworkX accepted; M2 NetworkX repository context routing accepted; M3 SciPy and M4 python-igraph accepted for their recorded exact Stage1 snapshots; M5 graph-tool accepted for exact SHA `9adc99b9511d0281b18be76d60865dcf13bb16b0`; E.8.8 is now extended to NetworkX, SciPy, igraph, graph-tool and SNAP; M6 SNAP isolated-worker E.8.5 and E.8.8 conformance passed on Stage1 SHA `425c0f7378bfe190da81b10b0f6e0b22c3df4f41`; exact-current-commit G9.42 validation remains pending; production approval remains false  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -616,7 +616,9 @@ The M6 worker implementation consists of:
 - `tools/gb03_native_backend_conformance.py`: refuses to mark SNAP E.8.5 as passed unless the isolated worker adapter is active and native adjacency telemetry is observed.
 - `tools/gb04_repository_backend_conformance.py`: includes worker image/runtime provenance in the E.8.8 report.
 
-The worker container is launched with network disabled, a read-only root filesystem, no repository bind mount, dropped Linux capabilities, no-new-privileges, a non-root identity and explicit CPU/memory/PID limits. The Docker build itself needs network access to fetch its base image and the pinned binary wheel; the runtime worker container does not have network access. The Docker image ID is recorded in the workflow environment and worker evidence.
+The worker container is launched with network disabled, a read-only root filesystem, no writable mounts, IPC disabled, no repository bind mount, dropped Linux capabilities, no-new-privileges, a non-root identity and explicit CPU/memory/PID limits. The Docker build itself needs network access to fetch its base image and the pinned binary wheel; the runtime worker container does not have network access. The Docker image ID is recorded in the workflow environment and worker evidence.
+
+In run `44914959176`, SNAP E.8.5 completed 14/14 queries with zero parity failures, 34 native adjacency lookups and 96 edge occurrences read. SNAP E.8.8 completed 43/43 repository queries with zero parity failures, 45 native adjacency lookups and 86 edge occurrences read. The graph-to-source gate verified two SHA-256-bound reads. The worker reported CPython 3.9.25 / SNAP 6.0.0 and image ID `sha256:55b531951c9f7f70bc0414ce4a59059d6602df3ec15e17bf0732099bd602f593`.
 
 SNAP's TNEANet native incident edge IDs are used through `GetOutEId` and `GetInEId`; each is resolved with `GetEI` and checked against a stored `semantic_occurrence` attribute. This preserves parallel edge occurrences and allows a bidirectional query to deduplicate a self-loop by native edge identity. Attributes are stored as canonical JSON strings, an explicit reversible representation transformation for JSON-compatible payloads.
 
@@ -626,8 +628,8 @@ See [AE-32C M6 SNAP Isolated Worker — Implementation and Acceptance](AE-32C-M6
 
 | Milestone | Current state | Remaining acceptance requirement |
 |---|---|---|
-| M5 graph-tool | Previously accepted at exact SHA `9adc99b...`; E.8.5/E.8.8 passed again at SHA `7771d637...` | If declaring M5 complete for the current Stage1 head, rerun G9.42 at the exact same SHA as the final dedicated E.8.5/E.8.8 run. |
-| M6 SNAP | Worker implementation and fake-process protocol test present; real E.8.5 failed once due to the corrected fingerprint-format bug | Corrected real E.8.5 and E.8.8 must both pass; then run G9.42 against that same exact Stage1 SHA. |
-| M3 SciPy / M4 igraph | Their historical exact-SHA acceptance records remain valid; E.8.5/E.8.8 also passed together at SHA `7771d637...` | No promotion; preserve `production_approval=false`. |
+| M5 graph-tool | Previously accepted at exact SHA `9adc99b...`; E.8.5/E.8.8 passed again at SHA `425c0f7...` | Run G9.42 at the exact same SHA as the final provenance-stamped E.8.5/E.8.8 run before closing current-head revalidation. |
+| M6 SNAP | Real isolated worker E.8.5 and E.8.8 passed at SHA `425c0f7...` | Run G9.42 at the exact same SHA as the final provenance-stamped E.8.5/E.8.8 run before recording M6 accepted. |
+| M3 SciPy / M4 igraph | Their historical exact-SHA acceptance records remain valid; E.8.5/E.8.8 also passed together at SHA `425c0f7...` | No promotion; preserve `production_approval=false`. |
 
-Do not infer M6 completion from a successful Docker build, a fake-process test, or a green overall workflow if the SNAP job is not green. Do not change registry acceptance state or production approval until the exact-SHA gates pass.
+Do not infer M6 completion from a successful Docker build or fake-process test alone. The real SNAP E.8.5/E.8.8 gate is now green; final milestone closure still requires a successful G9.42 Manual Validation Dispatcher report for the exact same Stage1 SHA. Do not change registry production approval.

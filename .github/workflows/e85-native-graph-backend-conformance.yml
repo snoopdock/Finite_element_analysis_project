@@ -17,9 +17,6 @@ on:
       - "tests/semantic_graph/**"
       - "requirements.txt"
       - "pyproject.toml"
-      - "docs/audit-engine/AE-32C-M6-SNAP-Isolated-Worker-Implementation-and-Acceptance.md"
-      - "docs/audit-engine/AE-32C-Graph-Backend-Compatibility-and-Utilization-Roadmap.md"
-      - "validation/profiles/G9.42.yaml"
 
 permissions:
   contents: read
