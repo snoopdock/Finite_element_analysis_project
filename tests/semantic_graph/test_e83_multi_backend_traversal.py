@@ -147,11 +147,14 @@ class _FakeGraphToolVertex:
     def __init__(self, graph, index):
         self.graph, self.index = graph, index
 
+    def __int__(self):
+        return self.index
+
     def out_edges(self):
-        return iter(edge for edge in self.graph._edges if edge.source() == self.index)
+        return iter(edge for edge in self.graph._edges if int(edge.source()) == self.index)
 
     def in_edges(self):
-        return iter(edge for edge in self.graph._edges if edge.target() == self.index)
+        return iter(edge for edge in self.graph._edges if int(edge.target()) == self.index)
 
 
 class _FakeGraphTool:
@@ -184,7 +187,9 @@ class _FakeGraphTool:
     def add_edge(self, source, target):
         source_index = source.index if hasattr(source, "index") else int(source)
         target_index = target.index if hasattr(target, "index") else int(target)
-        edge = _FakeGraphToolEdge(len(self._edges), source_index, target_index)
+        edge = _FakeGraphToolEdge(
+            len(self._edges), self.vertex(source_index), self.vertex(target_index),
+        )
         self._edges.append(edge)
         self.edge_index[edge] = edge.index
         return edge
