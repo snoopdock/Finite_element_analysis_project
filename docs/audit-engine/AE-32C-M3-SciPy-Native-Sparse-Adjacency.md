@@ -1,9 +1,9 @@
 # AE-32C M3 — SciPy Native Sparse Adjacency Implementation Record
 
-**Status:** Corrective implementation committed on `stage1/section-uuids`; G9.42 rerun pending after NetworkX conformance-label test correction  
+**Status:** Accepted for the tested SciPy CSR/CSC native-adjacency and repository context-tool path by G9.42 run 44898320570  
 **Milestone:** M3 — SciPy native sparse adjacency  
 **Predecessor:** M2 validated by G9.42 run [44894696688](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44894696688) against source SHA `9dd02f7f98e0ad25d2225c638ed14bad4bd5d4e6`  
-**Scope:** SciPy only. No acceptance or runtime promotion is claimed for igraph, graph-tool or SNAP.
+**Scope:** SciPy only. This acceptance does not promote igraph, graph-tool or SNAP.
 
 ---
 
@@ -105,9 +105,29 @@ The next user-run validation, [run 44896382956](https://github.com/snoopdock/Fin
 
 The assertion was corrected without changing production code. The failure analysis is recorded in [G9.42 Validation Failure Review — run 44896382956](AE-32C-G9.42-Validation-Failure-44896382956.md). The correction is committed as `4dc1a40681dab18b55f4fc4af0d45adbd21c8c83`; the documentation update follows in the same Stage1 branch. The SciPy-specific assertions passed in that run, but the overall validation failed and the provenance catalog was correctly blocked. Therefore M3 remains unvalidated.
 
-## 5. Acceptance boundary
+## 5. Final G9.42 acceptance
 
-M3 is not closed yet. The following remain unproven until exact-commit validation:
+G9.42 run [44898320570](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44898320570) validated the exact Stage1 source SHA `c40a258f627a1678036521e2474fccdd5537e46a` (Python 3.11.18; profile G9.42). The dispatcher itself ran from `main`, but the artifact identifies `stage1/section-uuids` and the exact target SHA above.
+
+| Evidence | Result |
+|---|---:|
+| Validation-engine unit tests | 53 passed |
+| Targeted suite | 683 total: 677 passed, 6 skipped |
+| Full regression | 3,622 total: 3,608 passed, 14 skipped |
+| Failures / errors | 0 / 0 |
+| Evidence digest and checksum verification | Passed |
+| Immutable evidence bundle | Published |
+| Provenance catalog | Built and independently verified |
+
+Validation report SHA-256: `250b8e5442f8dc15c0ade6c44a6ea51eb7032e0344934919b1a2d77616e5d0d1`.
+
+Immutable bundle SHA-256: `b3b54793a40bb5ca13309ee103ee814c5410ff83dd838aef98458f5c88946bb5`.
+
+The catalog entry records status and regression status as `passed`, with 683 targeted tests, and binds the report/bundle to the exact Stage1 source SHA. The 6 targeted and 14 regression skips remain explicit environmental exclusions; they do not negate the executed SciPy tests. This closes M3 for the tested SciPy implementation and repository context-tool path only. It does not establish a universal performance advantage or approve other optional backends.
+
+## 6. Acceptance boundary
+
+M3 is accepted for the tested path. The following broader claims are not established by this validation:
 
 - actual installed SciPy version/API behavior in the G9.42 environment;
 - all newly added sparse-adjacency tests passing;
@@ -117,7 +137,7 @@ M3 is not closed yet. The following remain unproven until exact-commit validatio
 
 A successful synthetic or mocked test alone would not establish native SciPy acceptance. The workflow must run with the real SciPy dependency installed and the report must identify the exact Stage1 source SHA.
 
-## 6. Files changed
+## 7. Files changed
 
 - `audit_engine/semantic_audit/graph/backend/scipy_adapter.py`
 - `audit_engine/semantic_audit/graph/backend/adapter_traversal.py`
@@ -129,12 +149,12 @@ A successful synthetic or mocked test alone would not establish native SciPy acc
 - `docs/audit-engine/AE-32C-M3-Validation-Failure-44895368283.md`
 - `docs/audit-engine/AE-32C-Graph-Backend-Compatibility-and-Utilization-Roadmap.md`
 
-## 7. Validation protocol
+## 8. Validation protocol
 
 Run the existing manual validation dispatcher against:
 
 - Branch: `stage1/section-uuids`
 - Profile: `G9.42`
 
-Acceptance requires the targeted suite and full regression to pass, the evidence integrity check to pass, and the provenance catalog to be built and independently verified. Report skips explicitly. Do not promote SciPy or begin M4 based only on workflow-level success without confirming the source SHA and artifact report.
+Acceptance requires the targeted suite and full regression to pass, the evidence integrity check to pass, and the provenance catalog to be built and independently verified. Report skips explicitly. Do not extend this acceptance to untested backends or workloads without separate evidence.
 
