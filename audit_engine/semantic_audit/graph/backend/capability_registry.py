@@ -1,6 +1,9 @@
 """Graph backend capabilities and optional dependency availability."""
 
-from audit_engine.semantic_audit.graph.backend.optional_backend_support import backend_available\nimport os\nimport shutil
+import os
+import shutil
+
+from audit_engine.semantic_audit.graph.backend.optional_backend_support import backend_available
 
 
 class BackendCapabilityRegistry:
@@ -20,11 +23,12 @@ class BackendCapabilityRegistry:
         return {name: dict(item["capabilities"]) for name, item in self._backends.items()}
 
 
-def _acceptance_state(backend_name, adjacency_implementation):
+def _acceptance_state(backend_name, adjacency_implementation, *, worker_configured=False):
     """Separate implementation/discoverability from conformance and approval."""
     return {
         "implementation": "present",
         "module_discoverable": backend_available(backend_name),
+        "worker_configured": bool(worker_configured),
         "api_compatibility": "not_checked",
         "structural_conformance": "not_run",
         "native_adjacency_conformance": "not_run",
@@ -51,15 +55,30 @@ def create_default_registry():
         "semantic_traversal": True, "side_channel_preservation": True,
         "available": backend_available("scipy"),
     })
-    for name, klass in (("igraph", "IGraphAdapter"),
-                        ("graph-tool", "GraphToolAdapter"), ("snap", "SNAPAdapter")):
-        adjacency_state = (
-            "implemented_unvalidated"
-            if name in {"igraph", "graph-tool"}
-            else "not_implemented"
+
+    snap_worker_configured = (
+        bool(os.environ.get("AE32C_SNAP_WORKER_IMAGE", "").strip())
+        and shutil.which("docker") is not None
+    )
+    for name, klass in (
+        ("igraph", "IGraphAdapter"),
+        ("graph-tool", "GraphToolAdapter"),
+        ("snap", "SNAPAdapter"),
+    ):
+        native_adjacency = (
+            name in {"igraph", "graph-tool"}
+            or (name == "snap" and snap_worker_configured)
+        )
+        available = (
+            snap_worker_configured or backend_available("snap")
+            if name == "snap" else backend_available(name)
         )
         registry.register(name, klass, {
-            "acceptance_state": _acceptance_state(name, adjacency_state),
+            "acceptance_state": _acceptance_state(
+                name,
+                "implemented_unvalidated" if native_adjacency else "not_implemented",
+                worker_configured=(name == "snap" and snap_worker_configured),
+            ),
             "lossless": True, "metadata": True, "multiedges": True,
             "directed": True, "semantic_traversal": True,
             "available": available,
