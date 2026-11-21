@@ -78,23 +78,29 @@ def test_repository_backend_query_surfaces_and_reads_hash_bound_source_files():
 
     runtime = tools.graph_runtime_report()
     assert runtime["active_computation_backend"] == "networkx"
+    assert runtime["external_backend_adapters_active"] == ["networkx"]
+    assert runtime["context_backend_bypass_count"] == 0
     assert runtime["backend_execution"]["parity_verified_queries"] == 1
     assert runtime["backend_execution"]["parity_failures"] == 0
 
 
-def test_repository_conformance_runner_reports_backend_bypass_tools():
+def test_repository_conformance_runner_requires_native_context_tool_routing():
     from tools.gb04_repository_backend_conformance import run_repository_conformance
 
     report = run_repository_conformance(FIXTURE, "networkx")
     assert report["status"] == "passed"
     assert report["graph_to_repository_follow_through"]["verified_read_count"] == 2
     assert report["backend_execution"]["parity_verified_queries"] >= 3
-    assert report["backend_queries"]["trace_execution_context"]["current_execution"] == (
-        "canonical_graph_context_walk_not_backend_routed"
+    assert report["backend_queries"]["trace_execution_context"]["backend_execution"] == (
+        "networkx_native_successor_predecessor_adjacency"
     )
-    assert report["backend_queries"]["find_workflow_context"]["current_execution"] == (
-        "canonical_graph_workflow_walk_not_backend_routed"
+    assert report["backend_queries"]["trace_execution_context"]["telemetry"]["native_adjacency_lookups"] >= 1
+    assert report["backend_queries"]["trace_nested_find_workflow_context"]["telemetry"]["parity_verified"] >= 1
+    assert report["backend_queries"]["find_workflow_context"]["backend_execution"] == (
+        "networkx_native_successor_predecessor_adjacency"
     )
+    assert report["backend_queries"]["find_workflow_context"]["telemetry"]["native_adjacency_lookups"] >= 1
+    assert report["backend_execution"]["context_operation_telemetry"]
 
 
 def test_repository_conformance_runner_reports_snapshot_and_source_manifest():

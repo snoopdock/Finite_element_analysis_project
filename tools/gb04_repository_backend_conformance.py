@@ -138,28 +138,45 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
     if related_tests.get("coverage_status") != "complete_for_query":
         raise RuntimeError("related_test_discovery_incomplete")
 
-    # Explicitly record which graph-derived tool families route through the
-    # selected backend. Two existing context helpers still use bounded
-    # canonical-graph walks and are intentionally reported as follow-up work.
-    backend_before_context = _runtime(tools)["backend_execution"]["queries_attempted"]
+    # Context tools must execute local adjacency through the selected NetworkX
+    # projection. The nested workflow query is attributed to trace execution.
     trace_context = _unwrap(tools.invoke("trace_execution_context", {
         "target": "pipeline/extractor.py",
         "max_depth": 4,
         "max_results": 20,
     }), "trace_execution_context")
-    backend_after_trace = _runtime(tools)["backend_execution"]["queries_attempted"]
     workflow_context = _unwrap(tools.invoke("find_workflow_context", {
         "target": "pipeline/extractor.py",
         "max_results": 20,
     }), "find_workflow_context")
-    backend_after_workflow = _runtime(tools)["backend_execution"]["queries_attempted"]
 
     final_runtime = _runtime(tools)
     execution = final_runtime.get("backend_execution", {})
+    context_telemetry = final_runtime.get("context_operation_telemetry", {})
+    trace_telemetry = context_telemetry.get("trace_execution_context", {})
+    nested_telemetry = context_telemetry.get("trace_execution_context.workflow_context", {})
+    workflow_telemetry = context_telemetry.get("find_workflow_context", {})
     if execution.get("parity_failures", 0) != 0:
         raise RuntimeError("backend_reference_parity_failure")
     if execution.get("parity_verified_queries", 0) < 3:
         raise RuntimeError("insufficient_backend_parity_verified_queries")
+    if final_runtime.get("context_backend_bypass_count", 0) != 0:
+        raise RuntimeError("context_tool_backend_bypass_detected")
+    for operation, telemetry in (
+        ("trace_execution_context", trace_telemetry),
+        ("trace_execution_context.workflow_context", nested_telemetry),
+        ("find_workflow_context", workflow_telemetry),
+    ):
+        if telemetry.get("adjacency_queries_attempted", 0) < 1:
+            raise RuntimeError(f"{operation}_native_adjacency_not_observed")
+        if telemetry.get("adjacency_queries_failed", 0) != 0:
+            raise RuntimeError(f"{operation}_native_adjacency_failure")
+        if telemetry.get("parity_failures", 0) != 0:
+            raise RuntimeError(f"{operation}_reference_parity_failure")
+        if telemetry.get("parity_verified", 0) < 1:
+            raise RuntimeError(f"{operation}_reference_parity_not_verified")
+        if telemetry.get("native_adjacency_lookups", 0) < 1:
+            raise RuntimeError(f"{operation}_native_adjacency_not_used")
 
     return {
         "schema_version": "ae32c/repository-backend-conformance/v1",
@@ -181,13 +198,17 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
             "find_related_tests": "selected_backend_and_reference_parity_verified",
             "trace_execution_context": {
                 "status": trace_context.get("coverage_status"),
-                "backend_query_delta": backend_after_trace - backend_before_context,
-                "current_execution": "canonical_graph_context_walk_not_backend_routed",
+                "backend_execution": "networkx_native_successor_predecessor_adjacency",
+                "telemetry": trace_telemetry,
+            },
+            "trace_nested_find_workflow_context": {
+                "backend_execution": "networkx_native_successor_predecessor_adjacency",
+                "telemetry": nested_telemetry,
             },
             "find_workflow_context": {
                 "status": workflow_context.get("coverage_status"),
-                "backend_query_delta": backend_after_workflow - backend_after_trace,
-                "current_execution": "canonical_graph_workflow_walk_not_backend_routed",
+                "backend_execution": "networkx_native_successor_predecessor_adjacency",
+                "telemetry": workflow_telemetry,
             },
         },
         "required_graph_query": {
@@ -222,7 +243,6 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
         },
         "limitations": [
             "This runner validates backend graph queries over the repository-derived semantic graph and hash-bound source reads; it does not execute repository code.",
-            "trace_execution_context and find_workflow_context still use canonical-graph context walks rather than the selected native backend.",
             "A passing repository conformance run does not establish diagnostic correctness or live LLM tool-selection quality.",
         ],
     }

@@ -130,7 +130,9 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             "native_edge_occurrences_read": 0,
             "projection_validation_nodes": 0,
             "projection_validation_edge_occurrences": 0,
+            "context_operation_telemetry": {},
         }
+        self._context_reference_adjacency = None
         self._last_query_native_metrics = {
             "native_adjacency_lookups": 0,
             "native_edge_occurrences_read": 0,
@@ -276,6 +278,75 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
         )
         return candidates
 
+    def context_edges(
+        self,
+        node_id: str,
+        *,
+        direction: TraversalDirection,
+        relation_types: set[str] | None = None,
+        operation: str,
+    ) -> list[SemanticEdge]:
+        """Return occurrence-preserving local adjacency for repository context tools.
+
+        Callers retain their traversal order, depth limits, and evidence rendering
+        while adjacency comes from NetworkX's keyed successor/predecessor indexes.
+        """
+        if not isinstance(operation, str) or not operation.strip():
+            raise ValueError("context operation name must be non-empty")
+        counters = self._metrics["context_operation_telemetry"].setdefault(
+            operation,
+            {
+                "adjacency_queries_attempted": 0,
+                "adjacency_queries_succeeded": 0,
+                "adjacency_queries_failed": 0,
+                "native_adjacency_lookups": 0,
+                "native_edge_occurrences_read": 0,
+                "parity_verified": 0,
+                "parity_failures": 0,
+            },
+        )
+        counters["adjacency_queries_attempted"] += 1
+        native_before = {
+            "native_adjacency_lookups": self._metrics["native_adjacency_lookups"],
+            "native_edge_occurrences_read": self._metrics["native_edge_occurrences_read"],
+        }
+        try:
+            if isinstance(direction, str):
+                direction = TraversalDirection(direction)
+            normalized = set(relation_types) if relation_types is not None else None
+            native = self._candidate_edges(
+                node_id, direction=direction, relation_types=normalized,
+                outgoing={}, incoming={},
+            )
+            # Independently compare this exact local result with the reference
+            # adjacency contract before returning it to a context tool.
+            reference_engine = GraphTraversalEngine(self.graph)
+            if self._context_reference_adjacency is None:
+                self._context_reference_adjacency = reference_engine._build_adjacency()
+            outgoing, incoming = self._context_reference_adjacency
+            reference = reference_engine._candidate_edges(
+                node_id, direction=direction, relation_types=normalized,
+                outgoing=outgoing, incoming=incoming,
+            )
+            native_identity = [(edge_fingerprint(edge), neighbor) for edge, neighbor in native]
+            reference_identity = [(edge_fingerprint(edge), neighbor) for edge, neighbor in reference]
+            if native_identity != reference_identity:
+                counters["parity_failures"] += 1
+                raise BackendParityError("networkx_context_adjacency_parity_mismatch")
+            counters["parity_verified"] += 1
+            counters["adjacency_queries_succeeded"] += 1
+            return [edge for edge, _neighbor in native]
+        except Exception:
+            counters["adjacency_queries_failed"] += 1
+            raise
+        finally:
+            counters["native_adjacency_lookups"] += (
+                self._metrics["native_adjacency_lookups"] - native_before["native_adjacency_lookups"]
+            )
+            counters["native_edge_occurrences_read"] += (
+                self._metrics["native_edge_occurrences_read"] - native_before["native_edge_occurrences_read"]
+            )
+
     def walk(self, *args: Any, **kwargs: Any) -> TraversalResult:
         self._metrics["queries_attempted"] += 1
         native_before = {
@@ -349,4 +420,8 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             "projection_edge_occurrence_count": self.native_graph.number_of_edges(),
             "backend_native_query_mode": "networkx_successor_predecessor_adjacency",
             "backend_execution": dict(self._metrics),
+            "context_operation_telemetry": {
+                key: dict(value)
+                for key, value in self._metrics["context_operation_telemetry"].items()
+            },
         }

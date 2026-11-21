@@ -803,6 +803,7 @@ class RepositoryEvidenceTools:
         if self.skipped_non_utf8_files or self.structured_record_issues or self.module_identity_issues:
             self.evidence_index_status = "incomplete"
         self.graph_fingerprint = self._graph_fingerprint()
+        self._context_backend_bypasses: Counter[str] = Counter()
         self.graph_service = SemanticGraphAnalysisService(
             self.graph,
             semantic_context=SemanticContext(
@@ -1507,18 +1508,55 @@ class RepositoryEvidenceTools:
         """Return the actual query backend and its observed execution counters."""
         engine = self.graph_service.engine.traversal_engine
         runtime = engine.runtime_report()
+        active_backend = runtime.get("active_computation_backend")
+        backend_is_external = active_backend not in (None, "reference", "python_reference_traversal")
         runtime.update({
+            "context_backend_bypasses": dict(sorted(self._context_backend_bypasses.items())),
+            "context_backend_bypass_count": sum(self._context_backend_bypasses.values()),
             "canonical_model": "SemanticGraph",
             "query_service": "SemanticGraphAnalysisService",
-            "backend_pipeline_wired_into_ae32b_query_path": self.graph_backend != "reference",
-            "external_backend_adapters_active": (
-                [self.graph_backend] if self.graph_backend != "reference" else []
-            ),
+            "backend_pipeline_wired_into_ae32b_query_path": backend_is_external,
+            "external_backend_adapters_active": [active_backend] if backend_is_external else [],
             "repository_code_executed": False,
             "network_calls_performed": False,
             "source_files_modified": False,
         })
         return runtime
+
+    def _context_edges(
+        self,
+        node_id: str,
+        *,
+        direction: str,
+        relation_types: set[str],
+        operation: str,
+    ) -> list[SemanticEdge]:
+        """Read local context adjacency through the selected graph backend."""
+        engine = self.graph_service.engine.traversal_engine
+        native_query = getattr(engine, "context_edges", None)
+        if callable(native_query):
+            from audit_engine.semantic_audit.graph.analysis import TraversalDirection
+            return native_query(
+                node_id,
+                direction=TraversalDirection(direction),
+                relation_types=relation_types,
+                operation=operation,
+            )
+
+        # Other adapters do not yet expose the context adjacency contract.
+        # Preserve legacy behavior, but record every canonical-graph bypass.
+        self._context_backend_bypasses[operation] += 1
+        if direction == "outgoing":
+            return [
+                edge for edge in self.graph.edges
+                if edge.source_id == node_id and edge.relation_type in relation_types
+            ]
+        if direction == "incoming":
+            return [
+                edge for edge in self.graph.edges
+                if edge.target_id == node_id and edge.relation_type in relation_types
+            ]
+        raise EvidenceToolError("unsupported_context_direction", "Unsupported context adjacency direction")
 
     def _repository_summary(self, args: dict[str, Any]) -> dict[str, Any]:
         self._check_keys(args, set())
@@ -2318,16 +2356,19 @@ class RepositoryEvidenceTools:
         if not target_module_id:
             raise EvidenceToolError("target_not_python_module", "Static execution context requires a resolvable Python module target")
 
-        imports = [
-            edge for edge in self.graph.edges
-            if edge.relation_type == "IMPORTS"
-            and edge.metadata.get("execution_context") != "type_checking_only"
-        ]
         incoming: dict[str, list[SemanticEdge]] = defaultdict(list)
         outgoing: dict[str, list[SemanticEdge]] = defaultdict(list)
-        for edge in imports:
-            incoming[edge.target_id].append(edge)
-            outgoing[edge.source_id].append(edge)
+        # Query each module's outgoing native adjacency once; this observes each
+        # IMPORTS edge occurrence once while retaining both directed indexes.
+        for module_node_id in sorted(set(self.module_nodes.values())):
+            for edge in self._context_edges(
+                module_node_id, direction="outgoing", relation_types={"IMPORTS"},
+                operation="trace_execution_context",
+            ):
+                if edge.metadata.get("execution_context") == "type_checking_only":
+                    continue
+                incoming[edge.target_id].append(edge)
+                outgoing[edge.source_id].append(edge)
         for adjacency in (incoming, outgoing):
             for values in adjacency.values():
                 values.sort(key=lambda edge: (
@@ -2458,7 +2499,10 @@ class RepositoryEvidenceTools:
         entrypoint_paths = entrypoint_paths[:max_results]
         entrypoint_context_paths = entrypoint_context_paths[:max_results]
 
-        workflow_result = self._find_workflow_context({"target": selector, "max_results": max_results})
+        workflow_result = self._find_workflow_context(
+            {"target": selector, "max_results": max_results},
+            _operation="trace_execution_context.workflow_context",
+        )
         active_workflow_paths = workflow_result.get("workflows", []) if isinstance(workflow_result, Mapping) else []
         workflow_truncated = bool(workflow_result.get("truncated", False)) if isinstance(workflow_result, Mapping) else True
         truncated = caller_truncated or dependency_truncated or entrypoint_truncated or workflow_truncated
@@ -2575,7 +2619,9 @@ class RepositoryEvidenceTools:
             "note": "A complete line-numbered preview with a source hash may count as inspected context. Incomplete previews require read_source_file. No repository code or tests are executed.",
         }
 
-    def _find_workflow_context(self, args: dict[str, Any]) -> dict[str, Any]:
+    def _find_workflow_context(
+        self, args: dict[str, Any], *, _operation: str = "find_workflow_context"
+    ) -> dict[str, Any]:
         self._check_keys(args, {"target", "max_results"}, {"target"})
         selector = self._string(args, "target", maximum=500)
         max_results = self._bounded_int(args, "max_results", 15, 1, MAX_SEARCH_RESULTS)
@@ -2594,13 +2640,21 @@ class RepositoryEvidenceTools:
         # unrelated symbol/definition edges when a workflow invokes a package.
         import_adjacency: dict[str, list[SemanticEdge]] = defaultdict(list)
         invoke_adjacency: dict[str, list[SemanticEdge]] = defaultdict(list)
-        for edge in self.graph.edges:
-            if edge.relation_type in {"IMPORTS", "PACKAGE_ENTRYPOINT"}:
-                if edge.relation_type == "IMPORTS" and edge.metadata.get("execution_context") == "type_checking_only":
-                    continue
-                import_adjacency[edge.source_id].append(edge)
-            elif edge.relation_type == "INVOKES":
-                invoke_adjacency[edge.source_id].append(edge)
+        context_source_ids = sorted(set(self.module_nodes.values()) | set(self.file_nodes.values()))
+        for source_id in context_source_ids:
+            for edge in self._context_edges(
+                source_id, direction="outgoing",
+                relation_types={"IMPORTS", "PACKAGE_ENTRYPOINT", "INVOKES"},
+                operation=_operation,
+            ):
+                if edge.relation_type == "IMPORTS":
+                    if edge.metadata.get("execution_context") == "type_checking_only":
+                        continue
+                    import_adjacency[edge.source_id].append(edge)
+                elif edge.relation_type == "PACKAGE_ENTRYPOINT":
+                    import_adjacency[edge.source_id].append(edge)
+                elif edge.relation_type == "INVOKES":
+                    invoke_adjacency[edge.source_id].append(edge)
         for values in import_adjacency.values():
             values.sort(key=lambda edge: (edge.target_id, int(edge.metadata.get("line") or 0), edge.source_id))
 
@@ -2663,9 +2717,12 @@ class RepositoryEvidenceTools:
                         if target_id.startswith("file:") and target_id != target_module_id:
                             target_file_path = str((target_node.attributes if target_node else {}).get("path", ""))
                             if target_file_path:
-                                final_file_edge = next((edge for edge in self.graph.edges
-                                    if edge.source_id == target_module_id and edge.target_id == target_id
-                                    and edge.relation_type == "IMPLEMENTED_BY"), None)
+                                final_file_edge = next((
+                                    edge for edge in self._context_edges(
+                                        target_module_id, direction="outgoing",
+                                        relation_types={"IMPLEMENTED_BY"}, operation=_operation,
+                                    ) if edge.target_id == target_id
+                                ), None)
                                 if final_file_edge is None:
                                     continue
                         relationship = "transitive_static_path"
