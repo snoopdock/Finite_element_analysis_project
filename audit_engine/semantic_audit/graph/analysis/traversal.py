@@ -17,7 +17,7 @@ from audit_engine.semantic_audit.core.semantic_graph import (
 )
 
 from .evidence import EvidenceRecord
-from .identity import edge_fingerprint, graph_fingerprint
+from .identity import graph_fingerprint
 from .models import TraversalDirection
 
 

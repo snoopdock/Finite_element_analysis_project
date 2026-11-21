@@ -214,25 +214,6 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             raise BackendProjectionError("canonical_graph_changed_after_networkx_projection")
         return {}, {}
 
-    def _validated_native_edge(
-        self,
-        source: str,
-        target: str,
-        data: dict[str, Any],
-    ) -> SemanticEdge:
-        occurrence = data.get(_EDGE_OCCURRENCE_KEY)
-        if type(occurrence) is not int or not 0 <= occurrence < len(self._edge_occurrences):
-            raise BackendProjectionError("networkx_edge_occurrence_mapping_invalid")
-        edge = self._edge_occurrences[occurrence]
-        if (
-            edge.source_id != source
-            or edge.target_id != target
-            or data.get("relation") != edge.relation_type
-            or data.get("attributes") != edge.attributes
-            or data.get("metadata") != edge.metadata
-        ):
-            raise BackendProjectionError("networkx_projection_semantic_payload_mismatch")
-        return edge
 
     def _candidate_edges(
         self,
