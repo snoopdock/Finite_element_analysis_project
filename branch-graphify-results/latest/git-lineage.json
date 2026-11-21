@@ -1,10 +1,10 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "5353fe823611a6711e36172a26c73a2900c81e0c",
+  "base_sha": "8f7ec8e27416f9ef1bb4ce8d0a098d1196467668",
   "compare_sha": "342c9d55b1dc49ccf93759d0dce203723485ef17",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 296,
+  "base_only_commit_count": 298,
   "compare_only_commit_count": 1168,
   "base_changes_since_merge_base": [
     {
@@ -7439,6 +7439,16 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "8f7ec8e27416f9ef1bb4ce8d0a098d1196467668",
+      "subject": "Harden M7.1 manual workflow definition and validation"
+    },
+    {
+      "side": "<",
+      "sha": "b49863a4540fe4695a8dc8caeaa089d500b97d20",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "5353fe823611a6711e36172a26c73a2900c81e0c",
