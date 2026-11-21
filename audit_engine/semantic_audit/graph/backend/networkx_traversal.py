@@ -155,7 +155,8 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             data = self.native_graph.get_edge_data(pair[0], pair[1], key)
             if not isinstance(data, dict):
                 raise BackendProjectionError("networkx_projection_edge_missing")
-            if _EDGE_OCCURRENCE_KEY in data:
+            existing_occurrence = data.get(_EDGE_OCCURRENCE_KEY)
+            if existing_occurrence is not None and existing_occurrence != occurrence:
                 raise BackendProjectionError("networkx_reserved_edge_key_collision")
             data[_EDGE_OCCURRENCE_KEY] = occurrence
 
