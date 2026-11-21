@@ -1,9 +1,11 @@
 # AE-32C M6 — SNAP Isolated Worker: Implementation and Acceptance
 
-**Status:** implementation committed; native conformance and repository parity are pending the current Stage1 workflow run. This record is not an acceptance declaration.  
+**Status:** worker implementation and protocol unit test are present. The first real SNAP E.8.5 attempt failed at worker initialization because the worker incorrectly expected a 64-character SHA-256 value; the canonical graph fingerprint is `graph:` plus 32 hexadecimal characters. That validation was corrected. The retry is pending; this record is not an acceptance declaration.  
 **Target branch:** `stage1/section-uuids`  
 **Implementation snapshot:** `7771d637cd613bf5cfc8c847108cd0c6eb28c98f`  
-**Current E.8.5 / E.8.8 run:** [44914650206](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914650206) — in progress at the time this record was written.  
+**Fingerprint correction:** `9f0125738759be4bb80026d9aa86d59a01e915b8`  
+**First full-matrix run:** [44914650206](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914650206) — NetworkX, SciPy, igraph and graph-tool E.8.5/E.8.8 passed; SNAP image build and adapter protocol test passed; SNAP E.8.5 failed at fingerprint validation, so SNAP E.8.8 was skipped.  
+**Fingerprint-correction retry:** [44914749858](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44914749858) — in progress at the time of this revision.  
 **Main-branch change boundary:** only the E85 workflow controller was updated to launch the Stage1 implementation; SNAP adapter and worker source remain on Stage1.
 
 ---
@@ -84,7 +86,7 @@ Allowed operations:
 | `metrics` | Return native adjacency counters |
 | `close` | Terminate the worker |
 
-The worker rejects unknown operations, extra or missing fields, invalid request IDs, protocol-version mismatch, graph-fingerprint mismatch, unknown semantic node IDs, invalid directions and malformed occurrence identities.
+The worker rejects unknown operations, extra or missing fields, invalid request IDs, protocol-version mismatch, graph-fingerprint mismatch, unknown semantic node IDs, invalid directions and malformed occurrence identities. The canonical graph fingerprint format is `graph:` followed by 32 lowercase hexadecimal characters; the initial worker validator incorrectly assumed a raw 64-character SHA-256 digest and was corrected in commit `9f0125738759be4bb80026d9aa86d59a01e915b8`.
 
 Resource bounds in the worker:
 
