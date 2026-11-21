@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots; M5 graph-tool and M6 SNAP exact-current implementation snapshot `81eb77aff35afe297a596a91826e016048515c0f` passed full five-backend E.8.5/E.8.8 run `44917397347`; AE-32C M7 is OPEN. M7.1 harness and integrity tests passed exact-source G9.42 run `44920211022` on Stage1 SHA `31179eb4457907f276edba3666f72153c049a138`; five-environment smoke execution is pending through a new manual controller committed on main. Production approval remains false  
+**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots. M7.1 five-backend smoke validation passed in run `44937517812` on source SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`. M7.2 task-suitability campaign implementation and tests are committed on Stage1; exact-source G9.42 validation and the five-backend campaign execution remain pending. Production approval remains false  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -664,31 +664,40 @@ The Stage1 acceptance snapshot is `81eb77aff35afe297a596a91826e016048515c0f`.
 
 ### 15.2 AE-32C M7 — Comparative backend performance and promotion policy
 
-M7 is now OPEN. Its purpose is to determine whether the five accepted native paths provide workload-specific operational value, without weakening semantic correctness or promoting a backend by assumption.
+M7 is OPEN and is governed by a task-suitability objective, not a universal performance competition. The five graph libraries are computational options. The audit engine may use different libraries for different problem classes according to their algorithmic relevance, representation capabilities, semantic-preservation behavior, native APIs, integration constraints and operational costs.
 
-The existing G6.1/G6.2 benchmark infrastructure compares NetworkX and SciPy using exported representations and directed reachability. It does not yet compare the five M1–M6 native query paths, does not separate all setup/validation/traversal/evidence/IPC costs, and does not provide comparable process-level memory measurements. Existing G6.1/G6.2 results therefore remain useful historical evidence but are not sufficient M7 acceptance.
+The canonical `SemanticGraph` remains authoritative. A computational backend is a replaceable projection and must not own semantic identity, evidence or provenance. A backend may be appropriate for sparse numerical operations and not for rich multigraph evidence traversal, or vice versa. Such judgments require task-specific operation contracts and validation.
 
-The M7 protocol and implementation sequence are defined in [AE-32C M7 — Comparative Backend Performance and Promotion Policy](AE-32C-M7-Comparative-Backend-Performance-and-Promotion-Policy.md). Work is staged:
+The M7 protocol and updated sequence are defined in [AE-32C M7 — Task Suitability and Operational Characterization](AE-32C-M7-Comparative-Backend-Performance-and-Promotion-Policy.md):
 
-1. M7.0 baseline freeze and benchmark-gap analysis — completed in the protocol record.
-2. M7.1 backend-neutral harness over the five accepted native adapters.
-3. M7.2 controlled workload matrix and bounded multi-seed campaign.
-4. M7.3 independent report verifier and descriptive analysis.
-5. M7.4 benchmark dossier and explicit task-specific promotion policy.
+1. M7.0 baseline freeze and protocol — completed.
+2. M7.1 five-backend native smoke and parameter-propagation gate — passed in run `44937517812`.
+3. M7.2 deterministic workload families and bounded multi-seed per-backend campaign — initial implementation committed; exact-source validation and five-backend execution pending.
+4. M7.3 independent campaign-artifact verification and descriptive dossier.
+5. M7.4 task-specific suitability statements and explicit policy.
 
-All comparisons must use equivalent canonical graph snapshots and semantic queries, verify parity before timing, prove the actual native path, retain raw samples and environment provenance, and report SNAP cold-start/IPC costs separately from warm native traversal. Mixed runner environments must be stratified rather than ranked together. No timing threshold, benchmark result or M7 report may automatically change backend selection or production approval.
-
-**M7.1 harness and exact-source validation:** `tools/gb05_native_backend_performance_benchmark.py` and `tests/semantic_graph/test_m7_native_backend_performance_benchmark.py` are committed. G9.42 run [44920211022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44920211022) passed against exact Stage1 SHA `31179eb4457907f276edba3666f72153c049a138`: 53 engine tests, 704 targeted tests (5 skipped), 3,643 regression tests (13 skipped), zero failures/errors. The detached evidence bundle and provenance catalog verified; all 14 M7 test cases appear in both the targeted and full-regression JUnit reports. The earlier E.8.5/E.8.8 guard [44918337178](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44918337178) remains scoped to code/test SHA `6db8eeabcb1869c809cfdea50bbd41042673d68d` and did not execute the M7 tests.
-
-**M7.1 manual smoke controller:** `.github/workflows/m7_1_manual_native_backend_smoke.yml` was committed to `main` at `59ab8aabc10939b5d262cc5f2e175a1216c939cc`. It includes a pinned `actionlint` preflight, resolves the requested source ref once, and pins five separate jobs (NetworkX, SciPy, igraph, graph-tool and isolated SNAP 6.0 worker) to that immutable SHA. Each job runs the same fixed-fixture harness and independent report verifier, and uploads a separate report plus runner/environment provenance. This is an environment-compatibility smoke run, not a controlled cross-backend timing ranking: the jobs use separate hosted runner instances, and process-level memory, evidence reconstruction, and decomposed SNAP startup/IPC costs remain outside the scaffold.
-
-**Immediate next action:** manually dispatch the new workflow from `main` with `source_ref=stage1/section-uuids`, `repeats=5`, and `warmup=2`. Inspect the five exact-source reports, native mode/telemetry, and environment manifests. If all five reports verify, close M7.1 and proceed to M7.2's controlled workload matrix and multi-seed campaign. Keep E.8.5/E.8.8 as a correctness gate; do not change adapter semantics, backend selection, or registry approval as part of M7.1.
-
+M7 timing is supporting operational evidence only. No universal winner, scalar backend score or automatic selector is part of this milestone. A future task-specific suitability statement must name the actual audit operation, graph shape, semantic invariants, native API, runtime/deployment constraints and evidence limitations. Keep `production_approval=false`.
 
 ### 15.3 M7.1 exact-source validation and five-backend smoke controller — 2026-11-21
 
-The M7.1 implementation is now validated at the exact Stage1 branch head `31179eb4457907f276edba3666f72153c049a138` by Manual Validation Dispatcher run [44920211022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44920211022). The run selected profile `G9.42`, completed 53 validation-engine unit tests, 704 targeted pytest cases (5 skipped), and 3,643 full-regression cases (13 skipped), with zero failures/errors. The targeted and full-regression JUnit manifests each contain the 14 M7.1 test cases. The detached report, checksum references, content-addressed evidence bundle and provenance catalog were verified.
+The M7.1 implementation is validated by the exact-source five-backend manual run [44937517812](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44937517812). The workflow revision was `182d0009f1c759c46813e3a1cbbf34d22c247acb`; the requested Stage1 branch resolved to `342c9d55b1dc49ccf93759d0dce203723485ef17`. All eight workflow jobs passed. The workflow-definition lint and immutable source-resolution jobs passed, and all five backend jobs checked out the same resolved source SHA.
 
-The dedicated manual controller `.github/workflows/m7_1_manual_native_backend_smoke.yml` is introduced on `main` at `59ab8aabc10939b5d262cc5f2e175a1216c939cc` and hardened with an `actionlint` preflight at `d2b15b166611d62d638887318edc289ff8a7f73e`. It resolves `source_ref` once and passes the immutable resulting SHA to all five backend jobs. NetworkX, SciPy and igraph use the pip environment; graph-tool uses the existing conda-forge environment; SNAP uses the restricted CPython 3.9 / SNAP 6.0 worker with the Python 3.11 orchestrator. Reports are independently verified and uploaded with separate environment provenance.
+The dispatch used 15 measured repetitions and 5 warm-up calls per query. The source-resolution job, all five backend jobs and the final summary received those exact values. The workflow's JSON configuration assertions passed, and each report recorded 15/5 for all seven query scenarios. The five independent report verifiers returned `status=verified`; query result digests agreed across backends. This closes M7.1's smoke and input-propagation gate.
 
-This controller has not yet been executed. Its five jobs run on separate GitHub-hosted runner instances; consequently, the timing outputs must not be interpreted as a controlled cross-backend ranking. It establishes smoke-level native-path execution only. M7.1 remains open until all five reports from one exact-source run are inspected and verified. M7.2 remains blocked until that gate closes. `production_approval=false` remains unchanged.
+The backend jobs ran on separate hosted runner instances. Their timings are not a controlled cross-backend comparison and are not ranked. This run proves native-path execution and report integrity on the fixed E.8.5 fixture, not broad task suitability. See [run 44937517812](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44937517812).
+
+### 15.4 M7.2 task-suitability workload campaign — initial implementation
+
+M7.2 adds `tools/gb06_task_suitability_campaign.py` and `tests/semantic_graph/test_m72_task_suitability_campaign.py`. The campaign defines five deterministic workload families: sparse dependency, hub-heavy impact, parallel evidence multigraph, disconnected components and dense local neighborhoods. It supports 2–5 distinct ascending seeds, 3–15 measured repetitions and 0–5 warm-up calls.
+
+For each backend, the campaign records separate workload/seed cases, canonical graph digests, five common bounded traversal queries, parity against the independent `GraphTraversalEngine`, native query mode, native adjacency counters, construction time, raw timings and environment/worker provenance. The verifier reconstructs every generated graph, regenerates the query manifest and expected reference outputs, checks sample counts and recomputes descriptive aggregates. It rejects altered workload/result/aggregate claims and authority escalation.
+
+The first M7.2 scope is intentionally limited to bounded semantic traversal under varied graph shapes. It does not claim to qualify sparse numerical linear algebra, centrality, community detection, ontology reasoning or end-to-end evidence reconstruction. Those require distinct task contracts and workload oracles. The five libraries remain computational options; M7.2 does not calculate a global ranking or select a winner.
+
+The new M7.2 test module has been added to `validation/profiles/G9.42.yaml`. Current Stage1 implementation commits:
+- `6d579da8e613274b41123eed64405859b07235a5` — campaign runner and deterministic workload generator.
+- `d205f0b881312edf1b930d07cca66df152f22ac6` — campaign integrity and workload tests.
+- `ffeb99b9dac2646f5da232510ab5553d6647db0a` — G9.42 profile inclusion.
+- `0265f0548ee742f0533287978ec9b29889fec614` — M7 task-suitability protocol and milestone status update.
+
+**Next acceptance gates:** run G9.42 against the current Stage1 head; correct any failures before dispatching the five backend campaign reports. Then run each backend against the same Stage1 source SHA, seeds, workload family set, repetitions and warm-up settings; inspect all artifacts and verify each report independently. Environment differences must be disclosed, and measurements must not be ranked across unmatched runner environments. Keep `production_approval=false`.
