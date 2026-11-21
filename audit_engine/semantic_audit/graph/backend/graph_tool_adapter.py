@@ -124,9 +124,7 @@ class GraphToolAdapter(NativeAdapterMixin, SemanticGraphAdapter):
                 occurrence = self._native_edge_id_to_occurrence.get(native_edge_id)
                 if type(occurrence) is not int or self._edge_ids.get(occurrence) != occurrence:
                     raise ValueError("graph_tool_native_edge_occurrence_mapping_invalid")
-                source = self.graph.vertex_index[edge.source()]
-                target = self.graph.vertex_index[edge.target()]
-                identity = (int(source), int(target))
+                identity = (int(edge.source()), int(edge.target()))
                 prior = selected.get(occurrence)
                 if prior is not None:
                     prior_edge, prior_identity = prior
