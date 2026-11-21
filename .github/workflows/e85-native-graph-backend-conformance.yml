@@ -44,19 +44,11 @@ jobs:
           python tools/gb03_native_backend_conformance.py \
             --backend "${{ matrix.backend }}" \
             --output "e85-${{ matrix.backend }}.json"
-      - name: Run repository-backed graph and source conformance (NetworkX only)
-        if: matrix.backend == 'networkx'
+      - name: Run repository-backed graph and source conformance
         run: |
           python tools/gb04_repository_backend_conformance.py \
             --backend "${{ matrix.backend }}" \
             --output "e88-${{ matrix.backend }}-repository.json"
-      - name: Record deferred repository gate for non-NetworkX backends
-        if: matrix.backend != 'networkx'
-        run: |
-          {
-            echo "### Repository-backed conformance"
-            echo "NOT RUN: native local edge-occurrence adjacency is not implemented for this backend; repository/tool-routing acceptance is deferred to its backend milestone."
-          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload conformance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -186,16 +178,18 @@ jobs:
         run: |
           {
             echo "## Native graph backend conformance"
-            echo "- NetworkX / SciPy / igraph matrix job execution: ${PIP_BACKENDS}"
+            echo "- NetworkX / SciPy / igraph synthetic and repository-backed conformance matrix: ${PIP_BACKENDS}"
             echo "- graph-tool synthetic job execution: ${GRAPH_TOOL}"
             echo "- SNAP isolated Python 3.9 compatibility job: ${SNAP_JOB}"
             echo "- SNAP compatibility status: ${SNAP_NATIVE}"
             echo "- SNAP AE-32C adapter acceptance: NOT YET ACCEPTED; isolated worker protocol and repository parity remain required."
-            echo "- NetworkX: M1 protocol tests run in the NetworkX matrix job; acceptance still requires their pass plus the repository report."
+            echo "- NetworkX: M1 protocol tests, E.8.5 synthetic conformance and E.8.8 repository/source conformance run in the matrix job."
+            echo "- SciPy: E.8.5 synthetic conformance and E.8.8 repository/source conformance run against CSR/CSC native adjacency."
+            echo "- igraph: E.8.5 synthetic conformance and E.8.8 repository/source conformance run against native incident-edge IDs."
             echo "- graph-tool: dedicated conda-forge environment runs both synthetic E.8.5 and repository-backed E.8.8 conformance; acceptance requires both reports to pass."
             echo "- A green workflow job status is not, by itself, backend acceptance."
             echo ""
-            echo "A backend is accepted only when both synthetic and repository-backed reports show status=passed. graph-tool runs in its dedicated conda-forge environment. SNAP's Python 3.9 import/adjacency smoke is not native adapter acceptance."
+            echo "A backend is accepted only when both synthetic and repository-backed reports show status=passed, with exact source identity, native-adjacency telemetry, zero parity failures and hash-bound source follow-through. graph-tool runs in its dedicated conda-forge environment. SNAP's Python 3.9 import/adjacency smoke is not native adapter acceptance."
           } >> "$GITHUB_STEP_SUMMARY"
           if [[ "${PIP_BACKENDS}" != "success" || "${GRAPH_TOOL}" != "success" || "${SNAP_JOB}" != "success" ]]; then
             exit 1
