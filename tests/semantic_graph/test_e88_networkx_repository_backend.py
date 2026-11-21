@@ -182,10 +182,19 @@ def test_native_backend_workflow_avoids_flat_layout_editable_install_and_adds_re
     workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/e85-native-graph-backend-conformance.yml").read_text(encoding="utf-8")
     assert "pip install -e" not in workflow
     assert "python tools/gb04_repository_backend_conformance.py" in workflow
-    assert "python-version: \"3.9.19\"" in workflow
-    assert "SNAP AE-32C adapter acceptance: NOT YET ACCEPTED" in workflow
+    # The graph-backend orchestrators use the project's supported Python 3.11.
+    # SNAP 6.0 is intentionally isolated in its own Python 3.9 worker image;
+    # it must not force the host workflow back to the legacy 3.9 interpreter.
+    assert 'python-version: "3.11"' in workflow
+    assert "Python 3.9 and SNAP 6.0 execute only inside the worker image." in workflow
 
-    pyproject = (Path(__file__).resolve().parents[2] / "pyproject.toml").read_text(encoding="utf-8")
+    root = Path(__file__).resolve().parents[2]
+    snap_dockerfile = (root / ".github/snap-worker/Dockerfile").read_text(encoding="utf-8")
+    assert "FROM python:3.9-slim-bookworm" in snap_dockerfile
+    snap_requirements = (root / ".github/environments/e85-snap-python39-requirements.txt").read_text(encoding="utf-8")
+    assert "snap-stanford==6.0.0" in snap_requirements
+
+    pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
     assert 'igraph>=0.11,<2.0' in pyproject
 
     snap_smoke = (Path(__file__).resolve().parents[2] / "tools/snap_python39_compatibility_smoke.py").read_text(encoding="utf-8")
