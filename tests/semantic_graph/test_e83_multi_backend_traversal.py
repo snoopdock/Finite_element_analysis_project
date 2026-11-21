@@ -286,10 +286,7 @@ def test_scipy_backend_uses_csr_and_preserves_parallel_edge_occurrences():
     assert runtime["backend_parity_mode"] == "strict_per_query_reference_comparison"
     assert runtime["backend_loss_assessment"]["lossless"] is False
     assert runtime["backend_execution"]["parity_verified_queries"] == 1
-    if backend == "igraph":
-        assert runtime["backend_native_query_mode"] == "igraph_incident_edge_ids"
-        assert runtime["native_adjacency"]["native_adjacency_lookups"] >= 1
-        assert runtime["native_adjacency"]["native_edge_occurrences_read"] >= 1
+
 
 
 @pytest.mark.parametrize("backend", ["igraph", "graph-tool", "snap"])
@@ -435,6 +432,10 @@ def test_real_optional_native_backend_query_when_installed(backend, module_name)
     assert result.discovered_entities == ("B", "C")
     assert runtime["active_computation_backend"] == backend
     assert runtime["backend_execution"]["parity_verified_queries"] == 1
+    if backend == "igraph":
+        assert runtime["backend_native_query_mode"] == "igraph_incident_edge_ids"
+        assert runtime["native_adjacency"]["native_adjacency_lookups"] >= 1
+        assert runtime["native_adjacency"]["native_edge_occurrences_read"] >= 1
 
 
 @pytest.mark.parametrize("backend", ["igraph", "graph-tool", "snap"])
