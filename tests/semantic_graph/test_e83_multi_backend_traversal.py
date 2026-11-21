@@ -143,20 +143,32 @@ class _FakeGraphToolEdge:
         return self._target
 
 
+class _FakeGraphToolVertex:
+    def __init__(self, graph, index):
+        self.graph, self.index = graph, index
+
+    def out_edges(self):
+        return iter(edge for edge in self.graph._edges if edge.source() == self.index)
+
+    def in_edges(self):
+        return iter(edge for edge in self.graph._edges if edge.target() == self.index)
+
+
 class _FakeGraphTool:
     def __init__(self, directed=True):
         assert directed is True
         self.vertex_properties, self.edge_properties = {}, {}
         self._vertices, self._edges = [], []
+        self.edge_index = _FakeProperty()
 
     def add_vertex(self, count):
         self._vertices.extend(range(len(self._vertices), len(self._vertices) + count))
 
     def vertex(self, index):
-        return index
+        return _FakeGraphToolVertex(self, int(index))
 
     def vertices(self):
-        return iter(self._vertices)
+        return iter([self.vertex(index) for index in self._vertices])
 
     def edges(self):
         return iter(self._edges)
@@ -170,8 +182,11 @@ class _FakeGraphTool:
         return _FakeProperty()
 
     def add_edge(self, source, target):
-        edge = _FakeGraphToolEdge(len(self._edges), source, target)
+        source_index = source.index if hasattr(source, "index") else int(source)
+        target_index = target.index if hasattr(target, "index") else int(target)
+        edge = _FakeGraphToolEdge(len(self._edges), source_index, target_index)
         self._edges.append(edge)
+        self.edge_index[edge] = edge.index
         return edge
 
 
@@ -331,6 +346,49 @@ def test_fake_igraph_edge_sequence_supports_indexed_edge_access(monkeypatch):
     assert edge["relation"] == "IMPORTS"
 
 
+def test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans(monkeypatch):
+    install_fake(monkeypatch, "graph-tool")
+    graph = graph_fixture()
+    engine = NativeAdapterGraphTraversalEngine(graph, "graph-tool")
+    adapter = engine.adapter
+    assert engine.runtime_report()["backend_execution"]["native_projection_reads"] == 9
+
+    def forbidden_full_nodes():
+        raise AssertionError("graph_tool_full_node_enumeration_during_query_or_report")
+
+    def forbidden_full_edges():
+        raise AssertionError("graph_tool_full_edge_enumeration_during_query_or_report")
+
+    monkeypatch.setattr(adapter, "iter_native_nodes", forbidden_full_nodes)
+    monkeypatch.setattr(adapter, "iter_native_edges", forbidden_full_edges)
+
+    outgoing = engine.walk("A", direction="outgoing", max_depth=1)
+    assert [(step.source_id, step.target_id, step.relation_type) for step in outgoing.steps] == [
+        ("A", "B", "DEPENDS_ON"), ("A", "B", "IMPORTS"),
+    ]
+    incoming = engine.walk("A", direction="incoming", max_depth=1)
+    assert [(step.source_id, step.target_id, step.relation_type) for step in incoming.steps] == [
+        ("D", "A", "IMPORTS"),
+    ]
+    both = engine.walk("C", direction="both", max_depth=1)
+    self_loops = [
+        step for step in both.steps
+        if step.source_id == "C" and step.target_id == "C"
+    ]
+    assert len(self_loops) == 1
+    assert both.examined_edges == 2
+
+    runtime = engine.runtime_report()
+    assert runtime["backend_native_query_mode"] == "graph_tool_vertex_edge_iterators"
+    assert runtime["projection_node_count"] == len(graph.nodes)
+    assert runtime["projection_edge_occurrence_count"] == len(graph.edges)
+    assert runtime["native_adjacency"]["native_adjacency_lookups"] == 3
+    assert runtime["native_adjacency"]["outgoing_edge_iterator_lookups"] == 2
+    assert runtime["native_adjacency"]["incoming_edge_iterator_lookups"] == 2
+    assert runtime["native_adjacency"]["native_edge_occurrences_read"] == 5
+    assert runtime["backend_execution"]["parity_verified_queries"] == 3
+
+
 def test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans(monkeypatch):
     install_fake(monkeypatch, "igraph")
     engine = NativeAdapterGraphTraversalEngine(graph_fixture(), "igraph")
@@ -442,7 +500,8 @@ def test_backend_registry_marks_all_adapters_as_semantic_query_capable():
         assert registry.get(backend)["capabilities"]["semantic_traversal"] is True
     assert registry.get("igraph")["capabilities"]["acceptance_state"]["native_adjacency_implementation"] == "implemented_unvalidated"
     assert registry.get("igraph")["capabilities"]["acceptance_state"]["production_approval"] is False
-    assert registry.get("graph-tool")["capabilities"]["acceptance_state"]["native_adjacency_implementation"] == "not_implemented"
+    assert registry.get("graph-tool")["capabilities"]["acceptance_state"]["native_adjacency_implementation"] == "implemented_unvalidated"
+    assert registry.get("graph-tool")["capabilities"]["acceptance_state"]["production_approval"] is False
     assert registry.get("snap")["capabilities"]["acceptance_state"]["native_adjacency_implementation"] == "not_implemented"
 
 
@@ -461,6 +520,11 @@ def test_real_optional_native_backend_query_when_installed(backend, module_name)
     assert runtime["backend_execution"]["parity_verified_queries"] == 1
     if backend == "igraph":
         assert runtime["backend_native_query_mode"] == "igraph_incident_edge_ids"
+        assert runtime["backend_library_version"]
+        assert runtime["native_adjacency"]["native_adjacency_lookups"] >= 1
+        assert runtime["native_adjacency"]["native_edge_occurrences_read"] >= 1
+    elif backend == "graph-tool":
+        assert runtime["backend_native_query_mode"] == "graph_tool_vertex_edge_iterators"
         assert runtime["backend_library_version"]
         assert runtime["native_adjacency"]["native_adjacency_lookups"] >= 1
         assert runtime["native_adjacency"]["native_edge_occurrences_read"] >= 1
