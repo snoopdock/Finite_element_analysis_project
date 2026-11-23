@@ -1,4 +1,4 @@
-# Graph Report - stage1-section-uuids  (2026-11-21)
+# Graph Report - stage1-section-uuids  (2026-11-23)
 
 ## Corpus Check
 - cluster-only mode — file stats not available
@@ -9,7 +9,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `47eb1ae6`
+- Built from commit: `e6a985d4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
