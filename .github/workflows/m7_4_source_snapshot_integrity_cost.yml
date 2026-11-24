@@ -10,6 +10,8 @@ on:
       - "audit_engine/semantic_audit/ae32b/evidence_tools.py"
       - "tools/gb06_source_snapshot_integrity_benchmark.py"
       - "tests/semantic_graph/test_m7_g4_source_snapshot_integrity_benchmark.py"
+      - "tests/semantic_graph/test_m74_snapshot_mutation_integrity.py"
+      - "tests/semantic_graph/test_m74_repository_side_effects.py"
       - "requirements.txt"
       - "pyproject.toml"
 
