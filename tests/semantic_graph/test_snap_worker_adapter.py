@@ -162,6 +162,34 @@ def _graph():
     return graph
 
 
+def test_snap_worker_protocol_rejects_unexposed_mutation_operation():
+    """The worker exposes read-only post-init operations, not graph mutation RPCs."""
+    from pathlib import Path
+    import subprocess
+    import sys
+
+    worker = Path(__file__).resolve().parents[2] / "tools" / "snap_worker.py"
+    request = {
+        "schema_version": "ae32c/snap-worker/v1",
+        "request_id": "mutation-probe",
+        "operation": "mutate",
+        "graph_fingerprint": "graph:" + "0" * 32,
+    }
+    completed = subprocess.run(
+        [sys.executable, str(worker)],
+        input=json.dumps(request) + "\n",
+        capture_output=True,
+        text=True,
+        timeout=5,
+        check=False,
+    )
+    assert completed.returncode == 0
+    frames = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
+    assert len(frames) == 1
+    assert frames[0]["status"] == "error"
+    assert frames[0]["error_code"] == "request_schema_invalid"
+
+
 def test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol(monkeypatch):
     captured = {}
 
