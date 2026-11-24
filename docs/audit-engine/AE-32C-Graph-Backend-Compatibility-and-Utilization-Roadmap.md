@@ -773,3 +773,15 @@ Exact-source [E.8.5/E.8.8 run 45385374806](https://github.com/snoopdock/Finite_e
 The old M6 G9.42 acceptance is only for its recorded historical snapshot and cannot be reused for the new adapter code. The current G9.42 profile contains `test_snap_worker_adapter.py` and `test_m74_task_suitability_acceptance.py`, but G9.42 has not been dispatched against `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`.
 
 The next gates are: determine why SNAP E.8.8 is unusually long or allow its declared job timeout to produce a final result; add/execute a live Docker stalled-worker cleanup test; and perform exact-source G9.42 through the manual dispatcher. Do not issue final task/backend suitability verdicts, promote a backend or change `production_approval=false`.
+
+## 21. Live SNAP Docker timeout cleanup — 2026-11-24
+
+At exact Stage1 source `7a77b52c316c60ffb8f433af2bbd1b742f389972`, the new `tests/semantic_graph/test_snap_worker_docker_lifecycle.py` integration step passed. The live Docker lifecycle test `tests/semantic_graph/test_snap_worker_docker_lifecycle.py` passed. It built a disposable worker container that deliberately did not respond, observed the adapter request deadline, verified `docker rm --force` used the exact container ID captured by `--cidfile`, and confirmed that `docker inspect` could no longer find the container. This is direct live Docker evidence on the tested GitHub-hosted runner, not merely a mocked process test.
+
+In exact-source workflow run `45391619634` at `7a77b52c316c60ffb8f433af2bbd1b742f389972`, the SNAP adapter protocol/restriction tests, live Docker timeout cleanup test, M7.4 task suite and synthetic E.8.5 all succeeded. NetworkX, SciPy, python-igraph and graph-tool jobs also succeeded. At the last inspection, SNAP repository-backed E.8.8 remained `in_progress` after approximately 12 minutes; no final SNAP repository report or artifact was available. Do not count the matrix as complete.
+
+The four non-SNAP backend jobs passed. The SNAP adapter protocol, M7.4 task acceptance and synthetic E.8.5 steps passed as well. The E.8.8 repository-backed stage has not produced a final result and remains the active validation boundary.
+
+The G9.42 profile now includes `tests/semantic_graph/test_snap_worker_adapter.py`, `tests/semantic_graph/test_snap_worker_docker_lifecycle.py`, and `tests/semantic_graph/test_m74_task_suitability_acceptance.py`. Exact-source G9.42 has not been dispatched. The default-branch manual dispatcher is `workflow_dispatch` only, and the available GitHub connection does not expose a workflow-dispatch action.
+
+Next work: resolve or instrument SNAP E.8.8; add the prepared M7.2 seeded-topology task tests; and run exact-revision G9.42 through the manual dispatcher. No final suitability verdict, ranking, automatic selector or production approval is implied.

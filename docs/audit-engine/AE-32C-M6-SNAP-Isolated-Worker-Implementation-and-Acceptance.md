@@ -240,3 +240,15 @@ At the last inspected state, the SNAP repository-backed E.8.8 step was still `in
 
 This run does not prove live forced removal of a deliberately stalled container. A Docker-backed lifecycle integration test is still desirable. The exact-commit G9.42 profile also remains unrun for this newer source revision. The old M6 G9.42 acceptance above must not be re-used as validation evidence for these later changes.
 
+
+## 10. Live Docker timeout cleanup — 2026-11-24
+
+**Exact source:** `7a77b52c316c60ffb8f433af2bbd1b742f389972`  
+**Workflow:** [run 45391619634](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45391619634)  
+**SNAP job:** `138436539853`
+
+The live Docker lifecycle test `tests/semantic_graph/test_snap_worker_docker_lifecycle.py` passed. It built a disposable worker container that deliberately did not respond, observed the adapter request deadline, verified `docker rm --force` used the exact container ID captured by `--cidfile`, and confirmed that `docker inspect` could no longer find the container. This is direct live Docker evidence on the tested GitHub-hosted runner, not merely a mocked process test.
+
+In exact-source workflow run `45391619634` at `7a77b52c316c60ffb8f433af2bbd1b742f389972`, the SNAP adapter protocol/restriction tests, live Docker timeout cleanup test, M7.4 task suite and synthetic E.8.5 all succeeded. NetworkX, SciPy, python-igraph and graph-tool jobs also succeeded. At the last inspection, SNAP repository-backed E.8.8 remained `in_progress` after approximately 12 minutes; no final SNAP repository report or artifact was available. Do not count the matrix as complete.
+
+The G9.42 profile now includes `tests/semantic_graph/test_snap_worker_adapter.py`, `tests/semantic_graph/test_snap_worker_docker_lifecycle.py`, and `tests/semantic_graph/test_m74_task_suitability_acceptance.py`. Exact-source G9.42 has not been dispatched. The default-branch manual dispatcher is `workflow_dispatch` only, and the available GitHub connection does not expose a workflow-dispatch action. This live test closes the actual container-removal question for the runner environment tested; it does not by itself establish repository-backed SNAP suitability. The older M6 G9.42 acceptance remains tied to its historical source snapshot and cannot be extended to this code. Keep `production_approval=false`.

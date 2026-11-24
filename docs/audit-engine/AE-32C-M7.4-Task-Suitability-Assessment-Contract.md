@@ -298,3 +298,18 @@ The current adapter enforces `AE32C_SNAP_WORKER_REQUEST_TIMEOUT_SECONDS` (defaul
 The SNAP adapter protocol test step passed at exact-source run `45385374806`, as did the SNAP M7.4 task test and synthetic E.8.5 conformance steps. The four non-SNAP backend jobs passed. The repository-backed SNAP E.8.8 step was still in progress after approximately 35 minutes at the last inspection, with no final result or SNAP evidence artifact available. Consequently, the current revision has positive adapter unit-test evidence but no current-run repository-backed SNAP acceptance result.
 
 The timeout and container-removal unit tests use simulated process/Docker behavior. They do not prove that a real Docker daemon removes a deliberately stalled container. A Docker-backed lifecycle test and exact-revision G9.42 are still outstanding. No final task/backend suitability verdict is issued by this follow-up.
+
+## 15. Live SNAP timeout cleanup and E.8.8 boundary — 2026-11-24
+
+**Exact source:** `7a77b52c316c60ffb8f433af2bbd1b742f389972`  
+**Workflow:** [run 45391619634](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45391619634)
+
+The workflow now executes `tests/semantic_graph/test_snap_worker_docker_lifecycle.py` against a real Docker daemon. The live Docker lifecycle test `tests/semantic_graph/test_snap_worker_docker_lifecycle.py` passed. It built a disposable worker container that deliberately did not respond, observed the adapter request deadline, verified `docker rm --force` used the exact container ID captured by `--cidfile`, and confirmed that `docker inspect` could no longer find the container. This is direct live Docker evidence on the tested GitHub-hosted runner, not merely a mocked process test.
+
+In exact-source workflow run `45391619634` at `7a77b52c316c60ffb8f433af2bbd1b742f389972`, the SNAP adapter protocol/restriction tests, live Docker timeout cleanup test, M7.4 task suite and synthetic E.8.5 all succeeded. NetworkX, SciPy, python-igraph and graph-tool jobs also succeeded. At the last inspection, SNAP repository-backed E.8.8 remained `in_progress` after approximately 12 minutes; no final SNAP repository report or artifact was available. Do not count the matrix as complete.
+
+The E.8.8 command is configured with a 30-second worker RPC timeout and a 12-minute step timeout. Its continuing `in_progress` status at the last inspection is unresolved; no SNAP E.8.8 report or artifact was available. Do not infer acceptance from the earlier E.8.5 pass.
+
+The G9.42 profile now includes `tests/semantic_graph/test_snap_worker_adapter.py`, `tests/semantic_graph/test_snap_worker_docker_lifecycle.py`, and `tests/semantic_graph/test_m74_task_suitability_acceptance.py`. Exact-source G9.42 has not been dispatched. The default-branch manual dispatcher is `workflow_dispatch` only, and the available GitHub connection does not expose a workflow-dispatch action.
+
+The formal G1–G8 task/backend evidence records and suitability verdicts remain pending. Keep `production_approval=false`.

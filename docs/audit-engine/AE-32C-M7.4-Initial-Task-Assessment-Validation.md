@@ -181,3 +181,16 @@ The latest exact-source run reports:
 The adapter test module exercises blocked write, blocked read, blocked close, invalid timeout values and the recorded `docker rm --force` command. Its process and Docker command are simulated/mocked. It does not prove cleanup against a real unresponsive container. No final E.8.8 SNAP artifact or conclusion was available, so the run is not accepted as a complete five-backend E.8.5/E.8.8 matrix.
 
 G9.42 includes the adapter test file and M7.4 suite, but has not been dispatched against this latest exact revision. Formal task/backend suitability verdicts remain pending; preserve `production_approval=false`.
+
+## 10. Live SNAP timeout-cleanup validation — 2026-11-24
+
+**Exact source:** `7a77b52c316c60ffb8f433af2bbd1b742f389972`  
+**Workflow:** [run 45391619634](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45391619634)
+
+The live Docker lifecycle test `tests/semantic_graph/test_snap_worker_docker_lifecycle.py` passed. It built a disposable worker container that deliberately did not respond, observed the adapter request deadline, verified `docker rm --force` used the exact container ID captured by `--cidfile`, and confirmed that `docker inspect` could no longer find the container. This is direct live Docker evidence on the tested GitHub-hosted runner, not merely a mocked process test.
+
+In exact-source workflow run `45391619634` at `7a77b52c316c60ffb8f433af2bbd1b742f389972`, the SNAP adapter protocol/restriction tests, live Docker timeout cleanup test, M7.4 task suite and synthetic E.8.5 all succeeded. NetworkX, SciPy, python-igraph and graph-tool jobs also succeeded. At the last inspection, SNAP repository-backed E.8.8 remained `in_progress` after approximately 12 minutes; no final SNAP repository report or artifact was available. Do not count the matrix as complete.
+
+The G9.42 profile now includes `tests/semantic_graph/test_snap_worker_adapter.py`, `tests/semantic_graph/test_snap_worker_docker_lifecycle.py`, and `tests/semantic_graph/test_m74_task_suitability_acceptance.py`. Exact-source G9.42 has not been dispatched. The default-branch manual dispatcher is `workflow_dispatch` only, and the available GitHub connection does not expose a workflow-dispatch action.
+
+**Bounded conclusion:** live Docker container removal is demonstrated for the tested runner. SNAP repository-backed E.8.8 and exact-source G9.42 remain pending. No formal suitability verdict or production approval is made.

@@ -289,3 +289,13 @@ The adapter uses a 120-second default request deadline (maximum 600 seconds) acr
 Exact-source [run 45385374806](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45385374806) checked out `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`. The SNAP adapter test, M7.4 task suite and E.8.5 synthetic step all succeeded. NetworkX, SciPy, python-igraph and graph-tool jobs succeeded. At the last inspection, SNAP E.8.8 remained in progress after approximately 35 minutes, with no final SNAP repository report or artifact. This is not a completed E.8.5/E.8.8 matrix result.
 
 The timeout cleanup tests use a mocked process and Docker command. Live forced removal of a deliberately stalled Docker worker remains unproven. The next M7.4 SNAP gate is to close the current E.8.8 result, then add or execute a real Docker lifecycle test for intentional worker non-response. The G9.42 profile contains the relevant adapter and M7.4 tests, but the profile has not been dispatched against this source revision. Keep all suitability decisions pending and `production_approval=false`.
+
+## 19. Live SNAP container-removal test — 2026-11-24
+
+At exact Stage1 source `7a77b52c316c60ffb8f433af2bbd1b742f389972`, the E.8.5/E.8.8 workflow runs `tests/semantic_graph/test_snap_worker_docker_lifecycle.py`. The live Docker lifecycle test `tests/semantic_graph/test_snap_worker_docker_lifecycle.py` passed. It built a disposable worker container that deliberately did not respond, observed the adapter request deadline, verified `docker rm --force` used the exact container ID captured by `--cidfile`, and confirmed that `docker inspect` could no longer find the container. This is direct live Docker evidence on the tested GitHub-hosted runner, not merely a mocked process test.
+
+In exact-source workflow run `45391619634` at `7a77b52c316c60ffb8f433af2bbd1b742f389972`, the SNAP adapter protocol/restriction tests, live Docker timeout cleanup test, M7.4 task suite and synthetic E.8.5 all succeeded. NetworkX, SciPy, python-igraph and graph-tool jobs also succeeded. At the last inspection, SNAP repository-backed E.8.8 remained `in_progress` after approximately 12 minutes; no final SNAP repository report or artifact was available. Do not count the matrix as complete.
+
+The G9.42 profile includes the SNAP adapter, live Docker lifecycle and M7.4 task tests, but exact-source G9.42 has not been dispatched. The main-branch dispatcher requires `workflow_dispatch`; that dispatch operation is not exposed by the connected GitHub actions tools.
+
+Do not treat the still-running E.8.8 step as acceptance. Keep task/backend verdicts pending and `production_approval=false`.
