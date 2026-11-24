@@ -853,3 +853,13 @@ Results: 53 validation-engine tests passed; 846 targeted tests (799 passed, 47 s
 Report SHA-256: `d12a924d7da5c29334c1df8e40072671e5771bc733e9c3c65e1395311ff831db`. Content-addressed bundle SHA-256: `decb5aa79605dad7bab4067d6700e8490aa3193c91b069098f87aa8a216a6266`. Actions artifact: `14923188602`, archive digest `sha256:39a9be6f71e093d101c2eedc704a596ce816adb78d354c28ce8dac2dc0b5435d`.
 
 G9.42 is now complete for this source snapshot. M7.4 is not complete: formal per-task/per-backend G1–G8 outcomes remain Insufficient evidence, the distinct E.8.5/E.8.8 artifacts still need their detached M7.4 G7 verifier pass, and representative task-domain workloads, G4/G6 closure and PATH/IMPACT boundaries remain. `production_approval=false` is unchanged.
+
+## 25. M7.4 G7 detached E.8.5/E.8.8 evidence verification — 2026-11-24
+
+The five backend-specific Actions artifacts from [run 45395352748](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45395352748) were downloaded by exact artifact ID and detached-verified against GitHub Actions metadata. Their sizes and SHA-256 digests matched; all five reports were bound to Stage1 source `51d025fd328b00a59988a05fe72d9092262434f5`, run/attempt, backend/library/native query mode and common report invariants.
+
+Each backend passed E.8.5 seven-case checks and 14/14 parity queries, plus E.8.8 43/43 parity queries. Zero backend query or parity failures were recorded. The verifier checked projection round-trip, repository snapshot/source-manifest fingerprint, context telemetry, source-file SHA follow-through, no-side-effect assertions, SciPy hybrid topology/semantic side-channel handling and SNAP worker constraints. Eleven verifier adversarial tests passed.
+
+Verifier implementation, tests, exact Actions artifact manifest and machine-readable verified dossier are committed in the repository. The full audit explanation and limitations are in [the detached dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier.md).
+
+G7 is now closed for the recorded E.8.5/E.8.8 evidence set. This does not constitute historical workflow re-execution or physical-runner attestation. The G9.42 result from run 45400741779 remains separately scoped to its validation bundle. G2/G4/G5/G6 and PATH/IMPACT domain limitations remain; all 20 task/backend outcomes remain Insufficient evidence. Preserve `production_approval=false`.

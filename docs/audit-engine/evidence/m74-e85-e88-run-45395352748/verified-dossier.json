@@ -1,0 +1,211 @@
+{
+  "artifacts": [
+    {
+      "artifact_archive_sha256": "sha256:daf49717450bc776001b4a86e690329412b184a39afbbfd3186260ee2b9dc6aa",
+      "artifact_archive_size_bytes": 2768,
+      "artifact_id": 14920662487,
+      "artifact_name": "e85-networkx-conformance",
+      "backend": "networkx",
+      "e85": {
+        "case_count": 7,
+        "native_adjacency_lookups": 34,
+        "native_edge_occurrences_read": 96,
+        "parity_verified": 14,
+        "queries": 14
+      },
+      "e85_report_sha256": "90bd548def803847917986df228734d31033518c46bfa3f8b587b172eb68de00",
+      "e88": {
+        "context_operations": {
+          "find_workflow_context": 16,
+          "trace_execution_context": 7,
+          "trace_execution_context.workflow_context": 16
+        },
+        "native_adjacency_lookups": 45,
+        "native_edge_occurrences_read": 86,
+        "parity_verified": 43,
+        "queries": 43,
+        "verified_source_reads": {
+          "main.py": "3282daf42d3e9a4eaccb836df33c569863853afd01c4176c532906c5e433f475",
+          "tests/checks.py": "cedb1c8e442aceb32d87722d2718ee9a80d8b676b7cb660f4c7bca3d8a81a75a"
+        }
+      },
+      "e88_report_sha256": "9fbcf71622779b6f3360ba4a2ad90d33d79ba4d649fc3448e1563057e37280f1",
+      "library_version": "3.6.1",
+      "native_query_mode": "networkx_successor_predecessor_adjacency"
+    },
+    {
+      "artifact_archive_sha256": "sha256:11491e4a4b16f0c8a5ca060a9882c6fdd97fd60c365c3831a8c410c6ae86b8e5",
+      "artifact_archive_size_bytes": 2928,
+      "artifact_id": 14920921665,
+      "artifact_name": "e85-scipy-conformance",
+      "backend": "scipy",
+      "e85": {
+        "case_count": 7,
+        "native_adjacency_lookups": 34,
+        "native_edge_occurrences_read": 96,
+        "parity_verified": 14,
+        "queries": 14
+      },
+      "e85_report_sha256": "121e569516f3c3fd83b40ae6166de7274ecdc99e8913f07f27a72fd07613a88c",
+      "e88": {
+        "context_operations": {
+          "find_workflow_context": 16,
+          "trace_execution_context": 7,
+          "trace_execution_context.workflow_context": 16
+        },
+        "native_adjacency_lookups": 45,
+        "native_edge_occurrences_read": 86,
+        "parity_verified": 43,
+        "queries": 43,
+        "verified_source_reads": {
+          "main.py": "3282daf42d3e9a4eaccb836df33c569863853afd01c4176c532906c5e433f475",
+          "tests/checks.py": "cedb1c8e442aceb32d87722d2718ee9a80d8b676b7cb660f4c7bca3d8a81a75a"
+        }
+      },
+      "e88_report_sha256": "03bf88e470a87c0a231893a1ebdb0f1652c38622fad941c7f65d467348ba0ed0",
+      "library_version": "1.17.1",
+      "native_query_mode": "scipy_csr_csc_adjacency"
+    },
+    {
+      "artifact_archive_sha256": "sha256:43dfe79abd2e9d0931b2417d82dd7c45bbfe5b510b99e14d44fed3c615877c7a",
+      "artifact_archive_size_bytes": 2747,
+      "artifact_id": 14921070985,
+      "artifact_name": "e85-igraph-conformance",
+      "backend": "igraph",
+      "e85": {
+        "case_count": 7,
+        "native_adjacency_lookups": 34,
+        "native_edge_occurrences_read": 96,
+        "parity_verified": 14,
+        "queries": 14
+      },
+      "e85_report_sha256": "e9a8f9402242f67be7b4ca4b86a09104d841d5e970ec17b48965fa430c72306f",
+      "e88": {
+        "context_operations": {
+          "find_workflow_context": 16,
+          "trace_execution_context": 7,
+          "trace_execution_context.workflow_context": 16
+        },
+        "native_adjacency_lookups": 45,
+        "native_edge_occurrences_read": 86,
+        "parity_verified": 43,
+        "queries": 43,
+        "verified_source_reads": {
+          "main.py": "3282daf42d3e9a4eaccb836df33c569863853afd01c4176c532906c5e433f475",
+          "tests/checks.py": "cedb1c8e442aceb32d87722d2718ee9a80d8b676b7cb660f4c7bca3d8a81a75a"
+        }
+      },
+      "e88_report_sha256": "be314f9cb1d4baec04f8622d3ab0b294068c64962af2ce0808729ca337c0ab53",
+      "library_version": "1.0.0",
+      "native_query_mode": "igraph_incident_edge_ids"
+    },
+    {
+      "artifact_archive_sha256": "sha256:6ae437eefa6be0d15956855b7b8c271393c4c68ccf15bcb9717e008e11eadddd",
+      "artifact_archive_size_bytes": 2845,
+      "artifact_id": 14920508045,
+      "artifact_name": "e85-graph-tool-conformance",
+      "backend": "graph-tool",
+      "e85": {
+        "case_count": 7,
+        "native_adjacency_lookups": 34,
+        "native_edge_occurrences_read": 96,
+        "parity_verified": 14,
+        "queries": 14
+      },
+      "e85_report_sha256": "0cbd584f2736cff0beeb068be8b6f61e4e37c2f3f33a47c1f6a1177fcf4ba9f4",
+      "e88": {
+        "context_operations": {
+          "find_workflow_context": 16,
+          "trace_execution_context": 7,
+          "trace_execution_context.workflow_context": 16
+        },
+        "native_adjacency_lookups": 45,
+        "native_edge_occurrences_read": 86,
+        "parity_verified": 43,
+        "queries": 43,
+        "verified_source_reads": {
+          "main.py": "3282daf42d3e9a4eaccb836df33c569863853afd01c4176c532906c5e433f475",
+          "tests/checks.py": "cedb1c8e442aceb32d87722d2718ee9a80d8b676b7cb660f4c7bca3d8a81a75a"
+        }
+      },
+      "e88_report_sha256": "a195f2df4daaa5abf86432dce221e9222c3948b9d800ba0277714c818386f087",
+      "library_version": "3.9",
+      "native_query_mode": "graph_tool_vertex_edge_iterators"
+    },
+    {
+      "artifact_archive_sha256": "sha256:e5ff53b2ee4d86c7534d080bf96558618445a8d7d4281e6f854a3c0bd45eac30",
+      "artifact_archive_size_bytes": 3431,
+      "artifact_id": 14920592009,
+      "artifact_name": "e85-e88-snap-isolated-worker",
+      "backend": "snap",
+      "e85": {
+        "case_count": 7,
+        "native_adjacency_lookups": 34,
+        "native_edge_occurrences_read": 96,
+        "parity_verified": 14,
+        "queries": 14
+      },
+      "e85_report_sha256": "642c1eed8709087cedc4e426b61dbe64315da8a6faa5b5cd022c1f64d8d7713e",
+      "e88": {
+        "context_operations": {
+          "find_workflow_context": 16,
+          "trace_execution_context": 7,
+          "trace_execution_context.workflow_context": 16
+        },
+        "native_adjacency_lookups": 45,
+        "native_edge_occurrences_read": 86,
+        "parity_verified": 43,
+        "queries": 43,
+        "verified_source_reads": {
+          "main.py": "3282daf42d3e9a4eaccb836df33c569863853afd01c4176c532906c5e433f475",
+          "tests/checks.py": "cedb1c8e442aceb32d87722d2718ee9a80d8b676b7cb660f4c7bca3d8a81a75a"
+        }
+      },
+      "e88_report_sha256": "f1873cc3ed4dba0ac4bc589fa6f275f733e1030ee9a592916d6bfb582da363c5",
+      "library_version": "6.0.0",
+      "native_query_mode": "snap_isolated_worker_tneanet_edge_ids"
+    }
+  ],
+  "campaign": {
+    "backends": [
+      "networkx",
+      "scipy",
+      "igraph",
+      "graph-tool",
+      "snap"
+    ],
+    "source_branch": "stage1/section-uuids",
+    "source_revision": "51d025fd328b00a59988a05fe72d9092262434f5",
+    "workflow_name": "AE-32C Native Graph Backend Conformance (E.8.5 / E.8.8)",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 45395352748
+  },
+  "cross_backend_invariants": {
+    "backend_specific_native_modes_verified": true,
+    "e85_graph_fingerprint": "graph:c6146d2473910927d9c7f113d92a4400",
+    "e88_repository_snapshot": {
+      "evidence_index_status": "complete",
+      "graph_edge_count": 41,
+      "graph_fingerprint": "graph:1aca2caea6acabcf695a6118f7202b6e",
+      "graph_node_count": 26,
+      "indexed_file_count": 9,
+      "source_manifest_sha256": "5d186a8801781c0c63ea29bc102a0c67f08bf8bd8358888cc96de381a24cb0cf"
+    }
+  },
+  "interpretation": {
+    "backend_auto_selection_permitted": false,
+    "computational_options_not_competitors": true,
+    "performance_winner_established": false,
+    "production_approval": false,
+    "scope": "artifact identity and declared E.8.5/E.8.8 evidence; not historical re-execution or physical-runner attestation",
+    "task_suitability_decision_established": false
+  },
+  "schema_version": "ae32c/m7.4-e85-e88-detached-dossier/v1",
+  "status": "verified",
+  "verifier": {
+    "implementation": "tools/gb08_m74_native_conformance_dossier.py",
+    "implementation_sha256": "94f1b42f81fed87123aed8b77e1d0560609a9bfe895502c05afde2b00fa7179f",
+    "manifest_sha256": "ff13bff4d7b2f57e425e2566b90797cbd22016ec048926e9ea590f67e79444d3",
+    "python_version": "3.13.5"
+  }
+}

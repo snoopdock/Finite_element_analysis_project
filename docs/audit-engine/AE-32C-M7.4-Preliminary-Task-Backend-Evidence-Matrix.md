@@ -15,7 +15,7 @@
 
 The expanded M7.4 acceptance module passed in all five backend environments. Each selected-backend job reported 21 passed and 84 intentionally skipped cases. This provides positive task-scoped semantic and native-path evidence for all 20 task/backend combinations (four public tasks × five backends).
 
-**This is not yet 20 suitability approvals.** Under the M7.4 contract, an untested or only partially evidenced mandatory gate prevents a Suitable decision. The preliminary outcome for every pair below is therefore **Insufficient evidence**. The reason is not an observed parity failure; it is the remaining incompleteness in representative workload, mutation/corruption envelope, operational envelope and independent evidence closure.
+**This is not yet 20 suitability approvals.** Under the M7.4 contract, an untested or only partially evidenced mandatory gate prevents a Suitable decision. The preliminary outcome for every pair below is therefore **Insufficient evidence**. The reason is not an observed parity failure; it is the remaining incompleteness in semantic boundary coverage, mutation/corruption safety, representative workload, operational envelope and task-domain qualification. The five-backend E.8.5/E.8.8 artifact integrity check (G7) was subsequently completed; see Section 9.
 
 The five backends are task-relevant computational options, not competing products. This record does not rank them.
 
@@ -71,7 +71,7 @@ All five E.8.8 reports record 43 successful backend queries, 43 reference-parity
 | G4 — Snapshot/mutation safety | Canonical graph immutability asserted through tested analyses | Partial | Stale/corrupt projection, mutation race and longer-running repeated-query cases remain open |
 | G5 — Task workload | Five M7.2 seeded families, two seeds, three replicas; all four public tasks invoked | Partial | Representative audit corpus, scale envelope, degree/evidence density and pressure workloads remain untested |
 | G6 — Environment/operations | Exact versions/Python, SNAP resource controls, deadlines, live Docker removal and explicit teardown tests | Partial | Startup costs, resource use under representative loads, cross-host portability and non-SNAP operational envelopes remain incomplete |
-| G7 — Evidence integrity | Exact source SHA, run/attempt, source/graph manifest hashes, artifact IDs and archive digests recorded; G9.42's own report, immutable bundle and catalog independently verified in run `45400741779` | Partial | Detached verification of the five-backend E.8.5/E.8.8 artifact set from run `45395352748` remains outstanding; do not conflate it with the separate G9.42 validation bundle |
+| G7 — Evidence integrity | Exact source SHA, run/attempt, source/graph manifest hashes, artifact IDs and archive digests recorded; G9.42 validation bundle independently verified in run `45400741779`; all five E.8.5/E.8.8 artifacts detached-verified in Section 9 | Pass, for the recorded evidence set | Preserve verifier, manifest, report hashes and archive digests; this is evidence-integrity closure, not runner attestation or task-suitability verdict |
 | G8 — Scope discipline | Policy prohibits winner, global score, automatic selection and production approval | Pass | Preserve restrictions in future selector decisions |
 
 ## 5. Preliminary task/backend decision ledger
@@ -121,7 +121,7 @@ Additional representation constraints:
 1. Expand G5 using task-specific audit-domain graph captures and boundary cases, including larger connected graphs, degree/evidence-density variation, multi-source sets near the 25-source limit, cycle scan limits and relation-vocabulary extremes.
 2. Complete G4 stale/corrupt projection, mutation-race and repeated-query lifecycle checks for every adapter.
 3. Complete G6 operational records: startup/teardown, resource use under declared workloads, portability and SNAP timeout/recovery behavior.
-4. Complete G7 with a detached verifier pass over this exact source/run/artifact set.
+4. **Completed:** detached verification of the exact five-backend E.8.5/E.8.8 artifacts from run `45395352748`; see Section 9.
 5. Complete PATH domain-specific evidence/locator/source follow-through.
 6. Keep IMPACT canonical SCC behavior explicit. Native SCC support would require a separate API/algorithm contract and parity evidence.
 7. **Completed:** exact-revision G9.42 was dispatched through the main-branch manual dispatcher with branch `stage1/section-uuids`, profile `G9.42` and regression mode `profile`; run `45400741779` passed against source SHA `d66f10b5c8af74b33a661c2453da3aca9982d565`. See Section 8 for run, test and evidence-bundle details.
@@ -143,3 +143,11 @@ Additional representation constraints:
 **Interpretation:** the exact-source G9.42 dispatch gate is now closed for Stage1 SHA `d66f10b...`. This does not close the separate M7.4 G7 requirement to independently verify the five-backend E.8.5/E.8.8 artifact set from run `45395352748`; the G9.42 validation bundle is a different evidence object. G4 stale/corrupt projection and mutation-race coverage, representative G5 audit-domain workload evidence, broader G6 operational/resource envelopes, PATH claim-to-source follow-through and the explicitly hybrid IMPACT SCC boundary remain as described in the preliminary matrix. All 20 task/backend outcomes remain `Insufficient evidence`; no suitability, ranking, selection or production approval follows.
 
 production_approval=false remains invariant.
+
+## 9. G7 — Detached verification of the five-backend E.8.5/E.8.8 artifacts
+
+**Status: Pass for this exact artifact set.** Run [45395352748](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45395352748), attempt 1, tested source `51d025fd328b00a59988a05fe72d9092262434f5` on `stage1/section-uuids`. Artifact IDs, sizes and GitHub Actions digests are recorded in `evidence/m74-e85-e88-run-45395352748/manifest.json`; the detached result is `evidence/m74-e85-e88-run-45395352748/verified-dossier.json`.
+
+The verifier recomputed every ZIP digest and byte count, required exactly the expected E.8.5/E.8.8 report members, bound reports to backend/source/run/attempt and checked schema, native mode/version, case/query totals, parity, telemetry, projection round-trip, repository snapshot, source-read hashes, side-effect declarations and SNAP policy. All five artifact sets passed. Each backend records E.8.5 14/14 and E.8.8 43/43 parity-verified queries, with zero query/parity failures. The 11 adversarial verifier unit tests passed.
+
+Verifier source SHA-256: `94f1b42f81fed87123aed8b77e1d0560609a9bfe895502c05afde2b00fa7179f`. G7 is closed for the exact downloaded evidence set. This is detached archive/report consistency verification, not historical workflow re-execution or physical-runner attestation. G2/G4/G5/G6 and task-domain qualifications remain open; all 20 task/backend outcomes remain **Insufficient evidence**. `production_approval=false` remains invariant.

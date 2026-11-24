@@ -1,7 +1,7 @@
 # AE-32C M7.4 — Task-Specific Backend Suitability Assessment Contract
 
 **Contract version:** `ae32c/m7-4-suitability-contract/v1`  
-**Status:** Expanded M7.4 task acceptance passed across all five backends; exact-source G9.42 passed at Stage1 SHA `d66f10b5c8af74b33a661c2453da3aca9982d565` in run `45400741779`; all 20 formal task/backend outcomes remain Insufficient evidence until the remaining mandatory gates are closed  
+**Status:** Expanded M7.4 task acceptance passed across all five backends; exact-source G9.42 passed at Stage1 SHA `d66f10b5c8af74b33a661c2453da3aca9982d565` in run `45400741779`; the E.8.5/E.8.8 artifact-integrity gate G7 is closed; all 20 formal task/backend outcomes remain Insufficient evidence pending remaining semantic, mutation-safety, workload, operational and task-domain gates  
 **Target branch:** `stage1/section-uuids` only  
 **Baseline Stage1 source:** `47eb1ae6777e1d34c445af219c96840797739f23`  
 **M7.2 campaign:** [run 44940960831](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940960831)  
@@ -366,4 +366,14 @@ The expanded workloads are medium-sized seeded semantic fixtures with disjoint r
 
 ## 17. Preliminary 20-pair evidence ledger
 
-The current evidence is consolidated in [AE-32C M7.4 Preliminary Task/Backend Evidence Matrix](AE-32C-M7.4-Preliminary-Task-Backend-Evidence-Matrix.md). It enumerates all four public tasks against all five computation options, records the bounded positive test/native-path evidence, and assesses each G1–G8 gate. All 20 preliminary outcomes remain Insufficient evidence because representative audit workloads, full mutation/operational envelopes and detached evidence verification are not yet closed. The ledger is not a suitability approval and does not promote a backend.
+The current evidence is consolidated in [AE-32C M7.4 Preliminary Task/Backend Evidence Matrix](AE-32C-M7.4-Preliminary-Task-Backend-Evidence-Matrix.md). It enumerates all four public tasks against all five computation options, records the bounded positive test/native-path evidence, and assesses each G1–G8 gate. At the time the preliminary ledger was first recorded, detached G7 verification was outstanding. It was subsequently completed for the five-backend E.8.5/E.8.8 artifact set (Section 19). All 20 preliminary outcomes remain Insufficient evidence because semantic boundary coverage, representative audit workloads, mutation-safety and operational envelopes, and PATH/IMPACT task-domain qualifications remain incomplete. The ledger is not a suitability approval and does not promote a backend.
+
+## 19. M7.4 G7 detached evidence verification — 2026-11-24
+
+The five backend E.8.5/E.8.8 evidence artifacts from [run 45395352748](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45395352748) were downloaded by exact Actions artifact ID and independently checked against the GitHub Actions archive metadata. The detached verifier is committed as `tools/gb08_m74_native_conformance_dossier.py`, with adversarial unit tests at `tests/semantic_graph/test_m74_detached_native_conformance_dossier.py`.
+
+All five artifact sizes and SHA-256 digests matched; each ZIP contained exactly its expected E.8.5 and E.8.8 JSON reports. Source SHA/run/attempt, backend/library/native-mode identity, parity/telemetry, semantic case sets, projection round-trip, repository graph fingerprint/manifest, two source-read hashes, side-effect declarations and SNAP worker restrictions were verified. Each backend reported 14/14 E.8.5 and 43/43 E.8.8 parity-verified queries with zero failures. All 11 verifier unit tests passed.
+
+Manifest SHA-256 `ff13bff4d7b2f57e425e2566b90797cbd22016ec048926e9ea590f67e79444d3`; verified dossier SHA-256 `43137fb5a2ad24bb3afbd522b2b6445959501560abc001845b6051141710437a`. Full interpretation and reproduction steps are in [the detached dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier.md).
+
+**G7 conclusion:** Pass for the exact artifact set from run 45395352748. This is detached byte/digest and report-consistency verification, not historical workflow re-execution or physical-runner attestation. G2/G4/G5/G6 and task-domain qualification remain open. All 20 task/backend outcomes remain Insufficient evidence and `production_approval=false`.

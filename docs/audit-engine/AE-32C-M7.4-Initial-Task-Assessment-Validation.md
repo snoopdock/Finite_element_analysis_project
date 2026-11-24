@@ -273,3 +273,13 @@ Validation-engine tests: 53 passed. Targeted G9.42 profile: 846 tests, 799 passe
 Detached evidence verification, content-addressed bundle publication, provenance catalog build and independent catalog verification all passed. Report SHA-256 `d12a924d7da5c29334c1df8e40072671e5771bc733e9c3c65e1395311ff831db`; bundle SHA-256 `decb5aa79605dad7bab4067d6700e8490aa3193c91b069098f87aa8a216a6266`; Actions artifact ID `14923188602`, archive digest `sha256:39a9be6f71e093d101c2eedc704a596ce816adb78d354c28ce8dac2dc0b5435d`.
 
 This closes the exact-source G9.42 dispatch gate for the Stage1 snapshot above. It does not close the separate detached verification requirement for the five-backend E.8.5/E.8.8 artifacts from run `45395352748`, nor the remaining representative-workload, mutation-safety, operational-envelope, PATH domain-follow-through or formal per-pair G1–G8 requirements. All 20 outcomes remain `Insufficient evidence`; `production_approval=false` remains invariant.
+
+## 14. M7.4 detached verification of E.8.5/E.8.8 artifacts — 2026-11-24
+
+The five original E.8.5/E.8.8 Actions artifacts from [run 45395352748](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45395352748) were downloaded by exact artifact ID and independently checked against API-reported sizes and SHA-256 digests. The standalone verifier binds them to Stage1 source `51d025fd328b00a59988a05fe72d9092262434f5`, run 45395352748, attempt 1 and all five expected backends/native modes.
+
+All E.8.5 reports passed seven conformance cases and 14/14 parity queries; all E.8.8 reports passed 43/43 parity queries. Every backend had zero query/parity failures. The verifier checked native telemetry, projection round-trip, repository snapshot/source-manifest fingerprint, context telemetry, two hash-verified source reads, no-side-effect claims, SciPy's hybrid CSR/CSC plus semantic side-channel representation, and SNAP isolation/timeouts. All 11 verifier unit tests passed under Python 3.13.5.
+
+Manifest and machine-readable verified result are committed under `docs/audit-engine/evidence/m74-e85-e88-run-45395352748/`. Their SHA-256 values are `ff13bff4d7b2f57e425e2566b90797cbd22016ec048926e9ea590f67e79444d3` and `43137fb5a2ad24bb3afbd522b2b6445959501560abc001845b6051141710437a`. See [the detached dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier.md).
+
+This closes G7 for the exact E.8.5/E.8.8 artifact set. It does not rerun the historical workflow or independently attest the physical runner. Remaining G2/G4/G5/G6 and task-domain limitations prevent final suitability decisions. All 20 preliminary outcomes remain Insufficient evidence; `production_approval=false`.
