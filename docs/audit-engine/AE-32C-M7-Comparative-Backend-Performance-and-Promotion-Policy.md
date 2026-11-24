@@ -1,6 +1,6 @@
 # AE-32C M7 — Task Suitability and Operational Characterization
 
-**Status:** M7.0 protocol complete; M7.1 closed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier accepted for its stated verification scope (G9.42 run `44943859099`, manual run `44945256220`); M7.4 assessment contract defined, task/backend verdicts pending.  
+**Status:** M7.0 protocol complete; M7.1 closed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier accepted for its stated verification scope (G9.42 run `44943859099`, manual run `44945256220`); M7.4 contract defined and initial STRUCTURAL / DEPENDENCY / PATH task-level acceptance passed across all five backend environments in run `45381213888`; formal task/backend verdicts remain pending and IMPACT is unassessed.  
 **M7.1 workflow revision:** `main` SHA `182d0009f1c759c46813e3a1cbbf34d22c247acb`  
 **M7.1 benchmark source:** Stage1 SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`  
 **M7.2 implementation:** `tools/gb06_task_suitability_campaign.py`  
@@ -182,9 +182,9 @@ M7.2 is accepted only when:
 
 - **M7.0 — Baseline freeze and protocol:** complete.
 - **M7.1 — Five-backend smoke harness and input propagation:** closed by run `44937517812`.
-- **M7.2 — Task-suitability workload families and bounded multi-seed campaign:** initial implementation committed; exact-source validation and five-backend campaign execution pending.
-- **M7.3 — Detached report verification and descriptive evidence dossier:** not started.
-- **M7.4 — Task-specific suitability assessment and explicit policy:** not started.
+- **M7.2 — Task-suitability workload families and bounded multi-seed campaign:** accepted for the declared bounded semantic-traversal workload scope; five-backend reports verified in run `44940960831`.
+- **M7.3 — Detached report verification and descriptive evidence dossier:** closed for artifact/report/log provenance and consistency verification in run `44945256220`; no historical timing re-execution or physical-runner attestation is claimed.
+- **M7.4 — Task-specific suitability assessment and explicit policy:** contract frozen; initial STRUCTURAL / DEPENDENCY / PATH task-level tests passed across all five backend environments in run `45381213888`; complete task/backend evidence records and formal verdicts remain pending. IMPACT remains unassessed.
 
 ## 10. Architectural references
 
@@ -196,6 +196,7 @@ M7.2 is accepted only when:
 - `tools/gb06_task_suitability_campaign.py` — M7.2 seeded workload campaign.
 - `tests/semantic_graph/test_m7_native_backend_performance_benchmark.py`.
 - `tests/semantic_graph/test_m72_task_suitability_campaign.py`.
+- `tests/semantic_graph/test_m74_task_suitability_acceptance.py` — first public-service task-level acceptance tranche.
 - `tools/gb07_campaign_dossier.py` — M7.3 detached campaign verifier and dossier generator.
 - `tests/semantic_graph/test_m73_campaign_dossier.py` — M7.3 adversarial dossier tests.
 - `.github/workflows/m7_3_detached_campaign_dossier.yml` — manual M7.3 detached-artifact verification controller on main.
@@ -251,3 +252,18 @@ The tests include missing/expired artifacts, mixed source revisions, configurati
 The task-specific assessment contract is maintained in [AE-32C M7.4 Task-Specific Backend Suitability Assessment Contract](AE-32C-M7.4-Task-Suitability-Assessment-Contract.md). It treats STRUCTURAL, DEPENDENCY, PATH and IMPACT as distinct operations and requires each backend/task pair to be assessed against the actual public analyzer/service path, semantic/evidence invariants, workload envelope and operational environment. The four possible outcomes are suitable, conditionally suitable, not suitable and insufficient evidence. The contract explicitly forbids extrapolating higher-level task suitability from the M7.2 traversal campaign alone.
 
 The contract is not a runtime selector and grants no promotion authority. The libraries remain computational options serving different problem classes. A future selector requires a separate architectural decision. `production_approval=false` remains invariant.
+
+
+## 16. M7.4 initial task-level evidence — 2026-11-24
+
+M7.4 is now in its executable assessment phase. The contract in [AE-32C M7.4 Task-Specific Backend Suitability Assessment Contract](AE-32C-M7.4-Task-Suitability-Assessment-Contract.md) remains the controlling decision framework.
+
+The first implementation commit, Stage1 SHA `942b54f8948286b4727ca208fdfa553e019437b9`, adds `tests/semantic_graph/test_m74_task_suitability_acceptance.py`, includes it in G9.42, and runs the selected-backend test partition in each of the five existing backend environments. The push-triggered run [45381213888](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45381213888) completed successfully. NetworkX, SciPy, python-igraph, graph-tool and SNAP each reported 7 passed / 28 intentionally skipped; the skips are the four non-selected backend partitions. All five E.8.5/E.8.8 jobs and the aggregate summary succeeded.
+
+The suite exercises STRUCTURAL, DEPENDENCY and PATH through `SemanticGraphAnalysisService`, with independent expected-result assertions, reference-service comparison, native query telemetry, per-query parity, evidence/edge-occurrence checks, bounds and canonical-graph immutability. The small synthetic fixture is diagnostic, not representative workload or scale coverage. The evidence supports initial semantic/native-path statements for the tested public routes only; it does not issue final suitability outcomes for any backend/task pair.
+
+The SNAP workflow recorded Docker image ID `sha256:f94d166165f7676f031bb476a79b0c7e112ef65f0f9c4ef5027844891f1eb4b3` for this execution. This addresses image identity for that run, not the unresolved lack of a per-request worker response deadline or the need for termination/recovery tests.
+
+G9.42 includes the new test module but was not run against this commit. IMPACT, claim-to-evidence source follow-through, representative workload envelopes, selector acceptance-state enforcement, and SNAP timeout/recovery remain open. The full source-bound evidence and test logs are recorded in [AE-32C M7.4 Initial Task Assessment Validation](AE-32C-M7.4-Initial-Task-Assessment-Validation.md).
+
+**Current M7.4 position:** initial STRUCTURAL / DEPENDENCY / PATH task tests are green across the five environments; the milestone is not complete and no task/backend suitability verdict, ranking, selector activation or production approval is made. Keep `production_approval=false`.
