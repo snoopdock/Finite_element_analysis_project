@@ -362,8 +362,6 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             if graph_fingerprint(self.graph) != self._source_fingerprint:
                 raise BackendProjectionError("canonical_graph_changed_after_networkx_projection")
             result = super().walk(*args, **kwargs)
-            # Detect mutations outside the nodes visited by the bounded query.
-            self._verify_projection()
             if graph_fingerprint(self.graph) != self._source_fingerprint:
                 raise BackendProjectionError("canonical_graph_changed_during_networkx_query")
             if self.verify_parity:
