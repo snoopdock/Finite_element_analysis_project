@@ -1,6 +1,6 @@
 # AE-32C M7.4 — Initial Task Assessment Validation Record
 
-**Status:** Initial STRUCTURAL / DEPENDENCY / PATH task-level acceptance suite passed across all five backend environments; formal suitability verdicts remain pending.  
+**Status:** Initial STRUCTURAL / DEPENDENCY / PATH / IMPACT task-level acceptance passed across all five backend environments; formal suitability verdicts remain pending.  
 **Target branch:** `stage1/section-uuids`  
 **Exact source commit:** `942b54f8948286b4727ca208fdfa553e019437b9`  
 **Parent commit:** `e6a985d44cc97521f730fc717f35fd4a0d9bf4cd`  
@@ -102,11 +102,11 @@ The same run uploaded native conformance evidence packages. Their archive digest
 
 ## 6. What this run does not establish
 
-This run does not establish any final suitability verdict for the 15 task/backend pairs.
+This run does not establish any final suitability verdict for the 20 task/backend pairs (four public tasks across five backend options).
 
 1. **Workload representativeness:** the M7.4 fixture is a focused five-node synthetic graph. It is not a representative or scale-complete test of the five M7.2 workload families, real repository evidence density, production graph sizes, memory pressure or throughput.
 2. **PATH domain interpretation:** generic graph path/evidence traversal is tested. Claim-to-evidence reconstruction, locator correctness and source-content follow-through remain distinct requirements.
-3. **IMPACT:** not tested. Multi-source budget allocation, deterministic candidate merging, per-source attribution, ownership/evidence resolution, cycle scanning and incomplete-result reporting remain unqualified.
+3. **IMPACT:** the follow-up run now tests multi-source budget allocation, deterministic candidate merging, per-source attribution, ownership/evidence resolution, cycle evidence and incomplete-result reporting. The test fixture remains small and synthetic; the canonical-graph cycle scan is not a native backend SCC operation, and representative workload/scale evidence remains open.
 4. **SNAP lifecycle:** image identity is recorded for this run, but request deadlines, timeout propagation, forced termination and worker recovery remain open.
 5. **Selector policy:** this change does not alter the generic first-match selection behavior or require task-specific acceptance states at selection time.
 6. **G9.42:** the new test file was added to the G9.42 profile, but G9.42 was not dispatched against this commit. The passing evidence here comes from run 45381213888.
@@ -118,6 +118,45 @@ This run does not establish any final suitability verdict for the 15 task/backen
 
 **Not supported:** a final suitable/conditionally suitable/not suitable decision, workload-wide task suitability, claim-to-evidence correctness, full IMPACT suitability, bounded SNAP request operation, selector authorization, production approval.
 
-Next gates are to expand task-specific workload and evidence records, assess IMPACT independently, add SNAP request deadline/cleanup/recovery verification, resolve selector policy separately, and run G9.42 against an exact Stage1 commit when dispatch capability is available.
+Next gates are to expand task-specific workload and evidence records for all four public tasks, add SNAP request deadline/cleanup/recovery verification, resolve selector policy separately, and run G9.42 against an exact Stage1 commit when dispatch capability is available.
 
 `production_approval=false` remains invariant.
+
+
+
+## 8. IMPACT follow-up validation — 2026-11-24
+
+**Corrected test source:** `ff6fe8226d6417b0832a17b8bed397217f72a303`  
+**Previous test commit:** `b6b81b60753cf36334281f19c3ff64aea5abe7b9`  
+**Workflow:** [AE-32C Native Graph Backend Conformance run 45382782600](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45382782600)  
+**Final result:** success, attempt 1; five backend jobs and aggregate summary succeeded.
+
+The corrected M7.4 module reported the following in each backend environment:
+
+| Backend | M7.4 result |
+|---|---:|
+| NetworkX | 11 passed, 44 intentionally skipped |
+| SciPy | 11 passed, 44 intentionally skipped |
+| python-igraph | 11 passed, 44 intentionally skipped |
+| graph-tool | 11 passed, 44 intentionally skipped |
+| SNAP isolated worker | 11 passed, 44 intentionally skipped |
+
+The 44 skips per job are the four backend partitions not selected by that job. Across the five jobs, the complete module therefore produced 55 passing backend-specific test executions and 220 expected skips. The run also completed the existing E.8.5/E.8.8 conformance jobs and aggregate summary successfully.
+
+### 8.1 Additional IMPACT behaviors covered
+
+The four IMPACT test cases per backend verify multi-source shared-candidate merging and per-source paths, source-order deterministic results, depth-one ownership evidence, test/workflow/symbol candidate categorization, cycle evidence, global per-source budget allocation and truncation, cycle-scan-limit incompleteness, and rejection of duplicate or more-than-25 changed sources.
+
+The test suite checks that the selected backend executes the ownership and reverse-dependency traversal calls, that each such query matches the reference traversal, that native adjacency and edge-occurrence telemetry are positive, and that no backend query failures or parity failures occur. It also checks that the canonical semantic graph is unchanged.
+
+### 8.2 Test-oracle correction
+
+The preceding run `45382609610` at commit `b6b81b60753cf36334281f19c3ff64aea5abe7b9` failed on one over-broad test expectation: it required `MEMBER_OF` in file-source ownership evidence even though the file analyzer resolves ownership only one hop from the changed file. `MEMBER_OF` linked a symbol discovered on that first hop to its module on a second hop. The correction removed that second-hop expectation and retained the direct `IMPLEMENTS`, `IMPLEMENTED_BY` and `DEFINES` assertions. This was a test-oracle correction; no runtime source was modified. The corrected exact-source run `45382782600` then passed in all five environments.
+
+### 8.3 IMPACT execution boundary
+
+The IMPACT analyzer's source-ownership and reverse-dependency traversal calls use the configured backend. Its cycle-detection sub-operation does not: `_dependency_cycles` reads and sorts the canonical graph's complete edge collection (subject to the global 50,000-edge limit), then induces the impacted-node subgraph and computes strongly connected components. The tests verify cycle output/evidence and fail-closed behavior when the scan limit is exceeded, but do not establish native backend SCC capability or cycle-scan performance. This must remain explicit in any later task/backend record.
+
+The SNAP worker image ID for this follow-up run was `sha256:8aa923b1de4d7b2ca7301cb27556178e35e8c54cff433f0c5d653320637f089e`. Per-request deadlines and worker timeout/termination/recovery remain untested. G9.42 was not run against this commit.
+
+**Updated bounded conclusion:** all four public task routes have initial synthetic task-level acceptance coverage in each of the five backend environments. This is test evidence, not 20 final suitability verdicts. All G1–G8 evidence records, representative workloads, selector policy and remaining operational gates are still required. `production_approval=false` remains invariant.

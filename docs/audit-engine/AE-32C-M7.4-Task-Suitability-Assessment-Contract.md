@@ -1,7 +1,7 @@
 # AE-32C M7.4 — Task-Specific Backend Suitability Assessment Contract
 
 **Contract version:** `ae32c/m7-4-suitability-contract/v1`  
-**Status:** Contract defined; initial STRUCTURAL / DEPENDENCY / PATH task-level acceptance tests passed in all five backend environments; formal task/backend suitability decisions not yet issued  
+**Status:** Contract defined; initial STRUCTURAL / DEPENDENCY / PATH / IMPACT task-level acceptance tests passed in all five backend environments; formal task/backend suitability decisions not yet issued  
 **Target branch:** `stage1/section-uuids` only  
 **Baseline Stage1 source:** `47eb1ae6777e1d34c445af219c96840797739f23`  
 **M7.2 campaign:** [run 44940960831](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940960831)  
@@ -65,10 +65,10 @@ The Stage1 analysis engine currently registers four query/analyzer paths. M7.4 s
 
 | Task ID | Public query/analyzer path | Intended audit use | M7.4 starting evidence status |
 |---|---|---|---|
-| `T-STRUCTURAL` | `QueryType.STRUCTURAL` / `StructuralAnalyzer` | One-hop relationship-neighborhood inspection | Candidate; end-to-end backend-specific acceptance still required |
-| `T-DEPENDENCY` | `QueryType.DEPENDENCY` / `DependencyAnalyzer` | Direct/transitive dependency context retrieval | Candidate; end-to-end backend-specific acceptance still required |
-| `T-PATH` | `QueryType.PATH` / `PathAnalyzer` | Bounded path and associated evidence exploration | Candidate; domain-specific claim-to-evidence use must be verified separately |
-| `T-IMPACT` | `QueryType.IMPACT` / `ImpactAnalyzer` | Multi-source change-impact candidate discovery | Insufficient evidence for complete operation; includes additional logic beyond the M7.2 traversal corpus |
+| `T-STRUCTURAL` | `QueryType.STRUCTURAL` / `StructuralAnalyzer` | One-hop relationship-neighborhood inspection | Initial synthetic public-service acceptance passed across five backends; formal verdict pending |
+| `T-DEPENDENCY` | `QueryType.DEPENDENCY` / `DependencyAnalyzer` | Direct/transitive dependency context retrieval | Initial synthetic public-service acceptance passed across five backends; formal verdict pending |
+| `T-PATH` | `QueryType.PATH` / `PathAnalyzer` | Bounded path and associated evidence exploration | Initial synthetic public-service acceptance passed across five backends; domain-specific claim-to-evidence and formal verdict remain pending |
+| `T-IMPACT` | `QueryType.IMPACT` / `ImpactAnalyzer` | Multi-source change-impact candidate discovery | Initial multi-source public-service acceptance passed across five backends; canonical cycle scan and formal verdict remain pending |
 
 ### 3.1 Structural neighborhood
 
@@ -92,7 +92,7 @@ The impact analyzer includes more than one traversal:
 - a separate bounded dependency-cycle scan (up to 2,000 cycle nodes and 50,000 scanned edges);
 - incomplete/truncation and cycle-scan status reporting.
 
-M7.2's common traversal queries do not by themselves qualify these additional behaviors. M7.4 must identify which of these sub-operations actually use the selected backend and which still operate over the canonical graph or separate indexes. Until this is tested, the complete impact operation is `insufficient evidence`, not accepted by extrapolation.
+M7.2's common traversal queries do not by themselves qualify these additional behaviors. The first M7.4 IMPACT test tranche now exercises multi-source merging, source attribution, per-source paths, ownership evidence, cycle evidence and budget/status behavior through the public service across all five backends. Source inspection confirms a hybrid execution boundary: ownership resolution and reverse-dependency walks use the selected traversal engine, while `_dependency_cycles` sorts and scans the canonical `SemanticGraph.edges` collection (subject to the 50,000-edge guard), then filters the induced impacted-node subgraph before its iterative SCC analysis. The cycle scan is therefore not a native backend operation. The new tests establish initial synthetic behavior, but they do not complete the representative workload, operational and G1–G8 evidence required for an IMPACT suitability verdict.
 
 ## 4. Per-backend implementation facts to carry into the assessment
 
@@ -108,7 +108,7 @@ These are implementation facts, not suitability verdicts.
 
 ### 4.1 SNAP-specific operational gap
 
-The current Python worker adapter performs synchronous `stdout.readline()` calls in its request path without a per-request response deadline. Its close path has a bounded process wait, but that does not bound a stalled initialization, audit or adjacency request. The M7.3 campaign record did not contain a concrete container image ID (`container_image_id=null`); the later M7.4 task-acceptance execution recorded Docker image ID `sha256:f94d166165f7676f031bb476a79b0c7e112ef65f0f9c4ef5027844891f1eb4b3`. That establishes image identity for this one execution, but does not close the unbounded per-request wait or prove timeout/recovery behavior.
+The current Python worker adapter performs synchronous `stdout.readline()` calls in its request path without a per-request response deadline. Its close path has a bounded process wait, but that does not bound a stalled initialization, audit or adjacency request. The M7.3 campaign record did not contain a concrete container image ID (`container_image_id=null`). Subsequent M7.4 runs recorded run-specific Docker image IDs, most recently `sha256:8aa923b1de4d7b2ca7301cb27556178e35e8c54cff433f0c5d653320637f089e` in run `45382782600`. Image identity is therefore evidenced for those executions, but the unbounded per-request wait and timeout/recovery behavior remain open.
 
 Therefore, SNAP cannot receive an unqualified operational suitability statement until a pinned image identity and bounded request/termination behavior are evidenced. This is a specific gap to assess and, if approved as a separate correction, remediate; it is not a claim that the observed campaign failed.
 
@@ -260,4 +260,25 @@ This tranche provides initial semantic and native-path evidence for these three 
 
 The next assessment work must expand operation-specific workloads and records, complete the IMPACT route separately, and close SNAP worker deadline/cleanup evidence before any stronger operational claim. No global ranking or automatic backend selection is introduced. `production_approval=false` remains invariant.
 
-**Contract conclusion:** M7.4 now has an initial executable STRUCTURAL / DEPENDENCY / PATH task-acceptance tranche across all five backends. The evidence is bounded to the tested synthetic fixture and run environment. Formal task/backend suitability verdicts remain pending; IMPACT and the outstanding operational gates are not closed by this section.
+## 13. IMPACT task-level executable evidence — 2026-11-24
+
+The follow-up implementation extends `tests/semantic_graph/test_m74_task_suitability_acceptance.py` with four IMPACT test cases for each backend. The tests execute through `SemanticGraphAnalysisService` and the registered `ImpactAnalyzer`, with reference parity enabled.
+
+The corrected test commit is `ff6fe8226d6417b0832a17b8bed397217f72a303`. Exact-source [workflow run 45382782600](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45382782600) completed successfully. Each backend environment reported 11 passed and 44 intentionally skipped (the four non-selected backend partitions). This is 55 passing test executions across the five jobs for the complete M7.4 module, including the STRUCTURAL / DEPENDENCY / PATH cases already introduced in the first tranche. The five native E.8.5/E.8.8 backend jobs and aggregate summary all succeeded.
+
+The IMPACT assertions cover:
+- multi-source change-set attribution and deterministic output under source-order permutation;
+- merging a shared candidate and retaining a separate path and source attribution for each changed source;
+- depth-one file ownership evidence and classification of affected test, workflow and symbol candidates;
+- dependency-cycle SCC output with exact cycle-edge evidence and the expected `IMPORTS` / `DEPENDS_ON` relations;
+- allocation and enforcement of a global visited-node / traversal-step budget, with explicit `INCOMPLETE` results;
+- an exceeded cycle-scan edge limit producing `incomplete_edge_limit` rather than a complete cycle result;
+- rejection of duplicate change sources and change sets larger than 25 sources.
+
+The initial run at commit `b6b81b60753cf36334281f19c3ff64aea5abe7b9` failed because the test expected `MEMBER_OF` in the evidence produced by a file-source ownership resolution. That relation is a second-hop edge from the symbol found by the one-hop file ownership walk; the expectation exceeded the implementation's declared depth-one ownership behavior. The correction in `ff6fe8226d6417b0832a17b8bed397217f72a303` narrowed the asserted evidence set to the direct ownership occurrences. No analyzer/runtime implementation was changed in response to that failure. The corrected test suite then passed in all five environments.
+
+The backend is involved in the ownership and reverse-dependency traversal queries. The subsequent dependency-cycle scan is a separate canonical-graph operation, not a selected-backend SCC API. The small fixture and monkeypatched edge-limit test establish deterministic bounded behavior, not performance or suitability of a native SCC implementation. The same graph-size/workload limitations stated in Section 12 continue to apply.
+
+The SNAP run recorded Docker image ID `sha256:8aa923b1de4d7b2ca7301cb27556178e35e8c54cff433f0c5d653320637f089e`. Per-request response deadlines, timeout propagation, termination and recovery are still not demonstrated. G9.42 includes the M7.4 test file but was not dispatched against this source commit. IMPACT therefore has initial synthetic acceptance evidence, not a final task/backend suitability verdict.
+
+**Contract conclusion:** M7.4 now has initial executable STRUCTURAL / DEPENDENCY / PATH / IMPACT task-acceptance evidence across all five backends. The evidence is bounded to synthetic fixtures and the tested run environments; the IMPACT cycle scan is a canonical-graph sub-operation rather than a native backend operation. Formal task/backend suitability verdicts remain pending. G9.42 and the outstanding workload, selector and SNAP operational gates are not closed by these test runs.

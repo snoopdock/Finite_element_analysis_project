@@ -1,6 +1,6 @@
 # AE-32C M7 — Task Suitability and Operational Characterization
 
-**Status:** M7.0 protocol complete; M7.1 closed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier accepted for its stated verification scope (G9.42 run `44943859099`, manual run `44945256220`); M7.4 contract defined and initial STRUCTURAL / DEPENDENCY / PATH task-level acceptance passed across all five backend environments in run `45381213888`; formal task/backend verdicts remain pending and IMPACT is unassessed.  
+**Status:** M7.0 protocol complete; M7.1 closed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier accepted for its stated verification scope (G9.42 run `44943859099`, manual run `44945256220`); M7.4 contract defined and initial STRUCTURAL / DEPENDENCY / PATH / IMPACT task-level acceptance passed across all five backend environments in run `45382782600`; formal task/backend verdicts remain pending.  
 **M7.1 workflow revision:** `main` SHA `182d0009f1c759c46813e3a1cbbf34d22c247acb`  
 **M7.1 benchmark source:** Stage1 SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`  
 **M7.2 implementation:** `tools/gb06_task_suitability_campaign.py`  
@@ -184,7 +184,7 @@ M7.2 is accepted only when:
 - **M7.1 — Five-backend smoke harness and input propagation:** closed by run `44937517812`.
 - **M7.2 — Task-suitability workload families and bounded multi-seed campaign:** accepted for the declared bounded semantic-traversal workload scope; five-backend reports verified in run `44940960831`.
 - **M7.3 — Detached report verification and descriptive evidence dossier:** closed for artifact/report/log provenance and consistency verification in run `44945256220`; no historical timing re-execution or physical-runner attestation is claimed.
-- **M7.4 — Task-specific suitability assessment and explicit policy:** contract frozen; initial STRUCTURAL / DEPENDENCY / PATH task-level tests passed across all five backend environments in run `45381213888`; complete task/backend evidence records and formal verdicts remain pending. IMPACT remains unassessed.
+- **M7.4 — Task-specific suitability assessment and explicit policy:** contract frozen; initial STRUCTURAL / DEPENDENCY / PATH tests passed in run `45381213888`; all four task routes now have initial synthetic acceptance coverage across the five backends in run `45382782600`; complete task/backend evidence records and formal verdicts remain pending.
 
 ## 10. Architectural references
 
@@ -267,3 +267,14 @@ The SNAP workflow recorded Docker image ID `sha256:f94d166165f7676f031bb476a79b0
 G9.42 includes the new test module but was not run against this commit. IMPACT, claim-to-evidence source follow-through, representative workload envelopes, selector acceptance-state enforcement, and SNAP timeout/recovery remain open. The full source-bound evidence and test logs are recorded in [AE-32C M7.4 Initial Task Assessment Validation](AE-32C-M7.4-Initial-Task-Assessment-Validation.md).
 
 **Current M7.4 position:** initial STRUCTURAL / DEPENDENCY / PATH task tests are green across the five environments; the milestone is not complete and no task/backend suitability verdict, ranking, selector activation or production approval is made. Keep `production_approval=false`.
+
+
+## 17. M7.4 IMPACT follow-up — 2026-11-24
+
+The M7.4 acceptance suite now covers the IMPACT route as well as STRUCTURAL, DEPENDENCY and PATH. Exact corrected test commit `ff6fe8226d6417b0832a17b8bed397217f72a303` was exercised in [workflow run 45382782600](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45382782600). NetworkX, SciPy, python-igraph, graph-tool and SNAP each reported 11 passed / 44 intentionally skipped for the backend-selected suite; all five E.8.5/E.8.8 jobs and the aggregate summary passed.
+
+The IMPACT tests cover multi-source attribution and deterministic candidate merging, per-source paths, one-hop ownership evidence, cycle records and their edge evidence, global change-set budget exhaustion, cycle-scan edge-limit behavior and invalid change-set cardinality. Native traversal and reference parity are asserted for ownership and reverse-dependency query calls. The cycle scan remains a canonical `SemanticGraph.edges` operation, not a native backend SCC operation. This hybrid execution boundary must be retained in later records.
+
+The first IMPACT test attempt at `b6b81b60753cf36334281f19c3ff64aea5abe7b9` failed because the test expected a second-hop `MEMBER_OF` edge in the one-hop file ownership evidence. The test oracle was corrected at `ff6fe8226d6417b0832a17b8bed397217f72a303`; no analyzer/runtime behavior was changed for that failure. The corrected run passed.
+
+The SNAP image identity for this run is `sha256:8aa923b1de4d7b2ca7301cb27556178e35e8c54cff433f0c5d653320637f089e`; per-request deadlines and worker timeout/recovery remain open. G9.42 was not dispatched against this commit. The M7.4 matrix now has initial test coverage for the 20 task/backend combinations, not final suitability verdicts. Representative workload, environment and operational dossiers remain pending. Keep `production_approval=false`.

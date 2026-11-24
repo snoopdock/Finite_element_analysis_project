@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots. M7.1 five-backend smoke validation passed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier verified and accepted by exact-source G9.42 run `44943859099` and manual verification run `44945256220`. M7.4 contract is defined; the initial STRUCTURAL, DEPENDENCY and PATH task-level acceptance suite passed on all five backend environments at Stage1 source `942b54f8948286b4727ca208fdfa553e019437b9` in run `45381213888`. Formal task/backend suitability verdicts remain pending; IMPACT has not yet been assessed. Production approval remains false  
+**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots. M7.1 five-backend smoke validation passed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier verified and accepted by exact-source G9.42 run `44943859099` and manual verification run `44945256220`. M7.4 contract is defined; initial STRUCTURAL, DEPENDENCY, PATH and IMPACT task-level acceptance tests passed across all five backend environments, most recently at Stage1 source `ff6fe8226d6417b0832a17b8bed397217f72a303` in run `45382782600`. Formal task/backend suitability verdicts remain pending. Production approval remains false  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -743,3 +743,18 @@ The tested public service paths cover STRUCTURAL one-hop direction/relation beha
 The SNAP job records Docker image ID `sha256:f94d166165f7676f031bb476a79b0c7e112ef65f0f9c4ef5027844891f1eb4b3` for this execution. This remedies the missing image-identity field for this particular run only. It does not implement a per-request response deadline or establish worker timeout/recovery behavior.
 
 The detailed run record is [AE-32C M7.4 Initial Task Assessment Validation](AE-32C-M7.4-Initial-Task-Assessment-Validation.md). G9.42 was updated to include the new test file but was **not** dispatched in this run. STRUCTURAL, DEPENDENCY and PATH therefore have positive initial task-level evidence, not final backend suitability verdicts. IMPACT remains unassessed. The generic selector's implicit first-match behavior remains outside this change. Do not infer universal suitability, ranking, runtime promotion, or production approval; preserve `production_approval=false`.
+
+
+## 19. M7.4 IMPACT acceptance follow-up — 2026-11-24
+
+The initial M7.4 test suite now covers all four public query/analyzer tasks: STRUCTURAL, DEPENDENCY, PATH and IMPACT. The corrected test source is `ff6fe8226d6417b0832a17b8bed397217f72a303`; push-triggered [E.8.5 / E.8.8 workflow run 45382782600](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45382782600) checked out that exact revision in all five backend environments. Each backend's M7.4 step passed 11 tests and intentionally skipped 44 cases for the four unselected backend partitions. The five backend jobs and aggregate summary succeeded.
+
+IMPACT-specific tests verify multi-source candidate merging and per-source attribution, deterministic source-order handling, one-hop ownership/evidence resolution, test/workflow/symbol candidates, cycle SCC evidence, bounded source budgets and explicit incomplete states, cycle-scan edge limits, and rejection of duplicate or over-25 source sets. The test helper also requires native traversal telemetry, parity verification for each traversal query and zero backend query errors. The canonical semantic graph is checked for mutation.
+
+**Execution decomposition:** IMPACT's ownership and reverse-dependency walks run through the selected traversal backend. Its cycle analysis reads/sorts the canonical `SemanticGraph.edges` collection, applies the 50,000-edge guard, induces the impacted-node subgraph and computes SCCs with the analyzer's iterative Kosaraju implementation. It is not a native backend SCC operation. Any suitability statement must distinguish these sub-operations; it must not present the full IMPACT path as wholly backend-native.
+
+The preceding test commit `b6b81b60753cf36334281f19c3ff64aea5abe7b9` exposed an over-broad expectation for a second-hop `MEMBER_OF` ownership edge. The correction at `ff6fe8226d6417b0832a17b8bed397217f72a303` aligned the expected evidence with the file-source analyzer's one-hop ownership walk. No runtime source change was made for this test correction. The corrected five-backend run then passed.
+
+The SNAP worker image ID was recorded as `sha256:8aa923b1de4d7b2ca7301cb27556178e35e8c54cff433f0c5d653320637f089e`. Its per-request `stdout.readline()` deadline, timeout propagation and recovery are still open. G9.42 includes the M7.4 suite but was not run against this source. The detailed test and run record is [AE-32C M7.4 Initial Task Assessment Validation](AE-32C-M7.4-Initial-Task-Assessment-Validation.md).
+
+**Current M7.4 status:** initial synthetic acceptance tests cover all 20 task/backend combinations; final G1–G8 task/backend records and formal verdicts remain pending. No ranking or automatic selection is introduced. Preserve `production_approval=false`.
