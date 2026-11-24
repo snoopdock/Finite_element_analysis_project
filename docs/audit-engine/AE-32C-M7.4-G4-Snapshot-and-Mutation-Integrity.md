@@ -510,3 +510,17 @@ This tranche does not yet measure:
 The SNAP audit measurement includes the worker's full projection-audit request and host-side validation. It does not isolate container IPC, serialization, native iteration and host comparison as separate subcomponents.
 
 **Decision:** G4 remains **Partial** pending the exact-source workflow result and broader integrity-cost characterization. No task/backend suitability outcome is promoted; all 20 remain `Insufficient evidence`. `production_approval=false` remains unchanged.
+
+
+### 18.5 Workflow event-context follow-up
+
+Run 15 successfully resolved a source ref and passed workflow lint, but its five backend jobs still failed before benchmark execution. The backend steps had their own raw `inputs.repeats` and `inputs.warmup` references; on a push event these are empty even when the resolver has valid defaults. Run 16 (`45463180074`, head SHA `b7fa687f31af33b354c6b93e3cad7365ef16d9e9`) repeated that failure mode. The logs show the benchmark CLI rejecting `--repeats ''`; they do not show a benchmark assertion or backend execution failure. The workflow-lint job passed in both runs.
+
+The workflow was then corrected at every backend-step environment reference to default to five repetitions and two warm-ups when dispatch inputs are absent. Push-triggered runs now resolve `github.sha`, not a moving branch name, so the measured source is pinned to the triggering commit. The same workflow revision also adds an explicit NetworkX-job pytest step for `test_m7_native_backend_performance_benchmark.py`, covering the timing contract and report-forgery tests rather than relying only on the benchmark CLI verifier.
+
+The follow-up commits are:
+- `463c45bcbb5d2d9d1910b9ea34b42ba70982427b`: propagate timing defaults to every backend job;
+- `b7fa687f31af33b354c6b93e3cad7365ef16d9e9`: pin push-triggered source resolution to `github.sha`;
+- `da3b2748d43f4303aecd1d09fe6cb79498bc026c`: run the M7 integrity timing contract tests in the workflow.
+
+Run 17 (`45463422308`) was cancelled while queued behind an earlier run when a newer workflow commit arrived. **Run 18 (`45463552807`)** is the current validation attempt, with workflow head SHA `da3b2748d43f4303aecd1d09fe6cb79498bc026c`; it was pending when this section was recorded. No backend timing outcome is inferred from the earlier workflow-input failures. The next status update must inspect Run 18's exact-source checkout, test step, all five benchmark/verification steps and aggregate result.
