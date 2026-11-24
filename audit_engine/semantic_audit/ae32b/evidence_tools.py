@@ -408,6 +408,8 @@ def _snapshot_stat_identity(info: os.stat_result) -> tuple[int, ...]:
         int(info.st_size),
         int(getattr(info, "st_mtime_ns", int(info.st_mtime * 1_000_000_000))),
         int(identity_timestamp_ns),
+        int(getattr(info, "st_file_attributes", 0)),
+        int(getattr(info, "st_reparse_tag", 0)),
     )
 
 
@@ -458,13 +460,20 @@ def _read_snapshot_file_with_identity(
             for descriptor in reversed(directory_fds):
                 os.close(descriptor)
 
-    # Portable fallback: verify each component before opening, refuse a symlink
-    # at the final component where O_NOFOLLOW exists, and recheck containment.
+    # Portable fallback: inspect every path component without following it.
+    # Windows junctions and other name-surrogate reparse points are not always
+    # reported by Path.is_symlink(), so inspect the native file attributes too.
     cursor = root
     for part in parts:
         cursor = cursor / part
-        if cursor.is_symlink():
+        component_stat = cursor.lstat()
+        if stat.S_ISLNK(component_stat.st_mode):
             raise OSError("symlinked manifest path is not permitted")
+        if os.name == "nt":
+            attributes = int(getattr(component_stat, "st_file_attributes", 0))
+            reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+            if attributes & reparse_flag:
+                raise OSError("reparse-point manifest path is not permitted")
     resolved = cursor.resolve(strict=True)
     resolved.relative_to(root)
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
