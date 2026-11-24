@@ -80,10 +80,10 @@ def test_snapshot_identity_prefers_windows_birthtime_when_available(monkeypatch)
         st_birthtime_ns=6_000_000_000,
     )
     monkeypatch.setattr(evidence_tools_module.os, "name", "nt")
-    assert evidence_tools_module._snapshot_stat_identity(info)[-1] == 6_000_000_000
+    assert evidence_tools_module._snapshot_stat_identity(info)[6] == 6_000_000_000
 
     del info.st_birthtime_ns
-    assert evidence_tools_module._snapshot_stat_identity(info)[-1] == 5_000_000_000
+    assert evidence_tools_module._snapshot_stat_identity(info)[6] == 5_000_000_000
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows junction/reparse-point behavior")
