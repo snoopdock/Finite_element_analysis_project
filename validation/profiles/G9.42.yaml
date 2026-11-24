@@ -41,6 +41,7 @@ target_tests:
   - tests/semantic_graph/test_e84_graph_impact_analysis.py
   - tests/semantic_graph/test_e85_native_backend_conformance.py
   - tests/semantic_graph/test_snap_worker_adapter.py
+  - tests/semantic_graph/test_snap_worker_docker_lifecycle.py
   - tests/semantic_graph/test_m7_native_backend_performance_benchmark.py
   - tests/semantic_graph/test_m72_task_suitability_campaign.py
   - tests/semantic_graph/test_m73_campaign_dossier.py

@@ -199,6 +199,9 @@ jobs:
           echo "SNAP worker image ID: $IMAGE_ID" >> "$GITHUB_STEP_SUMMARY"
       - name: Verify worker adapter protocol and container restrictions
         run: python -m pytest -q tests/semantic_graph/test_snap_worker_adapter.py
+      - name: Verify live Docker timeout and container cleanup
+        run: python -m pytest -q tests/semantic_graph/test_snap_worker_docker_lifecycle.py
+        timeout-minutes: 5
       - name: Run M7.4 task-level analyzer acceptance for SNAP isolated worker
         env:
           AE32C_M74_BACKEND: snap
@@ -210,6 +213,9 @@ jobs:
             --backend snap \
             --output e85-snap.json
       - name: Run SNAP repository-backed E.8.8 conformance
+        timeout-minutes: 12
+        env:
+          AE32C_SNAP_WORKER_REQUEST_TIMEOUT_SECONDS: "30"
         run: |
           python tools/gb04_repository_backend_conformance.py \
             --backend snap \
