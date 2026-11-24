@@ -1,9 +1,10 @@
 """M7.4 task-level semantic acceptance tests.
 
-These tests exercise the public analysis service for STRUCTURAL, DEPENDENCY and
-PATH queries. A passing test establishes bounded semantic parity and observed
-native-path execution for the tested environment; it is not, by itself, a
-backend suitability verdict or production approval.
+These tests exercise all four public analysis service routes and extend the
+synthetic fixtures with seeded, bounded M7.2 topology workloads. A passing test
+establishes task-scoped parity and observed native-path execution for the tested
+input envelope; it is not, by itself, a backend suitability verdict or
+production approval.
 """
 from __future__ import annotations
 
@@ -595,3 +596,153 @@ def test_m74_impact_duplicate_and_oversized_change_sets_fail_closed(backend):
             QueryType.IMPACT,
             source_ids,
         ))
+
+
+
+def _m74_replicate_seeded_workload(base_graph: SemanticGraph, replicas: int = 3) -> SemanticGraph:
+    """Replicate a seeded topology without changing its per-component shape."""
+    expanded = SemanticGraph()
+    for replica in range(replicas):
+        id_map = {
+            node.node_id: f"replica-{replica}:{node.node_id}"
+            for node in base_graph.nodes
+        }
+        for node in base_graph.nodes:
+            expanded.add_node(SemanticNode(
+                id_map[node.node_id],
+                node.entity_type,
+                dict(node.attributes),
+                {**dict(node.metadata), "replica": replica},
+            ))
+        for edge in base_graph.edges:
+            expanded.add_edge(SemanticEdge(
+                id_map[edge.source_id],
+                id_map[edge.target_id],
+                edge.relation_type,
+                dict(edge.attributes),
+                {**dict(edge.metadata), "replica": replica},
+            ))
+    return expanded
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+@pytest.mark.parametrize(
+    "workload_id",
+    (
+        "sparse_dependency",
+        "hub_impact",
+        "parallel_evidence",
+        "disconnected_components",
+        "dense_local_neighborhood",
+    ),
+)
+@pytest.mark.parametrize("seed", (20261101, 20261102))
+def test_m74_seeded_topology_workloads_cover_all_public_analysis_tasks(
+    backend, workload_id, seed,
+):
+    """Exercise the four public analyzers on M7.2 topology families at larger size."""
+    _require_backend(backend)
+    from tools import gb06_task_suitability_campaign as m72
+    from audit_engine.semantic_audit.graph.analysis.traversal import GraphTraversalEngine
+    from audit_engine.semantic_audit.graph.analysis.models import TraversalDirection
+
+    base_graph = m72._make_graph(workload_id, seed)
+    graph = _m74_replicate_seeded_workload(base_graph, replicas=3)
+    before = graph.to_dict()
+    base_node_ids = [node.node_id for node in base_graph.nodes]
+    source = f"replica-0:{base_node_ids[0]}"
+    second_source = f"replica-0:{base_node_ids[min(8, len(base_node_ids) - 1)]}"
+    relation_types = [
+        "DEPENDS_ON", "CITES", "DERIVED_FROM", "SUPPORTS",
+    ]
+    max_visited = len(graph.nodes)
+    max_steps = min(10000, max(2, len(graph.edges) * 2))
+
+    # Pick a path target from the reference traversal itself, then require the
+    # public PATH analyzer and each backend to reproduce that same path result.
+    probe = GraphTraversalEngine(graph).walk(
+        source,
+        direction=TraversalDirection.OUTGOING,
+        relation_types=tuple(relation_types),
+        max_depth=6,
+    )
+    assert probe.visited_nodes, f"seeded workload has no reachable node: {workload_id}/{seed}"
+    path_target = probe.visited_nodes[-1]
+
+    queries = (
+        GraphQuery(
+            f"m74-{workload_id}-{seed}-structural",
+            QueryType.STRUCTURAL,
+            (source,),
+            {
+                "direction": "outgoing",
+                "relation_types": relation_types,
+            },
+        ),
+        GraphQuery(
+            f"m74-{workload_id}-{seed}-dependency",
+            QueryType.DEPENDENCY,
+            (source,),
+            {
+                "direction": "outgoing",
+                "relation_types": relation_types,
+                "max_depth": 6,
+                "max_visited_nodes": max_visited,
+                "max_traversal_steps": max_steps,
+            },
+        ),
+        GraphQuery(
+            f"m74-{workload_id}-{seed}-path",
+            QueryType.PATH,
+            (source,),
+            {
+                "target_entity": path_target,
+                "direction": "outgoing",
+                "relation_types": relation_types,
+                "max_depth": 6,
+                "max_visited_nodes": max_visited,
+                "max_traversal_steps": max_steps,
+            },
+        ),
+        GraphQuery(
+            f"m74-{workload_id}-{seed}-impact",
+            QueryType.IMPACT,
+            (source, second_source),
+            {
+                "relation_types": relation_types,
+                "max_depth": 6,
+                "max_visited_nodes": min(2000, len(graph.nodes) * 2),
+                "max_traversal_steps": min(10000, max(2, len(graph.edges) * 4)),
+            },
+        ),
+    )
+
+    service = SemanticGraphAnalysisService(
+        graph, traversal_backend=backend, verify_backend_parity=True,
+    )
+    reference = SemanticGraphAnalysisService(
+        graph, traversal_backend="reference", verify_backend_parity=True,
+    )
+
+    for query in queries:
+        result = service.analyze(query)
+        expected = reference.analyze(query)
+        _assert_reference_equivalence(result, expected)
+        assert result.metadata["computation_backend"] == backend
+        assert result.metadata["backend_library"] == backend
+        assert result.metadata["backend_native_query_mode"] == NATIVE_QUERY_MODES[backend]
+        assert result.metadata["backend_parity_status"] == "verified_against_reference_per_query"
+        native_metrics = result.metadata["backend_native_query_metrics"]
+        assert native_metrics["native_adjacency_lookups"] > 0
+        assert native_metrics["native_edge_occurrences_read"] > 0
+
+    runtime = service.engine.traversal_engine.runtime_report()
+    execution = runtime["backend_execution"]
+    assert execution["queries_attempted"] >= len(queries)
+    assert execution["queries_succeeded"] == execution["queries_attempted"]
+    assert execution["queries_failed"] == 0
+    assert execution["parity_verified_queries"] == execution["queries_attempted"]
+    assert execution["parity_failures"] == 0
+    assert execution["native_adjacency_lookups"] > 0
+    assert execution["native_edge_occurrences_read"] > 0
+    assert graph.to_dict() == before
