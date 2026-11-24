@@ -387,11 +387,19 @@ def _sanitize_output_value(
 def _snapshot_stat_identity(info: os.stat_result) -> tuple[int, ...]:
     """Return descriptor identity and platform-dependent change observations.
 
-    POSIX st_ctime_ns is metadata-change time. On Windows, Python documents
-    st_ctime_ns as creation time (deprecated in favor of st_birthtime_ns), so
-    it is an identity observation there, not a metadata-change detector.
-    Callers must not infer cross-platform equivalence from this tuple.
+    POSIX st_ctime_ns is metadata-change time. On Windows, prefer
+    st_birthtime_ns when available; older Python versions expose creation
+    time through st_ctime_ns instead. Neither Windows field is a metadata-
+    change clock. Callers must not infer cross-platform equivalence from this
+    tuple.
     """
+    identity_timestamp_ns = (
+        getattr(info, "st_birthtime_ns", None) if os.name == "nt" else None
+    )
+    if identity_timestamp_ns is None:
+        identity_timestamp_ns = getattr(
+            info, "st_ctime_ns", int(info.st_ctime * 1_000_000_000),
+        )
     return (
         int(info.st_dev),
         int(info.st_ino),
@@ -399,7 +407,7 @@ def _snapshot_stat_identity(info: os.stat_result) -> tuple[int, ...]:
         int(stat.S_IMODE(info.st_mode)),
         int(info.st_size),
         int(getattr(info, "st_mtime_ns", int(info.st_mtime * 1_000_000_000))),
-        int(getattr(info, "st_ctime_ns", int(info.st_ctime * 1_000_000_000))),
+        int(identity_timestamp_ns),
     )
 
 
