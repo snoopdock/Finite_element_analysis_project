@@ -172,13 +172,6 @@ def _run_repository_conformance_with_tools(
         "target": "pipeline/extractor.py",
         "max_results": 20,
     }), "find_workflow_context")
-    _progress(
-        backend, "context_traversals_complete",
-        traversal_queries=execution.get("queries_attempted"),
-        trace_adjacency_queries=trace_telemetry.get("adjacency_queries_attempted"),
-        workflow_adjacency_queries=workflow_telemetry.get("adjacency_queries_attempted"),
-    )
-
     final_runtime = _runtime(tools)
     execution = final_runtime.get("backend_execution", {})
     context_telemetry = final_runtime.get("context_operation_telemetry", {})
@@ -209,6 +202,13 @@ def _run_repository_conformance_with_tools(
             raise RuntimeError(f"{operation}_reference_parity_not_verified")
         if telemetry.get("native_adjacency_lookups", 0) < 1:
             raise RuntimeError(f"{operation}_native_adjacency_not_used")
+
+    _progress(
+        backend, "context_traversals_complete",
+        traversal_queries=execution.get("queries_attempted"),
+        trace_adjacency_queries=trace_telemetry.get("adjacency_queries_attempted"),
+        workflow_adjacency_queries=workflow_telemetry.get("adjacency_queries_attempted"),
+    )
 
     return {
         "schema_version": "ae32c/repository-backend-conformance/v1",
