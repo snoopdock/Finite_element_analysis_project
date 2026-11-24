@@ -455,3 +455,57 @@ These are GitHub Actions-reported ZIP digests, not independent detached verifica
 The SNAP protocol boundary is now explicitly qualified: no supported post-init request mutates the TNEANet, and the protocol rejects a mutation request. The worker implementation remains trusted code; this is not a proof against malicious or defective worker code. G4 remains **Partial** because atomic repository-wide snapshot semantics, some metadata-hidden ABA schedules, postflight mutation windows, and the measured cost of integrity checks remain unresolved.
 
 The next cost-characterization work must follow the existing M7 policy: measure the operational cost of integrity checks for each backend in its own task-relevant environment, without producing a universal backend ranking or winner. Timing remains diagnostic evidence, not an automatic selection criterion.
+
+
+## 18. Integrity-audit cost instrumentation — 2026-11-24
+
+This tranche adds diagnostic timing for the full native-projection integrity audits already executed around each traversal query. It changes the M7.1 benchmark harness and its tests; it does not change production traversal or projection-validation code.
+
+### 18.1 Measurement boundary
+
+The benchmark installs an instance-local timing wrapper after the measured engine has been constructed:
+
+- NetworkX: wraps `NetworkXGraphTraversalEngine._verify_projection`.
+- SciPy, python-igraph, graph-tool and SNAP: wraps `NativeAdapterGraphTraversalEngine._build_adjacency`.
+
+For each successful measured query, the current implementation is expected to execute exactly two full projection audits: one preflight and one postflight. The harness records every audit duration and the paired sum for each query. It rejects a report if the observed audit count is not exactly twice the measured query-call count.
+
+The existing `engine_construction_ns` remains a combined construction measurement and includes the constructor's initial projection audit. It is not presented as an isolated audit measurement. Query wall-clock observations continue to include integrity audits, canonical fingerprint checks, traversal and result construction. The new audit timings therefore provide a component measurement, not a claim that subtracting the audit time yields a fully isolated traversal runtime.
+
+The wrapper is benchmark-local and installed only on the measured engine instance. No production telemetry or runtime behavior is modified.
+
+### 18.2 Report contract and verification
+
+The M7.1 report schema is advanced to `ae32c/m7-native-backend-benchmark/v2`. Each query now records:
+- the exact integrity-audit observation count;
+- individual audit durations and their median, p95, minimum, maximum and median absolute deviation;
+- paired preflight-plus-postflight duration observations for each measured query call, with the same aggregates.
+
+The independent report verifier reconstructs the expected pairwise sums from the raw audit observations, recomputes timing aggregates, and rejects altered audit counts, samples or aggregates. This makes the timing fields internally checkable after report generation; it does not independently reproduce the wall-clock measurements.
+
+The benchmark test module now asserts the two-audits-per-query invariant and includes rehashed report-forgery tests for audit timing and count.
+
+### 18.3 Exact-source execution
+
+The branch now contains:
+- benchmark instrumentation commit `7b10ce11058caf1344da5db2438d7e00fe931825`;
+- test commit `50ee7e425e0f7cc72b28f552936359479daa252a`;
+- dedicated M7.1 workflow commit `641982f9efb176e81a95ab0676cc3e9ff43be683`;
+- report-schema version commit `8fbbc6b73455020eeb1dbda866d58a1bcd5c1e47`.
+
+The new five-backend workflow was triggered by the exact-source push:
+**Run 45462809897**, run number 14, head SHA `8fbbc6b73455020eeb1dbda866d58a1bcd5c1e47`. At the time this dossier section was authored, the run was pending; no timing result or successful test outcome is claimed here. The workflow checks out the immutable resolved source SHA and preserves separate backend runner environments and artifacts. It is the same smoke workload, not the multi-seed/task-specific M7.2 campaign.
+
+### 18.4 Interpretation and limits
+
+The measured audit duration is a diagnostic component of the current integrity strategy on the fixed E.8.5 adversarial fixture. It is not a backend ranking, universal performance comparison, or backend-selection rule. Backend-specific runner and library environments remain part of the evidence; measurements must not be pooled into a universal winner claim.
+
+This tranche does not yet measure:
+- the second repository source-validation pass and descriptor-identity checks in `evidence_tools.py`;
+- scaling across multiple repository sizes or graph workload classes;
+- filesystem I/O, memory allocation, CPU utilization or worker startup as separate components;
+- the cost of each individual integrity sub-check inside a full projection audit.
+
+The SNAP audit measurement includes the worker's full projection-audit request and host-side validation. It does not isolate container IPC, serialization, native iteration and host comparison as separate subcomponents.
+
+**Decision:** G4 remains **Partial** pending the exact-source workflow result and broader integrity-cost characterization. No task/backend suitability outcome is promoted; all 20 remain `Insufficient evidence`. `production_approval=false` remains unchanged.
