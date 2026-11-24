@@ -376,3 +376,9 @@ The implementation already has construction-time projection audits, graph-finger
 The dedicated snapshot/mutation test suite passed in all five backend partitions in [run 45413494767](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45413494767), attempt 1, Stage1 source `7447a6b6327b2f310012088767df8251577f6cb1`. Each backend ran five selected G4 cases and passed all five; 20 other-backend parameter cases were correctly skipped per selected job. All E.8.5/E.8.8 backend jobs and aggregate summary also succeeded.
 
 G4 remains Partial, not closed. The test suite does not qualify arbitrary off-neighborhood mutation of mutable native exports, repository-file non-mutation or all concurrency/lifecycle schedules. No task/backend verdict changes, ranking, backend selection or production approval follows. `production_approval=false`.
+
+## 26. G4 full native projection validation — implementation pending execution
+
+The G4 follow-on now requires complete native projection validation before and after bounded queries. This addresses corruption in an off-neighborhood region that local adjacency checks would not inspect. The traversal itself continues to use the selected backend's native local-adjacency API. SNAP refreshes the worker audit on both boundaries.
+
+The additional cost is O(V+E) per full scan, twice per query; SNAP adds two worker audit RPCs. This is an integrity-first policy choice whose operational and workload cost must be measured before task suitability decisions. It does not make native exports immutable or rule out mutation/restoration between checks. The expanded five-backend fault-injection suite is pending exact-source execution. No suitability verdict, ranking or production approval changes.

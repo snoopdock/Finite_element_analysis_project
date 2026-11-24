@@ -301,3 +301,11 @@ The dedicated G4 tests were executed in [E.8.5/E.8.8 run 45413494767](https://gi
 All five native conformance jobs and aggregate summary succeeded. The E.8.5/E.8.8 reports in this run each recorded passed status, 14/14 and 43/43 parity-verified queries respectively, with zero failures. Artifact IDs, sizes and Actions-reported digests, together with the residual G4 limitations, are recorded in [the G4 integrity dossier](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md).
 
 This establishes successful execution of the focused synthetic snapshot/mutation test tranche, not full G4 closure. Mutable export/off-neighborhood corruption, repository-file non-mutation coverage and broader concurrency/lifecycle cases remain open. All 20 task/backend suitability outcomes remain Insufficient evidence; `production_approval=false`.
+
+## 17. G4 off-neighborhood projection integrity — implementation pending execution
+
+The next G4 tranche adds complete native projection preflight and postflight around bounded traversal queries. It removes the non-NetworkX construction-only validation shortcut, repeats NetworkX full projection verification, and forces SNAP to request a fresh worker audit rather than relying on its cached audit report. Native adjacency remains the actual traversal mechanism.
+
+New fault-injection tests corrupt a C-to-C self-loop outside a query rooted at A, both before the query and after local adjacency has been read. A SNAP-specific test checks that two fresh worker audit RPCs bracket one query. The workflow will execute these tests in all five native environments.
+
+This is a pending implementation tranche, not evidence of a pass. Full scans add O(V+E) preflight and postflight work per query; SNAP incurs two audit RPCs. The cost must be quantified, and repository-file side effects plus mutation/restoration/concurrency races remain open. G4 stays Partial; all 20 outcomes stay Insufficient evidence; `production_approval=false`.

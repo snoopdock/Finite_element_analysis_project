@@ -393,7 +393,9 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
                 raise SNAPWorkerProtocolError("snap_worker_result_not_object")
             return result
 
-    def _ensure_audit(self) -> dict[str, Any]:
+    def _ensure_audit(self, *, refresh: bool = False) -> dict[str, Any]:
+        if refresh:
+            self._audit_cache = None
         if self._audit_cache is None:
             report = self._request("audit")
             nodes, edges = report.get("nodes"), report.get("edges")
@@ -418,6 +420,10 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
                 "edges": deepcopy(edges),
             }
         return self._audit_cache
+
+    def refresh_native_audit(self) -> None:
+        """Re-read the complete worker projection instead of trusting its cache."""
+        self._ensure_audit(refresh=True)
 
     def identity_mapping(self):
         self._ensure_audit()

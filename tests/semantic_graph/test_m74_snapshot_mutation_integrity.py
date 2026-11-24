@@ -137,6 +137,47 @@ def _close_worker(engine, backend: str) -> None:
         engine.adapter.close()
 
 
+def _tamper_off_path_native_graph(engine, backend: str, marker: str) -> bool:
+    """Mutate the native C -> C self-loop, outside the query rooted at A."""
+    if backend == "networkx":
+        matches = [
+            data for source, target, _key, data in engine.native_graph.edges(
+                keys=True, data=True,
+            ) if source == "C" and target == "C"
+        ]
+        assert len(matches) == 1
+        matches[0]["relation"] = marker
+        return True
+    if backend == "scipy":
+        occurrence = next(
+            index for index, item in enumerate(engine.adapter.metadata["edges"])
+            if item["source"] == "C" and item["target"] == "C"
+        )
+        engine.adapter.relations[occurrence]["relation"] = marker
+        engine.adapter.metadata["edges"][occurrence]["relation"] = marker
+        return True
+    if backend == "igraph":
+        native = engine.native_graph
+        edge = next(
+            item for item in native.es
+            if native.vs[item.source]["semantic_id"] == "C"
+            and native.vs[item.target]["semantic_id"] == "C"
+        )
+        edge["relation"] = marker
+        return True
+    if backend == "graph-tool":
+        native = engine.native_graph
+        vp, ep = native.vertex_properties, native.edge_properties
+        edge = next(
+            item for item in native.edges()
+            if vp["semantic_id"][item.source()] == "C"
+            and vp["semantic_id"][item.target()] == "C"
+        )
+        ep["relation"][edge] = marker
+        return True
+    return False
+
+
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_g4_projection_snapshot_is_deeply_isolated_and_stale_canonical_fails_closed(backend):
     _require_backend(backend)
@@ -280,4 +321,115 @@ def test_g4_repeated_queries_and_fresh_projection_reconstruction_are_stable(back
     finally:
         if reconstructed is not None:
             _close_worker(reconstructed, backend)
+        _close_worker(engine, backend)
+
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_g4_off_neighborhood_native_projection_corruption_fails_before_bounded_query(backend, monkeypatch):
+    """A corrupt edge outside A's one-hop neighborhood must still be detected."""
+    _require_backend(backend)
+    graph = _integrity_graph()
+    engine = _engine(graph, backend, verify_parity=False)
+    try:
+        mutated_native_graph = _tamper_off_path_native_graph(
+            engine, backend, "TAMPERED_OFF_PATH",
+        )
+        if not mutated_native_graph:
+            # SNAP's worker graph is intentionally not exported to the host.
+            # Corrupt the fresh full-audit response returned by the worker.
+            adapter = engine.adapter
+            native_iter = adapter.iter_native_edges
+
+            def corrupted_full_projection():
+                records = [dict(item) for item in native_iter()]
+                off_path = next(
+                    item for item in records
+                    if item["source"] == "C" and item["target"] == "C"
+                )
+                off_path["relation"] = "TAMPERED_OFF_PATH"
+                return iter(records)
+
+            monkeypatch.setattr(adapter, "iter_native_edges", corrupted_full_projection)
+
+        with pytest.raises(RuntimeError, match="semantic.*mismatch"):
+            engine.walk("A", direction="outgoing", max_depth=1)
+        assert engine.runtime_report()["backend_execution"]["queries_failed"] == 1
+        assert engine.runtime_report()["backend_execution"]["queries_succeeded"] == 0
+    finally:
+        _close_worker(engine, backend)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_g4_off_neighborhood_native_mutation_during_query_fails_postflight(backend, monkeypatch):
+    """A projection mutation after local adjacency must be caught by postflight."""
+    _require_backend(backend)
+    graph = _integrity_graph()
+    engine = _engine(graph, backend, verify_parity=False)
+    try:
+        adapter = engine.adapter
+        native_adjacency = adapter.iter_adjacent_edge_occurrences
+        mutation_applied = False
+
+        def mutate_native_after_local_read(node_id, direction):
+            nonlocal mutation_applied
+            records = tuple(native_adjacency(node_id, direction))
+            if node_id == "A" and not mutation_applied:
+                mutation_applied = _tamper_off_path_native_graph(
+                    engine, backend, "TAMPERED_DURING_QUERY",
+                )
+            return records
+
+        if backend == "snap":
+            # The worker is intentionally opaque. Tamper with its fresh audit
+            # response only after the query has performed native adjacency.
+            native_iter = adapter.iter_native_edges
+
+            def corrupted_postflight_projection():
+                records = [dict(item) for item in native_iter()]
+                if mutation_applied:
+                    off_path = next(
+                        item for item in records
+                        if item["source"] == "C" and item["target"] == "C"
+                    )
+                    off_path["relation"] = "TAMPERED_DURING_QUERY"
+                return iter(records)
+
+            monkeypatch.setattr(adapter, "iter_native_edges", corrupted_postflight_projection)
+        monkeypatch.setattr(
+            adapter, "iter_adjacent_edge_occurrences", mutate_native_after_local_read,
+        )
+
+        with pytest.raises(RuntimeError, match="semantic.*mismatch"):
+            engine.walk("A", direction="outgoing", max_depth=1)
+        assert mutation_applied is True
+        assert engine.runtime_report()["backend_execution"]["queries_failed"] == 1
+        assert engine.runtime_report()["backend_execution"]["queries_succeeded"] == 0
+    finally:
+        _close_worker(engine, backend)
+
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_g4_snap_worker_projection_audit_is_refreshed_before_and_after_query(backend, monkeypatch):
+    _require_backend(backend)
+    if backend != "snap":
+        pytest.skip("fresh worker audit RPC is SNAP-specific")
+    graph = _integrity_graph()
+    engine = _engine(graph, backend, verify_parity=False)
+    try:
+        adapter = engine.adapter
+        original_request = adapter._request
+        audit_calls = []
+
+        def track_audit_requests(operation, *args, **kwargs):
+            if operation == "audit":
+                audit_calls.append(operation)
+            return original_request(operation, *args, **kwargs)
+
+        monkeypatch.setattr(adapter, "_request", track_audit_requests)
+        engine.walk("A", direction="outgoing", max_depth=1)
+        assert len(audit_calls) == 2
+        assert engine.runtime_report()["backend_execution"]["queries_succeeded"] == 1
+    finally:
         _close_worker(engine, backend)

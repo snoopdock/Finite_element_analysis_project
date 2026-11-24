@@ -153,6 +153,7 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
             "native_edge_occurrences_read": 0,
         }
         # Fail during construction if the native projection is already corrupt.
+        # The complete audit is repeated before and after every bounded query.
         self._build_adjacency()
 
     @property
@@ -162,11 +163,12 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
     def _build_adjacency(self):
         if graph_fingerprint(self.graph) != self._source_fingerprint:
             raise NativeAdapterProjectionError("canonical_graph_changed_after_native_projection")
-        # SciPy's complete projection is validated once at construction.
-        # Every subsequent walk receives empty Python indexes and must obtain
-        # candidates from CSR/CSC local adjacency.
-        if self._uses_native_local_adjacency and self._projection_validated:
-            return {}, {}
+        # Revalidate the complete native projection at every query boundary.
+        # Native local adjacency remains the traversal mechanism; this full
+        # audit is an integrity preflight, not a Python adjacency fallback.
+        refresh_audit = getattr(self.adapter, "refresh_native_audit", None)
+        if callable(refresh_audit):
+            refresh_audit()
 
         expected_nodes = {
             node.node_id: {
@@ -189,8 +191,10 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
         if observed_nodes != expected_nodes:
             raise NativeAdapterProjectionError("native_node_projection_semantic_mismatch")
 
-        outgoing = defaultdict(list)
-        incoming = defaultdict(list)
+        # Native-adjacency backends need a complete audit, not a duplicate
+        # Python adjacency index. Keep the latter only for a non-native path.
+        outgoing = defaultdict(list) if not self._uses_native_local_adjacency else None
+        incoming = defaultdict(list) if not self._uses_native_local_adjacency else None
         seen: set[int] = set()
         native_edges = list(self.adapter.iter_native_edges())
         self._metrics["native_projection_reads"] += len(native_nodes) + len(native_edges)
@@ -213,8 +217,9 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
                 or item.get("metadata") != edge.metadata
             ):
                 raise NativeAdapterProjectionError("native_edge_projection_semantic_mismatch")
-            outgoing[edge.source_id].append(edge)
-            incoming[edge.target_id].append(edge)
+            if outgoing is not None and incoming is not None:
+                outgoing[edge.source_id].append(edge)
+                incoming[edge.target_id].append(edge)
 
         if len(seen) != len(self._edge_occurrences):
             raise NativeAdapterProjectionError("native_edge_projection_occurrence_count_mismatch")
@@ -224,7 +229,8 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
         self._projection_edge_occurrence_count = len(seen)
         if self._uses_native_local_adjacency:
             self._projection_validated = True
-        return dict(outgoing), dict(incoming)
+            return {}, {}
+        return dict(outgoing or {}), dict(incoming or {})
 
     def _candidate_edges(
         self,
@@ -295,6 +301,11 @@ class NativeAdapterGraphTraversalEngine(GraphTraversalEngine):
                         f"{self._backend_name}_reference_traversal_parity_mismatch"
                     )
                 self._metrics["parity_verified_queries"] += 1
+            # Re-audit after traversal and parity comparison so corruption
+            # outside the visited neighborhood cannot be silently accepted.
+            self._build_adjacency()
+            if graph_fingerprint(self.graph) != self._source_fingerprint:
+                raise NativeAdapterProjectionError("canonical_graph_changed_after_native_query")
             self._last_query_native_metrics = {
                 "native_adjacency_lookups": (
                     self._metrics["native_adjacency_lookups"] - native_lookups_before

@@ -162,11 +162,12 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             data[_EDGE_OCCURRENCE_KEY] = occurrence
 
     def _verify_projection(self) -> None:
-        """Verify the complete native projection once before query execution.
+        """Verify the complete native projection at each query boundary.
 
-        Query execution then uses NetworkX's indexed ``succ``/``pred``
-        adjacency for only the nodes reached by the bounded traversal. The
-        canonical edge tuple remains the semantic evidence side channel.
+        The audit runs before and after bounded queries. Traversal still uses
+        NetworkX's indexed ``succ``/``pred`` adjacency; the full scan is an
+        integrity check, not a Python traversal fallback.
+        The canonical edge tuple remains the semantic evidence side channel.
         """
         if graph_fingerprint(self.graph) != self._source_fingerprint:
             raise BackendProjectionError("canonical_graph_changed_after_networkx_projection")
@@ -209,7 +210,8 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
     def _build_adjacency(
         self,
     ) -> tuple[dict[str, list[SemanticEdge]], dict[str, list[SemanticEdge]]]:
-        """Return no Python adjacency copy; traversal reads NetworkX per node."""
+        """Audit the full projection, then traverse native local adjacency."""
+        self._verify_projection()
         if graph_fingerprint(self.graph) != self._source_fingerprint:
             raise BackendProjectionError("canonical_graph_changed_after_networkx_projection")
         return {}, {}
@@ -310,6 +312,7 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             "native_edge_occurrences_read": self._metrics["native_edge_occurrences_read"],
         }
         try:
+            self._verify_projection()
             if isinstance(direction, str):
                 direction = TraversalDirection(direction)
             normalized = set(relation_types) if relation_types is not None else None
@@ -332,6 +335,9 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             if native_identity != reference_identity:
                 counters["parity_failures"] += 1
                 raise BackendParityError("networkx_context_adjacency_parity_mismatch")
+            self._verify_projection()
+            if graph_fingerprint(self.graph) != self._source_fingerprint:
+                raise BackendProjectionError("canonical_graph_changed_after_networkx_context_query")
             counters["parity_verified"] += 1
             counters["adjacency_queries_succeeded"] += 1
             return [edge for edge, _neighbor in native]
@@ -356,6 +362,8 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
             if graph_fingerprint(self.graph) != self._source_fingerprint:
                 raise BackendProjectionError("canonical_graph_changed_after_networkx_projection")
             result = super().walk(*args, **kwargs)
+            # Detect mutations outside the nodes visited by the bounded query.
+            self._verify_projection()
             if graph_fingerprint(self.graph) != self._source_fingerprint:
                 raise BackendProjectionError("canonical_graph_changed_during_networkx_query")
             if self.verify_parity:
@@ -366,6 +374,10 @@ class NetworkXGraphTraversalEngine(GraphTraversalEngine):
                     self._metrics["parity_failures"] += 1
                     raise BackendParityError("networkx_reference_traversal_parity_mismatch")
                 self._metrics["parity_verified_queries"] += 1
+            # The reference comparison is inside the integrity boundary too.
+            self._verify_projection()
+            if graph_fingerprint(self.graph) != self._source_fingerprint:
+                raise BackendProjectionError("canonical_graph_changed_after_networkx_query")
             self._metrics["queries_succeeded"] += 1
             self._metrics["total_examined_edges"] += result.examined_edges
             self._metrics["total_examined_edge_occurrences"] = (

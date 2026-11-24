@@ -875,3 +875,11 @@ The workflow must execute the new suite in NetworkX, SciPy, igraph, graph-tool a
 The dedicated G4 snapshot/mutation suite passed in all five native backend environments in [run 45413494767](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45413494767), against exact source `7447a6b6327b2f310012088767df8251577f6cb1`. Per-backend results: 5 passed / 20 expected selection skips for NetworkX, SciPy, igraph, graph-tool and SNAP. All backend jobs and the E.8.5/E.8.8 aggregate summary succeeded.
 
 This closes execution of the focused synthetic suite only. It does not close G4's full mutation-safety requirement: mutable native exports and off-neighborhood corruption, repository-file non-mutation and broader concurrency/lifecycle schedules remain. The detailed test and artifact ledger is in [the G4 integrity dossier](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md). Preserve Partial G4 status, Insufficient evidence for all 20 outcomes and `production_approval=false`.
+
+## 28. G4 complete projection preflight/postflight — implementation pending execution
+
+The next G4 tranche replaces construction-only native projection validation with complete preflight and postflight audits around each bounded traversal. NetworkX repeats its complete node/edge check; SciPy, igraph and graph-tool re-enumerate their native projection at each query boundary; SNAP requests a fresh worker audit instead of trusting its cached audit response. Native local adjacency remains the computation path.
+
+New tests inject off-neighborhood C-to-C corruption before a query and after local adjacency has executed, plus a SNAP audit-refresh count assertion. The five-backend workflow will execute these tests. At implementation time, execution is pending.
+
+This deliberately adds O(V+E) validation twice per traversal and two full audit RPCs for SNAP. G5/G6 must quantify that cost; no suitability inference is made from the implementation alone. Mutability, mutation/restoration races and repository-file side effects remain explicit limitations. G4 remains Partial and `production_approval=false`.

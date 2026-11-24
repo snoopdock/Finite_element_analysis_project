@@ -392,3 +392,11 @@ The G4 rule remains unchanged: canonical graph and repository data are authorita
 The G4 integrity tests introduced by the prior section were executed in the five-backend E.8.5/E.8.8 workflow [45413494767](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45413494767), attempt 1, against Stage1 source `7447a6b6327b2f310012088767df8251577f6cb1`. NetworkX, SciPy, python-igraph, graph-tool and SNAP each reported 5 passed / 20 expected backend-selection skips. All five backend jobs and the workflow summary succeeded.
 
 The detailed execution matrix and artifact identities are recorded in [the G4 integrity dossier](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md). This closes the execution requirement for this focused test tranche, not the full G4 gate. Native exports remain mutable and off-neighborhood corruption is not globally rescanned by each bounded query; repository-file non-mutation and broader concurrency/lifecycle schedules also remain unqualified. G4 stays Partial; all 20 suitability outcomes remain Insufficient evidence; `production_approval=false`.
+
+## 22. G4 query-boundary full projection validation — implementation pending execution
+
+The G4 continuation now specifies a complete native-projection audit before and after each bounded traversal, rather than relying only on construction-time validation and local adjacency checks. Native local adjacency remains the traversal path; the full scan is an integrity preflight/postflight. SNAP refreshes its worker-side audit on each boundary instead of treating its host-side audit cache as current.
+
+This changes the cost envelope materially: O(V+E) validation is added twice per traversal, with two full audit RPCs for SNAP. G5/G6 evidence must measure this overhead under representative audit workloads and worker conditions before any task/backend suitability conclusion. The implementation does not establish immutability or eliminate mutation-and-restoration races, and repository-file side-effect coverage remains a separate requirement.
+
+The new exact-source five-backend test run is pending. Until it passes and the remaining limits are resolved or bounded, G4 remains Partial and every task/backend outcome remains Insufficient evidence. `production_approval=false`.

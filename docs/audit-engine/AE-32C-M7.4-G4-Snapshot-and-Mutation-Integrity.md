@@ -92,3 +92,24 @@ All five E.8.5/E.8.8 backend jobs and aggregate summary job `138514348900` also 
 These artifact digests are the GitHub Actions-reported ZIP digests. They do not represent a detached G7 verification of this new run's E.8.5/E.8.8 artifacts; the earlier G7 dossier remains bound to run 45395352748 and its exact historical source.
 
 **G4 interpretation:** the new focused five-backend test tranche passes. This does not close G4. The suite establishes the tested snapshot/query behaviors, but it does not establish global immutability or detection of arbitrary off-neighborhood corruption in mutable native exports. Repository-file no-side-effect behavior and broader concurrency/lifecycle limits also remain. Maintain G4 as Partial and leave all 20 task/backend suitability outcomes at Insufficient evidence. `production_approval=false` remains invariant.
+
+## 8. G4 continuation — complete projection preflight/postflight (implementation pending execution)
+
+The next implementation tranche changes the query integrity boundary for all five backends:
+
+- **Before traversal:** re-enumerate the complete native node and edge-occurrence projection and compare it with the canonical `SemanticGraph`.
+- **After traversal and reference-parity work:** repeat the complete projection audit before accepting the result.
+- **NetworkX:** rerun full node/edge/occurrence verification at each boundary, including context-adjacency operations.
+- **SciPy, igraph and graph-tool:** remove the construction-only validation shortcut. Each query re-enumerates native nodes and all native edge occurrences, while the actual traversal continues to use CSR/CSC, incident-edge IDs or graph-tool edge iterators.
+- **SNAP:** add an explicit fresh worker-audit operation so a query does not rely on the adapter's prior audit cache; the complete audit is requested at both boundaries.
+
+The test module now adds:
+1. direct off-neighborhood native-projection corruption before a bounded query (NetworkX, SciPy, igraph and graph-tool); SNAP uses a deliberately corrupted fresh audit response because its worker graph is intentionally not exported into the host;
+2. off-neighborhood mutation after local adjacency but before query completion, checked by postflight;
+3. a SNAP-specific assertion that exactly two fresh `audit` RPCs bracket one query.
+
+These checks target the former blind spot: a query rooted at A must reject a corrupted C-to-C self-loop even though C is outside A's one-hop result.
+
+**Cost and limits:** complete validation adds O(V+E) work before and after each bounded traversal. SNAP additionally incurs two full audit RPCs per query. This is a deliberate integrity/performance tradeoff, not a free strengthening; subsequent task-workload and operational evidence must quantify it. The checks do not establish immutability, prevent an attacker or concurrent writer from mutating and restoring state entirely between observations, or close a race after the final postflight. Repository-file side-effect coverage remains separate.
+
+**Status at this record:** implementation and tests prepared; exact-source five-backend execution pending. G4 remains Partial until the new matrix passes and remaining concurrency/repository-side-effect limits are either tested or explicitly bounded in the contract. All 20 task/backend outcomes remain Insufficient evidence; `production_approval=false`.

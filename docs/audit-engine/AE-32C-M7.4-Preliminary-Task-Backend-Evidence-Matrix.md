@@ -165,3 +165,9 @@ All 20 suitability outcomes remain Insufficient evidence. `production_approval=f
 Run [45413494767](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45413494767), attempt 1, executed `test_m74_snapshot_mutation_integrity.py` against Stage1 source `7447a6b6327b2f310012088767df8251577f6cb1`. Each of NetworkX, SciPy, igraph, graph-tool and SNAP reported 5 passed / 20 backend-selection skips; all five jobs and the aggregate summary succeeded.
 
 **Gate status: Partial, not Pass.** The focused synthetic tests passed, but the contract also requires repository-file non-mutation and an acceptable treatment of mutable native exports/off-neighborhood corruption and broader mutation schedules. See [the G4 integrity dossier](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md). All 20 task/backend outcomes remain Insufficient evidence; `production_approval=false`.
+
+## 12. G4 off-neighborhood projection validation — implementation pending execution
+
+The G4 implementation now revalidates the complete native projection before and after each bounded query. New tests target corruption of an edge outside the query neighborhood, mutation after local adjacency, and fresh SNAP worker audit RPCs. The five-backend workflow includes the expanded suite.
+
+**Status: pending exact-source execution.** If the tests pass, they establish fail-closed detection for corruption present at preflight or persisting until postflight; they do not establish immutability or close mutation/restoration races. The two full scans add O(V+E) cost per traversal (and two worker audit RPCs for SNAP), which must be quantified under representative task workloads. Repository-file side-effect coverage remains open. G4 remains Partial; all 20 suitability outcomes remain Insufficient evidence.
