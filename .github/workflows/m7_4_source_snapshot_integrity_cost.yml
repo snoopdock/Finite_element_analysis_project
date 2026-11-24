@@ -85,3 +85,36 @@ jobs:
           path: artifacts/audit_engine/g4-source-snapshot-cost*
           if-no-files-found: warn
           retention-days: 30
+
+  windows-source-snapshot:
+    name: Windows G4 source snapshot compatibility
+    runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      AE32C_M74_BACKEND: networkx
+    steps:
+      - name: Checkout exact triggering source revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Record Windows source revision and filesystem context
+        shell: pwsh
+        run: |
+          $sourceSha = (git rev-parse HEAD).Trim()
+          if ($sourceSha -ne $env:GITHUB_SHA) { throw "checkout SHA mismatch" }
+          "### Windows G4 source snapshot compatibility" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "- Exact source SHA: $sourceSha" | Add-Content $env:GITHUB_STEP_SUMMARY
+          python -c "import os,platform,sys; print('os.name=',os.name); print('python=',sys.version); print('platform=',platform.platform())"
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install declared dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip check
+      - name: Run source snapshot and repository side-effect tests on Windows fallback
+        run: python -m pytest -q tests/semantic_graph/test_m7_g4_source_snapshot_integrity_benchmark.py tests/semantic_graph/test_m74_snapshot_mutation_integrity.py tests/semantic_graph/test_m74_repository_side_effects.py
