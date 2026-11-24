@@ -67,6 +67,15 @@ def test_rehashed_second_validation_timing_forgery_is_rejected(source_report):
         benchmark.verify_report(forged, root)
 
 
+def test_rehashed_timing_observation_list_forgery_is_rejected(source_report):
+    root, report = source_report
+    forged = deepcopy(report)
+    forged["measurements"]["second_validation_ns"]["observations_ns"][0] += 1
+    _rehash(forged)
+    with pytest.raises(benchmark.BenchmarkError, match="timing_observations_mismatch"):
+        benchmark.verify_report(forged, root)
+
+
 def test_rehashed_source_read_accounting_forgery_is_rejected(source_report):
     root, report = source_report
     forged = deepcopy(report)
