@@ -39,12 +39,13 @@ jobs:
           SOURCE_SHA="$(git rev-parse HEAD)"
           test "$SOURCE_SHA" = "$GITHUB_SHA"
           echo "AE32C_SOURCE_REVISION=$SOURCE_SHA" >> "$GITHUB_ENV"
+          echo "AE32C_RUNNER_REVISION=$SOURCE_SHA" >> "$GITHUB_ENV"
           {
             echo "### G4 source snapshot cost"
             echo "- Exact source SHA: $SOURCE_SHA"
             echo "- Workload: repository source manifest and content snapshot"
             echo "- Graph backend: reference (native backend setup excluded)"
-            echo "- Repetitions: 3; warm-up: 1"
+            echo "- Repetitions: 10; warm-up: 2"
             echo "- No atomic snapshot or production approval is established."
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Set up Python 3.11
@@ -66,11 +67,15 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts/audit_engine
           PYTHONPATH=. python tools/gb06_source_snapshot_integrity_benchmark.py run \
-            --repository . --repeats 3 --warmup 1 \
+            --repository . --repeats 10 --warmup 2 \
+            --expected-source-revision "$GITHUB_SHA" \
+            --expected-runner-revision "$GITHUB_SHA" \
             --report artifacts/audit_engine/g4-source-snapshot-cost.json \
             2>&1 | tee artifacts/audit_engine/g4-source-snapshot-cost-run.log
           PYTHONPATH=. python tools/gb06_source_snapshot_integrity_benchmark.py verify \
             --repository . \
+            --expected-source-revision "$GITHUB_SHA" \
+            --expected-runner-revision "$GITHUB_SHA" \
             --report artifacts/audit_engine/g4-source-snapshot-cost.json \
             2>&1 | tee artifacts/audit_engine/g4-source-snapshot-cost-verify.log
       - name: Upload source snapshot cost evidence
