@@ -1,7 +1,7 @@
 # AE-32C M7.4-G4 — Cross-Backend Snapshot and Mutation Integrity
 
 **Status:** the latest expanded five-backend G4 tranche passed; the SNAP worker's supported protocol is verified as read-only after initialization. Overall G4 remains Partial because atomic repository-wide snapshot semantics, postflight mutation windows and integrity-check cost characterization remain open.  
-**Latest exact-source execution:** [run 95](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45456154169), tested SHA `7ce60f233fc98042c832d24140ecc5e52aefff99`.  
+**Latest exact-source execution:** [run 96](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45457395602), tested SHA `315a23ed8c69aab2d1dec69607b64a9eccb9501c`.  
 **Branch:** `stage1/section-uuids`.  
 **Scope:** canonical graph snapshot isolation, source-file identity validation, controlled active-query mutation, fixture-tree side effects, native projection corruption, parity fail-closed behavior, repeated queries, reconstruction and SNAP worker teardown.
 
