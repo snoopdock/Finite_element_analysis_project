@@ -190,3 +190,20 @@ The SNAP-specific test holds the adapter's request lock while a query thread is 
 The new test module is inserted into all five backend jobs (NetworkX, SciPy, igraph, graph-tool, and SNAP). Exact-source workflow execution is required before these tests count as evidence. A passing run would support the narrow claims above only.
 
 The following remain outside this tranche and must not be silently marked closed: mutation followed by restoration entirely between integrity observations; mutation after final postflight; atomicity of the initial repository-wide source snapshot; direct mutation of the opaque SNAP TNEANet inside the worker; and G5/G6 characterization of full-projection validation cost. G4 remains Partial until these are either addressed or explicitly bounded in the acceptance contract. All 20 task/backend suitability outcomes remain Insufficient evidence and `production_approval=false`.
+
+
+## 11. Exact-source repository side-effect and lifecycle test execution — 2026-11-24
+
+**Workflow:** [45431740022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45431740022), attempt 1, completed `success`.  
+**Workflow event commit:** `1680d9119315a2a3a42707831e6d1635582d69cc`.  
+**Exact checked-out source recorded by the jobs:** `4bf6dcc20812043fc2e048ecbbdacd6d7495350f`.
+
+All five backend jobs and aggregate summary completed successfully. The G4 repository side-effect/snapshot-race test step passed in NetworkX, SciPy, igraph, graph-tool and SNAP. The pre-existing G4 snapshot/mutation test step also passed in all five environments. The SNAP-specific close-versus-queued-query lifecycle test passed as part of its repository side-effect test step.
+
+This run executed the repository immutability, post-construction same-size source mutation/snapshot-pinning, and SNAP queued-query teardown tests. It predates the second-pass manifest validation and its new mutation-during-loading test; those changes require the subsequent exact-source run and are not covered by this run.
+
+## 12. Second-pass manifest validation — implementation and test pending exact-source execution
+
+The content index is now followed by `_validate_loaded_source_snapshot()`, which re-reads every included source file and compares its size-bound SHA-256 to the original audit manifest. This rejects a same-size edit injected immediately after the first content read, before the graph is built and accepted. The new test `test_g4_same_size_edit_during_snapshot_loading_is_rejected` injects that schedule and asserts the structured error code `source_changed_during_index`.
+
+The second pass narrows the construction race but is not an atomic filesystem snapshot. An ABA mutation restored before the second pass remains undetectable, and a mutation after validation does not retroactively alter the already captured in-memory source snapshot. The current exact-source workflow run must pass before this extension is counted as evidence. The added full read also has a cost that must be measured; no runtime or memory claim is made here.
