@@ -1,6 +1,6 @@
 # AE-32C M6 — SNAP Isolated Worker: Implementation and Acceptance
 
-**Status:** M5 graph-tool and M6 SNAP isolated-worker milestones remain formally accepted only for the exact historical Stage1 implementation snapshot below. The later M7 adapter timeout/cleanup changes are a new implementation snapshot and are not covered by that historical G9.42 acceptance. The current adapter protocol tests pass at `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`; SNAP repository-backed E.8.8 and exact-commit G9.42 for that newer snapshot remain unclosed. Production approval remains false.  
+**Status:** M5 graph-tool and M6 SNAP isolated-worker milestones remain formally accepted only for the exact historical Stage1 implementation snapshot below. Subsequent M7 worker timeout/cleanup and explicit E.8.8 resource-teardown changes are validated for their declared E.8.5/E.8.8 scope by successful Stage1 run `45395352748` at source `51d025fd328b00a59988a05fe72d9092262434f5`; this is not a replacement or extension of the historical M6 G9.42 acceptance. Exact-source G9.42 for the newer snapshot remains unrun. Production approval remains false.  
 **Target branch:** `stage1/section-uuids`  
 **Initial full-matrix validation snapshot:** `c7fe14c52ded38eafbf3153137bf163efaa3f0e6`  
 **Final exact-commit acceptance snapshot:** `81eb77aff35afe297a596a91826e016048515c0f`  
@@ -252,3 +252,21 @@ The live Docker lifecycle test `tests/semantic_graph/test_snap_worker_docker_lif
 In exact-source workflow run `45391619634` at `7a77b52c316c60ffb8f433af2bbd1b742f389972`, the SNAP adapter protocol/restriction tests, live Docker timeout cleanup test, M7.4 task suite and synthetic E.8.5 all succeeded. NetworkX, SciPy, python-igraph and graph-tool jobs also succeeded. At the last inspection, SNAP repository-backed E.8.8 remained `in_progress` after approximately 12 minutes; no final SNAP repository report or artifact was available. Do not count the matrix as complete.
 
 The G9.42 profile now includes `tests/semantic_graph/test_snap_worker_adapter.py`, `tests/semantic_graph/test_snap_worker_docker_lifecycle.py`, and `tests/semantic_graph/test_m74_task_suitability_acceptance.py`. Exact-source G9.42 has not been dispatched. The default-branch manual dispatcher is `workflow_dispatch` only, and the available GitHub connection does not expose a workflow-dispatch action. This live test closes the actual container-removal question for the runner environment tested; it does not by itself establish repository-backed SNAP suitability. The older M6 G9.42 acceptance remains tied to its historical source snapshot and cannot be extended to this code. Keep `production_approval=false`.
+
+
+## 11. Explicit E.8.8 resource teardown and completed SNAP repository conformance — 2026-11-24
+
+**Exact source:** `51d025fd328b00a59988a05fe72d9092262434f5`  
+**Workflow:** [E.8.5/E.8.8 workflow run 45395352748](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45395352748)  
+**SNAP job:** `138449745692`  
+**Aggregate summary job:** `138450475726`
+
+The preceding exact-source run `45391619634` had produced a semantically complete E.8.8 JSON report but the command did not exit; the step timed out after 12 minutes because the runner did not explicitly close the `RepositoryEvidenceTools` backend adapter. The correction adds `RepositoryEvidenceTools.close()` and wraps the E.8.8 runner in `try/finally`. Phase logs now record repository indexing, query completion, source-hash follow-through, context traversal, resource closure and report completion. In the successful run, the logs explicitly reached `backend_resources_closed` before report output.
+
+The current E.8.8 run succeeded. The SNAP E.8.8 report completed with `status: passed` and source SHA `51d025fd328b00a59988a05fe72d9092262434f5`. It records 43 attempted/successful backend queries, 43 reference-parity verifications, zero query failures and zero parity failures; 45 native adjacency lookups and 86 native edge occurrences read. The repository fixture is complete: 26 nodes, 41 edge occurrences, 9 indexed files, graph fingerprint `graph:1aca2caea6acabcf695a6118f7202b6e`, and source-manifest SHA-256 `5d186a8801781c0c63ea29bc102a0c67f08bf8bd8358888cc96de381a24cb0cf`. The runner followed graph-surfaced paths to two source reads (`main.py` and `tests/checks.py`) and verified both SHA-256 values.
+
+The per-operation context telemetry is also complete: trace context 7/7 parity-verified adjacency queries; workflow context 16/16; nested workflow context 16/16. The SNAP worker was CPython 3.9.25 / SNAP 6.0.0, image ID `sha256:a3ab78cf8512048adfc3570bff591772c1542dfb09226363142c6779934f59a5`, with the declared isolated container restrictions. E.8.8 used a 30-second worker request deadline.
+
+The same job passed SNAP adapter protocol tests, the live Docker timeout/forced-removal integration test, the repository backend resource-teardown contract test, the expanded M7.4 suite and E.8.5. The full five-backend matrix and aggregate summary also succeeded. SNAP artifact ID `14920592009`, archive digest `sha256:e5ff53b2ee4d86c7534d080bf96558618445a8d7d4281e6f854a3c0bd45eac30`.
+
+The explicit teardown test and completed E.8.8 run close the previously open live repository-run/worker shutdown issue for the tested runner environment. They do not authorize automatic worker restart, backend preference, global suitability or production approval. Exact-source G9.42 remains pending.

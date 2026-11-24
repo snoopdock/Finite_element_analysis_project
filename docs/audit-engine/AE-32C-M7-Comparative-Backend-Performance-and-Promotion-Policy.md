@@ -1,6 +1,6 @@
 # AE-32C M7 — Task Suitability and Operational Characterization
 
-**Status:** M7.0 protocol complete; M7.1 closed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier accepted for its stated verification scope (G9.42 run `44943859099`, manual run `44945256220`); M7.4 initial STRUCTURAL / DEPENDENCY / PATH / IMPACT task acceptance passed across all five backend environments in run `45382782600`. SNAP request-deadline and mocked cleanup tests pass at source `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`; the latest SNAP repository-backed E.8.8 stage is still pending. Formal task/backend verdicts remain pending.  
+**Status:** M7.0 protocol complete; M7.1 closed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier accepted for its stated verification scope (G9.42 run `44943859099`, manual run `44945256220`); M7.4 expanded STRUCTURAL / DEPENDENCY / PATH / IMPACT seeded-topology acceptance passed across all five backends in run `45395352748`; the complete E.8.5/E.8.8 matrix and aggregate summary passed. Formal task/backend suitability verdicts remain pending.  
 **M7.1 workflow revision:** `main` SHA `182d0009f1c759c46813e3a1cbbf34d22c247acb`  
 **M7.1 benchmark source:** Stage1 SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`  
 **M7.2 implementation:** `tools/gb06_task_suitability_campaign.py`  
@@ -299,3 +299,44 @@ In exact-source workflow run `45391619634` at `7a77b52c316c60ffb8f433af2bbd1b742
 The G9.42 profile includes the SNAP adapter, live Docker lifecycle and M7.4 task tests, but exact-source G9.42 has not been dispatched. The main-branch dispatcher requires `workflow_dispatch`; that dispatch operation is not exposed by the connected GitHub actions tools.
 
 Do not treat the still-running E.8.8 step as acceptance. Keep task/backend verdicts pending and `production_approval=false`.
+
+
+## 20. Expanded M7.4 seeded workloads and complete SNAP E.8.8 close-out — 2026-11-24
+
+**Exact source:** `51d025fd328b00a59988a05fe72d9092262434f5`  
+**Workflow:** [E.8.5/E.8.8 workflow run 45395352748](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45395352748)  
+**Aggregate summary job:** `138450475726`
+
+All five backend jobs reported **21 passed, 84 intentionally skipped** for `tests/semantic_graph/test_m74_task_suitability_acceptance.py`:
+
+| Backend | Job ID | M7.4 test result |
+|---|---:|---:|
+| NetworkX | `138449745984` | 21 passed, 84 skipped |
+| SciPy | `138449746035` | 21 passed, 84 skipped |
+| python-igraph | `138449745936` | 21 passed, 84 skipped |
+| graph-tool | `138449746042` | 21 passed, 84 skipped |
+| SNAP isolated worker | `138449745692` | 21 passed, 84 skipped |
+
+The 84 skips in each job are the four backend partitions not selected by that job. Across the five environments this is 105 passing backend-specific test executions and 420 expected skips; it is not 105 different test definitions.
+
+The expanded tranche adds 10 parametrized topology cases per selected backend: five seeded M7.2 workload families and two fixed seeds (`20261101`, `20261102`). Each base topology is replicated three times as disjoint components, and each case executes STRUCTURAL, DEPENDENCY, PATH and two-source IMPACT analysis through the public service, compares with the reference service, checks native-mode/parity/adjacency telemetry, and verifies canonical-graph immutability.
+
+| M7.2 topology family | Base graph | Three-replica assessment graph |
+|---|---:|---:|
+| `sparse_dependency` | 48 nodes / 96 edges | 144 nodes / 288 edge occurrences |
+| `hub_impact` | 48 / 176 | 144 / 528 |
+| `parallel_evidence` | 32 / 144 | 96 / 432 |
+| `disconnected_components` | 64 / 128 | 192 / 384 |
+| `dense_local_neighborhood` | 32 / 256 | 96 / 768 |
+
+These are semantic/task-fit fixtures, not timing benchmarks. No backend is ranked and no global winner is inferred.
+
+SNAP adapter protocol, real Docker timeout cleanup, RepositoryEvidenceTools backend resource teardown, M7.4 task acceptance, E.8.5 and E.8.8 all passed. The first expanded E.8.8 execution at run `45391619634` emitted a passed report but failed to exit because the repository runner did not explicitly close the backend adapter. The E.8.8 runner now closes `RepositoryEvidenceTools` in `finally`; the latest logs explicitly reached `backend_resources_closed` before report output.
+
+The SNAP E.8.8 report completed with `status: passed` and source SHA `51d025fd328b00a59988a05fe72d9092262434f5`. It records 43 attempted/successful backend queries, 43 reference-parity verifications, zero query failures and zero parity failures; 45 native adjacency lookups and 86 native edge occurrences read. The repository fixture is complete: 26 nodes, 41 edge occurrences, 9 indexed files, graph fingerprint `graph:1aca2caea6acabcf695a6118f7202b6e`, and source-manifest SHA-256 `5d186a8801781c0c63ea29bc102a0c67f08bf8bd8358888cc96de381a24cb0cf`. The runner followed graph-surfaced paths to two source reads (`main.py` and `tests/checks.py`) and verified both SHA-256 values.
+
+The per-operation context telemetry is also complete: trace context 7/7 parity-verified adjacency queries; workflow context 16/16; nested workflow context 16/16. The SNAP worker was CPython 3.9.25 / SNAP 6.0.0, image ID `sha256:a3ab78cf8512048adfc3570bff591772c1542dfb09226363142c6779934f59a5`, with the declared isolated container restrictions. E.8.8 used a 30-second worker request deadline.
+
+The initial expanded test run failed only because the IMPACT fixture requested depth 6 where the analyzer allows 1–5. That test input was corrected to 5; no runtime analyzer algorithm was changed. The corrected exact-source run passed.
+
+These results are semantic task-fit tests, not cross-backend performance comparisons. Formal G1–G8 records and task/backend verdicts remain pending. Exact-source G9.42 has not been dispatched; keep `production_approval=false`.
