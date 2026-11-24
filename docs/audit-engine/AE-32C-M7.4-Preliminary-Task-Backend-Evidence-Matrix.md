@@ -156,7 +156,7 @@ Verifier source SHA-256: `94f1b42f81fed87123aed8b77e1d0560609a9bfe895502c05afde2
 
 The five-backend G4 test module and E.8.5/E.8.8 workflow integration are recorded in [the G4 integrity dossier](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md). The suite tests deep-copy snapshot isolation, stale canonical detection, mutation during native adjacency, corrupt/missing local occurrences, repeated-query stability, projection reconstruction and SNAP post-close behavior.
 
-**Gate status: Partial; execution pending.** No G4 pass is inferred from source inspection or from the earlier E.8.8 evidence. The new test partitions must run in the five dedicated backend environments and be checked against the exact Stage1 source SHA. Residual limitations include repository-file non-mutation not being exercised by this in-memory suite, non-exhaustive concurrency schedules, and mutable native exports whose off-neighborhood corruption is not globally revalidated on every bounded query.
+At the time this subsection was first recorded, the G4 test run was pending. Section 11 records the subsequent exact-source execution. **Gate status remains Partial, not Pass.** Residual limitations include repository-file non-mutation not being exercised by this in-memory suite, non-exhaustive concurrency schedules, and mutable native exports whose off-neighborhood corruption is not globally revalidated on every bounded query.
 
 All 20 suitability outcomes remain Insufficient evidence. `production_approval=false`.
 
