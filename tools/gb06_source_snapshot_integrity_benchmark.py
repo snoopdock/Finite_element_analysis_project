@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """G4 source-snapshot integrity-cost benchmark.
 
-Measures repository audit/manifest construction, the first source-content
-load, the second source-validation pass, and total RepositoryEvidenceTools
-construction separately. Uses the reference graph backend so native graph
-backend setup does not contaminate source-snapshot timings.
+Measures the repository audit/manifest scan, first content load, and second
+source-validation pass. It invokes the production snapshot methods on a
+minimally initialized RepositoryEvidenceTools instance and deliberately does
+not build the semantic graph or initialize a traversal backend.
 """
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ import argparse
 from hashlib import sha256
 import json
 import math
+import os
 import platform
 import statistics
 import sys
@@ -27,7 +28,7 @@ if str(REPOSITORY_ROOT) not in sys.path:
 from audit_engine.semantic_audit.ae32b import evidence_tools as evidence_module
 from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
 
-SCHEMA = "ae32c/m7-g4-source-snapshot-cost/v1"
+SCHEMA = "ae32c/m7-g4-source-snapshot-cost/v2"
 AUTHORITY = {
     "atomic_repository_snapshot_established": False,
     "backend_auto_selection_permitted": False,
@@ -68,8 +69,8 @@ def _timing_summary(observations: list[int]) -> dict[str, Any]:
     }
 
 
-def _instrumented_construction(repository: Path) -> tuple[RepositoryEvidenceTools, dict[str, Any]]:
-    """Measure the three source-inspection phases without production edits."""
+def _snapshot_phases(repository: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Run the exact production audit/load/validation methods, not graph build."""
     measurements: dict[str, Any] = {
         "repository_audit_ns": 0,
         "content_load_ns": 0,
@@ -80,7 +81,6 @@ def _instrumented_construction(repository: Path) -> tuple[RepositoryEvidenceTool
         "source_validation_bytes_read": 0,
     }
     phase: list[str | None] = [None]
-
     original_audit = evidence_module.audit_repository
     original_load = RepositoryEvidenceTools._load_indexed_content
     original_validate = RepositoryEvidenceTools._validate_loaded_source_snapshot
@@ -122,6 +122,8 @@ def _instrumented_construction(repository: Path) -> tuple[RepositoryEvidenceTool
             measurements["source_validation_bytes_read"] += len(data)
         return data, identity
 
+    source_revision = os.environ.get("AE32C_SOURCE_REVISION")
+    runner_revision = os.environ.get("AE32C_RUNNER_REVISION")
     started = perf_counter_ns()
     with (
         patch.object(evidence_module, "audit_repository", timed_audit),
@@ -129,8 +131,29 @@ def _instrumented_construction(repository: Path) -> tuple[RepositoryEvidenceTool
         patch.object(RepositoryEvidenceTools, "_validate_loaded_source_snapshot", timed_validate),
         patch.object(evidence_module, "_read_snapshot_file_with_identity", counted_read),
     ):
-        instance = RepositoryEvidenceTools(repository, graph_backend="reference")
-    measurements["constructor_total_ns"] = max(0, perf_counter_ns() - started)
+        report = evidence_module.audit_repository(
+            repository, source_revision=source_revision, runner_revision=runner_revision,
+        )
+        instance = RepositoryEvidenceTools.__new__(RepositoryEvidenceTools)
+        instance.root = evidence_module._validate_root(repository)
+        instance.report = report
+        instance.manifest_sha256 = report["audit"]["manifest_sha256"]
+        instance.manifest_rows = {
+            row["path"]: row for row in report.get("source_manifest", [])
+            if row.get("status") == "included"
+        }
+        instance.evidence_index_status = (
+            "complete" if report.get("audit", {}).get("status") == "complete" else "incomplete"
+        )
+        instance.contents = {}
+        instance.file_hashes = {}
+        instance.file_sizes = {}
+        instance.file_identities = {}
+        instance.skipped_sensitive_files = 0
+        instance.skipped_non_utf8_files = 0
+        timed_load(instance)
+        timed_validate(instance)
+    measurements["source_snapshot_pipeline_ns"] = max(0, perf_counter_ns() - started)
 
     rows = [
         row for rel, row in instance.manifest_rows.items()
@@ -138,14 +161,11 @@ def _instrumented_construction(repository: Path) -> tuple[RepositoryEvidenceTool
     ]
     measurements["indexed_file_count"] = len(rows)
     measurements["indexed_bytes"] = sum(int(row.get("size", 0)) for row in rows)
-    measurements["remaining_constructor_ns"] = (
-        measurements["constructor_total_ns"]
-        - measurements["repository_audit_ns"]
-        - measurements["content_load_ns"]
-        - measurements["second_validation_ns"]
-    )
-    if measurements["remaining_constructor_ns"] < 0:
-        raise BenchmarkError("instrumented_phase_time_exceeds_constructor_total")
+    measurements["manifest_sha256"] = instance.manifest_sha256
+    measurements["manifest_included_file_count"] = int(report["audit"]["included_file_count"])
+    measurements["manifest_included_bytes"] = int(report["audit"]["included_bytes"])
+    measurements["evidence_index_status"] = instance.evidence_index_status
+    measurements["skipped_non_utf8_files"] = instance.skipped_non_utf8_files
     expected_files = measurements["indexed_file_count"]
     expected_bytes = measurements["indexed_bytes"]
     if (
@@ -155,15 +175,17 @@ def _instrumented_construction(repository: Path) -> tuple[RepositoryEvidenceTool
         or measurements["source_validation_bytes_read"] != expected_bytes
     ):
         raise BenchmarkError("source_snapshot_read_accounting_mismatch")
-    measurements["manifest_sha256"] = instance.manifest_sha256
-    measurements["manifest_included_file_count"] = int(
-        instance.report.get("audit", {}).get("included_file_count", 0)
+    expected_total = (
+        measurements["repository_audit_ns"]
+        + measurements["content_load_ns"]
+        + measurements["second_validation_ns"]
     )
-    measurements["manifest_included_bytes"] = int(
-        instance.report.get("audit", {}).get("included_bytes", 0)
+    measurements["unattributed_pipeline_ns"] = (
+        measurements["source_snapshot_pipeline_ns"] - expected_total
     )
-    measurements["evidence_index_status"] = instance.evidence_index_status
-    return instance, measurements
+    if measurements["unattributed_pipeline_ns"] < 0:
+        raise BenchmarkError("instrumented_phase_time_exceeds_pipeline_total")
+    return report, measurements
 
 
 def make_report(
@@ -183,7 +205,7 @@ def make_report(
     samples: list[dict[str, Any]] = []
     accepted_manifest = None
     for index in range(warmup + repeats):
-        _instance, observed = _instrumented_construction(root)
+        _audit, observed = _snapshot_phases(root)
         manifest = observed["manifest_sha256"]
         if accepted_manifest is None:
             accepted_manifest = manifest
@@ -196,8 +218,8 @@ def make_report(
         "repository_audit_ns",
         "content_load_ns",
         "second_validation_ns",
-        "constructor_total_ns",
-        "remaining_constructor_ns",
+        "source_snapshot_pipeline_ns",
+        "unattributed_pipeline_ns",
     )
     summaries = {
         field: _timing_summary([int(item[field]) for item in samples])
@@ -212,6 +234,7 @@ def make_report(
         "source_load_bytes_read",
         "source_validation_file_reads",
         "source_validation_bytes_read",
+        "skipped_non_utf8_files",
     )
     stable = {}
     for field in stable_fields:
@@ -231,10 +254,11 @@ def make_report(
         "configuration": {
             "repeats": repeats,
             "warmup": warmup,
-            "graph_backend": "reference",
+            "graph_construction": "excluded",
+            "traversal_backend": "not_initialized",
             "timing_boundary": (
-                "repository audit, first content load, second source validation, "
-                "and total RepositoryEvidenceTools construction"
+                "repository audit/manifest scan, first source-content load, "
+                "and second descriptor-identity/hash validation pass"
             ),
         },
         "measurements": {
@@ -258,18 +282,20 @@ def make_report(
             "machine": platform.machine(),
         },
         "provenance": {
-            "source_revision": __import__("os").environ.get("AE32C_SOURCE_REVISION"),
-            "workflow_run_id": __import__("os").environ.get("GITHUB_RUN_ID"),
-            "workflow_run_attempt": __import__("os").environ.get("GITHUB_RUN_ATTEMPT"),
-            "workflow_name": __import__("os").environ.get("GITHUB_WORKFLOW"),
+            "source_revision": os.environ.get("AE32C_SOURCE_REVISION"),
+            "runner_revision": os.environ.get("AE32C_RUNNER_REVISION"),
+            "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+            "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+            "workflow_name": os.environ.get("GITHUB_WORKFLOW"),
         },
         "authority": dict(AUTHORITY),
         "interpretation": (
             "Repository-specific source snapshot cost characterization. "
-            "The second pass is timed separately from manifest construction and "
-            "first content loading. The reference graph backend avoids native "
-            "backend setup. This does not establish atomic snapshot semantics, "
-            "universal overhead, or production approval."
+            "The production repository audit, first content load and second "
+            "validation methods are timed separately. Graph construction and "
+            "native backend setup are deliberately excluded. This does not "
+            "establish atomic snapshot semantics, universal overhead, or "
+            "production approval."
         ),
     }
     report["report_sha256"] = _digest(report)
@@ -298,8 +324,8 @@ def verify_report(report: dict[str, Any], repository: str | Path) -> dict[str, A
         "repository_audit_ns",
         "content_load_ns",
         "second_validation_ns",
-        "constructor_total_ns",
-        "remaining_constructor_ns",
+        "source_snapshot_pipeline_ns",
+        "unattributed_pipeline_ns",
     )
     for field in timing_fields:
         observations = [item.get(field) for item in samples]
@@ -330,15 +356,13 @@ def verify_report(report: dict[str, Any], repository: str | Path) -> dict[str, A
             or item.get("source_validation_bytes_read") != indexed_bytes
         ):
             raise BenchmarkError("source_read_accounting_invalid")
-        if item.get("remaining_constructor_ns", -1) < 0:
-            raise BenchmarkError("negative_remaining_constructor_time")
-        if item.get("constructor_total_ns") != (
+        if item.get("source_snapshot_pipeline_ns") != (
             item.get("repository_audit_ns", 0)
             + item.get("content_load_ns", 0)
             + item.get("second_validation_ns", 0)
-            + item.get("remaining_constructor_ns", 0)
+            + item.get("unattributed_pipeline_ns", 0)
         ):
-            raise BenchmarkError("constructor_time_decomposition_invalid")
+            raise BenchmarkError("source_pipeline_time_decomposition_invalid")
 
     return {
         "status": "verified",
