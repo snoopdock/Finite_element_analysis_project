@@ -113,3 +113,53 @@ These checks target the former blind spot: a query rooted at A must reject a cor
 **Cost and limits:** complete validation adds O(V+E) work before and after each bounded traversal. SNAP additionally incurs two full audit RPCs per query. This is a deliberate integrity/performance tradeoff, not a free strengthening; subsequent task-workload and operational evidence must quantify it. The checks do not establish immutability, prevent an attacker or concurrent writer from mutating and restoring state entirely between observations, or close a race after the final postflight. Repository-file side-effect coverage remains separate.
 
 **Status at this record:** implementation and tests prepared; exact-source five-backend execution pending. G4 remains Partial until the new matrix passes and remaining concurrency/repository-side-effect limits are either tested or explicitly bounded in the contract. All 20 task/backend outcomes remain Insufficient evidence; `production_approval=false`.
+
+## 9. Exact-source five-backend execution of full projection boundary audits — 2026-11-24
+
+**Workflow:** [45423628531](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45423628531), attempt 1, completed `success`.  
+**Exact tested source:** `stage1/section-uuids` at `0790019b2d3ce4f4fe9c0f89d58c90eb3a689a9a`.
+
+### 9.1 G4 test matrix
+
+| Backend | Job ID | G4 test result |
+|---|---:|---:|
+| NetworkX | 138549608093 | 7 passed, 33 expected skips |
+| SciPy | 138549607706 | 7 passed, 33 expected skips |
+| python-igraph | 138549607991 | 7 passed, 33 expected skips |
+| graph-tool | 138549607596 | 7 passed, 33 expected skips |
+| SNAP isolated worker | 138549607264 | 8 passed, 32 expected skips |
+
+The four non-SNAP partitions each executed the seven backend-applicable tests. SNAP executed those seven plus the SNAP-specific fresh-audit RPC test. Skips are backend-selection exclusions and the non-SNAP selection of the SNAP-only test. There were no G4 failures or errors. The SNAP-specific test confirmed two fresh `audit` RPCs around one query.
+
+The new tests demonstrate:
+- off-neighborhood C-to-C native projection corruption is rejected before a bounded query for NetworkX, SciPy, igraph and graph-tool;
+- mutation of an off-neighborhood native record after local adjacency is read is rejected at postflight for those same four backends;
+- SNAP refreshes its worker audit at both query boundaries; the host-side test injects a corrupted fresh audit response after local adjacency to exercise the postflight rejection path.
+
+**SNAP limitation:** the worker graph is intentionally opaque to the host. The SNAP fault injection tampers with the fresh audit response, not the internal TNEANet itself. The independent fresh-audit RPC assertion establishes that the cache is not trusted at query boundaries, but it is not a direct in-worker mutation experiment.
+
+### 9.2 Full workflow and existing conformance
+
+All five backend jobs and aggregate summary job `138550687334` completed successfully. The E.8.5 and E.8.8 reports in the run recorded 14/14 and 43/43 parity-verified queries respectively, with zero parity failures. The existing graph-tool and NetworkX protocol tests also passed after their obsolete construction-only/no-full-scan assertions were reconciled with the new G4 query-boundary audit contract.
+
+For SciPy, igraph, graph-tool and SNAP, the report's `native_projection_reads` was:
+- E.8.5: 377 reads = 13 initial projection records + 2 × 14 queries × 13 records (5 nodes + 8 edge occurrences);
+- E.8.8: 5,829 reads = 67 initial projection records + 2 × 43 queries × 67 records (26 nodes + 41 edge occurrences).
+
+This exactly matches one construction audit plus two complete projection audits per query for the reported fixtures. NetworkX reports full validation node/edge counts through its separate projection-validation metrics. These are record-read counts, not elapsed-time or memory measurements. G5/G6 must still quantify the operational cost under representative audit workloads.
+
+### 9.3 Artifact identities
+
+| Artifact | ID | ZIP size | GitHub Actions SHA-256 |
+|---|---:|---:|---|
+| NetworkX | 14935062322 | 2,768 bytes | `3a3ff983b163846b69c5d517ad1068b39c2915670d00819359949d1f8e589ce4` |
+| SciPy | 14936480568 | 2,927 bytes | `a611775f158cebb9eaa95eb38439014bc72670ce6475c247ebe19d34b2c6143f` |
+| python-igraph | 14935392761 | 2,747 bytes | `4a3b75f3af9dcca5c96ca8cf3cf568f13d78bda9f9e55083ed23d6f82dcc6a72` |
+| graph-tool | 14935196933 | 2,844 bytes | `65513fff72e6db5c53d3fa13631c6345943e55830ae22b61c44fe761a974dc05` |
+| SNAP worker | 14935047472 | 3,436 bytes | `945ee6003330e3265f89770bb5f055c3ac0dcd9747c87653f918b0193b56d3ae` |
+
+These are Actions-reported ZIP digests, not a detached G7 verification of this run. The earlier G7 detached dossier remains bound to run 45395352748 and its historical source.
+
+### 9.4 G4 decision
+
+The off-neighborhood preflight/postflight behavior is now implemented and passed in all five backend partitions, with the SNAP worker caveat stated above. G4 is nevertheless **Partial**, not closed. Remaining work includes repository-file non-mutation coverage, mutation/restoration and broader concurrency/lifecycle schedules, the race after final postflight, direct SNAP in-worker mutation coverage, and G5/G6 characterization of the full-scan cost. All 20 task/backend outcomes remain Insufficient evidence. `production_approval=false`.

@@ -382,3 +382,9 @@ G4 remains Partial, not closed. The test suite does not qualify arbitrary off-ne
 The G4 follow-on now requires complete native projection validation before and after bounded queries. This addresses corruption in an off-neighborhood region that local adjacency checks would not inspect. The traversal itself continues to use the selected backend's native local-adjacency API. SNAP refreshes the worker audit on both boundaries.
 
 The additional cost is O(V+E) per full scan, twice per query; SNAP adds two worker audit RPCs. This is an integrity-first policy choice whose operational and workload cost must be measured before task suitability decisions. It does not make native exports immutable or rule out mutation/restoration between checks. The expanded five-backend fault-injection suite is pending exact-source execution. No suitability verdict, ranking or production approval changes.
+
+## 27. Exact-source G4 full-projection audit results — 2026-11-24
+
+The five-backend full-projection integrity suite passed in [run 45423628531](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45423628531), attempt 1, source `0790019b2d3ce4f4fe9c0f89d58c90eb3a689a9a`: NetworkX 7, SciPy 7, igraph 7, graph-tool 7 and SNAP 8 passed. All E.8.5/E.8.8 backend jobs and the aggregate summary succeeded with zero parity failures.
+
+The added validation cost is visible in operation counts: SciPy, igraph, graph-tool and SNAP read 377 projection records in E.8.5 and 5,829 in E.8.8, consistent with initial validation plus two full scans per query. These counts do not substitute for elapsed-time/resource measurements. The policy remains task-specific and does not rank the libraries. G4 remains Partial pending repository-file, concurrency, SNAP in-worker and workload/operational cost evidence; no suitability outcome or production approval changes.

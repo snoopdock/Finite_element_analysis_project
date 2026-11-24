@@ -309,3 +309,11 @@ The next G4 tranche adds complete native projection preflight and postflight aro
 New fault-injection tests corrupt a C-to-C self-loop outside a query rooted at A, both before the query and after local adjacency has been read. A SNAP-specific test checks that two fresh worker audit RPCs bracket one query. The workflow will execute these tests in all five native environments.
 
 This is a pending implementation tranche, not evidence of a pass. Full scans add O(V+E) preflight and postflight work per query; SNAP incurs two audit RPCs. The cost must be quantified, and repository-file side effects plus mutation/restoration/concurrency races remain open. G4 stays Partial; all 20 outcomes stay Insufficient evidence; `production_approval=false`.
+
+## 18. Exact-source G4 full-projection audit execution — 2026-11-24
+
+The expanded G4 suite passed in all five native environments in [run 45423628531](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45423628531), attempt 1, source `0790019b2d3ce4f4fe9c0f89d58c90eb3a689a9a`: NetworkX 7 passed, SciPy 7, igraph 7, graph-tool 7 and SNAP 8 (the SNAP-only fresh-audit RPC test accounts for the additional case). There were no G4 failures or errors. All five backend jobs and the aggregate summary succeeded.
+
+The tests cover off-neighborhood corruption before traversal and mutation persisting from local adjacency until postflight. SNAP uses fresh worker audit RPCs and a corrupted audit-response injection; it does not directly mutate the worker's TNEANet. E.8.5/E.8.8 reports also passed with 14/14 and 43/43 parity-verified queries per backend and zero parity failures.
+
+This is successful execution of the full-projection query-boundary tranche, not G4 closure. Repository-file no-side-effect coverage, broader concurrency/mutation-restoration cases, direct SNAP in-worker mutation, and operational cost characterization remain. See the G4 dossier for artifact IDs and digest ledger. G4 remains Partial; all 20 outcomes remain Insufficient evidence; `production_approval=false`.

@@ -883,3 +883,9 @@ The next G4 tranche replaces construction-only native projection validation with
 New tests inject off-neighborhood C-to-C corruption before a query and after local adjacency has executed, plus a SNAP audit-refresh count assertion. The five-backend workflow will execute these tests. At implementation time, execution is pending.
 
 This deliberately adds O(V+E) validation twice per traversal and two full audit RPCs for SNAP. G5/G6 must quantify that cost; no suitability inference is made from the implementation alone. Mutability, mutation/restoration races and repository-file side effects remain explicit limitations. G4 remains Partial and `production_approval=false`.
+
+## 29. Exact-source execution of G4 full projection audits — 2026-11-24
+
+The complete projection preflight/postflight implementation passed in all five backend partitions in [run 45423628531](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45423628531), attempt 1, Stage1 source `0790019b2d3ce4f4fe9c0f89d58c90eb3a689a9a`. G4 results: NetworkX 7 passed, SciPy 7, igraph 7, graph-tool 7, SNAP 8. All five E.8.5/E.8.8 jobs and aggregate summary succeeded; 14/14 and 43/43 parity-verified queries respectively, zero parity failures.
+
+The full scan record counts for SciPy, igraph, graph-tool and SNAP are 377 for E.8.5 and 5,829 for E.8.8, corresponding to construction validation plus preflight and postflight for each query. The result establishes the off-neighborhood integrity behavior tested, not universal immutability. Repository-file side effects, concurrency/mutation-restoration races, SNAP internal mutation and G5/G6 cost qualification remain. G4 stays Partial.

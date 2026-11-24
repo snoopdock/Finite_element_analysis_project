@@ -400,3 +400,11 @@ The G4 continuation now specifies a complete native-projection audit before and 
 This changes the cost envelope materially: O(V+E) validation is added twice per traversal, with two full audit RPCs for SNAP. G5/G6 evidence must measure this overhead under representative audit workloads and worker conditions before any task/backend suitability conclusion. The implementation does not establish immutability or eliminate mutation-and-restoration races, and repository-file side-effect coverage remains a separate requirement.
 
 The new exact-source five-backend test run is pending. Until it passes and the remaining limits are resolved or bounded, G4 remains Partial and every task/backend outcome remains Insufficient evidence. `production_approval=false`.
+
+## 23. Exact-source execution of full projection preflight/postflight — 2026-11-24
+
+The implementation described in Section 22 was executed in [run 45423628531](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45423628531), attempt 1, against exact Stage1 source `0790019b2d3ce4f4fe9c0f89d58c90eb3a689a9a`. NetworkX, SciPy, igraph, graph-tool and SNAP all passed the expanded G4 test partition: 7/7 each for the first four, and 8/8 for SNAP including the fresh-audit RPC test. All backend jobs and the aggregate E.8.5/E.8.8 summary succeeded.
+
+E.8.5 and E.8.8 each reported 14/14 and 43/43 parity-verified queries with zero parity failures. The G4 dossier records the complete job/artifact ledger and exact read-count arithmetic. For SciPy, igraph, graph-tool and SNAP, full projection record reads rose to 377 in E.8.5 and 5,829 in E.8.8, exactly corresponding to one initial validation plus two complete scans per query. These are operation counts, not timing measurements.
+
+This closes the exact-source execution requirement for the off-neighborhood integrity tranche, not G4 as a whole. SNAP tests fresh host-visible worker audit responses but do not mutate TNEANet inside the worker. Repository-file side effects, broader concurrency and mutation/restoration races, postflight race boundaries and G5/G6 cost characterization remain. G4 remains Partial; all 20 suitability outcomes remain Insufficient evidence; `production_approval=false`.

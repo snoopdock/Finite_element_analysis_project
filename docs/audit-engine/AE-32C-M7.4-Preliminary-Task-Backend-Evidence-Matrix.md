@@ -171,3 +171,9 @@ Run [45413494767](https://github.com/snoopdock/Finite_element_analysis_project/a
 The G4 implementation now revalidates the complete native projection before and after each bounded query. New tests target corruption of an edge outside the query neighborhood, mutation after local adjacency, and fresh SNAP worker audit RPCs. The five-backend workflow includes the expanded suite.
 
 **Status: pending exact-source execution.** If the tests pass, they establish fail-closed detection for corruption present at preflight or persisting until postflight; they do not establish immutability or close mutation/restoration races. The two full scans add O(V+E) cost per traversal (and two worker audit RPCs for SNAP), which must be quantified under representative task workloads. Repository-file side-effect coverage remains open. G4 remains Partial; all 20 suitability outcomes remain Insufficient evidence.
+
+## 13. Exact-source execution of off-neighborhood G4 integrity checks — 2026-11-24
+
+[Run 45423628531](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45423628531), attempt 1, source `0790019b2d3ce4f4fe9c0f89d58c90eb3a689a9a`, passed the expanded G4 suite in all five backend environments: NetworkX 7, SciPy 7, igraph 7, graph-tool 7 and SNAP 8 passed. All backend jobs and the aggregate E.8.5/E.8.8 summary succeeded.
+
+E.8.5/E.8.8 each recorded 14/14 and 43/43 parity-verified queries, zero parity failures. G4 remains Partial because repository-file side effects, broader concurrency/mutation-restoration races, the SNAP in-worker mutation boundary and G5/G6 cost characterization remain open. All 20 task/backend outcomes remain Insufficient evidence.
