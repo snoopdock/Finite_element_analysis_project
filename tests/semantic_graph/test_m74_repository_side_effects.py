@@ -7,6 +7,7 @@ import shutil
 import stat
 import threading
 import time
+from types import SimpleNamespace
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -68,6 +69,20 @@ def _copy_fixture(tmp_path: Path) -> Path:
     destination = tmp_path / "repository"
     shutil.copytree(FIXTURE, destination)
     return destination
+
+
+def test_snapshot_identity_prefers_windows_birthtime_when_available(monkeypatch):
+    info = SimpleNamespace(
+        st_dev=1, st_ino=2, st_mode=0o100644, st_size=3,
+        st_mtime=4.0, st_mtime_ns=4_000_000_000,
+        st_ctime=5.0, st_ctime_ns=5_000_000_000,
+        st_birthtime_ns=6_000_000_000,
+    )
+    monkeypatch.setattr(evidence_tools_module.os, "name", "nt")
+    assert evidence_tools_module._snapshot_stat_identity(info)[-1] == 6_000_000_000
+
+    del info.st_birthtime_ns
+    assert evidence_tools_module._snapshot_stat_identity(info)[-1] == 5_000_000_000
 
 
 def test_g4_tree_state_records_directory_modes_and_symlink_targets(tmp_path):
