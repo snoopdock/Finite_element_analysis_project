@@ -377,3 +377,12 @@ All five artifact sizes and SHA-256 digests matched; each ZIP contained exactly 
 Manifest SHA-256 `ff13bff4d7b2f57e425e2566b90797cbd22016ec048926e9ea590f67e79444d3`; verified dossier SHA-256 `43137fb5a2ad24bb3afbd522b2b6445959501560abc001845b6051141710437a`. Full interpretation and reproduction steps are in [the detached dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier.md).
 
 **G7 conclusion:** Pass for the exact artifact set from run 45395352748. This is detached byte/digest and report-consistency verification, not historical workflow re-execution or physical-runner attestation. G2/G4/G5/G6 and task-domain qualification remain open. All 20 task/backend outcomes remain Insufficient evidence and `production_approval=false`.
+
+
+## 20. G4 implementation and evidence boundary — 2026-11-24
+
+The dedicated five-backend test tranche and workflow integration are specified in [M7.4-G4 Cross-Backend Snapshot and Mutation Integrity](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md). The suite covers deep snapshot isolation, mutation of canonical graph data during native adjacency execution, corrupt or missing local edge occurrences, repeat-query stability, fresh projection reconstruction and SNAP post-close fail-closed behavior.
+
+The G4 rule remains unchanged: canonical graph and repository data are authoritative; a projection is not. The new suite is synthetic and does not establish repository-file non-mutation. In addition, native exports remain mutable and the current query path validates the projection at construction plus local adjacency used by a query; it does not perform a full native graph scan before every bounded query. Off-neighborhood projection corruption, arbitrary thread schedules and mutation-and-restoration between fingerprint checks therefore remain explicit limitations.
+
+**Status at this record:** tests/workflow added; exact-source five-backend execution pending. G4 is not closed, and no task/backend suitability outcome is upgraded. `production_approval=false` remains invariant.

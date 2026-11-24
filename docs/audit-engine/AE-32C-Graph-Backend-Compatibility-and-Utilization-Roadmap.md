@@ -863,3 +863,9 @@ Each backend passed E.8.5 seven-case checks and 14/14 parity queries, plus E.8.8
 Verifier implementation, tests, exact Actions artifact manifest and machine-readable verified dossier are committed in the repository. The full audit explanation and limitations are in [the detached dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier.md).
 
 G7 is now closed for the recorded E.8.5/E.8.8 evidence set. This does not constitute historical workflow re-execution or physical-runner attestation. The G9.42 result from run 45400741779 remains separately scoped to its validation bundle. G2/G4/G5/G6 and PATH/IMPACT domain limitations remain; all 20 task/backend outcomes remain Insufficient evidence. Preserve `production_approval=false`.
+
+## 26. M7.4-G4 cross-backend snapshot and mutation integrity — 2026-11-24
+
+Added a dedicated G4 test tranche and wired it into the five-backend E.8.5/E.8.8 workflow. It exercises deep snapshot isolation, stale canonical graph detection, mutation during native adjacency, local occurrence corruption/omission, repeated-query stability, fresh projection reconstruction and SNAP worker close semantics. Detailed source review, test scope and residual limitations are recorded in [the M7.4-G4 integrity dossier](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md).
+
+The workflow must execute the new suite in NetworkX, SciPy, igraph, graph-tool and SNAP environments against the exact committed Stage1 SHA before G4 evidence can be upgraded. At commit time the run is pending; G4 remains Partial. This is not an all-G4 closure: repository-file non-mutation and arbitrary concurrency schedules remain unqualified, and mutable backend exports can contain off-neighborhood corruption that is not globally rescanned before every bounded query. Keep all 20 task/backend verdicts at Insufficient evidence and preserve `production_approval=false`.

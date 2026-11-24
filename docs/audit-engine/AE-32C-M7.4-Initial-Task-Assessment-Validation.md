@@ -283,3 +283,13 @@ All E.8.5 reports passed seven conformance cases and 14/14 parity queries; all E
 Manifest and machine-readable verified result are committed under `docs/audit-engine/evidence/m74-e85-e88-run-45395352748/`. Their SHA-256 values are `ff13bff4d7b2f57e425e2566b90797cbd22016ec048926e9ea590f67e79444d3` and `43137fb5a2ad24bb3afbd522b2b6445959501560abc001845b6051141710437a`. See [the detached dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier.md).
 
 This closes G7 for the exact E.8.5/E.8.8 artifact set. It does not rerun the historical workflow or independently attest the physical runner. Remaining G2/G4/G5/G6 and task-domain limitations prevent final suitability decisions. All 20 preliminary outcomes remain Insufficient evidence; `production_approval=false`.
+
+## 15. M7.4-G4 cross-backend snapshot and mutation-integrity tranche — 2026-11-24
+
+A dedicated test module, `tests/semantic_graph/test_m74_snapshot_mutation_integrity.py`, and backend-matrix workflow steps have been added. The test module is selected independently for NetworkX, SciPy, igraph, graph-tool and the isolated SNAP worker. It covers nested-payload snapshot isolation, stale canonical snapshots, mutation during native adjacency execution, corrupted and omitted local edge occurrences, repeated-query stability, fresh reconstruction and fail-closed behavior after SNAP worker closure.
+
+Implementation review found existing protection mechanisms in `make_projection` and both traversal-engine families: deep-copied projection payloads, full projection validation during construction, canonical graph fingerprint checks around queries, and per-record validation of native local adjacency. The tranche is intended to verify these guarantees with focused fault injection rather than add a second, competing graph authority.
+
+**Execution status in this commit:** pending. No G4 test result is claimed until the five-backend workflow executes the new module against one exact Stage1 SHA. See [the G4 test and limitation record](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md).
+
+The record explicitly preserves unresolved limits: synthetic in-memory tests do not establish repository-file non-mutation; arbitrary concurrency interleavings and mutation/restoration between fingerprint checks are not exhausted; and mutable exported native objects are not globally re-enumerated before every bounded query, so corruption isolated to an unvisited region may not be observed by that query. G4 remains Partial. All 20 task/backend outcomes remain Insufficient evidence and `production_approval=false`.

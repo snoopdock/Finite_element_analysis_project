@@ -151,3 +151,11 @@ production_approval=false remains invariant.
 The verifier recomputed every ZIP digest and byte count, required exactly the expected E.8.5/E.8.8 report members, bound reports to backend/source/run/attempt and checked schema, native mode/version, case/query totals, parity, telemetry, projection round-trip, repository snapshot, source-read hashes, side-effect declarations and SNAP policy. All five artifact sets passed. Each backend records E.8.5 14/14 and E.8.8 43/43 parity-verified queries, with zero query/parity failures. The 11 adversarial verifier unit tests passed.
 
 Verifier source SHA-256: `94f1b42f81fed87123aed8b77e1d0560609a9bfe895502c05afde2b00fa7179f`. G7 is closed for the exact downloaded evidence set. This is detached archive/report consistency verification, not historical workflow re-execution or physical-runner attestation. G2/G4/G5/G6 and task-domain qualifications remain open; all 20 task/backend outcomes remain **Insufficient evidence**. `production_approval=false` remains invariant.
+
+## 10. G4 snapshot/mutation integrity test tranche — 2026-11-24
+
+The five-backend G4 test module and E.8.5/E.8.8 workflow integration are recorded in [the G4 integrity dossier](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md). The suite tests deep-copy snapshot isolation, stale canonical detection, mutation during native adjacency, corrupt/missing local occurrences, repeated-query stability, projection reconstruction and SNAP post-close behavior.
+
+**Gate status: Partial; execution pending.** No G4 pass is inferred from source inspection or from the earlier E.8.8 evidence. The new test partitions must run in the five dedicated backend environments and be checked against the exact Stage1 source SHA. Residual limitations include repository-file non-mutation not being exercised by this in-memory suite, non-exhaustive concurrency schedules, and mutable native exports whose off-neighborhood corruption is not globally revalidated on every bounded query.
+
+All 20 suitability outcomes remain Insufficient evidence. `production_approval=false`.

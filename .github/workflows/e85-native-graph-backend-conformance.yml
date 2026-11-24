@@ -75,6 +75,11 @@ jobs:
         run: |
           python -m pip install pytest
           python -m pytest -q tests/semantic_graph/test_m74_task_suitability_acceptance.py
+      - name: Run M7.4-G4 snapshot and mutation integrity for selected backend
+        env:
+          AE32C_M74_BACKEND: ${{ matrix.backend }}
+        run: python -m pytest -q tests/semantic_graph/test_m74_snapshot_mutation_integrity.py
+
       - name: Run synthetic native projection and traversal conformance
         run: |
           python tools/gb03_native_backend_conformance.py \
@@ -134,6 +139,12 @@ jobs:
           AE32C_M74_BACKEND: graph-tool
         run: |
           python -m pytest -q tests/semantic_graph/test_m74_task_suitability_acceptance.py
+      - name: Run M7.4-G4 snapshot and mutation integrity for graph-tool
+        shell: micromamba-shell {0}
+        env:
+          AE32C_M74_BACKEND: graph-tool
+        run: python -m pytest -q tests/semantic_graph/test_m74_snapshot_mutation_integrity.py
+
       - name: Run synthetic native graph-tool conformance
         shell: micromamba-shell {0}
         run: |
@@ -209,6 +220,11 @@ jobs:
           AE32C_M74_BACKEND: snap
         run: |
           python -m pytest -q tests/semantic_graph/test_m74_task_suitability_acceptance.py
+      - name: Run M7.4-G4 snapshot and mutation integrity for SNAP worker
+        env:
+          AE32C_M74_BACKEND: snap
+        run: python -m pytest -q tests/semantic_graph/test_m74_snapshot_mutation_integrity.py
+
       - name: Run SNAP synthetic native E.8.5 conformance
         run: |
           python tools/gb03_native_backend_conformance.py \
