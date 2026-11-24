@@ -351,3 +351,246 @@ def test_m74_bounded_queries_report_incomplete_instead_of_false_completion(backe
     else:
         assert result.discovered_entities == ("B",)
     assert graph.to_dict() == before
+
+
+
+def _m74_impact_graph() -> SemanticGraph:
+    graph = SemanticGraph()
+    nodes = [
+        ("file:src/app.py", "PythonSourceFile", {"path": "src/app.py"}),
+        ("module:app", "PythonModule", {"path": "src/app.py"}),
+        ("symbol:app.run", "PythonSymbol", {"path": "src/app.py", "name": "run"}),
+        ("file:src/lib.py", "PythonSourceFile", {"path": "src/lib.py"}),
+        ("module:lib", "PythonModule", {"path": "src/lib.py"}),
+        ("module:consumer", "PythonModule", {"path": "src/consumer.py"}),
+        ("module:consumer2", "PythonModule", {"path": "src/consumer2.py"}),
+        ("symbol:caller", "PythonSymbol", {"path": "src/consumer.py", "name": "caller"}),
+        ("file:tests/test_app.py", "TestFile", {"path": "tests/test_app.py"}),
+        ("file:.github/workflows/ci.yml", "WorkflowFile", {"path": ".github/workflows/ci.yml"}),
+    ]
+    for node_id, kind, attributes in nodes:
+        graph.add_node(SemanticNode(
+            node_id, kind, attributes,
+            {"source_sha256": f"sha-{node_id}"},
+        ))
+
+    edges = [
+        ("file:src/app.py", "module:app", "IMPLEMENTS"),
+        ("module:app", "file:src/app.py", "IMPLEMENTED_BY"),
+        ("file:src/app.py", "symbol:app.run", "DEFINES"),
+        ("symbol:app.run", "module:app", "MEMBER_OF"),
+        ("file:src/lib.py", "module:lib", "IMPLEMENTS"),
+        ("module:lib", "file:src/lib.py", "IMPLEMENTED_BY"),
+        ("module:app", "module:lib", "IMPORTS"),
+        ("module:lib", "module:app", "DEPENDS_ON"),
+        ("module:consumer", "module:app", "IMPORTS"),
+        ("module:consumer2", "module:consumer", "IMPORTS"),
+        ("symbol:caller", "symbol:app.run", "CALLS"),
+        ("file:tests/test_app.py", "module:app", "TESTS"),
+        ("file:.github/workflows/ci.yml", "module:app", "INVOKES"),
+    ]
+    for ordinal, (source, target, relation) in enumerate(edges, start=1):
+        graph.add_edge(SemanticEdge(
+            source, target, relation,
+            {"ordinal": ordinal},
+            {"path": f"evidence/{ordinal}.py", "line": ordinal},
+        ))
+    return graph
+
+
+def _m74_impact_query(
+    sources=("file:src/app.py", "file:src/lib.py"),
+    **constraints,
+) -> GraphQuery:
+    return GraphQuery(
+        "m74-impact-change-set",
+        QueryType.IMPACT,
+        sources,
+        {
+            "max_depth": 4,
+            "max_visited_nodes": 40,
+            "max_traversal_steps": 500,
+            **constraints,
+        },
+    )
+
+
+def _assert_m74_impact_native_execution(service, result, backend: str) -> None:
+    assert result.metadata["computation_backend"] == backend
+    assert result.metadata["backend_library"] == backend
+    assert result.metadata["backend_parity_status"] == "verified_against_reference_per_query"
+    expected_mode = NATIVE_QUERY_MODES[backend]
+    assert result.metadata["backend_native_query_mode"] == expected_mode
+
+    runtime = service.engine.traversal_engine.runtime_report()
+    execution = runtime["backend_execution"]
+    assert execution["queries_attempted"] > 1
+    assert execution["queries_succeeded"] == execution["queries_attempted"]
+    assert execution["queries_failed"] == 0
+    assert execution["parity_verified_queries"] == execution["queries_attempted"]
+    assert execution["parity_failures"] == 0
+    assert execution["native_adjacency_lookups"] > 0
+    assert execution["native_edge_occurrences_read"] > 0
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_m74_impact_multi_source_attribution_ownership_and_cycle_evidence(backend):
+    _require_backend(backend)
+    graph = _m74_impact_graph()
+    before = graph.to_dict()
+    query = _m74_impact_query()
+    service = SemanticGraphAnalysisService(
+        graph, traversal_backend=backend, verify_backend_parity=True,
+    )
+    reference = SemanticGraphAnalysisService(
+        graph, traversal_backend="reference", verify_backend_parity=True,
+    )
+
+    result = service.analyze(query)
+    expected = reference.analyze(query)
+    reverse_order = reference.analyze(_m74_impact_query(
+        ("file:src/lib.py", "file:src/app.py"),
+    ))
+
+    _assert_reference_equivalence(result, expected)
+    _assert_m74_impact_native_execution(service, result, backend)
+    assert result.status is AnalysisStatus.COMPLETED
+    assert result.source_entities == ("file:src/app.py", "file:src/lib.py")
+    assert result.analysis_id == reverse_order.analysis_id
+    assert result.discovered_entities == reverse_order.discovered_entities
+    assert result.metadata["impact_candidates"] == reverse_order.metadata["impact_candidates"]
+    assert result.metadata["dependency_cycles"] == reverse_order.metadata["dependency_cycles"]
+
+    metadata = result.metadata
+    assert metadata["changed_source_count"] == 2
+    assert metadata["unique_impact_count"] == len(metadata["impact_candidates"])
+    assert metadata["unique_impact_count"] == len(result.discovered_entities)
+    assert metadata["shared_impact_count"] >= 1
+    shared = {
+        item["node_id"]: item
+        for item in metadata["impact_candidates"]
+        if item["shared_change_impact"]
+    }
+    assert "module:consumer" in shared
+    assert shared["module:consumer"]["affected_by"] == [
+        "file:src/app.py", "file:src/lib.py",
+    ]
+    assert set(shared["module:consumer"]["paths_by_source"]) == {
+        "file:src/app.py", "file:src/lib.py",
+    }
+    assert all(
+        shared["module:consumer"]["paths_by_source"][source]
+        for source in ("file:src/app.py", "file:src/lib.py")
+    )
+    assert "file:tests/test_app.py" in metadata["affected_test_candidate_ids"]
+    assert "file:.github/workflows/ci.yml" in metadata["affected_workflow_candidate_ids"]
+    assert "symbol:caller" in metadata["affected_symbol_candidate_ids"]
+
+    evidence_by_id = {item.evidence_id: item for item in result.evidence}
+    ownership_ids = set(metadata["ownership_evidence_ids"])
+    assert ownership_ids
+    assert ownership_ids.issubset(evidence_by_id)
+    assert {"IMPLEMENTS", "IMPLEMENTED_BY", "DEFINES", "MEMBER_OF"}.issubset({
+        evidence_by_id[item].predicate for item in ownership_ids
+    })
+
+    assert metadata["cycle_analysis_status"] == "complete"
+    assert metadata["cycle_scan_edge_count"] == len(graph.edges)
+    assert metadata["dependency_cycle_count"] == 1
+    cycle = metadata["dependency_cycles"][0]
+    assert cycle["node_ids"] == ["module:app", "module:lib"]
+    assert cycle["relation_types"] == ["DEPENDS_ON", "IMPORTS"]
+    assert cycle["edge_count"] == 2
+    assert set(cycle["evidence_ids"]).issubset(evidence_by_id)
+    assert any(
+        item["code"] == "dependency_cycle_observed"
+        for item in metadata["risk_indicators"]
+    )
+
+    assert metadata["runtime_execution_proven"] is False
+    assert metadata["severity_assessed"] is False
+    assert metadata["semantic_correctness_assessed"] is False
+    assert metadata["automatic_approval_permitted"] is False
+    assert metadata["authoritative_graph_mutation_permitted"] is False
+    assert graph.to_dict() == before
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_m74_impact_global_change_set_budgets_are_deterministic_and_incomplete(backend):
+    _require_backend(backend)
+    graph = _m74_impact_graph()
+    before = graph.to_dict()
+    query = _m74_impact_query(
+        max_visited_nodes=4,
+        max_traversal_steps=4,
+    )
+    service = SemanticGraphAnalysisService(
+        graph, traversal_backend=backend, verify_backend_parity=True,
+    )
+    reference = SemanticGraphAnalysisService(
+        graph, traversal_backend="reference", verify_backend_parity=True,
+    )
+    result = service.analyze(query)
+
+    _assert_reference_equivalence(result, reference.analyze(query))
+    _assert_m74_impact_native_execution(service, result, backend)
+    assert result.status is AnalysisStatus.INCOMPLETE
+    assert result.metadata["truncated"] is True
+    assert "impact_frontier_incomplete" in {
+        item["code"] for item in result.metadata["risk_indicators"]
+    }
+    assert result.metadata["examined_edges"] <= 4
+    per_source = result.metadata["per_source_visited_node_counts"]
+    assert set(per_source) == {"file:src/app.py", "file:src/lib.py"}
+    assert all(count <= 2 for count in per_source.values())
+    assert sum(per_source.values()) <= 4
+    assert graph.to_dict() == before
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_m74_impact_cycle_scan_budget_is_explicitly_incomplete(backend, monkeypatch):
+    _require_backend(backend)
+    from audit_engine.semantic_audit.graph.analysis.impact import ImpactAnalyzer
+
+    monkeypatch.setattr(ImpactAnalyzer, "MAX_CYCLE_SCAN_EDGES", 1)
+    graph = _m74_impact_graph()
+    before = graph.to_dict()
+    service = SemanticGraphAnalysisService(
+        graph, traversal_backend=backend, verify_backend_parity=True,
+    )
+    result = service.analyze(_m74_impact_query())
+
+    _assert_m74_impact_native_execution(service, result, backend)
+    assert result.status is AnalysisStatus.INCOMPLETE
+    assert result.metadata["cycle_analysis_status"] == "incomplete_edge_limit"
+    assert result.metadata["cycle_scan_edge_count"] == 0
+    assert any(
+        item["code"] == "dependency_cycle_scan_incomplete"
+        for item in result.metadata["risk_indicators"]
+    )
+    assert graph.to_dict() == before
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_m74_impact_duplicate_and_oversized_change_sets_fail_closed(backend):
+    _require_backend(backend)
+    from audit_engine.semantic_audit.graph.queries.validation import GraphQueryValidationError
+
+    graph = SemanticGraph()
+    source_ids = tuple(f"change:{index}" for index in range(26))
+    for source_id in source_ids:
+        graph.add_node(SemanticNode(source_id, "ChangeSource"))
+    service = SemanticGraphAnalysisService(graph, traversal_backend=backend)
+
+    with pytest.raises(GraphQueryValidationError, match="duplicate"):
+        service.analyze(GraphQuery(
+            "m74-impact-duplicates",
+            QueryType.IMPACT,
+            ("change:0", "change:0"),
+        ))
+    with pytest.raises(GraphQueryValidationError, match="limited to 25"):
+        service.analyze(GraphQuery(
+            "m74-impact-over-limit",
+            QueryType.IMPACT,
+            source_ids,
+        ))
