@@ -384,8 +384,29 @@ def _sanitize_output_value(
     return f"<omitted:unsupported-{type(value).__name__}>"
 
 
-def _read_snapshot_file(root: Path, relative_path: str, expected_size: int) -> bytes:
-    """Read a manifest file without following symlinked path components where supported."""
+def _snapshot_stat_identity(info: os.stat_result) -> tuple[int, ...]:
+    """Return stable file identity/change metadata available on this platform."""
+    return (
+        int(info.st_dev),
+        int(info.st_ino),
+        int(stat.S_IFMT(info.st_mode)),
+        int(stat.S_IMODE(info.st_mode)),
+        int(info.st_size),
+        int(getattr(info, "st_mtime_ns", int(info.st_mtime * 1_000_000_000))),
+        int(getattr(info, "st_ctime_ns", int(info.st_ctime * 1_000_000_000))),
+    )
+
+
+def _read_snapshot_file_with_identity(
+    root: Path, relative_path: str, expected_size: int,
+) -> tuple[bytes, tuple[int, ...]]:
+    """Read a manifest file and return descriptor-bound identity metadata.
+
+    Comparing identities across the initial load and validation pass can
+    detect ordinary change-and-restore (ABA) schedules even when final bytes
+    and size match. This remains best-effort observation, not an atomic
+    snapshot or a defense against filesystems with coarse/synthetic metadata.
+    """
     parts = PurePosixPath(relative_path).parts
     if not parts or expected_size < 0:
         raise OSError("invalid manifest file entry")
@@ -406,14 +427,17 @@ def _read_snapshot_file(root: Path, relative_path: str, expected_size: int) -> b
                 directory_fds.append(next_fd)
                 current_fd = next_fd
             file_fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW, dir_fd=current_fd)
-            info = os.fstat(file_fd)
-            if not stat.S_ISREG(info.st_mode) or info.st_size != expected_size:
+            before = os.fstat(file_fd)
+            if not stat.S_ISREG(before.st_mode) or before.st_size != expected_size:
                 raise OSError("manifest file type or size changed")
             with os.fdopen(file_fd, "rb", closefd=False) as stream:
                 data = stream.read(expected_size + 1)
+            after = os.fstat(file_fd)
             if len(data) != expected_size:
                 raise OSError("manifest file size changed while reading")
-            return data
+            if _snapshot_stat_identity(before) != _snapshot_stat_identity(after):
+                raise OSError("manifest file metadata changed while reading")
+            return data, _snapshot_stat_identity(after)
         finally:
             if file_fd is not None:
                 os.close(file_fd)
@@ -432,16 +456,25 @@ def _read_snapshot_file(root: Path, relative_path: str, expected_size: int) -> b
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
     file_fd = os.open(str(resolved), flags)
     try:
-        info = os.fstat(file_fd)
-        if not stat.S_ISREG(info.st_mode) or info.st_size != expected_size:
+        before = os.fstat(file_fd)
+        if not stat.S_ISREG(before.st_mode) or before.st_size != expected_size:
             raise OSError("manifest file type or size changed")
         with os.fdopen(file_fd, "rb", closefd=False) as stream:
             data = stream.read(expected_size + 1)
+        after = os.fstat(file_fd)
         if len(data) != expected_size:
             raise OSError("manifest file size changed while reading")
-        return data
+        if _snapshot_stat_identity(before) != _snapshot_stat_identity(after):
+            raise OSError("manifest file metadata changed while reading")
+        return data, _snapshot_stat_identity(after)
     finally:
         os.close(file_fd)
+
+
+def _read_snapshot_file(root: Path, relative_path: str, expected_size: int) -> bytes:
+    """Compatibility wrapper returning bytes from the identity-aware reader."""
+    data, _identity = _read_snapshot_file_with_identity(root, relative_path, expected_size)
+    return data
 
 
 class _SymbolVisitor(ast.NodeVisitor):
@@ -785,6 +818,7 @@ class RepositoryEvidenceTools:
         self.contents: dict[str, str] = {}
         self.file_hashes: dict[str, str] = {}
         self.file_sizes: dict[str, int] = {}
+        self.file_identities: dict[str, tuple[int, ...]] = {}
         self.skipped_sensitive_files = 0
         self.skipped_non_utf8_files = 0
         self._load_indexed_content()
@@ -858,7 +892,7 @@ class RepositoryEvidenceTools:
             if not isinstance(expected_hash, str) or not isinstance(expected_size, int) or expected_size < 0:
                 raise EvidenceToolError("invalid_source_manifest", "Included source has an invalid size or digest")
             try:
-                data = _read_snapshot_file(self.root, rel, expected_size)
+                data, file_identity = _read_snapshot_file_with_identity(self.root, rel, expected_size)
             except (OSError, ValueError) as exc:
                 raise EvidenceToolError(
                     "source_changed_during_index",
@@ -878,15 +912,19 @@ class RepositoryEvidenceTools:
             self.contents[rel] = text
             self.file_hashes[rel] = expected_hash
             self.file_sizes[rel] = len(data)
+            self.file_identities[rel] = file_identity
 
     def _validate_loaded_source_snapshot(self) -> None:
         """Reject source edits observed between manifesting and content loading.
 
         This second complete read narrows the snapshot-construction race: the
         in-memory index is accepted only if every included file still matches
-        the original manifest after the first content-loading pass. It is not
-        an atomic filesystem snapshot and cannot detect an ABA mutation that
-        is restored before this validation pass.
+        the original manifest and its first-pass descriptor identity. Comparing
+        device/inode, type/mode, size, mtime_ns and ctime_ns detects ordinary
+        change-and-restore schedules between observations on filesystems that
+        expose these metadata changes. It is not an atomic filesystem snapshot
+        and cannot detect every ABA schedule or mutations hidden by coarse or
+        synthetic filesystem metadata.
         """
         for rel, row in sorted(self.manifest_rows.items()):
             if _is_sensitive_path(rel):
@@ -896,12 +934,17 @@ class RepositoryEvidenceTools:
             if not isinstance(expected_hash, str) or not isinstance(expected_size, int) or expected_size < 0:
                 raise EvidenceToolError("invalid_source_manifest", "Included source has an invalid size or digest")
             try:
-                data = _read_snapshot_file(self.root, rel, expected_size)
+                data, file_identity = _read_snapshot_file_with_identity(self.root, rel, expected_size)
             except (OSError, ValueError) as exc:
                 raise EvidenceToolError(
                     "source_changed_during_index",
                     f"Indexed source changed or became unavailable during snapshot validation: {rel}",
                 ) from exc
+            if file_identity != self.file_identities.get(rel):
+                raise EvidenceToolError(
+                    "source_changed_during_index",
+                    f"Indexed source metadata changed during snapshot validation: {rel}",
+                )
             if _sha256(data) != expected_hash:
                 raise EvidenceToolError(
                     "source_changed_during_index",
