@@ -33,6 +33,9 @@ def test_every_timed_query_records_native_execution(networkx_report):
         assert query["native_metrics_delta"]["native_adjacency_lookups"] >= 3
         assert query["native_metrics_delta"]["native_edge_occurrences_read"] > 0
         assert len(query["timing"]["observations_ns"]) == 3
+        assert query["integrity_audit_count"] == 6
+        assert len(query["integrity_audit_timing"]["observations_ns"]) == 6
+        assert len(query["per_query_integrity_total_timing"]["observations_ns"]) == 3
 
 
 def test_rehashed_result_forgery_is_rejected(networkx_report):
@@ -48,6 +51,20 @@ def test_rehashed_aggregate_forgery_is_rejected(networkx_report):
     forged["measurements"]["queries"][0]["timing"]["median_ns"] += 1
     _rehash(forged)
     with pytest.raises(m7.BenchmarkError, match="timing_aggregate_mismatch"):
+        m7.verify_report(forged)
+
+
+def test_integrity_audit_timing_is_independently_recomputed(networkx_report):
+    forged = deepcopy(networkx_report)
+    forged["measurements"]["queries"][0]["integrity_audit_timing"]["median_ns"] += 1
+    _rehash(forged)
+    with pytest.raises(m7.BenchmarkError, match="integrity_audit_timing_aggregate_mismatch"):
+        m7.verify_report(forged)
+
+    forged = deepcopy(networkx_report)
+    forged["measurements"]["queries"][0]["integrity_audit_count"] = 5
+    _rehash(forged)
+    with pytest.raises(m7.BenchmarkError, match="integrity_audit_count_invalid"):
         m7.verify_report(forged)
 
 
