@@ -903,6 +903,7 @@ class RepositoryEvidenceTools:
                     "source_changed_during_index",
                     f"Indexed source changed during snapshot construction: {rel}",
                 )
+            self.file_identities[rel] = file_identity
             try:
                 text = data.decode("utf-8")
             except UnicodeDecodeError:
@@ -912,7 +913,6 @@ class RepositoryEvidenceTools:
             self.contents[rel] = text
             self.file_hashes[rel] = expected_hash
             self.file_sizes[rel] = len(data)
-            self.file_identities[rel] = file_identity
 
     def _validate_loaded_source_snapshot(self) -> None:
         """Reject source edits observed between manifesting and content loading.
