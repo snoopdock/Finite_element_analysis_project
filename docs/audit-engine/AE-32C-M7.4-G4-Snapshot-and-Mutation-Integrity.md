@@ -493,8 +493,9 @@ The branch now contains:
 - dedicated M7.1 workflow commit `641982f9efb176e81a95ab0676cc3e9ff43be683`;
 - report-schema version commit `8fbbc6b73455020eeb1dbda866d58a1bcd5c1e47`.
 
-The new five-backend workflow was triggered by the exact-source push:
-**Run 45462809897**, run number 14, head SHA `8fbbc6b73455020eeb1dbda866d58a1bcd5c1e47`. At the time this dossier section was authored, the run was pending; no timing result or successful test outcome is claimed here. The workflow checks out the immutable resolved source SHA and preserves separate backend runner environments and artifacts. It is the same smoke workload, not the multi-seed/task-specific M7.2 campaign.
+The workflow's first exact-source push attempt, **Run 45462809897** (run 14; head SHA `8fbbc6b73455020eeb1dbda866d58a1bcd5c1e47`), passed actionlint but failed in source resolution before any backend job ran. The logs show that the `workflow_dispatch` inputs were empty on a `push` event; the resolver consequently rejected the empty requested ref and timing settings. This was a workflow event-context defect, not a benchmark or backend test failure.
+
+The workflow was corrected to use the dispatch inputs when present and otherwise default to `github.ref_name`, five timed repetitions and two warm-ups on push. The corrected workflow was pushed as `da1d8420c24a4ecbd0611abfde0936cb953f051a`. **Run 45463087734**, run number 15, was queued against that exact workflow commit when this dossier update was made; its outcome is not yet claimed. The workflow checks out an immutable resolved source SHA and preserves separate backend runner environments and artifacts. It is the same smoke workload, not the multi-seed/task-specific M7.2 campaign.
 
 ### 18.4 Interpretation and limits
 
