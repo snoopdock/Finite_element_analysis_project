@@ -68,7 +68,7 @@ def _timing_summary(observations: list[int]) -> dict[str, Any]:
 
 
 def _snapshot_phases(repository: Path) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Run the exact production audit/load/validation methods, not graph build."""
+    """Time production methods without per-file instrumentation in timed phases."""
     measurements: dict[str, Any] = {
         "repository_audit_ns": 0,
         "content_load_ns": 0,
@@ -78,7 +78,6 @@ def _snapshot_phases(repository: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         "source_validation_file_reads": 0,
         "source_validation_bytes_read": 0,
     }
-    phase: list[str | None] = [None]
     original_audit = evidence_module.audit_repository
     original_load = RepositoryEvidenceTools._load_indexed_content
     original_validate = RepositoryEvidenceTools._validate_loaded_source_snapshot
@@ -92,46 +91,20 @@ def _snapshot_phases(repository: Path) -> tuple[dict[str, Any], dict[str, Any]]:
             measurements["repository_audit_ns"] = max(0, perf_counter_ns() - started)
 
     def timed_load(self):
-        phase[0] = "load"
         started = perf_counter_ns()
         try:
             return original_load(self)
         finally:
             measurements["content_load_ns"] = max(0, perf_counter_ns() - started)
-            phase[0] = None
 
     def timed_validate(self):
-        phase[0] = "validation"
         started = perf_counter_ns()
         try:
             return original_validate(self)
         finally:
             measurements["second_validation_ns"] = max(0, perf_counter_ns() - started)
-            phase[0] = None
 
-    def counted_read(*args, **kwargs):
-        data, identity = original_read(*args, **kwargs)
-        current = phase[0]
-        if current == "load":
-            measurements["source_load_file_reads"] += 1
-            measurements["source_load_bytes_read"] += len(data)
-        elif current == "validation":
-            measurements["source_validation_file_reads"] += 1
-            measurements["source_validation_bytes_read"] += len(data)
-        return data, identity
-
-    source_revision = os.environ.get("AE32C_SOURCE_REVISION")
-    runner_revision = os.environ.get("AE32C_RUNNER_REVISION")
-    started = perf_counter_ns()
-    with (
-        patch.object(evidence_module, "audit_repository", timed_audit),
-        patch.object(RepositoryEvidenceTools, "_load_indexed_content", timed_load),
-        patch.object(RepositoryEvidenceTools, "_validate_loaded_source_snapshot", timed_validate),
-        patch.object(evidence_module, "_read_snapshot_file_with_identity", counted_read),
-    ):
-        report = evidence_module.audit_repository(
-            repository, source_revision=source_revision, runner_revision=runner_revision,
-        )
+    def new_instance(report):
         instance = RepositoryEvidenceTools.__new__(RepositoryEvidenceTools)
         instance.root = evidence_module._validate_root(repository)
         instance.report = report
@@ -149,9 +122,47 @@ def _snapshot_phases(repository: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         instance.file_identities = {}
         instance.skipped_sensitive_files = 0
         instance.skipped_non_utf8_files = 0
+        return instance
+
+    source_revision = os.environ.get("AE32C_SOURCE_REVISION")
+    runner_revision = os.environ.get("AE32C_RUNNER_REVISION")
+    started = perf_counter_ns()
+    with (
+        patch.object(evidence_module, "audit_repository", timed_audit),
+        patch.object(RepositoryEvidenceTools, "_load_indexed_content", timed_load),
+        patch.object(RepositoryEvidenceTools, "_validate_loaded_source_snapshot", timed_validate),
+    ):
+        report = evidence_module.audit_repository(
+            repository, source_revision=source_revision, runner_revision=runner_revision,
+        )
+        instance = new_instance(report)
         timed_load(instance)
         timed_validate(instance)
     measurements["source_snapshot_pipeline_ns"] = max(0, perf_counter_ns() - started)
+
+    # Read accounting is replayed outside the timed interval. Wrapping every
+    # production read in the timed path would add Python callback/counter
+    # overhead to the very operations whose cost is being measured.
+    accounting_phase: list[str | None] = [None]
+
+    def counted_read(*args, **kwargs):
+        data, identity = original_read(*args, **kwargs)
+        current = accounting_phase[0]
+        if current == "load":
+            measurements["source_load_file_reads"] += 1
+            measurements["source_load_bytes_read"] += len(data)
+        elif current == "validation":
+            measurements["source_validation_file_reads"] += 1
+            measurements["source_validation_bytes_read"] += len(data)
+        return data, identity
+
+    accounting_instance = new_instance(report)
+    with patch.object(evidence_module, "_read_snapshot_file_with_identity", counted_read):
+        accounting_phase[0] = "load"
+        original_load(accounting_instance)
+        accounting_phase[0] = "validation"
+        original_validate(accounting_instance)
+        accounting_phase[0] = None
 
     rows = [
         row for rel, row in instance.manifest_rows.items()
@@ -290,8 +301,9 @@ def make_report(
         "interpretation": (
             "Repository-specific source snapshot cost characterization. "
             "The production repository audit, first content load and second "
-            "validation methods are timed separately. Graph construction and "
-            "native backend setup are deliberately excluded. This does not "
+            "validation methods are timed separately; per-file read accounting "
+            "is replayed outside the timed interval to avoid callback overhead. "
+            "Graph construction and native backend setup are deliberately excluded. This does not "
             "establish atomic snapshot semantics, universal overhead, or "
             "production approval."
         ),
