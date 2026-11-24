@@ -183,6 +183,7 @@ def test_g4_same_size_edit_during_snapshot_loading_is_rejected(tmp_path, monkeyp
     monkeypatch.setattr(
         evidence_tools_module, "_read_snapshot_file", mutate_after_first_read,
     )
-    with pytest.raises(EvidenceToolError, match="source_changed_during_index"):
+    with pytest.raises(EvidenceToolError) as captured:
         RepositoryEvidenceTools(root, graph_backend="reference")
+    assert captured.value.code == "source_changed_during_index"
     assert mutation_applied is True
