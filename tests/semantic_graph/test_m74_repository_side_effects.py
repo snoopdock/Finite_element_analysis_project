@@ -10,7 +10,11 @@ from pathlib import Path
 
 import pytest
 
-from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
+import audit_engine.semantic_audit.ae32b.evidence_tools as evidence_tools_module
+from audit_engine.semantic_audit.ae32b.evidence_tools import (
+    EvidenceToolError,
+    RepositoryEvidenceTools,
+)
 from audit_engine.semantic_audit.core.semantic_graph import SemanticGraph, SemanticNode
 from audit_engine.semantic_audit.graph.analysis import TraversalDirection
 from audit_engine.semantic_audit.graph.backend.adapter_traversal import NativeAdapterGraphTraversalEngine
@@ -157,3 +161,28 @@ def test_g4_snap_close_serializes_against_a_pending_query_and_query_fails_closed
         assert engine.runtime_report()["backend_execution"]["queries_succeeded"] == 0
     finally:
         adapter.close()
+
+
+def test_g4_same_size_edit_during_snapshot_loading_is_rejected(tmp_path, monkeypatch):
+    """A file changed after its first read must fail the second manifest check."""
+    root = _copy_fixture(tmp_path)
+    original_reader = evidence_tools_module._read_snapshot_file
+    mutation_applied = False
+
+    def mutate_after_first_read(repository_root, relative_path, expected_size):
+        nonlocal mutation_applied
+        data = original_reader(repository_root, relative_path, expected_size)
+        if relative_path == "main.py" and not mutation_applied:
+            path = repository_root / relative_path
+            changed = (b"#" + data[1:]) if data else b"#"
+            assert len(changed) == len(data)
+            path.write_bytes(changed)
+            mutation_applied = True
+        return data
+
+    monkeypatch.setattr(
+        evidence_tools_module, "_read_snapshot_file", mutate_after_first_read,
+    )
+    with pytest.raises(EvidenceToolError, match="source_changed_during_index"):
+        RepositoryEvidenceTools(root, graph_backend="reference")
+    assert mutation_applied is True
