@@ -926,11 +926,14 @@ class RepositoryEvidenceTools:
         This second complete read narrows the snapshot-construction race: the
         in-memory index is accepted only if every included file still matches
         the original manifest and its first-pass descriptor identity. Comparing
-        device/inode, type/mode, size, mtime_ns and ctime_ns detects ordinary
-        change-and-restore schedules between observations on filesystems that
-        expose these metadata changes. It is not an atomic filesystem snapshot
-        and cannot detect every ABA schedule or mutations hidden by coarse or
-        synthetic filesystem metadata.
+        device/inode, type/mode, size, mtime_ns and the platform's ctime field
+        detects ordinary change-and-restore schedules only to the extent those
+        observations change. POSIX ctime is metadata-change time; Python's
+        Windows st_ctime_ns is creation time, not a metadata-change clock.
+        Hashes and size/mtime checks remain active on Windows, but the ctime
+        contribution is not equivalent across platforms. This is not an atomic
+        filesystem snapshot and cannot detect every ABA schedule or mutations
+        hidden by coarse or synthetic filesystem metadata.
         """
         for rel, row in sorted(self.manifest_rows.items()):
             if _is_sensitive_path(rel):
