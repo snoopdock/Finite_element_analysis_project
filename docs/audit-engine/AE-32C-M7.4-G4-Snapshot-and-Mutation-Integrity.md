@@ -1,6 +1,6 @@
 # AE-32C M7.4-G4 — Cross-Backend Snapshot and Mutation Integrity
 
-**Status:** the latest expanded five-backend G4 tranche passed; overall G4 remains Partial because atomic repository-wide snapshot semantics, postflight mutation windows, direct SNAP in-worker graph mutation and integrity-check cost characterization remain open.  
+**Status:** the latest expanded five-backend G4 tranche passed; the SNAP worker's supported protocol is verified as read-only after initialization. Overall G4 remains Partial because atomic repository-wide snapshot semantics, postflight mutation windows and integrity-check cost characterization remain open.  
 **Latest exact-source execution:** [run 95](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45456154169), tested SHA `7ce60f233fc98042c832d24140ecc5e52aefff99`.  
 **Branch:** `stage1/section-uuids`.  
 **Scope:** canonical graph snapshot isolation, source-file identity validation, controlled active-query mutation, fixture-tree side effects, native projection corruption, parity fail-closed behavior, repeated queries, reconstruction and SNAP worker teardown.
@@ -405,8 +405,53 @@ The following remain open or bounded:
 - atomicity of the repository manifest and file-content snapshot as a single point-in-time observation;
 - ABA changes completed before the first descriptor identity is captured, and schedules hidden by filesystem metadata semantics;
 - mutation after the final native projection postflight observation and before the query result is returned;
-- direct mutation of the opaque SNAP TNEANet inside the isolated worker (the host can audit worker projections, but this test tranche does not inject mutation into the worker's internal graph);
+- direct mutation of the opaque SNAP TNEANet by modified or compromised worker code remains outside the assurance boundary; Section 17 verifies that the supported protocol exposes no mutation operation and that post-init operations are read-only, but does not inject corruption inside the worker process;
 - filesystem side effects outside the fixture root and metadata categories listed as out of scope above;
 - G5/G6 characterization of the full-projection validation and second source pass cost.
 
 **Decision:** G4 remains **Partial**. The new checks close specific evidence gaps but do not justify a global immutability or atomic-snapshot claim. Keep all 20 task/backend suitability outcomes at `Insufficient evidence`; keep `production_approval=false`.
+
+
+## 17. SNAP worker protocol read-only boundary — 2026-11-24
+
+The remaining SNAP-specific G4 question was whether the isolated worker's supported request protocol provides any operation that can mutate its TNEANet after initialization. Inspection of `tools/snap_worker.py` establishes the operation allowlist in `_handle`:
+
+| Operation | State effect |
+|---|---|
+| `init` | Constructs the TNEANet once and installs the semantic node/edge mappings |
+| `audit` | Reads all native nodes and edges into a serialized projection |
+| `adjacency` | Reads native incident edge IDs and edge records; updates telemetry counters only |
+| `metrics` | Returns telemetry counters |
+| `close` | Returns the close acknowledgement; the worker loop exits |
+
+After initialization, the worker rejects any operation outside `audit`, `adjacency`, `metrics` and `close`. In particular, `mutate` is not an accepted protocol operation. The adjacency path uses SNAP's node iterator and incident-edge-ID accessors, then reads edge attributes; it does not call TNEANet mutation methods. The audit path also reads the graph. The host adapter serializes request/response exchanges under its request lock, and the worker processes the JSON-lines stream sequentially.
+
+A new subprocess test, `test_snap_worker_protocol_rejects_unexposed_mutation_operation`, sends a syntactically valid `mutate` request to the real worker script without initializing SNAP. The worker returns `request_schema_invalid`. This is a protocol-boundary test, not a native TNEANet mutation test.
+
+**Why no test-only mutation RPC was added:** exposing an operation that deliberately mutates the worker graph would expand the production protocol solely to test an internal state that the supported interface does not expose. The current assurance model instead treats `tools/snap_worker.py` and the pinned worker image as trusted implementation components, and verifies that their supported post-init operations are read-only. This does not prove that a modified or compromised worker cannot mutate or misreport its internal graph. The host can only validate the projection returned by the worker.
+
+### 17.1 Exact-source execution
+
+**Run:** [45457395602](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45457395602), run number 96, push event.  
+**Head SHA:** `315a23ed8c69aab2d1dec69607b64a9eccb9501c`.  
+**Conclusion:** all five backend jobs and the aggregate E.8.5/E.8.8 summary succeeded. Each backend job logged the exact triggering source SHA.
+
+The SNAP worker protocol test module reported **6 passed**. The G4 modules retained their run-95 results: SNAP snapshot/mutation **8 passed, 32 expected skips**; SNAP repository-side-effect/lifecycle **7 passed, 12 expected skips**. NetworkX, SciPy, igraph and graph-tool each reported snapshot/mutation **7 passed, 33 expected skips** and repository-side-effect/lifecycle **6 passed, 13 expected skips**. There were no failures.
+
+All five E.8.5/E.8.8 artifacts were uploaded:
+
+| Backend artifact | Artifact ID | ZIP size | Actions SHA-256 |
+|---|---:|---:|---|
+| NetworkX | 14951312857 | 2,766 bytes | `031e8ca46f63846944488a3b36c3f9f5cdf23b16fff95a31f828f49a293ebace` |
+| graph-tool | 14950657277 | 2,842 bytes | `f7dc82a23705ff301c6a774ebf43f3dbbe8077ecce2db85a9adf49e774b1bd8b` |
+| SciPy | 14950587208 | 2,924 bytes | `f622931d5c49ac8f0d52bc7826babd8c2886a67c23e45d5b23c4fdaa03d360de` |
+| SNAP isolated worker | 14950462483 | 3,432 bytes | `0f549a174ffab17597ed2cbe649aee15f16a5a76b31b8a452fa9d151db892776` |
+| python-igraph | 14950353356 | 2,744 bytes | `94ebdd6fbe8af05676b98e02fbb8f0ff541747387275a3be4e8f77c4d0d55d6c` |
+
+These are GitHub Actions-reported ZIP digests, not independent detached verification of artifact contents.
+
+### 17.2 G4 interpretation
+
+The SNAP protocol boundary is now explicitly qualified: no supported post-init request mutates the TNEANet, and the protocol rejects a mutation request. The worker implementation remains trusted code; this is not a proof against malicious or defective worker code. G4 remains **Partial** because atomic repository-wide snapshot semantics, some metadata-hidden ABA schedules, postflight mutation windows, and the measured cost of integrity checks remain unresolved.
+
+The next cost-characterization work must follow the existing M7 policy: measure the operational cost of integrity checks for each backend in its own task-relevant environment, without producing a universal backend ranking or winner. Timing remains diagnostic evidence, not an automatic selection criterion.
