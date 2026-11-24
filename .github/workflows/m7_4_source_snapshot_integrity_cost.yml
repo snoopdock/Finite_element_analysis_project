@@ -19,7 +19,7 @@ permissions:
 
 concurrency:
   group: ae32c-g4-source-snapshot-cost-stage1
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   source-snapshot-cost:
