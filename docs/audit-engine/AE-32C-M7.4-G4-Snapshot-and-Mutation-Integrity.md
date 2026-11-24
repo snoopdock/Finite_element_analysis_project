@@ -165,7 +165,7 @@ These are Actions-reported ZIP digests, not a detached G7 verification of this r
 The off-neighborhood preflight/postflight behavior is now implemented and passed in all five backend partitions, with the SNAP worker caveat stated above. G4 is nevertheless **Partial**, not closed. Remaining work includes repository-file non-mutation coverage, mutation/restoration and broader concurrency/lifecycle schedules, the race after final postflight, direct SNAP in-worker mutation coverage, and G5/G6 characterization of the full-scan cost. All 20 task/backend outcomes remain Insufficient evidence. `production_approval=false`.
 
 
-## 10. Repository side-effect and concurrent snapshot qualification — implementation pending execution
+## 10. Repository side-effect and concurrent snapshot qualification — implementation and execution
 
 The next G4 tranche adds `tests/semantic_graph/test_m74_repository_side_effects.py` and runs it in every existing E.8.5/E.8.8 backend environment.
 
@@ -187,7 +187,7 @@ The SNAP-specific test holds the adapter's request lock while a query thread is 
 
 ### 10.4 Acceptance and residual limits
 
-The new test module is inserted into all five backend jobs (NetworkX, SciPy, igraph, graph-tool, and SNAP). Exact-source workflow execution is required before these tests count as evidence. A passing run would support the narrow claims above only.
+The new test module is inserted into all five backend jobs (NetworkX, SciPy, igraph, graph-tool, and SNAP). Exact-source execution is recorded in Sections 11 and 13. A passing run supports the narrow claims above only.
 
 The following remain outside this tranche and must not be silently marked closed: mutation followed by restoration entirely between integrity observations; mutation after final postflight; atomicity of the initial repository-wide source snapshot; direct mutation of the opaque SNAP TNEANet inside the worker; and G5/G6 characterization of full-projection validation cost. G4 remains Partial until these are either addressed or explicitly bounded in the acceptance contract. All 20 task/backend suitability outcomes remain Insufficient evidence and `production_approval=false`.
 
@@ -202,8 +202,33 @@ All five backend jobs and aggregate summary completed successfully. The G4 repos
 
 This run executed the repository immutability, post-construction same-size source mutation/snapshot-pinning, and SNAP queued-query teardown tests. It predates the second-pass manifest validation and its new mutation-during-loading test; those changes require the subsequent exact-source run and are not covered by this run.
 
-## 12. Second-pass manifest validation — implementation and test pending exact-source execution
+## 12. Second-pass manifest validation — implementation and exact-source execution
 
 The content index is now followed by `_validate_loaded_source_snapshot()`, which re-reads every included source file and compares its size-bound SHA-256 to the original audit manifest. This rejects a same-size edit injected immediately after the first content read, before the graph is built and accepted. The new test `test_g4_same_size_edit_during_snapshot_loading_is_rejected` injects that schedule and asserts the structured error code `source_changed_during_index`.
 
-The second pass narrows the construction race but is not an atomic filesystem snapshot. An ABA mutation restored before the second pass remains undetectable, and a mutation after validation does not retroactively alter the already captured in-memory source snapshot. The current exact-source workflow run must pass before this extension is counted as evidence. The added full read also has a cost that must be measured; no runtime or memory claim is made here.
+The second pass narrows the construction race but is not an atomic filesystem snapshot. An ABA mutation restored before the second pass remains undetectable, and a mutation after validation does not retroactively alter the already captured in-memory source snapshot. The exact-source workflow run recorded in Section 13 passed this test in all five backend environments. The added full read also has a cost that must be measured; no runtime or memory claim is made here.
+
+
+## 13. Exact-source second-pass manifest and G4 repository qualification — 2026-11-24
+
+**Workflow:** [45432310272](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45432310272), attempt 1, completed `success`.  
+**Workflow event commit:** `5e9724896c62564345cd877d5903e9e5e0a14138`.  
+**Exact checked-out source:** `5e9724896c62564345cd877d5903e9e5e0a14138` in all five backend jobs.
+
+All five backend jobs and aggregate summary job `138581810523` completed successfully. The relevant G4 test results were:
+
+| Backend | Existing G4 snapshot/mutation tests | Repository side-effect/snapshot/lifecycle tests |
+|---|---:|---:|
+| NetworkX | 7 passed, 33 expected skips | 3 passed, 9 expected skips |
+| SciPy | 7 passed, 33 expected skips | 3 passed, 9 expected skips |
+| python-igraph | 7 passed, 33 expected skips | 3 passed, 9 expected skips |
+| graph-tool | 7 passed, 33 expected skips | 3 passed, 9 expected skips |
+| SNAP isolated worker | 8 passed, 32 expected skips | 4 passed, 8 expected skips |
+
+The skips are backend-selection exclusions and the SNAP-only lifecycle case on non-SNAP jobs. The SNAP partition executed the additional worker close/query race test. The new same-size mutation-during-loading test passed in every backend job; it constructs the evidence tool with the reference backend so the failure is isolated to source snapshot validation rather than native graph availability.
+
+The run also passed the pre-existing task-level acceptance, synthetic E.8.5 and repository-backed E.8.8 conformance stages in all five environments. The aggregate workflow conclusion was `success`. All five jobs recorded the same exact checked-out source SHA.
+
+**Interpretation:** the tested evidence operations left the isolated fixture tree's file bytes, path set and permission modes unchanged; concurrent reads remained bound to the constructed source snapshot after an external same-size edit; a same-size edit injected after first content read was rejected by the second manifest pass; and the SNAP query queued behind worker teardown failed closed. These are bounded test results, not proof of universal filesystem immutability, atomic repository-wide snapshots, or all possible concurrent schedules.
+
+**G4 remains Partial.** Outstanding limits include ABA mutation/restoration between observations, changes after the final manifest or query postflight check, direct in-worker SNAP TNEANet mutation, and cost characterization of the extra source-manifest pass and complete native projection scans. No task/backend suitability status is promoted and `production_approval=false` remains unchanged.
