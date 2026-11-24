@@ -2,9 +2,17 @@ from __future__ import annotations
 
 import json
 import os
+import threading
+import time
+
+import pytest
 
 from audit_engine.semantic_audit.core.semantic_graph import SemanticEdge, SemanticGraph, SemanticNode
-from audit_engine.semantic_audit.graph.backend.snap_worker_adapter import SNAPWorkerAdapter
+from audit_engine.semantic_audit.graph.backend.snap_worker_adapter import (
+    SNAPWorkerAdapter,
+    SNAPWorkerProtocolError,
+    SNAPWorkerTimeoutError,
+)
 
 
 class _FakeStdin:
@@ -17,6 +25,10 @@ class _FakeStdin:
     def flush(self):
         request = json.loads(self.owner.pending)
         operation = request["operation"]
+        self.owner.last_operation = operation
+        if self.owner.block_flush_operation == operation:
+            self.owner.flush_entered.set()
+            self.owner.release_io.wait(timeout=3)
         if operation == "init":
             result = {
                 "graph_fingerprint": request["graph_fingerprint"],
@@ -82,7 +94,7 @@ class _FakeStdin:
         }) + "\n"
 
     def close(self):
-        pass
+        self.owner.stdin_closed = True
 
 
 class _FakeStdout:
@@ -90,9 +102,15 @@ class _FakeStdout:
         self.owner = owner
 
     def readline(self):
+        if self.owner.block_read_operation == self.owner.last_operation:
+            self.owner.read_entered.set()
+            self.owner.release_io.wait(timeout=3)
         result = self.owner.output
         self.owner.output = ""
         return result
+
+    def close(self):
+        self.owner.stdout_closed = True
 
 
 class _FakeProcess:
@@ -104,6 +122,16 @@ class _FakeProcess:
         self.stdin = _FakeStdin(self)
         self.stdout = _FakeStdout(self)
         self.returncode = None
+        self.last_operation = None
+        self.block_flush_operation = None
+        self.block_read_operation = None
+        self.release_io = threading.Event()
+        self.flush_entered = threading.Event()
+        self.read_entered = threading.Event()
+        self.terminated = False
+        self.killed = False
+        self.stdin_closed = False
+        self.stdout_closed = False
 
     def poll(self):
         return self.returncode
@@ -112,8 +140,15 @@ class _FakeProcess:
         self.returncode = 0
         return 0
 
+    def terminate(self):
+        self.terminated = True
+        self.returncode = -15
+        self.release_io.set()
+
     def kill(self):
+        self.killed = True
         self.returncode = -9
+        self.release_io.set()
 
 
 def _graph():
@@ -167,3 +202,83 @@ def test_snap_worker_adapter_uses_restricted_container_and_versioned_protocol(mo
     assert process.kwargs["cwd"] != os.getcwd()
     assert set(process.kwargs["env"]) == {"PATH", "HOME"}
     adapter.close()
+
+
+
+def _patch_fake_worker(monkeypatch, captured):
+    def fake_popen(command, **kwargs):
+        process = _FakeProcess(command, **kwargs)
+        captured["process"] = process
+        return process
+
+    monkeypatch.setenv("AE32C_SNAP_WORKER_IMAGE", "ae32c-snap-worker:test")
+    monkeypatch.setattr(
+        "audit_engine.semantic_audit.graph.backend.snap_worker_adapter.shutil.which",
+        lambda name: "/usr/bin/docker",
+    )
+    monkeypatch.setattr(
+        "audit_engine.semantic_audit.graph.backend.snap_worker_adapter.subprocess.Popen",
+        fake_popen,
+    )
+
+
+@pytest.mark.parametrize("blocked_phase", ("flush", "read"))
+def test_snap_worker_request_deadline_bounds_pipe_io_and_discards_worker(
+    monkeypatch, blocked_phase,
+):
+    captured = {}
+    _patch_fake_worker(monkeypatch, captured)
+    monkeypatch.setenv("AE32C_SNAP_WORKER_REQUEST_TIMEOUT_SECONDS", "0.05")
+    adapter = SNAPWorkerAdapter(_graph())
+    process = captured["process"]
+    if blocked_phase == "flush":
+        process.block_flush_operation = "audit"
+        entered = process.flush_entered
+    else:
+        process.block_read_operation = "audit"
+        entered = process.read_entered
+
+    started = time.monotonic()
+    with pytest.raises(SNAPWorkerTimeoutError, match="snap_worker_request_timeout:audit"):
+        adapter._request("audit")
+    elapsed = time.monotonic() - started
+
+    assert entered.is_set()
+    assert elapsed < 2.0
+    assert process.terminated or process.killed
+    assert adapter._process is None
+    with pytest.raises(SNAPWorkerProtocolError, match="snap_worker_process_not_running"):
+        adapter._request("metrics")
+
+
+def test_snap_worker_close_deadline_is_bounded(monkeypatch):
+    captured = {}
+    _patch_fake_worker(monkeypatch, captured)
+    monkeypatch.setenv("AE32C_SNAP_WORKER_REQUEST_TIMEOUT_SECONDS", "0.05")
+    adapter = SNAPWorkerAdapter(_graph())
+    process = captured["process"]
+    process.block_read_operation = "close"
+
+    started = time.monotonic()
+    adapter.close()
+    elapsed = time.monotonic() - started
+
+    assert process.read_entered.is_set()
+    assert elapsed < 2.0
+    assert process.terminated or process.killed
+    assert adapter._process is None
+
+
+def test_snap_worker_timeout_configuration_is_finite_and_bounded(monkeypatch):
+    monkeypatch.setenv("AE32C_SNAP_WORKER_IMAGE", "ae32c-snap-worker:test")
+    monkeypatch.setenv("AE32C_SNAP_WORKER_REQUEST_TIMEOUT_SECONDS", "nan")
+    monkeypatch.setattr(
+        "audit_engine.semantic_audit.graph.backend.snap_worker_adapter.shutil.which",
+        lambda name: "/usr/bin/docker",
+    )
+    with pytest.raises(ValueError, match="snap_worker_request_timeout_out_of_range"):
+        SNAPWorkerAdapter(_graph())
+
+    monkeypatch.setenv("AE32C_SNAP_WORKER_REQUEST_TIMEOUT_SECONDS", "601")
+    with pytest.raises(ValueError, match="snap_worker_request_timeout_out_of_range"):
+        SNAPWorkerAdapter(_graph())

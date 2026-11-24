@@ -8,10 +8,13 @@ read-only root filesystem and no Linux capabilities.
 from __future__ import annotations
 
 import json
+import math
 import os
+import queue
 import shutil
 import subprocess
 import tempfile
+import threading
 from copy import deepcopy
 from typing import Any
 
@@ -32,17 +35,41 @@ class SNAPWorkerProtocolError(RuntimeError):
     """The isolated worker returned a malformed or unsuccessful protocol frame."""
 
 
+class SNAPWorkerTimeoutError(SNAPWorkerProtocolError):
+    """A worker request exceeded its configured wall-clock deadline."""
+
+
 class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
     """Native TNEANet adapter whose implementation runs only in the worker."""
 
     backend_name = "snap"
     is_isolated_worker = True
     PROTOCOL = "ae32c/snap-worker/v1"
+    REQUEST_TIMEOUT_ENV = "AE32C_SNAP_WORKER_REQUEST_TIMEOUT_SECONDS"
+    DEFAULT_REQUEST_TIMEOUT_SECONDS = 120.0
+    MAX_REQUEST_TIMEOUT_SECONDS = 600.0
+    CLOSE_REQUEST_TIMEOUT_SECONDS = 5.0
+    PROCESS_TERMINATE_TIMEOUT_SECONDS = 1.0
 
     def __init__(self, graph: SemanticGraph):
         if not isinstance(graph, SemanticGraph):
             raise TypeError("SNAPWorkerAdapter requires a SemanticGraph")
         image = os.environ.get("AE32C_SNAP_WORKER_IMAGE", "").strip()
+        raw_timeout = os.environ.get(
+            self.REQUEST_TIMEOUT_ENV,
+            str(self.DEFAULT_REQUEST_TIMEOUT_SECONDS),
+        ).strip()
+        try:
+            request_timeout = float(raw_timeout)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("snap_worker_request_timeout_invalid") from exc
+        if (
+            not math.isfinite(request_timeout)
+            or request_timeout <= 0
+            or request_timeout > self.MAX_REQUEST_TIMEOUT_SECONDS
+        ):
+            raise ValueError("snap_worker_request_timeout_out_of_range")
+
         docker = shutil.which("docker")
         if not image:
             raise RuntimeError("snap_worker_image_not_configured")
@@ -55,6 +82,8 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
         self._edge_ids = {}
         self._fingerprint = graph_fingerprint(graph)
         self._request_counter = 0
+        self._request_timeout_seconds = request_timeout
+        self._request_lock = threading.RLock()
         self._audit_cache = None
         self._metrics = {
             "native_adjacency_lookups": 0,
@@ -125,6 +154,8 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
             if response.get("edge_occurrence_count") != len(snapshot_edges):
                 raise SNAPWorkerProtocolError("snap_worker_edge_count_mismatch")
             self.worker_info = response
+            self.worker_info["request_timeout_seconds"] = self._request_timeout_seconds
+            self.worker_info["request_timeout_enforced"] = True
             self.worker_info["container_image"] = image
             self.worker_info["container_image_id"] = os.environ.get(
                 "AE32C_SNAP_WORKER_IMAGE_ID"
@@ -145,54 +176,171 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
             self.close()
             raise
 
-    def _request(self, operation: str, **payload: Any) -> dict[str, Any]:
-        process = getattr(self, "_process", None)
-        if process is None or process.poll() is not None:
-            raise SNAPWorkerProtocolError("snap_worker_process_not_running")
-        self._request_counter += 1
-        request_id = str(self._request_counter)
-        request = {
-            "schema_version": self.PROTOCOL,
-            "request_id": request_id,
-            "operation": operation,
-            "graph_fingerprint": self._fingerprint,
-            **payload,
-        }
-        try:
-            encoded = json.dumps(
-                request, ensure_ascii=False, sort_keys=True,
-                separators=(",", ":"), allow_nan=False,
+    def _stop_process(
+        self,
+        process: subprocess.Popen,
+        exchange_thread: threading.Thread | None = None,
+    ) -> None:
+        """Stop a failed worker and release its pipes with bounded waits."""
+        if getattr(self, "_process", None) is process:
+            self._process = None
+
+        if process.poll() is None:
+            try:
+                process.terminate()
+            except (OSError, ProcessLookupError):
+                pass
+            try:
+                process.wait(timeout=self.PROCESS_TERMINATE_TIMEOUT_SECONDS)
+            except subprocess.TimeoutExpired:
+                try:
+                    process.kill()
+                except (OSError, ProcessLookupError):
+                    pass
+                try:
+                    process.wait(timeout=self.PROCESS_TERMINATE_TIMEOUT_SECONDS)
+                except Exception:
+                    pass
+            except Exception:
+                try:
+                    process.kill()
+                    process.wait(timeout=self.PROCESS_TERMINATE_TIMEOUT_SECONDS)
+                except Exception:
+                    pass
+
+        # Process exit makes a blocked pipe read/write observable as EOF or
+        # BrokenPipe. Close streams only after the child has been stopped.
+        for stream in (process.stdin, process.stdout):
+            if stream is not None:
+                try:
+                    stream.close()
+                except Exception:
+                    pass
+        if exchange_thread is not None and exchange_thread.is_alive():
+            exchange_thread.join(timeout=self.PROCESS_TERMINATE_TIMEOUT_SECONDS)
+
+    def _request(
+        self,
+        operation: str,
+        *,
+        timeout_seconds: float | None = None,
+        **payload: Any,
+    ) -> dict[str, Any]:
+        """Perform one serialized JSON-lines RPC under a wall-clock deadline.
+
+        Blocking pipe I/O runs in a daemon thread so the caller can terminate
+        the worker when either stdin flush or stdout response stalls. A timed
+        out worker is discarded; the adapter never reuses a desynchronized
+        protocol stream.
+        """
+        with self._request_lock:
+            process = getattr(self, "_process", None)
+            if process is None or process.poll() is not None:
+                raise SNAPWorkerProtocolError("snap_worker_process_not_running")
+
+            effective_timeout = (
+                self._request_timeout_seconds
+                if timeout_seconds is None
+                else float(timeout_seconds)
             )
-        except (TypeError, ValueError) as exc:
-            raise SNAPWorkerProtocolError("snap_worker_request_not_json_serializable") from exc
-        if len(encoded.encode("utf-8")) > 16 * 1024 * 1024:
-            raise SNAPWorkerProtocolError("snap_worker_request_exceeds_size_limit")
-        if process.stdin is None or process.stdout is None:
-            raise SNAPWorkerProtocolError("snap_worker_protocol_stream_unavailable")
-        process.stdin.write(encoded + "\n")
-        process.stdin.flush()
-        line = process.stdout.readline()
-        if not line:
-            raise SNAPWorkerProtocolError(
-                f"snap_worker_terminated_without_response:{process.poll()}"
+            if (
+                not math.isfinite(effective_timeout)
+                or effective_timeout <= 0
+                or effective_timeout > self.MAX_REQUEST_TIMEOUT_SECONDS
+            ):
+                raise ValueError("snap_worker_request_timeout_out_of_range")
+
+            self._request_counter += 1
+            request_id = str(self._request_counter)
+            request = {
+                "schema_version": self.PROTOCOL,
+                "request_id": request_id,
+                "operation": operation,
+                "graph_fingerprint": self._fingerprint,
+                **payload,
+            }
+            try:
+                encoded = json.dumps(
+                    request, ensure_ascii=False, sort_keys=True,
+                    separators=(",", ":"), allow_nan=False,
+                )
+            except (TypeError, ValueError) as exc:
+                raise SNAPWorkerProtocolError(
+                    "snap_worker_request_not_json_serializable"
+                ) from exc
+            if len(encoded.encode("utf-8")) > 16 * 1024 * 1024:
+                raise SNAPWorkerProtocolError(
+                    "snap_worker_request_exceeds_size_limit"
+                )
+            if process.stdin is None or process.stdout is None:
+                raise SNAPWorkerProtocolError(
+                    "snap_worker_protocol_stream_unavailable"
+                )
+
+            outcome: queue.Queue[tuple[str, Any]] = queue.Queue(maxsize=1)
+
+            def exchange() -> None:
+                try:
+                    process.stdin.write(encoded + "\n")
+                    process.stdin.flush()
+                    line = process.stdout.readline()
+                    outcome.put(("response", line))
+                except BaseException as exc:
+                    outcome.put(("error", exc))
+
+            exchange_thread = threading.Thread(
+                target=exchange,
+                name=f"snap-worker-{operation}-{request_id}",
+                daemon=True,
             )
-        try:
-            response = json.loads(line)
-        except json.JSONDecodeError as exc:
-            raise SNAPWorkerProtocolError("snap_worker_response_not_valid_json") from exc
-        if not isinstance(response, dict):
-            raise SNAPWorkerProtocolError("snap_worker_response_not_object")
-        if response.get("schema_version") != self.PROTOCOL:
-            raise SNAPWorkerProtocolError("snap_worker_response_protocol_mismatch")
-        if response.get("request_id") != request_id:
-            raise SNAPWorkerProtocolError("snap_worker_response_id_mismatch")
-        if response.get("status") != "ok":
-            code = response.get("error_code", "unknown_worker_error")
-            raise SNAPWorkerProtocolError(f"snap_worker_error:{code}")
-        result = response.get("result")
-        if not isinstance(result, dict):
-            raise SNAPWorkerProtocolError("snap_worker_result_not_object")
-        return result
+            exchange_thread.start()
+            try:
+                kind, value = outcome.get(timeout=effective_timeout)
+            except queue.Empty as exc:
+                self._stop_process(process, exchange_thread)
+                raise SNAPWorkerTimeoutError(
+                    f"snap_worker_request_timeout:{operation}:"
+                    f"{effective_timeout:g}s"
+                ) from exc
+
+            if kind == "error":
+                self._stop_process(process, exchange_thread)
+                raise SNAPWorkerProtocolError(
+                    f"snap_worker_request_io_failed:{operation}"
+                ) from value
+
+            line = value
+            if not line:
+                self._stop_process(process, exchange_thread)
+                raise SNAPWorkerProtocolError(
+                    f"snap_worker_terminated_without_response:{process.poll()}"
+                )
+            try:
+                response = json.loads(line)
+            except json.JSONDecodeError as exc:
+                self._stop_process(process, exchange_thread)
+                raise SNAPWorkerProtocolError(
+                    "snap_worker_response_not_valid_json"
+                ) from exc
+            if not isinstance(response, dict):
+                self._stop_process(process, exchange_thread)
+                raise SNAPWorkerProtocolError("snap_worker_response_not_object")
+            if response.get("schema_version") != self.PROTOCOL:
+                self._stop_process(process, exchange_thread)
+                raise SNAPWorkerProtocolError(
+                    "snap_worker_response_protocol_mismatch"
+                )
+            if response.get("request_id") != request_id:
+                self._stop_process(process, exchange_thread)
+                raise SNAPWorkerProtocolError("snap_worker_response_id_mismatch")
+            if response.get("status") != "ok":
+                code = response.get("error_code", "unknown_worker_error")
+                raise SNAPWorkerProtocolError(f"snap_worker_error:{code}")
+            result = response.get("result")
+            if not isinstance(result, dict):
+                self._stop_process(process, exchange_thread)
+                raise SNAPWorkerProtocolError("snap_worker_result_not_object")
+            return result
 
     def _ensure_audit(self) -> dict[str, Any]:
         if self._audit_cache is None:
@@ -297,6 +445,8 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
             "json_attributes_only": True,
             "attributes_stored_as_canonical_json": True,
             "native_adjacency": "TNEANetNodeI.GetOutEId/GetInEId",
+            "request_timeout_seconds": self._request_timeout_seconds,
+            "request_timeout_enforced": True,
         })
         return result
 
@@ -315,43 +465,58 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
             "transport": "versioned_json_lines",
             "worker_image": self.worker_image,
             "graph_fingerprint": self._fingerprint,
+            "request_timeout_seconds": self._request_timeout_seconds,
         }
 
     def backend_graph(self):
         return self.export()
 
     def close(self):
-        process = getattr(self, "_process", None)
-        if process is None:
+        lock = getattr(self, "_request_lock", None)
+        if lock is None:
+            process = getattr(self, "_process", None)
+            if process is not None:
+                self._stop_process(process)
             return
-        self._process = None
-        try:
-            if process.poll() is None:
-                try:
-                    # The close frame is best-effort; the container is removed
-                    # by Docker when stdin closes or the process exits.
-                    request = {
-                        "schema_version": self.PROTOCOL,
-                        "request_id": "close",
-                        "operation": "close",
-                        "graph_fingerprint": self._fingerprint,
-                    }
-                    if process.stdin is not None:
-                        process.stdin.write(json.dumps(request) + "\n")
-                        process.stdin.flush()
-                        if process.stdout is not None:
-                            process.stdout.readline()
-                except Exception:
-                    pass
-                if process.stdin is not None:
-                    process.stdin.close()
-                process.wait(timeout=5)
-        except Exception:
+
+        with lock:
+            process = getattr(self, "_process", None)
+            if process is None:
+                return
             try:
-                process.kill()
-                process.wait(timeout=2)
-            except Exception:
-                pass
+                if process.poll() is None:
+                    try:
+                        # The close RPC uses a short deadline independent of
+                        # the larger initialization/adjacency request budget.
+                        self._request(
+                            "close",
+                            timeout_seconds=min(
+                                self.CLOSE_REQUEST_TIMEOUT_SECONDS,
+                                self._request_timeout_seconds,
+                            ),
+                        )
+                    except SNAPWorkerProtocolError:
+                        # _request has already stopped the worker after an
+                        # RPC timeout or protocol/pipe failure.
+                        pass
+
+                if getattr(self, "_process", None) is process and process.poll() is None:
+                    if process.stdin is not None:
+                        try:
+                            process.stdin.close()
+                        except Exception:
+                            pass
+                    try:
+                        process.wait(timeout=self.CLOSE_REQUEST_TIMEOUT_SECONDS)
+                    except subprocess.TimeoutExpired:
+                        self._stop_process(process)
+                    except Exception:
+                        self._stop_process(process)
+
+                self._stop_process(process)
+            finally:
+                if getattr(self, "_process", None) is process:
+                    self._process = None
 
     def __del__(self):
         try:
