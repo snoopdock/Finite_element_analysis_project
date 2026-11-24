@@ -1,6 +1,6 @@
 # AE-32C — Graph Backend Compatibility and Utilization Roadmap
 
-**Status:** M0–M6 accepted for their recorded exact Stage1 snapshots. M7.1 five-backend smoke validation passed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier verified and accepted by exact-source G9.42 run `44943859099` and manual verification run `44945256220`. M7.4 contract is defined; initial STRUCTURAL, DEPENDENCY, PATH and IMPACT task-level acceptance tests passed across all five backend environments, most recently at Stage1 source `ff6fe8226d6417b0832a17b8bed397217f72a303` in run `45382782600`. Formal task/backend suitability verdicts remain pending. Production approval remains false  
+**Status:** M0–M6 accepted for their recorded historical exact Stage1 snapshots; later SNAP adapter timeout changes are not covered by the old M6 G9.42 acceptance. M7.1 five-backend smoke validation passed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier verified and accepted for its stated scope. M7.4 initial STRUCTURAL, DEPENDENCY, PATH and IMPACT task acceptance passed across all five backend environments in run `45382782600`; the latest SNAP adapter timeout/cleanup test step also passed at Stage1 source `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`, while SNAP E.8.8 remains pending in run `45385374806`. Formal task/backend suitability verdicts remain pending. Production approval remains false  
 **Target branch:** `stage1/section-uuids` only  
 **Initial baseline reviewed:** `5a881c57cafc9ff17c3e01d3e1401ea9daf49225` — `AE-32C E.8.8.1`  
 **Current M0 close-out snapshot:** `1ed0471832b660e8c29a946e4655e1ed981106bf` — `E.8.8.2`; G9.42 run `44885166907`  
@@ -758,3 +758,18 @@ The preceding test commit `b6b81b60753cf36334281f19c3ff64aea5abe7b9` exposed an 
 The SNAP worker image ID was recorded as `sha256:8aa923b1de4d7b2ca7301cb27556178e35e8c54cff433f0c5d653320637f089e`. Its per-request `stdout.readline()` deadline, timeout propagation and recovery are still open. G9.42 includes the M7.4 suite but was not run against this source. The detailed test and run record is [AE-32C M7.4 Initial Task Assessment Validation](AE-32C-M7.4-Initial-Task-Assessment-Validation.md).
 
 **Current M7.4 status:** initial synthetic acceptance tests cover all 20 task/backend combinations; final G1–G8 task/backend records and formal verdicts remain pending. No ranking or automatic selection is introduced. Preserve `production_approval=false`.
+
+
+## 20. M7 SNAP worker request-deadline and cleanup follow-up — 2026-11-24
+
+The previously unbounded SNAP JSON-lines request has been bounded in the Stage1 adapter. The current implementation revision is `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`.
+
+The request deadline defaults to 120 seconds, is configured through `AE32C_SNAP_WORKER_REQUEST_TIMEOUT_SECONDS`, and cannot exceed 600 seconds. The deadline covers both pipe write/flush and response read. Graceful close is limited to five seconds. Docker launch now records the exact container ID with `--cidfile`; timeout cleanup attempts `docker rm --force` with a two-second command timeout, then bounds termination/kill of the host Docker client, closes streams and removes the temporary state directory. The adapter does not attempt an automatic restart after timeout.
+
+The adapter tests cover blocked writes, blocked reads, blocked close, invalid timeout configuration and the forced-removal command invocation/order. They use simulated process/Docker behavior rather than a live Docker daemon test.
+
+Exact-source [E.8.5/E.8.8 run 45385374806](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45385374806) shows successful SNAP adapter protocol tests, M7.4 task acceptance and SNAP synthetic E.8.5. NetworkX, SciPy, igraph and graph-tool jobs succeeded. At the latest inspection, SNAP repository-backed E.8.8 was still in progress after approximately 35 minutes. No final SNAP report or artifact was available; the whole matrix remains pending rather than accepted.
+
+The old M6 G9.42 acceptance is only for its recorded historical snapshot and cannot be reused for the new adapter code. The current G9.42 profile contains `test_snap_worker_adapter.py` and `test_m74_task_suitability_acceptance.py`, but G9.42 has not been dispatched against `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`.
+
+The next gates are: determine why SNAP E.8.8 is unusually long or allow its declared job timeout to produce a final result; add/execute a live Docker stalled-worker cleanup test; and perform exact-source G9.42 through the manual dispatcher. Do not issue final task/backend suitability verdicts, promote a backend or change `production_approval=false`.

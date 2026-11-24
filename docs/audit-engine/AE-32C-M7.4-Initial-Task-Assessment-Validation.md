@@ -107,7 +107,7 @@ This run does not establish any final suitability verdict for the 20 task/backen
 1. **Workload representativeness:** the M7.4 fixture is a focused five-node synthetic graph. It is not a representative or scale-complete test of the five M7.2 workload families, real repository evidence density, production graph sizes, memory pressure or throughput.
 2. **PATH domain interpretation:** generic graph path/evidence traversal is tested. Claim-to-evidence reconstruction, locator correctness and source-content follow-through remain distinct requirements.
 3. **IMPACT:** the follow-up run now tests multi-source budget allocation, deterministic candidate merging, per-source attribution, ownership/evidence resolution, cycle evidence and incomplete-result reporting. The test fixture remains small and synthetic; the canonical-graph cycle scan is not a native backend SCC operation, and representative workload/scale evidence remains open.
-4. **SNAP lifecycle:** image identity is recorded for this run, but request deadlines, timeout propagation, forced termination and worker recovery remain open.
+4. **SNAP lifecycle:** the Stage1 adapter now enforces request deadlines and attempts container-ID-based forced removal. The adapter test step passes on `6b32b0b`; those tests use mocked process/Docker behavior, so real stalled-container cleanup is not yet demonstrated. The latest E.8.8 step remains in progress.
 5. **Selector policy:** this change does not alter the generic first-match selection behavior or require task-specific acceptance states at selection time.
 6. **G9.42:** the new test file was added to the G9.42 profile, but G9.42 was not dispatched against this commit. The passing evidence here comes from run 45381213888.
 7. **Promotion:** no library is declared universally or comparatively superior; no runtime selection policy is activated.
@@ -118,7 +118,7 @@ This run does not establish any final suitability verdict for the 20 task/backen
 
 **Not supported:** a final suitable/conditionally suitable/not suitable decision, workload-wide task suitability, claim-to-evidence correctness, full IMPACT suitability, bounded SNAP request operation, selector authorization, production approval.
 
-Next gates are to expand task-specific workload and evidence records for all four public tasks, add SNAP request deadline/cleanup/recovery verification, resolve selector policy separately, and run G9.42 against an exact Stage1 commit when dispatch capability is available.
+Next gates are to expand task-specific workload and evidence records for all four public tasks, complete current SNAP E.8.8 evidence, add a live Docker stalled-container cleanup test, resolve selector policy separately, and run G9.42 against an exact Stage1 commit when dispatch capability is available.
 
 `production_approval=false` remains invariant.
 
@@ -160,3 +160,24 @@ The IMPACT analyzer's source-ownership and reverse-dependency traversal calls us
 The SNAP worker image ID for this follow-up run was `sha256:8aa923b1de4d7b2ca7301cb27556178e35e8c54cff433f0c5d653320637f089e`. Per-request deadlines and worker timeout/termination/recovery remain untested. G9.42 was not run against this commit.
 
 **Updated bounded conclusion:** all four public task routes have initial synthetic task-level acceptance coverage in each of the five backend environments. This is test evidence, not 20 final suitability verdicts. All G1–G8 evidence records, representative workloads, selector policy and remaining operational gates are still required. `production_approval=false` remains invariant.
+
+
+## 9. SNAP request-deadline implementation follow-up — 2026-11-24
+
+**Exact source:** `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`  
+**Workflow:** [AE-32C Native Graph Backend Conformance run 45385374806](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45385374806)
+
+The adapter implementation now bounds each worker request's stdin write/flush and stdout response read. The default deadline is 120 seconds, configurable through `AE32C_SNAP_WORKER_REQUEST_TIMEOUT_SECONDS`, with an upper bound of 600 seconds. Graceful close has a five-second maximum.
+
+The Docker launch records the worker's exact container ID using `--cidfile`. A timed-out request triggers a bounded attempt to `docker rm --force` the recorded container, followed by bounded termination/kill of the host Docker client, protocol-stream closure and temporary-directory cleanup. A timed-out adapter is not automatically restarted; a new adapter instance is required.
+
+The latest exact-source run reports:
+- SNAP adapter protocol/restriction test step: **success**;
+- SNAP M7.4 task-level acceptance step: **success**;
+- SNAP synthetic E.8.5 conformance: **success**;
+- NetworkX, SciPy, python-igraph and graph-tool jobs: **success**;
+- SNAP repository-backed E.8.8: **in progress** at the last inspection, approximately 35 minutes after the step began.
+
+The adapter test module exercises blocked write, blocked read, blocked close, invalid timeout values and the recorded `docker rm --force` command. Its process and Docker command are simulated/mocked. It does not prove cleanup against a real unresponsive container. No final E.8.8 SNAP artifact or conclusion was available, so the run is not accepted as a complete five-backend E.8.5/E.8.8 matrix.
+
+G9.42 includes the adapter test file and M7.4 suite, but has not been dispatched against this latest exact revision. Formal task/backend suitability verdicts remain pending; preserve `production_approval=false`.

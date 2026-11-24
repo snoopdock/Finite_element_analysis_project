@@ -1,6 +1,6 @@
 # AE-32C M7 — Task Suitability and Operational Characterization
 
-**Status:** M7.0 protocol complete; M7.1 closed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier accepted for its stated verification scope (G9.42 run `44943859099`, manual run `44945256220`); M7.4 contract defined and initial STRUCTURAL / DEPENDENCY / PATH / IMPACT task-level acceptance passed across all five backend environments in run `45382782600`; formal task/backend verdicts remain pending.  
+**Status:** M7.0 protocol complete; M7.1 closed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier accepted for its stated verification scope (G9.42 run `44943859099`, manual run `44945256220`); M7.4 initial STRUCTURAL / DEPENDENCY / PATH / IMPACT task acceptance passed across all five backend environments in run `45382782600`. SNAP request-deadline and mocked cleanup tests pass at source `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`; the latest SNAP repository-backed E.8.8 stage is still pending. Formal task/backend verdicts remain pending.  
 **M7.1 workflow revision:** `main` SHA `182d0009f1c759c46813e3a1cbbf34d22c247acb`  
 **M7.1 benchmark source:** Stage1 SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`  
 **M7.2 implementation:** `tools/gb06_task_suitability_campaign.py`  
@@ -278,3 +278,14 @@ The IMPACT tests cover multi-source attribution and deterministic candidate merg
 The first IMPACT test attempt at `b6b81b60753cf36334281f19c3ff64aea5abe7b9` failed because the test expected a second-hop `MEMBER_OF` edge in the one-hop file ownership evidence. The test oracle was corrected at `ff6fe8226d6417b0832a17b8bed397217f72a303`; no analyzer/runtime behavior was changed for that failure. The corrected run passed.
 
 The SNAP image identity for this run is `sha256:8aa923b1de4d7b2ca7301cb27556178e35e8c54cff433f0c5d653320637f089e`; per-request deadlines and worker timeout/recovery remain open. G9.42 was not dispatched against this commit. The M7.4 matrix now has initial test coverage for the 20 task/backend combinations, not final suitability verdicts. Representative workload, environment and operational dossiers remain pending. Keep `production_approval=false`.
+
+
+## 18. SNAP request deadline and cleanup implementation follow-up — 2026-11-24
+
+Stage1 commit `2755043ba5f985225c8794c93d72b76567ff8b83` introduced bounded worker RPCs; `fe6b5474be56f769309f66a4e56f82a44c1890bf` added container-ID capture and forced removal; `f03d2768b3863f74719079e7cde458b02f2b87b4` corrected the Docker cleanup test fixture; and `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86` corrected constructor initialization order.
+
+The adapter uses a 120-second default request deadline (maximum 600 seconds) across stdin write/flush and stdout read, and a five-second close deadline. On timeout it attempts a two-second-bounded `docker rm --force` against the captured container ID, then terminates/kills the Docker client and closes streams. An adapter that times out is not restarted in place.
+
+Exact-source [run 45385374806](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45385374806) checked out `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`. The SNAP adapter test, M7.4 task suite and E.8.5 synthetic step all succeeded. NetworkX, SciPy, python-igraph and graph-tool jobs succeeded. At the last inspection, SNAP E.8.8 remained in progress after approximately 35 minutes, with no final SNAP repository report or artifact. This is not a completed E.8.5/E.8.8 matrix result.
+
+The timeout cleanup tests use a mocked process and Docker command. Live forced removal of a deliberately stalled Docker worker remains unproven. The next M7.4 SNAP gate is to close the current E.8.8 result, then add or execute a real Docker lifecycle test for intentional worker non-response. The G9.42 profile contains the relevant adapter and M7.4 tests, but the profile has not been dispatched against this source revision. Keep all suitability decisions pending and `production_approval=false`.

@@ -1,7 +1,7 @@
 # AE-32C M7.4 — Task-Specific Backend Suitability Assessment Contract
 
 **Contract version:** `ae32c/m7-4-suitability-contract/v1`  
-**Status:** Contract defined; initial STRUCTURAL / DEPENDENCY / PATH / IMPACT task-level acceptance tests passed in all five backend environments; formal task/backend suitability decisions not yet issued  
+**Status:** Contract defined; initial STRUCTURAL / DEPENDENCY / PATH / IMPACT task-level acceptance passed in all five backend environments; SNAP request-deadline and mocked cleanup tests now pass on Stage1 `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`; latest SNAP repository-backed E.8.8 remains pending; formal task/backend suitability decisions not yet issued  
 **Target branch:** `stage1/section-uuids` only  
 **Baseline Stage1 source:** `47eb1ae6777e1d34c445af219c96840797739f23`  
 **M7.2 campaign:** [run 44940960831](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940960831)  
@@ -108,7 +108,7 @@ These are implementation facts, not suitability verdicts.
 
 ### 4.1 SNAP-specific operational gap
 
-The current Python worker adapter performs synchronous `stdout.readline()` calls in its request path without a per-request response deadline. Its close path has a bounded process wait, but that does not bound a stalled initialization, audit or adjacency request. The M7.3 campaign record did not contain a concrete container image ID (`container_image_id=null`). Subsequent M7.4 runs recorded run-specific Docker image IDs, most recently `sha256:8aa923b1de4d7b2ca7301cb27556178e35e8c54cff433f0c5d653320637f089e` in run `45382782600`. Image identity is therefore evidenced for those executions, but the unbounded per-request wait and timeout/recovery behavior remain open.
+The M7.3 campaign record did not contain a concrete container image ID (`container_image_id=null`); the M7.4 follow-up runs record run-specific Docker image identities. The unbounded request wait has now been corrected in Stage1 source `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`: `_request` bounds both pipe write/flush and response read, with a configurable 120-second default and 600-second maximum; graceful close is capped at five seconds. Timeout cleanup uses the Docker container ID captured by `--cidfile`, attempts `docker rm --force` with a two-second subprocess timeout, and then bounds host-client termination/kill. The adapter enters a terminal state after timeout; automatic worker restart is not implemented. The SNAP adapter test step passed in exact-source run `45385374806`, but the forced-removal path is tested with simulated process/Docker calls rather than a live deliberately stalled container. The SNAP repository-backed E.8.8 stage in that run remains in progress at the last inspection, so live repository conformance must not be marked accepted from this run.
 
 Therefore, SNAP cannot receive an unqualified operational suitability statement until a pinned image identity and bounded request/termination behavior are evidenced. This is a specific gap to assess and, if approved as a separate correction, remediate; it is not a claim that the observed campaign failed.
 
@@ -282,3 +282,19 @@ The backend is involved in the ownership and reverse-dependency traversal querie
 The SNAP run recorded Docker image ID `sha256:8aa923b1de4d7b2ca7301cb27556178e35e8c54cff433f0c5d653320637f089e`. Per-request response deadlines, timeout propagation, termination and recovery are still not demonstrated. G9.42 includes the M7.4 test file but was not dispatched against this source commit. IMPACT therefore has initial synthetic acceptance evidence, not a final task/backend suitability verdict.
 
 **Contract conclusion:** M7.4 now has initial executable STRUCTURAL / DEPENDENCY / PATH / IMPACT task-acceptance evidence across all five backends. The evidence is bounded to synthetic fixtures and the tested run environments; the IMPACT cycle scan is a canonical-graph sub-operation rather than a native backend operation. Formal task/backend suitability verdicts remain pending. G9.42 and the outstanding workload, selector and SNAP operational gates are not closed by these test runs.
+
+
+## 14. SNAP timeout implementation and current live-run boundary — 2026-11-24
+
+The worker request-deadline implementation and follow-up corrections are committed at:
+
+- `2755043ba5f985225c8794c93d72b76567ff8b83` — bounded request/close RPC;
+- `fe6b5474be56f769309f66a4e56f82a44c1890bf` — Docker container ID capture and forced-removal path;
+- `f03d2768b3863f74719079e7cde458b02f2b87b4` — timeout test setup correction;
+- `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86` — constructor initialization-order correction.
+
+The current adapter enforces `AE32C_SNAP_WORKER_REQUEST_TIMEOUT_SECONDS` (default 120 seconds; maximum 600 seconds) across both request pipe write/flush and response read. Graceful close uses a five-second cap. The adapter captures the Docker container ID with `--cidfile`; on a timeout it attempts `docker rm --force` against that exact ID, then terminates/kills the Docker client with bounded waits, closes streams and removes its temporary directory. It does not automatically restart a worker.
+
+The SNAP adapter protocol test step passed at exact-source run `45385374806`, as did the SNAP M7.4 task test and synthetic E.8.5 conformance steps. The four non-SNAP backend jobs passed. The repository-backed SNAP E.8.8 step was still in progress after approximately 35 minutes at the last inspection, with no final result or SNAP evidence artifact available. Consequently, the current revision has positive adapter unit-test evidence but no current-run repository-backed SNAP acceptance result.
+
+The timeout and container-removal unit tests use simulated process/Docker behavior. They do not prove that a real Docker daemon removes a deliberately stalled container. A Docker-backed lifecycle test and exact-revision G9.42 are still outstanding. No final task/backend suitability verdict is issued by this follow-up.

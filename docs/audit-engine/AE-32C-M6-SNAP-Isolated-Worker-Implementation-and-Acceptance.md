@@ -1,6 +1,6 @@
 # AE-32C M6 — SNAP Isolated Worker: Implementation and Acceptance
 
-**Status:** M5 graph-tool and M6 SNAP isolated-worker milestones are formally accepted for the exact Stage1 implementation snapshot below. All five backends passed provenance-stamped E.8.5/E.8.8, and exact-commit G9.42 passed. Acceptance is limited to the tested runtime and repository fixture; production approval remains false.  
+**Status:** M5 graph-tool and M6 SNAP isolated-worker milestones remain formally accepted only for the exact historical Stage1 implementation snapshot below. The later M7 adapter timeout/cleanup changes are a new implementation snapshot and are not covered by that historical G9.42 acceptance. The current adapter protocol tests pass at `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`; SNAP repository-backed E.8.8 and exact-commit G9.42 for that newer snapshot remain unclosed. Production approval remains false.  
 **Target branch:** `stage1/section-uuids`  
 **Initial full-matrix validation snapshot:** `c7fe14c52ded38eafbf3153137bf163efaa3f0e6`  
 **Final exact-commit acceptance snapshot:** `81eb77aff35afe297a596a91826e016048515c0f`  
@@ -169,7 +169,7 @@ After the provenance-stamped E.8.5 / E.8.8 run passes, dispatch [Manual Validati
 ## 7. Known limitations and follow-up
 
 - The Python base image is currently referenced by the `python:3.9-slim-bookworm` tag; the workflow records the resulting image ID. Pinning the base image by immutable digest is a reproducibility improvement.
-- The protocol is synchronous and line-oriented. The worker is resource-limited and the workflow has a job timeout, but the adapter does not yet implement a per-request wall-clock timeout.
+- The protocol remains synchronous and line-oriented at the wire level. The earlier adapter did not implement a per-request wall-clock timeout; this was corrected in Stage1 commit `2755043ba5f985225c8794c93d72b76567ff8b83` and the container-cleanup follow-up commits `fe6b5474be56f769309f66a4e56f82a44c1890bf` / `f03d2768b3863f74719079e7cde458b02f2b87b4`, with the constructor-order correction in `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`. The current adapter enforces a configurable 120-second default request deadline (maximum 600 seconds), including request write/flush and response read; graceful close is capped at five seconds. Timeout cleanup targets the recorded container ID with `docker rm --force` (bounded command timeout), then bounds host-client termination and kill. These lifecycle tests use a simulated process/Docker command; live Docker timeout-and-removal behavior has not yet been demonstrated. The exact-source E.8.8 stage in run `45385374806` is still in progress and must not be counted as accepted.
 - The worker receives a complete immutable graph snapshot during initialization. It does not receive repository paths, source files, provider tokens or LLM prompts.
 - The native worker is a query engine only. It does not become an authority for evidence, provenance, source hashes or semantic identity.
 - M6 acceptance does not establish that SNAP is faster or operationally preferable. Comparative benchmarking belongs to M7.
@@ -216,3 +216,27 @@ The bundle receipt independently binds source SHA, source profile, run ID and at
 **M6 — SNAP isolated worker and compatibility: ACCEPTED for the tested CPython 3.9.25 / SNAP 6.0.0 worker and repository-backed path.**
 
 This acceptance does not establish universal performance superiority, production suitability, live LLM tool-selection quality or scientific correctness. The benchmark gap and next work are assigned to [AE-32C M7 — Comparative Backend Performance and Promotion Policy](AE-32C-M7-Comparative-Backend-Performance-and-Promotion-Policy.md). Keep `production_approval=false`.
+
+
+## 9. M7 SNAP request-deadline and container-cleanup follow-up — 2026-11-24
+
+The unbounded per-request wait identified in Section 7 has been addressed in the current Stage1 adapter implementation. The exact source revision is `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`.
+
+### 9.1 Request deadline
+
+`SNAPWorkerAdapter._request` now performs the blocking JSON-lines write/flush/read exchange in a daemon thread and waits on a bounded response queue. The configured environment variable is `AE32C_SNAP_WORKER_REQUEST_TIMEOUT_SECONDS`; the default is 120 seconds and the permitted maximum is 600 seconds. Invalid, non-finite, zero/negative and over-maximum values fail during adapter construction. The explicit close request uses a five-second maximum.
+
+### 9.2 Timeout cleanup
+
+The Docker launch records the exact container ID with `--cidfile` and uses `--init`. If a request deadline expires, the adapter enters a terminal failed/closed state, attempts `docker rm --force <recorded-container-id>` with a bounded subprocess timeout, then terminates/kills the Docker client if needed, closes its protocol streams and removes its temporary state directory. The same cleanup path is used for blocked graceful close. The adapter does not transparently restart a worker: callers must construct a new adapter after a timeout.
+
+The test module now covers blocked stdin flush, blocked stdout response, blocked close, invalid timeout settings, and the exact forced-removal command ordering. These tests use a simulated process and mocked Docker subprocess; they establish host-side timeout/control-flow behavior, not live container termination.
+
+### 9.3 Exact-source workflow evidence and remaining gate
+
+Run [45385374806](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45385374806) checked out exact source `6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86`. The SNAP adapter protocol test step, SNAP M7.4 task-acceptance step and synthetic E.8.5 conformance step all concluded `success`. The NetworkX, SciPy, python-igraph and graph-tool jobs also concluded `success`.
+
+At the last inspected state, the SNAP repository-backed E.8.8 step was still `in_progress`, approximately 35 minutes after it started; its job has a 40-minute timeout. No final SNAP E.8.8 conclusion or SNAP artifact was available. The run must therefore remain pending for repository-backed SNAP acceptance until its final job result and artifact are inspected.
+
+This run does not prove live forced removal of a deliberately stalled container. A Docker-backed lifecycle integration test is still desirable. The exact-commit G9.42 profile also remains unrun for this newer source revision. The old M6 G9.42 acceptance above must not be re-used as validation evidence for these later changes.
+
