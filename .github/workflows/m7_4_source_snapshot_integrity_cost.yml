@@ -1,0 +1,83 @@
+name: AE-32C G4 Source Snapshot Integrity Cost
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_4_source_snapshot_integrity_cost.yml"
+      - "audit_engine/semantic_audit/ae32a/audit.py"
+      - "audit_engine/semantic_audit/ae32b/evidence_tools.py"
+      - "tools/gb06_source_snapshot_integrity_benchmark.py"
+      - "tests/semantic_graph/test_m7_g4_source_snapshot_integrity_benchmark.py"
+      - "requirements.txt"
+      - "pyproject.toml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-g4-source-snapshot-cost-stage1
+  cancel-in-progress: false
+
+jobs:
+  source-snapshot-cost:
+    name: Source snapshot integrity cost characterization
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact triggering source revision
+        uses: actions/checkout@v4
+        with:
+          ref: \${{ github.sha }}
+          persist-credentials: false
+      - name: Record immutable source revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          test "$SOURCE_SHA" = "$GITHUB_SHA"
+          echo "AE32C_SOURCE_REVISION=$SOURCE_SHA" >> "$GITHUB_ENV"
+          {
+            echo "### G4 source snapshot cost"
+            echo "- Exact source SHA: $SOURCE_SHA"
+            echo "- Workload: repository source manifest and content snapshot"
+            echo "- Graph backend: reference (native backend setup excluded)"
+            echo "- Repetitions: 3; warm-up: 1"
+            echo "- No atomic snapshot or production approval is established."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install declared dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip check
+      - name: Test source snapshot cost report contract
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/semantic_graph/test_m7_g4_source_snapshot_integrity_benchmark.py
+      - name: Measure repository audit, content load and second validation pass
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/audit_engine
+          PYTHONPATH=. python tools/gb06_source_snapshot_integrity_benchmark.py run \
+            --repository . --repeats 3 --warmup 1 \
+            --report artifacts/audit_engine/g4-source-snapshot-cost.json \
+            2>&1 | tee artifacts/audit_engine/g4-source-snapshot-cost-run.log
+          PYTHONPATH=. python tools/gb06_source_snapshot_integrity_benchmark.py verify \
+            --repository . \
+            --report artifacts/audit_engine/g4-source-snapshot-cost.json \
+            2>&1 | tee artifacts/audit_engine/g4-source-snapshot-cost-verify.log
+      - name: Upload source snapshot cost evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m7-4-g4-source-snapshot-cost-\${{ github.run_id }}-\${{ github.run_attempt }}
+          path: artifacts/audit_engine/g4-source-snapshot-cost*
+          if-no-files-found: warn
+          retention-days: 30
