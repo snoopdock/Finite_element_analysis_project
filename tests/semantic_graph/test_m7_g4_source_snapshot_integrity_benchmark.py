@@ -42,7 +42,8 @@ def test_source_snapshot_report_reconstructs_and_verifies(source_report):
     verified = benchmark.verify_report(report, root)
     assert verified["status"] == "verified"
     assert verified["atomic_snapshot_established"] is False
-    assert report["configuration"]["graph_backend"] == "reference"
+    assert report["configuration"]["graph_construction"] == "excluded"
+    assert report["configuration"]["traversal_backend"] == "not_initialized"
     assert report["workload"]["indexed_file_count"] >= 3
     assert report["workload"]["indexed_bytes"] > 0
 
