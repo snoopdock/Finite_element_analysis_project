@@ -246,3 +246,18 @@ The initial expanded run used IMPACT `max_depth=6`, contrary to the analyzer's e
 ### 12.3 Remaining acceptance boundary
 
 This is expanded synthetic task-level acceptance, not a production-representative graph corpus or benchmark. It provides no runtime ranking or promotion evidence. PATH domain-specific claim-to-evidence reconstruction, IMPACT native SCC capability (the cycle scan remains canonical-graph based), complete per-pair G1–G8 records, selector acceptance-state enforcement and exact-source G9.42 remain open. Keep `production_approval=false`.
+
+
+### 12.4 Five-backend immutable artifact provenance
+
+All five backend jobs uploaded E.8.5/E.8.8 evidence artifacts in run `45395352748`. The ZIP digests below are the GitHub Actions artifact archive SHA-256 values returned by the run's artifact service.
+
+| Backend | Artifact ID | Artifact name | Archive SHA-256 |
+|---|---:|---|---|
+| NetworkX | `14920662487` | `e85-networkx-conformance` | `sha256:daf49717450bc776001b4a86e690329412b184a39afbbfd3186260ee2b9dc6aa` |
+| SciPy | `14920921665` | `e85-scipy-conformance` | `sha256:11491e4a4b16f0c8a5ca060a9882c6fdd97fd60c365c3831a8c410c6ae86b8e5` |
+| python-igraph | `14921070985` | `e85-igraph-conformance` | `sha256:43dfe79abd2e9d0931b2417d82dd7c45bbfe5b510b99e14d44fed3c615877c7a` |
+| graph-tool | `14920508045` | `e85-graph-tool-conformance` | `sha256:6ae437eefa6be0d15956855b7b8c271393c4c68ccf15bcb9717e008e11eadddd` |
+| SNAP isolated worker | `14920592009` | `e85-e88-snap-isolated-worker` | `sha256:e5ff53b2ee4d86c7534d080bf96558618445a8d7d4281e6f854a3c0bd45eac30` |
+
+The workflow's aggregate conformance summary job `138450475726` concluded `success`. These artifact digests identify the uploaded ZIP archives; they do not constitute signed attestations of runner hardware or extend the report's declared semantic scope. Artifact retention/expiry should be checked before relying on these links in a later audit.
