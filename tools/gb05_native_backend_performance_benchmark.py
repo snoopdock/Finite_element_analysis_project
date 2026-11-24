@@ -111,6 +111,28 @@ def _close_engine(engine) -> None:
         close()
 
 
+def _install_integrity_timer(engine, backend: str) -> list[int]:
+    """Time complete native-projection audits without changing production code.
+
+    The wrapper is installed only on this benchmark instance and after engine
+    construction. Constructor audit cost therefore remains inside the existing
+    engine_construction_ns measurement.
+    """
+    observations: list[int] = []
+    method_name = "_verify_projection" if backend == "networkx" else "_build_adjacency"
+    original = getattr(engine, method_name)
+
+    def timed_audit(*args, **kwargs):
+        started = perf_counter_ns()
+        try:
+            return original(*args, **kwargs)
+        finally:
+            observations.append(max(0, perf_counter_ns() - started))
+
+    setattr(engine, method_name, timed_audit)
+    return observations
+
+
 def _result_summary(result) -> dict[str, Any]:
     return {
         "visited_nodes": list(result.visited_nodes),
@@ -197,6 +219,7 @@ def make_report(
     query_reports = []
     try:
         runtime = _runtime(measured_engine)
+        integrity_observations = _install_integrity_timer(measured_engine, backend)
         if runtime.get("backend_native_query_mode") != NATIVE_MODES[backend]:
             raise BenchmarkError("measured_native_query_mode_mismatch")
 
@@ -211,6 +234,7 @@ def make_report(
                     raise BenchmarkError(f"warmup_result_parity_mismatch:{name}")
 
             before = _native_counts(_runtime(measured_engine))
+            integrity_start = len(integrity_observations)
             observations = []
             for _ in range(repeats):
                 t0 = perf_counter_ns()
@@ -219,6 +243,17 @@ def make_report(
                 if _digest(_result_summary(result)) != expected[name]:
                     raise BenchmarkError(f"timed_result_parity_mismatch:{name}")
             after = _native_counts(_runtime(measured_engine))
+            audit_observations = integrity_observations[integrity_start:]
+            expected_audits = 2 * repeats
+            if len(audit_observations) != expected_audits:
+                raise BenchmarkError(
+                    f"integrity_audit_count_mismatch:{name}:"
+                    f"expected={expected_audits}:observed={len(audit_observations)}"
+                )
+            per_query_integrity_ns = [
+                audit_observations[index] + audit_observations[index + 1]
+                for index in range(0, len(audit_observations), 2)
+            ]
             delta = {
                 key: after[key] - before[key] for key in before
             }
@@ -233,6 +268,9 @@ def make_report(
                 "warmup_calls": warmup,
                 "measured_calls": repeats,
                 "timing": _timing_summary(observations),
+                "integrity_audit_count": len(audit_observations),
+                "integrity_audit_timing": _timing_summary(audit_observations),
+                "per_query_integrity_total_timing": _timing_summary(per_query_integrity_ns),
                 "native_metrics_delta": delta,
             })
 
@@ -334,6 +372,30 @@ def verify_report(report: dict[str, Any]) -> dict[str, Any]:
         for key in ("median_ns", "p95_ns", "minimum_ns", "maximum_ns", "mad_ns"):
             if timing.get(key) != recomputed[key]:
                 raise BenchmarkError(f"timing_aggregate_mismatch:{name}:{key}")
+        audit_count = item.get("integrity_audit_count")
+        expected_audits = 2 * len(observations)
+        if audit_count != expected_audits:
+            raise BenchmarkError(f"integrity_audit_count_invalid:{name}")
+        audit_timing = item.get("integrity_audit_timing", {})
+        audit_observations = audit_timing.get("observations_ns")
+        if not isinstance(audit_observations, list) or len(audit_observations) != expected_audits:
+            raise BenchmarkError(f"integrity_audit_timing_sample_count_mismatch:{name}")
+        audit_recomputed = _timing_summary(audit_observations)
+        for key in ("median_ns", "p95_ns", "minimum_ns", "maximum_ns", "mad_ns"):
+            if audit_timing.get(key) != audit_recomputed[key]:
+                raise BenchmarkError(f"integrity_audit_timing_aggregate_mismatch:{name}:{key}")
+        per_query_integrity = item.get("per_query_integrity_total_timing", {})
+        per_query_observations = per_query_integrity.get("observations_ns")
+        expected_per_query = [
+            audit_observations[index] + audit_observations[index + 1]
+            for index in range(0, expected_audits, 2)
+        ]
+        if per_query_observations != expected_per_query:
+            raise BenchmarkError(f"per_query_integrity_observations_invalid:{name}")
+        per_query_recomputed = _timing_summary(expected_per_query)
+        for key in ("median_ns", "p95_ns", "minimum_ns", "maximum_ns", "mad_ns"):
+            if per_query_integrity.get(key) != per_query_recomputed[key]:
+                raise BenchmarkError(f"per_query_integrity_aggregate_mismatch:{name}:{key}")
         native = item.get("native_metrics_delta", {})
         if native.get("native_adjacency_lookups", 0) < len(observations):
             raise BenchmarkError(f"native_lookup_count_invalid:{name}")
