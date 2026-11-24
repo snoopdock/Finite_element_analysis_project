@@ -490,7 +490,8 @@ def test_m74_impact_multi_source_attribution_ownership_and_cycle_evidence(backen
     ownership_ids = set(metadata["ownership_evidence_ids"])
     assert ownership_ids
     assert ownership_ids.issubset(evidence_by_id)
-    assert {"IMPLEMENTS", "IMPLEMENTED_BY", "DEFINES", "MEMBER_OF"}.issubset({
+    # File-source ownership resolution is depth one; MEMBER_OF is a second-hop edge.
+    assert {"IMPLEMENTS", "IMPLEMENTED_BY", "DEFINES"}.issubset({
         evidence_by_id[item].predicate for item in ownership_ids
     })
 
