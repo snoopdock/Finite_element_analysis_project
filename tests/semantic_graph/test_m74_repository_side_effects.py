@@ -45,8 +45,17 @@ def _copy_fixture(tmp_path: Path) -> Path:
     return destination
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _validate_backend_target():
+    selected = os.environ.get("AE32C_M74_BACKEND")
+    if selected is not None and selected not in BACKENDS:
+        pytest.fail(f"unknown AE32C_M74_BACKEND target: {selected!r}")
+
+
 def _selected_backend(backend: str) -> bool:
     selected = os.environ.get("AE32C_M74_BACKEND")
+    if selected is not None and selected not in BACKENDS:
+        pytest.fail(f"unknown AE32C_M74_BACKEND target: {selected!r}")
     if selected is not None and selected != backend:
         pytest.skip(f"workflow job targets {selected}, not {backend}")
     return True
@@ -91,8 +100,8 @@ def test_g4_repository_evidence_operations_are_byte_and_mode_read_only(tmp_path,
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
-def test_g4_repository_queries_are_bound_to_constructed_source_snapshot(tmp_path, backend):
-    """Concurrent on-disk edits cannot rewrite the already-indexed evidence snapshot."""
+def test_g4_repository_queries_use_constructed_snapshot_after_external_edit(tmp_path, backend):
+    """Concurrent reads remain bound to the constructed snapshot after an external edit."""
     _selected_backend(backend)
     root = _copy_fixture(tmp_path)
     tools = RepositoryEvidenceTools(root, graph_backend=backend)
@@ -135,11 +144,34 @@ def test_g4_snap_close_serializes_against_a_pending_query_and_query_fails_closed
     engine = service.engine.traversal_engine
     assert isinstance(engine, NativeAdapterGraphTraversalEngine)
     adapter = engine.adapter
-    started = threading.Event()
+    query_started = threading.Event()
+    query_waiting_for_lock = threading.Event()
     outcome = {}
+    underlying_lock = adapter._request_lock
+
+    class ObservedRLock:
+        """Expose the query thread's actual lock-acquisition attempt."""
+
+        def acquire(self, *args, **kwargs):
+            if query_started.is_set():
+                query_waiting_for_lock.set()
+            return underlying_lock.acquire(*args, **kwargs)
+
+        def release(self):
+            return underlying_lock.release()
+
+        def __enter__(self):
+            self.acquire()
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            self.release()
+            return False
+
+    adapter._request_lock = ObservedRLock()
 
     def query():
-        started.set()
+        query_started.set()
         try:
             engine.walk("A", direction=TraversalDirection.OUTGOING, max_depth=1)
             outcome["status"] = "success"
@@ -148,11 +180,13 @@ def test_g4_snap_close_serializes_against_a_pending_query_and_query_fails_closed
             outcome["error"] = str(exc)
 
     try:
-        # RLock permits close() on this thread while the query thread is queued.
+        # Hold the underlying RLock, then wait until the query really attempts
+        # to acquire it. Thread-start notification alone is not sufficient.
         with adapter._request_lock:
             worker = threading.Thread(target=query, daemon=True)
             worker.start()
-            assert started.wait(timeout=2)
+            assert query_started.wait(timeout=2)
+            assert query_waiting_for_lock.wait(timeout=2)
             adapter.close()
         worker.join(timeout=10)
         assert not worker.is_alive()
