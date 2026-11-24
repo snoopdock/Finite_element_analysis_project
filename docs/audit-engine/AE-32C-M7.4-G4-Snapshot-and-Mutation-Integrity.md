@@ -603,7 +603,6 @@ The first workflow attempt failed at checkout because GitHub expression markers 
 
 The exact source revision contained 1,857 included, non-sensitive source files totaling 9,492,994 bytes. No non-UTF-8 files were skipped. Both source-content passes read exactly 1,857 files and 9,492,994 bytes.
 
-<text></text>
 
 | Measurement | Median | Minimum | Maximum |
 |---|---:|---:|---:|
