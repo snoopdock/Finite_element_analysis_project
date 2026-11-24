@@ -1,7 +1,8 @@
 # AE-32C M7.4-G4 — Cross-Backend Snapshot and Mutation Integrity
 
-**Status:** the latest expanded five-backend G4 tranche passed; the SNAP worker's supported protocol is verified as read-only after initialization. Overall G4 remains Partial because atomic repository-wide snapshot semantics, postflight mutation windows and integrity-check cost characterization remain open.  
-**Latest exact-source execution:** [run 96](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45457395602), tested SHA `315a23ed8c69aab2d1dec69607b64a9eccb9501c`.  
+**Status:** the five-backend G4 behavioral conformance tranche passed in [run 96](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45457395602); the later M7.1 integrity-cost smoke run verified NetworkX, SciPy, python-igraph and SNAP, while graph-tool remained unmeasured because its process terminated with `Illegal instruction`. The SNAP worker's supported protocol is verified as read-only after initialization. Overall G4 remains Partial because atomic repository-wide snapshot semantics, postflight mutation windows and broader integrity-cost characterization remain open.  
+**Latest source-snapshot cost execution:** [run 5](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45465670711), tested SHA `2322efae96a2c4f2a310236d9522b294cbaaeaef`.  
+**Latest native projection cost execution:** [run 18](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45463552807), tested SHA `da3b2748d43f4303aecd1d09fe6cb79498bc026c`.  
 **Branch:** `stage1/section-uuids`.  
 **Scope:** canonical graph snapshot isolation, source-file identity validation, controlled active-query mutation, fixture-tree side effects, native projection corruption, parity fail-closed behavior, repeated queries, reconstruction and SNAP worker teardown.
 
@@ -570,3 +571,64 @@ The ZIP digests are the values reported by the Actions upload step. They identif
 **Interpretation:** this run confirms that the new instrumentation and report-verification contract operate for four backend configurations on the fixed fixture. It provides an initial indication of how much of each measured query was spent inside the two full projection audits on those particular runner environments. It does not establish comparative backend suitability, universal audit overhead, scaling behavior, or a performance winner. The graph-tool execution remains uncharacterized because of the runner process fault.
 
 **G4 decision:** remains **Partial**. Source-validation-pass timing, multi-size workload scaling, finer SNAP audit subcomponent timing, and broader runner repeatability remain open. Keep all 20 task/backend suitability outcomes at `Insufficient evidence`; keep `production_approval=false`.
+
+
+## 19. Source snapshot validation cost — 2026-11-24
+
+This tranche isolates the source-snapshot stages in `RepositoryEvidenceTools` without including semantic graph construction or native traversal backend initialization. The benchmark invokes the production `audit_repository`, `_load_indexed_content` and `_validate_loaded_source_snapshot` implementations. A minimally initialized `RepositoryEvidenceTools` instance is used only to supply the exact state those two production methods consume; no graph is built.
+
+### 19.1 Measurement boundary
+
+For each measured sample, the harness records:
+1. the complete `audit_repository` call, including repository inventory, manifest generation and the audit's static-analysis work;
+2. the first `_load_indexed_content` pass, including descriptor-bound reads, SHA-256 checks, identity capture and UTF-8 indexing;
+3. the second `_validate_loaded_source_snapshot` pass, including descriptor-bound rereads, before/after file descriptor identity checks, comparison with the first-pass identity, and SHA-256 comparison.
+
+The harness also records the number of file reads and bytes read independently for the first and second source passes. It rejects the report unless each pass reads exactly the expected non-sensitive included file count and byte total. The independent verifier recomputes the source manifest and validates the report digest, timing aggregates, read accounting and pipeline-time decomposition.
+
+This is intentionally not a full `RepositoryEvidenceTools` constructor benchmark: graph construction and traversal service initialization are excluded so they cannot obscure the source validation pass. The `audit_repository` timing is the entire audit call, not a pure directory-walk or manifest-only measurement.
+
+### 19.2 Exact-source execution
+
+**Run:** [45465670711](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45465670711)  
+**Source SHA:** `2322efae96a2c4f2a310236d9522b294cbaaeaef`  
+**Workflow conclusion:** success.  
+**Contract tests:** 9 passed in 0.29 s.  
+**Benchmark configuration:** one warm-up and three measured samples.  
+**Independent verification:** passed both immediately after report creation and as a separate workflow step.
+
+The first workflow attempt failed at checkout because GitHub expression markers had been escaped in the generated YAML, yielding a literal backslash before the commit SHA. The expression was corrected and the subsequent exact-source run passed. An earlier, broader benchmark attempt that included full semantic graph construction was cancelled when the source-only measurement boundary was adopted. Neither is treated as a timing result.
+
+### 19.3 Repository workload and measurements
+
+The exact source revision contained 1,857 included, non-sensitive source files totaling 9,492,994 bytes. No non-UTF-8 files were skipped. Both source-content passes read exactly 1,857 files and 9,492,994 bytes.
+
+<text></text>
+
+| Measurement | Median | Minimum | Maximum |
+|---|---:|---:|---:|
+| Complete `audit_repository` call | 6.858 s | 6.846 s | 7.018 s |
+| First content-load pass | 95.87 ms | 95.53 ms | 97.48 ms |
+| Second source-validation pass | 91.03 ms | 88.72 ms | 96.16 ms |
+| Source-snapshot pipeline total | 7.051 s | 7.035 s | 7.203 s |
+
+The second validation pass read 9.49 MB across 1,857 files and completed in a median 91.03 ms on the GitHub-hosted Ubuntu 24.04 x86_64 Azure runner with Python 3.11.18. This is approximately 49 microseconds per indexed file for this particular repository snapshot and runner. It includes file opening, descriptor identity observations, metadata comparison and SHA-256 verification; it is not a hash-only microbenchmark.
+
+The median second-pass duration is approximately 1.29% of the median source-snapshot pipeline duration. This ratio is descriptive of this one source tree and runner. The pipeline total includes the full repository audit call, which accounts for most of the observed time; it must not be interpreted as a universal percentage or a backend comparison.
+
+### 19.4 Report and artifact identities
+
+- Manifest SHA-256: `2ea76aa4f0f95b73e67489f74537712e18872c5a9a9c58e61496feb8cf3b736b`
+- Report SHA-256: `1c962f35581727ad17cceb62b87ccfd6608bd49104c3abfb66fac2d2a9c17bc0`
+- Actions artifact ID: `14955665605`
+- Artifact name: `m7-4-g4-source-snapshot-cost-45465670711-1`
+- Artifact size: 2,208 bytes
+- Actions-reported ZIP SHA-256: `cca28b5e11c43bdf176ce3c18b520ff35ca410b49d47a52b9dbe8836a2633fad`
+
+The artifact digest is the SHA-256 value reported by the Actions upload step; it is an archive identity, not a detached signature.
+
+### 19.5 Interpretation and limits
+
+This result closes the specific evidence gap for the cost of the second source-validation pass on the audited repository snapshot. It does not establish that the source snapshot is atomic, close the remaining ABA schedules, or measure the impact of filesystem metadata semantics across platforms. The benchmark uses three measured repetitions on one runner image and one repository revision. It does not establish scaling curves, performance distributions across machines, or the cost of every individual sub-operation.
+
+**G4 decision:** remains **Partial**. Keep all 20 task/backend suitability outcomes at `Insufficient evidence`; keep `production_approval=false`. Atomic repository-wide snapshot semantics, postflight mutation windows, cross-platform identity behavior, filesystem side effects outside the fixture root and larger workload characterization remain open.
