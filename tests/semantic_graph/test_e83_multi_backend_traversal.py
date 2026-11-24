@@ -395,7 +395,7 @@ def test_graph_tool_repository_conformance_routes_context_tools_through_native_a
         )
 
 
-def test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_full_scans(monkeypatch):
+def test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_revalidate_projection(monkeypatch):
     install_fake(monkeypatch, "graph-tool")
     graph = graph_fixture()
     engine = NativeAdapterGraphTraversalEngine(graph, "graph-tool")
@@ -403,14 +403,20 @@ def test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_
     assert sorted(adapter._native_edge_id_to_occurrence) == [11, 13, 15, 17, 19]
     assert engine.runtime_report()["backend_execution"]["native_projection_reads"] == 9
 
-    def forbidden_full_nodes():
-        raise AssertionError("graph_tool_full_node_enumeration_during_query_or_report")
+    native_nodes = adapter.iter_native_nodes
+    native_edges = adapter.iter_native_edges
+    audit_calls = {"nodes": 0, "edges": 0}
 
-    def forbidden_full_edges():
-        raise AssertionError("graph_tool_full_edge_enumeration_during_query_or_report")
+    def observed_full_nodes():
+        audit_calls["nodes"] += 1
+        return native_nodes()
 
-    monkeypatch.setattr(adapter, "iter_native_nodes", forbidden_full_nodes)
-    monkeypatch.setattr(adapter, "iter_native_edges", forbidden_full_edges)
+    def observed_full_edges():
+        audit_calls["edges"] += 1
+        return native_edges()
+
+    monkeypatch.setattr(adapter, "iter_native_nodes", observed_full_nodes)
+    monkeypatch.setattr(adapter, "iter_native_edges", observed_full_edges)
 
     outgoing = engine.walk("A", direction="outgoing", max_depth=1)
     assert [(step.source_id, step.target_id, step.relation_type) for step in outgoing.steps] == [
@@ -437,22 +443,30 @@ def test_graph_tool_native_vertex_edge_iterators_preserve_occurrences_and_avoid_
     assert runtime["native_adjacency"]["incoming_edge_iterator_lookups"] == 2
     assert runtime["native_adjacency"]["native_edge_occurrences_read"] == 5
     assert runtime["backend_execution"]["parity_verified_queries"] == 3
+    assert audit_calls == {"nodes": 6, "edges": 6}
+    assert runtime["backend_execution"]["native_projection_reads"] == 63
 
 
-def test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_scans(monkeypatch):
+def test_igraph_native_incident_edge_ids_preserve_occurrences_and_revalidate_projection(monkeypatch):
     install_fake(monkeypatch, "igraph")
     engine = NativeAdapterGraphTraversalEngine(graph_fixture(), "igraph")
     adapter = engine.adapter
     assert engine.runtime_report()["backend_execution"]["native_projection_reads"] == 9
 
-    def forbidden_full_nodes():
-        raise AssertionError("igraph_full_node_enumeration_during_query_or_report")
+    native_nodes = adapter.iter_native_nodes
+    native_edges = adapter.iter_native_edges
+    audit_calls = {"nodes": 0, "edges": 0}
 
-    def forbidden_full_edges():
-        raise AssertionError("igraph_full_edge_enumeration_during_query_or_report")
+    def observed_full_nodes():
+        audit_calls["nodes"] += 1
+        return native_nodes()
 
-    monkeypatch.setattr(adapter, "iter_native_nodes", forbidden_full_nodes)
-    monkeypatch.setattr(adapter, "iter_native_edges", forbidden_full_edges)
+    def observed_full_edges():
+        audit_calls["edges"] += 1
+        return native_edges()
+
+    monkeypatch.setattr(adapter, "iter_native_nodes", observed_full_nodes)
+    monkeypatch.setattr(adapter, "iter_native_edges", observed_full_edges)
 
     outgoing = engine.walk("A", direction="outgoing", max_depth=1)
     assert [(step.source_id, step.target_id, step.relation_type) for step in outgoing.steps] == [
@@ -479,6 +493,8 @@ def test_igraph_native_incident_edge_ids_preserve_occurrences_and_avoid_full_sca
     assert runtime["native_adjacency"]["incoming_incident_edge_lookups"] == 2
     assert runtime["native_adjacency"]["native_edge_occurrences_read"] == 5
     assert runtime["backend_execution"]["parity_verified_queries"] == 3
+    assert audit_calls == {"nodes": 6, "edges": 6}
+    assert runtime["backend_execution"]["native_projection_reads"] == 63
 
 
 def test_igraph_repository_conformance_routes_context_tools_through_native_adjacency():
@@ -617,21 +633,27 @@ def test_snap_fake_module_is_not_accepted_as_isolated_worker_conformance(monkeyp
         run("snap")
 
 
-def test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_scans(monkeypatch):
+def test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_revalidates_projection(monkeypatch):
     graph = graph_fixture()
     engine = NativeAdapterGraphTraversalEngine(graph, "scipy")
     adapter = engine.adapter
     initial_projection_reads = engine.runtime_report()["backend_execution"]["native_projection_reads"]
     assert initial_projection_reads == len(graph.nodes) + len(graph.edges)
 
-    def forbidden_full_nodes():
-        raise AssertionError("scipy_full_node_enumeration_during_query_or_report")
+    native_nodes = adapter.iter_native_nodes
+    native_edges = adapter.iter_native_edges
+    audit_calls = {"nodes": 0, "edges": 0}
 
-    def forbidden_full_edges():
-        raise AssertionError("scipy_full_edge_enumeration_during_query_or_report")
+    def observed_full_nodes():
+        audit_calls["nodes"] += 1
+        return native_nodes()
 
-    monkeypatch.setattr(adapter, "iter_native_nodes", forbidden_full_nodes)
-    monkeypatch.setattr(adapter, "iter_native_edges", forbidden_full_edges)
+    def observed_full_edges():
+        audit_calls["edges"] += 1
+        return native_edges()
+
+    monkeypatch.setattr(adapter, "iter_native_nodes", observed_full_nodes)
+    monkeypatch.setattr(adapter, "iter_native_edges", observed_full_edges)
 
     outgoing = engine.walk("A", direction="outgoing", max_depth=1)
     assert [(step.source_id, step.target_id, step.relation_type) for step in outgoing.steps] == [
@@ -652,6 +674,10 @@ def test_scipy_native_csr_csc_adjacency_preserves_occurrences_and_avoids_full_sc
     assert runtime["native_adjacency"]["csc_column_lookups"] == 1
     assert runtime["native_adjacency"]["native_edge_occurrences_read"] == 3
     assert runtime["backend_execution"]["parity_verified_queries"] == 2
+    assert audit_calls == {"nodes": 4, "edges": 4}
+    assert runtime["backend_execution"]["native_projection_reads"] == (
+        initial_projection_reads + 4 * (len(graph.nodes) + len(graph.edges))
+    )
 
 
 def test_reference_both_direction_returns_self_loop_occurrence_once():

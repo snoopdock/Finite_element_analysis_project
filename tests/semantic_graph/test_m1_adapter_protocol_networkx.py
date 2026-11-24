@@ -107,16 +107,20 @@ def test_legacy_adapter_fails_explicitly_instead_of_scanning_projection():
         list(LegacyAdapter().iter_adjacent_edge_occurrences("n", TraversalDirection.OUTGOING))
 
 
-def test_native_query_and_runtime_report_do_not_call_full_edge_enumerator(graph, monkeypatch):
+def test_native_query_uses_local_adjacency_and_brackets_it_with_full_integrity_audits(graph, monkeypatch):
     engine = NetworkXGraphTraversalEngine(graph, verify_parity=False)
+    native_edges = engine.native_graph.edges
+    full_audit_calls = []
 
-    def forbidden(*args, **kwargs):
-        raise AssertionError("full native edge enumeration is forbidden after projection validation")
+    def observed_full_audit(*args, **kwargs):
+        full_audit_calls.append((args, kwargs))
+        return native_edges(*args, **kwargs)
 
-    monkeypatch.setattr(engine.native_graph, "edges", forbidden)
+    monkeypatch.setattr(engine.native_graph, "edges", observed_full_audit)
     result = engine.walk("B", direction=TraversalDirection.BOTH, max_depth=1)
     report = engine.runtime_report()
     assert result.examined_edges == 5
+    assert len(full_audit_calls) == 2  # preflight and postflight
     metrics = report["backend_execution"]
     assert metrics["native_adjacency_lookups"] == 1
     assert metrics["native_edge_occurrences_read"] == 5

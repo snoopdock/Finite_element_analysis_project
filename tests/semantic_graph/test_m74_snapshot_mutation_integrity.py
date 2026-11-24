@@ -378,6 +378,10 @@ def test_g4_off_neighborhood_native_mutation_during_query_fails_postflight(backe
                 mutation_applied = _tamper_off_path_native_graph(
                     engine, backend, "TAMPERED_DURING_QUERY",
                 )
+                if backend == "snap":
+                    # The test mutates the fresh audit response below; the
+                    # opaque worker graph itself is never exposed to the host.
+                    mutation_applied = True
             return records
 
         if backend == "snap":
