@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import os
 import shutil
+import subprocess
 import stat
 import threading
 import time
@@ -83,6 +84,30 @@ def test_snapshot_identity_prefers_windows_birthtime_when_available(monkeypatch)
 
     del info.st_birthtime_ns
     assert evidence_tools_module._snapshot_stat_identity(info)[-1] == 5_000_000_000
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows junction/reparse-point behavior")
+def test_snapshot_reader_rejects_windows_directory_junction(tmp_path):
+    root = tmp_path / "repo"
+    outside = tmp_path / "outside"
+    root.mkdir()
+    outside.mkdir()
+    payload = b"outside repository source\n"
+    (outside / "secret.py").write_bytes(payload)
+    junction = root / "junction"
+    result = subprocess.run(
+        ["cmd.exe", "/c", "mklink", "/J", str(junction), str(outside)],
+        capture_output=True, text=True, check=False,
+    )
+    if result.returncode != 0:
+        pytest.skip(f"Windows junction creation unavailable: {result.stderr.strip()}")
+    try:
+        with pytest.raises(OSError, match="reparse-point manifest path"):
+            evidence_tools_module._read_snapshot_file_with_identity(
+                root.resolve(), "junction/secret.py", len(payload),
+            )
+    finally:
+        os.rmdir(junction)
 
 
 def test_g4_tree_state_records_directory_modes_and_symlink_targets(tmp_path):
