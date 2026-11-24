@@ -10,6 +10,7 @@ def _repository(root):
     (root / "src" / "sample_pkg").mkdir(parents=True)
     (root / "tests").mkdir()
     (root / "README.md").write_text("# Snapshot fixture\n", encoding="utf-8")
+    (root / "credentials.json").write_text('{"fixture": true}\n', encoding="utf-8")
     (root / "src" / "sample_pkg" / "__init__.py").write_text(
         '"""Fixture package."""\n', encoding="utf-8",
     )
@@ -45,6 +46,7 @@ def test_source_snapshot_report_reconstructs_and_verifies(source_report):
     assert report["configuration"]["graph_construction"] == "excluded"
     assert report["configuration"]["traversal_backend"] == "not_initialized"
     assert report["workload"]["source_file_count"] >= 3
+    assert report["workload"]["manifest_included_file_count"] == report["workload"]["source_file_count"] + 1
     assert report["workload"]["source_bytes"] > 0
 
 
