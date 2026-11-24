@@ -93,6 +93,10 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
         }
         self.worker_image = image
         self.worker_info: dict[str, Any] = {}
+        host_env = {
+            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+            "HOME": "/nonexistent",
+        }
         self._docker_executable = docker
         self._docker_env = host_env
         self._container_state_dir = tempfile.mkdtemp(prefix="ae32c-snap-worker-")
@@ -112,10 +116,6 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
             "--env", "PYTHONNOUSERSITE=1",
             image,
         ]
-        host_env = {
-            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
-            "HOME": "/nonexistent",
-        }
         try:
             self._process = subprocess.Popen(
                 command,
