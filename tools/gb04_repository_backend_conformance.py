@@ -39,9 +39,17 @@ def _runtime(tools: RepositoryEvidenceTools) -> dict[str, Any]:
     return tools.graph_runtime_report()
 
 
-def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
+def _progress(backend: str, phase: str, **details: Any) -> None:
+    record = {"backend": backend, "phase": phase, **details}
+    print("[E8.8] " + json.dumps(record, sort_keys=True), flush=True)
+
+
+def _run_repository_conformance_with_tools(
+    repo_root: Path,
+    backend: str,
+    tools: RepositoryEvidenceTools,
+) -> dict[str, Any]:
     repo_root = repo_root.resolve()
-    tools = RepositoryEvidenceTools(repo_root, graph_backend=backend)
     initial_runtime = _runtime(tools)
     if initial_runtime.get("active_computation_backend") != backend:
         raise RuntimeError("selected_backend_not_active")
@@ -51,6 +59,12 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
     summary_provenance = summary_response.get("provenance", {})
     if summary.get("evidence_index_status") != "complete":
         raise RuntimeError("repository_evidence_index_incomplete")
+    _progress(
+        backend, "repository_index_ready",
+        indexed_file_count=summary.get("indexed_file_count"),
+        graph_node_count=summary.get("graph_node_count"),
+        graph_edge_count=summary.get("graph_edge_count"),
+    )
 
     neighbors = _unwrap(tools.invoke("graph_neighbors", {
         "node": REQUIRED_TARGET,
@@ -67,6 +81,11 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
     source_paths = set(neighbors.get("source_paths", []))
     if not REQUIRED_CALLERS.issubset(source_paths):
         raise RuntimeError("required_repository_source_paths_missing")
+    _progress(
+        backend, "required_graph_query_complete",
+        source_paths=sorted(source_paths),
+        observed_relations=sorted(observed),
+    )
 
     # The graph evidence supplies expected source hashes. The source tool is
     # the only authority for reading file content and enforces repository scope.
@@ -110,6 +129,7 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
             "source_range_complete": read.get("source_range_complete"),
             "line_count": total_lines,
         })
+    _progress(backend, "source_hash_followthrough_complete", verified_read_count=len(reads))
 
     # Exercise the other backend-backed graph operations against the same
     # repository snapshot and preserve their independent evidence outputs.
@@ -131,6 +151,7 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
     }), "graph_path")
     if path_result.get("path_found") is not True:
         raise RuntimeError("repository_graph_path_not_found")
+    _progress(backend, "graph_path_complete", path_step_count=len(path_result.get("path", [])))
 
     related_tests = _unwrap(tools.invoke("find_related_tests", {
         "target": "pipeline/extractor.py",
@@ -138,6 +159,7 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
     }), "find_related_tests")
     if related_tests.get("coverage_status") != "complete_for_query":
         raise RuntimeError("related_test_discovery_incomplete")
+    _progress(backend, "related_test_discovery_complete", returned_count=related_tests.get("returned_count"))
 
     # Context tools must execute local adjacency through the selected NetworkX
     # projection. The nested workflow query is attributed to trace execution.
@@ -150,6 +172,12 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
         "target": "pipeline/extractor.py",
         "max_results": 20,
     }), "find_workflow_context")
+    _progress(
+        backend, "context_traversals_complete",
+        traversal_queries=execution.get("queries_attempted"),
+        trace_adjacency_queries=trace_telemetry.get("adjacency_queries_attempted"),
+        workflow_adjacency_queries=workflow_telemetry.get("adjacency_queries_attempted"),
+    )
 
     final_runtime = _runtime(tools)
     execution = final_runtime.get("backend_execution", {})
@@ -261,6 +289,22 @@ def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
             "A passing repository conformance run does not establish diagnostic correctness or live LLM tool-selection quality.",
         ],
     }
+
+
+def run_repository_conformance(repo_root: Path, backend: str) -> dict[str, Any]:
+    """Run repository-backed conformance with deterministic backend teardown."""
+    resolved_root = repo_root.resolve()
+    tools = RepositoryEvidenceTools(resolved_root, graph_backend=backend)
+    _progress(backend, "repository_tools_initialized")
+    try:
+        report = _run_repository_conformance_with_tools(
+            resolved_root, backend, tools,
+        )
+        return report
+    finally:
+        _progress(backend, "closing_backend_resources")
+        tools.close()
+        _progress(backend, "backend_resources_closed")
 
 
 def main() -> int:

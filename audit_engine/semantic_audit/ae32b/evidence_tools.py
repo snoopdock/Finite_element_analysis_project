@@ -1528,6 +1528,20 @@ class RepositoryEvidenceTools:
         })
         return runtime
 
+    def close(self) -> None:
+        """Release resources owned by the selected graph backend.
+
+        Most in-process backends require no explicit teardown. Isolated worker
+        adapters (such as SNAP) own subprocess/container resources and must be
+        closed explicitly by long-lived repository tools and conformance
+        runners rather than relying on interpreter-shutdown finalizers.
+        """
+        engine = self.graph_service.engine.traversal_engine
+        adapter = getattr(engine, "adapter", None)
+        close = getattr(adapter, "close", None)
+        if callable(close):
+            close()
+
     def _context_edges(
         self,
         node_id: str,

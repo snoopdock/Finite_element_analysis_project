@@ -202,6 +202,8 @@ jobs:
       - name: Verify live Docker timeout and container cleanup
         run: python -m pytest -q tests/semantic_graph/test_snap_worker_docker_lifecycle.py
         timeout-minutes: 5
+      - name: Verify repository backend resource teardown contract
+        run: python -m pytest -q tests/semantic_graph/test_e88_repository_backend_cleanup.py
       - name: Run M7.4 task-level analyzer acceptance for SNAP isolated worker
         env:
           AE32C_M74_BACKEND: snap
