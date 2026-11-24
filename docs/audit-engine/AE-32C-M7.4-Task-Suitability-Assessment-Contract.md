@@ -1,7 +1,7 @@
 # AE-32C M7.4 — Task-Specific Backend Suitability Assessment Contract
 
 **Contract version:** `ae32c/m7-4-suitability-contract/v1`  
-**Status:** Expanded M7.4 task acceptance passed across all five backends; exact-source G9.42 passed at Stage1 SHA `d66f10b5c8af74b33a661c2453da3aca9982d565` in run `45400741779`; the E.8.5/E.8.8 artifact-integrity gate G7 is closed; all 20 formal task/backend outcomes remain Insufficient evidence pending remaining semantic, mutation-safety, workload, operational and task-domain gates  
+**Status:** Expanded M7.4 task acceptance passed across all five backends; the latest E.8.5/E.8.8 regression [run 45469065040](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45469065040) passed all five backend jobs and the aggregate summary; corrected G4 source-snapshot cost characterization passed in [run 45469179127](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45469179127). Exact-source G9.42 previously passed at Stage1 SHA `d66f10b5c8af74b33a661c2453da3aca9982d565` in run `45400741779`. The G7 detached dossier remains closed for its recorded run `45395352748`; the newer run `45469065040` artifact set has matching independently recomputed archive digests but has not yet been processed by a new detached semantic dossier. All 20 formal task/backend outcomes remain Insufficient evidence pending remaining semantic, mutation-safety, workload, operational and task-domain gates  
 **Target branch:** `stage1/section-uuids` only  
 **Baseline Stage1 source:** `47eb1ae6777e1d34c445af219c96840797739f23`  
 **M7.2 campaign:** [run 44940960831](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940960831)  
