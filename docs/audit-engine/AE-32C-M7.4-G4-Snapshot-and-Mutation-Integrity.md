@@ -1,8 +1,9 @@
 # AE-32C M7.4-G4 — Cross-Backend Snapshot and Mutation Integrity
 
-**Status:** focused five-backend G4 test tranche passed; overall G4 remains Partial because off-neighborhood native mutation, repository-file non-mutation and broader concurrency/lifecycle coverage remain open.  
-**Branch baseline:** `stage1/section-uuids` at `b536e35e35a83e7086efe69130e6c0d99ecb1d3b`.  
-**Scope:** canonical graph snapshot isolation, mutation detection, local projection corruption, parity fail-closed behavior, repeated queries, reconstruction and SNAP worker teardown.
+**Status:** the latest expanded five-backend G4 tranche passed; overall G4 remains Partial because atomic repository-wide snapshot semantics, postflight mutation windows, direct SNAP in-worker graph mutation and integrity-check cost characterization remain open.  
+**Latest exact-source execution:** [run 95](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45456154169), tested SHA `7ce60f233fc98042c832d24140ecc5e52aefff99`.  
+**Branch:** `stage1/section-uuids`.  
+**Scope:** canonical graph snapshot isolation, source-file identity validation, controlled active-query mutation, fixture-tree side effects, native projection corruption, parity fail-closed behavior, repeated queries, reconstruction and SNAP worker teardown.
 
 ## 1. Acceptance boundary
 
@@ -331,3 +332,81 @@ This is stronger evidence for the tested cases, but it does **not** close G4. Th
 **Decision:** G4 remains **Partial**. Do not promote any of the 20 task/backend suitability outcomes from `Insufficient evidence`. `production_approval=false` remains unchanged.
 
 **Repository refs after the documentation update:** `stage1/section-uuids` is advanced by the dossier update; `main` remains `ee4e4b769221d331b1d2726301349cd0c217ab03`. No changes were made to `main`.
+
+
+## 16. Source identity, active-query mutation and expanded tree-state qualification — 2026-11-24
+
+This tranche extends the repository-file qualification from Section 10 and the two-pass source validation described in Section 12. It is tested on exact source SHA `7ce60f233fc98042c832d24140ecc5e52aefff99`.
+
+### 16.1 Descriptor-bound file identity across snapshot passes
+
+The source reader now returns both file bytes and a descriptor-bound identity signature. The signature records device, inode, file type, permission mode, size, modification time at nanosecond precision where exposed, and change time at nanosecond precision where exposed. The reader compares `fstat` identity before and after each read. The loader stores the first-pass identity for every included non-sensitive manifest entry, including entries that are later excluded from text indexing because they are not UTF-8. The validation pass compares the second identity with the stored first identity as well as checking the manifest SHA-256.
+
+This catches ordinary change-and-restore schedules between the two reads on filesystems that expose the corresponding metadata changes. The new characterization test changes `main.py` after the first descriptor read, waits briefly, restores the original bytes before the validation read, and asserts that construction fails with `source_changed_during_index`. This is materially stronger than content-hash comparison alone: final bytes and size match, but the observed file identity history does not.
+
+The guarantee remains bounded. Metadata precision and semantics vary by filesystem and platform. A filesystem with coarse or synthetic timestamps may conceal some changes. The identity is first captured during content loading, not atomically with the earlier repository manifest scan, so a change-and-restore completed before the first descriptor read is not necessarily detectable. Directory-entry changes between manifest creation and validation are not made atomic by this file-level signature. This remains best-effort mutation detection, not a repository-wide snapshot primitive.
+
+### 16.2 Mutation while a source query is in flight
+
+A new cross-backend test pauses `read_source_file` inside its source-line processing after the handler has entered the active query. While the query is paused, the fixture's `main.py` is changed on disk without changing its byte length. The query is then released and must return the already captured in-memory content and source digest.
+
+This tests a different schedule from Section 10.2: the external edit occurs while the tool invocation is in flight, rather than before concurrent reads are started. It establishes snapshot pinning for this read operation and controlled interleaving. It does not prove that every tool operation, every query phase, or every possible mutation schedule is race-free. The test does not prevent the external writer from changing the fixture; it verifies that the in-flight evidence result remains tied to the constructed source snapshot.
+
+### 16.3 Expanded fixture-tree state
+
+The repository side-effect helper now records:
+- regular-file relative paths, SHA-256 content digests and permission modes;
+- directory relative paths and permission modes;
+- symlink relative paths, permission modes and link targets;
+- the presence and type of other filesystem entries encountered by the walk.
+
+The walk does not follow directory symlinks. This improves the previous helper, which captured regular-file paths, bytes and modes but did not represent directories or symlink objects. The no-side-effect assertion therefore covers more of the fixture tree's observable structure.
+
+It still does not cover ownership, timestamps, ACLs, extended attributes, hard-link identity, all device/special-file metadata, effects outside the fixture root, or changes made and restored entirely between observations. It must not be described as proof of universal filesystem immutability or as a process sandbox.
+
+### 16.4 Exact-source workflow run 95
+
+**Run:** [45456154169](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45456154169), run number 95, push event.  
+**Head SHA:** `7ce60f233fc98042c832d24140ecc5e52aefff99`.  
+**Conclusion:** `success` for all five backend jobs and the aggregate E.8.5/E.8.8 summary. The five backend jobs logged a checked-out source SHA equal to the triggering SHA.
+
+| Backend | Snapshot/mutation integrity | Repository side-effect and lifecycle |
+|---|---:|---:|
+| NetworkX | 7 passed, 33 expected skips | 6 passed, 13 expected skips |
+| SciPy | 7 passed, 33 expected skips | 6 passed, 13 expected skips |
+| python-igraph | 7 passed, 33 expected skips | 6 passed, 13 expected skips |
+| graph-tool | 7 passed, 33 expected skips | 6 passed, 13 expected skips |
+| SNAP isolated worker | 8 passed, 32 expected skips | 7 passed, 12 expected skips |
+
+The non-SNAP jobs execute the selected backend's three parametrized repository tests, the tree-state characterization, the reference-backend ABA test and the snapshot-loading mutation test. SNAP additionally executes the worker close/query lifecycle test. Skips are the other backend partitions and the SNAP-only test where not applicable. There were no test failures.
+
+All five E.8.5/E.8.8 backend jobs and the aggregate summary passed. The run uploaded these five artifacts:
+
+| Backend artifact | Artifact ID | ZIP size | Actions SHA-256 |
+|---|---:|---:|---|
+| graph-tool | 14951531060 | 2,843 bytes | `231c19083be3bc420420f5144a2271d7d88719d90ec83fda1c16957a1082e286` |
+| SciPy | 14950986262 | 2,927 bytes | `243ba941da14f2a9a3c98e643fa494842699a11590d3d15f61dce2b3395b8e60` |
+| SNAP isolated worker | 14950077618 | 3,433 bytes | `3344fa7c8655ffb711838c4d12cf94e15ca2b3ff066d36c934743dd270797449` |
+| NetworkX | 14949903091 | 2,767 bytes | `99f7e64808bfe187e1d47665198942d91566e33389e1a5c1a1065d943171216d` |
+| python-igraph | 14949144503 | 2,746 bytes | `2ce37288e46e6edf7ed9c407e01703a4f48380d7d6771d901a52d6cbb6d9cf01` |
+
+These are GitHub Actions-reported artifact ZIP digests, recorded as artifact identities rather than independent detached verification of the JSON payloads.
+
+### 16.5 Updated G4 interpretation and remaining work
+
+This tranche now establishes, for the tested fixture and schedules:
+
+1. file identity is compared across the two source-loading observations, and an ordinary same-size change-and-restore between those observations is rejected;
+2. an external same-size edit during an in-flight `read_source_file` invocation does not change the returned snapshot-bound content or digest;
+3. the fixture-tree comparison includes regular files, directories, symlinks and entry types, not only regular-file bytes and modes;
+4. the five selected backend partitions pass the expanded G4 tests and the existing E.8.5/E.8.8 conformance workflow on one exact source revision.
+
+The following remain open or bounded:
+- atomicity of the repository manifest and file-content snapshot as a single point-in-time observation;
+- ABA changes completed before the first descriptor identity is captured, and schedules hidden by filesystem metadata semantics;
+- mutation after the final native projection postflight observation and before the query result is returned;
+- direct mutation of the opaque SNAP TNEANet inside the isolated worker (the host can audit worker projections, but this test tranche does not inject mutation into the worker's internal graph);
+- filesystem side effects outside the fixture root and metadata categories listed as out of scope above;
+- G5/G6 characterization of the full-projection validation and second source pass cost.
+
+**Decision:** G4 remains **Partial**. The new checks close specific evidence gaps but do not justify a global immutability or atomic-snapshot claim. Keep all 20 task/backend suitability outcomes at `Insufficient evidence`; keep `production_approval=false`.
