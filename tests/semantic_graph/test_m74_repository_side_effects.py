@@ -4,7 +4,9 @@ from __future__ import annotations
 import hashlib
 import os
 import shutil
+import stat
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -29,13 +31,36 @@ FIXTURE = (
 BACKENDS = ("networkx", "scipy", "igraph", "graph-tool", "snap")
 
 
-def _tree_state(root: Path) -> dict[str, tuple[str, int]]:
-    """Capture every regular file's bytes and mode, including additions/removals."""
-    state = {}
-    for path in sorted(item for item in root.rglob("*") if item.is_file()):
-        relative = path.relative_to(root).as_posix()
-        data = path.read_bytes()
-        state[relative] = (hashlib.sha256(data).hexdigest(), path.stat().st_mode & 0o777)
+def _tree_state(root: Path) -> dict[str, tuple[str, int, str | None]]:
+    """Capture entry types, permission modes, file bytes, and symlink targets.
+
+    Ownership, timestamps, ACLs, xattrs, hard-link identity, and external
+    filesystem effects are intentionally outside this helper's coverage.
+    """
+    state: dict[str, tuple[str, int, str | None]] = {}
+    for current, dirnames, filenames in os.walk(root, topdown=True, followlinks=False):
+        dirnames.sort()
+        filenames.sort()
+        symlink_directories = []
+        for name in [*dirnames, *filenames]:
+            path = Path(current) / name
+            relative = path.relative_to(root).as_posix()
+            info = path.lstat()
+            mode = stat.S_IMODE(info.st_mode)
+            if stat.S_ISLNK(info.st_mode):
+                kind, value = "symlink", os.readlink(path)
+                if name in dirnames:
+                    symlink_directories.append(name)
+            elif stat.S_ISDIR(info.st_mode):
+                kind, value = "directory", None
+            elif stat.S_ISREG(info.st_mode):
+                kind, value = "regular_file", hashlib.sha256(path.read_bytes()).hexdigest()
+            else:
+                kind, value = "other", str(info.st_rdev)
+            state[relative] = (kind, mode, value)
+        # Do not descend through directory symlinks.
+        if symlink_directories:
+            dirnames[:] = [name for name in dirnames if name not in symlink_directories]
     return state
 
 
@@ -43,6 +68,28 @@ def _copy_fixture(tmp_path: Path) -> Path:
     destination = tmp_path / "repository"
     shutil.copytree(FIXTURE, destination)
     return destination
+
+
+def test_g4_tree_state_records_directory_modes_and_symlink_targets(tmp_path):
+    root = tmp_path / "tree"
+    nested = root / "nested"
+    nested.mkdir(parents=True)
+    target = root / "target.txt"
+    target.write_text("target", encoding="utf-8")
+    link = root / "link.txt"
+    try:
+        link.symlink_to("target.txt")
+    except (NotImplementedError, OSError) as exc:
+        pytest.skip(f"symlinks are unavailable on this filesystem: {exc}")
+
+    state = _tree_state(root)
+    assert state["nested"][0] == "directory"
+    assert state["target.txt"][0] == "regular_file"
+    assert state["link.txt"] == ("symlink", state["link.txt"][1], "target.txt")
+
+    link.unlink()
+    link.symlink_to("missing.txt")
+    assert _tree_state(root) != state
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -197,25 +244,123 @@ def test_g4_snap_close_serializes_against_a_pending_query_and_query_fails_closed
         adapter.close()
 
 
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_g4_source_edit_during_active_read_query_preserves_pinned_snapshot(
+    tmp_path, backend, monkeypatch,
+):
+    """A same-size disk edit during an in-flight read cannot rewrite its snapshot."""
+    _selected_backend(backend)
+    root = _copy_fixture(tmp_path)
+    tools = RepositoryEvidenceTools(root, graph_backend=backend)
+    source_path = root / "main.py"
+    original = source_path.read_bytes()
+    changed = (b"#" + original[1:]) if original else b"#"
+    assert len(changed) == len(original)
+    expected_hash = tools.file_hashes["main.py"]
+    entered_source_read = threading.Event()
+    release_source_read = threading.Event()
+    response_holder = {}
+    original_source_lines = evidence_tools_module._source_lines
+
+    def pause_inside_active_query(text):
+        if (
+            threading.current_thread().name == "g4-active-source-read"
+            and text == tools.contents["main.py"]
+        ):
+            entered_source_read.set()
+            if not release_source_read.wait(timeout=10):
+                raise TimeoutError("test did not release the in-flight source read")
+        return original_source_lines(text)
+
+    monkeypatch.setattr(evidence_tools_module, "_source_lines", pause_inside_active_query)
+
+    def run_query():
+        response_holder["response"] = tools.invoke("read_source_file", {
+            "path": "main.py", "start_line": 1, "end_line": 20,
+        })
+
+    worker = threading.Thread(target=run_query, name="g4-active-source-read", daemon=True)
+    try:
+        worker.start()
+        assert entered_source_read.wait(timeout=10), "read query did not reach its in-flight pause"
+        source_path.write_bytes(changed)
+        release_source_read.set()
+        worker.join(timeout=10)
+        assert not worker.is_alive(), "read query did not finish after release"
+        response = response_holder["response"]
+        assert response["status"] == "ok"
+        assert response["result"]["source_sha256"] == expected_hash
+        assert response["result"]["content"] == tools.invoke("read_source_file", {
+            "path": "main.py", "start_line": 1, "end_line": 20,
+        })["result"]["content"]
+        assert source_path.read_bytes() == changed
+    finally:
+        release_source_read.set()
+        worker.join(timeout=10)
+        source_path.write_bytes(original)
+        tools.close()
+
+
+def test_g4_change_restore_between_snapshot_passes_is_detected_by_file_identity(
+    tmp_path, monkeypatch,
+):
+    """Descriptor identity catches an ordinary ABA edit despite restored bytes."""
+    root = _copy_fixture(tmp_path)
+    source_path = root / "main.py"
+    original = source_path.read_bytes()
+    changed = (b"#" + original[1:]) if original else b"#"
+    assert len(changed) == len(original)
+    original_reader = evidence_tools_module._read_snapshot_file_with_identity
+    main_reads = 0
+
+    def change_then_restore(repository_root, relative_path, expected_size):
+        nonlocal main_reads
+        if relative_path != "main.py":
+            return original_reader(repository_root, relative_path, expected_size)
+        main_reads += 1
+        if main_reads == 1:
+            data, identity = original_reader(repository_root, relative_path, expected_size)
+            source_path.write_bytes(changed)
+            time.sleep(0.02)
+            return data, identity
+        if main_reads == 2:
+            assert source_path.read_bytes() == changed
+            source_path.write_bytes(original)
+            time.sleep(0.02)
+        return original_reader(repository_root, relative_path, expected_size)
+
+    monkeypatch.setattr(
+        evidence_tools_module, "_read_snapshot_file_with_identity", change_then_restore,
+    )
+    try:
+        with pytest.raises(EvidenceToolError) as captured:
+            RepositoryEvidenceTools(root, graph_backend="reference")
+        assert captured.value.code == "source_changed_during_index"
+        assert main_reads == 2
+        assert source_path.read_bytes() == original
+    finally:
+        source_path.write_bytes(original)
+
+
 def test_g4_same_size_edit_during_snapshot_loading_is_rejected(tmp_path, monkeypatch):
     """A file changed after its first read must fail the second manifest check."""
     root = _copy_fixture(tmp_path)
-    original_reader = evidence_tools_module._read_snapshot_file
+    original_reader = evidence_tools_module._read_snapshot_file_with_identity
     mutation_applied = False
 
     def mutate_after_first_read(repository_root, relative_path, expected_size):
         nonlocal mutation_applied
-        data = original_reader(repository_root, relative_path, expected_size)
+        data, identity = original_reader(repository_root, relative_path, expected_size)
         if relative_path == "main.py" and not mutation_applied:
             path = repository_root / relative_path
             changed = (b"#" + data[1:]) if data else b"#"
             assert len(changed) == len(data)
             path.write_bytes(changed)
             mutation_applied = True
-        return data
+        return data, identity
 
     monkeypatch.setattr(
-        evidence_tools_module, "_read_snapshot_file", mutate_after_first_read,
+        evidence_tools_module, "_read_snapshot_file_with_identity", mutate_after_first_read,
     )
     with pytest.raises(EvidenceToolError) as captured:
         RepositoryEvidenceTools(root, graph_backend="reference")
