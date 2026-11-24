@@ -524,3 +524,49 @@ The follow-up commits are:
 - `da3b2748d43f4303aecd1d09fe6cb79498bc026c`: run the M7 integrity timing contract tests in the workflow.
 
 Run 17 (`45463422308`) was cancelled while queued behind an earlier run when a newer workflow commit arrived. **Run 18 (`45463552807`)** is the current validation attempt, with workflow head SHA `da3b2748d43f4303aecd1d09fe6cb79498bc026c`; it was pending when this section was recorded. No backend timing outcome is inferred from the earlier workflow-input failures. The next status update must inspect Run 18's exact-source checkout, test step, all five benchmark/verification steps and aggregate result.
+
+
+### 18.6 Exact-source results — Run 18
+
+**Run:** [45463552807](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45463552807)  
+**Workflow head and resolved source SHA:** `da3b2748d43f4303aecd1d09fe6cb79498bc026c`  
+**Configuration:** five measured calls and two warm-up calls per query; seven query forms; fixed E.8.5 fixture with 5 nodes and 8 edge occurrences.  
+**Workflow conclusion:** `failure`, solely because the graph-tool benchmark process terminated with signal-derived exit code 132 (`Illegal instruction`). The lint and source-resolution jobs passed. NetworkX, SciPy, python-igraph and SNAP each completed benchmark generation and independent report verification successfully.
+
+The NetworkX integrity-timing contract test step reported **15 passed in 0.24 s**. All four successful backend reports independently verified seven query outputs and reported `winner_established=false`.
+
+The following are backend-local diagnostic summaries. Each number is the median across the seven per-query medians from this one smoke fixture; it is not a pooled sample or a cross-backend comparison. Audit-pair time is the sum of the preflight and postflight projection-audit observations for a measured query.
+
+| Backend | Library version | Median query wall time | Median paired audit time | Median per-query audit share |
+|---|---:|---:|---:|---:|
+| NetworkX | 3.6.1 | 758,894 ns | 169,632 ns | 23.2% |
+| SciPy | 1.17.1 | 935,180 ns | 550,492 ns | 58.3% |
+| python-igraph | 1.0.0 | 1,124,399 ns | 555,059 ns | 48.0% |
+| SNAP worker | 6.0.0 | 2,986,278 ns | 1,769,406 ns | 59.3% |
+| graph-tool | no report | no measurement | no measurement | no measurement |
+
+The audit-share value is computed per query as paired audit time divided by that query's total measured wall time, then summarized by the median across the seven query forms. These ratios are diagnostic descriptions of this fixed fixture and runner configuration only. The engine-construction measurement still combines projection construction and its constructor-time initial audit. Query wall time includes fingerprint checks, integrity checks, traversal and result construction. The benchmark does not isolate every operation or establish how the shares scale with larger workloads.
+
+**Runner context:** NetworkX, SciPy and SNAP ran on GitHub-hosted Ubuntu x86_64 AWS runner images; python-igraph ran on an Ubuntu x86_64 Azure runner image. Their independent runner instances and library environments are not controlled paired experiments. graph-tool's environment provisioned successfully, but Python terminated with `Illegal instruction` immediately when the benchmark process started. Its failure is not a slow timing, a projection-audit rejection, or a semantic-parity failure. The uploaded graph-tool artifact contains environment and failure logs but no benchmark JSON.
+
+**Report identities (report SHA-256):**
+- NetworkX: `0f9cb2a2855645310f1ce9031fb23c0a75cd7b3eaf0d2eb9a98baecb5ac0ea38`
+- SciPy: `14ca8e481f20e2c4a712262763b355692f1531f50646a6703736dd6ffda1bbfe`
+- python-igraph: `5cd643ef5a13890166441c88770c081f8ebaa856e1662274f0fb849a9370a7fb`
+- SNAP: `0e9a50e6d7ffc0c06080b93634d24fd4bb0de53ff433ccd3aa8f490d70efe29f`
+
+**GitHub Actions artifact identities (ZIP digest reported by Actions):**
+
+| Backend | Artifact ID | ZIP size | Actions SHA-256 |
+|---|---:|---:|---|
+| NetworkX | 14954971013 | 4,140 bytes | `23d7184bde6d8fcdca8bbb68d88bd68aaaf07e126957db6bbcd79550092fdefd` |
+| SciPy | 14955060771 | 4,185 bytes | `626b9da358ac95bcd05d6050ac23921e950f0dbafbdfb5e417682f01c8afebfe` |
+| python-igraph | 14954890982 | 4,197 bytes | `6bc9671a6086ba41413f71d71734e7243e82430ff9a735932a188cd386066449` |
+| SNAP | 14954531740 | 4,884 bytes | `8bc2ffdbaeb912a5860a5d7dd970e5928968f6c94cd263a681bff5c05d5a660a` |
+| graph-tool | 14954716297 | 3,159 bytes | `631a6612d6037c46b8b5c613a1fd0e8269017d4c36b2f054ca6834ef048cbb9e` |
+
+The ZIP digests are the values reported by the Actions upload step. They identify the uploaded archives and are not detached signatures or independent proof of their contents.
+
+**Interpretation:** this run confirms that the new instrumentation and report-verification contract operate for four backend configurations on the fixed fixture. It provides an initial indication of how much of each measured query was spent inside the two full projection audits on those particular runner environments. It does not establish comparative backend suitability, universal audit overhead, scaling behavior, or a performance winner. The graph-tool execution remains uncharacterized because of the runner process fault.
+
+**G4 decision:** remains **Partial**. Source-validation-pass timing, multi-size workload scaling, finer SNAP audit subcomponent timing, and broader runner repeatability remain open. Keep all 20 task/backend suitability outcomes at `Insufficient evidence`; keep `production_approval=false`.
