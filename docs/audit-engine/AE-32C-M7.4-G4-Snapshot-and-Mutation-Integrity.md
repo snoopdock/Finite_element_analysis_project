@@ -1,6 +1,6 @@
-**Status:** five-backend G4 behavioral conformance passed in [E.8.5/E.8.8 run 101](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45471324700); corrected Linux source-cost measurement and Windows snapshot compatibility passed in [G4 run 9](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45471872966). Overall G4 remains **Partial**: these results do not establish an atomic repository-wide snapshot or close the postflight mutation window.  
-**Latest source-snapshot cost and Windows compatibility execution:** [run 9](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45471872966), tested SHA `9d592ee4570e58143d73126f9a8a5ab16f0349a9`.  
-**Latest E.8.5/E.8.8 conformance:** [run 101](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45471324700), tested SHA `17b52f10d8267a1ada0344e12159720ad8ab1306`.  
+**Status:** five-backend G4 behavioral conformance passed in [E.8.5/E.8.8 run 102](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45473007901); corrected Linux source-cost measurement and Windows reparse-point compatibility passed in [G4 run 10](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45473007486). Overall G4 remains **Partial**: these results do not establish an atomic repository-wide snapshot or close the postflight / Windows path-opening mutation windows.  
+**Latest source-snapshot cost and Windows compatibility execution:** [run 10](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45473007486), tested SHA `098a87394d972010f04466c540fcf5f43b490f9b`.  
+**Latest E.8.5/E.8.8 conformance:** [run 102](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45473007901), tested SHA `098a87394d972010f04466c540fcf5f43b490f9b`.  
 **Latest native projection cost execution:** [run 18](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45463552807), tested SHA `da3b2748d43f4303aecd1d09fe6cb79498bc026c`. Its graph-tool timing remained unmeasured after an `Illegal instruction`; the later E.8.5/E.8.8 graph-tool conformance job passed, which is not a replacement for that separate cost measurement.  
 **Branch:** `stage1/section-uuids`.  
 **Scope:** canonical graph snapshot isolation, source-file identity validation, controlled active-query mutation, fixture-tree side effects, native projection corruption, parity fail-closed behavior, repeated queries, reconstruction and SNAP worker teardown.
@@ -614,48 +614,48 @@ Schema: `ae32c/m7-g4-source-snapshot-cost/v3`.
 
 ### 20.3 Exact-source execution and measurements
 
-**Run:** [45471872966](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45471872966)  
-**Source SHA:** `9d592ee4570e58143d73126f9a8a5ab16f0349a9`  
+**Run:** [45473007486](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45473007486)  
+**Source SHA:** `098a87394d972010f04466c540fcf5f43b490f9b`  
 **Workflow conclusion:** success; both Linux measurement and Windows compatibility jobs passed.  
 **Linux contract tests:** 12 passed.  
-**Windows G4 tests:** 26 passed, 46 skipped under the explicit NetworkX-only configuration.  
+**Windows G4 tests:** 27 passed, 46 skipped under the explicit NetworkX-only configuration. The Windows-only directory-junction escape test passed.  
 **Benchmark:** two warm-ups, ten measured samples.  
 **Report verification:** passed in the run step and again in a separate workflow step.
 
-The audited repository snapshot contained 1,857 non-sensitive source files totaling 9,517,070 bytes. Both source passes accounted for exactly 1,857 reads and 9,517,070 bytes. No non-UTF-8 files were skipped. The manifest SHA-256 was `4a8d4991d7788c31d2931c8910aa28776281856b3aa7e5678c75c2dfe68bfd8a`.
+The audited repository snapshot contained 1,857 non-sensitive source files totaling 9,520,835 bytes. Both source passes accounted for exactly 1,857 reads and 9,520,835 bytes. No non-UTF-8 files were skipped. The manifest SHA-256 was `bb72bdae59c90f19a6b5f7cfcdf1a808019666c4612bd134b958cf7bab69e2b1`.
 
 | Timed phase | Median | Minimum | Maximum | MAD |
 |---|---:|---:|---:|---:|
-| Complete `audit_repository` call | 7.035 s | 6.459 s | 7.196 s | 38.59 ms |
-| First content-load pass | 94.92 ms | 93.35 ms | 96.79 ms | 0.590 ms |
-| Second source-validation pass | 87.41 ms | 86.11 ms | 89.81 ms | 0.551 ms |
-| Source-snapshot pipeline total | 7.219 s | 6.641 s | 7.380 s | 38.23 ms |
+| Complete `audit_repository` call | 4.589 s | 4.437 s | 4.844 s | 69.83 ms |
+| First content-load pass | 42.84 ms | 42.73 ms | 43.18 ms | 0.037 ms |
+| Second source-validation pass | 39.17 ms | 39.06 ms | 39.53 ms | 0.072 ms |
+| Source-snapshot pipeline total | 4.671 s | 4.520 s | 4.927 s | 69.98 ms |
 
-The second pass corresponds to approximately 47.07 microseconds per file and 1.211% of the measured pipeline median. This is the validation phase's share of the observed pipeline, **not** an incremental overhead measured against a no-validation baseline. The complete audit phase includes inventory, manifest construction and static analysis; it is not a pure directory-walk measurement.
+The second pass corresponds to approximately 21.10 microseconds per file and 0.839% of the measured pipeline median. This is the validation phase's share of the observed pipeline, **not** an incremental overhead measured against a no-validation baseline. The complete audit phase includes inventory, manifest construction and static analysis; it is not a pure directory-walk measurement.
 
-Environment: Python 3.11.18, Linux 7.0.0-1017-azure, x86_64. The ten observations are from one runner and one repository revision, in one process. A prior corrected run on another hosted runner produced materially different medians; these results must not be pooled or interpreted as a universal cost estimate. They do not establish a scaling curve or cross-host variance.
+Environment: Python 3.11.18, Linux 7.0.0-1014-aws, x86_64. The ten observations are from one runner and one repository revision, in one process. Other hosted-runner executions produced materially different medians; these results must not be pooled or interpreted as a universal cost estimate. They do not establish a scaling curve or cross-host variance.
 
-The paired Windows job ran on Windows Server 2022 with Python 3.11.9. It exercised the portable fallback and passed 26 tests with 46 skips. The unit test also exercised the Windows `st_birthtime_ns` selection branch; the Python 3.11 Windows runner itself used the documented `st_ctime_ns` fallback.
+The paired Windows job ran on Windows Server 2022 with Python 3.11.9. It exercised the portable fallback and passed 27 tests with 46 skips. The Windows unit test exercised the `st_birthtime_ns` selection branch and its older-runtime `st_ctime_ns` fallback; the Python 3.11 Windows runner itself used the fallback.
 
 ### 20.4 Report and artifact identities
 
-- Manifest SHA-256: `4a8d4991d7788c31d2931c8910aa28776281856b3aa7e5678c75c2dfe68bfd8a`
-- Report SHA-256: `d529f063b20d606c842d4375ce5744dd33e672c959468ab7be5a60be389529b8`
-- Actions artifact ID: `14957517616`
-- Artifact name: `m7-4-g4-source-snapshot-cost-45471872966-1`
-- Artifact size: 2,775 bytes
-- Actions-reported ZIP SHA-256: `ddf3790596c06612bc7efa39c033644f4698dd6f654e1c902b67bb51b875e35d`
+- Manifest SHA-256: `bb72bdae59c90f19a6b5f7cfcdf1a808019666c4612bd134b958cf7bab69e2b1`
+- Report SHA-256: `8af85c25ef02558de2a965b76b3778648f43bfd651f07b2fed9a8f946b490e08`
+- Actions artifact ID: `14958063284`
+- Artifact name: `m7-4-g4-source-snapshot-cost-45473007486-1`
+- Artifact size: 2,771 bytes
+- Actions-reported ZIP SHA-256: `d1c0f170e5c2e99f831fb9b4f2eb81f997438fc737500cbd8374d3206aa8e2b4`
 
 The downloaded ZIP's SHA-256 was independently recomputed and matched the Actions upload digest. The JSON report's canonical SHA-256 was independently recomputed and matched `report_sha256`. The in-workflow verifier returned `verified` twice with source and runner revision equal to the exact run SHA.
 
 ### 20.5 Interpretation
 
-This closes the **measurement-method correction**, adds Windows compatibility coverage for the supported Python 3.11 fallback, and makes the timestamp semantics explicit. It does not establish an atomic filesystem snapshot, close ABA schedules, protect the Windows path fallback against adversarial concurrent reparse-point changes, or measure a no-validation counterfactual. G4 remains Partial.
+This closes the **measurement-method correction**, adds Windows compatibility coverage for the supported Python 3.11 fallback, prefers `st_birthtime_ns` where available, and rejects static Windows reparse points in the path fallback. It does not establish an atomic filesystem snapshot, close ABA schedules, protect the Windows path fallback against a concurrent reparse-point replacement between component inspection and open, or measure a no-validation counterfactual. G4 remains Partial.
 
 ## 21. E.8.5 / E.8.8 and five-backend G4 regression — 2026-11-24
 
-**Run:** [45471324700](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45471324700)  
-**Exact source SHA:** `17b52f10d8267a1ada0344e12159720ad8ab1306`  
+**Run:** [45473007901](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45473007901)  
+**Exact source SHA:** `098a87394d972010f04466c540fcf5f43b490f9b`  
 **Workflow conclusion:** success, including the aggregate E.8.5/E.8.8 summary job.
 
 All five backend jobs passed: NetworkX, SciPy, python-igraph, graph-tool and the isolated SNAP worker. For every backend:
@@ -664,19 +664,19 @@ All five backend jobs passed: NetworkX, SciPy, python-igraph, graph-tool and the
 - E.8.8 repository-backed conformance: 43/43 queries succeeded and were reference-parity verified; zero query or parity failures.
 - M7.4 task-level acceptance: 21 passed, 84 expected skips.
 - G4 snapshot/mutation tests: NetworkX, SciPy, python-igraph and graph-tool each reported 7 passed / 33 expected skips; SNAP reported 8 passed / 32 expected skips.
-- G4 repository side-effect/lifecycle tests: NetworkX, SciPy, python-igraph and graph-tool each reported 7 passed / 13 expected skips; SNAP reported 8 passed / 12 expected skips.
+- G4 repository side-effect/lifecycle tests: NetworkX, SciPy, python-igraph and graph-tool each reported 7 passed / 14 expected skips; SNAP reported 8 passed / 13 expected skips. The additional Linux skip is the Windows-only junction test.
 
 The SNAP worker additionally passed six protocol/container-restriction tests, the live Docker timeout/container-cleanup test, two repository-backend resource-teardown tests, its G4 tests and both E.8.5/E.8.8 workloads. The E.8.5 report records an enforced 120-second request timeout; E.8.8 records an enforced 30-second request timeout. Provider credentials were not passed to the worker.
 
-Five artifacts were uploaded. Each downloaded archive's SHA-256 was independently recomputed and matched the corresponding Actions upload digest; every contained E.8.5/E.8.8 report records status `passed`, source SHA `17b52f10d8267a1ada0344e12159720ad8ab1306`, 14/14 E.8.5 queries and 43/43 E.8.8 queries.
+Five artifacts were uploaded. Each downloaded archive's SHA-256 was independently recomputed and matched the corresponding Actions upload digest; every contained E.8.5/E.8.8 report records status `passed`, source SHA `098a87394d972010f04466c540fcf5f43b490f9b`, 14/14 E.8.5 queries and 43/43 E.8.8 queries.
 
 | Backend | Artifact ID | Size | Independently matched ZIP SHA-256 |
 |---|---:|---:|---|
-| graph-tool | 14957952264 | 2,842 bytes | `e6af746de7ebadbfb57dd98458bd9d7d23583b0b90eb078ef88179e09237d3b1` |
-| NetworkX | 14956274364 | 2,766 bytes | `72fc47522ec90b82f2d2e42f8d2ca3966403e56460a2313a042b02324dd3e8f2` |
-| SciPy | 14956282729 | 2,925 bytes | `0a78b526d388494fe830ce0999ef6f5e0b16ffa8df072aa00b2e1b89b7935f8c` |
-| python-igraph | 14957247235 | 2,745 bytes | `3848195626c29085c8ab960bc3a23b71882690407f99e1aa7e2dbb666b36bb5b` |
-| SNAP isolated worker | 14956767545 | 3,431 bytes | `46af93276fdbf8067a51415ff2c78e0b33e90ec1526f74b82cf08031a70c7a3c` |
+| graph-tool | 14956094000 | 2,846 bytes | `a14b0c980cbb3b48ac4543f8991bd90788db2b87549a76d1cfcaf282aad48e84` |
+| NetworkX | 14957483338 | 2,770 bytes | `405d08ecf84037da757b1a810d619b184d00d71009817537cd0a89686b073f16` |
+| SciPy | 14956708544 | 2,929 bytes | `16814cdcea9fde5460170d3cb8baecd348d674fb3551ebf14cf78c855e6e0076` |
+| python-igraph | 14959140093 | 2,749 bytes | `644996cad98dec296072f5adc2d04168ff7bddbb333847ffd436dfebca96e9fd` |
+| SNAP isolated worker | 14956883659 | 3,429 bytes | `f9353cf1f20951e236d1ea37c1918d2e071e86d248c01e677308c532caddf0f9` |
 
 **Evidence-integrity qualification:** archive hashes and embedded source/run identities were independently checked. The full detached semantic dossier verifier remains bound to the earlier run `45395352748`; this newer artifact set has not yet been processed by a separately parameterized detached dossier. Do not treat archive-hash verification alone as equivalent to the G7 semantic dossier.
 
@@ -692,4 +692,12 @@ This G4 work preserves, but does not advance or close, the other project tracks:
 
 M7.2 and M7.3 remain accepted at their previously recorded scope. M7.4 remains a qualification/assessment phase, not a backend-selection decision. All 20 task/backend suitability outcomes remain `Insufficient evidence`; `production_approval=false`.
 
-**G4 decision:** **Partial**. Atomicity, postflight mutation, Windows reparse-point TOCTOU, out-of-root side effects and representative task-scale integrity-cost characterization remain open.
+**G4 decision:** **Partial**. Atomicity, postflight mutation, Windows reparse-point TOCTOU after component inspection, out-of-root side effects and representative task-scale integrity-cost characterization remain open.
+
+## 23. Next G4 technical tranche
+
+The next correctness work should characterize the final native-projection postflight-to-return window and the Windows component-inspection-to-open window. Neither is closed by the current tests. Repository-wide atomicity still requires either an immutable filesystem snapshot or a stronger external coordination contract; a second validation pass alone cannot establish a single point-in-time multi-file view.
+
+The existing `tools/gb05_native_backend_performance_benchmark.py` already times NetworkX `_verify_projection` and native-adapter `_build_adjacency` preflight/postflight audits and records projection reads. It should be extended with task-relevant workload families and backend-local reporting rather than replaced by a duplicate timer or converted into a universal backend ranking. The current five-node smoke result is not a representative workload characterization.
+
+G4 remains **Partial** until those boundaries and out-of-root side effects are addressed with explicit tests and evidence.
