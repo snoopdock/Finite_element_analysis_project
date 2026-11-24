@@ -11,6 +11,7 @@ on:
       - ".github/snap-worker/**"
       - ".github/environments/e85-snap-python39-requirements.txt"
       - "audit_engine/semantic_audit/graph/backend/**"
+      - "audit_engine/semantic_audit/ae32b/evidence_tools.py"
       - "tools/gb03_native_backend_conformance.py"
       - "tools/gb04_repository_backend_conformance.py"
       - "tools/snap_worker.py"
@@ -39,11 +40,15 @@ jobs:
       - name: Checkout Stage1 source branch
         uses: actions/checkout@v4
         with:
-          ref: stage1/section-uuids
+          ref: ${{ github.sha }}
       - name: Record selected source revision
         shell: bash
         run: |
           SOURCE_SHA="$(git rev-parse HEAD)"
+          if [[ "$SOURCE_SHA" != "$GITHUB_SHA" ]]; then
+            echo "::error::Checked-out SHA ($SOURCE_SHA) does not match triggering SHA ($GITHUB_SHA)"
+            exit 1
+          fi
           echo "AE32C_SOURCE_REVISION=$SOURCE_SHA" >> "$GITHUB_ENV"
           echo "Selected source ref: stage1/section-uuids"
           echo "Checked-out source SHA: $SOURCE_SHA"
@@ -102,7 +107,7 @@ jobs:
           path: |
             e85-${{ matrix.backend }}.json
             e88-${{ matrix.backend }}-repository.json
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30
 
   graph-tool-native:
@@ -113,11 +118,15 @@ jobs:
       - name: Checkout Stage1 source branch
         uses: actions/checkout@v4
         with:
-          ref: stage1/section-uuids
+          ref: ${{ github.sha }}
       - name: Record selected source revision
         shell: bash
         run: |
           SOURCE_SHA="$(git rev-parse HEAD)"
+          if [[ "$SOURCE_SHA" != "$GITHUB_SHA" ]]; then
+            echo "::error::Checked-out SHA ($SOURCE_SHA) does not match triggering SHA ($GITHUB_SHA)"
+            exit 1
+          fi
           echo "AE32C_SOURCE_REVISION=$SOURCE_SHA" >> "$GITHUB_ENV"
           echo "Selected source ref: stage1/section-uuids"
           echo "Checked-out source SHA: $SOURCE_SHA"
@@ -174,7 +183,7 @@ jobs:
           path: |
             e85-graph-tool.json
             e88-graph-tool-repository.json
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30
 
   snap-isolated-worker-conformance:
@@ -187,11 +196,15 @@ jobs:
       - name: Checkout Stage1 source branch
         uses: actions/checkout@v4
         with:
-          ref: stage1/section-uuids
+          ref: ${{ github.sha }}
       - name: Record selected source revision
         shell: bash
         run: |
           SOURCE_SHA="$(git rev-parse HEAD)"
+          if [[ "$SOURCE_SHA" != "$GITHUB_SHA" ]]; then
+            echo "::error::Checked-out SHA ($SOURCE_SHA) does not match triggering SHA ($GITHUB_SHA)"
+            exit 1
+          fi
           echo "AE32C_SOURCE_REVISION=$SOURCE_SHA" >> "$GITHUB_ENV"
           echo "Selected source ref: stage1/section-uuids"
           echo "Checked-out source SHA: $SOURCE_SHA"
@@ -271,7 +284,7 @@ jobs:
           path: |
             e85-snap.json
             e88-snap-repository.json
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30
 
   conformance-summary:
