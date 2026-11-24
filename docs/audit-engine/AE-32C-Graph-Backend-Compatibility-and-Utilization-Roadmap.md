@@ -834,3 +834,12 @@ The first expanded suite used IMPACT `max_depth=6`; the analyzer rejects values 
 ### 22.3 Current acceptance boundary
 
 This supplies substantially broader G5 synthetic task-workload evidence than the original five-node diagnostic fixture. It still does not establish performance superiority, production scale behavior, domain-specific claim-to-evidence completeness, or native backend SCC execution for IMPACT. Per-task/per-backend G1–G8 records and formal suitability outcomes remain pending. The updated G9.42 profile contains the adapter, live Docker, teardown and M7.4 tests, but exact-source G9.42 has not been dispatched. Preserve `production_approval=false`.
+
+
+## 23. M7.4 preliminary 20-pair G1–G8 evidence ledger — 2026-11-24
+
+The next M7.4 decision artifact is [AE-32C M7.4 Preliminary Task/Backend Evidence Matrix](AE-32C-M7.4-Preliminary-Task-Backend-Evidence-Matrix.md). It contains one preliminary record for every combination of the four public task/analyzer paths and the five computation backends, binds the positive acceptance evidence to exact source 51d025fd328b00a59988a05fe72d9092262434f5 and run 45395352748, lists exact repository-run library versions/native query modes, and marks G1–G8 gate states.
+
+The ledger does not turn 105 passing backend-specific test executions into 20 suitability approvals. All 20 outcomes remain Insufficient evidence: G5 seeded topologies still require representative audit-domain workloads; G4 needs broader stale/corrupt projection and lifecycle tests; G6 needs full operational/resource envelopes; and G7 needs a detached verifier pass for this exact evidence set. PATH domain-specific claim-to-evidence behavior remains unqualified, and IMPACT SCC cycle analysis remains canonical-graph based rather than native backend SCC execution.
+
+Exact-source G9.42 remains a separate manual-only validation gate. The profile contains the relevant tests but has not been dispatched against this latest source. Preserve production_approval=false; no global winner or automatic backend selection is authorized.

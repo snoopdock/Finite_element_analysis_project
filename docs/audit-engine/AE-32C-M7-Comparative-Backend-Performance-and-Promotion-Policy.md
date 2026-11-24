@@ -340,3 +340,10 @@ The per-operation context telemetry is also complete: trace context 7/7 parity-v
 The initial expanded test run failed only because the IMPACT fixture requested depth 6 where the analyzer allows 1–5. That test input was corrected to 5; no runtime analyzer algorithm was changed. The corrected exact-source run passed.
 
 These results are semantic task-fit tests, not cross-backend performance comparisons. Formal G1–G8 records and task/backend verdicts remain pending. Exact-source G9.42 has not been dispatched; keep `production_approval=false`.
+
+
+## 21. Preliminary task/backend evidence ledger — 2026-11-24
+
+The 20 task/backend combinations are enumerated in [AE-32C M7.4 Preliminary Task/Backend Evidence Matrix](AE-32C-M7.4-Preliminary-Task-Backend-Evidence-Matrix.md). Each record uses the M7.4 G1–G8 gates and keeps the formal outcome at Insufficient evidence where representative task workload, mutation/operational envelope or detached evidence verification remains partial.
+
+The matrix preserves two implementation qualifications: SciPy CSR/CSC is not by itself a complete semantic graph representation, and IMPACT uses selected-backend traversals but canonical-graph SCC cycle analysis. It records the exact E.8.8 library versions and native query modes from run 45395352748. No backend preference, ranking, selector activation or production approval follows from this evidence.

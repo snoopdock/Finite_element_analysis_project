@@ -1,7 +1,7 @@
 # AE-32C M7.4 — Task-Specific Backend Suitability Assessment Contract
 
 **Contract version:** `ae32c/m7-4-suitability-contract/v1`  
-**Status:** Contract defined; expanded STRUCTURAL / DEPENDENCY / PATH / IMPACT seeded-topology acceptance passed across all five backends at Stage1 `51d025fd328b00a59988a05fe72d9092262434f5` in run `45395352748`; SNAP live timeout cleanup and explicit E.8.8 resource teardown passed; formal task/backend suitability decisions remain pending  
+**Status:** Expanded M7.4 task acceptance passed across all five backends; the preliminary 20-pair G1–G8 evidence ledger is recorded, with all formal outcomes conservatively Insufficient evidence until mandatory gates are closed  
 **Target branch:** `stage1/section-uuids` only  
 **Baseline Stage1 source:** `47eb1ae6777e1d34c445af219c96840797739f23`  
 **M7.2 campaign:** [run 44940960831](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940960831)  
@@ -362,3 +362,8 @@ The first expanded run at `f31c29b518411f09142b967b3120e9f666179679` correctly e
 ### 16.3 Limits of this evidence
 
 The expanded workloads are medium-sized seeded semantic fixtures with disjoint replicated subgraphs; they are not production graph captures, latency measurements, memory profiles or a representative audit corpus. PATH remains generic graph path/evidence exploration, not complete domain-specific claim-to-evidence reconstruction. IMPACT cycle detection remains a canonical-graph SCC operation rather than a native backend SCC query. Formal G1–G8 per-task/per-backend records and verdicts remain pending. Exact-source G9.42 has not been dispatched; retain `production_approval=false`.
+
+
+## 17. Preliminary 20-pair evidence ledger
+
+The current evidence is consolidated in [AE-32C M7.4 Preliminary Task/Backend Evidence Matrix](AE-32C-M7.4-Preliminary-Task-Backend-Evidence-Matrix.md). It enumerates all four public tasks against all five computation options, records the bounded positive test/native-path evidence, and assesses each G1–G8 gate. All 20 preliminary outcomes remain Insufficient evidence because representative audit workloads, full mutation/operational envelopes and detached evidence verification are not yet closed. The ledger is not a suitability approval and does not promote a backend.
