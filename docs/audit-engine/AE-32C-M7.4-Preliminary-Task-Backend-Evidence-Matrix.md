@@ -71,7 +71,7 @@ All five E.8.8 reports record 43 successful backend queries, 43 reference-parity
 | G4 — Snapshot/mutation safety | Canonical graph immutability asserted through tested analyses | Partial | Stale/corrupt projection, mutation race and longer-running repeated-query cases remain open |
 | G5 — Task workload | Five M7.2 seeded families, two seeds, three replicas; all four public tasks invoked | Partial | Representative audit corpus, scale envelope, degree/evidence density and pressure workloads remain untested |
 | G6 — Environment/operations | Exact versions/Python, SNAP resource controls, deadlines, live Docker removal and explicit teardown tests | Partial | Startup costs, resource use under representative loads, cross-host portability and non-SNAP operational envelopes remain incomplete |
-| G7 — Evidence integrity | Exact source SHA, run/attempt, source/graph manifest hashes, artifact IDs and archive digests recorded | Partial | Detached verification pass over this exact evidence bundle is outstanding |
+| G7 — Evidence integrity | Exact source SHA, run/attempt, source/graph manifest hashes, artifact IDs and archive digests recorded; G9.42's own report, immutable bundle and catalog independently verified in run `45400741779` | Partial | Detached verification of the five-backend E.8.5/E.8.8 artifact set from run `45395352748` remains outstanding; do not conflate it with the separate G9.42 validation bundle |
 | G8 — Scope discipline | Policy prohibits winner, global score, automatic selection and production approval | Pass | Preserve restrictions in future selector decisions |
 
 ## 5. Preliminary task/backend decision ledger
@@ -124,7 +124,22 @@ Additional representation constraints:
 4. Complete G7 with a detached verifier pass over this exact source/run/artifact set.
 5. Complete PATH domain-specific evidence/locator/source follow-through.
 6. Keep IMPACT canonical SCC behavior explicit. Native SCC support would require a separate API/algorithm contract and parity evidence.
-7. Run exact-revision G9.42 through the main-branch manual dispatcher, with branch stage1/section-uuids, profile G9.42 and regression mode profile, when an authorized workflow-dispatch capability is available. The profile contains the SNAP adapter, live Docker lifecycle, E.8.8 teardown and M7.4 workload tests. This record does not claim G9.42 has run.
+7. **Completed:** exact-revision G9.42 was dispatched through the main-branch manual dispatcher with branch `stage1/section-uuids`, profile `G9.42` and regression mode `profile`; run `45400741779` passed against source SHA `d66f10b5c8af74b33a661c2453da3aca9982d565`. See Section 8 for run, test and evidence-bundle details.
 8. Only after mandatory gates close should each pair receive one formal outcome from the contract vocabulary.
+
+
+## 8. Exact-source G9.42 manual validation — 2026-11-24
+
+**Workflow:** [Manual Validation Dispatcher run 45400741779](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45400741779), attempt 1, `workflow_dispatch`, conclusion `success`.
+
+**Target source:** `stage1/section-uuids` at `d66f10b5c8af74b33a661c2453da3aca9982d565`. The workflow's `head_sha` / engine commit `ee4e4b769221d331b1d2726301349cd0c217ab03` identifies the `main` revision that supplied the dispatcher and central validation engine; it is not the source revision under test. The log records that the requested Stage1 branch was checked out and `git log -1` returned the target SHA above.
+
+**Profile:** `G9.42`, regression mode `profile`; profile SHA-256 `5203344eb03bee4f2c9c3999ba697243f7d3f4224ec27e36ebccb9d09448a6a`. The Stage1 profile includes the M7.4 task-acceptance, SNAP worker adapter, live Docker lifecycle, E.8.8 cleanup and related graph/backend tests.
+
+**Results:** 53/53 validation-engine unit tests passed; the targeted profile ran 846 tests (799 passed, 47 skipped, zero failures/errors); full regression ran 3,785 tests (3,730 passed, 55 skipped, zero failures/errors). In each invocation the M7.4 module reported 63 passes and 42 skips. Those 42 skips are the 21 graph-tool and 21 SNAP task-partition cases, intentionally unavailable in the generic Python 3.11.18 validation environment; the SNAP-specific adapter and live Docker lifecycle tests in this profile did execute and pass. The graph-tool and SNAP M7.4 task partitions were separately executed in their dedicated backend environments in run `45395352748`, where all five backends reported 21 passed / 84 other-backend skips.
+
+**Evidence pipeline:** detached validation-report/digest verification passed; immutable evidence bundle publication passed; provenance catalog build and independent verification passed. Report SHA-256: `d12a924d7da5c29334c1df8e40072671e5771bc733e9c3c65e1395311ff831db`. Content-addressed bundle SHA-256: `decb5aa79605dad7bab4067d6700e8490aa3193c91b069098f87aa8a216a6266` (758,773 bytes). GitHub Actions artifact ID `14923188602`, archive digest `sha256:39a9be6f71e093d101c2eedc704a596ce816adb78d354c28ce8dac2dc0b5435d`.
+
+**Interpretation:** the exact-source G9.42 dispatch gate is now closed for Stage1 SHA `d66f10b...`. This does not close the separate M7.4 G7 requirement to independently verify the five-backend E.8.5/E.8.8 artifact set from run `45395352748`; the G9.42 validation bundle is a different evidence object. G4 stale/corrupt projection and mutation-race coverage, representative G5 audit-domain workload evidence, broader G6 operational/resource envelopes, PATH claim-to-source follow-through and the explicitly hybrid IMPACT SCC boundary remain as described in the preliminary matrix. All 20 task/backend outcomes remain `Insufficient evidence`; no suitability, ranking, selection or production approval follows.
 
 production_approval=false remains invariant.

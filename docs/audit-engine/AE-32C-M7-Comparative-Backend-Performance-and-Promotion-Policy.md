@@ -1,6 +1,6 @@
 # AE-32C M7 — Task Suitability and Operational Characterization
 
-**Status:** M7.0 protocol complete; M7.1 closed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier accepted for its stated verification scope (G9.42 run `44943859099`, manual run `44945256220`); M7.4 expanded STRUCTURAL / DEPENDENCY / PATH / IMPACT seeded-topology acceptance passed across all five backends in run `45395352748`; the complete E.8.5/E.8.8 matrix and aggregate summary passed. Formal task/backend suitability verdicts remain pending.  
+**Status:** M7.0 protocol complete; M7.1 closed; M7.2 bounded traversal campaign accepted; M7.3 detached dossier accepted for its stated verification scope (G9.42 run `44943859099`, manual run `44945256220`); M7.4 expanded STRUCTURAL / DEPENDENCY / PATH / IMPACT seeded-topology acceptance passed across all five backends in run `45395352748`; the complete E.8.5/E.8.8 matrix and aggregate summary passed. Formal task/backend suitability verdicts remain pending; exact-source G9.42 subsequently passed at Stage1 SHA `d66f10b5c8af74b33a661c2453da3aca9982d565` in run `45400741779`.  
 **M7.1 workflow revision:** `main` SHA `182d0009f1c759c46813e3a1cbbf34d22c247acb`  
 **M7.1 benchmark source:** Stage1 SHA `342c9d55b1dc49ccf93759d0dce203723485ef17`  
 **M7.2 implementation:** `tools/gb06_task_suitability_campaign.py`  
@@ -339,7 +339,7 @@ The per-operation context telemetry is also complete: trace context 7/7 parity-v
 
 The initial expanded test run failed only because the IMPACT fixture requested depth 6 where the analyzer allows 1–5. That test input was corrected to 5; no runtime analyzer algorithm was changed. The corrected exact-source run passed.
 
-These results are semantic task-fit tests, not cross-backend performance comparisons. Formal G1–G8 records and task/backend verdicts remain pending. Exact-source G9.42 has not been dispatched; keep `production_approval=false`.
+These results are semantic task-fit tests, not cross-backend performance comparisons. Formal G1–G8 records and task/backend verdicts remain pending. At the time this section was written, exact-source G9.42 had not yet been dispatched; it subsequently passed in run `45400741779` against Stage1 SHA `d66f10b5c8af74b33a661c2453da3aca9982d565`. Keep `production_approval=false`.
 
 
 ## 21. Preliminary task/backend evidence ledger — 2026-11-24
@@ -347,3 +347,11 @@ These results are semantic task-fit tests, not cross-backend performance compari
 The 20 task/backend combinations are enumerated in [AE-32C M7.4 Preliminary Task/Backend Evidence Matrix](AE-32C-M7.4-Preliminary-Task-Backend-Evidence-Matrix.md). Each record uses the M7.4 G1–G8 gates and keeps the formal outcome at Insufficient evidence where representative task workload, mutation/operational envelope or detached evidence verification remains partial.
 
 The matrix preserves two implementation qualifications: SciPy CSR/CSC is not by itself a complete semantic graph representation, and IMPACT uses selected-backend traversals but canonical-graph SCC cycle analysis. It records the exact E.8.8 library versions and native query modes from run 45395352748. No backend preference, ranking, selector activation or production approval follows from this evidence.
+
+## 22. Exact-source G9.42 validation closure for the M7.4 snapshot — 2026-11-24
+
+Manual Validation Dispatcher run [45400741779](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45400741779) completed successfully using G9.42 and regression mode `profile`. It validated Stage1 source SHA `d66f10b5c8af74b33a661c2453da3aca9982d565`; the `main` SHA `ee4e4b769221d331b1d2726301349cd0c217ab03` was the central dispatcher/validation-engine revision, not the target source.
+
+The run passed 53 validation-engine tests, 799/846 targeted profile tests (47 skipped), and 3,730/3,785 full-regression tests (55 skipped), with zero failures/errors. The M7.4 test module had 63 passes and 42 expected skips for the generic interpreter's graph-tool and SNAP partitions; both were executed in their dedicated environments in five-backend run `45395352748`. Detached validation evidence, immutable bundle publication and provenance catalog verification passed. Report SHA-256 `d12a924d7da5c29334c1df8e40072671e5771bc733e9c3c65e1395311ff831db`; content-addressed bundle SHA-256 `decb5aa79605dad7bab4067d6700e8490aa3193c91b069098f87aa8a216a6266`; GitHub Actions artifact ID `14923188602` and archive digest `sha256:39a9be6f71e093d101c2eedc704a596ce816adb78d354c28ce8dac2dc0b5435d`.
+
+This closes the exact-source G9.42 dispatch requirement for the recorded Stage1 SHA. It does not itself detached-verify the distinct five-backend E.8.5/E.8.8 artifact set from run `45395352748`; do not mark M7.4 G7 complete on the basis of the G9.42 validation bundle. The 20 task/backend outcomes remain Insufficient evidence; there is no ranking, selector activation or production approval.

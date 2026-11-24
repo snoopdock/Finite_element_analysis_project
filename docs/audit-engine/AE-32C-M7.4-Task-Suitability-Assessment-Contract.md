@@ -1,7 +1,7 @@
 # AE-32C M7.4 — Task-Specific Backend Suitability Assessment Contract
 
 **Contract version:** `ae32c/m7-4-suitability-contract/v1`  
-**Status:** Expanded M7.4 task acceptance passed across all five backends; the preliminary 20-pair G1–G8 evidence ledger is recorded, with all formal outcomes conservatively Insufficient evidence until mandatory gates are closed  
+**Status:** Expanded M7.4 task acceptance passed across all five backends; exact-source G9.42 passed at Stage1 SHA `d66f10b5c8af74b33a661c2453da3aca9982d565` in run `45400741779`; all 20 formal task/backend outcomes remain Insufficient evidence until the remaining mandatory gates are closed  
 **Target branch:** `stage1/section-uuids` only  
 **Baseline Stage1 source:** `47eb1ae6777e1d34c445af219c96840797739f23`  
 **M7.2 campaign:** [run 44940960831](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940960831)  
@@ -218,7 +218,7 @@ M7.4 does not require every backend to be suitable for every task. An honest `in
 - `backend/capability_registry.py`, `backend/backend_selector.py`, `backend/backend_factory.py`, `backend/backend_pipeline.py` — capability declaration and construction/selection boundary.
 - `tools/gb06_task_suitability_campaign.py`, `tools/gb07_campaign_dossier.py` and their tests — campaign and detached-dossier evidence.
 - `tests/semantic_graph/test_m74_task_suitability_acceptance.py` — initial public-service STRUCTURAL, DEPENDENCY and PATH task acceptance tests.
-- `validation/profiles/G9.42.yaml` — deterministic profile inclusion for the M7.4 test module (profile dispatch remains pending).
+- `validation/profiles/G9.42.yaml` — deterministic profile inclusion for M7.4; exact-source dispatch passed at Stage1 SHA `d66f10b5c8af74b33a661c2453da3aca9982d565` in run `45400741779`.
 - `.github/workflows/e85-native-graph-backend-conformance.yml` — backend-isolated M7.4 test execution across NetworkX, SciPy, igraph, graph-tool and SNAP worker environments.
 
 ## 12. Initial task-level executable evidence — 2026-11-24
@@ -361,7 +361,7 @@ The first expanded run at `f31c29b518411f09142b967b3120e9f666179679` correctly e
 
 ### 16.3 Limits of this evidence
 
-The expanded workloads are medium-sized seeded semantic fixtures with disjoint replicated subgraphs; they are not production graph captures, latency measurements, memory profiles or a representative audit corpus. PATH remains generic graph path/evidence exploration, not complete domain-specific claim-to-evidence reconstruction. IMPACT cycle detection remains a canonical-graph SCC operation rather than a native backend SCC query. Formal G1–G8 per-task/per-backend records and verdicts remain pending. Exact-source G9.42 has not been dispatched; retain `production_approval=false`.
+The expanded workloads are medium-sized seeded semantic fixtures with disjoint replicated subgraphs; they are not production graph captures, latency measurements, memory profiles or a representative audit corpus. PATH remains generic graph path/evidence exploration, not complete domain-specific claim-to-evidence reconstruction. IMPACT cycle detection remains a canonical-graph SCC operation rather than a native backend SCC query. Formal G1–G8 per-task/per-backend records and verdicts remain pending. At the time this section was prepared, exact-source G9.42 was still pending; it was subsequently passed on Stage1 SHA `d66f10b5c8af74b33a661c2453da3aca9982d565` in run `45400741779` (Section 18). Retain `production_approval=false`.
 
 
 ## 17. Preliminary 20-pair evidence ledger

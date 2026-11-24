@@ -261,3 +261,15 @@ All five backend jobs uploaded E.8.5/E.8.8 evidence artifacts in run `4539535274
 | SNAP isolated worker | `14920592009` | `e85-e88-snap-isolated-worker` | `sha256:e5ff53b2ee4d86c7534d080bf96558618445a8d7d4281e6f854a3c0bd45eac30` |
 
 The workflow's aggregate conformance summary job `138450475726` concluded `success`. These artifact digests identify the uploaded ZIP archives; they do not constitute signed attestations of runner hardware or extend the report's declared semantic scope. Artifact retention/expiry should be checked before relying on these links in a later audit.
+
+## 13. Exact-source G9.42 manual validation — 2026-11-24
+
+**Run:** [45400741779](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45400741779), Manual Validation Dispatcher, attempt 1, completed successfully.
+
+The dispatcher was launched from `main` (`ee4e4b769221d331b1d2726301349cd0c217ab03`) but checked out the requested Stage1 source branch separately. The run's validation report records `target_branch=stage1/section-uuids`, `target_commit_sha=d66f10b5c8af74b33a661c2453da3aca9982d565`, `requested_profile=G9.42`, `regression_mode=profile`, profile SHA-256 `5203344eb03bee4f2c9c3999ba697243f7d3f4224ec27e36ebccb9d09448a6a`, and status `passed`.
+
+Validation-engine tests: 53 passed. Targeted G9.42 profile: 846 tests, 799 passed, 47 skipped, zero failures/errors. Full regression: 3,785 tests, 3,730 passed, 55 skipped, zero failures/errors. The M7.4 test module itself reported 63 passed and 42 skipped in each pytest invocation; the skipped cases are the graph-tool and SNAP task partitions unavailable in the generic Python 3.11.18 interpreter. The profile's SNAP adapter, live Docker timeout/cleanup, and E.8.8 teardown tests did run and pass. The five backend-specific M7.4 partitions, including graph-tool and the isolated SNAP worker, were separately run successfully in the dedicated five-environment workflow `45395352748`.
+
+Detached evidence verification, content-addressed bundle publication, provenance catalog build and independent catalog verification all passed. Report SHA-256 `d12a924d7da5c29334c1df8e40072671e5771bc733e9c3c65e1395311ff831db`; bundle SHA-256 `decb5aa79605dad7bab4067d6700e8490aa3193c91b069098f87aa8a216a6266`; Actions artifact ID `14923188602`, archive digest `sha256:39a9be6f71e093d101c2eedc704a596ce816adb78d354c28ce8dac2dc0b5435d`.
+
+This closes the exact-source G9.42 dispatch gate for the Stage1 snapshot above. It does not close the separate detached verification requirement for the five-backend E.8.5/E.8.8 artifacts from run `45395352748`, nor the remaining representative-workload, mutation-safety, operational-envelope, PATH domain-follow-through or formal per-pair G1–G8 requirements. All 20 outcomes remain `Insufficient evidence`; `production_approval=false` remains invariant.
