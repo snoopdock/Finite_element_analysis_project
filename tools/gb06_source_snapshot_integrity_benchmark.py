@@ -28,7 +28,7 @@ if str(REPOSITORY_ROOT) not in sys.path:
 from audit_engine.semantic_audit.ae32b import evidence_tools as evidence_module
 from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
 
-SCHEMA = "ae32c/m7-g4-source-snapshot-cost/v2"
+SCHEMA = "ae32c/m7-g4-source-snapshot-cost/v3"
 AUTHORITY = {
     "atomic_repository_snapshot_established": False,
     "backend_auto_selection_permitted": False,
@@ -62,7 +62,6 @@ def _timing_summary(observations: list[int]) -> dict[str, Any]:
         "unit": "ns",
         "observations_ns": observations,
         "median_ns": median,
-        "p95_ns": ordered[max(0, math.ceil(0.95 * len(ordered)) - 1)],
         "minimum_ns": ordered[0],
         "maximum_ns": ordered[-1],
         "mad_ns": statistics.median([abs(item - median) for item in ordered]),
@@ -159,15 +158,15 @@ def _snapshot_phases(repository: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         row for rel, row in instance.manifest_rows.items()
         if not evidence_module._is_sensitive_path(rel)
     ]
-    measurements["indexed_file_count"] = len(rows)
-    measurements["indexed_bytes"] = sum(int(row.get("size", 0)) for row in rows)
+    measurements["source_file_count"] = len(rows)
+    measurements["source_bytes"] = sum(int(row.get("size", 0)) for row in rows)
     measurements["manifest_sha256"] = instance.manifest_sha256
     measurements["manifest_included_file_count"] = int(report["audit"]["included_file_count"])
     measurements["manifest_included_bytes"] = int(report["audit"]["included_bytes"])
     measurements["evidence_index_status"] = instance.evidence_index_status
     measurements["skipped_non_utf8_files"] = instance.skipped_non_utf8_files
-    expected_files = measurements["indexed_file_count"]
-    expected_bytes = measurements["indexed_bytes"]
+    expected_files = measurements["source_file_count"]
+    expected_bytes = measurements["source_bytes"]
     if (
         measurements["source_load_file_reads"] != expected_files
         or measurements["source_validation_file_reads"] != expected_files
@@ -226,8 +225,8 @@ def make_report(
         for field in timing_fields
     }
     stable_fields = (
-        "indexed_file_count",
-        "indexed_bytes",
+        "source_file_count",
+        "source_bytes",
         "manifest_included_file_count",
         "manifest_included_bytes",
         "source_load_file_reads",
@@ -302,7 +301,13 @@ def make_report(
     return report
 
 
-def verify_report(report: dict[str, Any], repository: str | Path) -> dict[str, Any]:
+def verify_report(
+    report: dict[str, Any],
+    repository: str | Path,
+    *,
+    expected_source_revision: str | None = None,
+    expected_runner_revision: str | None = None,
+) -> dict[str, Any]:
     if not isinstance(report, dict) or report.get("schema_version") != SCHEMA:
         raise BenchmarkError("unknown_report_schema")
     payload = dict(report)
@@ -331,7 +336,7 @@ def verify_report(report: dict[str, Any], repository: str | Path) -> dict[str, A
         observations = [item.get(field) for item in samples]
         recomputed = _timing_summary(observations)
         supplied = payload["measurements"].get(field, {})
-        for key in ("median_ns", "p95_ns", "minimum_ns", "maximum_ns", "mad_ns"):
+        for key in ("median_ns", "minimum_ns", "maximum_ns", "mad_ns"):
             if supplied.get(key) != recomputed[key]:
                 raise BenchmarkError(f"timing_aggregate_mismatch:{field}:{key}")
 
@@ -346,14 +351,29 @@ def verify_report(report: dict[str, Any], repository: str | Path) -> dict[str, A
     ):
         raise BenchmarkError("source_manifest_reconstruction_mismatch")
 
-    indexed_files = workload.get("indexed_file_count")
-    indexed_bytes = workload.get("indexed_bytes")
+    manifest_rows = reconstructed.get("source_manifest", [])
+    expected_rows = [
+        row for row in manifest_rows
+        if row.get("status") == "included"
+        and isinstance(row.get("path"), str)
+        and not evidence_module._is_sensitive_path(row["path"])
+    ]
+    expected_source_count = len(expected_rows)
+    expected_source_bytes = sum(int(row["size"]) for row in expected_rows)
+    if (
+        workload.get("source_file_count") != expected_source_count
+        or workload.get("source_bytes") != expected_source_bytes
+    ):
+        raise BenchmarkError("source_read_accounting_does_not_match_manifest")
+
+    source_files = workload.get("source_file_count")
+    source_bytes = workload.get("source_bytes")
     for item in samples:
         if (
-            item.get("source_load_file_reads") != indexed_files
-            or item.get("source_validation_file_reads") != indexed_files
-            or item.get("source_load_bytes_read") != indexed_bytes
-            or item.get("source_validation_bytes_read") != indexed_bytes
+            item.get("source_load_file_reads") != source_files
+            or item.get("source_validation_file_reads") != source_files
+            or item.get("source_load_bytes_read") != source_bytes
+            or item.get("source_validation_bytes_read") != source_bytes
         ):
             raise BenchmarkError("source_read_accounting_invalid")
         if item.get("source_snapshot_pipeline_ns") != (
@@ -364,11 +384,27 @@ def verify_report(report: dict[str, Any], repository: str | Path) -> dict[str, A
         ):
             raise BenchmarkError("source_pipeline_time_decomposition_invalid")
 
+    provenance = payload.get("provenance", {})
+    for label, expected, actual in (
+        ("source", expected_source_revision, provenance.get("source_revision")),
+        ("runner", expected_runner_revision, provenance.get("runner_revision")),
+    ):
+        if expected is not None:
+            if (
+                not isinstance(expected, str)
+                or len(expected) != 40
+                or any(ch not in "0123456789abcdefABCDEF" for ch in expected)
+                or actual != expected.lower()
+            ):
+                raise BenchmarkError(f"{label}_revision_provenance_mismatch")
+
     return {
         "status": "verified",
         "manifest_sha256": workload["manifest_sha256"],
         "repeats": repeats,
         "report_sha256": submitted,
+        "source_revision": provenance.get("source_revision"),
+        "runner_revision": provenance.get("runner_revision"),
         "atomic_snapshot_established": False,
     }
 
@@ -381,9 +417,13 @@ def main(argv=None) -> int:
     run_parser.add_argument("--repeats", type=int, default=3)
     run_parser.add_argument("--warmup", type=int, default=1)
     run_parser.add_argument("--report", required=True)
+    run_parser.add_argument("--expected-source-revision")
+    run_parser.add_argument("--expected-runner-revision")
     verify_parser = commands.add_parser("verify")
     verify_parser.add_argument("--repository", required=True)
     verify_parser.add_argument("--report", required=True)
+    verify_parser.add_argument("--expected-source-revision")
+    verify_parser.add_argument("--expected-runner-revision")
     args = parser.parse_args(argv)
 
     try:
@@ -397,11 +437,19 @@ def main(argv=None) -> int:
                 json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n",
                 encoding="utf-8",
             )
-            print(json.dumps(verify_report(report, args.repository), sort_keys=True))
+            print(json.dumps(verify_report(
+                report, args.repository,
+                expected_source_revision=args.expected_source_revision,
+                expected_runner_revision=args.expected_runner_revision,
+            ), sort_keys=True))
         else:
             path = Path(args.report)
             report = json.loads(path.read_text(encoding="utf-8"))
-            print(json.dumps(verify_report(report, args.repository), sort_keys=True))
+            print(json.dumps(verify_report(
+                report, args.repository,
+                expected_source_revision=args.expected_source_revision,
+                expected_runner_revision=args.expected_runner_revision,
+            ), sort_keys=True))
     except Exception as exc:
         print(json.dumps({
             "status": "failed",
