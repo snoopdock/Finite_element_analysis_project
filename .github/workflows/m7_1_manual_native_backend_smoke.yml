@@ -137,8 +137,8 @@ jobs:
       - name: Capture runner and dependency provenance
         shell: bash
         env:
-          REPEATS: ${{ inputs.repeats }}
-          WARMUP: ${{ inputs.warmup }}
+          REPEATS: ${{ inputs.repeats || '5' }}
+          WARMUP: ${{ inputs.warmup || '2' }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -158,8 +158,8 @@ jobs:
         shell: bash
         env:
           BACKEND: ${{ matrix.backend }}
-          REPEATS: ${{ inputs.repeats }}
-          WARMUP: ${{ inputs.warmup }}
+          REPEATS: ${{ inputs.repeats || '5' }}
+          WARMUP: ${{ inputs.warmup || '2' }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -222,8 +222,8 @@ jobs:
       - name: Capture runner and dependency provenance
         shell: micromamba-shell {0}
         env:
-          REPEATS: ${{ inputs.repeats }}
-          WARMUP: ${{ inputs.warmup }}
+          REPEATS: ${{ inputs.repeats || '5' }}
+          WARMUP: ${{ inputs.warmup || '2' }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -243,8 +243,8 @@ jobs:
         shell: micromamba-shell {0}
         env:
           PYTHONPATH: source
-          REPEATS: ${{ inputs.repeats }}
-          WARMUP: ${{ inputs.warmup }}
+          REPEATS: ${{ inputs.repeats || '5' }}
+          WARMUP: ${{ inputs.warmup || '2' }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -307,8 +307,8 @@ jobs:
       - name: Capture runner and dependency provenance
         shell: bash
         env:
-          REPEATS: ${{ inputs.repeats }}
-          WARMUP: ${{ inputs.warmup }}
+          REPEATS: ${{ inputs.repeats || '5' }}
+          WARMUP: ${{ inputs.warmup || '2' }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -329,8 +329,8 @@ jobs:
         shell: bash
         env:
           PYTHONPATH: source
-          REPEATS: ${{ inputs.repeats }}
-          WARMUP: ${{ inputs.warmup }}
+          REPEATS: ${{ inputs.repeats || '5' }}
+          WARMUP: ${{ inputs.warmup || '2' }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -365,8 +365,8 @@ jobs:
           GRAPH_TOOL: ${{ needs.graph-tool-native.result }}
           SNAP: ${{ needs.snap-isolated-worker.result }}
           SOURCE_SHA: ${{ needs.resolve-source.outputs.source_sha }}
-          REPEATS: ${{ inputs.repeats }}
-          WARMUP: ${{ inputs.warmup }}
+          REPEATS: ${{ inputs.repeats || '5' }}
+          WARMUP: ${{ inputs.warmup || '2' }}
         run: |
           {
             echo "## M7.1 five-backend smoke outcome"
