@@ -73,7 +73,7 @@ jobs:
         id: resolve
         shell: bash
         env:
-          REQUESTED_REF: ${{ inputs.source_ref || github.ref_name }}
+          REQUESTED_REF: ${{ inputs.source_ref || github.sha }}
           REPEATS: ${{ inputs.repeats || '5' }}
           WARMUP: ${{ inputs.warmup || '2' }}
         run: |
