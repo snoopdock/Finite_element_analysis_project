@@ -233,8 +233,26 @@ def _patch_fake_worker(monkeypatch, captured):
     def fake_popen(command, **kwargs):
         process = _FakeProcess(command, **kwargs)
         captured["process"] = process
+        if "--cidfile" in command:
+            cidfile = command[command.index("--cidfile") + 1]
+            with open(cidfile, "w", encoding="ascii") as handle:
+                handle.write("fake-container-id")
         return process
 
+    def fake_run(command, **kwargs):
+        captured.setdefault("docker_calls", []).append((command, kwargs))
+        process = captured.get("process")
+        if process is not None:
+            process.events.append("docker-rm-force")
+            process.returncode = -9
+            process.killed = True
+            process.release_io.set()
+        return type("Completed", (), {"returncode": 0})()
+
+    monkeypatch.setattr(
+        "audit_engine.semantic_audit.graph.backend.snap_worker_adapter.subprocess.run",
+        fake_run,
+    )
     monkeypatch.setenv("AE32C_SNAP_WORKER_IMAGE", "ae32c-snap-worker:test")
     monkeypatch.setattr(
         "audit_engine.semantic_audit.graph.backend.snap_worker_adapter.shutil.which",
@@ -273,7 +291,7 @@ def test_snap_worker_request_deadline_bounds_pipe_io_and_discards_worker(
     assert captured["docker_calls"][0][0] == [
         "/usr/bin/docker", "rm", "--force", "fake-container-id",
     ]
-    assert process.events.index("docker-rm-force") < len(process.events)
+    assert process.events[0] == "docker-rm-force"
     assert adapter._process is None
     with pytest.raises(SNAPWorkerProtocolError, match="snap_worker_process_not_running"):
         adapter._request("metrics")
