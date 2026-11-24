@@ -1,7 +1,7 @@
 # AE-32C M7.4 — Task-Specific Backend Suitability Assessment Contract
 
 **Contract version:** `ae32c/m7-4-suitability-contract/v1`  
-**Status:** Assessment contract defined; task-level suitability decisions not yet issued  
+**Status:** Contract defined; initial STRUCTURAL / DEPENDENCY / PATH task-level acceptance tests passed in all five backend environments; formal task/backend suitability decisions not yet issued  
 **Target branch:** `stage1/section-uuids` only  
 **Baseline Stage1 source:** `47eb1ae6777e1d34c445af219c96840797739f23`  
 **M7.2 campaign:** [run 44940960831](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940960831)  
@@ -108,7 +108,7 @@ These are implementation facts, not suitability verdicts.
 
 ### 4.1 SNAP-specific operational gap
 
-The current Python worker adapter performs synchronous `stdout.readline()` calls in its request path without a per-request response deadline. Its close path has a bounded process wait, but that does not bound a stalled initialization, audit or adjacency request. The M7.3 campaign record also did not contain a concrete container image ID (`container_image_id=null`).
+The current Python worker adapter performs synchronous `stdout.readline()` calls in its request path without a per-request response deadline. Its close path has a bounded process wait, but that does not bound a stalled initialization, audit or adjacency request. The M7.3 campaign record did not contain a concrete container image ID (`container_image_id=null`); the later M7.4 task-acceptance execution recorded Docker image ID `sha256:f94d166165f7676f031bb476a79b0c7e112ef65f0f9c4ef5027844891f1eb4b3`. That establishes image identity for this one execution, but does not close the unbounded per-request wait or prove timeout/recovery behavior.
 
 Therefore, SNAP cannot receive an unqualified operational suitability statement until a pinned image identity and bounded request/termination behavior are evidenced. This is a specific gap to assess and, if approved as a separate correction, remediate; it is not a claim that the observed campaign failed.
 
@@ -217,5 +217,47 @@ M7.4 does not require every backend to be suitable for every task. An honest `in
 - `backend/networkx_adapter.py`, `scipy_adapter.py`, `igraph_adapter.py`, `graph_tool_adapter.py`, `snap_worker_adapter.py` — concrete native APIs and operational boundaries.
 - `backend/capability_registry.py`, `backend/backend_selector.py`, `backend/backend_factory.py`, `backend/backend_pipeline.py` — capability declaration and construction/selection boundary.
 - `tools/gb06_task_suitability_campaign.py`, `tools/gb07_campaign_dossier.py` and their tests — campaign and detached-dossier evidence.
+- `tests/semantic_graph/test_m74_task_suitability_acceptance.py` — initial public-service STRUCTURAL, DEPENDENCY and PATH task acceptance tests.
+- `validation/profiles/G9.42.yaml` — deterministic profile inclusion for the M7.4 test module (profile dispatch remains pending).
+- `.github/workflows/e85-native-graph-backend-conformance.yml` — backend-isolated M7.4 test execution across NetworkX, SciPy, igraph, graph-tool and SNAP worker environments.
 
-**Contract conclusion:** M7.4's scope is sufficiently defined to begin task-level assessment design. No task/backend suitability verdict is issued by this contract alone.
+## 12. Initial task-level executable evidence — 2026-11-24
+
+The first implementation tranche is committed at Stage1 source SHA `942b54f8948286b4727ca208fdfa553e019437b9`. It adds `tests/semantic_graph/test_m74_task_suitability_acceptance.py`, includes the module in `validation/profiles/G9.42.yaml`, and inserts a backend-scoped test step into each of the five existing E.8.5/E.8.8 native-backend workflow environments.
+
+The push-triggered [workflow run 45381213888](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45381213888) checked out the exact source commit above in all five backend jobs. Each selected-backend test invocation reported 7 passed and 28 skipped. The skips are deliberate: each job sets `AE32C_M74_BACKEND` to one backend and skips the four other backend partitions. Across the five environments this produced 35 passing backend-specific task test executions, not 35 distinct test definitions. All five E.8.5/E.8.8 native conformance jobs and the aggregate summary also succeeded.
+
+### 12.1 Tested operation behavior
+
+- **STRUCTURAL:** one-hop public-service analysis, direction and relation filtering, exact duplicate-endpoint/duplicate-relation edge-occurrence evidence, incoming and bidirectional direction, and one-count self-loop behavior.
+- **DEPENDENCY:** bounded transitive traversal across `IMPORTS` and `DEPENDS_ON`, exclusion of the decoy `USES` relation, exact observation/evidence output, and explicit incomplete status under a traversal-step limit.
+- **PATH:** bounded source-to-target path output with path-step evidence, exclusion of a filtered direct edge, and incomplete/no-false-path behavior when the step budget stops traversal.
+
+Each backend run compares task results against the reference service, asserts the declared native query mode and nonzero native adjacency lookup/edge-occurrence telemetry, requires per-query reference parity and zero query failures, and checks that the canonical `SemanticGraph` is unchanged. The fixture is deliberately diagnostic rather than representative: five nodes and seven edge occurrences, including two parallel same-label edge occurrences, one relation-filter decoy, a transitive chain, an incoming edge and a self-loop.
+
+### 12.2 Backend execution record
+
+| Backend | Workflow job | M7.4 test result |
+|---|---:|---:|
+| NetworkX | `138400416078` | 7 passed; 28 other-backend cases skipped |
+| SciPy | `138400415869` | 7 passed; 28 other-backend cases skipped |
+| python-igraph | `138400415873` | 7 passed; 28 other-backend cases skipped |
+| graph-tool | `138400416016` | 7 passed; 28 other-backend cases skipped |
+| SNAP isolated worker | `138400415896` | 7 passed; 28 other-backend cases skipped |
+
+The aggregate E.8.5/E.8.8 summary job `138400786827` succeeded. The SNAP worker image was built and its run-time image ID was recorded as `sha256:f94d166165f7676f031bb476a79b0c7e112ef65f0f9c4ef5027844891f1eb4b3`. This is the Docker image content ID for that run; it is not a guarantee that future builds from mutable upstream inputs will reproduce the same image.
+
+### 12.3 Scope and evidence limitations
+
+This tranche provides initial semantic and native-path evidence for these three public service tasks. It does **not** issue a formal suitable/conditionally suitable/not suitable verdict for any task/backend pair. In particular:
+
+- the fixture is small and synthetic; it does not establish behavior across the complete M7.2 workload envelope, production-sized graphs, resource pressure or realistic audit datasets;
+- PATH is generic graph path/evidence traversal; claim-to-evidence reconstruction and hash-verified source-content follow-through remain separate obligations;
+- IMPACT is not covered and remains `insufficient evidence` pending direct tests of multi-source budgeting, candidate merging, ownership/evidence resolution, cycle scanning and truncation reporting;
+- the SNAP image identity is now recorded for this run, but synchronous worker `stdout.readline()` still has no per-request response deadline; timeout, termination and recovery behavior remain open;
+- the generic backend selector's implicit first-match behavior and acceptance-state enforcement are not changed by this tranche;
+- G9.42 now includes the test module, but **G9.42 was not run** against this commit. The evidence cited here is the E.8.5/E.8.8 push workflow and its M7.4 test-step logs.
+
+The next assessment work must expand operation-specific workloads and records, complete the IMPACT route separately, and close SNAP worker deadline/cleanup evidence before any stronger operational claim. No global ranking or automatic backend selection is introduced. `production_approval=false` remains invariant.
+
+**Contract conclusion:** M7.4 now has an initial executable STRUCTURAL / DEPENDENCY / PATH task-acceptance tranche across all five backends. The evidence is bounded to the tested synthetic fixture and run environment. Formal task/backend suitability verdicts remain pending; IMPACT and the outstanding operational gates are not closed by this section.
