@@ -277,3 +277,57 @@ The earlier run [45453257165](https://github.com/snoopdock/Finite_element_analys
 The repository's `main` branch was checked after these commits and remained at `ee4e4b769221d331b1d2726301349cd0c217ab03`. No change was made to `main`.
 
 **G4 interpretation:** these corrections strengthen test determinism and CI source provenance. They do not make the source snapshot atomic, detect an ABA mutation restored between observations, establish full repository-wide filesystem immutability, or close the remaining concurrency and native-backend limits. Keep G4 Partial and preserve all 20 task/backend suitability outcomes as Insufficient evidence; `production_approval=false` remains invariant.
+
+
+## 15. Final exact-source execution of deterministic G4 corrections — 2026-11-24
+
+**Workflow:** [45453260519](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45453260519), run number 92, attempt 1, completed with conclusion `success`.  
+**Event:** push to `stage1/section-uuids`.  
+**Exact tested source SHA:** `66cbc5dc654c2c09dfaf6f2c83d99516725eadcd`.
+
+All five backend jobs logged a checked-out source SHA equal to the event SHA. The explicit checkout assertion passed in every job. All five backend jobs, the aggregate E.8.5/E.8.8 summary job, and all evidence-upload steps completed successfully.
+
+### 15.1 G4 results
+
+| Backend | Snapshot/mutation integrity | Repository side-effect and lifecycle |
+|---|---:|---:|
+| NetworkX | 7 passed, 33 expected skips | 3 passed, 9 expected skips |
+| SciPy | 7 passed, 33 expected skips | 3 passed, 9 expected skips |
+| python-igraph | 7 passed, 33 expected skips | 3 passed, 9 expected skips |
+| graph-tool | 7 passed, 33 expected skips | 3 passed, 9 expected skips |
+| SNAP isolated worker | 8 passed, 32 expected skips | 4 passed, 8 expected skips |
+
+The four non-SNAP partitions execute seven selected-backend snapshot/mutation cases and three repository-side-effect cases. SNAP executes the additional SNAP-specific fresh-audit and close/query lifecycle cases. The skipped cases are the other backend partitions excluded by backend selection, plus SNAP-only tests in non-SNAP jobs. There were no G4 failures or errors.
+
+The SNAP close/query test passed with the instrumented request lock. Its worker image build, adapter protocol/restriction tests, live Docker timeout/cleanup tests, repository backend teardown test, E.8.5 synthetic conformance and E.8.8 repository-backed conformance also passed.
+
+### 15.2 Full conformance and artifacts
+
+All five E.8.5/E.8.8 backend jobs and the aggregate summary concluded `success`. Each backend uploaded its expected E.8.5 and E.8.8 JSON reports; no artifact-upload step failed. The job logs show report status `passed` and zero query failures for the tested conformance outputs. The artifact identities reported by GitHub Actions are:
+
+| Backend artifact | Artifact ID | ZIP size | Actions SHA-256 |
+|---|---:|---:|---|
+| NetworkX | 14947779116 | 2,767 bytes | `39e3975f49bcfd3e00035e1895f3fa6aa3152d75acc26c215597ef93bea1b6fc` |
+| SciPy | 14947354400 | 2,926 bytes | `307a69957889d04eaaf3cad8e49334d4d479f2fa77ea74d9b8f6313d228593d1` |
+| python-igraph | 14947784105 | 2,746 bytes | `9905253d9e64175136431c1bc16ae836e4e3a80900694fd0742f7b25d8a402d3` |
+| graph-tool | 14947324522 | 2,844 bytes | `33b9cd4124fada4a7fd3e34dfafec69f73c716fb6ee0912d445b15252f8ce6eb` |
+| SNAP isolated worker | 14948997478 | 3,433 bytes | `19534555d2ec07668f2e92f77a7b707642f8e218104a123fa69f1d17c6064dbb` |
+
+These digests are the Actions-reported ZIP digests. They are recorded as artifact identities, not represented as independent detached verification of the report contents.
+
+### 15.3 Final interpretation
+
+The two implementation commits and their exact-source run establish the following limited results:
+
+1. The five backend jobs checked out the triggering commit, not a later moving branch head.
+2. Changes to the second-pass source-manifest implementation now trigger the workflow through the path filter.
+3. Invalid backend selectors fail rather than silently skipping every backend partition.
+4. The SNAP close/query test waits for a real lock-acquisition attempt before closing the worker.
+5. All five selected backend partitions passed the G4 snapshot/mutation and repository-side-effect/lifecycle test modules.
+6. The existing E.8.5/E.8.8 conformance jobs and artifact uploads also passed on the same exact source.
+
+This is stronger evidence for the tested cases, but it does **not** close G4. The test tree-state helper covers regular-file path membership, content hashes and permission modes; it does not prove absence of side effects outside the fixture or cover every filesystem metadata category. The post-construction external-edit test does not inject mutation during an active query. The second-pass manifest check is not an atomic repository-wide snapshot and can miss an ABA change restored between observations. Broader mutation/restoration schedules, changes after final validation, direct in-worker SNAP graph mutation and G5/G6 cost characterization remain open or explicitly bounded.
+
+**Decision:** G4 remains **Partial**. Do not promote any of the 20 task/backend suitability outcomes from `Insufficient evidence`. `production_approval=false` remains unchanged.
+
+**Repository refs after the documentation update:** `stage1/section-uuids` is advanced by the dossier update; `main` remains `ee4e4b769221d331b1d2726301349cd0c217ab03`. No changes were made to `main`.
