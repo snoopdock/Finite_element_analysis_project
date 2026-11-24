@@ -93,8 +93,16 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
         }
         self.worker_image = image
         self.worker_info: dict[str, Any] = {}
+        self._docker_executable = docker
+        self._docker_env = host_env
+        self._container_state_dir = tempfile.mkdtemp(prefix="ae32c-snap-worker-")
+        self._container_id_file = os.path.join(
+            self._container_state_dir, "container-id"
+        )
         command = [
-            docker, "run", "--rm", "--pull=never", "-i",
+            docker, "run", "--rm", "--pull=never",
+            "--cidfile", self._container_id_file,
+            "--init", "-i",
             "--network=none", "--ipc=none", "--read-only",
             "--cap-drop=ALL", "--security-opt=no-new-privileges",
             "--pids-limit=64", "--memory=512m", "--cpus=1",
@@ -108,18 +116,22 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
             "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
             "HOME": "/nonexistent",
         }
-        self._process = subprocess.Popen(
-            command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-            encoding="utf-8",
-            bufsize=1,
-            cwd=tempfile.gettempdir(),
-            env=host_env,
-            close_fds=True,
-        )
+        try:
+            self._process = subprocess.Popen(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                encoding="utf-8",
+                bufsize=1,
+                cwd=tempfile.gettempdir(),
+                env=host_env,
+                close_fds=True,
+            )
+        except Exception:
+            shutil.rmtree(self._container_state_dir, ignore_errors=True)
+            raise
         snapshot_nodes = [
             {
                 "id": item["id"],
@@ -176,20 +188,54 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
             self.close()
             raise
 
+    def _force_remove_container(self) -> bool:
+        """Force-remove the exact worker container recorded by Docker."""
+        cidfile = getattr(self, "_container_id_file", None)
+        if not cidfile or not os.path.isfile(cidfile):
+            return False
+        try:
+            with open(cidfile, "r", encoding="ascii") as handle:
+                container_id = handle.read().strip()
+        except OSError:
+            return False
+        if not container_id:
+            return False
+
+        try:
+            result = subprocess.run(
+                [self._docker_executable, "rm", "--force", container_id],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                cwd=tempfile.gettempdir(),
+                env=self._docker_env,
+                check=False,
+                timeout=2.0,
+            )
+            return result.returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+
     def _stop_process(
         self,
         process: subprocess.Popen,
         exchange_thread: threading.Thread | None = None,
     ) -> None:
-        """Stop a failed worker and release its pipes with bounded waits."""
+        """Stop the exact Docker worker, then release pipes with bounded waits."""
         if getattr(self, "_process", None) is process:
             self._process = None
 
         if process.poll() is None:
-            try:
-                process.terminate()
-            except (OSError, ProcessLookupError):
-                pass
+            # Do not rely solely on SIGTERM to the docker CLI: PID 1 inside a
+            # container has special signal handling. Force-remove the known
+            # container first, which makes Docker send SIGKILL to its main
+            # process and remove it even if the worker is not responding.
+            self._force_remove_container()
+            if process.poll() is None:
+                try:
+                    process.terminate()
+                except (OSError, ProcessLookupError):
+                    pass
             try:
                 process.wait(timeout=self.PROCESS_TERMINATE_TIMEOUT_SECONDS)
             except subprocess.TimeoutExpired:
@@ -218,6 +264,11 @@ class SNAPWorkerAdapter(NativeAdapterMixin, SemanticGraphAdapter):
                     pass
         if exchange_thread is not None and exchange_thread.is_alive():
             exchange_thread.join(timeout=self.PROCESS_TERMINATE_TIMEOUT_SECONDS)
+
+        state_dir = getattr(self, "_container_state_dir", None)
+        if state_dir:
+            shutil.rmtree(state_dir, ignore_errors=True)
+            self._container_state_dir = None
 
     def _request(
         self,
