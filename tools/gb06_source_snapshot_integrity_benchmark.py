@@ -11,7 +11,6 @@ from __future__ import annotations
 import argparse
 from hashlib import sha256
 import json
-import math
 import os
 import platform
 import statistics
@@ -319,8 +318,11 @@ def verify_report(
 
     config = payload.get("configuration", {})
     repeats = config.get("repeats")
+    warmup = config.get("warmup")
     if type(repeats) is not int or not 3 <= repeats <= 15:
         raise BenchmarkError("report_repeat_configuration_invalid")
+    if type(warmup) is not int or not 0 <= warmup <= 5:
+        raise BenchmarkError("report_warmup_configuration_invalid")
     samples = payload.get("measurements", {}).get("samples")
     if not isinstance(samples, list) or len(samples) != repeats:
         raise BenchmarkError("sample_count_mismatch")
