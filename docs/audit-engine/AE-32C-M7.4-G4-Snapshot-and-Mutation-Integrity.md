@@ -163,3 +163,30 @@ These are Actions-reported ZIP digests, not a detached G7 verification of this r
 ### 9.4 G4 decision
 
 The off-neighborhood preflight/postflight behavior is now implemented and passed in all five backend partitions, with the SNAP worker caveat stated above. G4 is nevertheless **Partial**, not closed. Remaining work includes repository-file non-mutation coverage, mutation/restoration and broader concurrency/lifecycle schedules, the race after final postflight, direct SNAP in-worker mutation coverage, and G5/G6 characterization of the full-scan cost. All 20 task/backend outcomes remain Insufficient evidence. `production_approval=false`.
+
+
+## 10. Repository side-effect and concurrent snapshot qualification — implementation pending execution
+
+The next G4 tranche adds `tests/semantic_graph/test_m74_repository_side_effects.py` and runs it in every existing E.8.5/E.8.8 backend environment.
+
+### 10.1 Repository-file side effects
+
+The test copies the established AE-32C repository fixture into an isolated temporary directory and records the relative path set, SHA-256 digest of every regular file, and permission mode. It then constructs `RepositoryEvidenceTools` and exercises bounded repository search, symbol search, source-file reading, and graph-neighbor querying. After explicit backend teardown, the complete file-state map must be byte-identical to the initial map. This detects content modification, file creation/deletion, and permission-mode changes within the fixture tree.
+
+This is a test of the evidence-tool operations and selected backend against the fixture. It does not prove that arbitrary operating-system side effects outside the fixture root are impossible; the report must not generalize it to a sandbox guarantee.
+
+### 10.2 Snapshot consistency under external source mutation
+
+A second test constructs the repository evidence snapshot, then performs an external same-size edit to an indexed source file. Concurrent bounded reads are issued through the already-constructed tool instance. They must continue returning the original indexed content and source digest, demonstrating that read operations use the captured in-memory source snapshot rather than reopening a mutable path during each query. The test restores the fixture file in a `finally` block and checks the original bytes.
+
+This establishes per-instance snapshot pinning for the tested file/read path. It does not establish an atomic point-in-time snapshot across every repository file during initial manifest construction; that stronger claim would require a repository-wide snapshot primitive or a second complete manifest validation with a defined race model.
+
+### 10.3 SNAP close/query lifecycle race
+
+The SNAP-specific test holds the adapter's request lock while a query thread is queued, closes the worker, then releases the lock. The queued query must fail closed with `snap_worker_process_not_running`; it must not report a successful traversal after teardown. This tests the serialized worker lifecycle boundary, not every possible process crash, timeout, simultaneous caller, or container-removal interleaving. The existing Docker lifecycle suite remains independently required.
+
+### 10.4 Acceptance and residual limits
+
+The new test module is inserted into all five backend jobs (NetworkX, SciPy, igraph, graph-tool, and SNAP). Exact-source workflow execution is required before these tests count as evidence. A passing run would support the narrow claims above only.
+
+The following remain outside this tranche and must not be silently marked closed: mutation followed by restoration entirely between integrity observations; mutation after final postflight; atomicity of the initial repository-wide source snapshot; direct mutation of the opaque SNAP TNEANet inside the worker; and G5/G6 characterization of full-projection validation cost. G4 remains Partial until these are either addressed or explicitly bounded in the acceptance contract. All 20 task/backend suitability outcomes remain Insufficient evidence and `production_approval=false`.
