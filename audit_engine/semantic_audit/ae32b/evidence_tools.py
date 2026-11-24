@@ -385,7 +385,13 @@ def _sanitize_output_value(
 
 
 def _snapshot_stat_identity(info: os.stat_result) -> tuple[int, ...]:
-    """Return stable file identity/change metadata available on this platform."""
+    """Return descriptor identity and platform-dependent change observations.
+
+    POSIX st_ctime_ns is metadata-change time. On Windows, Python documents
+    st_ctime_ns as creation time (deprecated in favor of st_birthtime_ns), so
+    it is an identity observation there, not a metadata-change detector.
+    Callers must not infer cross-platform equivalence from this tuple.
+    """
     return (
         int(info.st_dev),
         int(info.st_ino),
