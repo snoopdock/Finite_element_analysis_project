@@ -232,3 +232,48 @@ The run also passed the pre-existing task-level acceptance, synthetic E.8.5 and 
 **Interpretation:** the tested evidence operations left the isolated fixture tree's file bytes, path set and permission modes unchanged; concurrent reads remained bound to the constructed source snapshot after an external same-size edit; a same-size edit injected after first content read was rejected by the second manifest pass; and the SNAP query queued behind worker teardown failed closed. These are bounded test results, not proof of universal filesystem immutability, atomic repository-wide snapshots, or all possible concurrent schedules.
 
 **G4 remains Partial.** Outstanding limits include ABA mutation/restoration between observations, changes after the final manifest or query postflight check, direct in-worker SNAP TNEANet mutation, and cost characterization of the extra source-manifest pass and complete native projection scans. No task/backend suitability status is promoted and `production_approval=false` remains unchanged.
+
+
+## 14. G4 deterministic race and workflow provenance corrections — 2026-11-24
+
+Two follow-up commits address the workflow and test-harness defects identified during the G4 re-examination.
+
+**Workflow commit:** [1bb448e](https://github.com/snoopdock/Finite_element_analysis_project/commit/1bb448e326ec8d6e9ebabd85d6bbca2625193568).  
+**Test commit:** [66cbc5d](https://github.com/snoopdock/Finite_element_analysis_project/commit/66cbc5dc654c2c09dfaf6f2c83d99516725eadcd).  
+**Branch:** `stage1/section-uuids`.
+
+### 14.1 Exact source checkout
+
+All three backend jobs now use `ref: ${{ github.sha }}` rather than resolving the moving branch name at job execution time. The source-recording step compares `git rev-parse HEAD` with `GITHUB_SHA` and exits with an error on mismatch. This prevents a delayed matrix job from silently testing a newer branch head than the event that triggered it.
+
+The workflow path filter now includes `audit_engine/semantic_audit/ae32b/evidence_tools.py`, which contains the second-pass source-manifest validation used by the G4 repository snapshot tests. Missing all conformance report files now causes artifact upload to fail (`if-no-files-found: error`); this setting does not, by itself, validate every individual report's JSON schema or status field.
+
+### 14.2 Backend selector validation
+
+The repository side-effect test module now fails immediately when `AE32C_M74_BACKEND` is set to a value outside the five registered backend names. A typo can no longer make all parameterized backend cases skip while leaving a green pytest exit code. The selected backend is still the only backend executed in each job; other backend partitions are expected skips.
+
+### 14.3 Deterministic SNAP close/query race
+
+The former test signalled that the query thread had started, but did not establish that it had reached the lock acquisition. It now wraps the adapter's existing re-entrant request lock with an observing proxy. The main thread holds the underlying lock, starts the query, and waits for the query thread's actual acquisition attempt to be signalled before calling `close()`. Only then is the lock released. The assertion remains that the queued query fails closed with `snap_worker_process_not_running` and does not increment the successful-query count.
+
+This removes the previous scheduling ambiguity for the specific tested interleaving. It is not an exhaustive proof of every worker shutdown race.
+
+The post-construction external-edit test was also renamed to state its actual schedule: the file is changed after the evidence snapshot is constructed and before concurrent reads begin. It demonstrates snapshot-pinned reads under that schedule; it does not claim that the external mutation occurred during an active query.
+
+### 14.4 Exact-source workflow run
+
+**Run:** [45453260519](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45453260519), run number 92, push event.  
+**Head SHA:** `66cbc5dc654c2c09dfaf6f2c83d99516725eadcd`.  
+**State at the time of this dossier update:** NetworkX, SciPy, igraph and graph-tool jobs completed successfully; SNAP isolated-worker job was still executing its task-level acceptance step. All four completed jobs logged a checked-out source SHA equal to the run head SHA. Their G4 test steps passed:
+- NetworkX: snapshot/mutation 7 passed, 33 skipped; repository side-effect 3 passed, 9 skipped.
+- SciPy: snapshot/mutation 7 passed, 33 skipped; repository side-effect 3 passed, 9 skipped.
+- python-igraph: snapshot/mutation 7 passed, 33 skipped; repository side-effect 3 passed, 9 skipped.
+- graph-tool: snapshot/mutation 7 passed, 33 skipped; repository side-effect 3 passed, 9 skipped.
+
+The skips are the other backend partitions excluded by the selected-backend environment variable. The SNAP G4 partition and final workflow aggregate are intentionally not marked passed in this interim record; they require the run's final result.
+
+The earlier run [45453257165](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45453257165), triggered by the workflow-only commit, was cancelled by the configured `cancel-in-progress: true` when the test commit triggered run 92. This is expected latest-commit behavior, not a test failure.
+
+The repository's `main` branch was checked after these commits and remained at `ee4e4b769221d331b1d2726301349cd0c217ab03`. No change was made to `main`.
+
+**G4 interpretation:** these corrections strengthen test determinism and CI source provenance. They do not make the source snapshot atomic, detect an ABA mutation restored between observations, establish full repository-wide filesystem immutability, or close the remaining concurrency and native-backend limits. Keep G4 Partial and preserve all 20 task/backend suitability outcomes as Insufficient evidence; `production_approval=false` remains invariant.
