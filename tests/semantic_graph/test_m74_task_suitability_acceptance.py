@@ -710,7 +710,7 @@ def test_m74_seeded_topology_workloads_cover_all_public_analysis_tasks(
             (source, second_source),
             {
                 "relation_types": relation_types,
-                "max_depth": 6,
+                "max_depth": 5,
                 "max_visited_nodes": min(2000, len(graph.nodes) * 2),
                 "max_traversal_steps": min(10000, max(2, len(graph.edges) * 4)),
             },
