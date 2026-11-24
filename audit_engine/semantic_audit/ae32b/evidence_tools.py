@@ -788,6 +788,11 @@ class RepositoryEvidenceTools:
         self.skipped_sensitive_files = 0
         self.skipped_non_utf8_files = 0
         self._load_indexed_content()
+        # The audit manifest and content-loading pass are separate filesystem
+        # observations. Revalidate every included source after loading so a
+        # same-size edit that races immediately after its first read cannot
+        # silently produce a mixed repository snapshot.
+        self._validate_loaded_source_snapshot()
         self.graph = SemanticGraph()
         self.node_metadata: dict[str, dict[str, Any]] = {}
         self.file_nodes: dict[str, str] = {}
@@ -873,6 +878,35 @@ class RepositoryEvidenceTools:
             self.contents[rel] = text
             self.file_hashes[rel] = expected_hash
             self.file_sizes[rel] = len(data)
+
+    def _validate_loaded_source_snapshot(self) -> None:
+        """Reject source edits observed between manifesting and content loading.
+
+        This second complete read narrows the snapshot-construction race: the
+        in-memory index is accepted only if every included file still matches
+        the original manifest after the first content-loading pass. It is not
+        an atomic filesystem snapshot and cannot detect an ABA mutation that
+        is restored before this validation pass.
+        """
+        for rel, row in sorted(self.manifest_rows.items()):
+            if _is_sensitive_path(rel):
+                continue
+            expected_hash = row.get("sha256")
+            expected_size = row.get("size")
+            if not isinstance(expected_hash, str) or not isinstance(expected_size, int) or expected_size < 0:
+                raise EvidenceToolError("invalid_source_manifest", "Included source has an invalid size or digest")
+            try:
+                data = _read_snapshot_file(self.root, rel, expected_size)
+            except (OSError, ValueError) as exc:
+                raise EvidenceToolError(
+                    "source_changed_during_index",
+                    f"Indexed source changed or became unavailable during snapshot validation: {rel}",
+                ) from exc
+            if _sha256(data) != expected_hash:
+                raise EvidenceToolError(
+                    "source_changed_during_index",
+                    f"Indexed source changed during snapshot validation: {rel}",
+                )
 
     def _add_node(self, node_id: str, entity_type: str, attributes: dict[str, Any]) -> None:
         if self.graph.has_node(node_id):
