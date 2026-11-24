@@ -44,18 +44,18 @@ def test_source_snapshot_report_reconstructs_and_verifies(source_report):
     assert verified["atomic_snapshot_established"] is False
     assert report["configuration"]["graph_construction"] == "excluded"
     assert report["configuration"]["traversal_backend"] == "not_initialized"
-    assert report["workload"]["indexed_file_count"] >= 3
-    assert report["workload"]["indexed_bytes"] > 0
+    assert report["workload"]["source_file_count"] >= 3
+    assert report["workload"]["source_bytes"] > 0
 
 
 def test_both_source_passes_read_every_indexed_file_and_byte(source_report):
     _root, report = source_report
     workload = report["workload"]
     for sample in report["measurements"]["samples"]:
-        assert sample["source_load_file_reads"] == workload["indexed_file_count"]
-        assert sample["source_validation_file_reads"] == workload["indexed_file_count"]
-        assert sample["source_load_bytes_read"] == workload["indexed_bytes"]
-        assert sample["source_validation_bytes_read"] == workload["indexed_bytes"]
+        assert sample["source_load_file_reads"] == workload["source_file_count"]
+        assert sample["source_validation_file_reads"] == workload["source_file_count"]
+        assert sample["source_load_bytes_read"] == workload["source_bytes"]
+        assert sample["source_validation_bytes_read"] == workload["source_bytes"]
 
 
 def test_rehashed_second_validation_timing_forgery_is_rejected(source_report):
@@ -74,6 +74,36 @@ def test_rehashed_source_read_accounting_forgery_is_rejected(source_report):
     _rehash(forged)
     with pytest.raises(benchmark.BenchmarkError, match="source_read_accounting_invalid"):
         benchmark.verify_report(forged, root)
+
+
+def test_rehashed_source_manifest_accounting_forgery_is_rejected(source_report):
+    root, report = source_report
+    forged = deepcopy(report)
+    forged["workload"]["source_file_count"] += 1
+    for sample in forged["measurements"]["samples"]:
+        sample["source_load_file_reads"] += 1
+        sample["source_validation_file_reads"] += 1
+    _rehash(forged)
+    with pytest.raises(benchmark.BenchmarkError, match="source_read_accounting_does_not_match_manifest"):
+        benchmark.verify_report(forged, root)
+
+
+def test_verifier_binds_expected_source_and_runner_revisions(tmp_path, monkeypatch):
+    root = _repository(tmp_path / "repo")
+    source_sha = "a" * 40
+    runner_sha = "b" * 40
+    monkeypatch.setenv("AE32C_SOURCE_REVISION", source_sha)
+    monkeypatch.setenv("AE32C_RUNNER_REVISION", runner_sha)
+    report = benchmark.make_report(root, repeats=3, warmup=0)
+    verified = benchmark.verify_report(
+        report, root,
+        expected_source_revision=source_sha,
+        expected_runner_revision=runner_sha,
+    )
+    assert verified["source_revision"] == source_sha
+    assert verified["runner_revision"] == runner_sha
+    with pytest.raises(benchmark.BenchmarkError, match="source_revision_provenance_mismatch"):
+        benchmark.verify_report(report, root, expected_source_revision="c" * 40)
 
 
 @pytest.mark.parametrize("repeats,warmup", [(2, 0), (16, 0), (3, -1), (3, 6), (True, 0)])
