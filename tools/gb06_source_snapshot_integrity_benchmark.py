@@ -255,8 +255,8 @@ def make_report(
             "graph_construction": "excluded",
             "traversal_backend": "not_initialized",
             "timing_boundary": (
-                "repository audit/manifest scan, first source-content load, "
-                "and second descriptor-identity/hash validation pass"
+                "complete repository audit (inventory, manifest and static analysis), "
+                "first source-content load, and second descriptor-identity/hash validation pass"
             ),
         },
         "measurements": {
@@ -338,6 +338,8 @@ def verify_report(
         observations = [item.get(field) for item in samples]
         recomputed = _timing_summary(observations)
         supplied = payload["measurements"].get(field, {})
+        if supplied.get("unit") != "ns" or supplied.get("observations_ns") != observations:
+            raise BenchmarkError(f"timing_observations_mismatch:{field}")
         for key in ("median_ns", "minimum_ns", "maximum_ns", "mad_ns"):
             if supplied.get(key) != recomputed[key]:
                 raise BenchmarkError(f"timing_aggregate_mismatch:{field}:{key}")
