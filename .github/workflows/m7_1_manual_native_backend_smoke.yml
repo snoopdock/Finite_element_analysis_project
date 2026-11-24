@@ -134,6 +134,10 @@ jobs:
             python -m pip install 'igraph>=0.11,<2.0'
           fi
           python -m pip check
+      - name: Test M7 integrity timing report contract
+        if: matrix.backend == 'networkx'
+        run: |
+          PYTHONPATH=source python -m pytest -q source/tests/semantic_graph/test_m7_native_backend_performance_benchmark.py
       - name: Capture runner and dependency provenance
         shell: bash
         env:
