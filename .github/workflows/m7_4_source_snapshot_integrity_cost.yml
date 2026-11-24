@@ -1,7 +1,6 @@
 name: AE-32C G4 Source Snapshot Integrity Cost
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - stage1/section-uuids
