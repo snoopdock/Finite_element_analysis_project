@@ -79,6 +79,10 @@ jobs:
         env:
           AE32C_M74_BACKEND: ${{ matrix.backend }}
         run: python -m pytest -q tests/semantic_graph/test_m74_snapshot_mutation_integrity.py
+      - name: Run M7.4-G4 repository side-effect and snapshot-race qualification
+        env:
+          AE32C_M74_BACKEND: ${{ matrix.backend }}
+        run: python -m pytest -q tests/semantic_graph/test_m74_repository_side_effects.py
 
       - name: Run synthetic native projection and traversal conformance
         run: |
@@ -144,6 +148,11 @@ jobs:
         env:
           AE32C_M74_BACKEND: graph-tool
         run: python -m pytest -q tests/semantic_graph/test_m74_snapshot_mutation_integrity.py
+      - name: Run M7.4-G4 repository side-effect and snapshot-race qualification for graph-tool
+        shell: micromamba-shell {0}
+        env:
+          AE32C_M74_BACKEND: graph-tool
+        run: python -m pytest -q tests/semantic_graph/test_m74_repository_side_effects.py
 
       - name: Run synthetic native graph-tool conformance
         shell: micromamba-shell {0}
@@ -224,6 +233,10 @@ jobs:
         env:
           AE32C_M74_BACKEND: snap
         run: python -m pytest -q tests/semantic_graph/test_m74_snapshot_mutation_integrity.py
+      - name: Run M7.4-G4 repository side-effect and lifecycle-race qualification for SNAP worker
+        env:
+          AE32C_M74_BACKEND: snap
+        run: python -m pytest -q tests/semantic_graph/test_m74_repository_side_effects.py
 
       - name: Run SNAP synthetic native E.8.5 conformance
         run: |
