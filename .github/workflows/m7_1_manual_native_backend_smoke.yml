@@ -73,9 +73,9 @@ jobs:
         id: resolve
         shell: bash
         env:
-          REQUESTED_REF: ${{ inputs.source_ref }}
-          REPEATS: ${{ inputs.repeats }}
-          WARMUP: ${{ inputs.warmup }}
+          REQUESTED_REF: ${{ inputs.source_ref || github.ref_name }}
+          REPEATS: ${{ inputs.repeats || '5' }}
+          WARMUP: ${{ inputs.warmup || '2' }}
         run: |
           set -euo pipefail
           test -n "$REQUESTED_REF"
