@@ -34,7 +34,7 @@ from audit_engine.semantic_audit.graph.backend.networkx_traversal import (
 )
 from tools.gb03_native_backend_conformance import fixture
 
-SCHEMA = "ae32c/m7-native-backend-benchmark/v1"
+SCHEMA = "ae32c/m7-native-backend-benchmark/v2"
 BACKENDS = ("networkx", "scipy", "igraph", "graph-tool", "snap")
 NATIVE_MODES = {
     "networkx": "networkx_successor_predecessor_adjacency",
