@@ -293,3 +293,11 @@ Implementation review found existing protection mechanisms in `make_projection` 
 **Execution status in this commit:** pending. No G4 test result is claimed until the five-backend workflow executes the new module against one exact Stage1 SHA. See [the G4 test and limitation record](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md).
 
 The record explicitly preserves unresolved limits: synthetic in-memory tests do not establish repository-file non-mutation; arbitrary concurrency interleavings and mutation/restoration between fingerprint checks are not exhausted; and mutable exported native objects are not globally re-enumerated before every bounded query, so corruption isolated to an unvisited region may not be observed by that query. G4 remains Partial. All 20 task/backend outcomes remain Insufficient evidence and `production_approval=false`.
+
+## 16. Exact-source execution of the M7.4-G4 test tranche — 2026-11-24
+
+The dedicated G4 tests were executed in [E.8.5/E.8.8 run 45413494767](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45413494767), attempt 1, against exact Stage1 source `7447a6b6327b2f310012088767df8251577f6cb1`. Each selected backend partition passed all five G4 tests: NetworkX 5/5, SciPy 5/5, igraph 5/5, graph-tool 5/5 and isolated SNAP 5/5. Each job also reported 20 expected skips for the four backends not selected in that partition. No G4 failures/errors were recorded.
+
+All five native conformance jobs and aggregate summary succeeded. The E.8.5/E.8.8 reports in this run each recorded passed status, 14/14 and 43/43 parity-verified queries respectively, with zero failures. Artifact IDs, sizes and Actions-reported digests, together with the residual G4 limitations, are recorded in [the G4 integrity dossier](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md).
+
+This establishes successful execution of the focused synthetic snapshot/mutation test tranche, not full G4 closure. Mutable export/off-neighborhood corruption, repository-file non-mutation coverage and broader concurrency/lifecycle cases remain open. All 20 task/backend suitability outcomes remain Insufficient evidence; `production_approval=false`.

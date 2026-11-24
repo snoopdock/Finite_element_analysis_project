@@ -386,3 +386,9 @@ The dedicated five-backend test tranche and workflow integration are specified i
 The G4 rule remains unchanged: canonical graph and repository data are authoritative; a projection is not. The new suite is synthetic and does not establish repository-file non-mutation. In addition, native exports remain mutable and the current query path validates the projection at construction plus local adjacency used by a query; it does not perform a full native graph scan before every bounded query. Off-neighborhood projection corruption, arbitrary thread schedules and mutation-and-restoration between fingerprint checks therefore remain explicit limitations.
 
 **Status at this record:** tests/workflow added; exact-source five-backend execution pending. G4 is not closed, and no task/backend suitability outcome is upgraded. `production_approval=false` remains invariant.
+
+## 21. Exact-source G4 test execution — 2026-11-24
+
+The G4 integrity tests introduced by the prior section were executed in the five-backend E.8.5/E.8.8 workflow [45413494767](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45413494767), attempt 1, against Stage1 source `7447a6b6327b2f310012088767df8251577f6cb1`. NetworkX, SciPy, python-igraph, graph-tool and SNAP each reported 5 passed / 20 expected backend-selection skips. All five backend jobs and the workflow summary succeeded.
+
+The detailed execution matrix and artifact identities are recorded in [the G4 integrity dossier](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md). This closes the execution requirement for this focused test tranche, not the full G4 gate. Native exports remain mutable and off-neighborhood corruption is not globally rescanned by each bounded query; repository-file non-mutation and broader concurrency/lifecycle schedules also remain unqualified. G4 stays Partial; all 20 suitability outcomes remain Insufficient evidence; `production_approval=false`.

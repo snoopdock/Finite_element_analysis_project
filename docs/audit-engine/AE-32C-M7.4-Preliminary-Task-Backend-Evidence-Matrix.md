@@ -159,3 +159,9 @@ The five-backend G4 test module and E.8.5/E.8.8 workflow integration are recorde
 **Gate status: Partial; execution pending.** No G4 pass is inferred from source inspection or from the earlier E.8.8 evidence. The new test partitions must run in the five dedicated backend environments and be checked against the exact Stage1 source SHA. Residual limitations include repository-file non-mutation not being exercised by this in-memory suite, non-exhaustive concurrency schedules, and mutable native exports whose off-neighborhood corruption is not globally revalidated on every bounded query.
 
 All 20 suitability outcomes remain Insufficient evidence. `production_approval=false`.
+
+## 11. Exact-source execution of G4 synthetic integrity tests — 2026-11-24
+
+Run [45413494767](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45413494767), attempt 1, executed `test_m74_snapshot_mutation_integrity.py` against Stage1 source `7447a6b6327b2f310012088767df8251577f6cb1`. Each of NetworkX, SciPy, igraph, graph-tool and SNAP reported 5 passed / 20 backend-selection skips; all five jobs and the aggregate summary succeeded.
+
+**Gate status: Partial, not Pass.** The focused synthetic tests passed, but the contract also requires repository-file non-mutation and an acceptable treatment of mutable native exports/off-neighborhood corruption and broader mutation schedules. See [the G4 integrity dossier](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md). All 20 task/backend outcomes remain Insufficient evidence; `production_approval=false`.

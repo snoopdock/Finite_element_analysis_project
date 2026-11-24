@@ -370,3 +370,9 @@ All five archive SHA-256 digests matched GitHub Actions metadata. Each backend h
 The five-backend G4 test module and E.8.5/E.8.8 workflow steps are recorded in [the G4 integrity dossier](AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md). The new suite targets deep projection-copy isolation, canonical graph mutation guards, local native occurrence corruption/omission, repeat-query stability, reconstruction and SNAP worker teardown.
 
 The implementation already has construction-time projection audits, graph-fingerprint guards and per-query local occurrence validation. The new tests have not yet run at this commit. G4 remains Partial until exact-source results are available. Do not convert these controls into a general guarantee of immutable native exports: full native projection revalidation is not performed on every query, so off-neighborhood projection corruption, repository-file no-side-effect qualification and arbitrary concurrency schedules remain open. The 20 task/backend outcomes are unchanged at Insufficient evidence; no ranking, selector activation or production approval follows. `production_approval=false`.
+
+## 25. M7.4-G4 focused execution results — 2026-11-24
+
+The dedicated snapshot/mutation test suite passed in all five backend partitions in [run 45413494767](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45413494767), attempt 1, Stage1 source `7447a6b6327b2f310012088767df8251577f6cb1`. Each backend ran five selected G4 cases and passed all five; 20 other-backend parameter cases were correctly skipped per selected job. All E.8.5/E.8.8 backend jobs and aggregate summary also succeeded.
+
+G4 remains Partial, not closed. The test suite does not qualify arbitrary off-neighborhood mutation of mutable native exports, repository-file non-mutation or all concurrency/lifecycle schedules. No task/backend verdict changes, ranking, backend selection or production approval follows. `production_approval=false`.
