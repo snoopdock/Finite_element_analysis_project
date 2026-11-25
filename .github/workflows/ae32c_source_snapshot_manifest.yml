@@ -149,6 +149,19 @@ jobs:
                   "- Unaccounted source units: " + str(coverage.get("unaccounted_count")),
                   "- Negative findings permitted by default: false",
               ]
+              ledger = graph.get("finding_ledger", {})
+              findings = ledger.get("findings", [])
+              statuses = {}
+              for finding in findings:
+                  status = str(finding.get("claim_status", "unknown"))
+                  statuses[status] = statuses.get(status, 0) + 1
+              lines += [
+                  "- Finding ledger SHA-256: " + str(ledger.get("ledger_sha256")),
+                  "- Rule registry SHA-256: " + str(ledger.get("rule_registry_sha256")),
+                  "- Bound finding count: " + str(ledger.get("finding_count")),
+                  "- Finding assessment statuses: " + json.dumps(statuses, sort_keys=True),
+                  "- Absence claims authorized: false",
+              ]
           else:
               lines.append("- Graph snapshot manifest missing")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
