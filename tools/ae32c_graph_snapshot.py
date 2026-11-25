@@ -74,6 +74,7 @@ def build_coverage_manifest(
     sensitive_paths: set[str] | None = None,
     structured_issues: list[dict[str, Any]] | None = None,
     module_identity_issues: list[dict[str, Any]] | None = None,
+    evidence_index_status: str = "complete",
 ) -> dict[str, Any]:
     """Account for every Git tree entry and every AE-32A candidate source unit."""
     sensitive_paths = sensitive_paths or set()
@@ -130,6 +131,7 @@ def build_coverage_manifest(
         and not workflow_issues
         and not structured_issues
         and not module_identity_issues
+        and evidence_index_status == "complete"
     )
     python_paths = sorted(
         path for path in represented_paths if PurePosixPath(path).suffix.lower() == ".py"
@@ -184,6 +186,7 @@ def build_graph_snapshot(
     sensitive_paths: set[str] | None = None,
     structured_issues: list[dict[str, Any]] | None = None,
     module_identity_issues: list[dict[str, Any]] | None = None,
+    evidence_index_status: str = "complete",
     python_runtime: str | None = None,
 ) -> dict[str, Any]:
     _verify_source_manifest(source_manifest, source_manifest.get("source", {}).get("commit_oid"))
@@ -192,6 +195,7 @@ def build_graph_snapshot(
         source_manifest, evidence_report, represented_paths, file_hashes,
         sensitive_paths=sensitive_paths, structured_issues=structured_issues,
         module_identity_issues=module_identity_issues,
+        evidence_index_status=evidence_index_status,
     )
     graph_content_sha256 = digest({
         "graph_schema_version": GRAPH_SCHEMA_VERSION,
@@ -251,6 +255,7 @@ def capture(repository: str | Path, source_manifest_path: str | Path,
         GRAPH_PROJECTION_VERSION as PROJECTION_VERSION,
         SCHEMA_VERSION as BUILDER_VERSION,
         RepositoryEvidenceTools,
+        _is_sensitive_path,
     )
     if PROJECTION_VERSION != GRAPH_PROJECTION_VERSION or BUILDER_VERSION != GRAPH_BUILDER_VERSION:
         raise GraphSnapshotError("graph_builder_contract_version_mismatch")
@@ -266,9 +271,10 @@ def capture(repository: str | Path, source_manifest_path: str | Path,
         evidence_report=builder.report,
         represented_paths=set(builder.file_nodes),
         file_hashes=builder.file_hashes,
-        sensitive_paths={path for path in builder.manifest_rows if path not in builder.contents},
+        sensitive_paths={path for path in builder.manifest_rows if _is_sensitive_path(path)},
         structured_issues=builder.structured_record_issues,
         module_identity_issues=builder.module_identity_issues,
+        evidence_index_status=builder.evidence_index_status,
     )
     return snapshot
 
