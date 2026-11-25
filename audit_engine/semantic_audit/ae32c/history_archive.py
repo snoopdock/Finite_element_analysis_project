@@ -12,7 +12,7 @@ from typing import Any, Callable, Mapping
 from .publication import PublicationError, digest, verify_run_record
 
 ARCHIVE_SCHEMA = "ae32c/publication-history-segment/v1"
-_PATH_RE = re.compile(r"^state/history/segment-[0-9]{8}-[0-9a-f]{16}\\.json$")
+_PATH_RE = re.compile(r"^state/history/segment-[0-9]{8}-[0-9a-f]{16}\.json$")
 
 
 def _verify_entry(entry: Any) -> None:
