@@ -43,7 +43,7 @@ class FakeGitHub:
             if ref in self.refs: raise GitHubAPIError(422,"exists")
             self.refs[ref]=b["sha"]; return {}
         if p.startswith(root+"/git/commits/") and m=="GET": return self.commits[p.rsplit("/",1)[1]]
-        if p.startswith(root+"/git/trees/") and m=="GET": return {"tree":self.trees[p.rsplit("/",1)[1]]}
+        if p.startswith(root+"/git/trees/") and m=="GET": return {"tree":self.trees[p.rsplit("/",1)[1].split("?",1)[0]]}
         if p.startswith(root+"/git/blobs/") and m=="GET": return {"content":base64.b64encode(self.blobs[p.rsplit("/",1)[1]]).decode()}
         if p==root+"/git/blobs" and m=="POST":
             s=self.ident("b"); self.blobs[s]=base64.b64decode(b["content"]); return {"sha":s}
