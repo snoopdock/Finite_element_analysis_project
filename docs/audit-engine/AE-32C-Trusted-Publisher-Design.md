@@ -221,3 +221,17 @@ These are CI and internal-consistency results only. The tests use constructed fi
 - The source manifest currently has no JSON Schema validation step in the producer workflow. Add strict schema validation in the trusted publisher, using trusted schema files from its own checked-out revision.
 - The GitHub CAS adapter currently stores an unbounded append-only JSON history. Define compaction/retention before operational use.
 - No live App token, publication ref, environment approval, ruleset, or protected-default-branch guarantee has been exercised.
+
+## 10. Trusted publisher implementation scaffold (2026-11-25)
+
+The repository now contains:
+
+- `tools/ae32c_trusted_publisher.py`: read-only preparation phase retrieves the upstream run and repository metadata directly from GitHub, checks the exact producer workflow identity, selects the unique artifact named for the upstream run ID and attempt, verifies the GitHub-provided artifact SHA-256, downloads it with a size cap, validates the ZIP and trusted local schemas, and writes an immutable run record to the runner temporary directory.
+- A separate publish phase requires `AE32C_PUBLICATION_TOKEN` and delegates to `GitHubRefCASStore`. The workflow mints this token only after preparation has completed.
+- Artifact download redirects are handled without forwarding the GitHub API bearer token to a different origin.
+- `tests/semantic_graph/test_ae32c_trusted_publisher.py` covers API metadata mapping and exact, unique, unexpired artifact selection.
+- `.github/workflows/ae32c_trusted_publisher.yml` uses `workflow_run`, checks out the trusted default-branch revision, validates before token creation, and requests a repository-scoped GitHub App token with only `contents:write`.
+
+**Activation state:** the workflow is deliberately disabled unless repository variable `AE32C_TRUSTED_PUBLISHER_ENABLED` is exactly `true`. It has not been activated. It is only present on `stage1/section-uuids`; it cannot receive `workflow_run` events until it is merged into the default branch. The repository's default-branch protection status remains unverified, no publication-ref ruleset or required-reviewer environment has been confirmed, and no App credentials have been configured or used.
+
+The publisher scaffold is not yet live-verified. CI currently validates the pure metadata/artifact-selection functions and imports the orchestration module. A live GitHub API download, redirect behavior against GitHub's artifact service, App-token issuance, ruleset enforcement, and publication-ref CAS remain untested. The publisher must remain disabled until the activation blockers in Section 7 are cleared and the user explicitly authorizes activation.
