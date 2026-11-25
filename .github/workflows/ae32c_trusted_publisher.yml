@@ -19,7 +19,7 @@ jobs:
   trusted-publisher:
     # Deliberately inert until repository controls and credentials are configured
     # and an administrator explicitly sets this repository variable to "true".
-    if: ${{ vars.AE32C_TRUSTED_PUBLISHER_ENABLED == 'true' }}
+    if: ${{ vars.AE32C_TRUSTED_PUBLISHER_ENABLED == 'true' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == github.event.repository.default_branch && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.conclusion == 'success' }}
     name: Validate upstream artifact and publish guarded state
     runs-on: ubuntu-24.04
     timeout-minutes: 15
