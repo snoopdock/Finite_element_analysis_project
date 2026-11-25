@@ -3,7 +3,7 @@
 **Record type:** Preliminary evidence ledger; not a suitability approval  
 **Branch:** stage1/section-uuids  
 **Latest task-test source:** ed33bf68c49fd41506d5d7917fbdc77bf8e544e7 (the earlier evidence snapshots remain individually source-bound)  
-**Latest E.8.5/E.8.8 regression:** [45600944022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45600944022), attempt 1, success; the separate G7 detached pass for run 45473007901 is recorded below  
+**Latest E.8.5/E.8.8 regression:** [45600944022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45600944022), attempt 1, success; G7 detached passes for both run 45473007901 and the latest run 45600944022 are recorded below  
 **Latest aggregate summary job:** 139159986931, success  
 **Controlling contract:** [M7.4 Task-Specific Backend Suitability Assessment Contract](AE-32C-M7.4-Task-Suitability-Assessment-Contract.md)  
 **Validation evidence:** [M7.4 Initial Task Assessment Validation](AE-32C-M7.4-Initial-Task-Assessment-Validation.md)  
@@ -200,4 +200,13 @@ The verifier changes and provenance test were then exercised by the later five-b
 
 The G4 evidence is stronger but remains bounded. It includes in-root byte/mode read-only checks, source-snapshot consistency after external same-size edits, a tested active-read mutation schedule, ordinary change-and-restore detection between snapshot passes, and fail-closed behavior for a query waiting on a closed SNAP worker. It does not establish atomic repository-wide snapshot semantics, eliminate Windows reparse-point path-opening TOCTOU, cover all filesystem metadata/external side effects or close every mutation/restoration race. G4 remains Partial.
 
-**Important source separation:** run 45601021689 verifies the earlier artifact set from run 45473007901; it does not verify the later artifacts produced by run 45600944022. The latter still require their own detached G7 pass if they are to be used as the current immutable evidence set. The latest run 45600944022 has not been validated by exact-source G9.42. All 20 task/backend outcomes remain Insufficient evidence; no backend ranking or automatic selection is authorized; `production_approval=false`.
+**Source separation:** run 45601021689 verifies the five-backend artifact set from run 45473007901. The later artifact set from run 45600944022 was separately detached-verified by [run 45601831710](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45601831710); G7 is Pass for both exact sets. Run 45600944022 has not been validated by exact-source G9.42. All 20 task/backend outcomes remain Insufficient evidence; no backend ranking or automatic selection is authorized; `production_approval=false`.
+
+
+## 16. G7 detached verification of the latest five-backend artifact set — 2026-11-25
+
+The E.8.5/E.8.8 artifacts from [run 45600944022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45600944022), exact source `ed33bf68c49fd41506d5d7917fbdc77bf8e544e7`, were downloaded by exact artifact ID and detached-verified in [run 45601831710](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45601831710). The verifier ran 12 adversarial unit tests, recomputed archive byte counts and SHA-256 values, and checked report schema, source/run/attempt identity, backend/library/native-mode, E.8.5/E.8.8 parity/query telemetry, projection round-trip, repository snapshot, source hashes, context telemetry, side-effect declarations, SciPy hybrid representation and SNAP image/policy/deadlines.
+
+All five archives and their embedded reports passed. The committed machine-readable dossier is `evidence/m74-e85-e88-run-45600944022/verified-dossier.json`; see [the run-specific dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45600944022.md). **G7 is Pass for the exact run 45600944022 artifact set.** This is detached byte/digest and report-consistency verification, not historical workflow re-execution or physical-runner attestation.
+
+Run 45600944022 also passed the five-backend M7.4 task suite, E.8.5/E.8.8 and bounded G4 repository side-effect/snapshot-race tests. G4 remains Partial because atomic repository-wide snapshot semantics, Windows reparse-point path-opening TOCTOU, full external side-effect coverage and all mutation/restoration windows remain unresolved. G5/G6 and PATH/IMPACT domain qualification remain open. Exact-source G9.42 has not been run against this source. All 20 task/backend outcomes remain Insufficient evidence; `production_approval=false`.
