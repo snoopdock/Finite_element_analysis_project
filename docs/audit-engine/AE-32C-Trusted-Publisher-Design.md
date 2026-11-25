@@ -179,16 +179,16 @@ Do not activate a write-capable publisher until all are true:
 
 The GitHub CAS backend now bounds the frequently rewritten publication-state document without deleting audit history.
 
-- The newest 256 decisions remain inline by default.
-- When the inline history exceeds that limit, the oldest excess records are moved into an immutable archive segment of at most 128 entries.
+- Inline history is capped at 256 decisions by default.
+- When that cap is exceeded, the oldest decisions are moved into immutable archive segments of at most 128 entries each, continuing until the inline history is within the cap.
 - Each segment binds the repository, sequence number, exact entries, previous segment path/digest, and its own canonical SHA-256 digest.
-- The segment blob and the state document that points to it are added to the same Git tree and committed in one candidate commit. The existing non-force ref update remains the single CAS publication point; an interrupted or losing writer cannot expose a state pointer without its segment.
+- All newly created segment blobs and the updated state document that points to the final segment are added to the same Git tree and committed in one candidate commit. The existing non-force ref update remains the single CAS publication point; an interrupted or losing writer cannot expose a state pointer without its segment.
 - The state stores only the archive tip, segment count, and archived-record count. Readers walk the digest chain, verify every segment and run record, check sequence/path/digest binding, and fail closed on missing, altered, truncated, or miscounted archives.
 - The default limits are configurable on the store for tests and controlled deployments.
 
 This is **bounded active-state compaction, not deletion or a total storage cap**. The archive remains append-only and grows with the number of decisions; old Git commits also remain in Git history. Deleting or expiring records would require a separately authorized retention policy and an independently preserved audit anchor. No record is discarded by this implementation.
 
-The fake-transport test suite now exercises compaction across multiple segments, bounded inline history, archive-chain verification, and tamper rejection. This does not yet establish live GitHub CAS behavior, GitHub App authorization, environment approval, or ruleset enforcement.
+The fake-transport test suite exercises compaction across multiple segments, bounded inline history, archive-chain verification, and tamper rejection. The publisher orchestration suite also exercises the complete `prepare` path with a constructed ZIP artifact and mocked GitHub API responses, including API/event binding, exact artifact digest, allowlisted workflow rejection, and incomplete-coverage history-only disposition. These tests do not establish live GitHub CAS behavior, GitHub App authorization, environment approval, or ruleset enforcement.
 
 ## 9. Current disposition
 
