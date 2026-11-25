@@ -1,7 +1,7 @@
 import base64
 import unittest
 from audit_engine.semantic_audit.ae32c.github_publication import GitHubAPIError, GitHubRefCASStore
-from audit_engine.semantic_audit.ae32c.publication import _empty, build_run_record, digest
+from audit_engine.semantic_audit.ae32c.publication import PublicationError, _empty, build_run_record, digest
 
 REPO="snoopdock/Finite_element_analysis_project"
 SOURCE="a"*40
@@ -19,7 +19,7 @@ class FakeGitHub:
         self.refs={"heads/stage1/section-uuids":SOURCE}
         self.commits={SOURCE:{"tree":{"sha":"ts"}}}
         self.trees={"ts":[]}; self.blobs={}; self.i=0
-        self.fail_patch=False; self.move_source=None
+        self.fail_patch=False; self.move_source=None; self.truncated_tree=False
     def ident(self,p):
         self.i+=1; return p+str(self.i)
     def request(self,m,p,b=None):
@@ -43,7 +43,7 @@ class FakeGitHub:
             if ref in self.refs: raise GitHubAPIError(422,"exists")
             self.refs[ref]=b["sha"]; return {}
         if p.startswith(root+"/git/commits/") and m=="GET": return self.commits[p.rsplit("/",1)[1]]
-        if p.startswith(root+"/git/trees/") and m=="GET": return {"tree":self.trees[p.rsplit("/",1)[1].split("?",1)[0]]}
+        if p.startswith(root+"/git/trees/") and m=="GET": return {"tree":self.trees[p.rsplit("/",1)[1].split("?",1)[0]], "truncated":self.truncated_tree}
         if p.startswith(root+"/git/blobs/") and m=="GET": return {"content":base64.b64encode(self.blobs[p.rsplit("/",1)[1]]).decode()}
         if p==root+"/git/blobs" and m=="POST":
             s=self.ident("b"); self.blobs[s]=base64.b64decode(b["content"]); return {"sha":s}
@@ -135,6 +135,12 @@ class GitHubCASStoreTests(unittest.TestCase):
         archive=next(x for x in tree if x["path"].startswith("state/history/segment-"))
         self.api.blobs[archive["sha"]]=b'{"tampered":true}'
         with self.assertRaisesRegex(Exception, "publication_history_archive_identity_invalid"):
+            self.store.current()
+
+    def test_truncated_recursive_tree_fails_closed(self):
+        self.store.publish(make_record())
+        self.api.truncated_tree=True
+        with self.assertRaisesRegex(PublicationError, "github_publication_tree_truncated"):
             self.store.current()
 
     def test_cas_conflict_retries(self):
