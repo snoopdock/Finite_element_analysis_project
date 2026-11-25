@@ -120,6 +120,39 @@ def parse_artifact_archive(raw: bytes) -> dict[str, dict[str, Any]]:
     }
 
 
+def validate_manifest_schemas(
+    source_manifest: Mapping[str, Any],
+    graph_manifest: Mapping[str, Any],
+    *,
+    source_schema: Mapping[str, Any],
+    graph_schema: Mapping[str, Any],
+) -> None:
+    """Validate manifests against trusted local JSON Schemas, never artifact schemas."""
+    try:
+        from jsonschema import Draft202012Validator, FormatChecker
+        from jsonschema.exceptions import SchemaError
+    except ImportError as exc:
+        raise TrustedArtifactError("jsonschema_dependency_missing") from exc
+    for label, instance, schema in (
+        ("source", source_manifest, source_schema),
+        ("graph", graph_manifest, graph_schema),
+    ):
+        try:
+            Draft202012Validator.check_schema(dict(schema))
+            validator = Draft202012Validator(dict(schema), format_checker=FormatChecker())
+            errors = sorted(
+                validator.iter_errors(dict(instance)),
+                key=lambda error: (tuple(map(str, error.absolute_path)), error.message),
+            )
+        except SchemaError as exc:
+            raise TrustedArtifactError(label + "_trusted_schema_invalid:" + str(exc)) from exc
+        if errors:
+            first = errors[0]
+            path = "/".join(str(part) for part in first.absolute_path)
+            raise TrustedArtifactError(
+                label + "_schema_validation_failed:" + path + ":" + first.message
+            )
+
 def _require_hex(value: Any, lengths: tuple[int, ...], label: str) -> None:
     if not isinstance(value, str) or len(value) not in lengths or not _HEX.fullmatch(value):
         raise TrustedArtifactError(label + "_invalid")
@@ -298,9 +331,9 @@ def validate_publication_artifact(
 ) -> dict[str, Any]:
     """Validate manifests against independently retrieved GitHub run metadata.
 
-    The caller must independently enforce the allowlisted workflow ID and
-    successful upstream conclusion. This function restricts current candidates
-    to same-repository pushes on the protected default branch.
+    The caller must validate mappings against schemas from the trusted publisher
+    checkout before calling this function. Workflow identity and conclusion are
+    independently enforced here.
     """
     required = ("repository", "default_branch", "head_branch", "head_repository",
                 "ref", "event", "head_sha", "run_id", "run_attempt", "run_number",
