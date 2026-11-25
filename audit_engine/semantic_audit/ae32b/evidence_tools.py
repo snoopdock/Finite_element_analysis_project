@@ -413,6 +413,149 @@ def _snapshot_stat_identity(info: os.stat_result) -> tuple[int, ...]:
     )
 
 
+
+def _windows_open_file_handle(kernel32, path: Path, flags: int):
+    """Open a Windows path while preserving the returned kernel object handle."""
+    import ctypes
+    from ctypes import wintypes
+
+    create_file = kernel32.CreateFileW
+    create_file.argtypes = [
+        wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID,
+        wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE,
+    ]
+    create_file.restype = wintypes.HANDLE
+    handle = create_file(
+        str(path), 0x80000000, 0x00000007, None, 3, flags, None,
+    )
+    invalid_handle = ctypes.c_void_p(-1).value
+    handle_value = getattr(handle, "value", handle)
+    if handle_value in (None, invalid_handle):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return handle
+
+
+def _windows_handle_attributes(kernel32, handle) -> int:
+    import ctypes
+
+    class FileAttributeTagInfo(ctypes.Structure):
+        _fields_ = [
+            ("FileAttributes", ctypes.c_uint32),
+            ("ReparseTag", ctypes.c_uint32),
+        ]
+
+    get_info = kernel32.GetFileInformationByHandleEx
+    get_info.argtypes = [
+        ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_uint32,
+    ]
+    get_info.restype = ctypes.c_int
+    info = FileAttributeTagInfo()
+    if not get_info(handle, 9, ctypes.byref(info), ctypes.sizeof(info)):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return int(info.FileAttributes)
+
+
+def _windows_final_path(kernel32, handle, volume_name_flag: int) -> str:
+    import ctypes
+    from ctypes import wintypes
+
+    get_final_path = kernel32.GetFinalPathNameByHandleW
+    get_final_path.argtypes = [
+        wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD,
+    ]
+    get_final_path.restype = wintypes.DWORD
+    buffer = ctypes.create_unicode_buffer(32768)
+    length = get_final_path(handle, buffer, len(buffer), volume_name_flag)
+    if length == 0 or length >= len(buffer):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return buffer.value
+
+
+def _read_windows_snapshot_file_with_identity(
+    root: Path, relative_path: str, expected_size: int,
+) -> tuple[bytes, tuple[int, ...]]:
+    """Open by handle and validate the opened object's final path.
+
+    Component lstat checks alone have a TOCTOU window on Windows because
+    Python does not provide dir_fd-relative opens there. The final handle path
+    is therefore checked against the already-open repository-root handle.
+    A directory junction swapped after component inspection cannot redirect
+    the read outside the root without failing this handle-bound check.
+    """
+    import ctypes
+    import msvcrt
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    close_handle = kernel32.CloseHandle
+    close_handle.argtypes = [ctypes.c_void_p]
+    close_handle.restype = ctypes.c_int
+
+    FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000
+    FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
+    FILE_ATTRIBUTE_DIRECTORY = 0x00000010
+    FILE_ATTRIBUTE_REPARSE_POINT = 0x00000400
+
+    root_handle = None
+    file_handle = None
+    file_fd = None
+    try:
+        root_handle = _windows_open_file_handle(
+            kernel32, root,
+            FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+        )
+        root_attributes = _windows_handle_attributes(kernel32, root_handle)
+        if root_attributes & FILE_ATTRIBUTE_REPARSE_POINT:
+            raise OSError("reparse-point repository root is not permitted")
+        if not root_attributes & FILE_ATTRIBUTE_DIRECTORY:
+            raise OSError("repository root handle is not a directory")
+
+        candidate = root.joinpath(*PurePosixPath(relative_path).parts)
+        file_handle = _windows_open_file_handle(
+            kernel32, candidate, FILE_FLAG_OPEN_REPARSE_POINT,
+        )
+        file_attributes = _windows_handle_attributes(kernel32, file_handle)
+        if file_attributes & FILE_ATTRIBUTE_REPARSE_POINT:
+            raise OSError("reparse-point manifest path is not permitted")
+
+        # Use the same volume naming form for both handles. GUID paths work
+        # across drive-letter aliases; DOS paths are a fallback for filesystems
+        # that do not expose a volume GUID.
+        try:
+            root_final = _windows_final_path(kernel32, root_handle, 1)
+            file_final = _windows_final_path(kernel32, file_handle, 1)
+        except OSError:
+            root_final = _windows_final_path(kernel32, root_handle, 0)
+            file_final = _windows_final_path(kernel32, file_handle, 0)
+        root_prefix = root_final.rstrip("\\\\") + "\\\\"
+        if not file_final.casefold().startswith(root_prefix.casefold()):
+            raise OSError("opened manifest path escapes repository root")
+
+        handle_value = getattr(file_handle, "value", file_handle)
+        file_fd = msvcrt.open_osfhandle(
+            int(handle_value), os.O_RDONLY | getattr(os, "O_BINARY", 0),
+        )
+        # The CRT descriptor now owns the HANDLE.
+        file_handle = None
+        before = os.fstat(file_fd)
+        if not stat.S_ISREG(before.st_mode) or before.st_size != expected_size:
+            raise OSError("manifest file type or size changed")
+        with os.fdopen(file_fd, "rb", closefd=False) as stream:
+            data = stream.read(expected_size + 1)
+        after = os.fstat(file_fd)
+        if len(data) != expected_size:
+            raise OSError("manifest file size changed while reading")
+        if _snapshot_stat_identity(before) != _snapshot_stat_identity(after):
+            raise OSError("manifest file metadata changed while reading")
+        return data, _snapshot_stat_identity(after)
+    finally:
+        if file_fd is not None:
+            os.close(file_fd)
+        if file_handle is not None:
+            close_handle(file_handle)
+        if root_handle is not None:
+            close_handle(root_handle)
+
+
 def _read_snapshot_file_with_identity(
     root: Path, relative_path: str, expected_size: int,
 ) -> tuple[bytes, tuple[int, ...]]:
@@ -459,6 +602,22 @@ def _read_snapshot_file_with_identity(
                 os.close(file_fd)
             for descriptor in reversed(directory_fds):
                 os.close(descriptor)
+
+    if os.name == "nt":
+        # Keep static component checks, then bind the read to a validated handle.
+        cursor = root
+        for part in parts:
+            cursor = cursor / part
+            component_stat = cursor.lstat()
+            if stat.S_ISLNK(component_stat.st_mode):
+                raise OSError("symlinked manifest path is not permitted")
+            attributes = int(getattr(component_stat, "st_file_attributes", 0))
+            reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+            if attributes & reparse_flag:
+                raise OSError("reparse-point manifest path is not permitted")
+        return _read_windows_snapshot_file_with_identity(
+            root, relative_path, expected_size,
+        )
 
     # Portable fallback: inspect every path component without following it.
     # Windows junctions and other name-surrogate reparse points are not always
