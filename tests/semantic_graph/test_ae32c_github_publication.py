@@ -1,7 +1,7 @@
 import base64
 import unittest
 from audit_engine.semantic_audit.ae32c.github_publication import GitHubAPIError, GitHubRefCASStore
-from audit_engine.semantic_audit.ae32c.publication import build_run_record
+from audit_engine.semantic_audit.ae32c.publication import _empty, build_run_record, digest
 
 REPO="snoopdock/Finite_element_analysis_project"
 SOURCE="a"*40
@@ -98,6 +98,33 @@ class GitHubCASStoreTests(unittest.TestCase):
         archived=[x for x in tree if x["path"].startswith("state/history/segment-")]
         self.assertEqual(len(archived), 3)
         self.assertEqual(self.store.current()["generation"], [8, 1])
+
+    def test_legacy_backlog_archives_multiple_segments_in_one_cas_commit(self):
+        head=self.store._ensure_publication_ref()
+        state=_empty(REPO)
+        state["history"]=[
+            {"record":make_record(n), "decision":"PUBLISHED",
+             "reason":"fresh_successful_run", "authorized_source_revision":SOURCE}
+            for n in range(1, 9)
+        ]
+        state["current"]=make_record(8)
+        state["last_generation"]=[8, 1]
+        state["authorized_source_revision"]=SOURCE
+        state["state_sha256"]=digest({k:v for k,v in state.items() if k!="state_sha256"})
+        seeded=self.store._commit_state(head,state)
+        self.api.refs["heads/ae32c-publication-state"]=seeded
+
+        result=self.store.publish(make_record(9))
+        self.assertEqual(result["decision"],"PUBLISHED")
+        current_head=self.store._get_ref(self.store.publication_branch)
+        compacted=self.store._read_state_at(current_head)
+        self.assertEqual(len(compacted["history"]),3)
+        self.assertEqual(compacted["history_archive"]["record_count"],6)
+        self.assertEqual(compacted["history_archive"]["segment_count"],3)
+        tree=self.api.trees[self.api.commits[current_head]["tree"]["sha"]]
+        segments=[x for x in tree if x["path"].startswith("state/history/segment-")]
+        self.assertEqual(len(segments),3)
+        self.assertEqual(self.store.current()["generation"],[9,1])
 
     def test_tampered_archive_segment_fails_closed(self):
         for n in range(1, 5):
