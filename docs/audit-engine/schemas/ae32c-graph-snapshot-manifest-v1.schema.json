@@ -4,59 +4,199 @@
   "title": "AE-32C Graph Snapshot Manifest v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["manifest_schema", "manifest_sha256", "status", "graph_snapshot_id", "source_snapshot_id", "source", "builder", "graph", "coverage", "coverage_sha256", "identity", "authority"],
+  "required": [
+    "manifest_schema",
+    "manifest_sha256",
+    "status",
+    "graph_snapshot_id",
+    "source_snapshot_id",
+    "source",
+    "builder",
+    "graph",
+    "coverage",
+    "coverage_sha256",
+    "identity",
+    "authority",
+    "rule_registry_sha256",
+    "finding_ledger",
+    "finding_ledger_sha256"
+  ],
   "properties": {
-    "manifest_schema": {"const": "ae32c/graph-snapshot-manifest/v1"},
-    "manifest_sha256": {"$ref": "#/$defs/digest"},
-    "status": {"const": "CAPTURED"},
-    "graph_snapshot_id": {"$ref": "#/$defs/digest"},
-    "source_snapshot_id": {"$ref": "#/$defs/digest"},
+    "manifest_schema": {
+      "const": "ae32c/graph-snapshot-manifest/v1"
+    },
+    "manifest_sha256": {
+      "$ref": "#/$defs/digest"
+    },
+    "status": {
+      "const": "CAPTURED"
+    },
+    "graph_snapshot_id": {
+      "$ref": "#/$defs/digest"
+    },
+    "source_snapshot_id": {
+      "$ref": "#/$defs/digest"
+    },
     "source": {
       "type": "object",
-      "required": ["repository", "commit_oid", "root_tree_oid"],
+      "required": [
+        "repository",
+        "commit_oid",
+        "root_tree_oid"
+      ],
       "properties": {
-        "repository": {"type": "string"},
-        "commit_oid": {"type": "string", "minLength": 40},
-        "root_tree_oid": {"type": "string", "minLength": 40}
+        "repository": {
+          "type": "string"
+        },
+        "commit_oid": {
+          "type": "string",
+          "minLength": 40
+        },
+        "root_tree_oid": {
+          "type": "string",
+          "minLength": 40
+        }
       },
       "additionalProperties": false
     },
     "builder": {
       "type": "object",
-      "required": ["name", "projection_contract_version", "graph_schema_version", "python_runtime"],
+      "required": [
+        "name",
+        "projection_contract_version",
+        "graph_schema_version",
+        "python_runtime"
+      ],
       "properties": {
-        "name": {"type": "string"},
-        "projection_contract_version": {"type": "string"},
-        "graph_schema_version": {"type": "string"},
-        "python_runtime": {"type": "string"}
+        "name": {
+          "type": "string"
+        },
+        "projection_contract_version": {
+          "type": "string"
+        },
+        "graph_schema_version": {
+          "type": "string"
+        },
+        "python_runtime": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "graph": {
       "type": "object",
-      "required": ["node_count", "edge_count", "content_sha256"],
+      "required": [
+        "node_count",
+        "edge_count",
+        "content_sha256"
+      ],
       "properties": {
-        "node_count": {"type": "integer", "minimum": 0},
-        "edge_count": {"type": "integer", "minimum": 0},
-        "content_sha256": {"$ref": "#/$defs/digest"}
+        "node_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "edge_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/digest"
+        }
       },
       "additionalProperties": false
     },
-    "coverage": {"type": "object"},
-    "coverage_sha256": {"$ref": "#/$defs/digest"},
-    "identity": {"type": "object"},
+    "coverage": {
+      "type": "object"
+    },
+    "coverage_sha256": {
+      "$ref": "#/$defs/digest"
+    },
+    "identity": {
+      "type": "object"
+    },
     "authority": {
       "type": "object",
-      "required": ["graph_is_derived_from_source", "graph_is_canonical_repository_authority", "graph_completeness_established", "negative_findings_permitted_by_default", "production_approval"],
+      "required": [
+        "graph_is_derived_from_source",
+        "graph_is_canonical_repository_authority",
+        "graph_completeness_established",
+        "negative_findings_permitted_by_default",
+        "production_approval"
+      ],
       "properties": {
-        "graph_is_derived_from_source": {"const": true},
-        "graph_is_canonical_repository_authority": {"const": false},
-        "graph_completeness_established": {"type": "boolean"},
-        "negative_findings_permitted_by_default": {"const": false},
-        "production_approval": {"const": false}
+        "graph_is_derived_from_source": {
+          "const": true
+        },
+        "graph_is_canonical_repository_authority": {
+          "const": false
+        },
+        "graph_completeness_established": {
+          "type": "boolean"
+        },
+        "negative_findings_permitted_by_default": {
+          "const": false
+        },
+        "production_approval": {
+          "const": false
+        }
       },
       "additionalProperties": false
+    },
+    "rule_registry_sha256": {
+      "$ref": "#/$defs/digest"
+    },
+    "finding_ledger": {
+      "type": "object",
+      "required": [
+        "schema",
+        "source_snapshot_id",
+        "graph_snapshot_id",
+        "rule_registry_sha256",
+        "finding_count",
+        "findings",
+        "authority",
+        "ledger_sha256"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ae32c/finding-ledger/v1"
+        },
+        "source_snapshot_id": {
+          "$ref": "#/$defs/digest"
+        },
+        "graph_snapshot_id": {
+          "$ref": "#/$defs/digest"
+        },
+        "rule_registry_sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "finding_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "authority": {
+          "type": "object"
+        },
+        "ledger_sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "additionalProperties": true
+    },
+    "finding_ledger_sha256": {
+      "$ref": "#/$defs/digest"
     }
   },
-  "$defs": {"digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
 }
