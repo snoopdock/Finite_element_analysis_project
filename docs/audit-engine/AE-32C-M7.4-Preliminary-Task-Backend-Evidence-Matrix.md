@@ -238,3 +238,22 @@ The five artifacts from run 45602554671 were independently detached-verified by 
 The machine-readable dossier is `evidence/m74-e85-e88-run-45602554671/verified-dossier.json`; see [the detailed dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45602554671.md). **G7 is Pass for this exact artifact set.** This is detached archive-byte/digest and report-consistency verification, not historical workflow re-execution or physical-runner attestation.
 
 **Current decision:** G4 is improved but remains Partial because repository-wide snapshot atomicity, hard-link/metadata and external-side-effect coverage, remaining mutation/restoration schedules, and native projection postflight-to-return concurrency are unresolved. G5/G6 and PATH/IMPACT domain qualification remain open. Exact-source G9.42 has not been run against this source. All 20 task/backend outcomes remain Insufficient evidence; `production_approval=false`.
+
+
+## 18. Windows handle-bound G4 race mitigation and latest exact-source evidence — 2026-11-25
+
+**Exact Stage1 source:** `0b37e79c9942e483cea770fc96138c4f185753e1`
+
+### 18.1 Windows G4 race test
+
+[G4 run 45602554567](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602554567) passed the source-snapshot cost characterization and Windows compatibility jobs. Windows job `139165068194` passed **28 tests with 46 expected skips**. The new adversarial test replaces an ordinary in-root directory with a junction to an outside directory after component inspection and before opening the candidate file. The handle-bound final-path check rejected the outside target.
+
+The Windows reader now opens/holds the root handle, opens the candidate with `FILE_FLAG_OPEN_REPARSE_POINT`, rejects a final reparse point, compares normalized final paths from `GetFinalPathNameByHandleW`, and reads from the same handle with before/after descriptor identity checks. The first attempt failed only because the fixture's inside/outside payloads differed in length; the fixture was corrected before the passing run. The mitigation closes the tested junction-replacement schedule, not all Windows namespace, reparse-point, hard-link, volume or permission configurations.
+
+### 18.2 Five-backend run and G7
+
+[E.8.5/E.8.8 run 45602554671](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602554671) passed all five backend jobs and the aggregate summary. Each backend reported 21 M7.4 task-acceptance passes, E.8.5 14/14 parity and E.8.8 43/43 parity, with zero query/parity failures. The G4 snapshot/mutation and repository-side-effect suites passed for all backends; SNAP also passed worker protocol, live Docker timeout/cleanup and teardown tests.
+
+The exact five artifact archives were detached-verified in [run 45602963647](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602963647). Artifact IDs, byte counts and SHA-256 values matched the pinned manifest; report schemas and source/run/attempt identities, native modes, versions, parity telemetry, graph/source snapshot identity, context telemetry, side-effect declarations, SciPy hybrid semantics and SNAP worker identity/policy/deadlines passed. The committed machine-readable dossier is `evidence/m74-e85-e88-run-45602554671/verified-dossier.json`; see [the detailed dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45602554671.md). **G7 is Pass for this exact set.**
+
+**Current status:** G4 is improved but remains Partial because repository-wide snapshot atomicity, complete filesystem metadata/external-side-effect coverage, hard-link aliasing, arbitrary mutation/restoration schedules and native projection postflight-to-return concurrency remain unresolved. G5/G6 and PATH/IMPACT task-domain qualification remain open. Exact-source G9.42 has not been run against this SHA. All 20 task/backend outcomes remain Insufficient evidence; `production_approval=false`.
