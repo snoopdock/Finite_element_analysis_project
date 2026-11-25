@@ -199,7 +199,7 @@ The repository now has a manual, read-only preflight entry point:
 - It requires exactly one active ruleset targeting only `ae32c-publication-state`, with update/deletion/non-fast-forward protections and a single GitHub App integration bypass.
 - It requires environment reviewers and deployment restricted to protected branches.
 - It reports App client-ID/private-key presence as `PRESENT_UNVERIFIED`; it does not read or print secret values, mint an App token, or verify the installation.
-- API permission failures are reported as `UNVERIFIED`, never as a pass.
+- The workflow optionally accepts `AE32C_PREFLIGHT_READ_TOKEN`, a fine-grained, repository-scoped token with read-only Administration and Actions permissions. Without it, the workflow falls back to `GITHUB_TOKEN`; endpoints not readable by that token are reported as `UNVERIFIED`, never as a pass.
 - `.github/workflows/ae32c_publisher_readiness_preflight.yml` exposes this check as a manual workflow on `main`, with read-only permissions and a detached report artifact.
 
 The preflight is intentionally conservative: it cannot report activation-ready until a separate controlled App-installation/token test is completed. It does not mutate repository settings, create the publication ref, or publish audit results. It is a readiness diagnostic, not a substitute for an administrator configuring the required controls.
