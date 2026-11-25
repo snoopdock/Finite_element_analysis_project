@@ -736,3 +736,38 @@ The Windows portable fallback inspects path components before opening them. A co
 This execution closes the exact-source test requirement for the current repository-side-effect/snapshot-race tranche and strengthens G4 evidence. It does **not** close G4. Atomic snapshot semantics, the Windows path-opening race, full external side-effect coverage, the postflight-to-return race and broader mutation schedules remain unresolved. G4 stays **Partial**.
 
 The same run does not turn any task/backend pair into a suitability approval. All 20 outcomes remain **Insufficient evidence**; no backend ranking, automatic selection, scientific approval or production approval follows. `production_approval=false`.
+
+
+## 25. Windows handle-bound containment against junction replacement — 2026-11-25
+
+**Implementation source:** `0b37e79c9942e483cea770fc96138c4f185753e1`  
+**G4 workflow:** [run 45602554567](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602554567), success  
+**Windows job:** `139165068194`, success  
+**Five-backend regression:** [run 45602554671](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602554671), all five backends and aggregate summary success
+
+### 25.1 Implementation
+
+The Windows fallback now binds the source read to actual open handles instead of relying only on a prior component check:
+
+1. Open the repository root with `CreateFileW`, `FILE_FLAG_BACKUP_SEMANTICS` and `FILE_FLAG_OPEN_REPARSE_POINT`; reject a reparse-point root or a non-directory handle.
+2. Open the candidate file with `CreateFileW` and `FILE_FLAG_OPEN_REPARSE_POINT`; reject a final-component reparse point using `GetFileInformationByHandleEx(FileAttributeTagInfo)`.
+3. Obtain normalized final paths from both handles using `GetFinalPathNameByHandleW`. Prefer `VOLUME_NAME_GUID`; retry with the DOS volume-name form if GUID naming is unavailable. Compare the opened file's final path to the already-open root handle's final path, using a component-boundary prefix check. Reject if the actual opened object resolves outside the root.
+4. Transfer the same file handle to a CRT descriptor and read from that handle. Compare descriptor identity before and after the read and enforce the expected size.
+
+This closes the specific race where a directory component is inspected as an ordinary directory, then replaced by a junction before the file open. The check is performed against the final opened object, not a path string resolved earlier.
+
+### 25.2 Adversarial Windows test and result
+
+The new Windows-only test deliberately creates a normal in-root directory and file, allows the component `lstat` checks to complete, renames that directory, and installs a junction at the same path pointing to an outside directory immediately before the candidate file is opened. The test requires the handle-bound final-path check to reject the outside target.
+
+The first attempt, run `45602327903`, failed before exercising the helper because the test fixture's two payloads had different lengths (25 bytes versus 23 bytes). This was a test-fixture defect, not evidence for or against the handle check. The fixture was corrected to use an equal-length outside payload. The subsequent exact-source Windows job in run `45602554567` passed: **28 passed, 46 expected skips in 1.27 seconds**, on Windows Server 2022 with Python 3.11.9 for the test step. The new junction-replacement test passed together with the existing static junction, source-snapshot and repository-side-effect tests.
+
+The same source passed the Linux source-snapshot cost characterization job and all five E.8.5/E.8.8 backend jobs in run `45602554671`. Each backend reported 21 M7.4 task-acceptance passes, 14/14 E.8.5 parity-verified queries and 43/43 E.8.8 parity-verified queries, with zero query/parity failures. The SNAP job also passed its worker protocol, live Docker timeout/cleanup, task acceptance, G4 and resource-teardown tests.
+
+### 25.3 Assurance boundary
+
+**The tested Windows junction-swap-to-outside race is now rejected by a handle-bound final-path check.** This is stronger than the prior lstat/resolve/open sequence, but it is not a universal proof for every Windows filesystem namespace or every reparse-point type. The current test covers a local NTFS-style directory junction on the hosted Windows Server 2022 runner; it does not exhaust mount points, network shares, all volume aliases, hard-link aliasing, root replacement schedules or all permission configurations. If final-path resolution cannot be established, the implementation fails closed rather than falling back to an unchecked path read.
+
+This does not create an atomic repository-wide snapshot. It also does not close every filesystem metadata/external-side-effect boundary, every mutation-and-restoration schedule, or the native-projection postflight-to-return window. A validated file handle secures the identity and containment of that individual read; it does not prove that all files in a multi-file repository view existed in one common instant.
+
+**G4 status:** improved; Windows component-inspection-to-open escape is closed for the tested junction-replacement schedule. G4 remains **Partial** pending a declared/implemented repository-wide snapshot consistency contract, broader filesystem namespace and side-effect coverage, and native projection concurrency/postflight closure. All 20 task/backend suitability outcomes remain Insufficient evidence; `production_approval=false`.
