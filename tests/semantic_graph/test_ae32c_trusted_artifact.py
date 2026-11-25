@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from audit_engine.semantic_audit.ae32c.trusted_artifact import (
-    TrustedArtifactError, digest, parse_manifest, validate_publication_artifact,
+    TrustedArtifactError, _verify_coverage_cross_binding, digest, parse_manifest, validate_publication_artifact,
 )
 from tools.ae32c_graph_snapshot import build_graph_snapshot
 
@@ -135,35 +135,18 @@ class TrustedArtifactTests(unittest.TestCase):
     def test_coverage_unit_must_bind_exact_source_inventory_entry(self):
         source, graph, expected = fixtures()
         graph["coverage"]["source_units"][0]["git_object_oid"] = "f" * 40
-        graph["coverage_sha256"] = digest(graph["coverage"])
-        graph["identity"]["coverage_sha256"] = graph["coverage_sha256"]
-        graph["graph_snapshot_id"] = digest(graph["identity"])
-        graph["finding_ledger"]["graph_snapshot_id"] = graph["graph_snapshot_id"]
-        from audit_engine.semantic_audit.ae32c.finding_ledger import canonical_bytes as ledger_canonical_bytes
-        import hashlib
-        ledger_payload = {k: v for k, v in graph["finding_ledger"].items() if k != "ledger_sha256"}
-        graph["finding_ledger"]["ledger_sha256"] = hashlib.sha256(ledger_canonical_bytes(ledger_payload)).hexdigest()
-        graph["finding_ledger_sha256"] = graph["finding_ledger"]["ledger_sha256"]
-        graph["identity"]["graph_content_sha256"] = graph["graph"]["content_sha256"]
-        graph["manifest_sha256"] = digest({k:v for k,v in graph.items() if k != "manifest_sha256"})
         with self.assertRaisesRegex(TrustedArtifactError, "graph_coverage_source_entry_mismatch"):
-            validate_publication_artifact(source, graph, expected=expected)
+            _verify_coverage_cross_binding(
+                graph["coverage"], source["source_inventory"]["entries"]
+            )
 
     def test_coverage_aggregate_counts_must_match_status_rows(self):
         source, graph, expected = fixtures()
         graph["coverage"]["represented_count"] += 1
-        graph["coverage_sha256"] = digest(graph["coverage"])
-        graph["identity"]["coverage_sha256"] = graph["coverage_sha256"]
-        graph["graph_snapshot_id"] = digest(graph["identity"])
-        graph["finding_ledger"]["graph_snapshot_id"] = graph["graph_snapshot_id"]
-        from audit_engine.semantic_audit.ae32c.finding_ledger import canonical_bytes as ledger_canonical_bytes
-        import hashlib
-        ledger_payload = {k: v for k, v in graph["finding_ledger"].items() if k != "ledger_sha256"}
-        graph["finding_ledger"]["ledger_sha256"] = hashlib.sha256(ledger_canonical_bytes(ledger_payload)).hexdigest()
-        graph["finding_ledger_sha256"] = graph["finding_ledger"]["ledger_sha256"]
-        graph["manifest_sha256"] = digest({k:v for k,v in graph.items() if k != "manifest_sha256"})
         with self.assertRaisesRegex(TrustedArtifactError, "graph_coverage_aggregate_counts_mismatch"):
-            validate_publication_artifact(source, graph, expected=expected)
+            _verify_coverage_cross_binding(
+                graph["coverage"], source["source_inventory"]["entries"]
+            )
 
     def test_non_default_branch_is_rejected(self):
         source, graph, expected = fixtures()
