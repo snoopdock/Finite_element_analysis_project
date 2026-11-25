@@ -192,7 +192,9 @@ class GitHubRefCASStore:
                 "publication_commit_sha": commit_sha,
                 "authorized_source_revision": source_sha,
                 "live_source_revision_after_commit": live_source,
-                "history_count": len(next_state["history"]),
+                "history_count": len(next_state["history"]) + (next_state.get("history_archive") or {}).get("record_count", 0),
+                "history_inline_count": len(next_state["history"]),
+                "history_archived_count": (next_state.get("history_archive") or {}).get("record_count", 0),
             }
         raise PublicationError("github_publication_cas_retry_exhausted")
 
