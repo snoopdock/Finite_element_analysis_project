@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ae32c-source-snapshot-${ github.event.pull_request.number || github.ref }}
+  group: ae32c-source-snapshot-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -22,15 +22,15 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      AE32C_SOURCE_REVISION: ${ github.sha }}
-      AE32C_EVENT_NAME: ${ github.event_name }}
-      AE32C_REPOSITORY: ${ github.repository }}
-      AE32C_REF: ${ github.ref }}
+      AE32C_SOURCE_REVISION: ${{ github.sha }}
+      AE32C_EVENT_NAME: ${{ github.event_name }}
+      AE32C_REPOSITORY: ${{ github.repository }}
+      AE32C_REF: ${{ github.ref }}
     steps:
       - name: Checkout exact event revision
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${ github.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -67,8 +67,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ae32c-source-snapshot-${ github.run_id }}-${ github.run_attempt }}
-          path: ${ runner.temp }}/ae32c-source-snapshot/source-snapshot-manifest.json
+          name: ae32c-source-snapshot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ae32c-source-snapshot/source-snapshot-manifest.json
           if-no-files-found: warn
           retention-days: 30
 
