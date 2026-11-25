@@ -526,7 +526,7 @@ def _read_windows_snapshot_file_with_identity(
         except OSError:
             root_final = _windows_final_path(kernel32, root_handle, 0)
             file_final = _windows_final_path(kernel32, file_handle, 0)
-        root_prefix = root_final.rstrip("\\\\") + "\\\\"
+        root_prefix = root_final.rstrip("\\") + "\\"
         if not file_final.casefold().startswith(root_prefix.casefold()):
             raise OSError("opened manifest path escapes repository root")
 
