@@ -61,6 +61,7 @@ def evaluate(
     environment: Any,
     app_client_id_present: bool,
     app_private_key_present: bool,
+    publisher_app_id: int | None,
 ) -> dict[str, Any]:
     checks: dict[str, dict[str, str]] = {}
 
@@ -119,6 +120,8 @@ def evaluate(
                 and bypass[0].get("actor_type") == "Integration"
                 and bypass[0].get("bypass_mode") == "always"
                 and isinstance(bypass[0].get("actor_id"), int)
+                and publisher_app_id is not None
+                and bypass[0].get("actor_id") == publisher_app_id
             )
             if REQUIRED_RULES.issubset(names) and app_bypass:
                 valid.append(ruleset)
@@ -239,6 +242,11 @@ def main() -> int:
             repository=os.environ.get("GITHUB_REPOSITORY", ""),
             app_client_id_present=os.environ.get("AE32C_APP_CLIENT_ID_PRESENT") == "true",
             app_private_key_present=os.environ.get("AE32C_APP_PRIVATE_KEY_PRESENT") == "true",
+            publisher_app_id=(
+                int(os.environ["AE32C_PUBLISHER_APP_ID"])
+                if os.environ.get("AE32C_PUBLISHER_APP_ID", "").isdigit()
+                else None
+            ),
         )
         with open(args.output, "w", encoding="utf-8") as handle:
             json.dump(result, handle, ensure_ascii=False, sort_keys=True, indent=2)
