@@ -225,7 +225,7 @@ A failed or missing manifest must be treated as an incomplete source-snapshot st
 
 ## 10. Next implementation stages
 
-1. Bind graph schema, builder/frontend versions, graph digest and coverage manifest to source_snapshot_id.
+1. **Completed — graph snapshot identity and source coverage.** See [AE-32C Graph Snapshot Identity and Coverage](AE-32C-Graph-Snapshot-Coverage.md). The graph schema, AE-32B builder/projection versions, graph-content digest and coverage manifest are now bound to `source_snapshot_id`.
 2. Add rule-specific coverage and closed-world/negative-query contracts.
 3. Add immutable run-result records and a separate freshness-guarded publication protocol.
 4. Establish full-rebuild correctness and representative resource measurements.
