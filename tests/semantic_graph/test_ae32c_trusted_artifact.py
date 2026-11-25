@@ -4,9 +4,10 @@ import io
 import json
 import zipfile
 import unittest
+from pathlib import Path
 
 from audit_engine.semantic_audit.ae32c.trusted_artifact import (
-    TrustedArtifactError, _verify_coverage_cross_binding, digest, parse_artifact_archive, parse_manifest, validate_publication_artifact,
+    TrustedArtifactError, _verify_coverage_cross_binding, digest, parse_artifact_archive, parse_manifest, validate_manifest_schemas, validate_publication_artifact,
 )
 from tools.ae32c_graph_snapshot import build_graph_snapshot
 
@@ -40,6 +41,7 @@ def fixtures(*, represented=True):
     }
     source_manifest = {
         "manifest_schema": "ae32c/source-snapshot-manifest/v1",
+        "created_at": "2026-11-25T00:00:00Z",
         "status": "VERIFIED", "source_snapshot_id": source_id,
         "source": source, "event": event,
         "source_inventory": {"schema": "ae32c/source-inventory/v1",
@@ -47,16 +49,22 @@ def fixtures(*, represented=True):
                              "sha256": inventory_sha},
         "materialization": {
             "checkout_commit_oid": COMMIT, "checkout_root_tree_oid": TREE,
-            "status": "CLEAN", "worktree": {
+            "status": "CLEAN",
+            "submodule_and_lfs_limitations": "Submodule and external LFS payloads are outside the snapshot boundary.",
+            "worktree": {
                 "clean": True, "changed_entry_count": 0, "changed_entries_sample": [],
             },
         },
         "verification": {
-            "status": "VERIFIED", "source_snapshot_id_at_verification": source_id,
+            "status": "VERIFIED",
+            "captured_at": "2026-11-25T00:00:00Z",
+            "verified_at": "2026-11-25T00:01:00Z",
+            "source_snapshot_id_at_verification": source_id,
             "source_inventory_sha256_at_verification": inventory_sha,
             "worktree_clean_at_verification": True,
+            "reason": None,
         },
-        "run": {"run_id": "100", "run_attempt": "1", "workflow": "AE-32C"},
+        "run": {"run_id": "100", "run_attempt": "1", "workflow": "AE-32C", "actor": "test"},
         "authority": {
             "atomic_repository_snapshot_established": False,
             "graph_completeness_established": False,
@@ -93,6 +101,21 @@ def fixtures(*, represented=True):
 
 
 class TrustedArtifactTests(unittest.TestCase):
+    def test_both_manifests_validate_against_trusted_schemas(self):
+        source, graph, expected = fixtures()
+        root = Path("docs/audit-engine/schemas")
+        source_schema = json.loads((root / "ae32c-source-snapshot-manifest-v1.schema.json").read_text())
+        graph_schema = json.loads((root / "ae32c-graph-snapshot-manifest-v1.schema.json").read_text())
+        validate_manifest_schemas(source, graph, source_schema=source_schema, graph_schema=graph_schema)
+
+    def test_source_schema_rejects_unexpected_top_level_field(self):
+        source, graph, expected = fixtures()
+        source["unrecognized"] = True
+        root = Path("docs/audit-engine/schemas")
+        source_schema = json.loads((root / "ae32c-source-snapshot-manifest-v1.schema.json").read_text())
+        graph_schema = json.loads((root / "ae32c-graph-snapshot-manifest-v1.schema.json").read_text())
+        with self.assertRaisesRegex(TrustedArtifactError, "source_schema_validation_failed"):
+            validate_manifest_schemas(source, graph, source_schema=source_schema, graph_schema=graph_schema)
     def test_complete_artifact_produces_current_eligible_record(self):
         source, graph, expected = fixtures()
         result = validate_publication_artifact(source, graph, expected=expected)
