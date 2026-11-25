@@ -7,7 +7,7 @@ on:
     paths:
       - "tools/gb08_m74_native_conformance_dossier.py"
       - "tests/semantic_graph/test_m74_detached_native_conformance_dossier.py"
-      - "docs/audit-engine/evidence/m74-e85-e88-run-45600944022/manifest.json"
+      - "docs/audit-engine/evidence/m74-e85-e88-run-45602554671/manifest.json"
       - ".github/workflows/m7_4_detached_e85_e88_dossier.yml"
 
 permissions:
@@ -44,7 +44,7 @@ jobs:
           import subprocess
           from pathlib import Path
 
-          manifest_path = Path("docs/audit-engine/evidence/m74-e85-e88-run-45600944022/manifest.json")
+          manifest_path = Path("docs/audit-engine/evidence/m74-e85-e88-run-45602554671/manifest.json")
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
           output = Path("artifacts")
           output.mkdir(parents=True, exist_ok=True)
@@ -76,16 +76,16 @@ jobs:
         run: |
           python tools/gb08_m74_native_conformance_dossier.py \
             --artifact-dir artifacts \
-            --manifest docs/audit-engine/evidence/m74-e85-e88-run-45600944022/manifest.json \
-            --expected-run-id 45600944022 \
-            --expected-source-revision ed33bf68c49fd41506d5d7917fbdc77bf8e544e7 \
-            --expected-snap-image sha256:ef460791e7e5fcf6c7d7b232941cca37ea6020704454bee2c685aec1d094bd14 \
+            --manifest docs/audit-engine/evidence/m74-e85-e88-run-45602554671/manifest.json \
+            --expected-run-id 45602554671 \
+            --expected-source-revision 0b37e79c9942e483cea770fc96138c4f185753e1 \
+            --expected-snap-image sha256:4367b17c45d9d53c2a0337f44cda93755883e2e88e0972d94c500b4816880555 \
             --output artifacts/verified-dossier.json
 
       - name: Upload detached verification dossier
         uses: actions/upload-artifact@v4
         with:
-          name: m74-detached-dossier-45600944022
+          name: m74-detached-dossier-45602554671
           path: artifacts/verified-dossier.json
           if-no-files-found: error
           retention-days: 30
