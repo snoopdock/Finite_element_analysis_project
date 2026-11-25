@@ -165,15 +165,15 @@ Any failed, cancelled, incomplete, superseded, non-authorized, or stale run is n
 
 Do not activate a write-capable publisher until all are true:
 
-1. The trusted publisher workflow and validator are reviewed and present on the default branch.
-2. The default branch's protection/required-review policy is verified.
-3. The publication-ref ruleset is configured and verified.
-4. The protected environment and required reviewers are configured.
-5. The GitHub App/credential is installed with minimum permissions.
-6. Artifact validation and policy tests pass.
-7. Live ref-CAS integration is tested in a controlled repository/ref.
-8. Publication-history compaction and integrity verification are implemented and fake-transport tested; live GitHub behavior remains unverified.
-9. The user explicitly authorizes activation.
+1. **Satisfied:** the trusted publisher workflow and validator are present on the current default branch.
+2. **Blocked:** the live GitHub branch API reports `main.protected == false`; required-review protection is absent.
+3. **Blocked:** the live repository rulesets endpoint returned an empty list; no publication-ref-only ruleset exists.
+4. **Unverified:** the `ae32c-publication` environment and required reviewers have not been verified.
+5. **Unverified:** the repository-scoped GitHub App installation, client ID, and private-key secret have not been verified.
+6. **CI-gated:** artifact validation and policy tests must pass on the candidate revision.
+7. **Open:** live ref-CAS integration, including archive writes and reads, has not been tested in a controlled repository/ref.
+8. **Implemented, CI-gated:** bounded inline history and digest-chained archive verification are implemented; live GitHub behavior remains unverified.
+9. **Conditional authorization:** the user has authorized activation only if it is judged safe; that condition is not met while blockers 2–7 remain.
 
 ## 8. Publication-history compaction (2026-11-26)
 
@@ -192,7 +192,7 @@ The fake-transport test suite now exercises compaction across multiple segments,
 
 ## 9. Current disposition
 
-The existing producer workflow remains read-only. The trusted publisher workflow is present on `main` and is wired to the producer through `workflow_run`, but its job is skipped unless repository variable `AE32C_TRUSTED_PUBLISHER_ENABLED` is exactly `true`. The adapter remains fake-transport tested only. No publication ref has been created by this project, no live write credential has been used, and no production result pointer exists.
+The existing producer workflow remains read-only. The trusted publisher workflow is present on `main` and is wired to the producer through `workflow_run`, but its job remains gated by repository variable `AE32C_TRUSTED_PUBLISHER_ENABLED`. On 2026-11-26, the live branch API reported `main.protected == false` and the repository rulesets endpoint returned no rulesets. Environment reviewers and App credentials remain unverified. The durable adapter and archive compaction are fake-transport tested; no live write credential has been used and no production result pointer has been created. Activation is therefore not safe, notwithstanding the user's conditional authorization.
 
 This document defines the next implementation and acceptance boundary; it does not claim that the publisher is operational.
 
