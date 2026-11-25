@@ -1,0 +1,102 @@
+name: AE-32C GitHub Source Snapshot Manifest
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+  pull_request:
+    branches:
+      - stage1/section-uuids
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-source-snapshot-${ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-snapshot:
+    name: Capture and verify exact Git source snapshot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      AE32C_SOURCE_REVISION: ${ github.sha }}
+      AE32C_EVENT_NAME: ${ github.event_name }}
+      AE32C_REPOSITORY: ${ github.repository }}
+      AE32C_REF: ${ github.ref }}
+    steps:
+      - name: Checkout exact event revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Establish Python runtime
+        run: python --version
+
+      - name: Run source snapshot manifest unit tests
+        run: |
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_ae32c_source_snapshot_manifest.py' \
+            -v
+
+      - name: Capture exact source and Git tree inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ae32c-source-snapshot"
+          python tools/ae32c_source_snapshot_manifest.py capture \
+            --repository . \
+            --output "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" \
+            --expected-source-revision "$GITHUB_SHA"
+
+      - name: Verify source identity and worktree postflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/ae32c_source_snapshot_manifest.py verify \
+            --repository . \
+            --manifest "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" \
+            --expected-source-revision "$GITHUB_SHA"
+
+      - name: Publish compact source snapshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae32c-source-snapshot-${ github.run_id }}-${ github.run_attempt }}
+          path: ${ runner.temp }}/ae32c-source-snapshot/source-snapshot-manifest.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Summarize source snapshot result
+        if: always()
+        shell: bash
+        run: |
+          if [ -f "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" ]; then
+            python - <<'PY'
+            import json
+            import os
+            from pathlib import Path
+            path = Path(os.environ["RUNNER_TEMP"]) / "ae32c-source-snapshot/source-snapshot-manifest.json"
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+            source = manifest.get("source", {})
+            inventory = manifest.get("source_inventory", {})
+            lines = [
+                "### AE-32C source snapshot",
+                "- Status: " + str(manifest.get("status")),
+                "- Commit: " + str(source.get("commit_oid")),
+                "- Root tree: " + str(source.get("root_tree_oid")),
+                "- Inventory SHA-256: " + str(inventory.get("sha256")),
+                "- Inventory entries: " + str(inventory.get("entry_count")),
+                "- Atomic repository snapshot established: " + str(manifest.get("authority", {}).get("atomic_repository_snapshot_established")),
+            ]
+            with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as stream:
+                stream.write("\n".join(lines) + "\n")
+            PY
+          else
+            echo "Source snapshot manifest was not created." >> "$GITHUB_STEP_SUMMARY"
+          fi
