@@ -277,6 +277,7 @@ def verify_finding_ledger(ledger: Mapping[str, Any]) -> None:
             raise RuleContractError("finding_rule_version_mismatch")
         if finding.get("rule_id") != finding.get("rule_contract", {}).get("rule_id") and not _matches(str(finding.get("rule_contract", {}).get("rule_id", "")), str(finding.get("rule_id", ""))):
             raise RuleContractError("finding_rule_contract_mismatch")
-        if finding.get("claim_status") == "ABSTAIN" and finding.get("rule_contract", {}).get("claim_polarity") == "absence":
-            if finding.get("rule_contract", {}).get("closed_world") is not None:
-                raise RuleContractError("absence_claim_closed_world_policy_mismatch")
+        polarity = finding.get("rule_contract", {}).get("claim_polarity")
+        if polarity in {"absence", "mixed"} and finding.get("rule_contract", {}).get("closed_world") is None:
+            if finding.get("claim_status") != "ABSTAIN":
+                raise RuleContractError("open_world_claim_not_abstained")
