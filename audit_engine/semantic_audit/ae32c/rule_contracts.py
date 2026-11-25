@@ -33,43 +33,43 @@ def digest(value: Any) -> str:
 # Dynamic component suffixes are explicit patterns, not implicit unknown rules.
 _RULES: tuple[dict[str, Any], ...] = (
     {"rule_id": "AE32A-LLM-ISOLATION-*", "claim_polarity": "mixed",
-     "required_evidence_kinds": ["llm_transport", "graph_or_tool_loop"],
+     "required_evidence_kinds": ["llm_transport_call"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-NO-TOOL-LOOP", "claim_polarity": "absence",
-     "required_evidence_kinds": ["tool_protocol_scan", "dispatch_scan"],
+     "required_evidence_kinds": ["model_tool_protocol_indicator", "tool_dispatch_indicator"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-NO-GENERAL-AE-WORKFLOW", "claim_polarity": "absence",
      "required_evidence_kinds": ["workflow_command"],
      "required_coverage": ["workflow_static_scan", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-FIXED-DIAGNOSTIC-CONTEXT", "claim_polarity": "mixed",
-     "required_evidence_kinds": ["fixed_context_path"],
+     "required_evidence_kinds": ["fixed_context_allowlist"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-GRAPH-SERVICE-UNUSED", "claim_polarity": "absence",
-     "required_evidence_kinds": ["graph_service_consumer_scan"],
+     "required_evidence_kinds": ["graph_import"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-GRAPH-NOT-IN-LLM-PATH", "claim_polarity": "absence",
-     "required_evidence_kinds": ["llm_graph_path_scan"],
+     "required_evidence_kinds": ["graph_import"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-AE28-EXTERNAL-MODEL-INPUT", "claim_polarity": "positive",
      "required_evidence_kinds": ["external_model_response_intake"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-AE29-VERIFICATION-RECEIPT-ONLY", "claim_polarity": "mixed",
-     "required_evidence_kinds": ["verification_gate", "test_runner_scan"],
+     "required_evidence_kinds": ["verification_gate_api"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-SYNTHETIC-EVAL-ONLY", "claim_polarity": "mixed",
-     "required_evidence_kinds": ["evaluation_harness", "provider_transport_scan"],
+     "required_evidence_kinds": ["evaluation_indicator"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-NO-TEST-REFERENCE-*", "claim_polarity": "absence",
-     "required_evidence_kinds": ["component_inventory", "test_reference_scan"],
+     "required_evidence_kinds": ["component_inventory"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-PROVIDER-PATH-DUPLICATION", "claim_polarity": "positive",
-     "required_evidence_kinds": ["provider_transport", "provider_factory_import_scan"],
+     "required_evidence_kinds": ["llm_transport_call"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-DECISION-MEMORY-BRIDGE-NOT-OBSERVED", "claim_polarity": "absence",
-     "required_evidence_kinds": ["decision_memory_import_scan"],
+     "required_evidence_kinds": ["decision_memory_indicator"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-INCOMPLETE-PYTHON-SCAN", "claim_polarity": "positive",
-     "required_evidence_kinds": ["python_parse_issue"],
+     "required_evidence_kinds": ["python_syntax_error"],
      "required_coverage": ["python_ast", "source_manifest"], "closed_world": None},
     {"rule_id": "AE32A-SCOPE-EXCLUSIONS", "claim_polarity": "positive",
      "required_evidence_kinds": ["scope_exclusion"],
@@ -180,13 +180,30 @@ def build_finding_ledger(
             graph_manifest.get("coverage", {}).get("status") == "COMPLETE_WITH_DECLARED_EXCLUSIONS"
             and graph_manifest.get("coverage", {}).get("unaccounted_count") == 0
         )
+        observed_kinds = {item["kind"] for item in evidence_refs}
+        required_kinds = set(contract.get("required_evidence_kinds", []))
+        missing_kinds = sorted(required_kinds - observed_kinds)
+        if missing_kinds:
+            evidence_issues.extend("required_evidence_kind_missing:" + kind for kind in missing_kinds)
+        extractor_coverage = graph_manifest.get("coverage", {}).get("extractor_coverage", {})
+        coverage_issues: list[str] = []
+        for requirement in contract.get("required_coverage", []):
+            if requirement == "source_manifest" and not required_scope_complete:
+                coverage_issues.append("source_manifest_incomplete")
+            elif requirement == "python_ast":
+                ast_coverage = extractor_coverage.get("python_ast", {})
+                if ast_coverage.get("candidate_count") != ast_coverage.get("parsed_count") or ast_coverage.get("failed_count", 0):
+                    coverage_issues.append("python_ast_incomplete")
+            elif requirement == "workflow_static_scan":
+                if extractor_coverage.get("workflow_static_scan", {}).get("status") != "complete":
+                    coverage_issues.append("workflow_static_scan_incomplete")
         if contract["claim_polarity"] == "absence":
             claim_status = "ABSTAIN"
             reason = "closed_world_contract_not_defined"
         elif evidence_issues or not evidence_refs:
             claim_status = "INSUFFICIENT_EVIDENCE"
             reason = "evidence_binding_failed_or_missing"
-        elif not required_scope_complete:
+        elif coverage_issues:
             claim_status = "ABSTAIN"
             reason = "required_source_coverage_incomplete"
         else:
@@ -209,6 +226,7 @@ def build_finding_ledger(
             "finding_id": digest(finding_payload),
             **finding_payload,
             "evidence_issues": sorted(set(evidence_issues)),
+            "coverage_issues": sorted(set(coverage_issues)),
             "rule_contract": contract,
         })
     bound.sort(key=lambda item: (item["rule_id"], item["finding_id"]))
