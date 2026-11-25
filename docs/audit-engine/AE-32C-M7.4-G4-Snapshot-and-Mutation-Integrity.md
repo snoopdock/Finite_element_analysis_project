@@ -701,3 +701,38 @@ The next correctness work should characterize the final native-projection postfl
 The existing `tools/gb05_native_backend_performance_benchmark.py` already times NetworkX `_verify_projection` and native-adapter `_build_adjacency` preflight/postflight audits and records projection reads. It should be extended with task-relevant workload families and backend-local reporting rather than replaced by a duplicate timer or converted into a universal backend ranking. The current five-node smoke result is not a representative workload characterization.
 
 G4 remains **Partial** until those boundaries and out-of-root side effects are addressed with explicit tests and evidence.
+
+## 24. Latest G4 repository-side-effect and snapshot-race execution — 2026-11-25
+
+**Five-backend workflow:** [run 45600944022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45600944022), attempt 1  
+**Exact tested source:** `ed33bf68c49fd41506d5d7917fbdc77bf8e544e7`  
+**Detached G7 verification of this E.8.5/E.8.8 artifact set:** [run 45601831710](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45601831710), success
+
+All five backend jobs and the aggregate summary succeeded. Each backend reported 21 passed / 84 expected skips for the M7.4 task acceptance module. The G4 snapshot/mutation module reported 7 passed / 33 expected backend-selection skips for NetworkX, SciPy, python-igraph and graph-tool; SNAP reported 8 passed / 32 expected skips. The G4 repository side-effect/snapshot-race module reported 7 passed / 14 expected skips for the four in-process backends and 8 passed / 13 expected skips for SNAP. The extra Linux skip is the Windows-only directory-junction test.
+
+SNAP additionally passed six worker protocol/container-restriction tests, the live Docker timeout/container-cleanup test, and two repository-backend resource-teardown tests. E.8.5 and E.8.8 passed with 14/14 and 43/43 parity-verified queries respectively, zero query/parity failures, and the expected native adjacency telemetry. The later detached G7 workflow independently verified the five original E.8.5/E.8.8 archives for this exact source/run; see [the run-specific dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45600944022.md).
+
+### 24.1 What the repository-side-effect tests establish
+
+The test tranche exercises the following bounded cases:
+
+- Repository-backed evidence operations preserve file bytes and permission modes within the copied repository fixture.
+- A same-size external disk edit after construction does not replace the already-pinned in-memory source snapshot returned by repository evidence queries.
+- A same-size disk edit during an active read query does not rewrite the content/hash pair used by that query.
+- An ordinary change-and-restore schedule between the initial load and second validation pass is detected through descriptor-bound identity observations.
+- A same-size source edit during initial loading is rejected by the second manifest validation.
+- A SNAP query waiting for the worker request lock when close occurs fails closed after the worker is stopped; it does not report a successful query against the closed worker.
+
+The tree-state helper explicitly does not cover ownership, timestamps, ACLs, extended attributes, hard-link identity or external filesystem effects outside the copied root. The Windows-only junction test is separately covered by the paired Windows compatibility job in run 45473007486; it verifies rejection of a static junction/reparse-point escape, not a concurrent replacement race.
+
+### 24.2 Remaining G4 boundaries
+
+These results do not prove an atomic repository-wide point-in-time snapshot. The initial manifest, content-load pass and second validation pass can still observe a sequence of filesystem states; a second pass narrows and detects tested races but does not make the whole multi-file view atomic.
+
+The Windows portable fallback inspects path components before opening them. A concurrent junction/reparse-point replacement between inspection and open remains a TOCTOU boundary because the fallback is not equivalent to POSIX descriptor-relative traversal. The current tests also do not establish that every possible out-of-root effect, filesystem metadata change, hard-link alias, or concurrent mutation-and-restoration schedule is detected. A successful postflight scan does not prove that the projection cannot be changed after the scan but before the result is returned.
+
+### 24.3 Decision
+
+This execution closes the exact-source test requirement for the current repository-side-effect/snapshot-race tranche and strengthens G4 evidence. It does **not** close G4. Atomic snapshot semantics, the Windows path-opening race, full external side-effect coverage, the postflight-to-return race and broader mutation schedules remain unresolved. G4 stays **Partial**.
+
+The same run does not turn any task/backend pair into a suitability approval. All 20 outcomes remain **Insufficient evidence**; no backend ranking, automatic selection, scientific approval or production approval follows. `production_approval=false`.
