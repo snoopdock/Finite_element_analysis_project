@@ -87,11 +87,12 @@ def parse_artifact_archive(raw: bytes) -> dict[str, dict[str, Any]]:
             payloads: dict[str, bytes] = {}
             for item in members:
                 name = item.filename
-                if (name.startswith(("/", "\\\\")) or "\\\\" in name
+                if (name.startswith(("/", chr(92))) or chr(92) in name
                         or any(part in ("", ".", "..") for part in name.split("/"))):
                     raise TrustedArtifactError("artifact_archive_path_invalid:" + name)
                 mode = item.external_attr >> 16
-                if item.is_dir() or stat.S_ISLNK(mode) or (mode and not stat.S_ISREG(mode)):
+                file_type = stat.S_IFMT(mode)
+                if item.is_dir() or file_type not in (0, stat.S_IFREG):
                     raise TrustedArtifactError("artifact_archive_member_type_invalid:" + name)
                 if item.flag_bits & 0x1:
                     raise TrustedArtifactError("artifact_archive_encrypted_member:" + name)
