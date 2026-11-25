@@ -1,0 +1,90 @@
+name: AE-32C M7.4 Detached E.8.5/E.8.8 Dossier Verification
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - "tools/gb08_m74_native_conformance_dossier.py"
+      - "tests/semantic_graph/test_m74_detached_native_conformance_dossier.py"
+      - "docs/audit-engine/evidence/m74-e85-e88-run-45473007901/manifest.json"
+      - ".github/workflows/m7_4_detached_e85_e88_dossier.yml"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  verify-detached-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact verifier revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run detached verifier adversarial tests
+        run: |
+          python -m unittest discover -s tests/semantic_graph -p 'test_m74_detached_native_conformance_dossier.py' -v
+
+      - name: Download exact historical Actions artifact archives
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          manifest_path = Path("docs/audit-engine/evidence/m74-e85-e88-run-45473007901/manifest.json")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          output = Path("artifacts")
+          output.mkdir(parents=True, exist_ok=True)
+          for item in manifest["artifacts"]:
+              backend = {
+                  "e85-networkx-conformance": "networkx",
+                  "e85-scipy-conformance": "scipy",
+                  "e85-igraph-conformance": "igraph",
+                  "e85-graph-tool-conformance": "graph_tool",
+                  "e85-e88-snap-isolated-worker": "snap",
+              }[item["name"]]
+              url = (
+                  f"https://api.github.com/repos/${{ github.repository }}"
+                  f"/actions/artifacts/{item['id']}/zip"
+              )
+              destination = output / f"{backend}.zip"
+              subprocess.run([
+                  "curl", "--fail", "--location", "--retry", "3",
+                  "--retry-all-errors",
+                  "--header", f"Authorization: Bearer {os.environ['GITHUB_TOKEN']}",
+                  "--header", "Accept: application/vnd.github+json",
+                  "--header", "X-GitHub-Api-Version: 2022-11-28",
+                  url, "--output", str(destination),
+              ], check=True)
+              print(f"downloaded {item['name']} -> {destination}")
+          PY
+
+      - name: Verify artifact bytes and E.8.5/E.8.8 semantic contracts
+        run: |
+          python tools/gb08_m74_native_conformance_dossier.py \
+            --artifact-dir artifacts \
+            --manifest docs/audit-engine/evidence/m74-e85-e88-run-45473007901/manifest.json \
+            --expected-run-id 45473007901 \
+            --expected-source-revision 098a87394d972010f04466c540fcf5f43b490f9b \
+            --expected-snap-image sha256:a6feacb4726070cb6e990ad13a7b4aefe557b6ebfae7adc3431c92af1d8e9ec2 \
+            --output artifacts/verified-dossier.json
+
+      - name: Upload detached verification dossier
+        uses: actions/upload-artifact@v4
+        with:
+          name: m74-detached-dossier-45473007901
+          path: artifacts/verified-dossier.json
+          if-no-files-found: error
+          retention-days: 30
