@@ -115,8 +115,17 @@ def _blob_content_digests(root: Path, entries: list[dict[str, Any]]) -> dict[str
                                 stderr.decode("utf-8", errors="replace")[:500])
     finally:
         if process.poll() is None:
+            try:
+                if process.stdin and not process.stdin.closed:
+                    process.stdin.close()
+            except OSError:
+                pass
             process.kill()
             process.wait()
+        if process.stdout:
+            process.stdout.close()
+        if process.stderr:
+            process.stderr.close()
     return digests
 
 
@@ -150,7 +159,8 @@ def _event_context(event_name, repository_name, ref, event_path) -> dict[str, An
 
 
 def _build_snapshot(repository, *, expected_source_revision=None, event_name=None,
-                    repository_name=None, ref=None, event_path=None) -> dict[str, Any]:
+                    repository_name=None, ref=None, event_path=None,
+                    recorded_event=None) -> dict[str, Any]:
     root = Path(repository).expanduser().resolve(strict=True)
     if not root.is_dir():
         raise SnapshotError("repository_not_directory")
@@ -171,7 +181,18 @@ def _build_snapshot(repository, *, expected_source_revision=None, event_name=Non
         else:
             raise SnapshotError(f"unsupported_git_tree_entry:{item['mode']}:{item['object_type']}")
     inventory_sha256 = _sha256(entries)
-    event = _event_context(event_name, repository_name, ref, event_path)
+    if recorded_event is None:
+        event = _event_context(event_name, repository_name, ref, event_path)
+    else:
+        required_event_fields = (
+            "event_name", "repository", "ref", "source_mode",
+            "base_commit_oid", "head_commit_oid", "event_merge_commit_oid",
+        )
+        if not isinstance(recorded_event, dict) or any(
+            field not in recorded_event for field in required_event_fields
+        ):
+            raise SnapshotError("recorded_event_context_invalid")
+        event = {field: recorded_event[field] for field in required_event_fields}
     source = {
         "repository": event["repository"], "source_mode": event["source_mode"],
         "commit_oid": commit_oid, "commit_oid_algorithm": object_format,
@@ -241,13 +262,19 @@ def verify_manifest(repository, manifest_path, *, expected_source_revision=None)
         manifest = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(manifest, dict) or manifest.get("manifest_schema") != SCHEMA:
             raise SnapshotError("manifest_schema_invalid")
-        snapshot = _build_snapshot(repository,
-                                   expected_source_revision=expected_source_revision)
-        same = (snapshot["source_snapshot_id"] == manifest.get("source_snapshot_id")
-                and snapshot["source_inventory"]["sha256"]
-                == manifest.get("source_inventory", {}).get("sha256")
-                and snapshot["source"]["root_tree_oid"]
-                == manifest.get("source", {}).get("root_tree_oid"))
+        snapshot = _build_snapshot(
+            repository,
+            expected_source_revision=expected_source_revision,
+            recorded_event=manifest.get("event"),
+        )
+        same = (
+            snapshot["source_snapshot_id"] == manifest.get("source_snapshot_id")
+            and snapshot["source"] == manifest.get("source")
+            and snapshot["source_inventory"]["sha256"]
+            == manifest.get("source_inventory", {}).get("sha256")
+            and snapshot["source"]["root_tree_oid"]
+            == manifest.get("source", {}).get("root_tree_oid")
+        )
         if not same:
             raise SnapshotError("source_identity_changed_after_capture")
         if not snapshot["materialization"]["worktree"]["clean"]:
