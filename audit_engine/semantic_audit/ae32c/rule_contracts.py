@@ -197,9 +197,13 @@ def build_finding_ledger(
             elif requirement == "workflow_static_scan":
                 if extractor_coverage.get("workflow_static_scan", {}).get("status") != "complete":
                     coverage_issues.append("workflow_static_scan_incomplete")
-        if contract["claim_polarity"] == "absence":
+        if contract["claim_polarity"] in {"absence", "mixed"} and contract.get("closed_world") is None:
             claim_status = "ABSTAIN"
-            reason = "closed_world_contract_not_defined"
+            reason = (
+                "closed_world_contract_not_defined"
+                if contract["claim_polarity"] == "absence"
+                else "mixed_claim_requires_closed_world_contract"
+            )
         elif evidence_issues or not evidence_refs:
             claim_status = "INSUFFICIENT_EVIDENCE"
             reason = "evidence_binding_failed_or_missing"
