@@ -2,9 +2,9 @@
 
 **Record type:** Preliminary evidence ledger; not a suitability approval  
 **Branch:** stage1/section-uuids  
-**Latest task-test source:** ed33bf68c49fd41506d5d7917fbdc77bf8e544e7 (the earlier evidence snapshots remain individually source-bound)  
-**Latest E.8.5/E.8.8 regression:** [45600944022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45600944022), attempt 1, success; G7 detached passes for both run 45473007901 and the latest run 45600944022 are recorded below  
-**Latest aggregate summary job:** 139159986931, success  
+**Latest task-test source:** 0b37e79c9942e483cea770fc96138c4f185753e1 (earlier evidence snapshots remain individually source-bound)  
+**Latest E.8.5/E.8.8 regression:** [45602554671](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602554671), attempt 1, success; G7 detached pass for this exact set is [run 45602963647](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602963647)  
+**Latest aggregate summary job:** 139165860984, success  
 **Controlling contract:** [M7.4 Task-Specific Backend Suitability Assessment Contract](AE-32C-M7.4-Task-Suitability-Assessment-Contract.md)  
 **Validation evidence:** [M7.4 Initial Task Assessment Validation](AE-32C-M7.4-Initial-Task-Assessment-Validation.md)  
 **Authority:** production_approval=false; no global ranking, winner, automatic selection or runtime promotion.
@@ -25,11 +25,11 @@ The latest E.8.5/E.8.8 source SHA is ed33bf68c49fd41506d5d7917fbdc77bf8e544e7. T
 
 | Backend | CI job ID | M7.4 result |
 |---|---:|---:|
-| NetworkX | 139159380457 | 21 passed; 84 expected skips |
-| SciPy | 139159380319 | 21 passed; 84 expected skips |
-| python-igraph | 139159380489 | 21 passed; 84 expected skips |
-| graph-tool | 139159380252 | 21 passed; 84 expected skips |
-| SNAP isolated worker | 139159379827 | 21 passed; 84 expected skips |
+| NetworkX | 139164993004 | 21 passed; 84 expected skips |
+| SciPy | 139164992886 | 21 passed; 84 expected skips |
+| python-igraph | 139164992902 | 21 passed; 84 expected skips |
+| graph-tool | 139164992523 | 21 passed; 84 expected skips |
+| SNAP isolated worker | 139164993062 | 21 passed; 84 expected skips |
 
 The 84 skips in each job are the four backend partitions not selected by that job. Across the matrix this is 105 passing backend-specific test executions and 420 expected skips; it is not 105 different test definitions.
 
@@ -210,3 +210,31 @@ The E.8.5/E.8.8 artifacts from [run 45600944022](https://github.com/snoopdock/Fi
 All five archives and their embedded reports passed. The committed machine-readable dossier is `evidence/m74-e85-e88-run-45600944022/verified-dossier.json`; see [the run-specific dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45600944022.md). **G7 is Pass for the exact run 45600944022 artifact set.** This is detached byte/digest and report-consistency verification, not historical workflow re-execution or physical-runner attestation.
 
 Run 45600944022 also passed the five-backend M7.4 task suite, E.8.5/E.8.8 and bounded G4 repository side-effect/snapshot-race tests. G4 remains Partial because atomic repository-wide snapshot semantics, Windows reparse-point path-opening TOCTOU, full external side-effect coverage and all mutation/restoration windows remain unresolved. G5/G6 and PATH/IMPACT domain qualification remain open. Exact-source G9.42 has not been run against this source. All 20 task/backend outcomes remain Insufficient evidence; `production_approval=false`.
+
+
+## 17. Latest source: Windows handle-bound race test, five-backend regression and detached G7 — 2026-11-25
+
+**Exact Stage1 source:** `0b37e79c9942e483cea770fc96138c4f185753e1`
+
+### 17.1 G4 Windows source-reader result
+
+[G4 run 45602554567](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602554567) passed both the source-snapshot cost characterization job and the Windows compatibility job. Windows job `139165068194` ran the G4 source-snapshot, mutation and repository-side-effect suites on Windows Server 2022 with Python 3.11.9: **28 passed, 46 expected skips**. The new adversarial test swaps a normal in-root directory for an outside junction after component inspection and verifies that the opened file handle's final path is rejected.
+
+The implementation binds reads to a held repository-root handle and a candidate file handle, rejects final reparse-point files, compares normalized final paths via `GetFinalPathNameByHandleW`, and reads from the same handle after containment succeeds. This closes the tested junction-replacement-to-outside schedule; it does not prove every Windows namespace/reparse-point case or an atomic repository-wide snapshot.
+
+### 17.2 Latest five-backend acceptance
+
+[E.8.5/E.8.8 run 45602554671](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602554671) passed all five backend jobs and aggregate summary `139165860984`. Each backend reported 21 M7.4 task-acceptance passes, 14/14 E.8.5 parity-verified queries and 43/43 E.8.8 parity-verified queries, with zero query/parity failures.
+
+- G4 snapshot/mutation tests: 7 passed / 33 expected skips for NetworkX, SciPy, igraph and graph-tool; 8 passed / 32 expected skips for SNAP.
+- G4 repository-side-effect/snapshot-race tests: 7 passed / 15 expected skips for the four in-process backends; 8 passed / 14 expected skips for SNAP. The extra skip is the Windows-only junction test, exercised by the Windows job above.
+- SNAP additionally passed six worker protocol/restriction tests, one live Docker timeout/cleanup test and two resource-teardown tests.
+- The Windows helper change is platform-specific; the five Linux backend jobs verify that the shared code remains importable and that their existing source-read paths and semantic reports remain correct.
+
+### 17.3 Detached G7
+
+The five artifacts from run 45602554671 were independently detached-verified by [run 45602963647](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602963647). Exact artifact IDs, byte counts and archive SHA-256 values matched the pinned manifest; embedded E.8.5/E.8.8 schemas, source/run/attempt identities, native modes/library versions, parity telemetry, repository graph/source identities, context operations, side-effect declarations, SciPy hybrid representation and SNAP worker image/policy/deadlines passed.
+
+The machine-readable dossier is `evidence/m74-e85-e88-run-45602554671/verified-dossier.json`; see [the detailed dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45602554671.md). **G7 is Pass for this exact artifact set.** This is detached archive-byte/digest and report-consistency verification, not historical workflow re-execution or physical-runner attestation.
+
+**Current decision:** G4 is improved but remains Partial because repository-wide snapshot atomicity, hard-link/metadata and external-side-effect coverage, remaining mutation/restoration schedules, and native projection postflight-to-return concurrency are unresolved. G5/G6 and PATH/IMPACT domain qualification remain open. Exact-source G9.42 has not been run against this source. All 20 task/backend outcomes remain Insufficient evidence; `production_approval=false`.
