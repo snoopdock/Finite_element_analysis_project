@@ -1,0 +1,211 @@
+{
+  "schema_version": "ae32c/m7.4-e85-e88-detached-dossier/v1",
+  "status": "verified",
+  "campaign": {
+    "workflow_run_id": 45600944022,
+    "workflow_run_attempt": 1,
+    "source_revision": "ed33bf68c49fd41506d5d7917fbdc77bf8e544e7",
+    "source_branch": "stage1/section-uuids",
+    "workflow_name": "AE-32C Native Graph Backend Conformance (E.8.5 / E.8.8)",
+    "backends": [
+      "networkx",
+      "scipy",
+      "igraph",
+      "graph-tool",
+      "snap"
+    ]
+  },
+  "artifacts": [
+    {
+      "backend": "networkx",
+      "artifact_id": 15015546978,
+      "artifact_name": "e85-networkx-conformance",
+      "artifact_archive_size_bytes": 2767,
+      "artifact_archive_sha256": "sha256:a1e85f0fc21249d25cb0eb3b46b912c889a866898bf5c48c10409ca541bfcd8a",
+      "library_version": "3.6.1",
+      "native_query_mode": "networkx_successor_predecessor_adjacency",
+      "e85_report_sha256": "e7f3d3a86c7cf787ef71a1129f18ca8c010fca51f76a632ca07a90620a7d63a4",
+      "e88_report_sha256": "c5ed942cba1afcd9b1f794dd0789e7f9c8b5caecb9b667947d6faaa73c3f6ae4",
+      "e85": {
+        "case_count": 7,
+        "queries": 14,
+        "parity_verified": 14,
+        "native_adjacency_lookups": 34,
+        "native_edge_occurrences_read": 96
+      },
+      "e88": {
+        "queries": 43,
+        "parity_verified": 43,
+        "native_adjacency_lookups": 45,
+        "native_edge_occurrences_read": 86,
+        "context_operations": {
+          "trace_execution_context": 7,
+          "find_workflow_context": 16,
+          "trace_execution_context.workflow_context": 16
+        },
+        "verified_source_reads": {
+          "main.py": "3282daf42d3e9a4eaccb836df33c569863853afd01c4176c532906c5e433f475",
+          "tests/checks.py": "cedb1c8e442aceb32d87722d2718ee9a80d8b676b7cb660f4c7bca3d8a81a75a"
+        }
+      }
+    },
+    {
+      "backend": "scipy",
+      "artifact_id": 15015397170,
+      "artifact_name": "e85-scipy-conformance",
+      "artifact_archive_size_bytes": 2927,
+      "artifact_archive_sha256": "sha256:3b68803963ef8708c26b6ef14d0330782e4fd8a4fc84af2e18e8f14bba163bcb",
+      "library_version": "1.17.1",
+      "native_query_mode": "scipy_csr_csc_adjacency",
+      "e85_report_sha256": "300fc9e8acebdf6888e2f48fa483f462fa506567affb7e74ee41f6e9b6bcf826",
+      "e88_report_sha256": "366ea78c54cb52845d7a8a928c81a12d694d5aed9946cd31d1ae28cdb6a3c2f1",
+      "e85": {
+        "case_count": 7,
+        "queries": 14,
+        "parity_verified": 14,
+        "native_adjacency_lookups": 34,
+        "native_edge_occurrences_read": 96
+      },
+      "e88": {
+        "queries": 43,
+        "parity_verified": 43,
+        "native_adjacency_lookups": 45,
+        "native_edge_occurrences_read": 86,
+        "context_operations": {
+          "trace_execution_context": 7,
+          "find_workflow_context": 16,
+          "trace_execution_context.workflow_context": 16
+        },
+        "verified_source_reads": {
+          "main.py": "3282daf42d3e9a4eaccb836df33c569863853afd01c4176c532906c5e433f475",
+          "tests/checks.py": "cedb1c8e442aceb32d87722d2718ee9a80d8b676b7cb660f4c7bca3d8a81a75a"
+        }
+      }
+    },
+    {
+      "backend": "igraph",
+      "artifact_id": 15013799761,
+      "artifact_name": "e85-igraph-conformance",
+      "artifact_archive_size_bytes": 2747,
+      "artifact_archive_sha256": "sha256:7b37eceabbf316e5927c3af34f37502c772ca7a8161e223ca17204ad74658fbd",
+      "library_version": "1.0.0",
+      "native_query_mode": "igraph_incident_edge_ids",
+      "e85_report_sha256": "7ed75212e34e1c858703ee32c5960ea7e9b97be1059e9c38636871af9b514a1c",
+      "e88_report_sha256": "0152d7d9a0c30479fa2146ce8b22569ef91b4d9858af264c96cab4b4d4c6c350",
+      "e85": {
+        "case_count": 7,
+        "queries": 14,
+        "parity_verified": 14,
+        "native_adjacency_lookups": 34,
+        "native_edge_occurrences_read": 96
+      },
+      "e88": {
+        "queries": 43,
+        "parity_verified": 43,
+        "native_adjacency_lookups": 45,
+        "native_edge_occurrences_read": 86,
+        "context_operations": {
+          "trace_execution_context": 7,
+          "find_workflow_context": 16,
+          "trace_execution_context.workflow_context": 16
+        },
+        "verified_source_reads": {
+          "main.py": "3282daf42d3e9a4eaccb836df33c569863853afd01c4176c532906c5e433f475",
+          "tests/checks.py": "cedb1c8e442aceb32d87722d2718ee9a80d8b676b7cb660f4c7bca3d8a81a75a"
+        }
+      }
+    },
+    {
+      "backend": "graph-tool",
+      "artifact_id": 15016215025,
+      "artifact_name": "e85-graph-tool-conformance",
+      "artifact_archive_size_bytes": 2843,
+      "artifact_archive_sha256": "sha256:32d33b8b858b86e121f7491df30fbb9c12b4762d35f9166aa78c37d3919bbb37",
+      "library_version": "3.9",
+      "native_query_mode": "graph_tool_vertex_edge_iterators",
+      "e85_report_sha256": "7a69d48f2e6b239243992ac7782c5798332a65f4672ceabc8b8bc65399990f80",
+      "e88_report_sha256": "70ffd274f083b47e8908394c5db5664dbed2d856badb341aa7103e24bfcc8c48",
+      "e85": {
+        "case_count": 7,
+        "queries": 14,
+        "parity_verified": 14,
+        "native_adjacency_lookups": 34,
+        "native_edge_occurrences_read": 96
+      },
+      "e88": {
+        "queries": 43,
+        "parity_verified": 43,
+        "native_adjacency_lookups": 45,
+        "native_edge_occurrences_read": 86,
+        "context_operations": {
+          "trace_execution_context": 7,
+          "find_workflow_context": 16,
+          "trace_execution_context.workflow_context": 16
+        },
+        "verified_source_reads": {
+          "main.py": "3282daf42d3e9a4eaccb836df33c569863853afd01c4176c532906c5e433f475",
+          "tests/checks.py": "cedb1c8e442aceb32d87722d2718ee9a80d8b676b7cb660f4c7bca3d8a81a75a"
+        }
+      }
+    },
+    {
+      "backend": "snap",
+      "artifact_id": 15014649334,
+      "artifact_name": "e85-e88-snap-isolated-worker",
+      "artifact_archive_size_bytes": 3435,
+      "artifact_archive_sha256": "sha256:abd715bd0e05e65b13b53a68b18f143788f14471a19d8e94ae1c7ce823b440d4",
+      "library_version": "6.0.0",
+      "native_query_mode": "snap_isolated_worker_tneanet_edge_ids",
+      "e85_report_sha256": "328cd9a9f17ae457c73b68a39adb7fc5f35ab77096eb81821c21c8345bb5a9d5",
+      "e88_report_sha256": "b5eccf1e5c79d77eb4b0cefb404da9774f2a05393438f2c24e6603cfbe1d5bcf",
+      "e85": {
+        "case_count": 7,
+        "queries": 14,
+        "parity_verified": 14,
+        "native_adjacency_lookups": 34,
+        "native_edge_occurrences_read": 96
+      },
+      "e88": {
+        "queries": 43,
+        "parity_verified": 43,
+        "native_adjacency_lookups": 45,
+        "native_edge_occurrences_read": 86,
+        "context_operations": {
+          "trace_execution_context": 7,
+          "find_workflow_context": 16,
+          "trace_execution_context.workflow_context": 16
+        },
+        "verified_source_reads": {
+          "main.py": "3282daf42d3e9a4eaccb836df33c569863853afd01c4176c532906c5e433f475",
+          "tests/checks.py": "cedb1c8e442aceb32d87722d2718ee9a80d8b676b7cb660f4c7bca3d8a81a75a"
+        }
+      }
+    }
+  ],
+  "cross_backend_invariants": {
+    "e85_graph_fingerprint": "graph:c6146d2473910927d9c7f113d92a4400",
+    "e88_repository_snapshot": {
+      "evidence_index_status": "complete",
+      "graph_edge_count": 41,
+      "graph_fingerprint": "graph:1aca2caea6acabcf695a6118f7202b6e",
+      "graph_node_count": 26,
+      "indexed_file_count": 9,
+      "source_manifest_sha256": "5d186a8801781c0c63ea29bc102a0c67f08bf8bd8358888cc96de381a24cb0cf"
+    },
+    "backend_specific_native_modes_verified": true
+  },
+  "interpretation": {
+    "computational_options_not_competitors": true,
+    "performance_winner_established": false,
+    "task_suitability_decision_established": false,
+    "backend_auto_selection_permitted": false,
+    "production_approval": false,
+    "scope": "artifact identity and declared E.8.5/E.8.8 evidence; not historical re-execution or physical-runner attestation"
+  },
+  "verifier": {
+    "implementation": "tools/gb08_m74_native_conformance_dossier.py",
+    "implementation_sha256": "8b7aa5b42675126ee92324ae2744c5ad31202725e27240d5a938e6b4ad724c3b",
+    "manifest_sha256": "3c1f11fa39ed73e215d67c9cab3d73a362686842661f6d6685a4c3d34909cdbc",
+    "python_version": "3.11.18"
+  }
+}
