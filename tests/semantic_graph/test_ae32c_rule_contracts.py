@@ -54,7 +54,7 @@ class RuleContractTests(unittest.TestCase):
                          "detail": "validated response intake"}],
         }])
         finding = ledger["findings"][0]
-        self.assertEqual(finding["claim_status"], "SUPPORTED")
+        self.assertEqual(finding["claim_status"], "EVIDENCE_BOUND")
         self.assertEqual(finding["source_snapshot_id"], "a" * 64)
         self.assertEqual(finding["graph_snapshot_id"], "c" * 64)
         self.assertEqual(finding["evidence"][0]["graph_node_id"], "file:src/a.py")
