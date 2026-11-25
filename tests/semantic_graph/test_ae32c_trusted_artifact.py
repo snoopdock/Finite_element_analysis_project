@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from audit_engine.semantic_audit.ae32c.trusted_artifact import (
-    TrustedArtifactError, _verify_coverage_cross_binding, digest, parse_artifact_archive, parse_manifest, validate_manifest_schemas, validate_publication_artifact,
+    TrustedArtifactError, _verify_coverage_cross_binding, digest, parse_artifact_archive, parse_manifest, validate_artifact_bytes, validate_manifest_schemas, validate_publication_artifact,
 )
 from tools.ae32c_graph_snapshot import build_graph_snapshot
 
@@ -101,6 +101,20 @@ def fixtures(*, represented=True):
 
 
 class TrustedArtifactTests(unittest.TestCase):
+    def test_end_to_end_artifact_entry_point_validates_bytes_and_schemas(self):
+        source, graph, expected = fixtures()
+        root = Path("docs/audit-engine/schemas")
+        source_schema = json.loads((root / "ae32c-source-snapshot-manifest-v1.schema.json").read_text())
+        graph_schema = json.loads((root / "ae32c-graph-snapshot-manifest-v1.schema.json").read_text())
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("source-snapshot-manifest.json", json.dumps(source))
+            archive.writestr("graph-snapshot-manifest.json", json.dumps(graph))
+        result = validate_artifact_bytes(
+            buffer.getvalue(), expected=expected,
+            source_schema=source_schema, graph_schema=graph_schema,
+        )
+        self.assertTrue(result["current_eligible"])
     def test_both_manifests_validate_against_trusted_schemas(self):
         source, graph, expected = fixtures()
         root = Path("docs/audit-engine/schemas")
