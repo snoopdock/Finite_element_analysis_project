@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/snoopdock/Finite_element_analysis_project/blob/stage1/section-uuids/docs/audit-engine/schemas/ae32c-graph-snapshot-manifest-v1.schema.json",
+  "title": "AE-32C Graph Snapshot Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifest_schema", "status", "graph_snapshot_id", "source_snapshot_id", "source", "builder", "graph", "coverage", "coverage_sha256", "identity", "authority"],
+  "properties": {
+    "manifest_schema": {"const": "ae32c/graph-snapshot-manifest/v1"},
+    "status": {"const": "CAPTURED"},
+    "graph_snapshot_id": {"$ref": "#/$defs/digest"},
+    "source_snapshot_id": {"$ref": "#/$defs/digest"},
+    "source": {
+      "type": "object",
+      "required": ["repository", "commit_oid", "root_tree_oid"],
+      "properties": {
+        "repository": {"type": "string"},
+        "commit_oid": {"type": "string", "minLength": 40},
+        "root_tree_oid": {"type": "string", "minLength": 40}
+      },
+      "additionalProperties": false
+    },
+    "builder": {
+      "type": "object",
+      "required": ["name", "projection_contract_version", "graph_schema_version", "python_runtime"],
+      "properties": {
+        "name": {"type": "string"},
+        "projection_contract_version": {"type": "string"},
+        "graph_schema_version": {"type": "string"},
+        "python_runtime": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "graph": {
+      "type": "object",
+      "required": ["node_count", "edge_count", "content_sha256"],
+      "properties": {
+        "node_count": {"type": "integer", "minimum": 0},
+        "edge_count": {"type": "integer", "minimum": 0},
+        "content_sha256": {"$ref": "#/$defs/digest"}
+      },
+      "additionalProperties": false
+    },
+    "coverage": {"type": "object"},
+    "coverage_sha256": {"$ref": "#/$defs/digest"},
+    "identity": {"type": "object"},
+    "authority": {
+      "type": "object",
+      "required": ["graph_is_derived_from_source", "graph_is_canonical_repository_authority", "graph_completeness_established", "negative_findings_permitted_by_default", "production_approval"],
+      "properties": {
+        "graph_is_derived_from_source": {"const": true},
+        "graph_is_canonical_repository_authority": {"const": false},
+        "graph_completeness_established": {"type": "boolean"},
+        "negative_findings_permitted_by_default": {"const": false},
+        "production_approval": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}
