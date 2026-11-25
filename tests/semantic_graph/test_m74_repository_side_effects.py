@@ -406,3 +406,55 @@ def test_g4_same_size_edit_during_snapshot_loading_is_rejected(tmp_path, monkeyp
         RepositoryEvidenceTools(root, graph_backend="reference")
     assert captured.value.code == "source_changed_during_index"
     assert mutation_applied is True
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows handle/reparse-point behavior")
+def test_snapshot_reader_rejects_junction_swap_after_component_inspection(
+    tmp_path, monkeypatch,
+):
+    """A junction installed after lstat must not redirect an opened read outside root."""
+    root = tmp_path / "repo"
+    junction = root / "nested"
+    outside = tmp_path / "outside"
+    original_directory = root / "nested-original"
+    junction.mkdir(parents=True)
+    outside.mkdir()
+    payload = b"same-size source payload\n"
+    (junction / "secret.py").write_bytes(payload)
+    (outside / "secret.py").write_bytes(b"outside source payload\n")
+    assert len((outside / "secret.py").read_bytes()) == len(payload)
+
+    original_open = evidence_tools_module._windows_open_file_handle
+    mutation_applied = False
+
+    def swap_junction_before_file_open(kernel32, path, flags):
+        nonlocal mutation_applied
+        if Path(path) == junction / "secret.py" and not mutation_applied:
+            os.rename(junction, original_directory)
+            result = subprocess.run(
+                ["cmd.exe", "/c", "mklink", "/J", str(junction), str(outside)],
+                capture_output=True, text=True, check=False,
+            )
+            if result.returncode != 0:
+                os.rename(original_directory, junction)
+                pytest.skip(
+                    f"Windows junction creation unavailable: {result.stderr.strip()}"
+                )
+            mutation_applied = True
+        return original_open(kernel32, path, flags)
+
+    monkeypatch.setattr(
+        evidence_tools_module, "_windows_open_file_handle",
+        swap_junction_before_file_open,
+    )
+    try:
+        with pytest.raises(OSError, match="opened manifest path escapes repository root"):
+            evidence_tools_module._read_snapshot_file_with_identity(
+                root.resolve(), "nested/secret.py", len(payload),
+            )
+        assert mutation_applied is True
+    finally:
+        if junction.exists():
+            os.rmdir(junction)
+        if original_directory.exists():
+            os.rename(original_directory, junction)
