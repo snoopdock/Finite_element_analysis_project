@@ -122,7 +122,7 @@ def verify_e88(r,b,run_id=RUN,source_revision=SOURCE,snap_image=SNAP_IMAGE):
     need(r.get("side_effects")==effects, "e88_side_effects:"+b)
     w=r.get("native_worker")
     if b=="snap":
-        need(w.get("container_image_id")==SNAP_IMAGE and w.get("snap_version")=="6.0.0" and w.get("python_version")=="3.9.25" and
+        need(w.get("container_image_id")==snap_image and w.get("snap_version")=="6.0.0" and w.get("python_version")=="3.9.25" and
              w.get("request_timeout_enforced") is True and w.get("request_timeout_seconds")==30.0 and
              w.get("container_policy")==SNAP_POLICY and w.get("graph_fingerprint")==REPO["graph_fingerprint"] and
              w.get("node_count")==26 and w.get("edge_occurrence_count")==41, "snap_e88_isolation:")
