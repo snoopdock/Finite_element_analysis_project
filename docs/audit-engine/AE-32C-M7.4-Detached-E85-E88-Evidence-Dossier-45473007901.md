@@ -12,7 +12,7 @@ The detached workflow downloaded all five historical Actions ZIP archives by the
 
 The workflow also ran the verifier's adversarial unit suite successfully before downloading the artifacts. The verifier implementation was `tools/gb08_m74_native_conformance_dossier.py`, SHA-256 `8b7aa5b42675126ee92324ae2744c5ad31202725e27240d5a938e6b4ad724c3b`. The manifest SHA-256 was `00514ec1c37593651af67e575e58cd594b725833604d86be160877c0d7cc4c3f`. Verification ran under Python 3.11.18.
 
-The machine-readable verified result is the [detached dossier artifact](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45601021689/artifacts/15015925967), artifact ID `15015925967`, 2,210 bytes, Actions-reported ZIP SHA-256 `814e03f4fd018acc27a963c1db8d7e56f9c71cf281cb13c15fd1a710b5b83fb6`.
+The machine-readable verified result is committed at [`evidence/m74-e85-e88-run-45473007901/verified-dossier.json`](evidence/m74-e85-e88-run-45473007901/verified-dossier.json) and preserved as the [detached dossier artifact](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45601021689/artifacts/15015925967), artifact ID `15015925967`, 2,210 bytes, Actions-reported ZIP SHA-256 `814e03f4fd018acc27a963c1db8d7e56f9c71cf281cb13c15fd1a710b5b83fb6`.
 
 ## Backend evidence
 
