@@ -4,9 +4,10 @@
   "title": "AE-32C Graph Snapshot Manifest v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["manifest_schema", "status", "graph_snapshot_id", "source_snapshot_id", "source", "builder", "graph", "coverage", "coverage_sha256", "identity", "authority"],
+  "required": ["manifest_schema", "manifest_sha256", "status", "graph_snapshot_id", "source_snapshot_id", "source", "builder", "graph", "coverage", "coverage_sha256", "identity", "authority"],
   "properties": {
     "manifest_schema": {"const": "ae32c/graph-snapshot-manifest/v1"},
+    "manifest_sha256": {"$ref": "#/$defs/digest"},
     "status": {"const": "CAPTURED"},
     "graph_snapshot_id": {"$ref": "#/$defs/digest"},
     "source_snapshot_id": {"$ref": "#/$defs/digest"},
