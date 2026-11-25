@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/snoopdock/Finite_element_analysis_project/blob/stage1/section-uuids/docs/audit-engine/schemas/ae32c-source-snapshot-manifest-v1.schema.json",
+  "title": "AE-32C Source Snapshot Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifest_schema", "manifest_sha256", "status", "created_at", "source_snapshot_id", "source", "event", "source_inventory", "materialization", "verification", "run", "authority"],
+  "properties": {
+    "manifest_schema": {"const": "ae32c/source-snapshot-manifest/v1"},
+    "manifest_sha256": {"$ref": "#/$defs/digest"},
+    "status": {"enum": ["CAPTURED_PENDING_POSTFLIGHT", "VERIFIED", "FAILED"]},
+    "created_at": {"type": "string", "format": "date-time"},
+    "source_snapshot_id": {"$ref": "#/$defs/digest"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "source_mode", "commit_oid", "commit_oid_algorithm", "root_tree_oid", "base_commit_oid", "head_commit_oid", "source_inventory_sha256"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 3},
+        "source_mode": {"enum": ["push", "pull_request_merge", "manual", "scheduled", "github_event"]},
+        "commit_oid": {"type": "string", "pattern": "^[0-9a-fA-F]+$"},
+        "commit_oid_algorithm": {"enum": ["sha1", "sha256"]},
+        "root_tree_oid": {"type": "string", "pattern": "^[0-9a-fA-F]+$"},
+        "base_commit_oid": {"type": ["string", "null"]},
+        "head_commit_oid": {"type": ["string", "null"]},
+        "source_inventory_sha256": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_name", "repository", "ref", "source_mode", "base_commit_oid", "head_commit_oid", "event_merge_commit_oid"],
+      "properties": {
+        "event_name": {"type": "string"},
+        "repository": {"type": "string"},
+        "ref": {"type": "string"},
+        "source_mode": {"type": "string"},
+        "base_commit_oid": {"type": ["string", "null"]},
+        "head_commit_oid": {"type": ["string", "null"]},
+        "event_merge_commit_oid": {"type": ["string", "null"]}
+      }
+    },
+    "source_inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "entry_count", "entries", "sha256"],
+      "properties": {
+        "schema": {"const": "ae32c/source-inventory/v1"},
+        "entry_count": {"type": "integer", "minimum": 0},
+        "sha256": {"$ref": "#/$defs/digest"},
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "mode", "object_type", "git_object_oid", "content_sha256", "materialization_kind"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1},
+              "mode": {"type": "string", "pattern": "^[0-7]{6}$"},
+              "object_type": {"enum": ["blob", "commit"]},
+              "git_object_oid": {"type": "string", "pattern": "^[0-9a-fA-F]+$"},
+              "content_sha256": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+              "materialization_kind": {"enum": ["regular_file", "symlink", "gitlink_submodule"]}
+            }
+          }
+        }
+      }
+    },
+    "materialization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkout_commit_oid", "checkout_root_tree_oid", "worktree", "status", "submodule_and_lfs_limitations"],
+      "properties": {
+        "checkout_commit_oid": {"type": "string"},
+        "checkout_root_tree_oid": {"type": "string"},
+        "status": {"enum": ["CLEAN", "DIRTY"]},
+        "submodule_and_lfs_limitations": {"type": "string"},
+        "worktree": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["clean", "changed_entry_count", "changed_entries_sample"],
+          "properties": {
+            "clean": {"type": "boolean"},
+            "changed_entry_count": {"type": "integer", "minimum": 0},
+            "changed_entries_sample": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "captured_at", "verified_at", "source_snapshot_id_at_verification", "source_inventory_sha256_at_verification", "worktree_clean_at_verification", "reason"],
+      "properties": {
+        "status": {"enum": ["PENDING", "VERIFIED", "FAILED"]},
+        "captured_at": {"type": "string", "format": "date-time"},
+        "verified_at": {"type": ["string", "null"], "format": "date-time"},
+        "source_snapshot_id_at_verification": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+        "source_inventory_sha256_at_verification": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+        "worktree_clean_at_verification": {"type": ["boolean", "null"]},
+        "reason": {"type": ["string", "null"]}
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workflow", "run_id", "run_attempt", "actor"],
+      "properties": {
+        "workflow": {"type": ["string", "null"]},
+        "run_id": {"type": ["string", "null"]},
+        "run_attempt": {"type": ["string", "null"]},
+        "actor": {"type": ["string", "null"]}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["atomic_repository_snapshot_established", "graph_completeness_established", "production_approval"],
+      "properties": {
+        "atomic_repository_snapshot_established": {"const": false},
+        "graph_completeness_established": {"const": false},
+        "production_approval": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
