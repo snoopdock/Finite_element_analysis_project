@@ -12,14 +12,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: ae32c-trusted-publisher-\${{ github.event.workflow_run.id }}
+  group: ae32c-trusted-publisher-${{ github.event.workflow_run.id }}
   cancel-in-progress: false
 
 jobs:
   trusted-publisher:
     # Deliberately inert until repository controls and credentials are configured
     # and an administrator explicitly sets this repository variable to "true".
-    if: \${{ vars.AE32C_TRUSTED_PUBLISHER_ENABLED == 'true' }}
+    if: ${{ vars.AE32C_TRUSTED_PUBLISHER_ENABLED == 'true' }}
     name: Validate upstream artifact and publish guarded state
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -32,7 +32,7 @@ jobs:
       - name: Checkout trusted default-branch workflow revision
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: \${{ github.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -44,7 +44,7 @@ jobs:
 
       - name: Validate exact upstream run and artifact
         env:
-          GITHUB_TOKEN: \${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python tools/ae32c_trusted_publisher.py prepare
@@ -55,15 +55,15 @@ jobs:
         id: publisher-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          client-id: \${{ vars.AE32C_PUBLISHER_APP_CLIENT_ID }}
-          private-key: \${{ secrets.AE32C_PUBLISHER_APP_PRIVATE_KEY }}
-          owner: \${{ github.repository_owner }}
+          client-id: ${{ vars.AE32C_PUBLISHER_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AE32C_PUBLISHER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
           repositories: Finite_element_analysis_project
           permission-contents: write
 
       - name: Publish through durable ref compare-and-swap
         env:
-          AE32C_PUBLICATION_TOKEN: \${{ steps.publisher-token.outputs.token }}
+          AE32C_PUBLICATION_TOKEN: ${{ steps.publisher-token.outputs.token }}
         run: |
           set -euo pipefail
           python tools/ae32c_trusted_publisher.py publish
