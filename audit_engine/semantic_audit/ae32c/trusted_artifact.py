@@ -142,6 +142,72 @@ def _verify_source_manifest(manifest: Mapping[str, Any], expected: Mapping[str, 
         raise TrustedArtifactError("source_authority_flag_invalid")
 
 
+def _verify_coverage_cross_binding(coverage: Mapping[str, Any], source_entries: list[dict[str, Any]]) -> None:
+    """Reconcile every graph coverage row with the exact source inventory row."""
+    units = coverage.get("source_units")
+    if not isinstance(units, list) or len(units) != len(source_entries):
+        raise TrustedArtifactError("graph_source_coverage_denominator_mismatch")
+    expected_entries = {entry["path"]: entry for entry in source_entries}
+    observed_paths: list[str] = []
+    counts: dict[str, int] = {}
+    unaccounted_paths: list[str] = []
+    for unit in units:
+        if not isinstance(unit, dict):
+            raise TrustedArtifactError("graph_coverage_unit_invalid")
+        path = unit.get("path")
+        if not isinstance(path, str) or path not in expected_entries:
+            raise TrustedArtifactError("graph_coverage_path_not_in_source_inventory")
+        observed_paths.append(path)
+        entry = expected_entries[path]
+        if (unit.get("git_object_oid") != entry.get("git_object_oid")
+                or unit.get("source_content_sha256") != entry.get("content_sha256")):
+            raise TrustedArtifactError("graph_coverage_source_entry_mismatch:" + path)
+        status = unit.get("status")
+        if status not in {
+            "represented", "excluded_symlink", "excluded_sensitive",
+            "outside_declared_source_scope", "excluded_by_evidence_inventory",
+            "unaccounted",
+        }:
+            raise TrustedArtifactError("graph_coverage_status_invalid:" + path)
+        if status == "represented" and unit.get("reason") is not None:
+            raise TrustedArtifactError("graph_represented_reason_must_be_null:" + path)
+        if status != "represented" and (not isinstance(unit.get("reason"), str) or not unit["reason"]):
+            raise TrustedArtifactError("graph_exclusion_reason_missing:" + path)
+        counts[status] = counts.get(status, 0) + 1
+        if status == "unaccounted":
+            unaccounted_paths.append(path)
+    if observed_paths != sorted(expected_entries, key=lambda item: item.encode("utf-8")):
+        raise TrustedArtifactError("graph_coverage_source_path_set_or_order_mismatch")
+    if coverage.get("status_counts") != dict(sorted(counts.items())):
+        raise TrustedArtifactError("graph_coverage_status_counts_mismatch")
+    represented = counts.get("represented", 0)
+    excluded = sum(value for key, value in counts.items()
+                   if key.startswith("excluded") or key == "outside_declared_source_scope")
+    unaccounted = counts.get("unaccounted", 0)
+    if (coverage.get("represented_count") != represented
+            or coverage.get("excluded_count") != excluded
+            or coverage.get("unaccounted_count") != unaccounted):
+        raise TrustedArtifactError("graph_coverage_aggregate_counts_mismatch")
+    limitations = coverage.get("limitations")
+    if not isinstance(limitations, dict) or limitations.get("unaccounted_paths") != unaccounted_paths:
+        raise TrustedArtifactError("graph_coverage_unaccounted_path_list_mismatch")
+    extractor = coverage.get("extractor_coverage")
+    if not isinstance(extractor, dict):
+        raise TrustedArtifactError("graph_extractor_coverage_missing")
+    python_ast = extractor.get("python_ast")
+    workflow = extractor.get("workflow_static_scan")
+    structured = extractor.get("structured_record_ingestion")
+    module_identity = extractor.get("module_identity")
+    if not all(isinstance(x, dict) for x in (python_ast, workflow, structured, module_identity)):
+        raise TrustedArtifactError("graph_extractor_coverage_invalid")
+    if (python_ast.get("failed_count") != python_ast.get("issue_count")
+            or python_ast.get("candidate_count") != python_ast.get("parsed_count", 0) + python_ast.get("failed_count", 0)
+            or workflow.get("status") != ("complete" if workflow.get("issue_count") == 0 else "incomplete")
+            or structured.get("status") != ("complete" if structured.get("issue_count") == 0 else "incomplete")
+            or module_identity.get("status") != ("complete" if module_identity.get("issue_count") == 0 else "incomplete")):
+        raise TrustedArtifactError("graph_extractor_coverage_counts_inconsistent")
+
+
 def validate_publication_artifact(
     source_manifest: Mapping[str, Any],
     graph_manifest: Mapping[str, Any],
@@ -181,18 +247,26 @@ def validate_publication_artifact(
         raise TrustedArtifactError("graph_authority_flag_invalid")
     coverage = graph_manifest.get("coverage", {})
     source_count = len(source_manifest["source_inventory"]["entries"])
-    if (coverage.get("source_unit_count") != source_count
-            or len(coverage.get("source_units", [])) != source_count):
+    if coverage.get("source_unit_count") != source_count:
         raise TrustedArtifactError("graph_source_coverage_denominator_mismatch")
+    _verify_coverage_cross_binding(
+        coverage, source_manifest["source_inventory"]["entries"]
+    )
     represented = coverage.get("represented_count")
     excluded = coverage.get("excluded_count")
     unaccounted = coverage.get("unaccounted_count")
-    if not all(isinstance(x, int) and x >= 0 for x in (represented, excluded, unaccounted)):
+    if not all(isinstance(x, int) and not isinstance(x, bool) and x >= 0
+               for x in (represented, excluded, unaccounted)):
         raise TrustedArtifactError("graph_coverage_counts_invalid")
-    if represented + excluded + unaccounted != source_count:
-        raise TrustedArtifactError("graph_coverage_counts_do_not_reconcile")
     complete = (coverage.get("status") == "COMPLETE_WITH_DECLARED_EXCLUSIONS"
                 and unaccounted == 0)
+    if complete:
+        extractor = coverage["extractor_coverage"]
+        if (extractor["python_ast"]["failed_count"] != 0
+                or any(extractor[key]["issue_count"] != 0
+                       or extractor[key]["status"] != "complete"
+                       for key in ("workflow_static_scan", "structured_record_ingestion", "module_identity"))):
+            raise TrustedArtifactError("graph_complete_status_conflicts_with_extractor_issues")
     builder = graph_manifest.get("builder")
     if not isinstance(builder, dict):
         raise TrustedArtifactError("graph_builder_identity_missing")
