@@ -6,6 +6,7 @@ on:
       - stage1/section-uuids
   pull_request:
     branches:
+      - main
       - stage1/section-uuids
   workflow_dispatch:
 
@@ -37,6 +38,9 @@ jobs:
       - name: Establish Python runtime
         run: python --version
 
+      - name: Install static audit runtime dependency
+        run: python -m pip install --disable-pip-version-check "PyYAML==6.0.2"
+
       - name: Run source snapshot manifest unit tests
         run: |
           python -m unittest discover \
@@ -63,12 +67,40 @@ jobs:
             --manifest "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" \
             --expected-source-revision "$GITHUB_SHA"
 
-      - name: Publish compact source snapshot evidence
+      - name: Run graph snapshot identity and coverage unit tests
+        run: |
+          python -m unittest discover \\
+            -s tests/semantic_graph \\
+            -p 'test_ae32c_graph_snapshot.py' \\
+            -v
+
+      - name: Capture source-bound graph identity and coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/ae32c_graph_snapshot.py \\
+            --repository . \\
+            --source-manifest "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" \\
+            --output "$RUNNER_TEMP/ae32c-source-snapshot/graph-snapshot-manifest.json" \\
+            --expected-source-revision "$GITHUB_SHA"
+
+      - name: Verify source identity after graph projection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/ae32c_source_snapshot_manifest.py verify \\
+            --repository . \\
+            --manifest "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" \\
+            --expected-source-revision "$GITHUB_SHA"
+
+      - name: Publish compact source and graph snapshot evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ae32c-source-snapshot-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/ae32c-source-snapshot/source-snapshot-manifest.json
+          path: |
+            ${{ runner.temp }}/ae32c-source-snapshot/source-snapshot-manifest.json
+            ${{ runner.temp }}/ae32c-source-snapshot/graph-snapshot-manifest.json
           if-no-files-found: warn
           retention-days: 30
 
@@ -78,7 +110,7 @@ jobs:
         run: |
           manifest="$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json"
           if [ -f "$manifest" ]; then
-            python -c 'import json,os; p=os.path.join(os.environ["RUNNER_TEMP"],"ae32c-source-snapshot/source-snapshot-manifest.json"); m=json.load(open(p,encoding="utf-8")); s=m.get("source",{}); i=m.get("source_inventory",{}); lines=["### AE-32C source snapshot","- Status: "+str(m.get("status")),"- Commit: "+str(s.get("commit_oid")),"- Root tree: "+str(s.get("root_tree_oid")),"- Inventory SHA-256: "+str(i.get("sha256")),"- Inventory entries: "+str(i.get("entry_count")),"- Atomic repository snapshot established: "+str(m.get("authority",{}).get("atomic_repository_snapshot_established"))]; open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8").write(chr(10).join(lines)+chr(10))'
+            python -c 'import json,os; p=os.path.join(os.environ["RUNNER_TEMP"],"ae32c-source-snapshot/source-snapshot-manifest.json"); m=json.load(open(p,encoding="utf-8")); s=m.get("source",{}); i=m.get("source_inventory",{}); lines=["### AE-32C source snapshot","- Status: "+str(m.get("status")),"- Commit: "+str(s.get("commit_oid")),"- Root tree: "+str(s.get("root_tree_oid")),"- Inventory SHA-256: "+str(i.get("sha256")),"- Inventory entries: "+str(i.get("entry_count")),"- Atomic repository snapshot established: "+str(m.get("authority",{}).get("atomic_repository_snapshot_established"))]; gp=os.path.join(os.environ["RUNNER_TEMP"],"ae32c-source-snapshot/graph-snapshot-manifest.json");\nif os.path.isfile(gp):\n g=json.load(open(gp,encoding="utf-8")); c=g.get("coverage",{}); lines += ["### AE-32C graph snapshot","- Graph snapshot ID: "+str(g.get("graph_snapshot_id")),"- Graph content SHA-256: "+str(g.get("graph",{}).get("content_sha256")),"- Coverage: "+str(c.get("status")),"- Represented source units: "+str(c.get("represented_count")),"- Unaccounted source units: "+str(c.get("unaccounted_count")),"- Negative findings permitted by default: "+str(g.get("authority",{}).get("negative_findings_permitted_by_default"))];\nopen(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8").write(chr(10).join(lines)+chr(10))'
           else
             echo "Source snapshot manifest was not created." >> "$GITHUB_STEP_SUMMARY"
           fi
