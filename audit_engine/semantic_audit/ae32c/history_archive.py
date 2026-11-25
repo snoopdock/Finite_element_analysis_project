@@ -33,8 +33,8 @@ def _verify_entry(entry: Any) -> None:
 def compact_history(
     state: Mapping[str, Any], *, max_inline_records: int = 256,
     archive_batch_size: int = 128,
-) -> tuple[dict[str, Any], dict[str, Any] | None]:
-    """Move the oldest excess entries into one immutable digest-chained segment."""
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Archive oldest decisions in bounded batches until inline history is within limit."""
     if max_inline_records < 1 or archive_batch_size < 1:
         raise PublicationError("publication_history_compaction_limits_invalid")
     payload = {k: v for k, v in state.items() if k != "state_sha256"}
@@ -43,13 +43,10 @@ def compact_history(
         raise PublicationError("publication_history_invalid")
     for entry in history:
         _verify_entry(entry)
-    excess = len(history) - max_inline_records
-    if excess <= 0:
+    if len(history) <= max_inline_records:
         payload["state_sha256"] = digest(payload)
-        return payload, None
+        return payload, []
 
-    count = min(excess, archive_batch_size)
-    archived = history[:count]
     previous = payload.get("history_archive")
     if previous is not None:
         if not isinstance(previous, Mapping):
@@ -62,26 +59,35 @@ def compact_history(
     else:
         sequence, record_count, previous_link = 0, 0, None
 
-    segment_payload = {
-        "schema": ARCHIVE_SCHEMA,
-        "repository": payload["repository"],
-        "sequence": sequence + 1,
-        "previous": previous_link,
-        "entries": archived,
-    }
-    segment_sha256 = digest(segment_payload)
-    segment = {**segment_payload, "segment_sha256": segment_sha256}
-    path = f"state/history/segment-{sequence + 1:08d}-{segment_sha256[:16]}.json"
-    payload["history"] = history[count:]
+    remaining = list(history)
+    archives: list[dict[str, Any]] = []
+    while len(remaining) > max_inline_records:
+        count = min(archive_batch_size, len(remaining) - max_inline_records + archive_batch_size - 1)
+        archived, remaining = remaining[:count], remaining[count:]
+        segment_payload = {
+            "schema": ARCHIVE_SCHEMA,
+            "repository": payload["repository"],
+            "sequence": sequence + 1,
+            "previous": previous_link,
+            "entries": archived,
+        }
+        segment_sha256 = digest(segment_payload)
+        segment = {**segment_payload, "segment_sha256": segment_sha256}
+        segment_path = f"state/history/segment-{sequence + 1:08d}-{segment_sha256[:16]}.json"
+        archives.append({"path": segment_path, "segment": segment})
+        sequence += 1
+        record_count += count
+        previous_link = {"path": segment_path, "sha256": segment_sha256}
+
+    payload["history"] = remaining
     payload["history_archive"] = {
-        "path": path,
-        "sha256": segment_sha256,
-        "segment_count": sequence + 1,
-        "record_count": record_count + count,
+        "path": previous_link["path"],
+        "sha256": previous_link["sha256"],
+        "segment_count": sequence,
+        "record_count": record_count,
     }
     payload["state_sha256"] = digest(payload)
-    return payload, {"path": path, "segment": segment}
-
+    return payload, archives
 
 def verify_archive_segment(
     segment: Mapping[str, Any], *, repository: str, expected_sha256: str,
