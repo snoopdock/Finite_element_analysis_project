@@ -1,6 +1,6 @@
 # AE-32C Phase 3 — Rule-Specific Coverage and Finding Provenance
 
-**Status:** Implemented; final push-path validation pending after mixed-claim hardening  
+**Status:** Implemented and push-path validated on `stage1/section-uuids`  
 **Production approval:** Not granted  
 **Pull-request execution:** Deliberately deferred
 
@@ -102,11 +102,34 @@ The test suite covers:
 
 The push-triggered workflow run is the authoritative execution record for this implementation. A successful run validates these tests and the integration path; it does not qualify semantic entailment or closed-world absence rules.
 
-## 8. Validation status
+## 8. Push-path validation record
 
-An initial push-path run validated the ledger integration, but subsequent review identified that mixed-polarity findings could be marked `EVIDENCE_BOUND` based on their positive evidence even though their statements also depended on an absence inference. The implementation was tightened: both `absence` and `mixed` claims now require a query-specific closed-world contract; otherwise they must remain `ABSTAIN`. A dedicated regression test covers this condition.
+**Workflow run:** [45635685020](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45635685020)  
+**Tested source revision:** `c6a9573db46057f7c40464047077a26e41d1fc71`  
+**Workflow conclusion:** success  
+**Artifact:** [ae32c-source-graph-snapshot-45635685020-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45635685020/artifacts/15033420000)  
+**Artifact ID:** `15033420000`  
+**Artifact size:** 291,582 bytes  
+**GitHub-reported ZIP SHA-256:** `eeb2030790f8b97006fa7fa7225bd2851cbb8796ed4d1c1d026d7670b7eb864e`
 
-The initial run is therefore not the final acceptance record for this version. The current branch revision must pass the complete source/graph/rule workflow after this hardening. No pull request was opened or tested.
+The workflow passed 8 source-snapshot tests, 10 graph-snapshot tests and 9 rule-contract tests. Source identity was verified before and after graph projection. The graph-manifest verifier checked the embedded finding ledger and the top-level rule-registry digest reference.
+
+Observed run data:
+
+- source snapshot ID: `c2a5343e0cb528ca2c6afdf9035b960b56e07c630f722104b9ac32415684436f`;
+- source inventory: 1,947 Git tree entries;
+- graph snapshot ID: `9045f5c9dcd2cf76f1d0585856ca2624507e921c13a380dec907078744971199`;
+- graph content SHA-256: `ac1f82409533111402d31337bc188cd3c73098cc561682a207372c76ee4abc05`;
+- graph size: 11,282 nodes and 40,160 edges;
+- source coverage: 1,879 represented, 68 declared exclusions, zero unaccounted;
+- finding ledger: 9 findings;
+- assessment statuses: 2 `EVIDENCE_BOUND`, 7 `ABSTAIN`;
+- rule registry SHA-256: `446d1b2c294b09e6921cc6be422bb1f4d8cc97821f43835715a81ea45d97de79`;
+- finding ledger SHA-256: `e3c874e96550a943454c839ab405a3a4cc1db06e7983dbaed0bc9625e0d04f82`.
+
+The 7 abstentions include all absence- and mixed-polarity findings, because no rule currently has an authorized closed-world contract. Two findings are evidence-bound; this confirms structural source/graph/rule provenance only and does not establish semantic entailment. No absence claim is authorized.
+
+This is a push-event validation. No pull request was opened or tested, as explicitly deferred.
 
 ## 9. Remaining work
 
