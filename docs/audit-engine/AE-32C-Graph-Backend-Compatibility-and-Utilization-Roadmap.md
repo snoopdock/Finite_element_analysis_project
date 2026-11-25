@@ -889,3 +889,26 @@ This deliberately adds O(V+E) validation twice per traversal and two full audit 
 The complete projection preflight/postflight implementation passed in all five backend partitions in [run 45423628531](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45423628531), attempt 1, Stage1 source `0790019b2d3ce4f4fe9c0f89d58c90eb3a689a9a`. G4 results: NetworkX 7 passed, SciPy 7, igraph 7, graph-tool 7, SNAP 8. All five E.8.5/E.8.8 jobs and aggregate summary succeeded; 14/14 and 43/43 parity-verified queries respectively, zero parity failures.
 
 The full scan record counts for SciPy, igraph, graph-tool and SNAP are 377 for E.8.5 and 5,829 for E.8.8, corresponding to construction validation plus preflight and postflight for each query. The result establishes the off-neighborhood integrity behavior tested, not universal immutability. Repository-file side effects, concurrency/mutation-restoration races, SNAP internal mutation and G5/G6 cost qualification remain. G4 stays Partial.
+
+
+## 30. M7.4 detached G7 verification of E.8.5/E.8.8 run 45473007901 — 2026-11-25
+
+The five backend artifacts from [run 45473007901](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45473007901), attempt 1, were detached-verified in [run 45601021689](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45601021689). The verifier checked out exact revision `8efd78d6e5bb6327be083d0f09e885122707f56d`, ran the adversarial unit suite, downloaded the five historical Actions ZIPs by exact artifact ID, recomputed archive sizes and SHA-256 digests, and verified their embedded E.8.5/E.8.8 semantic reports.
+
+All five artifacts matched the pinned manifest and source `098a87394d972010f04466c540fcf5f43b490f9b`. Every backend reported E.8.5 seven cases / 14 of 14 parity-verified queries and E.8.8 43 of 43 parity-verified queries, with zero query or parity failures. Native query mode, library version, projection round-trip, common repository snapshot, context telemetry, source-file hashes, side-effect declarations, SciPy hybrid representation and SNAP worker identity/policy/deadlines were checked.
+
+The detached result is artifact `15015925967`, 2,210 bytes, Actions ZIP SHA-256 `814e03f4fd018acc27a963c1db8d7e56f9c71cf281cb13c15fd1a710b5b83fb6`. The exact manifest and full interpretation are recorded in [the run-specific dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45473007901.md).
+
+**G7:** Pass for this exact artifact set. This is archive-byte/digest and report-consistency verification, not historical workflow re-execution or physical-runner attestation. G7 does not close G2/G4/G5/G6 or task-domain qualification. Preserve all 20 outcomes as Insufficient evidence and `production_approval=false`.
+
+## 31. Post-verifier exact-source five-backend regression — 2026-11-25
+
+The parameterized detached-verifier code and provenance test were included in Stage1 source `ed33bf68c49fd41506d5d7917fbdc77bf8e544e7`. The subsequent E.8.5/E.8.8 regression [run 45600944022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45600944022) completed successfully across NetworkX, SciPy, python-igraph, graph-tool and SNAP, including the aggregate summary.
+
+Each backend reported 21 passed / 84 expected skips in the M7.4 task-acceptance suite. G4 snapshot/mutation tests reported 7 passed / 33 expected skips for NetworkX, SciPy, igraph and graph-tool, and 8 passed / 32 expected skips for SNAP. Repository side-effect/snapshot-race tests reported 7 passed / 14 expected skips for the four in-process backends and 8 passed / 13 expected skips for SNAP. SNAP also passed its six worker protocol/restriction tests, live Docker timeout/cleanup test and two resource-teardown tests.
+
+All backends again reported E.8.5 14/14 and E.8.8 43/43 parity-verified queries, with zero query or parity failures. This provides additional exact-source evidence for the public task paths, full projection audits, repository source-read follow-through and the bounded G4 side-effect/snapshot-race cases.
+
+The G4 tests now demonstrate byte/mode read-only behavior within the copied repository fixture, snapshot-pinned source reads during the tested same-size edit, detection of an ordinary change-and-restore schedule between snapshot passes, and fail-closed behavior for a waiting SNAP query after worker close. They do not establish an atomic repository-wide filesystem snapshot, protect the Windows fallback from a concurrent reparse-point swap between inspection and open, cover all external side effects/metadata, or eliminate mutation-and-restoration and postflight-to-return races.
+
+**G4 remains Partial.** The latest run does not change any of the 20 task/backend suitability outcomes. Exact-source G9.42 has not been run against `ed33bf68c49fd41506d5d7917fbdc77bf8e544e7`; the previous G9.42 result remains bound to its recorded source SHA. No backend ranking, automatic selection or production approval is authorized.
