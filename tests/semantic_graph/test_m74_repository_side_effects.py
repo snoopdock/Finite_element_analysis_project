@@ -421,7 +421,8 @@ def test_snapshot_reader_rejects_junction_swap_after_component_inspection(
     outside.mkdir()
     payload = b"same-size source payload\n"
     (junction / "secret.py").write_bytes(payload)
-    (outside / "secret.py").write_bytes(b"outside source payload\n")
+    outside_payload = b"O" * len(payload)
+    (outside / "secret.py").write_bytes(outside_payload)
     assert len((outside / "secret.py").read_bytes()) == len(payload)
 
     original_open = evidence_tools_module._windows_open_file_handle
@@ -436,7 +437,6 @@ def test_snapshot_reader_rejects_junction_swap_after_component_inspection(
                 capture_output=True, text=True, check=False,
             )
             if result.returncode != 0:
-                os.rename(original_directory, junction)
                 pytest.skip(
                     f"Windows junction creation unavailable: {result.stderr.strip()}"
                 )
@@ -455,6 +455,12 @@ def test_snapshot_reader_rejects_junction_swap_after_component_inspection(
         assert mutation_applied is True
     finally:
         if junction.exists():
-            os.rmdir(junction)
+            info = junction.lstat()
+            if stat.S_ISLNK(info.st_mode) or (
+                int(getattr(info, "st_file_attributes", 0)) & 0x400
+            ):
+                os.rmdir(junction)
+            else:
+                shutil.rmtree(junction)
         if original_directory.exists():
             os.rename(original_directory, junction)
