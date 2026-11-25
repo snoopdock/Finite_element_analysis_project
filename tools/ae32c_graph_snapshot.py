@@ -11,6 +11,11 @@ import platform
 import sys
 from typing import Any
 
+# Direct script execution places tools/ rather than the repository root on sys.path.
+_REPOSITORY_CODE_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPOSITORY_CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPOSITORY_CODE_ROOT))
+
 from audit_engine.semantic_audit.ae32c.rule_contracts import (
     build_finding_ledger,
     rule_registry,
