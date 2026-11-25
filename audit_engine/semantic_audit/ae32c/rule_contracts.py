@@ -207,7 +207,7 @@ def build_finding_ledger(
             claim_status = "ABSTAIN"
             reason = "required_source_coverage_incomplete"
         else:
-            claim_status = "SUPPORTED"
+            claim_status = "EVIDENCE_BOUND"
             reason = "source_and_graph_evidence_bound"
         finding_payload = {
             "rule_id": rule_id,
@@ -267,8 +267,12 @@ def verify_finding_ledger(ledger: Mapping[str, Any]) -> None:
         )})
         if finding.get("finding_id") != expected:
             raise RuleContractError("finding_identity_mismatch")
-        if finding.get("claim_status") == "SUPPORTED" and not finding.get("evidence"):
-            raise RuleContractError("supported_finding_without_evidence")
+        if finding.get("claim_status") == "EVIDENCE_BOUND" and not finding.get("evidence"):
+            raise RuleContractError("evidence_bound_finding_without_evidence")
+        if finding.get("rule_version") != finding.get("rule_contract", {}).get("version"):
+            raise RuleContractError("finding_rule_version_mismatch")
+        if finding.get("rule_id") != finding.get("rule_contract", {}).get("rule_id") and not _matches(str(finding.get("rule_contract", {}).get("rule_id", "")), str(finding.get("rule_id", ""))):
+            raise RuleContractError("finding_rule_contract_mismatch")
         if finding.get("claim_status") == "ABSTAIN" and finding.get("rule_contract", {}).get("claim_polarity") == "absence":
             if finding.get("rule_contract", {}).get("closed_world") is not None:
                 raise RuleContractError("absence_claim_closed_world_policy_mismatch")
