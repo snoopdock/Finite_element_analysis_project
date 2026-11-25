@@ -61,7 +61,8 @@ class FakeGitHub:
 class GitHubCASStoreTests(unittest.TestCase):
     def setUp(self):
         self.api=FakeGitHub()
-        self.store=GitHubRefCASStore(self.api,REPO,"stage1/section-uuids",\n                                    max_inline_history=3, archive_batch_size=2)
+        self.store=GitHubRefCASStore(self.api,REPO,"stage1/section-uuids",
+                                    max_inline_history=3, archive_batch_size=2)
     def test_persist_and_reload(self):
         self.assertTrue(self.store.publish(make_record())["current_effective"])
         second=GitHubRefCASStore(self.api,REPO,"stage1/section-uuids")
