@@ -98,7 +98,7 @@ class GitHubRefCASStore:
     def _read_state_at(self, commit_sha: str) -> dict[str, Any]:
         commit = self.http.request("GET", self.base + "/git/commits/" + commit_sha)
         tree_sha = commit["tree"]["sha"]
-        tree = self.http.request("GET", self.base + "/git/trees/" + tree_sha)
+        tree = self.http.request("GET", self.base + "/git/trees/" + tree_sha + "?recursive=1")
         entry = next((x for x in tree.get("tree", []) if x.get("path") == self.state_path), None)
         if entry is None:
             return _empty(self.repository)
