@@ -190,6 +190,20 @@ This is **bounded active-state compaction, not deletion or a total storage cap**
 
 The fake-transport test suite exercises compaction across multiple segments, bounded inline history, archive-chain verification, and tamper rejection. The publisher orchestration suite also exercises the complete `prepare` path with a constructed ZIP artifact and mocked GitHub API responses, including API/event binding, exact artifact digest, allowlisted workflow rejection, and incomplete-coverage history-only disposition. These tests do not establish live GitHub CAS behavior, GitHub App authorization, environment approval, or ruleset enforcement.
 
+## 9. Read-only activation preflight
+
+The repository now has a manual, read-only preflight entry point:
+
+- `tools/ae32c_publisher_preflight.py` queries the default-branch protection, repository rulesets, and `ae32c-publication` environment through GitHub's REST API.
+- It requires at least one approval, administrator enforcement, and required status checks for the default branch.
+- It requires exactly one active ruleset targeting only `ae32c-publication-state`, with update/deletion/non-fast-forward protections and a single GitHub App integration bypass.
+- It requires environment reviewers and deployment restricted to protected branches.
+- It reports App client-ID/private-key presence as `PRESENT_UNVERIFIED`; it does not read or print secret values, mint an App token, or verify the installation.
+- API permission failures are reported as `UNVERIFIED`, never as a pass.
+- `.github/workflows/ae32c_publisher_readiness_preflight.yml` exposes this check as a manual workflow on `main`, with read-only permissions and a detached report artifact.
+
+The preflight is intentionally conservative: it cannot report activation-ready until a separate controlled App-installation/token test is completed. It does not mutate repository settings, create the publication ref, or publish audit results. It is a readiness diagnostic, not a substitute for an administrator configuring the required controls.
+
 ## 9. Current disposition
 
 The existing producer workflow remains read-only. The trusted publisher workflow is present on `main` and is wired to the producer through `workflow_run`, but its job remains gated by repository variable `AE32C_TRUSTED_PUBLISHER_ENABLED`. On 2026-11-26, the live branch API reported `main.protected == false` and the repository rulesets endpoint returned no rulesets. Environment reviewers and App credentials remain unverified. The durable adapter and archive compaction are fake-transport tested; no live write credential has been used and no production result pointer has been created. Activation is therefore not safe, notwithstanding the user's conditional authorization.
