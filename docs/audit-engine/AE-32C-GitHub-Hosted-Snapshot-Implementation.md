@@ -122,6 +122,7 @@ docs/audit-engine/schemas/ae32c-source-snapshot-manifest-v1.schema.json
 The generated manifest contains:
 
 - manifest_schema: schema identifier;
+- manifest_sha256: canonical digest of the manifest excluding this field;
 - status: capture/postflight state;
 - source_snapshot_id: digest of source identity fields;
 - source: repository, commit, tree, object format and PR identities;
@@ -154,7 +155,7 @@ The workflow:
 
 The workflow concurrency group reduces redundant overlapping work. Cancellation is not a freshness proof and is not used as publication authorization. This first workflow does not update a mutable current-result pointer.
 
-The artifact upload action is still referenced by a major-version tag in this initial implementation. Before treating the entire workflow as part of a frozen trusted computing base, pin that action to a reviewed full commit SHA as well.
+The checkout and artifact-upload actions are pinned to reviewed full commit SHAs in the workflow. Re-review those pins when intentionally upgrading the actions.
 
 Untrusted pull-request content must not receive secrets or write permissions. The workflow only checks out and inventories the merge revision; it does not execute repository build scripts or install repository-defined packages.
 

@@ -54,6 +54,7 @@ class SourceSnapshotManifestTests(unittest.TestCase):
              + "\n").encode("utf-8")).hexdigest()
         self.assertEqual(manifest["source_inventory"]["sha256"], expected)
         self.assertEqual(manifest["status"], "CAPTURED_PENDING_POSTFLIGHT")
+        self.assertEqual(len(manifest["manifest_sha256"]), 64)
         self.assertFalse(manifest["authority"]["atomic_repository_snapshot_established"])
 
     def test_unchanged_source_passes_postflight(self):
@@ -102,6 +103,17 @@ class SourceSnapshotManifestTests(unittest.TestCase):
         self.assertEqual(manifest["source"]["base_commit_oid"], "a" * 40)
         self.assertEqual(manifest["source"]["head_commit_oid"], "b" * 40)
         self.assertEqual(manifest["source"]["commit_oid"], self.commit)
+
+    def test_manifest_tampering_is_rejected(self):
+        manifest = self._capture()
+        path = self.root.parent / "manifest.json"
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        manifest["source_inventory"]["entries"][0]["path"] = "tampered.py"
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(SnapshotError, "manifest_digest_mismatch"):
+            verify_manifest(self.root, path, expected_source_revision=self.commit)
+        failed = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(failed["status"], "FAILED")
 
     def test_capture_rejects_dirty_worktree(self):
         (self.root / "module.py").write_text("dirty\n", encoding="utf-8")

@@ -4,9 +4,10 @@
   "title": "AE-32C Source Snapshot Manifest v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["manifest_schema", "status", "created_at", "source_snapshot_id", "source", "event", "source_inventory", "materialization", "verification", "run", "authority"],
+  "required": ["manifest_schema", "manifest_sha256", "status", "created_at", "source_snapshot_id", "source", "event", "source_inventory", "materialization", "verification", "run", "authority"],
   "properties": {
     "manifest_schema": {"const": "ae32c/source-snapshot-manifest/v1"},
+    "manifest_sha256": {"$ref": "#/$defs/digest"},
     "status": {"enum": ["CAPTURED_PENDING_POSTFLIGHT", "VERIFIED", "FAILED"]},
     "created_at": {"type": "string", "format": "date-time"},
     "source_snapshot_id": {"$ref": "#/$defs/digest"},

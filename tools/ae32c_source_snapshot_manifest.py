@@ -32,6 +32,11 @@ def _sha256(value: Any) -> str:
     return hashlib.sha256(_canonical_bytes(value)).hexdigest()
 
 
+def _seal_manifest(manifest: dict[str, Any]) -> None:
+    payload = {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+    manifest["manifest_sha256"] = _sha256(payload)
+
+
 def _git(root: Path, *args: str) -> bytes:
     completed = subprocess.run(["git", *args], cwd=root, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, check=False)
@@ -226,7 +231,7 @@ def capture_manifest(repository, *, expected_source_revision=None, event_name=No
     if not snapshot["materialization"]["worktree"]["clean"]:
         raise SnapshotError("worktree_not_clean_at_capture")
     now = _utc_now()
-    return {
+    manifest = {
         "manifest_schema": SCHEMA, "status": "CAPTURED_PENDING_POSTFLIGHT",
         "created_at": now, "source_snapshot_id": snapshot["source_snapshot_id"],
         "source": snapshot["source"], "event": snapshot["event"],
@@ -246,9 +251,12 @@ def capture_manifest(repository, *, expected_source_revision=None, event_name=No
                       "graph_completeness_established": False,
                       "production_approval": False},
     }
+    _seal_manifest(manifest)
+    return manifest
 
 
 def _atomic_write(path: Path, value: dict[str, Any]) -> None:
+    _seal_manifest(value)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
     temporary.write_bytes(_canonical_bytes(value))
@@ -262,6 +270,16 @@ def verify_manifest(repository, manifest_path, *, expected_source_revision=None)
         manifest = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(manifest, dict) or manifest.get("manifest_schema") != SCHEMA:
             raise SnapshotError("manifest_schema_invalid")
+        submitted_manifest_digest = manifest.get("manifest_sha256")
+        payload = {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+        if submitted_manifest_digest != _sha256(payload):
+            raise SnapshotError("manifest_digest_mismatch")
+        inventory = manifest.get("source_inventory")
+        if not isinstance(inventory, dict) or not isinstance(inventory.get("entries"), list):
+            raise SnapshotError("manifest_inventory_invalid")
+        if (inventory.get("entry_count") != len(inventory["entries"])
+                or inventory.get("sha256") != _sha256(inventory["entries"])):
+            raise SnapshotError("manifest_inventory_digest_mismatch")
         snapshot = _build_snapshot(
             repository,
             expected_source_revision=expected_source_revision,
@@ -272,6 +290,8 @@ def verify_manifest(repository, manifest_path, *, expected_source_revision=None)
             and snapshot["source"] == manifest.get("source")
             and snapshot["source_inventory"]["sha256"]
             == manifest.get("source_inventory", {}).get("sha256")
+            and snapshot["source_inventory"]["entries"]
+            == manifest.get("source_inventory", {}).get("entries")
             and snapshot["source"]["root_tree_oid"]
             == manifest.get("source", {}).get("root_tree_oid")
         )
