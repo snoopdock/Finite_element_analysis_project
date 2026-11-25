@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
 
 permissions:
-  administration: read
   actions: read
   contents: read
 
@@ -36,6 +35,7 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PREFLIGHT_READ_TOKEN: ${{ secrets.AE32C_PREFLIGHT_READ_TOKEN }}
           AE32C_APP_CLIENT_ID_PRESENT: ${{ vars.AE32C_PUBLISHER_APP_CLIENT_ID != '' }}
           AE32C_APP_PRIVATE_KEY_PRESENT: ${{ secrets.AE32C_PUBLISHER_APP_PRIVATE_KEY != '' }}
         run: |
