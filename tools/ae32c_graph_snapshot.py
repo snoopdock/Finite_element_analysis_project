@@ -11,6 +11,12 @@ import platform
 import sys
 from typing import Any
 
+from audit_engine.semantic_audit.ae32c.rule_contracts import (
+    build_finding_ledger,
+    rule_registry,
+    verify_finding_ledger,
+)
+
 GRAPH_MANIFEST_SCHEMA = "ae32c/graph-snapshot-manifest/v1"
 GRAPH_SCHEMA_VERSION = "semantic_graph/v1"
 GRAPH_PROJECTION_VERSION = "ae32b/source-evidence-projection/v3"
@@ -218,6 +224,18 @@ def build_graph_snapshot(
         "graph_content_sha256": graph_content_sha256,
         "coverage_sha256": coverage_sha256,
     }
+    finding_ledger = build_finding_ledger(
+        list(evidence_report.get("findings", [])),
+        source_manifest,
+        {
+            "graph_snapshot_id": digest(identity),
+            "source_snapshot_id": source_manifest["source_snapshot_id"],
+            "coverage": coverage,
+        },
+        canonical_graph,
+        rule_registry(),
+    )
+    verify_finding_ledger(finding_ledger)
     result = {
         "manifest_schema": GRAPH_MANIFEST_SCHEMA,
         "status": "CAPTURED",
@@ -237,6 +255,9 @@ def build_graph_snapshot(
         "coverage": coverage,
         "coverage_sha256": coverage_sha256,
         "identity": identity,
+        "rule_registry_sha256": finding_ledger["rule_registry_sha256"],
+        "finding_ledger": finding_ledger,
+        "finding_ledger_sha256": finding_ledger["ledger_sha256"],
         "authority": {
             "graph_is_derived_from_source": True,
             "graph_is_canonical_repository_authority": False,
@@ -269,6 +290,19 @@ def verify_graph_manifest(manifest: dict[str, Any]) -> None:
         raise GraphSnapshotError("graph_coverage_identity_mismatch")
     if identity.get("source_snapshot_id") != manifest.get("source_snapshot_id"):
         raise GraphSnapshotError("graph_source_identity_mismatch")
+    ledger = manifest.get("finding_ledger")
+    if not isinstance(ledger, dict):
+        raise GraphSnapshotError("finding_ledger_missing")
+    try:
+        verify_finding_ledger(ledger)
+    except ValueError as exc:
+        raise GraphSnapshotError("finding_ledger_invalid:" + str(exc)) from exc
+    if ledger.get("source_snapshot_id") != manifest.get("source_snapshot_id"):
+        raise GraphSnapshotError("finding_ledger_source_mismatch")
+    if ledger.get("graph_snapshot_id") != manifest.get("graph_snapshot_id"):
+        raise GraphSnapshotError("finding_ledger_graph_mismatch")
+    if manifest.get("finding_ledger_sha256") != ledger.get("ledger_sha256"):
+        raise GraphSnapshotError("finding_ledger_digest_reference_mismatch")
 
 
 def capture(repository: str | Path, source_manifest_path: str | Path,
