@@ -62,7 +62,7 @@ def compact_history(
     remaining = list(history)
     archives: list[dict[str, Any]] = []
     while len(remaining) > max_inline_records:
-        count = min(archive_batch_size, len(remaining) - max_inline_records + archive_batch_size - 1)
+        count = min(archive_batch_size, len(remaining))
         archived, remaining = remaining[:count], remaining[count:]
         segment_payload = {
             "schema": ARCHIVE_SCHEMA,
