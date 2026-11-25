@@ -308,6 +308,8 @@ def verify_graph_manifest(manifest: dict[str, Any]) -> None:
         raise GraphSnapshotError("finding_ledger_graph_mismatch")
     if manifest.get("finding_ledger_sha256") != ledger.get("ledger_sha256"):
         raise GraphSnapshotError("finding_ledger_digest_reference_mismatch")
+    if manifest.get("rule_registry_sha256") != ledger.get("rule_registry_sha256"):
+        raise GraphSnapshotError("rule_registry_digest_reference_mismatch")
 
 
 def capture(repository: str | Path, source_manifest_path: str | Path,
