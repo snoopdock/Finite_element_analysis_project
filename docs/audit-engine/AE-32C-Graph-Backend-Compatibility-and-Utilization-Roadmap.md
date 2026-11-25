@@ -912,3 +912,18 @@ All backends again reported E.8.5 14/14 and E.8.8 43/43 parity-verified queries,
 The G4 tests now demonstrate byte/mode read-only behavior within the copied repository fixture, snapshot-pinned source reads during the tested same-size edit, detection of an ordinary change-and-restore schedule between snapshot passes, and fail-closed behavior for a waiting SNAP query after worker close. They do not establish an atomic repository-wide filesystem snapshot, protect the Windows fallback from a concurrent reparse-point swap between inspection and open, cover all external side effects/metadata, or eliminate mutation-and-restoration and postflight-to-return races.
 
 **G4 remains Partial.** The latest run does not change any of the 20 task/backend suitability outcomes. Exact-source G9.42 has not been run against `ed33bf68c49fd41506d5d7917fbdc77bf8e544e7`; the previous G9.42 result remains bound to its recorded source SHA. No backend ranking, automatic selection or production approval is authorized.
+
+
+## 32. Detached G7 verification of the latest E.8.5/E.8.8 regression — 2026-11-25
+
+The five-backend artifact set from [run 45600944022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45600944022), exact source `ed33bf68c49fd41506d5d7917fbdc77bf8e544e7`, was detached-verified by [run 45601831710](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45601831710). The verifier workflow ran all 12 adversarial unit tests, downloaded the original five Actions ZIPs by exact artifact ID, recomputed their sizes and SHA-256 digests, and validated the embedded E.8.5/E.8.8 report contracts.
+
+All five artifacts matched the pinned manifest, run/attempt and exact source. Each backend passed E.8.5 seven-case/14-query parity and E.8.8 43-query parity, with zero query/parity failures. The verifier also checked native mode/library identity, the shared repository graph fingerprint and source-manifest identity, context telemetry, source-file hashes, side-effect declarations, SciPy's hybrid representation and SNAP's exact worker image/policy/deadlines.
+
+The committed machine-readable result is `evidence/m74-e85-e88-run-45600944022/verified-dossier.json`; the per-backend archive/report ledger and limitations are in [the run-specific dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45600944022.md). Detached output artifact `15014489921` has Actions-reported ZIP SHA-256 `792aea796cc6cf73f8b1ec34dc230c01f0ec3e411b53897fbfd83b1442920a95`.
+
+**G7:** Pass for the exact artifact set from run 45600944022. This is detached archive-byte/digest and report-consistency verification, not historical workflow re-execution or physical-runner attestation. The earlier run 45473007901 also remains separately G7-verified.
+
+The same source's five-backend regression passed M7.4 task acceptance, G4 snapshot/mutation and repository side-effect/snapshot-race tests. This strengthens G4 evidence but does not prove atomic repository-wide snapshots, close the Windows reparse-point path-opening race, cover all external filesystem effects or eliminate all mutation/restoration windows. G4 remains Partial. G5 representative audit-domain coverage, G6 operational/resource envelopes, PATH domain-specific claim-to-evidence behavior and the hybrid IMPACT SCC boundary remain open. Exact-source G9.42 has not been run against `ed33bf68c49fd41506d5d7917fbdc77bf8e544e7`.
+
+All 20 task/backend outcomes remain Insufficient evidence. The backends remain computational options, not competitors; no global winner, automatic selection, scientific approval or production approval is established. Preserve `production_approval=false`.
