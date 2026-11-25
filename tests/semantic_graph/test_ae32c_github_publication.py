@@ -90,13 +90,13 @@ class GitHubCASStoreTests(unittest.TestCase):
             self.store.publish(make_record(n))
         head=self.store._get_ref(self.store.publication_branch)
         state=self.store._read_state_at(head)
-        self.assertEqual(len(state["history"]), 3)
-        self.assertEqual(state["history_archive"]["record_count"], 5)
-        self.assertEqual(state["history_archive"]["segment_count"], 5)
+        self.assertEqual(len(state["history"]), 2)
+        self.assertEqual(state["history_archive"]["record_count"], 6)
+        self.assertEqual(state["history_archive"]["segment_count"], 3)
         commit=self.api.commits[head]
         tree=self.api.trees[commit["tree"]["sha"]]
         archived=[x for x in tree if x["path"].startswith("state/history/segment-")]
-        self.assertEqual(len(archived), 5)
+        self.assertEqual(len(archived), 3)
         self.assertEqual(self.store.current()["generation"], [8, 1])
 
     def test_tampered_archive_segment_fails_closed(self):
