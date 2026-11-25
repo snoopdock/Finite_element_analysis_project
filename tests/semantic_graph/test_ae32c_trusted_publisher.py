@@ -190,7 +190,7 @@ class TrustedPublisherPrepareIntegrationTests(unittest.TestCase):
                 "workflow_run": {"id": 100, "head_branch": "attacker-controlled"}
             }), encoding="utf-8")
             with patch("tools.ae32c_trusted_publisher._api_json",
-                       side_effect=self._api_responses()) as api_call, \\
+                       side_effect=self._api_responses()) as api_call, \
                  patch("tools.ae32c_trusted_publisher._download_artifact",
                        return_value=self.archive) as download:
                 result = prepare(
@@ -212,7 +212,7 @@ class TrustedPublisherPrepareIntegrationTests(unittest.TestCase):
             event_path = Path(tmp) / "event.json"
             event_path.write_text(json.dumps({"workflow_run": {"id": 100}}), encoding="utf-8")
             with patch("tools.ae32c_trusted_publisher._api_json",
-                       side_effect=self._api_responses(artifacts=[bad_artifact])), \\
+                       side_effect=self._api_responses(artifacts=[bad_artifact])), \
                  patch("tools.ae32c_trusted_publisher._download_artifact",
                        return_value=self.archive):
                 with self.assertRaisesRegex(PublisherError, "upstream_artifact_digest_mismatch"):
@@ -243,7 +243,7 @@ class TrustedPublisherPrepareIntegrationTests(unittest.TestCase):
             event_path = Path(tmp) / "event.json"
             event_path.write_text(json.dumps({"workflow_run": {"id": 100}}), encoding="utf-8")
             with patch("tools.ae32c_trusted_publisher._api_json",
-                       side_effect=self._api_responses(run=bad_run)), \\
+                       side_effect=self._api_responses(run=bad_run)), \
                  patch("tools.ae32c_trusted_publisher._download_artifact",
                        return_value=self.archive) as download:
                 with self.assertRaisesRegex(PublisherError, "producer_workflow_not_allowlisted"):
@@ -268,7 +268,7 @@ class TrustedPublisherPrepareIntegrationTests(unittest.TestCase):
             output_path = Path(tmp) / "prepared.json"
             event_path.write_text(json.dumps({"workflow_run": {"id": 100}}), encoding="utf-8")
             with patch("tools.ae32c_trusted_publisher._api_json",
-                       side_effect=self._api_responses(artifacts=[artifact])), \\
+                       side_effect=self._api_responses(artifacts=[artifact])), \
                  patch("tools.ae32c_trusted_publisher._download_artifact",
                        return_value=raw):
                 result = prepare(
@@ -279,5 +279,6 @@ class TrustedPublisherPrepareIntegrationTests(unittest.TestCase):
             self.assertFalse(result["current_eligible"])
             self.assertEqual(result["record"]["outcome"], "INCOMPLETE")
             self.assertTrue(output_path.is_file())
-\nif __name__ == "__main__":
+
+if __name__ == "__main__":
     unittest.main()
