@@ -1,0 +1,186 @@
+name: AE-32C GitHub Source and Graph Snapshot
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+      - integration/ae32c-trusted-publisher
+      - main
+  pull_request:
+    branches:
+      - main
+      - stage1/section-uuids
+      - integration/ae32c-trusted-publisher
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-source-snapshot-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-snapshot:
+    name: Capture source and derived graph identity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      AE32C_SOURCE_REVISION: ${{ github.sha }}
+      AE32C_EVENT_NAME: ${{ github.event_name }}
+      AE32C_REPOSITORY: ${{ github.repository }}
+      AE32C_REF: ${{ github.ref }}
+    steps:
+      - name: Checkout exact event revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Establish Python runtime
+        run: python --version
+
+      - name: Install static audit runtime dependency
+        run: python -m pip install --disable-pip-version-check "PyYAML==6.0.2" "jsonschema==4.25.1"
+
+      - name: Run source snapshot manifest unit tests
+        run: |
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_ae32c_source_snapshot_manifest.py' \
+            -v
+
+      - name: Capture exact source and Git tree inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ae32c-source-snapshot"
+          python tools/ae32c_source_snapshot_manifest.py capture \
+            --repository . \
+            --output "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" \
+            --expected-source-revision "$GITHUB_SHA"
+
+      - name: Verify source identity before graph projection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/ae32c_source_snapshot_manifest.py verify \
+            --repository . \
+            --manifest "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" \
+            --expected-source-revision "$GITHUB_SHA"
+
+      - name: Run graph snapshot identity and coverage unit tests
+        run: |
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_ae32c_graph_snapshot.py' \
+            -v
+
+      - name: Run rule coverage and finding provenance unit tests
+        run: |
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_ae32c_rule_contracts.py' \
+            -v
+
+      - name: Run freshness-guarded publication state-machine tests
+        run: |
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_ae32c_publication.py' \
+            -v
+
+      - name: Run durable GitHub publication backend tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_ae32c_github_publication.py' -v
+
+      - name: Run trusted publication artifact validation tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_ae32c_trusted_artifact.py' -v
+
+      - name: Run trusted publisher orchestration tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_ae32c_trusted_publisher.py' -v
+      - name: Capture source-bound graph identity and coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/ae32c_graph_snapshot.py \
+            --repository . \
+            --source-manifest "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" \
+            --output "$RUNNER_TEMP/ae32c-source-snapshot/graph-snapshot-manifest.json" \
+            --expected-source-revision "$GITHUB_SHA"
+
+      - name: Verify source identity after graph projection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/ae32c_source_snapshot_manifest.py verify \
+            --repository . \
+            --manifest "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" \
+            --expected-source-revision "$GITHUB_SHA"
+
+      - name: Publish compact source and graph snapshot evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ae32c-source-graph-snapshot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ae32c-source-snapshot/source-snapshot-manifest.json
+            ${{ runner.temp }}/ae32c-source-snapshot/graph-snapshot-manifest.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Summarize source and graph snapshot result
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "ae32c-source-snapshot"
+          lines = ["### AE-32C source snapshot"]
+          source_path = root / "source-snapshot-manifest.json"
+          if source_path.is_file():
+              source = json.loads(source_path.read_text(encoding="utf-8"))
+              identity = source.get("source", {})
+              inventory = source.get("source_inventory", {})
+              lines += [
+                  "- Status: " + str(source.get("status")),
+                  "- Commit: " + str(identity.get("commit_oid")),
+                  "- Root tree: " + str(identity.get("root_tree_oid")),
+                  "- Inventory SHA-256: " + str(inventory.get("sha256")),
+                  "- Inventory entries: " + str(inventory.get("entry_count")),
+              ]
+          else:
+              lines.append("- Source manifest missing")
+          graph_path = root / "graph-snapshot-manifest.json"
+          if graph_path.is_file():
+              graph = json.loads(graph_path.read_text(encoding="utf-8"))
+              coverage = graph.get("coverage", {})
+              lines += [
+                  "### AE-32C graph snapshot",
+                  "- Graph snapshot ID: " + str(graph.get("graph_snapshot_id")),
+                  "- Graph content SHA-256: " + str(graph.get("graph", {}).get("content_sha256")),
+                  "- Coverage: " + str(coverage.get("status")),
+                  "- Represented source units: " + str(coverage.get("represented_count")),
+                  "- Unaccounted source units: " + str(coverage.get("unaccounted_count")),
+                  "- Negative findings permitted by default: false",
+              ]
+              ledger = graph.get("finding_ledger", {})
+              findings = ledger.get("findings", [])
+              statuses = {}
+              for finding in findings:
+                  status = str(finding.get("claim_status", "unknown"))
+                  statuses[status] = statuses.get(status, 0) + 1
+              lines += [
+                  "- Finding ledger SHA-256: " + str(ledger.get("ledger_sha256")),
+                  "- Rule registry SHA-256: " + str(ledger.get("rule_registry_sha256")),
+                  "- Bound finding count: " + str(ledger.get("finding_count")),
+                  "- Finding assessment statuses: " + json.dumps(statuses, sort_keys=True),
+                  "- Absence claims authorized: false",
+              ]
+          else:
+              lines.append("- Graph snapshot manifest missing")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+              handle.write("\n".join(lines) + "\n")
+          PY
