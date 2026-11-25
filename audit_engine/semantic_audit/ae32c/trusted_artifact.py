@@ -435,3 +435,19 @@ def validate_publication_artifact(
         "configuration": config,
         "configuration_sha256": digest(config),
     }
+def validate_artifact_bytes(
+    raw_archive: bytes,
+    *,
+    expected: Mapping[str, Any],
+    source_schema: Mapping[str, Any],
+    graph_schema: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Single safe entry point for a trusted publisher consuming artifact bytes."""
+    manifests = parse_artifact_archive(raw_archive)
+    validate_manifest_schemas(
+        manifests["source"], manifests["graph"],
+        source_schema=source_schema, graph_schema=graph_schema,
+    )
+    return validate_publication_artifact(
+        manifests["source"], manifests["graph"], expected=expected,
+    )
