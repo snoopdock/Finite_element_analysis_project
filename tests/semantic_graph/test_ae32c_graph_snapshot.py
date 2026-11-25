@@ -7,6 +7,7 @@ from tools.ae32c_graph_snapshot import (
     build_graph_snapshot,
     canonical_bytes,
     digest,
+    verify_graph_manifest,
 )
 
 
@@ -111,6 +112,19 @@ class GraphSnapshotTests(unittest.TestCase):
                 graph={"nodes": [], "edges": []}, evidence_report=report(),
                 represented_paths=set(), file_hashes={},
             )
+
+    def test_graph_manifest_tampering_is_rejected(self):
+        result = self._build()
+        result["coverage"]["represented_count"] = 999
+        with self.assertRaisesRegex(GraphSnapshotError, "graph_manifest_digest_mismatch"):
+            verify_graph_manifest(result)
+
+    def test_graph_manifest_internal_identity_is_verified(self):
+        result = self._build()
+        verify_graph_manifest(result)
+        self.assertEqual(result["manifest_sha256"], digest({
+            key: value for key, value in result.items() if key != "manifest_sha256"
+        }))
 
     def test_extractor_issue_makes_coverage_incomplete(self):
         evidence = report()
