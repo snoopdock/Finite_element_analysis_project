@@ -13,6 +13,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -67,15 +68,41 @@ def _download_artifact(api_url: str, token: str, repository: str, artifact_id: i
             "User-Agent": "AE-32C-trusted-publisher",
         },
     )
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            return None
+    opener = urllib.request.build_opener(NoRedirect)
     try:
-        with urllib.request.urlopen(request, timeout=60) as response:
+        try:
+            response = opener.open(request, timeout=60)
+        except urllib.error.HTTPError as redirect:
+            if redirect.code not in (301, 302, 303, 307, 308):
+                raise
+            location = redirect.headers.get("Location")
+            if not location:
+                raise PublisherError("artifact_redirect_location_missing")
+            target = urlsplit(location)
+            source = urlsplit(api_url)
+            if (target.scheme != "https" or not target.hostname
+                    or target.username or target.password):
+                raise PublisherError("artifact_redirect_target_invalid")
+            same_origin = (target.scheme, target.hostname, target.port) == (
+                source.scheme, source.hostname, source.port
+            )
+            # GitHub's artifact redirect commonly points to object storage.
+            # Never forward the GitHub API bearer token to a different origin.
+            redirected_request = urllib.request.Request(
+                location,
+                headers=({"Authorization": "Bearer " + token} if same_origin else {}),
+            )
+            response = opener.open(redirected_request, timeout=60)
+        with response:
             raw = response.read(MAX_DOWNLOAD_BYTES + 1)
     except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
         raise PublisherError("upstream_artifact_download_failed") from exc
     if len(raw) > MAX_DOWNLOAD_BYTES:
         raise PublisherError("upstream_artifact_download_too_large")
     return raw
-
 
 def build_expected_metadata(
     run: Mapping[str, Any], repository_metadata: Mapping[str, Any], repository: str
