@@ -165,24 +165,39 @@ Any failed, cancelled, incomplete, superseded, non-authorized, or stale run is n
 
 Do not activate a write-capable publisher until all are true:
 
-1. The trusted publisher workflow and validator are reviewed and present on the default branch.
-2. The default branch's protection/required-review policy is verified.
-3. The publication-ref ruleset is configured and verified.
-4. The protected environment and required reviewers are configured.
-5. The GitHub App/credential is installed with minimum permissions.
-6. Artifact validation and policy tests pass.
-7. Live ref-CAS integration is tested in a controlled repository/ref.
-8. Retention/compaction policy for the append-only state document is defined.
-9. The user explicitly authorizes activation.
+1. **Satisfied:** the trusted publisher workflow and validator are present on the current default branch.
+2. **Blocked:** the live GitHub branch API reports `main.protected == false`; required-review protection is absent.
+3. **Blocked:** the live repository rulesets endpoint returned an empty list; no publication-ref-only ruleset exists.
+4. **Unverified:** the `ae32c-publication` environment and required reviewers have not been verified.
+5. **Unverified:** the repository-scoped GitHub App installation, client ID, and private-key secret have not been verified.
+6. **CI-gated:** artifact validation and policy tests must pass on the candidate revision.
+7. **Open:** live ref-CAS integration, including archive writes and reads, has not been tested in a controlled repository/ref.
+8. **Implemented, CI-gated:** bounded inline history and digest-chained archive verification are implemented; live GitHub behavior remains unverified.
+9. **Conditional authorization:** the user has authorized activation only if it is judged safe; that condition is not met while blockers 2–7 remain.
 
-## 8. Current disposition
+## 8. Publication-history compaction (2026-11-26)
 
-The existing producer workflow remains read-only. The trusted publisher workflow is present on `main` and is wired to the producer through `workflow_run`, but its job is skipped unless repository variable `AE32C_TRUSTED_PUBLISHER_ENABLED` is exactly `true`. The adapter remains fake-transport tested only. No publication ref has been created by this project, no live write credential has been used, and no production result pointer exists.
+The GitHub CAS backend now bounds the frequently rewritten publication-state document without deleting audit history.
+
+- Inline history is capped at 256 decisions by default.
+- When that cap is exceeded, the oldest decisions are moved into immutable archive segments of at most 128 entries each, continuing until the inline history is within the cap.
+- Each segment binds the repository, sequence number, exact entries, previous segment path/digest, and its own canonical SHA-256 digest.
+- All newly created segment blobs and the updated state document that points to the final segment are added to the same Git tree and committed in one candidate commit. The existing non-force ref update remains the single CAS publication point; an interrupted or losing writer cannot expose a state pointer without its segment.
+- The state stores only the archive tip, segment count, and archived-record count. Readers walk the digest chain, verify every segment and run record, check sequence/path/digest binding, and fail closed on missing, altered, truncated, or miscounted archives.
+- The default limits are configurable on the store for tests and controlled deployments.
+
+This is **bounded active-state compaction, not deletion or a total storage cap**. The archive remains append-only and grows with the number of decisions; old Git commits also remain in Git history. Deleting or expiring records would require a separately authorized retention policy and an independently preserved audit anchor. No record is discarded by this implementation.
+
+The fake-transport test suite exercises compaction across multiple segments, bounded inline history, archive-chain verification, and tamper rejection. The publisher orchestration suite also exercises the complete `prepare` path with a constructed ZIP artifact and mocked GitHub API responses, including API/event binding, exact artifact digest, allowlisted workflow rejection, and incomplete-coverage history-only disposition. These tests do not establish live GitHub CAS behavior, GitHub App authorization, environment approval, or ruleset enforcement.
+
+## 9. Current disposition
+
+The existing producer workflow remains read-only. The trusted publisher workflow is present on `main` and is wired to the producer through `workflow_run`, but its job remains gated by repository variable `AE32C_TRUSTED_PUBLISHER_ENABLED`. On 2026-11-26, the live branch API reported `main.protected == false` and the repository rulesets endpoint returned no rulesets. Environment reviewers and App credentials remain unverified. The durable adapter and archive compaction are fake-transport tested; no live write credential has been used and no production result pointer has been created. Activation is therefore not safe, notwithstanding the user's conditional authorization.
 
 This document defines the next implementation and acceptance boundary; it does not claim that the publisher is operational.
 
 
-## 9. Implemented validator status (2026-11-25)
+## 10. Implemented validator status (2026-11-25)
 
 The following controls are implemented on `main` in
 `audit_engine/semantic_audit/ae32c/trusted_artifact.py`:
@@ -223,7 +238,7 @@ These are CI and internal-consistency results only. The tests use constructed fi
 - The GitHub CAS adapter currently stores an unbounded append-only JSON history. Define compaction/retention before operational use.
 - No live App token, publication ref, environment approval, ruleset, or protected-default-branch guarantee has been exercised.
 
-## 10. Trusted publisher implementation scaffold (2026-11-25)
+## 11. Trusted publisher implementation scaffold (2026-11-25)
 
 The repository now contains:
 
@@ -253,7 +268,7 @@ CI run [45669000822](https://github.com/snoopdock/Finite_element_analysis_projec
 These tests do not execute the publisher workflow, obtain an App token, download a live upstream artifact through the workflow-run context, or write the publication ref. The publisher remains gated and unactivated.
 
 
-## 11. Main-branch integration status (2026-11-26)
+## 12. Main-branch integration status (2026-11-26)
 
 PR [#2](https://github.com/snoopdock/Finite_element_analysis_project/pull/2) was squash-merged to `main` at `192c86b74d83f31345f8714fbe28c793cac13ec7`. The isolated integration branch contained the AE-32C implementation and its required graph-projection runtime dependencies; the unrelated `stage1/section-uuids` history was not merged. The producer workflow passed on the merge commit with all 68 AE-32C tests. The downstream trusted-publisher workflow was triggered and skipped by its explicit repository-variable guard. The publication ref remains absent, and no write token or production state was created.
 

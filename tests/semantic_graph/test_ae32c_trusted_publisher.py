@@ -1,15 +1,23 @@
 from __future__ import annotations
 
 import io
+import json
+import hashlib
+import tempfile
 import unittest
+import zipfile
+from pathlib import Path
 from email.message import Message
 from unittest.mock import patch
+
+from test_ae32c_trusted_artifact import fixtures as artifact_fixtures, REPOSITORY, COMMIT
 
 from tools.ae32c_trusted_publisher import (
     PublisherError,
     build_expected_metadata,
     select_expected_artifact,
     _download_artifact,
+    prepare,
 )
 
 
@@ -129,6 +137,148 @@ class TrustedPublisherMetadataTests(unittest.TestCase):
         with self.assertRaisesRegex(PublisherError, "digest_missing"):
             select_expected_artifact([artifact], run_id=12345, run_attempt=2)
 
+
+
+
+class TrustedPublisherPrepareIntegrationTests(unittest.TestCase):
+    def setUp(self):
+        self.source, self.graph, self.expected = artifact_fixtures()
+        self.run = {
+            "id": 100,
+            "repository": {"full_name": REPOSITORY},
+            "run_attempt": 1,
+            "run_number": 51,
+            "workflow_id": 430355742,
+            "path": ".github/workflows/ae32c_source_snapshot_manifest.yml",
+            "head_sha": COMMIT,
+            "head_branch": "main",
+            "head_repository": {"full_name": REPOSITORY},
+            "event": "push",
+            "conclusion": "success",
+        }
+        self.repo_meta = {"full_name": REPOSITORY, "default_branch": "main"}
+        self.archive = self._archive_bytes()
+        self.artifact = {
+            "id": 7654,
+            "name": "ae32c-source-graph-snapshot-100-1",
+            "expired": False,
+            "digest": "sha256:" + hashlib.sha256(self.archive).hexdigest(),
+            "workflow_run": {"id": 100, "head_sha": COMMIT},
+        }
+
+    def _archive_bytes(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("source-snapshot-manifest.json", json.dumps(self.source))
+            archive.writestr("graph-snapshot-manifest.json", json.dumps(self.graph))
+        return buffer.getvalue()
+
+    def _api_responses(self, run=None, artifacts=None):
+        return [
+            run or self.run,
+            self.repo_meta,
+            {"artifacts": [self.artifact] if artifacts is None else artifacts},
+        ]
+
+    def test_prepare_validates_exact_api_run_artifact_and_writes_record(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            event_path = Path(tmp) / "event.json"
+            output_path = Path(tmp) / "prepared.json"
+            # Only the upstream run ID is read from the event payload. Authority
+            # fields are independently retrieved from the GitHub API.
+            event_path.write_text(json.dumps({
+                "workflow_run": {"id": 100, "head_branch": "attacker-controlled"}
+            }), encoding="utf-8")
+            with patch("tools.ae32c_trusted_publisher._api_json",
+                       side_effect=self._api_responses()) as api_call, \
+                 patch("tools.ae32c_trusted_publisher._download_artifact",
+                       return_value=self.archive) as download:
+                result = prepare(
+                    api_url="https://api.github.com", read_token="read-only-token",
+                    repository=REPOSITORY, event_path=str(event_path),
+                    output_path=str(output_path), trusted_root=str(Path.cwd()),
+                )
+            self.assertTrue(result["current_eligible"])
+            self.assertEqual(result["artifact_id"], 7654)
+            self.assertEqual(result["artifact_sha256"], hashlib.sha256(self.archive).hexdigest())
+            self.assertEqual(result["record"]["source_revision"], COMMIT)
+            self.assertEqual(json.loads(output_path.read_text())["record"], result["record"])
+            self.assertEqual(api_call.call_count, 3)
+            download.assert_called_once_with("https://api.github.com", "read-only-token", REPOSITORY, 7654)
+
+    def test_prepare_rejects_artifact_byte_digest_mismatch(self):
+        bad_artifact = dict(self.artifact, digest="sha256:" + "0" * 64)
+        with tempfile.TemporaryDirectory() as tmp:
+            event_path = Path(tmp) / "event.json"
+            event_path.write_text(json.dumps({"workflow_run": {"id": 100}}), encoding="utf-8")
+            with patch("tools.ae32c_trusted_publisher._api_json",
+                       side_effect=self._api_responses(artifacts=[bad_artifact])), \
+                 patch("tools.ae32c_trusted_publisher._download_artifact",
+                       return_value=self.archive):
+                with self.assertRaisesRegex(PublisherError, "upstream_artifact_digest_mismatch"):
+                    prepare(
+                        api_url="https://api.github.com", read_token="read-only-token",
+                        repository=REPOSITORY, event_path=str(event_path),
+                        output_path=str(Path(tmp) / "prepared.json"),
+                        trusted_root=str(Path.cwd()),
+                    )
+
+    def test_prepare_rejects_event_run_id_disagreement(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            event_path = Path(tmp) / "event.json"
+            event_path.write_text(json.dumps({"workflow_run": {"id": 101}}), encoding="utf-8")
+            with patch("tools.ae32c_trusted_publisher._api_json",
+                       side_effect=self._api_responses()):
+                with self.assertRaisesRegex(PublisherError, "workflow_run_id_disagrees_with_event"):
+                    prepare(
+                        api_url="https://api.github.com", read_token="read-only-token",
+                        repository=REPOSITORY, event_path=str(event_path),
+                        output_path=str(Path(tmp) / "prepared.json"),
+                        trusted_root=str(Path.cwd()),
+                    )
+
+    def test_prepare_rejects_non_allowlisted_workflow_before_artifact_download(self):
+        bad_run = dict(self.run, workflow_id=999)
+        with tempfile.TemporaryDirectory() as tmp:
+            event_path = Path(tmp) / "event.json"
+            event_path.write_text(json.dumps({"workflow_run": {"id": 100}}), encoding="utf-8")
+            with patch("tools.ae32c_trusted_publisher._api_json",
+                       side_effect=self._api_responses(run=bad_run)), \
+                 patch("tools.ae32c_trusted_publisher._download_artifact",
+                       return_value=self.archive) as download:
+                with self.assertRaisesRegex(PublisherError, "producer_workflow_not_allowlisted"):
+                    prepare(
+                        api_url="https://api.github.com", read_token="read-only-token",
+                        repository=REPOSITORY, event_path=str(event_path),
+                        output_path=str(Path(tmp) / "prepared.json"),
+                        trusted_root=str(Path.cwd()),
+                    )
+            download.assert_not_called()
+
+    def test_prepare_rejects_incomplete_coverage_as_current_but_retains_record(self):
+        source, graph, expected = artifact_fixtures(represented=False)
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("source-snapshot-manifest.json", json.dumps(source))
+            archive.writestr("graph-snapshot-manifest.json", json.dumps(graph))
+        raw = buffer.getvalue()
+        artifact = dict(self.artifact, digest="sha256:" + hashlib.sha256(raw).hexdigest())
+        with tempfile.TemporaryDirectory() as tmp:
+            event_path = Path(tmp) / "event.json"
+            output_path = Path(tmp) / "prepared.json"
+            event_path.write_text(json.dumps({"workflow_run": {"id": 100}}), encoding="utf-8")
+            with patch("tools.ae32c_trusted_publisher._api_json",
+                       side_effect=self._api_responses(artifacts=[artifact])), \
+                 patch("tools.ae32c_trusted_publisher._download_artifact",
+                       return_value=raw):
+                result = prepare(
+                    api_url="https://api.github.com", read_token="read-only-token",
+                    repository=REPOSITORY, event_path=str(event_path),
+                    output_path=str(output_path), trusted_root=str(Path.cwd()),
+                )
+            self.assertFalse(result["current_eligible"])
+            self.assertEqual(result["record"]["outcome"], "INCOMPLETE")
+            self.assertTrue(output_path.is_file())
 
 if __name__ == "__main__":
     unittest.main()

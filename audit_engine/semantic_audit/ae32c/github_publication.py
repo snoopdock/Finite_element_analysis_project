@@ -16,6 +16,7 @@ from .publication import (
     PublicationError, _empty, _verify_state, canonical_bytes, digest,
     verify_run_record,
 )
+from .history_archive import compact_history, verify_archive_chain
 
 class GitHubAPIError(PublicationError):
     def __init__(self, status: int, message: str):
@@ -61,7 +62,8 @@ class GitHubRefCASStore:
     """
     def __init__(self, transport: GitHubRESTTransport, repository: str,
                  source_branch: str, publication_branch: str = "ae32c-publication-state",
-                 state_path: str = "state/publication.json", retries: int = 8):
+                 state_path: str = "state/publication.json", retries: int = 8,
+                 max_inline_history: int = 256, archive_batch_size: int = 128):
         if not all((repository, source_branch, publication_branch, state_path)):
             raise PublicationError("github_store_configuration_missing")
         self.http = transport
@@ -70,6 +72,10 @@ class GitHubRefCASStore:
         self.publication_branch = publication_branch
         self.state_path = state_path
         self.retries = retries
+        if max_inline_history < 1 or archive_batch_size < 1:
+            raise PublicationError("github_store_history_limits_invalid")
+        self.max_inline_history = max_inline_history
+        self.archive_batch_size = archive_batch_size
         self.base = "/repos/" + repository
 
     def _ref_path(self, branch: str) -> str:
@@ -99,26 +105,38 @@ class GitHubRefCASStore:
         commit = self.http.request("GET", self.base + "/git/commits/" + commit_sha)
         tree_sha = commit["tree"]["sha"]
         tree = self.http.request("GET", self.base + "/git/trees/" + tree_sha + "?recursive=1")
+        if tree.get("truncated") is True:
+            raise PublicationError("github_publication_tree_truncated")
         entry = next((x for x in tree.get("tree", []) if x.get("path") == self.state_path), None)
         if entry is None:
             return _empty(self.repository)
-        blob = self.http.request("GET", self.base + "/git/blobs/" + entry["sha"])
-        import base64
-        raw = base64.b64decode(blob["content"])
+        def read_blob(blob_sha: str) -> bytes:
+            blob = self.http.request("GET", self.base + "/git/blobs/" + blob_sha)
+            import base64
+            return base64.b64decode(blob["content"])
+        raw = read_blob(entry["sha"])
         state = json.loads(raw.decode("utf-8"))
         _verify_state(state, self.repository)
+        verify_archive_chain(state, tree.get("tree", []), read_blob)
         return state
 
-    def _commit_state(self, parent_sha: str, state: Mapping[str, Any]) -> str:
+    def _commit_state(self, parent_sha: str, state: Mapping[str, Any],
+                      archives: list[Mapping[str, Any]] | None = None) -> str:
         import base64
         raw = canonical_bytes(state)
         blob = self.http.request("POST", self.base + "/git/blobs", {
             "content": base64.b64encode(raw).decode("ascii"), "encoding": "base64",
         })["sha"]
         parent = self.http.request("GET", self.base + "/git/commits/" + parent_sha)
+        entries = [{"path": self.state_path, "mode": "100644", "type": "blob", "sha": blob}]
+        for archive in archives or []:
+            archive_raw = canonical_bytes(archive["segment"])
+            archive_blob = self.http.request("POST", self.base + "/git/blobs", {
+                "content": base64.b64encode(archive_raw).decode("ascii"), "encoding": "base64",
+            })["sha"]
+            entries.append({"path": archive["path"], "mode": "100644", "type": "blob", "sha": archive_blob})
         tree = self.http.request("POST", self.base + "/git/trees", {
-            "base_tree": parent["tree"]["sha"],
-            "tree": [{"path": self.state_path, "mode": "100644", "type": "blob", "sha": blob}],
+            "base_tree": parent["tree"]["sha"], "tree": entries,
         })["sha"]
         return self.http.request("POST", self.base + "/git/commits", {
             "message": "AE-32C: advance durable publication state",
@@ -151,8 +169,12 @@ class GitHubRefCASStore:
                 next_state["current"] = dict(record)
                 next_state["last_generation"] = list(generation)
                 next_state["authorized_source_revision"] = source_sha
-            next_state["state_sha256"] = digest(next_state)
-            commit_sha = self._commit_state(parent_sha, next_state)
+            next_state, archive = compact_history(
+                next_state, max_inline_records=self.max_inline_history,
+                archive_batch_size=self.archive_batch_size,
+            )
+            next_state["state_sha256"] = digest({k: v for k, v in next_state.items() if k != "state_sha256"})
+            commit_sha = self._commit_state(parent_sha, next_state, archive)
             try:
                 self.http.request("PATCH", self._ref_path(self.publication_branch), {
                     "sha": commit_sha, "force": False,
@@ -172,7 +194,9 @@ class GitHubRefCASStore:
                 "publication_commit_sha": commit_sha,
                 "authorized_source_revision": source_sha,
                 "live_source_revision_after_commit": live_source,
-                "history_count": len(next_state["history"]),
+                "history_count": len(next_state["history"]) + (next_state.get("history_archive") or {}).get("record_count", 0),
+                "history_inline_count": len(next_state["history"]),
+                "history_archived_count": (next_state.get("history_archive") or {}).get("record_count", 0),
             }
         raise PublicationError("github_publication_cas_retry_exhausted")
 
