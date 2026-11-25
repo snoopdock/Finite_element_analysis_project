@@ -40,6 +40,16 @@ The configuration digest is bound but canonical effective-configuration serializ
 
 `tests/semantic_graph/test_ae32c_publication.py` covers fresh publication, superseded revisions, late completion, equal-generation collisions, cancelled/failed/incomplete outcomes, non-push events, record tampering, and concurrent local writers. CI validates the state machine and local filesystem behavior only, not distributed storage or a live ref-lookup race.
 
+## Durable backend adapter
+
+`audit_engine/semantic_audit/ae32c/github_publication.py` adds a GitHub-native durable store. It writes one canonical state document to `state/publication.json` on the dedicated `ae32c-publication-state` ref. Each candidate state is committed as a child of the exact publication-ref head that was read. The controller advances the ref with a non-force update. Competing writers create sibling commits; only one can fast-forward the ref, and losers reread state and retry. This makes the publication-ref update the serialization/CAS point without relying on runner-local files.
+
+The adapter resolves the source branch ref itself immediately before eligibility evaluation. It records that authorized SHA in state. It then resolves the source ref again after the publication-ref update. Crucially, `current()` independently resolves the live source branch and returns a record only when both the stored authorization SHA and the record source revision still equal that live SHA. Thus a source-branch move between pre-check and publication cannot leave a stale record readable as current. Historical records remain in the state log.
+
+Six fake-transport tests exercise persistence across store instances, stale-source history retention, a source move during commit, failed/non-push disposition, generation collision, and retry after a simulated ref-update conflict. The workflow runs these tests without a write token.
+
+**Credential boundary:** the existing snapshot workflow intentionally retains `contents: read`. The durable adapter is not yet invoked by that workflow. A trusted publisher must receive a narrowly scoped write credential in a separate trust boundary; do not simply change the current job to `contents: write`, because it executes repository-controlled Python and is also configured for pull-request events. The module is an implemented backend adapter, not yet a live production publication service.
+
 ## Remaining work
 
 1. Implement durable cross-run storage with transactional compare-and-swap.
