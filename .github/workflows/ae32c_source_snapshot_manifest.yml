@@ -76,27 +76,9 @@ jobs:
         if: always()
         shell: bash
         run: |
-          if [ -f "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" ]; then
-            python - <<'PY'
-            import json
-            import os
-            from pathlib import Path
-            path = Path(os.environ["RUNNER_TEMP"]) / "ae32c-source-snapshot/source-snapshot-manifest.json"
-            manifest = json.loads(path.read_text(encoding="utf-8"))
-            source = manifest.get("source", {})
-            inventory = manifest.get("source_inventory", {})
-            lines = [
-                "### AE-32C source snapshot",
-                "- Status: " + str(manifest.get("status")),
-                "- Commit: " + str(source.get("commit_oid")),
-                "- Root tree: " + str(source.get("root_tree_oid")),
-                "- Inventory SHA-256: " + str(inventory.get("sha256")),
-                "- Inventory entries: " + str(inventory.get("entry_count")),
-                "- Atomic repository snapshot established: " + str(manifest.get("authority", {}).get("atomic_repository_snapshot_established")),
-            ]
-            with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as stream:
-                stream.write("\n".join(lines) + "\n")
-            PY
+          manifest="$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json"
+          if [ -f "$manifest" ]; then
+            python -c 'import json,os; p=os.path.join(os.environ["RUNNER_TEMP"],"ae32c-source-snapshot/source-snapshot-manifest.json"); m=json.load(open(p,encoding="utf-8")); s=m.get("source",{}); i=m.get("source_inventory",{}); lines=["### AE-32C source snapshot","- Status: "+str(m.get("status")),"- Commit: "+str(s.get("commit_oid")),"- Root tree: "+str(s.get("root_tree_oid")),"- Inventory SHA-256: "+str(i.get("sha256")),"- Inventory entries: "+str(i.get("entry_count")),"- Atomic repository snapshot established: "+str(m.get("authority",{}).get("atomic_repository_snapshot_established"))]; open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8").write("\\n".join(lines)+"\\n")'
           else
             echo "Source snapshot manifest was not created." >> "$GITHUB_STEP_SUMMARY"
           fi
