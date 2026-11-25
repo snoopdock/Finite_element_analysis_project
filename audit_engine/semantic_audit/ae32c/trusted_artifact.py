@@ -6,8 +6,11 @@ that producer code computed semantically correct findings.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import re
+import stat
+import zipfile
 from typing import Any, Mapping
 
 from audit_engine.semantic_audit.ae32c.publication import build_run_record
@@ -18,6 +21,9 @@ POLICY_SCHEMA = "ae32c/trusted-publication-config/v1"
 ALLOWED_PRODUCER_WORKFLOW_ID = 430355742
 ALLOWED_PRODUCER_WORKFLOW_PATH = ".github/workflows/ae32c_source_snapshot_manifest.yml"
 MAX_MANIFEST_BYTES = 64 * 1024 * 1024
+MAX_ARCHIVE_BYTES = 32 * 1024 * 1024
+MAX_ARCHIVE_UNCOMPRESSED_BYTES = 128 * 1024 * 1024
+MAX_ARCHIVE_COMPRESSION_RATIO = 100
 _HEX = re.compile(r"^[0-9a-f]+$")
 
 
@@ -64,6 +70,53 @@ def parse_manifest(raw: bytes, *, label: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise TrustedArtifactError(label + "_root_not_object")
     return value
+
+
+def parse_artifact_archive(raw: bytes) -> dict[str, dict[str, Any]]:
+    """Safely read the two expected JSON members from an untrusted ZIP artifact."""
+    if not isinstance(raw, bytes) or len(raw) > MAX_ARCHIVE_BYTES:
+        raise TrustedArtifactError("artifact_archive_size_invalid")
+    expected_names = {"source-snapshot-manifest.json", "graph-snapshot-manifest.json"}
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw), "r") as archive:
+            members = archive.infolist()
+            names = [item.filename for item in members]
+            if len(names) != 2 or len(set(names)) != 2 or set(names) != expected_names:
+                raise TrustedArtifactError("artifact_archive_member_set_invalid")
+            total_uncompressed = 0
+            payloads: dict[str, bytes] = {}
+            for item in members:
+                name = item.filename
+                if (name.startswith(("/", "\\\\")) or "\\\\" in name
+                        or any(part in ("", ".", "..") for part in name.split("/"))):
+                    raise TrustedArtifactError("artifact_archive_path_invalid:" + name)
+                mode = item.external_attr >> 16
+                if item.is_dir() or stat.S_ISLNK(mode) or (mode and not stat.S_ISREG(mode)):
+                    raise TrustedArtifactError("artifact_archive_member_type_invalid:" + name)
+                if item.flag_bits & 0x1:
+                    raise TrustedArtifactError("artifact_archive_encrypted_member:" + name)
+                if item.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
+                    raise TrustedArtifactError("artifact_archive_compression_invalid:" + name)
+                if item.file_size < 0 or item.file_size > MAX_MANIFEST_BYTES:
+                    raise TrustedArtifactError("artifact_archive_member_size_invalid:" + name)
+                total_uncompressed += item.file_size
+                if total_uncompressed > MAX_ARCHIVE_UNCOMPRESSED_BYTES:
+                    raise TrustedArtifactError("artifact_archive_uncompressed_size_invalid")
+                if item.file_size and (item.compress_size == 0
+                        or item.file_size / item.compress_size > MAX_ARCHIVE_COMPRESSION_RATIO):
+                    raise TrustedArtifactError("artifact_archive_compression_ratio_invalid:" + name)
+                payload = archive.read(item)
+                if len(payload) != item.file_size:
+                    raise TrustedArtifactError("artifact_archive_member_length_mismatch:" + name)
+                payloads[name] = payload
+    except TrustedArtifactError:
+        raise
+    except (zipfile.BadZipFile, zipfile.LargeZipFile, OSError, EOFError, RuntimeError) as exc:
+        raise TrustedArtifactError("artifact_archive_invalid") from exc
+    return {
+        "source": parse_manifest(payloads["source-snapshot-manifest.json"], label="source"),
+        "graph": parse_manifest(payloads["graph-snapshot-manifest.json"], label="graph"),
+    }
 
 
 def _require_hex(value: Any, lengths: tuple[int, ...], label: str) -> None:
