@@ -105,6 +105,8 @@ class GitHubRefCASStore:
         commit = self.http.request("GET", self.base + "/git/commits/" + commit_sha)
         tree_sha = commit["tree"]["sha"]
         tree = self.http.request("GET", self.base + "/git/trees/" + tree_sha + "?recursive=1")
+        if tree.get("truncated") is True:
+            raise PublicationError("github_publication_tree_truncated")
         entry = next((x for x in tree.get("tree", []) if x.get("path") == self.state_path), None)
         if entry is None:
             return _empty(self.repository)
