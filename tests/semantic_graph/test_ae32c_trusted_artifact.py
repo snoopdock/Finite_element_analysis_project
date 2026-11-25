@@ -136,6 +136,10 @@ class TrustedArtifactTests(unittest.TestCase):
         source, graph, expected = fixtures()
         expected["head_branch"] = "feature/test"
         expected["ref"] = "refs/heads/feature/test"
+        source["event"]["ref"] = expected["ref"]
+        source["manifest_sha256"] = digest({
+            key: value for key, value in source.items() if key != "manifest_sha256"
+        })
         with self.assertRaisesRegex(TrustedArtifactError, "event_ref_not_default_branch"):
             validate_publication_artifact(source, graph, expected=expected)
 
