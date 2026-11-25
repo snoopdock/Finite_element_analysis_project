@@ -48,7 +48,12 @@ class FakeGitHub:
         if p==root+"/git/blobs" and m=="POST":
             s=self.ident("b"); self.blobs[s]=base64.b64decode(b["content"]); return {"sha":s}
         if p==root+"/git/trees" and m=="POST":
-            s=self.ident("t"); self.trees[s]=b["tree"]; return {"sha":s}
+            s=self.ident("t")
+            merged={x["path"]:dict(x) for x in self.trees.get(b.get("base_tree"), [])}
+            for item in b["tree"]:
+                merged[item["path"]]=dict(item)
+            self.trees[s]=list(merged.values())
+            return {"sha":s}
         if p==root+"/git/commits" and m=="POST":
             s=self.ident("c"); self.commits[s]={"tree":{"sha":b["tree"]},"parents":b["parents"]}; return {"sha":s}
         raise AssertionError((m,p))
@@ -56,7 +61,7 @@ class FakeGitHub:
 class GitHubCASStoreTests(unittest.TestCase):
     def setUp(self):
         self.api=FakeGitHub()
-        self.store=GitHubRefCASStore(self.api,REPO,"stage1/section-uuids")
+        self.store=GitHubRefCASStore(self.api,REPO,"stage1/section-uuids",\n                                    max_inline_history=3, archive_batch_size=2)
     def test_persist_and_reload(self):
         self.assertTrue(self.store.publish(make_record())["current_effective"])
         second=GitHubRefCASStore(self.api,REPO,"stage1/section-uuids")
@@ -79,6 +84,31 @@ class GitHubCASStoreTests(unittest.TestCase):
         self.store.publish(make_record(3))
         self.assertEqual(self.store.publish(make_record(3))["decision"],"REJECTED")
         self.assertEqual(self.store.current()["generation"],[3,1])
+    def test_history_compaction_preserves_chain_and_bounds_inline_state(self):
+        for n in range(1, 9):
+            self.store.publish(make_record(n))
+        head=self.store._get_ref(self.store.publication_branch)
+        state=self.store._read_state_at(head)
+        self.assertEqual(len(state["history"]), 3)
+        self.assertEqual(state["history_archive"]["record_count"], 5)
+        self.assertEqual(state["history_archive"]["segment_count"], 5)
+        commit=self.api.commits[head]
+        tree=self.api.trees[commit["tree"]["sha"]]
+        archived=[x for x in tree if x["path"].startswith("state/history/segment-")]
+        self.assertEqual(len(archived), 5)
+        self.assertEqual(self.store.current()["generation"], [8, 1])
+
+    def test_tampered_archive_segment_fails_closed(self):
+        for n in range(1, 5):
+            self.store.publish(make_record(n))
+        head=self.store._get_ref(self.store.publication_branch)
+        commit=self.api.commits[head]
+        tree=self.api.trees[commit["tree"]["sha"]]
+        archive=next(x for x in tree if x["path"].startswith("state/history/segment-"))
+        self.api.blobs[archive["sha"]]=b'{"tampered":true}'
+        with self.assertRaisesRegex(Exception, "publication_history_archive_segment_unreadable"):
+            self.store.current()
+
     def test_cas_conflict_retries(self):
         self.api.fail_patch=True
         self.assertEqual(self.store.publish(make_record())["decision"],"PUBLISHED")
