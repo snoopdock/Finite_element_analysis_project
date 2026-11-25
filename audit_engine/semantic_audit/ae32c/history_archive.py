@@ -115,7 +115,12 @@ def verify_archive_chain(
     state: Mapping[str, Any], tree_entries: list[Mapping[str, Any]],
     read_blob: Callable[[str], bytes],
 ) -> None:
-    """Verify every archive segment from the state tip back to the root."""
+    """Verify inline decisions and every archive segment from tip to root."""
+    inline = state.get("history")
+    if not isinstance(inline, list):
+        raise PublicationError("publication_history_invalid")
+    for entry in inline:
+        _verify_entry(entry)
     pointer = state.get("history_archive")
     if pointer is None:
         return
