@@ -39,16 +39,16 @@ def load_json(raw, name):
     except Exception as e: raise DossierError("invalid_json:"+name) from e
     need(isinstance(obj,dict), "json_root_invalid:"+name); return obj
 
-def identity(r,b,schema,label):
+def identity(r,b,schema,label,run_id=RUN,source_revision=SOURCE):
     need(r.get("schema_version")==schema, f"schema_mismatch:{b}:{label}")
     need(r.get("backend")==b, f"backend_mismatch:{b}:{label}")
-    need(r.get("source_revision")==SOURCE, f"source_sha_mismatch:{b}:{label}")
-    need(str(r.get("workflow_run_id"))==str(RUN), f"run_id_mismatch:{b}:{label}")
+    need(r.get("source_revision")==source_revision, f"source_sha_mismatch:{b}:{label}")
+    need(str(r.get("workflow_run_id"))==str(run_id), f"run_id_mismatch:{b}:{label}")
     need(str(r.get("workflow_run_attempt"))==str(ATTEMPT), f"attempt_mismatch:{b}:{label}")
     need(r.get("workflow_name")==WORKFLOW and r.get("status")=="passed", f"workflow_or_status_mismatch:{b}:{label}")
 
-def verify_e85(r,b):
-    identity(r,b,"ae32c/e85-native-backend-conformance/v1","e85")
+def verify_e85(r,b,run_id=RUN,source_revision=SOURCE,snap_image=SNAP_IMAGE):
+    identity(r,b,"ae32c/e85-native-backend-conformance/v1","e85",run_id,source_revision)
     need(r.get("backend_native_query_mode")==MODES[b], "e85_native_mode:"+b)
     need(str(r.get("native_library_version"))==VERSIONS[b], "e85_library_version:"+b)
     need(r.get("case_count")==7 and r.get("repeated_query_count")==14, "e85_case_counts:"+b)
@@ -80,13 +80,13 @@ def verify_e85(r,b):
     else: need(loss.get("lossless") is True and loss.get("details",{}).get("lost")==[], "e85_loss_assessment:"+b)
     w=r.get("native_worker")
     if b=="snap":
-        need(w.get("container_image_id")==SNAP_IMAGE and w.get("snap_version")=="6.0.0" and w.get("python_version")=="3.9.25" and
+        need(w.get("container_image_id")==snap_image and w.get("snap_version")=="6.0.0" and w.get("python_version")=="3.9.25" and
              w.get("request_timeout_enforced") is True and w.get("request_timeout_seconds")==120.0, "snap_e85_worker:")
     else: need(w is None, "unexpected_e85_worker:"+b)
     return {"case_count":7,"queries":14,"parity_verified":14,"native_adjacency_lookups":34,"native_edge_occurrences_read":96}
 
-def verify_e88(r,b):
-    identity(r,b,"ae32c/repository-backend-conformance/v1","e88")
+def verify_e88(r,b,run_id=RUN,source_revision=SOURCE,snap_image=SNAP_IMAGE):
+    identity(r,b,"ae32c/repository-backend-conformance/v1","e88",run_id,source_revision)
     need(r.get("backend_library")==b and str(r.get("backend_library_version"))==VERSIONS[b] and
          r.get("backend_native_query_mode")==MODES[b], "e88_backend_identity:"+b)
     x=r.get("backend_execution",{})
@@ -130,8 +130,8 @@ def verify_e88(r,b):
     return {"queries":43,"parity_verified":43,"native_adjacency_lookups":45,"native_edge_occurrences_read":86,
             "context_operations":tele,"verified_source_reads":{k:v[1] for k,v in READS.items()}}
 
-def verify(artifact_dir, manifest):
-    need(manifest.get("run_id")==RUN and manifest.get("run_attempt")==ATTEMPT and manifest.get("source_revision")==SOURCE and
+def verify(artifact_dir, manifest, *, expected_run_id=RUN, expected_source_revision=SOURCE, expected_snap_image=SNAP_IMAGE):
+    need(manifest.get("run_id")==expected_run_id and manifest.get("run_attempt")==ATTEMPT and manifest.get("source_revision")==expected_source_revision and
          manifest.get("head_branch")=="stage1/section-uuids" and manifest.get("workflow_name")==WORKFLOW,
          "manifest_identity_mismatch")
     items=manifest.get("artifacts",[]); need(len(items)==5, "manifest_requires_five_artifacts")
@@ -144,7 +144,7 @@ def verify(artifact_dir, manifest):
         need(item.get("expired") is False and re.fullmatch(r"sha256:[0-9a-f]{64}",item.get("digest","")) is not None,
              "artifact_expired_or_digest_invalid")
         wr=item.get("workflow_run",{})
-        need(wr.get("id")==RUN and wr.get("head_branch")=="stage1/section-uuids" and wr.get("head_sha")==SOURCE and
+        need(wr.get("id")==expected_run_id and wr.get("head_branch")=="stage1/section-uuids" and wr.get("head_sha")==expected_source_revision and
              wr.get("repository_id")==1346375418 and wr.get("head_repository_id")==1346375418, "artifact_source_binding:"+b)
         need(type(item.get("size_in_bytes")) is int and item["size_in_bytes"]>0, "artifact_size_invalid")
         by[b]=item
@@ -167,13 +167,13 @@ def verify(artifact_dir, manifest):
                 e85=load_json(raw_e85,b+":e85")
                 e88=load_json(raw_e88,b+":e88")
         except zipfile.BadZipFile as e: raise DossierError("zip_invalid:"+b) from e
-        a=verify_e85(e85,b); c=verify_e88(e88,b)
+        a=verify_e85(e85,b,expected_run_id,expected_source_revision,expected_snap_image); c=verify_e88(e88,b,expected_run_id,expected_source_revision,expected_snap_image)
         records.append({"backend":b,"artifact_id":item["id"],"artifact_name":item["name"],
           "artifact_archive_sha256":item["digest"],"artifact_archive_size_bytes":len(raw),
           "e85_report_sha256":sha(raw_e85), "e88_report_sha256":sha(raw_e88),
           "native_query_mode":MODES[b],"library_version":VERSIONS[b],"e85":a,"e88":c})
     return {"schema_version":"ae32c/m7.4-e85-e88-detached-dossier/v1","status":"verified",
-      "campaign":{"workflow_run_id":RUN,"workflow_run_attempt":ATTEMPT,"source_revision":SOURCE,
+      "campaign":{"workflow_run_id":expected_run_id,"workflow_run_attempt":ATTEMPT,"source_revision":expected_source_revision,
        "source_branch":"stage1/section-uuids","backends":list(BACKENDS),"workflow_name":WORKFLOW},
       "artifacts":records,"cross_backend_invariants":{"e85_graph_fingerprint":E85_FP,"e88_repository_snapshot":REPO,
        "backend_specific_native_modes_verified":True},
@@ -186,10 +186,13 @@ def main():
     ap.add_argument("--artifact-dir",type=Path,required=True)
     ap.add_argument("--manifest",type=Path,required=True)
     ap.add_argument("--output",type=Path)
+    ap.add_argument("--expected-run-id",type=int,default=RUN)
+    ap.add_argument("--expected-source-revision",default=SOURCE)
+    ap.add_argument("--expected-snap-image",default=SNAP_IMAGE)
     a=ap.parse_args()
     try:
         manifest=load_json(a.manifest.read_bytes(),a.manifest.name)
-        result=verify(a.artifact_dir,manifest)
+        result=verify(a.artifact_dir,manifest,expected_run_id=a.expected_run_id,expected_source_revision=a.expected_source_revision,expected_snap_image=a.expected_snap_image)
         result["verifier"]={"implementation":"tools/gb08_m74_native_conformance_dossier.py",
           "implementation_sha256":file_sha(Path(__file__)),"manifest_sha256":file_sha(a.manifest),"python_version":sys.version.split()[0]}
         rendered=json.dumps(result,indent=2,sort_keys=True)+"\n"
