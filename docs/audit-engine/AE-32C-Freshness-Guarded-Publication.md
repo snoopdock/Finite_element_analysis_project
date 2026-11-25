@@ -61,3 +61,12 @@ Six fake-transport tests exercise persistence across store instances, stale-sour
 7. Keep historical retention separate from current-result publication.
 
 No PR was opened or tested. No merge or production approval was performed.
+
+
+## Bounded inline history and immutable archive segments
+
+The GitHub CAS backend now keeps at most 256 recent decisions in the active state document by default. When the threshold is exceeded, the oldest excess entries are moved to an immutable segment containing at most 128 records. Segments are linked by previous-path and previous-digest references; each segment digest binds its repository, sequence, entries, and predecessor. The active state stores the archive tip and aggregate segment/record counts.
+
+The segment blob and updated state pointer are written into one candidate Git tree and one commit before the non-force ref update. The ref update remains the CAS point, so a losing or interrupted writer cannot publish a pointer without its archive segment. Every state read verifies the full archive chain, all segment digests and sequence/path bindings, each archived run-record digest, and aggregate counts. Missing, altered, truncated, or miscounted archives fail closed.
+
+This bounds the frequently rewritten state document, not total storage: archived history is intentionally retained and grows with use. No record is silently discarded. A destructive retention/expiry policy is not implemented and would require separate authorization and an independently preserved audit anchor. Fake-transport tests cover multiple segments, bounded inline state, and tamper rejection; live GitHub API behavior remains unverified.
