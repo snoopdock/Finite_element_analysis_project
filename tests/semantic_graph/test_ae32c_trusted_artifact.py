@@ -42,14 +42,23 @@ def fixtures(*, represented=True):
         "source_inventory": {"schema": "ae32c/source-inventory/v1",
                              "entry_count": len(entries), "entries": entries,
                              "sha256": inventory_sha},
-        "materialization": {"status": "CLEAN"},
+        "materialization": {
+            "checkout_commit_oid": COMMIT, "checkout_root_tree_oid": TREE,
+            "status": "CLEAN", "worktree": {
+                "clean": True, "changed_entry_count": 0, "changed_entries_sample": [],
+            },
+        },
         "verification": {
             "status": "VERIFIED", "source_snapshot_id_at_verification": source_id,
             "source_inventory_sha256_at_verification": inventory_sha,
             "worktree_clean_at_verification": True,
         },
         "run": {"run_id": "100", "run_attempt": "1", "workflow": "AE-32C"},
-        "authority": {"production_approval": False},
+        "authority": {
+            "atomic_repository_snapshot_established": False,
+            "graph_completeness_established": False,
+            "production_approval": False,
+        },
     }
     source_manifest["manifest_sha256"] = digest(source_manifest)
     report = {
@@ -93,6 +102,12 @@ class TrustedArtifactTests(unittest.TestCase):
         result = validate_publication_artifact(source, graph, expected=expected)
         self.assertFalse(result["current_eligible"])
         self.assertEqual(result["record"]["outcome"], "INCOMPLETE")
+
+    def test_unallowlisted_workflow_is_rejected(self):
+        source, graph, expected = fixtures()
+        expected["workflow_id"] = 123
+        with self.assertRaisesRegex(TrustedArtifactError, "upstream_workflow_not_allowlisted"):
+            validate_publication_artifact(source, graph, expected=expected)
 
     def test_wrong_upstream_run_is_rejected(self):
         source, graph, expected = fixtures()
