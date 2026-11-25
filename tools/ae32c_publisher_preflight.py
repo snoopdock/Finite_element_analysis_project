@@ -115,6 +115,7 @@ def evaluate(
             # broad role/team/user bypasses are rejected.
             app_bypass = (
                 isinstance(bypass, list) and len(bypass) == 1
+                and isinstance(bypass[0], dict)
                 and bypass[0].get("actor_type") == "Integration"
                 and bypass[0].get("bypass_mode") == "always"
                 and isinstance(bypass[0].get("actor_id"), int)
