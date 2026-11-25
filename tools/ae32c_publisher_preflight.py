@@ -235,7 +235,7 @@ def main() -> int:
     try:
         result = run(
             api_url=os.environ.get("GITHUB_API_URL", "https://api.github.com"),
-            token=os.environ.get("GITHUB_TOKEN", ""),
+            token=os.environ.get("PREFLIGHT_READ_TOKEN") or os.environ.get("GITHUB_TOKEN", ""),
             repository=os.environ.get("GITHUB_REPOSITORY", ""),
             app_client_id_present=os.environ.get("AE32C_APP_CLIENT_ID_PRESENT") == "true",
             app_private_key_present=os.environ.get("AE32C_APP_PRIVATE_KEY_PRESENT") == "true",
