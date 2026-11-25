@@ -106,7 +106,7 @@ class GitHubCASStoreTests(unittest.TestCase):
         tree=self.api.trees[commit["tree"]["sha"]]
         archive=next(x for x in tree if x["path"].startswith("state/history/segment-"))
         self.api.blobs[archive["sha"]]=b'{"tampered":true}'
-        with self.assertRaisesRegex(Exception, "publication_history_archive_segment_unreadable"):
+        with self.assertRaisesRegex(Exception, "publication_history_archive_identity_invalid"):
             self.store.current()
 
     def test_cas_conflict_retries(self):
