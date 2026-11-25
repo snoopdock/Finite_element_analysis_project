@@ -123,7 +123,9 @@ def verify_archive_chain(
     path, expected_sha = pointer.get("path"), pointer.get("sha256")
     sequence, total_records, seen = expected_segments, 0, set()
     while path is not None:
-        if not isinstance(path, str) or not _PATH_RE.fullmatch(path) or path in seen:
+        if (not isinstance(path, str) or not _PATH_RE.fullmatch(path) or path in seen
+                or not isinstance(expected_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_sha)
+                or path != f"state/history/segment-{sequence:08d}-{expected_sha[:16]}.json"):
             raise PublicationError("publication_history_archive_path_invalid")
         seen.add(path)
         tree_entry = by_path.get(path)
