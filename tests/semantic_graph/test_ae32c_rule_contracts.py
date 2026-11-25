@@ -74,6 +74,23 @@ class RuleContractTests(unittest.TestCase):
         self.assertEqual(finding["status_reason"], "closed_world_contract_not_defined")
         self.assertFalse(ledger["authority"]["absence_claims_authorized"])
 
+    def test_mixed_claim_abstains_without_closed_world_contract(self):
+        ledger = self._ledger([{
+            "id": "AE32A-FIXED-DIAGNOSTIC-CONTEXT",
+            "severity": "high", "title": "Fixed diagnostic context",
+            "statement": "A fixed context path was observed, with an absence inference.",
+            "limitation": "Static source observation.",
+            "evidence": [{
+                "path": "src/a.py", "line": 4, "kind": "fixed_context_allowlist",
+                "detail": "fixed path list",
+            }],
+        }])
+        self.assertEqual(ledger["findings"][0]["claim_status"], "ABSTAIN")
+        self.assertEqual(
+            ledger["findings"][0]["status_reason"],
+            "mixed_claim_requires_closed_world_contract",
+        )
+
     def test_incomplete_coverage_prevents_supported_positive_claim(self):
         ledger = self._ledger([{
             "id": "AE32A-AE28-EXTERNAL-MODEL-INPUT",
