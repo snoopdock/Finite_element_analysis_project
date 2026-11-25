@@ -275,6 +275,9 @@ def capture(repository: str | Path, source_manifest_path: str | Path,
             expected_source_revision: str | None = None) -> dict[str, Any]:
     source_manifest = json.loads(Path(source_manifest_path).read_text(encoding="utf-8"))
     _verify_source_manifest(source_manifest, expected_source_revision)
+    repository_root = Path(repository).expanduser().resolve(strict=True)
+    if str(repository_root) not in sys.path:
+        sys.path.insert(0, str(repository_root))
     from audit_engine.semantic_audit.ae32b.evidence_tools import (
         GRAPH_PROJECTION_VERSION as PROJECTION_VERSION,
         SCHEMA_VERSION as BUILDER_VERSION,
@@ -284,7 +287,7 @@ def capture(repository: str | Path, source_manifest_path: str | Path,
     if PROJECTION_VERSION != GRAPH_PROJECTION_VERSION or BUILDER_VERSION != GRAPH_BUILDER_VERSION:
         raise GraphSnapshotError("graph_builder_contract_version_mismatch")
     builder = RepositoryEvidenceTools(
-        repository, source_revision=source_manifest["source"]["commit_oid"],
+        repository_root, source_revision=source_manifest["source"]["commit_oid"],
         graph_backend="reference",
     )
     if builder.report.get("audit", {}).get("source_revision") != source_manifest["source"]["commit_oid"]:
