@@ -235,3 +235,18 @@ The repository now contains:
 **Activation state:** the workflow is deliberately disabled unless repository variable `AE32C_TRUSTED_PUBLISHER_ENABLED` is exactly `true`. It has not been activated. It is only present on `stage1/section-uuids`; it cannot receive `workflow_run` events until it is merged into the default branch. The repository's default-branch protection status remains unverified, no publication-ref ruleset or required-reviewer environment has been confirmed, and no App credentials have been configured or used.
 
 The publisher scaffold is not yet live-verified. CI currently validates the pure metadata/artifact-selection functions and imports the orchestration module. A live GitHub API download, redirect behavior against GitHub's artifact service, App-token issuance, ruleset enforcement, and publication-ref CAS remain untested. The publisher must remain disabled until the activation blockers in Section 7 are cleared and the user explicitly authorizes activation.
+
+### Publisher orchestration hardening and CI result
+
+The orchestration layer now additionally:
+
+- Requires the GitHub run object's repository identity to equal the target repository.
+- Requires the artifact's embedded workflow-run ID and head SHA to equal the exact upstream run.
+- Rejects duplicate artifact names, expired artifacts, missing artifact digests, and mismatched artifact metadata.
+- Compares downloaded ZIP bytes against the SHA-256 digest returned by GitHub's artifact API.
+- Handles the GitHub artifact redirect without forwarding the GitHub API bearer token to a different origin.
+- Prefilters the workflow to successful same-repository pushes to the default branch, while repeating all authorization checks in the Python validator.
+
+CI run [45669000822](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45669000822) passed on commit `f573aade69b348d672bec1d1bbb111627a43ef01`. The publisher orchestration suite passed 9 tests; the trusted artifact suite passed 18 tests; all 19 workflow steps succeeded. The producer artifact for this run was ID `15049071901`, 293,271 bytes, with GitHub-reported SHA-256 `86fa9a11578016f6cccb28d3f048a668a2dac012bea39f17e1024b770a169f2d`. The source inventory contained 1,958 entries; graph coverage represented 1,890, declared 68 exclusions, and had zero unaccounted units.
+
+These tests do not execute the publisher workflow, obtain an App token, download a live upstream artifact through the workflow-run context, or write the publication ref. The publisher remains gated and unactivated.
