@@ -108,6 +108,8 @@ def build_expected_metadata(
     run: Mapping[str, Any], repository_metadata: Mapping[str, Any], repository: str
 ) -> dict[str, Any]:
     """Build validator metadata exclusively from GitHub API responses."""
+    run_repository = run.get("repository")
+    run_repository_name = run_repository.get("full_name") if isinstance(run_repository, dict) else None
     head_repository = run.get("head_repository")
     if not isinstance(head_repository, dict):
         head_repository_name = None
@@ -127,10 +129,13 @@ def build_expected_metadata(
         "conclusion": run.get("conclusion"),
         "repository": repository,
         "head_repository": head_repository_name,
+        "run_repository": run_repository_name,
         "default_branch": default_branch,
     }
     if any(value in (None, "") for value in required_values.values()):
         raise PublisherError("upstream_run_metadata_incomplete")
+    if run_repository_name != repository:
+        raise PublisherError("upstream_run_repository_mismatch")
     return {
         "repository": repository,
         "default_branch": str(default_branch),
@@ -149,7 +154,8 @@ def build_expected_metadata(
 
 
 def select_expected_artifact(
-    artifacts: list[Mapping[str, Any]], *, run_id: int, run_attempt: int
+    artifacts: list[Mapping[str, Any]], *, run_id: int, run_attempt: int,
+    head_sha: str | None = None,
 ) -> Mapping[str, Any]:
     expected_name = f"{ARTIFACT_PREFIX}{run_id}-{run_attempt}"
     matches = [item for item in artifacts if item.get("name") == expected_name]
@@ -158,8 +164,13 @@ def select_expected_artifact(
     artifact = matches[0]
     if artifact.get("expired") is not False:
         raise PublisherError("expected_upstream_artifact_expired")
-    if not isinstance(artifact.get("id"), int):
+    if type(artifact.get("id")) is not int or artifact["id"] < 1:
         raise PublisherError("expected_upstream_artifact_id_invalid")
+    upstream = artifact.get("workflow_run")
+    if not isinstance(upstream, dict) or upstream.get("id") != run_id:
+        raise PublisherError("artifact_workflow_run_id_mismatch")
+    if head_sha is not None and upstream.get("head_sha") != head_sha:
+        raise PublisherError("artifact_workflow_head_sha_mismatch")
     if not isinstance(artifact.get("digest"), str) or not artifact["digest"].startswith("sha256:"):
         raise PublisherError("expected_upstream_artifact_digest_missing")
     return artifact
@@ -196,7 +207,8 @@ def prepare(
     if not isinstance(artifacts, list):
         raise PublisherError("upstream_artifact_list_invalid")
     artifact = select_expected_artifact(
-        artifacts, run_id=run_id, run_attempt=expected["run_attempt"]
+        artifacts, run_id=run_id, run_attempt=expected["run_attempt"],
+        head_sha=expected["head_sha"],
     )
     archive = _download_artifact(api_url, read_token, repository, artifact["id"])
     actual_digest = hashlib.sha256(archive).hexdigest()
