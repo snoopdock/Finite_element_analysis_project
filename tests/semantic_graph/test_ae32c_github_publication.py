@@ -63,6 +63,7 @@ class GitHubCASStoreTests(unittest.TestCase):
         self.assertEqual(second.current()["record_sha256"],make_record()["record_sha256"])
     def test_stale_source_history_only(self):
         self.api.refs["heads/stage1/section-uuids"]=OTHER
+        self.api.commits[OTHER]={"tree":{"sha":"ts"}}
         self.assertEqual(self.store.publish(make_record())["decision"],"HISTORICAL_ONLY")
         self.assertIsNone(self.store.current())
     def test_source_move_during_commit_not_current(self):
