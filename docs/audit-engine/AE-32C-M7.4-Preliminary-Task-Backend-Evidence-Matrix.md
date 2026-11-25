@@ -2,9 +2,9 @@
 
 **Record type:** Preliminary evidence ledger; not a suitability approval  
 **Branch:** stage1/section-uuids  
-**Exact task-test source:** 51d025fd328b00a59988a05fe72d9092262434f5  
-**Exact E.8.5/E.8.8 run:** [45395352748](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45395352748), attempt 1, success  
-**Aggregate summary job:** 138450475726, success  
+**Latest task-test source:** ed33bf68c49fd41506d5d7917fbdc77bf8e544e7 (the earlier evidence snapshots remain individually source-bound)  
+**Latest E.8.5/E.8.8 regression:** [45600944022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45600944022), attempt 1, success; the separate G7 detached pass for run 45473007901 is recorded below  
+**Latest aggregate summary job:** 139159986931, success  
 **Controlling contract:** [M7.4 Task-Specific Backend Suitability Assessment Contract](AE-32C-M7.4-Task-Suitability-Assessment-Contract.md)  
 **Validation evidence:** [M7.4 Initial Task Assessment Validation](AE-32C-M7.4-Initial-Task-Assessment-Validation.md)  
 **Authority:** production_approval=false; no global ranking, winner, automatic selection or runtime promotion.
@@ -21,15 +21,15 @@ The five backends are task-relevant computational options, not competing product
 
 ## 2. Source and test evidence
 
-The exact E.8.5/E.8.8 source SHA was 51d025fd328b00a59988a05fe72d9092262434f5. The task acceptance module was checked out at that exact source in all five backend jobs.
+The latest E.8.5/E.8.8 source SHA is ed33bf68c49fd41506d5d7917fbdc77bf8e544e7. The task acceptance module was checked out at that exact source in all five backend jobs; earlier campaign results remain separately bound to their historical source SHAs.
 
 | Backend | CI job ID | M7.4 result |
 |---|---:|---:|
-| NetworkX | 138449745984 | 21 passed; 84 expected skips |
-| SciPy | 138449746035 | 21 passed; 84 expected skips |
-| python-igraph | 138449745936 | 21 passed; 84 expected skips |
-| graph-tool | 138449746042 | 21 passed; 84 expected skips |
-| SNAP isolated worker | 138449745692 | 21 passed; 84 expected skips |
+| NetworkX | 139159380457 | 21 passed; 84 expected skips |
+| SciPy | 139159380319 | 21 passed; 84 expected skips |
+| python-igraph | 139159380489 | 21 passed; 84 expected skips |
+| graph-tool | 139159380252 | 21 passed; 84 expected skips |
+| SNAP isolated worker | 139159379827 | 21 passed; 84 expected skips |
 
 The 84 skips in each job are the four backend partitions not selected by that job. Across the matrix this is 105 passing backend-specific test executions and 420 expected skips; it is not 105 different test definitions.
 
@@ -187,6 +187,17 @@ Exact-source [G4 run 10](https://github.com/snoopdock/Finite_element_analysis_pr
 
 The latest five-backend E.8.5/E.8.8 regression [run 45473007901](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45473007901), source SHA `098a87394d972010f04466c540fcf5f43b490f9b`, completed successfully for NetworkX, SciPy, python-igraph, graph-tool and the isolated SNAP worker. Each backend recorded E.8.5 14/14 and E.8.8 43/43 parity-verified queries, with zero query/parity failures. The G4 snapshot/mutation suite reported 7 passed / 33 expected skips for the four in-process backends and 8 passed / 32 expected skips for SNAP. Repository side-effect/lifecycle tests reported 7 passed / 14 expected skips for the four in-process backends and 8 passed / 13 expected skips for SNAP. The M7.4 task-level acceptance suite reported 21 passed / 84 expected skips per backend. SNAP protocol, live timeout/cleanup, resource teardown, G4 and repository-backed E.8.8 steps all passed.
 
-All five downloaded E.8.5/E.8.8 artifact ZIP hashes were independently recomputed and matched their Actions upload digests; their embedded reports identify the exact run source SHA and `passed` status. The full detached semantic dossier verifier remains bound to run `45395352748`; the new run's artifacts have not yet been through a separately parameterized detached dossier. Do not extend the earlier G7 detached-verification claim to this new artifact set solely on the basis of matching archive hashes.
+All five downloaded E.8.5/E.8.8 artifact ZIP hashes were independently recomputed and matched their Actions upload digests; their embedded reports identify the exact run source SHA and `passed` status. The artifacts from run `45473007901` were subsequently processed by the parameterized detached verifier in [run `45601021689`](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45601021689), which passed G7 for that exact artifact set (Section 15). The later regression artifacts from run `45600944022` have not yet been through their own detached dossier; do not extend the G7 pass for run `45473007901` to this newer artifact set.
 
 **Decision unchanged:** G4 remains Partial. G5/G6 and other incomplete M7.4 gates remain open. All 20 task/backend outcomes remain **Insufficient evidence**; `production_approval=false`. Computational backends remain task-specific options, not universal performance competitors.
+
+
+## 15. Latest detached G7 verification and post-verifier regression — 2026-11-25
+
+The E.8.5/E.8.8 artifact set from run `45473007901`, source SHA `098a87394d972010f04466c540fcf5f43b490f9b`, was independently detached-verified by [run 45601021689](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45601021689). All five artifact archives matched exact IDs, byte counts and SHA-256 digests. The verifier checked the E.8.5/E.8.8 schemas, source/run/attempt identity, native modes and library versions, parity/query telemetry, projection round-trip, repository snapshot, context telemetry, source hashes, side-effect declarations, SciPy hybrid representation and SNAP image/policy/deadline. The detached dossier is [artifact 15015925967](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45601021689/artifacts/15015925967). **G7 is Pass for run 45473007901 only.**
+
+The verifier changes and provenance test were then exercised by the later five-backend E.8.5/E.8.8 regression [run 45600944022](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45600944022), source SHA `ed33bf68c49fd41506d5d7917fbdc77bf8e544e7`. All five backend jobs and the aggregate summary succeeded. Each backend reported 21/21 M7.4 task-acceptance passes, 14/14 E.8.5 parity-verified queries and 43/43 E.8.8 parity-verified queries, with zero query/parity failures. G4 snapshot/mutation tests passed 7 cases in each in-process backend and 8 in SNAP; repository side-effect/snapshot-race tests passed 7 cases in each in-process backend and 8 in SNAP. SNAP also passed protocol, live Docker timeout/cleanup and resource-teardown tests.
+
+The G4 evidence is stronger but remains bounded. It includes in-root byte/mode read-only checks, source-snapshot consistency after external same-size edits, a tested active-read mutation schedule, ordinary change-and-restore detection between snapshot passes, and fail-closed behavior for a query waiting on a closed SNAP worker. It does not establish atomic repository-wide snapshot semantics, eliminate Windows reparse-point path-opening TOCTOU, cover all filesystem metadata/external side effects or close every mutation/restoration race. G4 remains Partial.
+
+**Important source separation:** run 45601021689 verifies the earlier artifact set from run 45473007901; it does not verify the later artifacts produced by run 45600944022. The latter still require their own detached G7 pass if they are to be used as the current immutable evidence set. The latest run 45600944022 has not been validated by exact-source G9.42. All 20 task/backend outcomes remain Insufficient evidence; no backend ranking or automatic selection is authorized; `production_approval=false`.
