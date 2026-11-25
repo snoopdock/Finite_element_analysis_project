@@ -75,6 +75,13 @@ jobs:
             -p 'test_ae32c_graph_snapshot.py' \
             -v
 
+      - name: Run rule coverage and finding provenance unit tests
+        run: |
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_ae32c_rule_contracts.py' \
+            -v
+
       - name: Capture source-bound graph identity and coverage
         shell: bash
         run: |
