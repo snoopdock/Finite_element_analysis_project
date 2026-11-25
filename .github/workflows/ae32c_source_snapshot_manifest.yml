@@ -4,11 +4,13 @@ on:
   push:
     branches:
       - stage1/section-uuids
+      - integration/ae32c-trusted-publisher
       - main
   pull_request:
     branches:
       - main
       - stage1/section-uuids
+      - integration/ae32c-trusted-publisher
   workflow_dispatch:
 
 permissions:
