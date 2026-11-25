@@ -1,11 +1,11 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "ededbe2e8fdc0d2bcd3736cf9b90a17f48c945ef",
-  "compare_sha": "e6a985d44cc97521f730fc717f35fd4a0d9bf4cd",
+  "base_sha": "192c86b74d83f31345f8714fbe28c793cac13ec7",
+  "compare_sha": "2efb8b44e69a0f3a4512f8164668c41af4127d75",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 326,
-  "compare_only_commit_count": 1203,
+  "base_only_commit_count": 328,
+  "compare_only_commit_count": 1420,
   "base_changes_since_merge_base": [
     {
       "status": "A",
@@ -153,6 +153,14 @@
     },
     {
       "status": "A",
+      "path": ".github/workflows/ae32c_source_snapshot_manifest.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/ae32c_trusted_publisher.yml"
+    },
+    {
+      "status": "A",
       "path": ".github/workflows/ae32d-machine-verification.yml"
     },
     {
@@ -261,6 +269,10 @@
     },
     {
       "status": "A",
+      "path": "audit_engine/semantic_audit/__init__.py"
+    },
+    {
+      "status": "A",
       "path": "audit_engine/semantic_audit/ae31/__init__.py"
     },
     {
@@ -297,7 +309,123 @@
     },
     {
       "status": "A",
+      "path": "audit_engine/semantic_audit/ae32c/__init__.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/ae32c/github_publication.py"
+    },
+    {
+      "status": "A",
       "path": "audit_engine/semantic_audit/ae32c/investigator.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/ae32c/publication.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/ae32c/rule_contracts.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/ae32c/trusted_artifact.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/core/models.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/core/semantic_graph.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/__init__.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/__init__.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/context.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/dependency.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/engine.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/evidence.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/helpers.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/identity.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/impact.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/memory.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/models.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/observations.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/path.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/results.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/serialization.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/structural.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/analysis/traversal.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/queries/__init__.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/queries/models.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/queries/results.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/queries/validation.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/graph/service.py"
     },
     {
       "status": "A",
@@ -393,6 +521,18 @@
     },
     {
       "status": "A",
+      "path": "docs/audit-engine/AE-32C-Freshness-Guarded-Publication.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-GitHub-Hosted-Snapshot-Implementation.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-Graph-Snapshot-Coverage.md"
+    },
+    {
+      "status": "A",
       "path": "docs/audit-engine/AE-32C-Phase-D-Exact-Commit-Validation-Gate.md"
     },
     {
@@ -406,6 +546,14 @@
     {
       "status": "A",
       "path": "docs/audit-engine/AE-32C-Phase-E5-Independent-Conditions-Workflow.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-Rule-Coverage-and-Finding-Provenance.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-Trusted-Publisher-Design.md"
     },
     {
       "status": "A",
@@ -426,6 +574,14 @@
     {
       "status": "A",
       "path": "docs/audit-engine/G9.39-llm-runtime-observability-and-provider-contract.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/schemas/ae32c-graph-snapshot-manifest-v1.schema.json"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/schemas/ae32c-source-snapshot-manifest-v1.schema.json"
     },
     {
       "status": "A",
@@ -517,6 +673,34 @@
     },
     {
       "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_github_publication.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_graph_snapshot.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_publication.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_rule_contracts.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_source_snapshot_manifest.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_trusted_artifact.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_trusted_publisher.py"
+    },
+    {
+      "status": "A",
       "path": "tests/semantic_high_assurance/test_outcome_feedback.py"
     },
     {
@@ -534,6 +718,18 @@
     {
       "status": "A",
       "path": "tests/test_retrieval_provider_retirement.py"
+    },
+    {
+      "status": "A",
+      "path": "tools/ae32c_graph_snapshot.py"
+    },
+    {
+      "status": "A",
+      "path": "tools/ae32c_source_snapshot_manifest.py"
+    },
+    {
+      "status": "A",
+      "path": "tools/ae32c_trusted_publisher.py"
     },
     {
       "status": "A",
@@ -723,6 +919,14 @@
     },
     {
       "status": "A",
+      "path": ".github/workflows/ae32c_source_snapshot_manifest.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/ae32c_trusted_publisher.yml"
+    },
+    {
+      "status": "A",
       "path": ".github/workflows/ae32d-machine-verification.yml"
     },
     {
@@ -740,6 +944,18 @@
     {
       "status": "A",
       "path": ".github/workflows/latex-audit.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/m7_1_manual_native_backend_smoke.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/m7_4_detached_e85_e88_dossier.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/m7_4_source_snapshot_integrity_cost.yml"
     },
     {
       "status": "A",
@@ -1607,6 +1823,10 @@
     },
     {
       "status": "A",
+      "path": "audit_engine/semantic_audit/ae32c/github_publication.py"
+    },
+    {
+      "status": "A",
       "path": "audit_engine/semantic_audit/ae32c/graph_pilot.py"
     },
     {
@@ -1631,6 +1851,10 @@
     },
     {
       "status": "A",
+      "path": "audit_engine/semantic_audit/ae32c/publication.py"
+    },
+    {
+      "status": "A",
       "path": "audit_engine/semantic_audit/ae32c/response_normalizer.py"
     },
     {
@@ -1639,11 +1863,19 @@
     },
     {
       "status": "A",
+      "path": "audit_engine/semantic_audit/ae32c/rule_contracts.py"
+    },
+    {
+      "status": "A",
       "path": "audit_engine/semantic_audit/ae32c/runtime_architecture.py"
     },
     {
       "status": "A",
       "path": "audit_engine/semantic_audit/ae32c/tool_policy.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/ae32c/trusted_artifact.py"
     },
     {
       "status": "A",
@@ -2983,11 +3215,23 @@
     },
     {
       "status": "A",
+      "path": "docs/audit-engine/AE-32C-Freshness-Guarded-Publication.md"
+    },
+    {
+      "status": "A",
       "path": "docs/audit-engine/AE-32C-G9.42-Validation-Failure-44896382956.md"
     },
     {
       "status": "A",
+      "path": "docs/audit-engine/AE-32C-GitHub-Hosted-Snapshot-Implementation.md"
+    },
+    {
+      "status": "A",
       "path": "docs/audit-engine/AE-32C-Graph-Backend-Compatibility-and-Utilization-Roadmap.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-Graph-Snapshot-Coverage.md"
     },
     {
       "status": "A",
@@ -3059,6 +3303,34 @@
     },
     {
       "status": "A",
+      "path": "docs/audit-engine/AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45473007901.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45600944022.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45602554671.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M7.4-G4-Snapshot-and-Mutation-Integrity.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M7.4-Initial-Task-Assessment-Validation.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-M7.4-Preliminary-Task-Backend-Evidence-Matrix.md"
+    },
+    {
+      "status": "A",
       "path": "docs/audit-engine/AE-32C-M7.4-Task-Suitability-Assessment-Contract.md"
     },
     {
@@ -3123,6 +3395,14 @@
     },
     {
       "status": "A",
+      "path": "docs/audit-engine/AE-32C-Rule-Coverage-and-Finding-Provenance.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/AE-32C-Trusted-Publisher-Design.md"
+    },
+    {
+      "status": "A",
       "path": "docs/audit-engine/AE-32D-Audit-Quality-Benchmark-Protocol.md"
     },
     {
@@ -3140,6 +3420,46 @@
     {
       "status": "A",
       "path": "docs/audit-engine/G9.39-llm-runtime-observability-and-provider-contract.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/evidence/m74-e85-e88-run-45395352748/manifest.json"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/evidence/m74-e85-e88-run-45395352748/verified-dossier.json"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/evidence/m74-e85-e88-run-45473007901/manifest.json"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/evidence/m74-e85-e88-run-45473007901/verified-dossier.json"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/evidence/m74-e85-e88-run-45600944022/manifest.json"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/evidence/m74-e85-e88-run-45600944022/verified-dossier.json"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/evidence/m74-e85-e88-run-45602554671/manifest.json"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/evidence/m74-e85-e88-run-45602554671/verified-dossier.json"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/schemas/ae32c-graph-snapshot-manifest-v1.schema.json"
+    },
+    {
+      "status": "A",
+      "path": "docs/audit-engine/schemas/ae32c-source-snapshot-manifest-v1.schema.json"
     },
     {
       "status": "A",
@@ -6075,6 +6395,34 @@
     },
     {
       "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_github_publication.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_graph_snapshot.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_publication.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_rule_contracts.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_source_snapshot_manifest.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_trusted_artifact.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_trusted_publisher.py"
+    },
+    {
+      "status": "A",
       "path": "tests/semantic_graph/test_analysis_engine_service.py"
     },
     {
@@ -6112,6 +6460,10 @@
     {
       "status": "A",
       "path": "tests/semantic_graph/test_e88_networkx_repository_backend.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_e88_repository_backend_cleanup.py"
     },
     {
       "status": "A",
@@ -6199,6 +6551,26 @@
     },
     {
       "status": "A",
+      "path": "tests/semantic_graph/test_m74_detached_native_conformance_dossier.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_m74_repository_side_effects.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_m74_snapshot_mutation_integrity.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_m74_task_suitability_acceptance.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_m7_g4_source_snapshot_integrity_benchmark.py"
+    },
+    {
+      "status": "A",
       "path": "tests/semantic_graph/test_m7_native_backend_performance_benchmark.py"
     },
     {
@@ -6228,6 +6600,10 @@
     {
       "status": "A",
       "path": "tests/semantic_graph/test_snap_worker_adapter.py"
+    },
+    {
+      "status": "A",
+      "path": "tests/semantic_graph/test_snap_worker_docker_lifecycle.py"
     },
     {
       "status": "A",
@@ -6895,11 +7271,23 @@
     },
     {
       "status": "A",
+      "path": "tools/ae32c_graph_snapshot.py"
+    },
+    {
+      "status": "A",
       "path": "tools/ae32c_provider_compatibility_smoke.py"
     },
     {
       "status": "A",
       "path": "tools/ae32c_runtime_architecture.py"
+    },
+    {
+      "status": "A",
+      "path": "tools/ae32c_source_snapshot_manifest.py"
+    },
+    {
+      "status": "A",
+      "path": "tools/ae32c_trusted_publisher.py"
     },
     {
       "status": "A",
@@ -6995,11 +7383,19 @@
     },
     {
       "status": "A",
+      "path": "tools/gb06_source_snapshot_integrity_benchmark.py"
+    },
+    {
+      "status": "A",
       "path": "tools/gb06_task_suitability_campaign.py"
     },
     {
       "status": "A",
       "path": "tools/gb07_campaign_dossier.py"
+    },
+    {
+      "status": "A",
+      "path": "tools/gb08_m74_native_conformance_dossier.py"
     },
     {
       "status": "A",
@@ -7467,6 +7863,1101 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "192c86b74d83f31345f8714fbe28c793cac13ec7",
+      "subject": "Integrate AE-32C trusted publisher"
+    },
+    {
+      "side": ">",
+      "sha": "2efb8b44e69a0f3a4512f8164668c41af4127d75",
+      "subject": "AE-32C: record publisher orchestration hardening and CI result"
+    },
+    {
+      "side": ">",
+      "sha": "f573aade69b348d672bec1d1bbb111627a43ef01",
+      "subject": "AE-32C: prefilter publisher to successful same-repo default-branch pushes"
+    },
+    {
+      "side": ">",
+      "sha": "90c4d76f05d1ac4ef917c67badf2eb4b052cb7ac",
+      "subject": "AE-32C: test publisher repository binding and redirect isolation"
+    },
+    {
+      "side": ">",
+      "sha": "caade30f8220bf6d9af272436f871c4a2d0ab0ca",
+      "subject": "AE-32C: bind publisher metadata and artifact to repository run"
+    },
+    {
+      "side": ">",
+      "sha": "f279bf31c9f91f173e31886551e91ec6c35eb968",
+      "subject": "AE-32C: document disabled trusted publisher scaffold"
+    },
+    {
+      "side": ">",
+      "sha": "39a6554c855fe19278500baeb2b261ec87ca52f9",
+      "subject": "AE-32C: run trusted publisher orchestration tests in CI"
+    },
+    {
+      "side": ">",
+      "sha": "197ce321c6d891826259091a8e3718bec57399ac",
+      "subject": "AE-32C: correct trusted publisher workflow expressions"
+    },
+    {
+      "side": ">",
+      "sha": "1843fb9d4b342aa2eeda86300eed10c56b11e007",
+      "subject": "AE-32C: add disabled-by-default trusted publisher workflow"
+    },
+    {
+      "side": ">",
+      "sha": "fac1cd7cfc3a0e94bd77925a0b11e3627288eb55",
+      "subject": "AE-32C: test trusted publisher metadata and artifact selection"
+    },
+    {
+      "side": ">",
+      "sha": "9e3c6275d21aa3301fc255504dc5778c69684cae",
+      "subject": "AE-32C: prevent API token forwarding across artifact redirects"
+    },
+    {
+      "side": ">",
+      "sha": "cf2a9c153d5ad26a1fe8fc8e8bd2ae385ce09d20",
+      "subject": "AE-32C: add isolated trusted publisher orchestration"
+    },
+    {
+      "side": ">",
+      "sha": "d6b0ebc4a96bd1410166339703b260558b245485",
+      "subject": "AE-32C: test end-to-end trusted artifact validation"
+    },
+    {
+      "side": ">",
+      "sha": "df56552bdb79a7dd8c4e595d40d91a58985941f6",
+      "subject": "AE-32C: add end-to-end trusted artifact validation entry point"
+    },
+    {
+      "side": ">",
+      "sha": "88293e6247a182bf9be16895355a0b046b6258e7",
+      "subject": "AE-32C: pin JSON Schema validator for publisher tests"
+    },
+    {
+      "side": ">",
+      "sha": "6b81870a939053e04121b9bb47761fccdc4336a3",
+      "subject": "AE-32C: test trusted source and graph JSON Schemas"
+    },
+    {
+      "side": ">",
+      "sha": "3f8e52de88af0341b043853edcde677e2a5a6c91",
+      "subject": "AE-32C: add trusted local JSON Schema validation"
+    },
+    {
+      "side": ">",
+      "sha": "63b121968ba09e50a2815409c58e286956f7d5f6",
+      "subject": "AE-32C: document trusted artifact validator and CI evidence"
+    },
+    {
+      "side": ">",
+      "sha": "28a1a4e6ff31ee0e94052f248808ecd8eee5e262",
+      "subject": "AE-32C: correct ZIP member path and file-mode checks"
+    },
+    {
+      "side": ">",
+      "sha": "e41a8a8d8051b7f3e1acfb30e244f9304bd1281f",
+      "subject": "AE-32C: test safe publication archive parsing"
+    },
+    {
+      "side": ">",
+      "sha": "9c14a7b03061736609f674d1dd97fe38448eb7fb",
+      "subject": "AE-32C: safely parse untrusted publication archives"
+    },
+    {
+      "side": ">",
+      "sha": "beadebcbd71aaf5c34a013048d54aa610fbfc5b7",
+      "subject": "AE-32C: test publisher workflow allowlist and source materialization"
+    },
+    {
+      "side": ">",
+      "sha": "bf1b793d043dddf5ea714f84ebdb518d9e956a65",
+      "subject": "AE-32C: enforce publisher workflow and source authority bindings"
+    },
+    {
+      "side": ">",
+      "sha": "3d6639db1329a92c79c57baf6f3d2e33f8ff61f0",
+      "subject": "AE-32C: simplify coverage cross-binding regression tests"
+    },
+    {
+      "side": ">",
+      "sha": "8513b562004975d1f464b93e39cc6dce57feebd8",
+      "subject": "AE-32C: test source-bound graph coverage validation"
+    },
+    {
+      "side": ">",
+      "sha": "3b1a4b59729fa5dc470a4a7c9199bf05fe071b81",
+      "subject": "AE-32C: reconcile trusted artifact coverage against source inventory"
+    },
+    {
+      "side": ">",
+      "sha": "c120f0af30cb6eaa9c5302404126ce7666c8ed5a",
+      "subject": "test(ae32c): exercise non-default branch rejection"
+    },
+    {
+      "side": ">",
+      "sha": "1f13ae6cf8779cd34b55ec9f32eb44923c601456",
+      "subject": "ci(ae32c): test trusted publication artifact validation"
+    },
+    {
+      "side": ">",
+      "sha": "463f09d86bc39741648bcb447d51e1f71a8b1e92",
+      "subject": "test(ae32c): cover trusted artifact validation"
+    },
+    {
+      "side": ">",
+      "sha": "9c2664183a55b70b26d1ceca3722e8c7bc31ed8f",
+      "subject": "feat(ae32c): validate trusted publication artifacts"
+    },
+    {
+      "side": ">",
+      "sha": "7ababe37101131d584e7b84f6cb05b49469146fa",
+      "subject": "docs(ae32c): define trusted publisher security boundary"
+    },
+    {
+      "side": ">",
+      "sha": "91ac03b0fbe930d898d1904ec830c0457231bdd6",
+      "subject": "AE-32C: correct stale-ref fake fixture"
+    },
+    {
+      "side": ">",
+      "sha": "ca1b59699d8b042c5fcba52f2cf03eb211639415",
+      "subject": "AE-32C: document durable GitHub ref-CAS publication backend"
+    },
+    {
+      "side": ">",
+      "sha": "abcb3c69d62b136d9ce3c289981eed76ace83b79",
+      "subject": "AE-32C: add durable GitHub publication backend tests to CI"
+    },
+    {
+      "side": ">",
+      "sha": "48db79ccd8854195b02fd161fab4c49e39a40d70",
+      "subject": "AE-32C: align fake GitHub tree transport with recursive reads"
+    },
+    {
+      "side": ">",
+      "sha": "f3674b4cbf9fbf1865750dded027f4c0864e0dae",
+      "subject": "AE-32C: read nested publication state from recursive Git tree"
+    },
+    {
+      "side": ">",
+      "sha": "f279096d67c5e50a6182a21510488d795eaed56c",
+      "subject": "AE-32C: test durable GitHub ref CAS publication backend"
+    },
+    {
+      "side": ">",
+      "sha": "2285afe531d09e7fcff4c042c65dcf4ac8b79245",
+      "subject": "AE-32C: add durable GitHub ref compare-and-swap publication store"
+    },
+    {
+      "side": ">",
+      "sha": "9d733a85a495846b4b39e1ea9f4e3ff5ef822c12",
+      "subject": "AE-32C: document freshness-guarded result publication"
+    },
+    {
+      "side": ">",
+      "sha": "8b60e4b4029141987165e6323aef1ac8e3a75f4d",
+      "subject": "AE-32C: validate result publication state machine in CI"
+    },
+    {
+      "side": ">",
+      "sha": "ae809743dff0894a013dfdbb9a9e5f942f2f2925",
+      "subject": "AE-32C: correct canonical publication record encoding"
+    },
+    {
+      "side": ">",
+      "sha": "2ec664444f22cd1e99d52e8cb77ef63ebe0d22ce",
+      "subject": "AE-32C: correct canonical publication record newline"
+    },
+    {
+      "side": ">",
+      "sha": "01d85ded80a500e54a027665c5c61089de31ac13",
+      "subject": "AE-32C: test freshness-guarded result publication"
+    },
+    {
+      "side": ">",
+      "sha": "0e4326020449038be31bf260e4e71b185cf33276",
+      "subject": "AE-32C: implement freshness-guarded result publication"
+    },
+    {
+      "side": ">",
+      "sha": "647ddba6a0e0b437c201a8a254cc326562b40fa2",
+      "subject": "AE-32C: add result publication module"
+    },
+    {
+      "side": ">",
+      "sha": "1b2367d424f6a7fd7b5f41b05e22f57096d37bf9",
+      "subject": "docs(audit): record final rule coverage validation [skip ci]"
+    },
+    {
+      "side": ">",
+      "sha": "c6a9573db46057f7c40464047077a26e41d1fc71",
+      "subject": "docs(audit): clarify mixed-polarity abstention rule"
+    },
+    {
+      "side": ">",
+      "sha": "4e48cd5382e76391e025608a7f4e2a244d6273cb",
+      "subject": "docs(audit): document mixed-claim fail-closed hardening"
+    },
+    {
+      "side": ">",
+      "sha": "acb1be3de9fc25f6913732e497f6fe01dc173c07",
+      "subject": "test(audit): require abstention for mixed open-world findings"
+    },
+    {
+      "side": ">",
+      "sha": "7223c1a8749d5d9700609d48c56b333ef9847218",
+      "subject": "fix(audit): verify mixed and absence claim abstention policy"
+    },
+    {
+      "side": ">",
+      "sha": "44077414be1ec965b00d636b1ad425c4942decda",
+      "subject": "fix(audit): abstain on mixed findings without closed-world proof"
+    },
+    {
+      "side": ">",
+      "sha": "d2e05bed5372e623b16856e4e8577302143cd05f",
+      "subject": "docs(audit): link completed rule coverage and finding provenance phase"
+    },
+    {
+      "side": ">",
+      "sha": "6b7446503d23ea8b9379977dd728aa2d22de0a0e",
+      "subject": "docs(audit): record rule-bound finding validation evidence"
+    },
+    {
+      "side": ">",
+      "sha": "f07015e875de16e9f6f36d6600c2ff3281c05e96",
+      "subject": "ci(audit): summarize rule-bound finding ledger evidence"
+    },
+    {
+      "side": ">",
+      "sha": "7cfe1844dabb2694c919b1731495e71d612bd331",
+      "subject": "fix(audit): verify graph manifest rule registry digest reference"
+    },
+    {
+      "side": ">",
+      "sha": "bbdce6f2f679213c7d0e66feb62c1ee1dd6855fd",
+      "subject": "fix(audit): resolve rule contract package for direct CLI execution"
+    },
+    {
+      "side": ">",
+      "sha": "c906dab0c22023e8b5b73700f39a292346367323",
+      "subject": "docs(audit): specify rule coverage and finding provenance contract"
+    },
+    {
+      "side": ">",
+      "sha": "c4a17c500006e9f56c9021d1daf4af0f1e0d0ae0",
+      "subject": "test(audit): assert evidence binding without semantic proof claim"
+    },
+    {
+      "side": ">",
+      "sha": "7387052c7e58d6f377b2dfb2056c19a4dca1911c",
+      "subject": "fix(audit): distinguish evidence binding from semantic claim proof"
+    },
+    {
+      "side": ">",
+      "sha": "7dd31d8ba152ddb4f0fb202dd483b4d245f02e4f",
+      "subject": "docs(audit): extend graph manifest schema with finding ledger"
+    },
+    {
+      "side": ">",
+      "sha": "1443464154f084793f65fa1ca01a9151ff7ea6f4",
+      "subject": "ci(audit): execute rule contract and finding provenance tests"
+    },
+    {
+      "side": ">",
+      "sha": "b386353cab77f5744d2e70a0b08a7fba8fd4bf71",
+      "subject": "fix(audit): enforce rule-specific evidence and extractor coverage"
+    },
+    {
+      "side": ">",
+      "sha": "98d121edfd0dae7638cc401a08c68a7428ce072b",
+      "subject": "test(audit): cover rule contracts and finding provenance"
+    },
+    {
+      "side": ">",
+      "sha": "fe5c327211d29cc27c5cf8c1da6fdcb9c09ec687",
+      "subject": "feat(audit): bind findings to rule source and graph identities"
+    },
+    {
+      "side": ">",
+      "sha": "6b32cd674314dc9812a0f88598b055a059025f88",
+      "subject": "feat(audit): add versioned rule coverage and finding contracts"
+    },
+    {
+      "side": ">",
+      "sha": "7781bc26d52080e3086653288c3305daa97be683",
+      "subject": "docs(audit): link completed graph snapshot phase"
+    },
+    {
+      "side": ">",
+      "sha": "4bfd84ac7e52038e6a334b56dba0c7112d607e2b",
+      "subject": "docs(audit): record graph snapshot validation evidence"
+    },
+    {
+      "side": ">",
+      "sha": "c7ce3ebb1f970609254dc540807a68688c1cee0a",
+      "subject": "fix(audit): resolve repository package when invoking graph snapshot CLI"
+    },
+    {
+      "side": ">",
+      "sha": "ccf38234f72e19dc698af70a5ae94e3b59be26b5",
+      "subject": "test(audit): verify graph manifest integrity and identity"
+    },
+    {
+      "side": ">",
+      "sha": "e1b9ba0e9df2ed52cf35d3dc8893da49736aabc9",
+      "subject": "docs(audit): require sealed graph manifest digest"
+    },
+    {
+      "side": ">",
+      "sha": "5cbfb3481844b5f5dcfe44e8340a9f0593767c6a",
+      "subject": "feat(audit): seal graph snapshot and verify manifest identity"
+    },
+    {
+      "side": ">",
+      "sha": "2a0b99918658d8720d76bcdbde2fc02c854bd3bf",
+      "subject": "ci(audit): enable source graph snapshot after main integration"
+    },
+    {
+      "side": ">",
+      "sha": "29eea2a8c3e830c57f406dbee4f3c184bfef823d",
+      "subject": "ci(audit): prepare graph coverage and main PR validation path"
+    },
+    {
+      "side": ">",
+      "sha": "10704f7313249aa5130b6b6ec0dbc703f45f451d",
+      "subject": "fix(audit): distinguish graph coverage exclusions from index failures"
+    },
+    {
+      "side": ">",
+      "sha": "621b1a36ecc280174a52025f770ccef3dca9252c",
+      "subject": "ci(audit): add graph snapshot coverage and deferred PR target"
+    },
+    {
+      "side": ">",
+      "sha": "8da188b12d4c4f16d7edec4a58d97ad6b2ee3a64",
+      "subject": "feat(audit): add graph snapshot identity and coverage"
+    },
+    {
+      "side": ">",
+      "sha": "fe1ade60338b1c78992081477ea73a5bf98e11de",
+      "subject": "docs(audit): record source snapshot implementation evidence"
+    },
+    {
+      "side": ">",
+      "sha": "f9b66a1bcecf73ff9c769f36bc4cb4959764f189",
+      "subject": "feat(audit): seal source manifests and harden verification"
+    },
+    {
+      "side": ">",
+      "sha": "5f1768d5677685b3bae3e54a921100ae74482bb4",
+      "subject": "fix(workflow): correct source snapshot summary step"
+    },
+    {
+      "side": ">",
+      "sha": "0ad5ab27d61cb96b39c45c4aa40ba51d2446c110",
+      "subject": "fix(audit): preserve event identity during snapshot verification"
+    },
+    {
+      "side": ">",
+      "sha": "6f8043f52a38d0e268d3927310e3b884662e9a5c",
+      "subject": "fix(workflow): correct GitHub expression interpolation"
+    },
+    {
+      "side": ">",
+      "sha": "00e9c5cfad898b745a368e50927952db2717fe92",
+      "subject": "feat(audit): add GitHub source snapshot manifest"
+    },
+    {
+      "side": ">",
+      "sha": "c7e396f7b79f5dda49e31ecffb92c5b64d58a0c1",
+      "subject": "docs(audit): record latest Windows G4 and G7 evidence"
+    },
+    {
+      "side": ">",
+      "sha": "0355acfa15cd6edef40317c6972b595847c5440e",
+      "subject": "docs(audit): record Windows G4 mitigation and current G7"
+    },
+    {
+      "side": ">",
+      "sha": "5d7e1bde8a60aa66e1942bff9ec9778829466855",
+      "subject": "docs(audit): record G4 Windows junction race mitigation"
+    },
+    {
+      "side": ">",
+      "sha": "e436a313515378f749e1860e6ee01caddca10f7f",
+      "subject": "docs(audit): refresh M7.4 matrix with Windows G4 and latest G7"
+    },
+    {
+      "side": ">",
+      "sha": "c5dc9a82391f37d43773f4541bcc357328d9d550",
+      "subject": "docs(audit): record Windows handle-bound G4 mitigation and latest G7"
+    },
+    {
+      "side": ">",
+      "sha": "cc2e8091ca66278de0108c6d30b4538200255995",
+      "subject": "docs(audit): link latest detached M7.4 evidence to G4 dossier"
+    },
+    {
+      "side": ">",
+      "sha": "4d047775cfd8547824c003f0da3106317a535db4",
+      "subject": "docs(audit): record Windows G4 race mitigation and latest G7 pass"
+    },
+    {
+      "side": ">",
+      "sha": "75c82597edcf2a50d316d251aa4fbf1b91489293",
+      "subject": "docs(audit): record detached M7.4 dossier for run 456025"
+    },
+    {
+      "side": ">",
+      "sha": "815e08414c0d23891d150cbf9fd74d5540af75ad",
+      "subject": "docs(audit): preserve verified M7.4 dossier for run 456025"
+    },
+    {
+      "side": ">",
+      "sha": "0a59e974cb32a609539a710b1b604bcc999e3906",
+      "subject": "docs(audit): record Windows handle-bound G4 race closure"
+    },
+    {
+      "side": ">",
+      "sha": "1d47738f5837c4f0ccf85331be5afb7cc9cd47f3",
+      "subject": "ci(audit): detach-verify latest M7.4 evidence run 456025"
+    },
+    {
+      "side": ">",
+      "sha": "11252f97e075f8b214b94f915a5db88ca118f19c",
+      "subject": "docs(audit): pin M7.4 E8.5 E8.8 run 456025 artifacts"
+    },
+    {
+      "side": ">",
+      "sha": "0b37e79c9942e483cea770fc96138c4f185753e1",
+      "subject": "test(audit): correct Windows junction race fixture cleanup"
+    },
+    {
+      "side": ">",
+      "sha": "d0f0349ac3eea52c80709ed390a9fa7d0fc857ac",
+      "subject": "test(audit): cover Windows junction replacement race"
+    },
+    {
+      "side": ">",
+      "sha": "22cf77ebf9a43f67a61b47e858260df50d50312a",
+      "subject": "fix(audit): normalize Windows final-path containment prefix"
+    },
+    {
+      "side": ">",
+      "sha": "cb29e67402257bbda9ccbbd874f84d068578d854",
+      "subject": "fix(audit): bind Windows source reads to validated file handles"
+    },
+    {
+      "side": ">",
+      "sha": "fc8d57bdb614ebc1bad2edaa21bfd7c91c8eb96e",
+      "subject": "docs(audit): record latest G4 snapshot race evidence"
+    },
+    {
+      "side": ">",
+      "sha": "4d9067a0d6b5b144a04ca5bba80863360bc2bc7a",
+      "subject": "docs(audit): close G7 for latest M7.4 artifact set"
+    },
+    {
+      "side": ">",
+      "sha": "152fb9155d8a4ac7cb6d8d636425666d3eacfb51",
+      "subject": "docs(audit): record latest M7.4 detached G7 pass"
+    },
+    {
+      "side": ">",
+      "sha": "c1bc1afd21ea56bb4becc1c3c9d28e2eda1f0e04",
+      "subject": "docs(audit): close G7 for latest M7.4 evidence set"
+    },
+    {
+      "side": ">",
+      "sha": "bebc1028b436fcdce2af1afcd1b1b223dde9069f",
+      "subject": "docs(audit): record detached M7.4 dossier for run 456009"
+    },
+    {
+      "side": ">",
+      "sha": "2fbaeba898a837df089d1421b5ba0af715c40c7b",
+      "subject": "docs(audit): preserve verified M7.4 dossier for run 456009"
+    },
+    {
+      "side": ">",
+      "sha": "974922a6d492c3d2d97f96d8ae99dfd17c7b80dd",
+      "subject": "fix(ci): use matching manifest for latest M7.4 dossier"
+    },
+    {
+      "side": ">",
+      "sha": "babe3e549e361ee66018cd39893fa6cd0f3fb005",
+      "subject": "ci(audit): verify detached M7.4 evidence from run 456009"
+    },
+    {
+      "side": ">",
+      "sha": "6401651327d8187c916d61e1f5d9eb5ed405958f",
+      "subject": "docs(audit): pin M7.4 E8.5 E8.8 run 456009 artifacts"
+    },
+    {
+      "side": ">",
+      "sha": "9693f929bd7ab717b2ca7f62b306fe32c5227651",
+      "subject": "docs(audit): link committed M7.4 verified dossier"
+    },
+    {
+      "side": ">",
+      "sha": "43e6bc5598c1b10641dbe24b6cbbed4854c5a565",
+      "subject": "docs(audit): preserve verified M7.4 detached dossier"
+    },
+    {
+      "side": ">",
+      "sha": "2c0a078804d08fcd68dbbdc2106c9105f5633ea7",
+      "subject": "docs(audit): refresh M7.4 evidence matrix after G7 and regression"
+    },
+    {
+      "side": ">",
+      "sha": "7e6176e7d065036e1d7f4db3ee8e0b2fc622c8ed",
+      "subject": "docs(audit): record M7.4 G7 closure and G4 regression"
+    },
+    {
+      "side": ">",
+      "sha": "5c6bd7baf7e83042568bf88be26bed183faf79fa",
+      "subject": "docs(audit): record latest M7.4 five-backend G4 regression"
+    },
+    {
+      "side": ">",
+      "sha": "b8eabfe2f59bf0e451e3402255f41dfb62055f16",
+      "subject": "docs(audit): close M7.4 G7 for E8.5 E8.8 run 45473007901"
+    },
+    {
+      "side": ">",
+      "sha": "f21eaa273a894e80534c113694d2c1d509afdfdc",
+      "subject": "docs(audit): record detached M7.4 dossier for run 45473007901"
+    },
+    {
+      "side": ">",
+      "sha": "34ff261a4535db79632afbf8aae1cd79cd72a6ed",
+      "subject": "fix(ci): resolve repository identity in detached artifact fetch"
+    },
+    {
+      "side": ">",
+      "sha": "8efd78d6e5bb6327be083d0f09e885122707f56d",
+      "subject": "ci(audit): add detached M7.4 E8.5 E8.8 dossier verification"
+    },
+    {
+      "side": ">",
+      "sha": "3c8324029e286cd28ebfc03a90face4d69c41fe7",
+      "subject": "docs(audit): pin M7.4 E8.5 E8.8 artifact manifest"
+    },
+    {
+      "side": ">",
+      "sha": "2d47c01f38d182009cb052cdc42d59ae91fa355c",
+      "subject": "fix(audit): bind detached SNAP image to expected run"
+    },
+    {
+      "side": ">",
+      "sha": "ed33bf68c49fd41506d5d7917fbdc77bf8e544e7",
+      "subject": "test(audit): cover parameterized M7.4 dossier provenance"
+    },
+    {
+      "side": ">",
+      "sha": "c97907e2b9234c8b1d5e78be722c9e6d49b0006a",
+      "subject": "test(audit): parameterize detached M7.4 evidence verifier"
+    },
+    {
+      "side": ">",
+      "sha": "d6b1ed4f34f4d3992010305451bb93f6507d45b1",
+      "subject": "docs(audit): refresh M7.4 contract with latest G4 and E8.8 runs"
+    },
+    {
+      "side": ">",
+      "sha": "f8f0ea4224de723c2bc32d6ab177a3f2bc8e9f87",
+      "subject": "docs(audit): update M7.4 matrix with latest G4 and E8.8 evidence"
+    },
+    {
+      "side": ">",
+      "sha": "9ee668e98bfd36f6292c96dd2889b32ad75bdadd",
+      "subject": "docs(audit): record reparse-point fix and exact-source E8.8 evidence"
+    },
+    {
+      "side": ">",
+      "sha": "098a87394d972010f04466c540fcf5f43b490f9b",
+      "subject": "test(audit): assert Windows timestamp field position explicitly"
+    },
+    {
+      "side": ">",
+      "sha": "6220442d53a8eb88b63f76fa255d9771889bccdd",
+      "subject": "test(audit): reject Windows junction escapes in source snapshots"
+    },
+    {
+      "side": ">",
+      "sha": "0f340500e207f658769974a24f3c4b39b1dc1fa7",
+      "subject": "fix(audit): reject Windows reparse points in snapshot paths"
+    },
+    {
+      "side": ">",
+      "sha": "b2cb520070fc5fb000000ecadcd3966af46f0276",
+      "subject": "docs(audit): refresh M7.4 contract evidence status"
+    },
+    {
+      "side": ">",
+      "sha": "fc0dc2de67dfe8c045d0be9a0e3dee310fd26d38",
+      "subject": "docs(audit): update M7.4 matrix with latest G4 and E8.8 evidence"
+    },
+    {
+      "side": ">",
+      "sha": "875fdbd059a87ff34db04a4029ded41ad5c23b2b",
+      "subject": "docs(audit): record latest Windows G4 and E8.8 evidence"
+    },
+    {
+      "side": ">",
+      "sha": "9d592ee4570e58143d73126f9a8a5ab16f0349a9",
+      "subject": "ci(audit): trigger Windows G4 tests on mutation suite changes"
+    },
+    {
+      "side": ">",
+      "sha": "17b52f10d8267a1ada0344e12159720ad8ab1306",
+      "subject": "test(audit): cover Windows birthtime identity selection"
+    },
+    {
+      "side": ">",
+      "sha": "49c959d560f494b4ece393c3c5051aa6fe5059f7",
+      "subject": "fix(audit): prefer Windows birthtime for snapshot identity"
+    },
+    {
+      "side": ">",
+      "sha": "14b1fcc1a7bfeb191c9b010f12b05bec298f8e99",
+      "subject": "ci(audit): add Windows G4 snapshot compatibility coverage"
+    },
+    {
+      "side": ">",
+      "sha": "3c3c7abb307fb20f4e4fd3f3acabd3aff787be8d",
+      "subject": "ci(audit): add Windows G4 snapshot compatibility coverage"
+    },
+    {
+      "side": ">",
+      "sha": "677536490b54c39b502eb011d67017c01b9b85a0",
+      "subject": "docs(audit): keep M7.4 contract current with G4 and E8.8 runs"
+    },
+    {
+      "side": ">",
+      "sha": "5c415ba29a55e74111a3721cf7819d27e4e1bf85",
+      "subject": "docs(audit): update M7.4 matrix with corrected G4 and E8.8 evidence"
+    },
+    {
+      "side": ">",
+      "sha": "51aedf17412ff94fb5f138e4390bff5aba53cf11",
+      "subject": "docs(audit): correct G4 cost methodology and record E8.8 regression"
+    },
+    {
+      "side": ">",
+      "sha": "3820963a285281d84f62e43d26ea0345eee859e6",
+      "subject": "fix(audit): remove per-read instrumentation from timed G4 phases"
+    },
+    {
+      "side": ">",
+      "sha": "5ad4602cc3f3efe9901a464c081785ea6178c0b7",
+      "subject": "test(audit): distinguish sensitive manifest files from indexed source"
+    },
+    {
+      "side": ">",
+      "sha": "38104e54b2e4ffc7df3332f9e83f5a07e0468b87",
+      "subject": "fix(ci): make branch-only G4 cost workflow push-triggered"
+    },
+    {
+      "side": ">",
+      "sha": "ff6e0e048ffd0b9542b1730d4d69a08530a2768b",
+      "subject": "test(audit): reject forged G4 timing observation arrays"
+    },
+    {
+      "side": ">",
+      "sha": "66866a4c56ce9e68f0a6024bab30bfa12052f190",
+      "subject": "fix(audit): verify G4 timing observations and clarify audit boundary"
+    },
+    {
+      "side": ">",
+      "sha": "391fdd9e5c547d92b51594db174a706a37ef462b",
+      "subject": "docs(audit): bound snapshot identity claims by platform semantics"
+    },
+    {
+      "side": ">",
+      "sha": "fbea287d231d8e58765513d1c083d4b06909f630",
+      "subject": "docs(audit): clarify platform-specific snapshot identity semantics"
+    },
+    {
+      "side": ">",
+      "sha": "90243469dc539025191df7ec779368483b7a005b",
+      "subject": "fix(audit): validate G4 benchmark warmup contract"
+    },
+    {
+      "side": ">",
+      "sha": "5eadaeeb3c5459da92d41c1fa95dcec12cde3791",
+      "subject": "ci(audit): bind G4 cost report to exact source and runner revisions"
+    },
+    {
+      "side": ">",
+      "sha": "1b805ff799492a0167a41af07e8ad8cbd8b50b58",
+      "subject": "test(audit): verify G4 source report provenance and manifest accounting"
+    },
+    {
+      "side": ">",
+      "sha": "224e653a600311de2edede1d1fed9cb1373ef231",
+      "subject": "fix(audit): strengthen G4 snapshot cost report verification"
+    },
+    {
+      "side": ">",
+      "sha": "e47f31d6703af5c0ab65b9f32815b6b6c4b025c9",
+      "subject": "docs(audit): remove stray markup from G4 dossier"
+    },
+    {
+      "side": ">",
+      "sha": "96346057d31c29dd63d57b9a0a700b7fb3446a75",
+      "subject": "docs(audit): record source snapshot validation cost results"
+    },
+    {
+      "side": ">",
+      "sha": "2322efae96a2c4f2a310236d9522b294cbaaeaef",
+      "subject": "ci(audit): cancel stale source snapshot cost runs"
+    },
+    {
+      "side": ">",
+      "sha": "b9805e909a9aec6a386d494a136db87e5d223b07",
+      "subject": "test(audit): assert isolated source snapshot timing boundary"
+    },
+    {
+      "side": ">",
+      "sha": "0f1a54059908251bcdd254c62c8bc0e1fb0a3b97",
+      "subject": "refactor(audit): isolate source snapshot phases from graph build"
+    },
+    {
+      "side": ">",
+      "sha": "dae04617babb78c180188ed02c3268f46e2dbdd7",
+      "subject": "fix(ci): correct G4 workflow expression escaping"
+    },
+    {
+      "side": ">",
+      "sha": "6db5b134f4fc91013a756a099df6195a22f4f8fe",
+      "subject": "ci(audit): add G4 source snapshot cost workflow"
+    },
+    {
+      "side": ">",
+      "sha": "4b244429c5047a38397ef81f93229099ea9bd41a",
+      "subject": "test(audit): verify source snapshot cost benchmark"
+    },
+    {
+      "side": ">",
+      "sha": "0eb1519de5fb199015a788aa887a6c670d2388d6",
+      "subject": "feat(audit): benchmark source snapshot integrity costs"
+    },
+    {
+      "side": ">",
+      "sha": "c017dad589add568165fd90b927740955d394e0c",
+      "subject": "docs(audit): record exact-source integrity timing results"
+    },
+    {
+      "side": ">",
+      "sha": "b9fc46658e09f64a0632f353f50640e720e71d16",
+      "subject": "docs(audit): record M7 workflow input propagation failures"
+    },
+    {
+      "side": ">",
+      "sha": "da3b2748d43f4303aecd1d09fe6cb79498bc026c",
+      "subject": "test(ci): execute M7 integrity timing contract in workflow"
+    },
+    {
+      "side": ">",
+      "sha": "463c45bcbb5d2d9d1910b9ea34b42ba70982427b",
+      "subject": "fix(ci): propagate M7 defaults to backend jobs"
+    },
+    {
+      "side": ">",
+      "sha": "b7fa687f31af33b354c6b93e3cad7365ef16d9e9",
+      "subject": "fix(ci): pin push benchmark to triggering commit SHA"
+    },
+    {
+      "side": ">",
+      "sha": "bb6b7c0f10d521241c40d8ef7d7f90206dbdbdf3",
+      "subject": "docs(audit): record M7 push-input failure and correction"
+    },
+    {
+      "side": ">",
+      "sha": "da1d8420c24a4ecbd0611abfde0936cb953f051a",
+      "subject": "fix(ci): default M7 inputs for push-triggered runs"
+    },
+    {
+      "side": ">",
+      "sha": "51b04093423e8fcb8d07f84f096196b246b270ee",
+      "subject": "docs(audit): record G4 integrity cost instrumentation"
+    },
+    {
+      "side": ">",
+      "sha": "8fbbc6b73455020eeb1dbda866d58a1bcd5c1e47",
+      "subject": "chore(audit): version integrity timing report schema"
+    },
+    {
+      "side": ">",
+      "sha": "641982f9efb176e81a95ab0676cc3e9ff43be683",
+      "subject": "ci(audit): add M7 integrity overhead smoke workflow"
+    },
+    {
+      "side": ">",
+      "sha": "50ee7e425e0f7cc72b28f552936359479daa252a",
+      "subject": "test(audit): verify integrity timing evidence"
+    },
+    {
+      "side": ">",
+      "sha": "7b10ce11058caf1344da5db2438d7e00fe931825",
+      "subject": "feat(audit): measure native projection integrity overhead"
+    },
+    {
+      "side": ">",
+      "sha": "7ff5df888ef5ca41f833c1b53c5cd7d288e5d7d9",
+      "subject": "docs(audit): point G4 dossier to latest exact-source run"
+    },
+    {
+      "side": ">",
+      "sha": "e562de953eaa36abc83f66b67277f3ba8a6c077f",
+      "subject": "docs(audit): bound SNAP worker mutation protocol and record run 96"
+    },
+    {
+      "side": ">",
+      "sha": "315a23ed8c69aab2d1dec69607b64a9eccb9501c",
+      "subject": "test(snap): reject worker graph mutation protocol operation"
+    },
+    {
+      "side": ">",
+      "sha": "77f5dfee926fd0212e816f61ef0a3db6d368b4b9",
+      "subject": "docs(audit): record expanded G4 mutation qualification"
+    },
+    {
+      "side": ">",
+      "sha": "7ce60f233fc98042c832d24140ecc5e52aefff99",
+      "subject": "fix(audit): retain file identities for non-UTF8 manifest entries"
+    },
+    {
+      "side": ">",
+      "sha": "eff6d9d7884cd79c6bea6b117a0e79cecaae38b4",
+      "subject": "test(audit): qualify active source reads and ABA mutation schedules"
+    },
+    {
+      "side": ">",
+      "sha": "fbd80d32db38acdc8628f02f8f10253fc10a49de",
+      "subject": "fix(audit): detect source identity changes across snapshot passes"
+    },
+    {
+      "side": ">",
+      "sha": "fc118eadc8461f9ac3d37c5a0ae1460c83a9cae4",
+      "subject": "docs(audit): record exact-source G4 correction run"
+    },
+    {
+      "side": ">",
+      "sha": "536a80a85c0c194a73d7ac751688806a1ebe718e",
+      "subject": "docs(audit): record G4 race and CI provenance corrections"
+    },
+    {
+      "side": ">",
+      "sha": "66cbc5dc654c2c09dfaf6f2c83d99516725eadcd",
+      "subject": "test(audit): make G4 backend and SNAP race checks deterministic"
+    },
+    {
+      "side": ">",
+      "sha": "1bb448e326ec8d6e9ebabd85d6bbca2625193568",
+      "subject": "fix(ci): pin G4 conformance jobs to triggering commit"
+    },
+    {
+      "side": ">",
+      "sha": "761034e072f46af879147947a70a0bc518cf266e",
+      "subject": "Record exact-source G4 repository and snapshot validation results"
+    },
+    {
+      "side": ">",
+      "sha": "22acde061303afe5b915173298b5abcb2b894597",
+      "subject": "Record G4 repository side-effect run and second-pass validation"
+    },
+    {
+      "side": ">",
+      "sha": "5e9724896c62564345cd877d5903e9e5e0a14138",
+      "subject": "Fix G4 snapshot-race assertion to inspect structured error code"
+    },
+    {
+      "side": ">",
+      "sha": "c44817f49237dc60c81b3bc848bc69ba461df509",
+      "subject": "Test G4 detection of same-size mutation during snapshot loading"
+    },
+    {
+      "side": ">",
+      "sha": "1fa4309c664d90c6744cea30182dd0aad88699c4",
+      "subject": "M7.4 G4: revalidate repository source manifest after loading"
+    },
+    {
+      "side": ">",
+      "sha": "4bf6dcc20812043fc2e048ecbbdacd6d7495350f",
+      "subject": "Document G4 repository side-effect and lifecycle qualification"
+    },
+    {
+      "side": ">",
+      "sha": "1680d9119315a2a3a42707831e6d1635582d69cc",
+      "subject": "M7.4 G4: run repository side-effect and race tests in all backends"
+    },
+    {
+      "side": ">",
+      "sha": "8a2a07ee72a1fa11cc9840ae5c8336155fb3a975",
+      "subject": "M7.4 G4: qualify repository side effects and snapshot races"
+    },
+    {
+      "side": ">",
+      "sha": "4a453e3a8c8bab5482c9a3ba75e9c6380ce16005",
+      "subject": "M7.4: record exact-source G4 integrity audit results"
+    },
+    {
+      "side": ">",
+      "sha": "0790019b2d3ce4f4fe9c0f89d58c90eb3a689a9a",
+      "subject": "M7.4: avoid redundant NetworkX projection postflight"
+    },
+    {
+      "side": ">",
+      "sha": "d97cd0c14a4204ba17d38b3411960c984a34eb81",
+      "subject": "M7.4: align native traversal tests with G4 integrity audits"
+    },
+    {
+      "side": ">",
+      "sha": "ec7141d6d4cb0f2e1e2aeadb14084a0871417b48",
+      "subject": "M7.4: revalidate full native projections around queries"
+    },
+    {
+      "side": ">",
+      "sha": "08c5fb30ab9995051ad029aef8e4299fb20bd0a5",
+      "subject": "M7.4: clarify G4 evidence chronology"
+    },
+    {
+      "side": ">",
+      "sha": "dba4941d3d3532f9c78b9df15dd938070e20889d",
+      "subject": "M7.4: record five-backend G4 integrity results"
+    },
+    {
+      "side": ">",
+      "sha": "7447a6b6327b2f310012088767df8251577f6cb1",
+      "subject": "M7.4: add cross-backend G4 mutation integrity tranche"
+    },
+    {
+      "side": ">",
+      "sha": "b536e35e35a83e7086efe69130e6c0d99ecb1d3b",
+      "subject": "M7.4: reconcile G7 policy history"
+    },
+    {
+      "side": ">",
+      "sha": "4c14d21a3e394de85804c3627d5450fccc1922e4",
+      "subject": "M7.4: close detached E.8.5 E.8.8 evidence verification"
+    },
+    {
+      "side": ">",
+      "sha": "18f11c88ffef405b2eceea6ace3baa67588ea595",
+      "subject": "M7.4: record exact-source G9.42 validation"
+    },
+    {
+      "side": ">",
+      "sha": "d66f10b5c8af74b33a661c2453da3aca9982d565",
+      "subject": "M7.4: add preliminary 20-pair task backend evidence ledger"
+    },
+    {
+      "side": ">",
+      "sha": "cf3faf32c649168da3f434b9eec808dfd76d0722",
+      "subject": "M7.4: record five-backend artifact digests"
+    },
+    {
+      "side": ">",
+      "sha": "fbd1779b261751f0277f637a9bab7c9f7ff18c98",
+      "subject": "M7.4: record expanded seeded workloads and complete backend matrix"
+    },
+    {
+      "side": ">",
+      "sha": "51d025fd328b00a59988a05fe72d9092262434f5",
+      "subject": "M7.4: align seeded impact workload depth with analyzer contract"
+    },
+    {
+      "side": ">",
+      "sha": "f31c29b518411f09142b967b3120e9f666179679",
+      "subject": "M7.4: add seeded audit-topology task workloads"
+    },
+    {
+      "side": ">",
+      "sha": "6d62649a5724e7d6c157e15222391ebd7118be79",
+      "subject": "E.8.8: emit context completion telemetry after report construction"
+    },
+    {
+      "side": ">",
+      "sha": "638440934a213f0a93ccb57dc31f155f34e6e9cd",
+      "subject": "E.8.8: close repository backend resources explicitly"
+    },
+    {
+      "side": ">",
+      "sha": "ac89f7f26911cab4aad0e488711b56acc48372b1",
+      "subject": "M7: record live SNAP Docker timeout cleanup evidence"
+    },
+    {
+      "side": ">",
+      "sha": "7a77b52c316c60ffb8f433af2bbd1b742f389972",
+      "subject": "M7.4: add live Docker timeout test and bound SNAP repository conformance"
+    },
+    {
+      "side": ">",
+      "sha": "ede0e7f517e67d62bdf9bb20478f12d8e4987fea",
+      "subject": "M7: record SNAP worker deadline implementation and live validation boundary"
+    },
+    {
+      "side": ">",
+      "sha": "6b32b0bad6390d5f18d8fa6ce7cb99a321c06a86",
+      "subject": "M7.4: initialize SNAP Docker environment before cleanup setup"
+    },
+    {
+      "side": ">",
+      "sha": "f03d2768b3863f74719079e7cde458b02f2b87b4",
+      "subject": "M7.4: test force-removal of timed-out SNAP containers"
+    },
+    {
+      "side": ">",
+      "sha": "fe6b5474be56f769309f66a4e56f82a44c1890bf",
+      "subject": "M7.4: force-remove timed-out SNAP worker containers"
+    },
+    {
+      "side": ">",
+      "sha": "2755043ba5f985225c8794c93d72b76567ff8b83",
+      "subject": "M7.4: bound SNAP worker request and close operations"
+    },
+    {
+      "side": ">",
+      "sha": "970eeeda5d3a18f7e1552468c27e78ef511f72a4",
+      "subject": "M7.4: record initial impact assessment evidence"
+    },
+    {
+      "side": ">",
+      "sha": "ff6fe8226d6417b0832a17b8bed397217f72a303",
+      "subject": "M7.4: align impact ownership assertion with one-hop contract"
+    },
+    {
+      "side": ">",
+      "sha": "b6b81b60753cf36334281f19c3ff64aea5abe7b9",
+      "subject": "M7.4: add multi-source impact assessment tests"
+    },
+    {
+      "side": ">",
+      "sha": "21531c8dd109e98a39fdd97ab9711df961cb6f3b",
+      "subject": "M7: synchronize milestone policy with accepted evidence"
+    },
+    {
+      "side": ">",
+      "sha": "a266a538966cfe2e24466004f0ffbe5ad067ccd1",
+      "subject": "M7.4: record initial task assessment evidence"
+    },
+    {
+      "side": ">",
+      "sha": "942b54f8948286b4727ca208fdfa553e019437b9",
+      "subject": "M7.4: add task-level graph analyzer acceptance tests"
+    },
+    {
+      "side": "<",
+      "sha": "ee4e4b769221d331b1d2726301349cd0c217ab03",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": ">",
       "sha": "e6a985d44cc97521f730fc717f35fd4a0d9bf4cd",
