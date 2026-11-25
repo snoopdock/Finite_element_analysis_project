@@ -179,3 +179,45 @@ Do not activate a write-capable publisher until all are true:
 The existing producer workflow remains read-only and is not wired to the durable publisher. The adapter remains fake-transport tested only. No publication ref has been created by this project, no live write credential has been used, no trusted publisher is active, and no production result pointer exists.
 
 This document defines the next implementation and acceptance boundary; it does not claim that the publisher is operational.
+
+
+## 9. Implemented validator status (2026-11-25)
+
+The following controls are now implemented on `stage1/section-uuids` in
+`audit_engine/semantic_audit/ae32c/trusted_artifact.py`:
+
+- Canonical JSON digest verification, duplicate-key rejection, non-finite-number rejection, strict UTF-8 parsing, and bounded manifest sizes.
+- ZIP archive parsing that accepts exactly the two expected root-level JSON members, rejects duplicate/unexpected members, traversal-like names, links/non-regular members, encryption, unsupported compression, excessive member/archive sizes, and excessive compression ratios.
+- Source manifest identity, inventory digest/count/path uniqueness/order, Git object ID/mode/type/materialization metadata, checkout commit/tree identity, clean-worktree state, and postflight identity checks.
+- Independent event/repository/ref/default-branch/head-SHA/run-ID/run-attempt checks.
+- Exact producer workflow allowlist: workflow ID `430355742` and path `.github/workflows/ae32c_source_snapshot_manifest.yml`.
+- Graph manifest verifier, source snapshot/commit/tree cross-bindings, graph authority flags, and nonnegative node/edge counts.
+- Per-path graph coverage reconciliation against the exact source inventory Git object ID and content digest; status/reason validation; aggregate/status-count reconciliation; unaccounted-path reconciliation; extractor issue/count consistency.
+- Current eligibility only for `COMPLETE_WITH_DECLARED_EXCLUSIONS` coverage with zero unaccounted units and no declared extractor issues; otherwise the result is history-only as `INCOMPLETE`.
+- Configuration digest derived from independently supplied workflow metadata and validated graph builder/rule-registry identity.
+
+The producer workflow remains `contents: read`; the validator is not wired to any privileged workflow or credential.
+
+### CI evidence
+
+The validator and producer pipeline passed:
+
+- Workflow run: [45666618999](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45666618999)
+- Tested commit: `28a1a4e6ff31ee0e94052f248808ecd8eee5e262`
+- Job: `139391006971`
+- Trusted-artifact tests: 15 passed.
+- Other AE-32C test groups in the same job: source snapshot, graph snapshot, rule contracts, local publication state machine, and GitHub CAS adapter; all steps succeeded.
+- Source inventory: 1,955 entries.
+- Graph coverage: 1,887 represented, 68 declared exclusions, 0 unaccounted.
+- Graph snapshot ID: `bb44d57ac4d20137bf55a26da7119346c09506a6c1f5212b8cfdeefd8bd102c4`.
+- Artifact ID: `15048755034`, 292,815 bytes; uploaded ZIP SHA-256 `fb8560a10a2bb9b894f105549713c46080ab507286cb08b9b890aadbcad1a202`.
+
+These are CI and internal-consistency results only. The tests use constructed fixtures and fake GitHub transports; they do not establish artifact authenticity, semantic correctness, live ref-CAS behavior, GitHub branch/ruleset enforcement, or production authorization.
+
+### Remaining validator and publisher work
+
+- The archive parser is unit-tested but is not yet called by a publisher entry point.
+- The validator accepts independently retrieved metadata as an argument; the future workflow must retrieve it directly from GitHub API endpoints and enforce the allowlist before downloading or processing artifacts.
+- The source manifest currently has no JSON Schema validation step in the producer workflow. Add strict schema validation in the trusted publisher, using trusted schema files from its own checked-out revision.
+- The GitHub CAS adapter currently stores an unbounded append-only JSON history. Define compaction/retention before operational use.
+- No live App token, publication ref, environment approval, ruleset, or protected-default-branch guarantee has been exercised.
