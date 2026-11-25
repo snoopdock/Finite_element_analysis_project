@@ -1,0 +1,79 @@
+{
+  "run_id": 45600944022,
+  "run_attempt": 1,
+  "workflow_name": "AE-32C Native Graph Backend Conformance (E.8.5 / E.8.8)",
+  "head_branch": "stage1/section-uuids",
+  "source_revision": "ed33bf68c49fd41506d5d7917fbdc77bf8e544e7",
+  "artifacts": [
+    {
+      "id": 15015546978,
+      "name": "e85-networkx-conformance",
+      "expired": false,
+      "size_in_bytes": 2767,
+      "digest": "sha256:a1e85f0fc21249d25cb0eb3b46b912c889a866898bf5c48c10409ca541bfcd8a",
+      "workflow_run": {
+        "id": 45600944022,
+        "head_branch": "stage1/section-uuids",
+        "head_sha": "ed33bf68c49fd41506d5d7917fbdc77bf8e544e7",
+        "repository_id": 1346375418,
+        "head_repository_id": 1346375418
+      }
+    },
+    {
+      "id": 15015397170,
+      "name": "e85-scipy-conformance",
+      "expired": false,
+      "size_in_bytes": 2927,
+      "digest": "sha256:3b68803963ef8708c26b6ef14d0330782e4fd8a4fc84af2e18e8f14bba163bcb",
+      "workflow_run": {
+        "id": 45600944022,
+        "head_branch": "stage1/section-uuids",
+        "head_sha": "ed33bf68c49fd41506d5d7917fbdc77bf8e544e7",
+        "repository_id": 1346375418,
+        "head_repository_id": 1346375418
+      }
+    },
+    {
+      "id": 15013799761,
+      "name": "e85-igraph-conformance",
+      "expired": false,
+      "size_in_bytes": 2747,
+      "digest": "sha256:7b37eceabbf316e5927c3af34f37502c772ca7a8161e223ca17204ad74658fbd",
+      "workflow_run": {
+        "id": 45600944022,
+        "head_branch": "stage1/section-uuids",
+        "head_sha": "ed33bf68c49fd41506d5d7917fbdc77bf8e544e7",
+        "repository_id": 1346375418,
+        "head_repository_id": 1346375418
+      }
+    },
+    {
+      "id": 15016215025,
+      "name": "e85-graph-tool-conformance",
+      "expired": false,
+      "size_in_bytes": 2843,
+      "digest": "sha256:32d33b8b858b86e121f7491df30fbb9c12b4762d35f9166aa78c37d3919bbb37",
+      "workflow_run": {
+        "id": 45600944022,
+        "head_branch": "stage1/section-uuids",
+        "head_sha": "ed33bf68c49fd41506d5d7917fbdc77bf8e544e7",
+        "repository_id": 1346375418,
+        "head_repository_id": 1346375418
+      }
+    },
+    {
+      "id": 15014649334,
+      "name": "e85-e88-snap-isolated-worker",
+      "expired": false,
+      "size_in_bytes": 3435,
+      "digest": "sha256:abd715bd0e05e65b13b53a68b18f143788f14471a19d8e94ae1c7ce823b440d4",
+      "workflow_run": {
+        "id": 45600944022,
+        "head_branch": "stage1/section-uuids",
+        "head_sha": "ed33bf68c49fd41506d5d7917fbdc77bf8e544e7",
+        "repository_id": 1346375418,
+        "head_repository_id": 1346375418
+      }
+    }
+  ]
+}
