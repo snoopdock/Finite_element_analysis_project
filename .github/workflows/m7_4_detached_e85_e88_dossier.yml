@@ -76,7 +76,7 @@ jobs:
         run: |
           python tools/gb08_m74_native_conformance_dossier.py \
             --artifact-dir artifacts \
-            --manifest docs/audit-engine/evidence/m74-e85-e88-run-45473007901/manifest.json \
+            --manifest docs/audit-engine/evidence/m74-e85-e88-run-45600944022/manifest.json \
             --expected-run-id 45600944022 \
             --expected-source-revision ed33bf68c49fd41506d5d7917fbdc77bf8e544e7 \
             --expected-snap-image sha256:ef460791e7e5fcf6c7d7b232941cca37ea6020704454bee2c685aec1d094bd14 \
