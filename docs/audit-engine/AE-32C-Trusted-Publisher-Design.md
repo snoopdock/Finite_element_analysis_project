@@ -1,9 +1,10 @@
 # AE-32C Phase 5.1 — Trusted Publisher Boundary
 
-**Status:** Design contract recorded; no privileged publisher workflow is active.  
-**Branch:** `stage1/section-uuids`  
+**Status:** Trusted-publisher implementation merged to `main`; workflow is present but deliberately disabled.  
+**Implementation branch:** `integration/ae32c-trusted-publisher` (merged by PR #2; disposable branch may be deleted).  
+**Current branch:** `main`  
 **Production approval:** false  
-**PR execution:** deferred until the user confirms the branch has been merged or explicitly requests PR validation.
+**Live publication:** not enabled; no publication ref or production pointer has been created.
 
 ## 1. Purpose and current boundary
 
@@ -176,14 +177,14 @@ Do not activate a write-capable publisher until all are true:
 
 ## 8. Current disposition
 
-The existing producer workflow remains read-only and is not wired to the durable publisher. The adapter remains fake-transport tested only. No publication ref has been created by this project, no live write credential has been used, no trusted publisher is active, and no production result pointer exists.
+The existing producer workflow remains read-only. The trusted publisher workflow is present on `main` and is wired to the producer through `workflow_run`, but its job is skipped unless repository variable `AE32C_TRUSTED_PUBLISHER_ENABLED` is exactly `true`. The adapter remains fake-transport tested only. No publication ref has been created by this project, no live write credential has been used, and no production result pointer exists.
 
 This document defines the next implementation and acceptance boundary; it does not claim that the publisher is operational.
 
 
 ## 9. Implemented validator status (2026-11-25)
 
-The following controls are now implemented on `stage1/section-uuids` in
+The following controls are implemented on `main` in
 `audit_engine/semantic_audit/ae32c/trusted_artifact.py`:
 
 - Canonical JSON digest verification, duplicate-key rejection, non-finite-number rejection, strict UTF-8 parsing, and bounded manifest sizes.
@@ -232,9 +233,9 @@ The repository now contains:
 - `tests/semantic_graph/test_ae32c_trusted_publisher.py` covers API metadata mapping and exact, unique, unexpired artifact selection.
 - `.github/workflows/ae32c_trusted_publisher.yml` uses `workflow_run`, checks out the trusted default-branch revision, validates before token creation, and requests a repository-scoped GitHub App token with only `contents:write`.
 
-**Activation state:** the workflow is deliberately disabled unless repository variable `AE32C_TRUSTED_PUBLISHER_ENABLED` is exactly `true`. It has not been activated. It is only present on `stage1/section-uuids`; it cannot receive `workflow_run` events until it is merged into the default branch. The repository's default-branch protection status remains unverified, no publication-ref ruleset or required-reviewer environment has been confirmed, and no App credentials have been configured or used.
+**Activation state:** the workflow is deliberately disabled unless repository variable `AE32C_TRUSTED_PUBLISHER_ENABLED` is exactly `true`. It has not been activated. It is present on `main` and receives `workflow_run` events, but the job is deliberately skipped while `AE32C_TRUSTED_PUBLISHER_ENABLED` is unset or not exactly `true`. The repository's default-branch protection status remains unverified, no publication-ref ruleset or required-reviewer environment has been confirmed, and no App credentials have been configured or used.
 
-The publisher scaffold is not yet live-verified. CI currently validates the pure metadata/artifact-selection functions and imports the orchestration module. A live GitHub API download, redirect behavior against GitHub's artifact service, App-token issuance, ruleset enforcement, and publication-ref CAS remain untested. The publisher must remain disabled until the activation blockers in Section 7 are cleared and the user explicitly authorizes activation.
+The publisher scaffold is not yet live-verified. CI validates the metadata/artifact-selection functions and imports the orchestration module; the main-branch producer CI does not execute the publisher's privileged path. A live GitHub API artifact download through `workflow_run`, App-token issuance, ruleset enforcement, environment approval, and publication-ref CAS remain untested. The publisher must remain disabled until the activation blockers in Section 7 are cleared and the user explicitly authorizes activation.
 
 ### Publisher orchestration hardening and CI result
 
@@ -250,3 +251,10 @@ The orchestration layer now additionally:
 CI run [45669000822](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45669000822) passed on commit `f573aade69b348d672bec1d1bbb111627a43ef01`. The publisher orchestration suite passed 9 tests; the trusted artifact suite passed 18 tests; all 19 workflow steps succeeded. The producer artifact for this run was ID `15049071901`, 293,271 bytes, with GitHub-reported SHA-256 `86fa9a11578016f6cccb28d3f048a668a2dac012bea39f17e1024b770a169f2d`. The source inventory contained 1,958 entries; graph coverage represented 1,890, declared 68 exclusions, and had zero unaccounted units.
 
 These tests do not execute the publisher workflow, obtain an App token, download a live upstream artifact through the workflow-run context, or write the publication ref. The publisher remains gated and unactivated.
+
+
+## 11. Main-branch integration status (2026-11-26)
+
+PR [#2](https://github.com/snoopdock/Finite_element_analysis_project/pull/2) was squash-merged to `main` at `192c86b74d83f31345f8714fbe28c793cac13ec7`. The isolated integration branch contained the AE-32C implementation and its required graph-projection runtime dependencies; the unrelated `stage1/section-uuids` history was not merged. The producer workflow passed on the merge commit with all 68 AE-32C tests. The downstream trusted-publisher workflow was triggered and skipped by its explicit repository-variable guard. The publication ref remains absent, and no write token or production state was created.
+
+Subsequent automation may advance `main`; the merge SHA above identifies the integration commit, not necessarily the current branch head. The implementation branch is no longer required for execution and may be deleted independently after review. The publisher remains operationally unapproved.
