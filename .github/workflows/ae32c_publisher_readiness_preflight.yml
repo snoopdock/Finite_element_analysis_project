@@ -39,9 +39,14 @@ jobs:
           AE32C_APP_CLIENT_ID_PRESENT: ${{ vars.AE32C_PUBLISHER_APP_CLIENT_ID != '' }}
           AE32C_APP_PRIVATE_KEY_PRESENT: ${{ secrets.AE32C_PUBLISHER_APP_PRIVATE_KEY != '' }}
         run: |
-          set -euo pipefail
+          set +e
           python tools/ae32c_publisher_preflight.py --output "$RUNNER_TEMP/ae32c-publisher-preflight.json"
-          cat "$RUNNER_TEMP/ae32c-publisher-preflight.json" >> "$GITHUB_STEP_SUMMARY"
+          result=$?
+          set -e
+          if [[ -f "$RUNNER_TEMP/ae32c-publisher-preflight.json" ]]; then
+            cat "$RUNNER_TEMP/ae32c-publisher-preflight.json" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$result"
 
       - name: Preserve read-only preflight report
         if: always()
