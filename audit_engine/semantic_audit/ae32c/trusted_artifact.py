@@ -15,6 +15,8 @@ from tools.ae32c_graph_snapshot import verify_graph_manifest, GraphSnapshotError
 
 SOURCE_SCHEMA = "ae32c/source-snapshot-manifest/v1"
 POLICY_SCHEMA = "ae32c/trusted-publication-config/v1"
+ALLOWED_PRODUCER_WORKFLOW_ID = 430355742
+ALLOWED_PRODUCER_WORKFLOW_PATH = ".github/workflows/ae32c_source_snapshot_manifest.yml"
 MAX_MANIFEST_BYTES = 64 * 1024 * 1024
 _HEX = re.compile(r"^[0-9a-f]+$")
 
@@ -104,11 +106,34 @@ def _verify_source_manifest(manifest: Mapping[str, Any], expected: Mapping[str, 
     for entry in entries:
         if not isinstance(entry, dict) or not isinstance(entry.get("path"), str) or not entry["path"]:
             raise TrustedArtifactError("source_inventory_entry_invalid")
+        if (not isinstance(entry.get("mode"), str)
+                or not re.fullmatch(r"[0-7]{6}", entry["mode"])
+                or entry.get("object_type") not in ("blob", "commit")
+                or entry.get("materialization_kind") not in ("regular_file", "symlink", "gitlink_submodule")):
+            raise TrustedArtifactError("source_inventory_entry_metadata_invalid:" + entry["path"])
+        _require_hex(entry.get("git_object_oid"), lengths, "source_inventory_git_object_oid")
+        content_sha = entry.get("content_sha256")
+        if content_sha is not None:
+            _require_hex(content_sha, (64,), "source_inventory_content_sha256")
+        if entry["materialization_kind"] == "gitlink_submodule" and entry.get("object_type") != "commit":
+            raise TrustedArtifactError("source_inventory_gitlink_type_invalid:" + entry["path"])
+        if entry["materialization_kind"] != "gitlink_submodule" and entry.get("object_type") != "blob":
+            raise TrustedArtifactError("source_inventory_blob_type_invalid:" + entry["path"])
         paths.append(entry["path"])
     if len(paths) != len(set(paths)):
         raise TrustedArtifactError("source_inventory_duplicate_path")
     if paths != sorted(paths, key=lambda item: item.encode("utf-8")):
         raise TrustedArtifactError("source_inventory_order_invalid")
+    materialization = manifest.get("materialization")
+    if not isinstance(materialization, dict) or materialization.get("status") != "CLEAN":
+        raise TrustedArtifactError("source_materialization_not_clean")
+    worktree = materialization.get("worktree")
+    if (not isinstance(worktree, dict) or worktree.get("clean") is not True
+            or worktree.get("changed_entry_count") != 0):
+        raise TrustedArtifactError("source_materialization_worktree_not_clean")
+    if (materialization.get("checkout_commit_oid") != commit
+            or materialization.get("checkout_root_tree_oid") != tree):
+        raise TrustedArtifactError("source_materialization_identity_mismatch")
     if verification.get("status") != "VERIFIED":
         raise TrustedArtifactError("source_postflight_not_verified")
     if verification.get("source_snapshot_id_at_verification") != manifest.get("source_snapshot_id"):
@@ -138,7 +163,10 @@ def _verify_source_manifest(manifest: Mapping[str, Any], expected: Mapping[str, 
     if str(run.get("run_attempt")) != str(expected.get("run_attempt")):
         raise TrustedArtifactError("workflow_run_attempt_mismatch")
     authority = manifest.get("authority")
-    if not isinstance(authority, dict) or authority.get("production_approval") is not False:
+    if (not isinstance(authority, dict)
+            or authority.get("production_approval") is not False
+            or authority.get("atomic_repository_snapshot_established") is not False
+            or authority.get("graph_completeness_established") is not False):
         raise TrustedArtifactError("source_authority_flag_invalid")
 
 
@@ -227,6 +255,13 @@ def validate_publication_artifact(
         raise TrustedArtifactError("upstream_run_metadata_missing")
     if expected["conclusion"] != "success":
         raise TrustedArtifactError("upstream_workflow_not_successful")
+    try:
+        workflow_id = int(expected["workflow_id"])
+    except (TypeError, ValueError) as exc:
+        raise TrustedArtifactError("upstream_workflow_id_invalid") from exc
+    if (workflow_id != ALLOWED_PRODUCER_WORKFLOW_ID
+            or expected["workflow_path"] != ALLOWED_PRODUCER_WORKFLOW_PATH):
+        raise TrustedArtifactError("upstream_workflow_not_allowlisted")
     _verify_source_manifest(source_manifest, expected)
     try:
         verify_graph_manifest(dict(graph_manifest))
@@ -243,8 +278,20 @@ def validate_publication_artifact(
             or graph_source.get("root_tree_oid") != source.get("root_tree_oid")):
         raise TrustedArtifactError("graph_source_identity_mismatch")
     graph_authority = graph_manifest.get("authority")
-    if not isinstance(graph_authority, dict) or graph_authority.get("production_approval") is not False:
+    if (not isinstance(graph_authority, dict)
+            or graph_authority.get("production_approval") is not False
+            or graph_authority.get("graph_is_derived_from_source") is not True
+            or graph_authority.get("graph_is_canonical_repository_authority") is not False
+            or graph_authority.get("negative_findings_permitted_by_default") is not False):
         raise TrustedArtifactError("graph_authority_flag_invalid")
+    identity = graph_manifest.get("identity", {})
+    if (identity.get("source_commit_oid") != source.get("commit_oid")
+            or identity.get("source_root_tree_oid") != source.get("root_tree_oid")):
+        raise TrustedArtifactError("graph_identity_source_revision_mismatch")
+    graph_meta = graph_manifest.get("graph", {})
+    if any(not isinstance(graph_meta.get(key), int) or isinstance(graph_meta.get(key), bool)
+           or graph_meta.get(key) < 0 for key in ("node_count", "edge_count")):
+        raise TrustedArtifactError("graph_node_edge_count_invalid")
     coverage = graph_manifest.get("coverage", {})
     source_count = len(source_manifest["source_inventory"]["entries"])
     if coverage.get("source_unit_count") != source_count:
