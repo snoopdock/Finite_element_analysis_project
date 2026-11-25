@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - stage1/section-uuids
+      - main
   pull_request:
     branches:
       - main
