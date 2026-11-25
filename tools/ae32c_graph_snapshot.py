@@ -218,7 +218,7 @@ def build_graph_snapshot(
         "graph_content_sha256": graph_content_sha256,
         "coverage_sha256": coverage_sha256,
     }
-    return {
+    result = {
         "manifest_schema": GRAPH_MANIFEST_SCHEMA,
         "status": "CAPTURED",
         "graph_snapshot_id": digest(identity),
@@ -245,6 +245,30 @@ def build_graph_snapshot(
             "production_approval": False,
         },
     }
+    result["manifest_sha256"] = digest(result)
+    verify_graph_manifest(result)
+    return result
+
+
+def verify_graph_manifest(manifest: dict[str, Any]) -> None:
+    if manifest.get("manifest_schema") != GRAPH_MANIFEST_SCHEMA:
+        raise GraphSnapshotError("graph_manifest_schema_invalid")
+    payload = {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+    if manifest.get("manifest_sha256") != digest(payload):
+        raise GraphSnapshotError("graph_manifest_digest_mismatch")
+    coverage = manifest.get("coverage")
+    if not isinstance(coverage, dict) or manifest.get("coverage_sha256") != digest(coverage):
+        raise GraphSnapshotError("graph_coverage_digest_mismatch")
+    identity = manifest.get("identity")
+    if not isinstance(identity, dict) or digest(identity) != manifest.get("graph_snapshot_id"):
+        raise GraphSnapshotError("graph_snapshot_identity_mismatch")
+    graph = manifest.get("graph", {})
+    if identity.get("graph_content_sha256") != graph.get("content_sha256"):
+        raise GraphSnapshotError("graph_content_identity_mismatch")
+    if identity.get("coverage_sha256") != manifest.get("coverage_sha256"):
+        raise GraphSnapshotError("graph_coverage_identity_mismatch")
+    if identity.get("source_snapshot_id") != manifest.get("source_snapshot_id"):
+        raise GraphSnapshotError("graph_source_identity_mismatch")
 
 
 def capture(repository: str | Path, source_manifest_path: str | Path,
