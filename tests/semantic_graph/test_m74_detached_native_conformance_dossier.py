@@ -281,5 +281,54 @@ class DossierVerifierTests(unittest.TestCase):
             dossier.verify(self.artifact_dir, self.manifest)
 
 
+
+    def test_run_specific_identity_and_worker_image_are_parameterized(self):
+        run_id = 45473007901
+        source_revision = "098a87394d972010f04466c540fcf5f43b490f9b"
+        snap_image = "sha256:a6feacb4726070cb6e990ad13a7b4aefe557b6ebfae7adc3431c92af1d8e9ec2"
+        manifest = copy.deepcopy(self.manifest)
+        manifest["run_id"] = run_id
+        manifest["source_revision"] = source_revision
+        for artifact in manifest["artifacts"]:
+            artifact["workflow_run"]["id"] = run_id
+            artifact["workflow_run"]["head_sha"] = source_revision
+            backend = next(
+                key for key, name in dossier.ARTIFACTS.items()
+                if name == artifact["name"]
+            )
+            path = self.artifact_dir / (backend.replace("-", "_") + ".zip")
+            with zipfile.ZipFile(path) as source:
+                members = {name: source.read(name) for name in source.namelist()}
+            for name, raw in list(members.items()):
+                report = json.loads(raw)
+                report["source_revision"] = source_revision
+                report["workflow_run_id"] = str(run_id)
+                if backend == "snap":
+                    report["native_worker"]["container_image_id"] = snap_image
+                members[name] = json.dumps(report).encode()
+            with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as target:
+                for name, raw in members.items():
+                    target.writestr(name, raw)
+            artifact["size_in_bytes"] = path.stat().st_size
+            artifact["digest"] = "sha256:" + dossier.file_sha(path)
+
+        result = dossier.verify(
+            self.artifact_dir, manifest,
+            expected_run_id=run_id,
+            expected_source_revision=source_revision,
+            expected_snap_image=snap_image,
+        )
+        self.assertEqual(result["status"], "verified")
+        self.assertEqual(result["campaign"]["workflow_run_id"], run_id)
+        self.assertEqual(result["campaign"]["source_revision"], source_revision)
+
+        with self.assertRaisesRegex(dossier.DossierError, "manifest_identity_mismatch"):
+            dossier.verify(
+                self.artifact_dir, manifest,
+                expected_run_id=run_id + 1,
+                expected_source_revision=source_revision,
+                expected_snap_image=snap_image,
+            )
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
