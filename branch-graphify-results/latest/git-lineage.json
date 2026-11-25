@@ -1,10 +1,10 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "00b34987b755f465e064aa5afeb36f9a7819174b",
+  "base_sha": "1178c312e8e5237e2aad702c53a0fd99a0f5bfb2",
   "compare_sha": "2efb8b44e69a0f3a4512f8164668c41af4127d75",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 330,
+  "base_only_commit_count": 332,
   "compare_only_commit_count": 1420,
   "base_changes_since_merge_base": [
     {
@@ -314,6 +314,10 @@
     {
       "status": "A",
       "path": "audit_engine/semantic_audit/ae32c/github_publication.py"
+    },
+    {
+      "status": "A",
+      "path": "audit_engine/semantic_audit/ae32c/history_archive.py"
     },
     {
       "status": "A",
@@ -7863,6 +7867,16 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "1178c312e8e5237e2aad702c53a0fd99a0f5bfb2",
+      "subject": "AE-32C: harden trusted publisher history and prepare validation"
+    },
+    {
+      "side": "<",
+      "sha": "5a9916f108521d69ba9e75c0dc3d4ffee654216f",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "00b34987b755f465e064aa5afeb36f9a7819174b",

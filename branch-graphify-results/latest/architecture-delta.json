@@ -2,8 +2,8 @@
   "identity_note": "Node keys use the first available id/node_id/key/name/label field. Edge keys use source/target/relation-like fields. These are structural comparison keys, not proof of semantic equivalence.",
   "base": {
     "branch": "main",
-    "node_count": 5865,
-    "edge_count": 9805
+    "node_count": 5888,
+    "edge_count": 9901
   },
   "compare": {
     "branch": "stage1-section-uuids",
@@ -11,9 +11,9 @@
     "edge_count": 47744
   },
   "nodes": {
-    "common_count": 3187,
-    "base_only_count": 2678,
-    "compare_only_count": 15533,
+    "common_count": 3184,
+    "base_only_count": 2704,
+    "compare_only_count": 15536,
     "base_only": [
       "abc",
       "analysis_citation_validator_rationale_128",
@@ -25,6 +25,19 @@
       "analysis_gap_detector_rationale_8",
       "asyncfunctiondef",
       "audit_engine_semantic_audit_ae32a_audit_rationale_917",
+      "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_read_state_at_read_blob",
+      "audit_engine_semantic_audit_ae32c_github_publication_rationale_204",
+      "audit_engine_semantic_audit_ae32c_github_publication_rationale_27",
+      "audit_engine_semantic_audit_ae32c_github_publication_rationale_57",
+      "audit_engine_semantic_audit_ae32c_history_archive",
+      "audit_engine_semantic_audit_ae32c_history_archive_compact_history",
+      "audit_engine_semantic_audit_ae32c_history_archive_py_any",
+      "audit_engine_semantic_audit_ae32c_history_archive_rationale_1",
+      "audit_engine_semantic_audit_ae32c_history_archive_rationale_118",
+      "audit_engine_semantic_audit_ae32c_history_archive_rationale_37",
+      "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_chain",
+      "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_segment",
+      "audit_engine_semantic_audit_ae32c_history_archive_verify_entry",
       "audit_engine_semantic_audit_ae32c_investigator_rationale_1027",
       "audit_engine_semantic_audit_ae32c_investigator_rationale_1042",
       "audit_engine_semantic_audit_ae32c_investigator_rationale_1161",
@@ -2467,6 +2480,19 @@
       "skipunless",
       "tests_semantic_audit_test_ae32c_g942_investigator_contract_regressions_test_nararouter_guidance_explicitly_does_not_assume_json_mode",
       "tests_semantic_audit_test_ae32c_g942_investigator_contract_regressions_test_non_nararouter_guidance_does_not_include_nararouter_specific_rule",
+      "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_history_compaction_preserves_chain_and_bounds_inline_state",
+      "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_legacy_backlog_archives_multiple_segments_in_one_cas_commit",
+      "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_tampered_archive_segment_fails_closed",
+      "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_truncated_recursive_tree_fails_closed",
+      "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests",
+      "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_api_responses",
+      "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_archive_bytes",
+      "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_setup",
+      "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_artifact_byte_digest_mismatch",
+      "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_event_run_id_disagreement",
+      "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_incomplete_coverage_as_current_but_retains_record",
+      "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_non_allowlisted_workflow_before_artifact_download",
+      "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_validates_exact_api_run_artifact_and_writes_record",
       "tools_ae32d_stamp_execution_provenance",
       "tools_ae32d_stamp_execution_provenance_main",
       "tools_ae32d_stamp_execution_provenance_py_any",
@@ -4155,6 +4181,9 @@
       "audit_engine_semantic_audit_ae32c_evaluation_source_reference_count",
       "audit_engine_semantic_audit_ae32c_evaluation_summarize_graph_report",
       "audit_engine_semantic_audit_ae32c_evaluation_write_comparison_artifacts",
+      "audit_engine_semantic_audit_ae32c_github_publication_rationale_180",
+      "audit_engine_semantic_audit_ae32c_github_publication_rationale_26",
+      "audit_engine_semantic_audit_ae32c_github_publication_rationale_56",
       "audit_engine_semantic_audit_ae32c_graph_pilot",
       "audit_engine_semantic_audit_ae32c_graph_pilot_apply_model_runtime_limits",
       "audit_engine_semantic_audit_ae32c_graph_pilot_build_cost_estimator",
@@ -18231,9 +18260,9 @@
     ]
   },
   "edges": {
-    "common_count": 6621,
-    "base_only_count": 3184,
-    "compare_only_count": 41123,
+    "common_count": 6618,
+    "base_only_count": 3283,
+    "compare_only_count": 41126,
     "base_only": [
       [
         "analysis_citation_validator",
@@ -18344,6 +18373,201 @@
         "audit_engine_semantic_audit_ae32b_evidence_tools_symbolvisitor_visit_functiondef",
         "functiondef",
         "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication",
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication",
+        "audit_engine_semantic_audit_ae32c_history_archive_compact_history",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication",
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_chain",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_publish",
+        "audit_engine_semantic_audit_ae32c_history_archive_compact_history",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_read_state_at",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_read_state_at_read_blob",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_read_state_at",
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_chain",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_read_state_at",
+        "audit_engine_semantic_audit_ae32c_publication_publicationerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication_rationale_204",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_current",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication_rationale_27",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubresttransport",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication_rationale_57",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "audit_engine_semantic_audit_ae32c_history_archive_compact_history",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_chain",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_segment",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_entry",
+        "contains"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "audit_engine_semantic_audit_ae32c_publication",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "audit_engine_semantic_audit_ae32c_publication_digest",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "audit_engine_semantic_audit_ae32c_publication_publicationerror",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "audit_engine_semantic_audit_ae32c_publication_verify_run_record",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "re",
+        "imports"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "typing",
+        "imports_from"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_compact_history",
+        "audit_engine_semantic_audit_ae32c_history_archive_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_compact_history",
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_entry",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_compact_history",
+        "audit_engine_semantic_audit_ae32c_publication_digest",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_compact_history",
+        "audit_engine_semantic_audit_ae32c_publication_publicationerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_rationale_1",
+        "audit_engine_semantic_audit_ae32c_history_archive",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_rationale_118",
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_chain",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_rationale_37",
+        "audit_engine_semantic_audit_ae32c_history_archive_compact_history",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_chain",
+        "audit_engine_semantic_audit_ae32c_history_archive_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_chain",
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_segment",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_chain",
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_entry",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_chain",
+        "audit_engine_semantic_audit_ae32c_publication_publicationerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_chain",
+        "re",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_segment",
+        "audit_engine_semantic_audit_ae32c_history_archive_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_segment",
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_entry",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_segment",
+        "audit_engine_semantic_audit_ae32c_publication_digest",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_archive_segment",
+        "audit_engine_semantic_audit_ae32c_publication_publicationerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_entry",
+        "audit_engine_semantic_audit_ae32c_history_archive_py_any",
+        "references"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_entry",
+        "audit_engine_semantic_audit_ae32c_publication_publicationerror",
+        "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_history_archive_verify_entry",
+        "audit_engine_semantic_audit_ae32c_publication_verify_run_record",
+        "calls"
       ],
       [
         "audit_engine_semantic_audit_ae32c_investigator_rationale_1027",
@@ -30998,6 +31222,306 @@
       [
         "tests_semantic_audit_test_ae32c_g942_investigator_contract_regressions_test_non_nararouter_guidance_does_not_include_nararouter_specific_rule",
         "tests_semantic_audit_test_ae32c_g942_investigator_contract_regressions_initial_payload",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication",
+        "audit_engine_semantic_audit_ae32c_publication_digest",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication",
+        "audit_engine_semantic_audit_ae32c_publication_empty",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication",
+        "audit_engine_semantic_audit_ae32c_publication_publicationerror",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests",
+        "audit_engine_semantic_audit_ae32c_publication_publicationerror",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests",
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_history_compaction_preserves_chain_and_bounds_inline_state",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests",
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_legacy_backlog_archives_multiple_segments_in_one_cas_commit",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests",
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_tampered_archive_segment_fails_closed",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests",
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_truncated_recursive_tree_fails_closed",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_history_compaction_preserves_chain_and_bounds_inline_state",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_current",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_history_compaction_preserves_chain_and_bounds_inline_state",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_get_ref",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_history_compaction_preserves_chain_and_bounds_inline_state",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_publish",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_history_compaction_preserves_chain_and_bounds_inline_state",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_read_state_at",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_history_compaction_preserves_chain_and_bounds_inline_state",
+        "tests_semantic_graph_test_ae32c_github_publication_make_record",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_legacy_backlog_archives_multiple_segments_in_one_cas_commit",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_commit_state",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_legacy_backlog_archives_multiple_segments_in_one_cas_commit",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_current",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_legacy_backlog_archives_multiple_segments_in_one_cas_commit",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_ensure_publication_ref",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_legacy_backlog_archives_multiple_segments_in_one_cas_commit",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_get_ref",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_legacy_backlog_archives_multiple_segments_in_one_cas_commit",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_publish",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_legacy_backlog_archives_multiple_segments_in_one_cas_commit",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_read_state_at",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_legacy_backlog_archives_multiple_segments_in_one_cas_commit",
+        "audit_engine_semantic_audit_ae32c_publication_digest",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_legacy_backlog_archives_multiple_segments_in_one_cas_commit",
+        "audit_engine_semantic_audit_ae32c_publication_empty",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_legacy_backlog_archives_multiple_segments_in_one_cas_commit",
+        "tests_semantic_graph_test_ae32c_github_publication_make_record",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_tampered_archive_segment_fails_closed",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_current",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_tampered_archive_segment_fails_closed",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_get_ref",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_tampered_archive_segment_fails_closed",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_publish",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_tampered_archive_segment_fails_closed",
+        "tests_semantic_graph_test_ae32c_github_publication_make_record",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_truncated_recursive_tree_fails_closed",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_current",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_truncated_recursive_tree_fails_closed",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_publish",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_github_publication_githubcasstoretests_test_truncated_recursive_tree_fails_closed",
+        "tests_semantic_graph_test_ae32c_github_publication_make_record",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher",
+        "hashlib",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher",
+        "json",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher",
+        "pathlib",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher",
+        "tempfile",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher",
+        "tests_semantic_graph_test_ae32c_trusted_artifact",
+        "imports_from"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher",
+        "tests_semantic_graph_test_ae32c_trusted_artifact_fixtures",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests",
+        "contains"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher",
+        "tools_ae32c_trusted_publisher_prepare",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher",
+        "zipfile",
+        "imports"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_api_responses",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_archive_bytes",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_setup",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_artifact_byte_digest_mismatch",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_event_run_id_disagreement",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_incomplete_coverage_as_current_but_retains_record",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_non_allowlisted_workflow_before_artifact_download",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_validates_exact_api_run_artifact_and_writes_record",
+        "method"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests",
+        "tools_ae32c_trusted_publisher_publishererror",
+        "uses"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_setup",
+        "tests_semantic_graph_test_ae32c_trusted_artifact_fixtures",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_setup",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_archive_bytes",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_artifact_byte_digest_mismatch",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_api_responses",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_artifact_byte_digest_mismatch",
+        "tools_ae32c_trusted_publisher_prepare",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_event_run_id_disagreement",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_api_responses",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_event_run_id_disagreement",
+        "tools_ae32c_trusted_publisher_prepare",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_incomplete_coverage_as_current_but_retains_record",
+        "tests_semantic_graph_test_ae32c_trusted_artifact_fixtures",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_incomplete_coverage_as_current_but_retains_record",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_api_responses",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_incomplete_coverage_as_current_but_retains_record",
+        "tools_ae32c_trusted_publisher_prepare",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_non_allowlisted_workflow_before_artifact_download",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_api_responses",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_rejects_non_allowlisted_workflow_before_artifact_download",
+        "tools_ae32c_trusted_publisher_prepare",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_validates_exact_api_run_artifact_and_writes_record",
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_api_responses",
+        "calls"
+      ],
+      [
+        "tests_semantic_graph_test_ae32c_trusted_publisher_trustedpublisherprepareintegrationtests_test_prepare_validates_exact_api_run_artifact_and_writes_record",
+        "tools_ae32c_trusted_publisher_prepare",
         "calls"
       ],
       [
@@ -59891,6 +60415,21 @@
         "audit_engine_semantic_audit_ae32c_evaluation_write_comparison_artifacts",
         "uuid",
         "calls"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication_rationale_180",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore_current",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication_rationale_26",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubresttransport",
+        "rationale_for"
+      ],
+      [
+        "audit_engine_semantic_audit_ae32c_github_publication_rationale_56",
+        "audit_engine_semantic_audit_ae32c_github_publication_githubrefcasstore",
+        "rationale_for"
       ],
       [
         "audit_engine_semantic_audit_ae32c_graph_pilot",

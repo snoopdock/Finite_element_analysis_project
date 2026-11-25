@@ -1,26 +1,26 @@
 [graphify extract] --force: full re-scan, semantic cache reads skipped
-[graphify extract] scanning /tmp/branch-graphify-worktrees-puuozf2y/main
+[graphify extract] scanning /tmp/branch-graphify-worktrees-qxa369mu/main
 [graphify extract] --code-only: skipping 43 non-code file(s) (43 docs, 0 papers, 0 images) — no LLM extraction
-[graphify extract] found 362 code, 0 docs, 0 papers, 0 images
+[graphify extract] found 363 code, 0 docs, 0 papers, 0 images
 [graphify extract] 28 file(s) not classified (no supported extension or shebang), skipped: .git, .gitignore, .gitkeep, BasicTest.lean, Contracts.lean, Convergence.lean (+22 more)
-[graphify extract] AST extraction on 362 code files...
-  AST cache: 0/362 files served from cache (0%); 362 to extract
-  AST extraction: 100/362 uncached files (27%) [4 workers]
-  AST extraction: 200/362 uncached files (55%) [4 workers]
-  AST extraction: 300/362 uncached files (82%) [4 workers]
-  AST extraction: 362/362 uncached files (100%) [4 workers]
+[graphify extract] AST extraction on 363 code files...
+  AST cache: 0/363 files served from cache (0%); 363 to extract
+  AST extraction: 100/363 uncached files (27%) [4 workers]
+  AST extraction: 200/363 uncached files (55%) [4 workers]
+  AST extraction: 300/363 uncached files (82%) [4 workers]
+  AST extraction: 363/363 uncached files (100%) [4 workers]
   warning: 3 code file(s) yielded no symbols (0.00 MB) — a data file, or source this extractor models no symbols for: audit_engine/semantic_audit/graph/analysis/__init__.py, audit_engine/semantic_audit/graph/queries/__init__.py, pyproject.toml
-[graphify extract] AST extraction incomplete for 3 source(s): /tmp/branch-graphify-worktrees-puuozf2y/main/branch-graphify-results/latest/architecture-delta.json, /tmp/branch-graphify-worktrees-puuozf2y/main/branch-graphify-results/latest/main/graph.json, /tmp/branch-graphify-worktrees-puuozf2y/main/branch-graphify-results/latest/stage1-section-uuids/graph.json; failed sources will not replace saved AST records and remain pending for retry.
-[graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/main/graphify-out/graph.json: 5865 nodes, 9805 edges, 437 communities
+[graphify extract] AST extraction incomplete for 3 source(s): /tmp/branch-graphify-worktrees-qxa369mu/main/branch-graphify-results/latest/architecture-delta.json, /tmp/branch-graphify-worktrees-qxa369mu/main/branch-graphify-results/latest/main/graph.json, /tmp/branch-graphify-worktrees-qxa369mu/main/branch-graphify-results/latest/stage1-section-uuids/graph.json; failed sources will not replace saved AST records and remain pending for retry.
+[graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/main/graphify-out/graph.json: 5888 nodes, 9901 edges, 434 communities
 [graphify extract] wrote /home/runner/work/_temp/branch-graphify-results/latest/main/graphify-out/.graphify_analysis.json
 [graphify extract] next: run `graphify cluster-only /home/runner/work/_temp/branch-graphify-results/latest/main` to generate GRAPH_REPORT.md and name communities
 
 
 --- cluster-only ---
 Loading existing graph...
-Graph: 5865 nodes, 9805 edges
+Graph: 5888 nodes, 9901 edges
 Re-clustering...
-Graph has 5865 nodes (above 5000 limit). Building aggregated community view...
-graph.html written (aggregated: 437 community nodes, 689 cross-community edges)
+Graph has 5888 nodes (above 5000 limit). Building aggregated community view...
+graph.html written (aggregated: 434 community nodes, 785 cross-community edges)
 Tip: run with --obsidian for full node-level detail.
-Done - 437 communities. GRAPH_REPORT.md, graph.json and graph.html updated.
+Done - 434 communities. GRAPH_REPORT.md, graph.json and graph.html updated.
