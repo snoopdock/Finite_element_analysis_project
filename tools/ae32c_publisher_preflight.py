@@ -199,7 +199,7 @@ def evaluate(
 
 
 def run(api_url: str, token: str, repository: str, app_client_id_present: bool,
-        app_private_key_present: bool) -> dict[str, Any]:
+        app_private_key_present: bool, publisher_app_id: int | None) -> dict[str, Any]:
     if not token or not repository or "/" not in repository:
         raise ValueError("github_read_context_missing")
     repo_status, repo = api_get(api_url, token, "/repos/" + repository)
@@ -228,6 +228,7 @@ def run(api_url: str, token: str, repository: str, app_client_id_present: bool,
         environment=environment,
         app_client_id_present=app_client_id_present,
         app_private_key_present=app_private_key_present,
+        publisher_app_id=publisher_app_id,
     )
 
 
