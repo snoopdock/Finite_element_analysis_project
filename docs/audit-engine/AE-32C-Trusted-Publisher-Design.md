@@ -197,7 +197,7 @@ The existing producer workflow remains read-only. The trusted publisher workflow
 This document defines the next implementation and acceptance boundary; it does not claim that the publisher is operational.
 
 
-## 9. Implemented validator status (2026-11-25)
+## 10. Implemented validator status (2026-11-25)
 
 The following controls are implemented on `main` in
 `audit_engine/semantic_audit/ae32c/trusted_artifact.py`:
@@ -238,7 +238,7 @@ These are CI and internal-consistency results only. The tests use constructed fi
 - The GitHub CAS adapter currently stores an unbounded append-only JSON history. Define compaction/retention before operational use.
 - No live App token, publication ref, environment approval, ruleset, or protected-default-branch guarantee has been exercised.
 
-## 10. Trusted publisher implementation scaffold (2026-11-25)
+## 11. Trusted publisher implementation scaffold (2026-11-25)
 
 The repository now contains:
 
@@ -268,7 +268,7 @@ CI run [45669000822](https://github.com/snoopdock/Finite_element_analysis_projec
 These tests do not execute the publisher workflow, obtain an App token, download a live upstream artifact through the workflow-run context, or write the publication ref. The publisher remains gated and unactivated.
 
 
-## 11. Main-branch integration status (2026-11-26)
+## 12. Main-branch integration status (2026-11-26)
 
 PR [#2](https://github.com/snoopdock/Finite_element_analysis_project/pull/2) was squash-merged to `main` at `192c86b74d83f31345f8714fbe28c793cac13ec7`. The isolated integration branch contained the AE-32C implementation and its required graph-projection runtime dependencies; the unrelated `stage1/section-uuids` history was not merged. The producer workflow passed on the merge commit with all 68 AE-32C tests. The downstream trusted-publisher workflow was triggered and skipped by its explicit repository-variable guard. The publication ref remains absent, and no write token or production state was created.
 
