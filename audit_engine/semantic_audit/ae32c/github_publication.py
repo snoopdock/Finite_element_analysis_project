@@ -119,7 +119,7 @@ class GitHubRefCASStore:
         return state
 
     def _commit_state(self, parent_sha: str, state: Mapping[str, Any],
-                      archive: Mapping[str, Any] | None = None) -> str:
+                      archives: list[Mapping[str, Any]] | None = None) -> str:
         import base64
         raw = canonical_bytes(state)
         blob = self.http.request("POST", self.base + "/git/blobs", {
@@ -127,7 +127,7 @@ class GitHubRefCASStore:
         })["sha"]
         parent = self.http.request("GET", self.base + "/git/commits/" + parent_sha)
         entries = [{"path": self.state_path, "mode": "100644", "type": "blob", "sha": blob}]
-        if archive is not None:
+        for archive in archives or []:
             archive_raw = canonical_bytes(archive["segment"])
             archive_blob = self.http.request("POST", self.base + "/git/blobs", {
                 "content": base64.b64encode(archive_raw).decode("ascii"), "encoding": "base64",
