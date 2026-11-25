@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import io
+import json
+import zipfile
 import unittest
 
 from audit_engine.semantic_audit.ae32c.trusted_artifact import (
-    TrustedArtifactError, _verify_coverage_cross_binding, digest, parse_manifest, validate_publication_artifact,
+    TrustedArtifactError, _verify_coverage_cross_binding, digest, parse_artifact_archive, parse_manifest, validate_publication_artifact,
 )
 from tools.ae32c_graph_snapshot import build_graph_snapshot
 
@@ -132,6 +135,33 @@ class TrustedArtifactTests(unittest.TestCase):
         })
         with self.assertRaisesRegex(TrustedArtifactError, "graph_source_identity_mismatch"):
             validate_publication_artifact(source, graph, expected=expected)
+
+    def test_archive_parser_accepts_exact_expected_members(self):
+        source, graph, expected = fixtures()
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("source-snapshot-manifest.json", json.dumps(source))
+            archive.writestr("graph-snapshot-manifest.json", json.dumps(graph))
+        parsed = parse_artifact_archive(buffer.getvalue())
+        self.assertEqual(parsed["source"]["source_snapshot_id"], source["source_snapshot_id"])
+        self.assertEqual(parsed["graph"]["graph_snapshot_id"], graph["graph_snapshot_id"])
+
+    def test_archive_parser_rejects_unexpected_members(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("../source-snapshot-manifest.json", "{}")
+            archive.writestr("graph-snapshot-manifest.json", "{}")
+        with self.assertRaisesRegex(TrustedArtifactError, "artifact_archive_member_set_invalid"):
+            parse_artifact_archive(buffer.getvalue())
+
+    def test_archive_parser_rejects_duplicate_members(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("source-snapshot-manifest.json", "{}")
+            archive.writestr("source-snapshot-manifest.json", "{}")
+            archive.writestr("graph-snapshot-manifest.json", "{}")
+        with self.assertRaisesRegex(TrustedArtifactError, "artifact_archive_member_set_invalid"):
+            parse_artifact_archive(buffer.getvalue())
 
     def test_duplicate_json_keys_are_rejected(self):
         with self.assertRaisesRegex(TrustedArtifactError, "duplicate_json_key"):
