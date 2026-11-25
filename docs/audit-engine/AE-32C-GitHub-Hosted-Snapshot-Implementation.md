@@ -252,3 +252,36 @@ No phase should claim completion solely because a workflow is green. Each accept
 - [ ] Documentation and schema are committed with implementation.
 
 **Current assurance statement:** this is a first source-identity and postflight-integrity implementation. It does not close G4 repository-wide atomicity, publication freshness, graph completeness or production approval.
+
+
+## 12. Initial GitHub-hosted validation record
+
+**Workflow run:** [45622987296](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45622987296)  
+**Tested source revision:** f9b66a1bcecf73ff9c769f36bc4cb4959764f189  
+**Workflow conclusion:** success  
+**Artifact:** [ae32c-source-snapshot-45622987296-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45622987296/artifacts/15027620112)  
+**Artifact ID:** 15027620112  
+**Artifact size:** 142,662 bytes  
+**Actions ZIP SHA-256:** 5367910c4d0073c34ad70b5844b3630346f053a99c91b3283e520a8a8284763f
+
+The run executed eight standard-library unit tests. All passed:
+
+- committed source/tree identity and blob digest;
+- dirty-worktree rejection at capture;
+- expected-commit mismatch rejection;
+- manifest tamper detection;
+- pull-request base/head/merge identity recording;
+- tracked mutation rejection at postflight;
+- unchanged-source postflight acceptance;
+- untracked-file rejection at postflight.
+
+The live GitHub push run captured and verified:
+
+- commit: f9b66a1bcecf73ff9c769f36bc4cb4959764f189;
+- root tree: c42346bfd27f741b0bfb20a67840f5e7b70d92a9;
+- source inventory entries: 1,940;
+- source inventory SHA-256: 84a1f772b3d64d16e785abe4290fd4edcfd78630f8adfdf363ff38f6b7135214;
+- source snapshot ID: 68b73ef0a92212c5607a7ea917ff1c0eb6626a7f45ccf662f8f5a030e24ad436;
+- postflight status: VERIFIED.
+
+This validates the push-event path and the tested manifest contract for that exact source revision. It does not yet constitute an end-to-end pull-request workflow execution, JSON Schema validator execution, atomic repository-wide snapshot, stale-publication test or production approval. The artifact digest is GitHub's reported ZIP digest; this record does not claim an independently signed attestation.

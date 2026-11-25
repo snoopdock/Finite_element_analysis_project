@@ -78,7 +78,7 @@ jobs:
         run: |
           manifest="$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json"
           if [ -f "$manifest" ]; then
-            python -c 'import json,os; p=os.path.join(os.environ["RUNNER_TEMP"],"ae32c-source-snapshot/source-snapshot-manifest.json"); m=json.load(open(p,encoding="utf-8")); s=m.get("source",{}); i=m.get("source_inventory",{}); lines=["### AE-32C source snapshot","- Status: "+str(m.get("status")),"- Commit: "+str(s.get("commit_oid")),"- Root tree: "+str(s.get("root_tree_oid")),"- Inventory SHA-256: "+str(i.get("sha256")),"- Inventory entries: "+str(i.get("entry_count")),"- Atomic repository snapshot established: "+str(m.get("authority",{}).get("atomic_repository_snapshot_established"))]; open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8").write("\\n".join(lines)+"\\n")'
+            python -c 'import json,os; p=os.path.join(os.environ["RUNNER_TEMP"],"ae32c-source-snapshot/source-snapshot-manifest.json"); m=json.load(open(p,encoding="utf-8")); s=m.get("source",{}); i=m.get("source_inventory",{}); lines=["### AE-32C source snapshot","- Status: "+str(m.get("status")),"- Commit: "+str(s.get("commit_oid")),"- Root tree: "+str(s.get("root_tree_oid")),"- Inventory SHA-256: "+str(i.get("sha256")),"- Inventory entries: "+str(i.get("entry_count")),"- Atomic repository snapshot established: "+str(m.get("authority",{}).get("atomic_repository_snapshot_established"))]; open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8").write(chr(10).join(lines)+chr(10))'
           else
             echo "Source snapshot manifest was not created." >> "$GITHUB_STEP_SUMMARY"
           fi
