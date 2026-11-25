@@ -48,7 +48,7 @@ class PublisherPreflightTests(unittest.TestCase):
             branch_protection_status=200, branch_protection=protection(),
             rulesets_status=200, rulesets=ruleset(),
             environment_status=200, environment=environment(),
-            app_client_id_present=True, app_private_key_present=True,
+            app_client_id_present=True, app_private_key_present=True, publisher_app_id=12345,
         )
         self.assertEqual(result["checks"]["default_branch_protection"]["status"], "PASS")
         self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "PASS")
@@ -74,7 +74,7 @@ class PublisherPreflightTests(unittest.TestCase):
             branch_protection_status=403, branch_protection={},
             rulesets_status=403, rulesets={},
             environment_status=403, environment={},
-            app_client_id_present=False, app_private_key_present=False,
+            app_client_id_present=False, app_private_key_present=False, publisher_app_id=None,
         )
         self.assertEqual(result["checks"]["default_branch_protection"]["status"], "UNVERIFIED")
         self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "UNVERIFIED")
@@ -129,7 +129,7 @@ class PublisherPreflightTests(unittest.TestCase):
         with patch("tools.ae32c_publisher_preflight.api_get", side_effect=responses) as get:
             result = run(
                 "https://api.github.com", "read-token", "owner/repo",
-                False, False,
+                False, False, None,
             )
         self.assertEqual(get.call_count, 4)
         self.assertFalse(result["activation_ready"])
