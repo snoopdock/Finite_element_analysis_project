@@ -62,7 +62,7 @@ class PersistedAssuranceTests(unittest.TestCase):
         self.epistemic.record_assertion(self.assertion)
         self.epistemic.record_assertion_dependencies(self.assertion)
         for node in (
-            "snap-1", "scanner", "inventory",
+            "snapshot:snap-1", "producer:scanner", "method:inventory",
             f"artifact-sha256:{'a' * 64}",
         ):
             self.declare_terminal(node)
