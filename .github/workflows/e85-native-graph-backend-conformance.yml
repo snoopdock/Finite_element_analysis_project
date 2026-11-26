@@ -143,7 +143,7 @@ jobs:
         with:
           environment-file: .github/environments/e85-graph-tool.yml
           environment-name: ae32-e85-graph-tool
-          cache-environment: true
+          cache-environment: false
           init-shell: bash
       - name: Assert portable graph-tool binary target
         shell: micromamba-shell {0}
