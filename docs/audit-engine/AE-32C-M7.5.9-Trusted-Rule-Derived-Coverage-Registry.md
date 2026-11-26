@@ -65,7 +65,8 @@ The dedicated suite covers:
 - unknown and ambiguous rule rejection;
 - duplicate selected rule rejection;
 - claim/source snapshot binding;
-- registry digest mismatch.
+- registry digest mismatch;
+- forged or modified plan fields rejected by recomputing the plan from the pinned built-in registry before construction/verification.
 
 The CI workflow runs M7.5.9 after the M7.5.1–M7.5.8 regression suites and stores its log as an artifact.
 
