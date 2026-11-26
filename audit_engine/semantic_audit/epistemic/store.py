@@ -171,7 +171,14 @@ class EpistemicStore:
             raise RevisionConflictError(
                 f"expected revision {expected_revision}, current revision is {current['revision']}"
             )
-        old_state = GapState(current["payload"]["state"])
+        prior = current["payload"]
+        stable_fields = ("subject_id", "kind", "scope_id", "discovery_method")
+        for field in stable_fields:
+            prior_value = prior[field]
+            next_value = gap.kind.value if field == "kind" else getattr(gap, field)
+            if prior_value != next_value:
+                raise StoreError(f"gap identity field {field} cannot change across revisions")
+        old_state = GapState(prior["state"])
         if gap.state not in _ALLOWED_GAP_TRANSITIONS[old_state]:
             raise InvalidTransitionError(f"transition {old_state.value} -> {gap.state.value} is not permitted")
         self._append("gap", gap.gap_id, expected_revision + 1, _canonical_payload(gap))
