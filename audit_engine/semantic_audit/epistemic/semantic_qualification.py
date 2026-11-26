@@ -55,9 +55,9 @@ _CONTRACTS = {
     "AE32A-SCOPE-EXCLUSIONS": {
         "version": "1.0.0", "evidence_kind": "scope_exclusion",
         "proposition": "The verified source inventory declares this path excluded.",
-        "qualification": "SUPPORTED",
-        "reason": "The exact source inventory contains the path and its declared exclusion.",
-        "limitation": "This does not establish that the exclusion is justified or that scope is complete.",
+        "qualification": "INSUFFICIENT",
+        "reason": "The observation carries a declared reason, but this validator does not independently replay the upstream extractor inventory.",
+        "limitation": "No independent verification of exclusion selection, rationale, or scope completeness."
     },
 }
 
@@ -72,7 +72,15 @@ def _source_entries(source_manifest: Mapping[str, Any]) -> dict[str, Mapping[str
     inventory = source_manifest.get("source_inventory")
     if not isinstance(inventory, Mapping) or not isinstance(inventory.get("entries"), list):
         raise SemanticQualificationError("source_inventory_missing_or_invalid")
-    entries: dict[str, Mapping[str, Any]] = {}
+    inventory_payload = list(inventory["entries"])
+    if inventory.get("entry_count") != len(inventory_payload):
+        raise SemanticQualificationError("source_inventory_entry_count_mismatch")
+    if inventory.get("sha256") != _digest(inventory_payload):
+        raise SemanticQualificationError("source_inventory_digest_mismatch")
+    manifest_payload = {k: v for k, v in source_manifest.items() if k != "manifest_sha256"}
+    if source_manifest.get("manifest_sha256") != _digest(manifest_payload):
+        raise SemanticQualificationError("source_manifest_digest_mismatch")
+    entries: dict[str, Mapping[str, Any]] =
     for item in inventory["entries"]:
         if not isinstance(item, Mapping) or not isinstance(item.get("path"), str):
             raise SemanticQualificationError("source_inventory_entry_invalid")
@@ -210,9 +218,13 @@ def qualify_typed_evidence_observations(
     root = Path(repository_root).expanduser().resolve(strict=True)
     if not root.is_dir():
         raise SemanticQualificationError("repository_root_not_directory")
+    if bundle.get("schema") != "ae32c/typed-evidence-observation-bundle/v1":
+        raise SemanticQualificationError("observation_bundle_schema_invalid")
     observations = bundle.get("observations")
     if not isinstance(observations, list):
         raise SemanticQualificationError("observation_collection_invalid")
+    if bundle.get("observation_count") != len(observations):
+        raise SemanticQualificationError("observation_count_mismatch")
     contracts = semantic_evidence_contract_registry()["contracts"]
     by_id: dict[str, Mapping[str, Any]] = {}
     verified_raw: dict[str, bytes] = {}
