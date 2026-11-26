@@ -107,6 +107,18 @@ class PublisherPreflightTests(unittest.TestCase):
         )
         self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "BLOCKED")
 
+    def test_ruleset_that_also_targets_other_refs_is_rejected(self):
+        unsafe = ruleset()
+        unsafe[0]["conditions"]["ref_name"]["include"].append("refs/heads/main")
+        result = evaluate(
+            repository="owner/repo", default_branch="main",
+            branch_protection_status=200, branch_protection=protection(),
+            rulesets_status=200, rulesets=unsafe,
+            environment_status=200, environment=environment(),
+            app_client_id_present=True, app_private_key_present=True, publisher_app_id=12345,
+        )
+        self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "BLOCKED")
+
     def test_malformed_bypass_entry_fails_closed(self):
         unsafe = ruleset()
         unsafe[0]["bypass_actors"] = [None]
