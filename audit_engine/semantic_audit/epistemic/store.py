@@ -90,6 +90,41 @@ class EpistemicStore:
         self.close()
 
     def _initialize(self) -> None:
+        existing = self._connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'epistemic_events'"
+        ).fetchone()
+        if existing and "'completeness'" not in (existing["sql"] or ""):
+            # Migrate the M7.5.2 two-record-type schema without discarding history.
+            with self._connection:
+                self._connection.execute("DROP TRIGGER IF EXISTS epistemic_events_no_update")
+                self._connection.execute("DROP TRIGGER IF EXISTS epistemic_events_no_delete")
+                self._connection.execute(
+                    "ALTER TABLE epistemic_events RENAME TO epistemic_events_m752"
+                )
+                self._connection.execute("""
+                    CREATE TABLE epistemic_events (
+                        sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+                        event_id TEXT NOT NULL UNIQUE,
+                        record_type TEXT NOT NULL CHECK(record_type IN ('assertion', 'gap', 'completeness')),
+                        record_id TEXT NOT NULL,
+                        revision INTEGER NOT NULL CHECK(revision >= 1),
+                        payload TEXT NOT NULL,
+                        payload_sha256 TEXT NOT NULL,
+                        previous_hash TEXT NOT NULL,
+                        event_hash TEXT NOT NULL UNIQUE,
+                        UNIQUE(record_type, record_id, revision)
+                    )
+                """)
+                self._connection.execute("""
+                    INSERT INTO epistemic_events
+                    (sequence, event_id, record_type, record_id, revision, payload,
+                     payload_sha256, previous_hash, event_hash)
+                    SELECT sequence, event_id, record_type, record_id, revision, payload,
+                           payload_sha256, previous_hash, event_hash
+                    FROM epistemic_events_m752 ORDER BY sequence
+                """)
+                self._connection.execute("DROP TABLE epistemic_events_m752")
+
         self._connection.executescript("""
             CREATE TABLE IF NOT EXISTS epistemic_events (
                 sequence INTEGER PRIMARY KEY AUTOINCREMENT,
