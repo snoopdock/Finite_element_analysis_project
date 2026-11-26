@@ -257,6 +257,8 @@ class EpistemicStore:
             adjacency = self._dependency_adjacency()
             recorded: list[str] = []
             for edge in edges:
+                if self.invalidation_history(edge.dependency_id):
+                    raise StoreError(f"dependency {edge.dependency_id} is already invalidated")
                 if self._reachable(adjacency, edge.dependency_id, edge.dependent_id):
                     raise StoreError(f"dependency edge {edge.edge_id} would introduce a cycle")
                 self._append(
@@ -265,7 +267,37 @@ class EpistemicStore:
                 )
                 adjacency.setdefault(edge.dependent_id, set()).add(edge.dependency_id)
                 recorded.append(edge.edge_id)
+            manifest = ProvenanceManifest(
+                manifest_id=f"manifest:{claim_node}:v1",
+                node_id=claim_node,
+                edge_ids=tuple(recorded),
+                manifest_version="m7.5.4/v1",
+            )
+            self.record_dependency_manifest(manifest, transaction_open=True)
         return tuple(recorded)
+
+    def record_dependency_manifest(
+        self, manifest: ProvenanceManifest, *, transaction_open: bool = False,
+    ) -> bool:
+        if not isinstance(manifest, ProvenanceManifest):
+            raise TypeError("manifest must be a ProvenanceManifest")
+        if not transaction_open:
+            with self._connection:
+                self._connection.execute("BEGIN IMMEDIATE")
+                return self.record_dependency_manifest(manifest, transaction_open=True)
+        rows = self._connection.execute(
+            """SELECT record_id FROM epistemic_events
+               WHERE record_type = 'dependency'
+               AND json_extract(payload, '$.dependent_id') = ?""",
+            (manifest.node_id,),
+        ).fetchall()
+        declared = {row["record_id"] for row in rows}
+        if declared != set(manifest.edge_ids):
+            raise StoreError("dependency manifest must exactly enumerate all recorded outgoing edges")
+        return self._append(
+            "dependency_manifest", manifest.manifest_id, 1,
+            _canonical_payload(manifest), transaction_open=True,
+        )
 
     def dependency_history(self) -> list[dict[str, Any]]:
         rows = self._connection.execute(
@@ -392,16 +424,31 @@ class EpistemicStore:
                 invalidation_ids=tuple(item["invalidation_id"] for item in history),
                 reason="one or more dependency changes invalidated this node",
             )
-        has_dependencies = self._connection.execute(
-            """SELECT 1 FROM epistemic_events
-               WHERE record_type = 'dependency'
-               AND json_extract(payload, '$.dependent_id') = ? LIMIT 1""",
+        manifest_row = self._connection.execute(
+            """SELECT payload FROM epistemic_events
+               WHERE record_type = 'dependency_manifest'
+               AND json_extract(payload, '$.node_id') = ?
+               ORDER BY sequence DESC LIMIT 1""",
             (node_id,),
         ).fetchone()
-        if has_dependencies:
+        if manifest_row:
+            manifest = json.loads(manifest_row["payload"])
+            rows = self._connection.execute(
+                """SELECT record_id FROM epistemic_events
+                   WHERE record_type = 'dependency'
+                   AND json_extract(payload, '$.dependent_id') = ?""",
+                (node_id,),
+            ).fetchall()
+            actual = {row["record_id"] for row in rows}
+            declared = set(manifest["edge_ids"])
+            if actual == declared and declared:
+                return FreshnessResult(
+                    node_id=node_id, status=FreshnessStatus.FRESH,
+                    reason="a closed dependency manifest exactly matches the recorded dependency edges",
+                )
             return FreshnessResult(
-                node_id=node_id, status=FreshnessStatus.FRESH,
-                reason="declared dependencies have no recorded invalidation",
+                node_id=node_id, status=FreshnessStatus.UNKNOWN,
+                reason="dependency manifest is missing edges or does not match the current dependency set",
             )
         return FreshnessResult(
             node_id=node_id, status=FreshnessStatus.UNKNOWN,
