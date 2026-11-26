@@ -121,6 +121,8 @@ def evaluate_negative_claim_with_freshness(
     UNKNOWN is fail-closed: absence of invalidation records is not evidence of
     freshness unless a dependency declaration establishes what was checked.
     """
+    if not isinstance(claim, CompletenessClaim):
+        raise TypeError("claim must be a CompletenessClaim")
     if not isinstance(freshness, FreshnessResult):
         raise TypeError("freshness must be a FreshnessResult")
     if freshness.node_id != f"claim:{claim.claim_id}":
