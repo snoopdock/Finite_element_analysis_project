@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -90,6 +91,99 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             coverage = provider.coverage_report()
             self.assertEqual(coverage["lfs_pointer_blob_count"], 1)
             self.assertFalse(coverage["lfs_payload_verified"])
+
+    def test_provider_remains_pinned_after_branch_ref_moves(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            manifest = self._verified_manifest(root)
+            provider = GitObjectSourceProvider(root, manifest)
+            pinned_commit = provider.snapshot_identity()["commit_oid"]
+            (root / "src" / "module.py").write_text("VALUE = 'new commit'\n", encoding="utf-8")
+            self._git(root, "add", "src/module.py")
+            self._git(root, "commit", "-m", "move branch after provider construction")
+            self.assertNotEqual(self._git(root, "rev-parse", "HEAD"), pinned_commit)
+            self.assertEqual(provider.snapshot_identity()["commit_oid"], pinned_commit)
+            self.assertEqual(provider.read_entry("src/module.py"), b"VALUE = 'committed'\n")
+
+    def test_worktree_aba_mutation_does_not_change_pinned_bytes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            provider = GitObjectSourceProvider(root, self._verified_manifest(root))
+            source = root / "src" / "module.py"
+            original = source.read_bytes()
+            source.write_bytes(b"VALUE = 'temporary mutation'\n")
+            source.write_bytes(original)
+            self.assertEqual(source.read_bytes(), original)
+            self.assertEqual(provider.read_entry("src/module.py"), original)
+
+    def test_hard_link_replacement_does_not_change_pinned_bytes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            provider = GitObjectSourceProvider(root, self._verified_manifest(root))
+            original = root / "src" / "module.py"
+            replacement = root / "replacement.py"
+            replacement.write_text("VALUE = 'hard-link target'\n", encoding="utf-8")
+            original.unlink()
+            try:
+                os.link(replacement, original)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest("host does not permit hard-link creation: " + str(exc))
+            self.assertEqual(original.read_bytes(), replacement.read_bytes())
+            self.assertEqual(provider.read_entry("src/module.py"), b"VALUE = 'committed'\n")
+
+    def test_missing_pinned_blob_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            provider = GitObjectSourceProvider(root, self._verified_manifest(root))
+            oid = provider.entry_metadata("src/module.py")["git_object_oid"]
+            object_dir = Path(self._git(root, "rev-parse", "--git-path", "objects"))
+            if not object_dir.is_absolute():
+                object_dir = root / object_dir
+            loose_object = object_dir / oid[:2] / oid[2:]
+            if not loose_object.is_file():
+                self.skipTest("test fixture blob is not stored as a loose object")
+            loose_object.unlink()
+            from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceError
+            with self.assertRaisesRegex(GitObjectSourceError, "git_command_failed"):
+                provider.read_entry("src/module.py")
+
+    def test_corrupt_pinned_blob_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            provider = GitObjectSourceProvider(root, self._verified_manifest(root))
+            oid = provider.entry_metadata("src/module.py")["git_object_oid"]
+            object_dir = Path(self._git(root, "rev-parse", "--git-path", "objects"))
+            if not object_dir.is_absolute():
+                object_dir = root / object_dir
+            loose_object = object_dir / oid[:2] / oid[2:]
+            if not loose_object.is_file():
+                self.skipTest("test fixture blob is not stored as a loose object")
+            loose_object.write_bytes(b"corrupt-object-data")
+            from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceError
+            with self.assertRaisesRegex(GitObjectSourceError, "git_command_failed"):
+                provider.read_entry("src/module.py")
+
+    def test_gitlink_is_not_read_as_regular_source_blob(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            commit_oid = self._git(root, "rev-parse", "HEAD")
+            (root / "vendor").mkdir()
+            self._git(root, "update-index", "--add", "--cacheinfo",
+                      "160000," + commit_oid + ",vendor/submodule")
+            self._git(root, "commit", "-m", "add gitlink fixture")
+            provider = GitObjectSourceProvider(root, self._verified_manifest(root))
+            metadata = provider.entry_metadata("vendor/submodule")
+            self.assertEqual(metadata["mode"], "160000")
+            self.assertEqual(metadata["object_type"], "commit")
+            from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceError
+            with self.assertRaisesRegex(GitObjectSourceError, "entry_not_regular_file_blob"):
+                provider.read_entry("vendor/submodule")
 
     def test_manifest_tree_mismatch_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
