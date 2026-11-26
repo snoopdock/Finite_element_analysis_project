@@ -184,6 +184,9 @@ class CompletenessClaim:
     unsupported_constructs: Tuple[str, ...] = ()
     assumptions: Tuple[str, ...] = ()
     invalidation_triggers: Tuple[str, ...] = ()
+    predicate_id: Optional[str] = None
+    covered_unit_ids: Tuple[str, ...] = ()
+    expected_unit_ids: Tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         for name in ("claim_id", "subject_id", "scope_id", "source_snapshot_id", "enumeration_method", "method_version"):
@@ -204,10 +207,17 @@ class CompletenessClaim:
         if len(set(evidence_ids)) != len(evidence_ids):
             raise ContractError("evidence_refs must not repeat evidence_id values")
         object.__setattr__(self, "verification_method_id", _optional_text(self.verification_method_id, "verification_method_id"))
+        object.__setattr__(self, "predicate_id", _optional_text(self.predicate_id, "predicate_id"))
         object.__setattr__(self, "exclusions", _unique_texts(self.exclusions, "exclusions"))
         object.__setattr__(self, "unsupported_constructs", _unique_texts(self.unsupported_constructs, "unsupported_constructs"))
         object.__setattr__(self, "assumptions", _unique_texts(self.assumptions, "assumptions"))
         object.__setattr__(self, "invalidation_triggers", _unique_texts(self.invalidation_triggers, "invalidation_triggers"))
+        object.__setattr__(self, "covered_unit_ids", _unique_texts(self.covered_unit_ids, "covered_unit_ids"))
+        object.__setattr__(self, "expected_unit_ids", _unique_texts(self.expected_unit_ids, "expected_unit_ids"))
+        if self.covered_unit_ids and len(self.covered_unit_ids) != self.covered_units:
+            raise ContractError("covered_unit_ids length must equal covered_units")
+        if self.expected_unit_ids and self.expected_units is not None and len(self.expected_unit_ids) != self.expected_units:
+            raise ContractError("expected_unit_ids length must equal expected_units")
         if self.status is CompletenessStatus.SUPPORTED_WITHIN_SCOPE:
             if self.expected_units is None or self.covered_units != self.expected_units:
                 raise ContractError("supported completeness requires a known denominator and exact coverage")
@@ -217,3 +227,11 @@ class CompletenessClaim:
                 raise ContractError("supported completeness requires verification_method_id")
             if self.unsupported_constructs:
                 raise ContractError("unsupported constructs prevent supported completeness")
+            if self.predicate_id is None:
+                raise ContractError("supported completeness requires predicate_id")
+            if len(self.expected_unit_ids) != self.expected_units:
+                raise ContractError("supported completeness requires an exact expected-unit manifest")
+            if set(self.covered_unit_ids) != set(self.expected_unit_ids):
+                raise ContractError("supported completeness requires exact unit-manifest coverage")
+            if any(ref.source_snapshot_id != self.source_snapshot_id for ref in self.evidence_refs):
+                raise ContractError("completeness evidence must bind to the claim source snapshot")
