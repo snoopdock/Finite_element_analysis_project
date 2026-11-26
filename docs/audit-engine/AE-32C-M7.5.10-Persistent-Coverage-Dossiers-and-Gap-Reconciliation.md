@@ -1,6 +1,6 @@
 # AE-32C M7.5.10 — Persistent Coverage Dossiers, Snapshot Binding and Gap Reconciliation
 
-**Status:** Implemented; corrective validation-precedence changes committed; exact-source CI validation pending.  
+**Status:** Corrective implementation CI-validated; 111 M7.5 regression tests passed on source commit `39d2b177f5fc486f1acf1f900303ba18500327c1` (run [45906808231](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45906808231)).  
 **Branch:** `stage1/section-uuids`  
 **Scope:** M7.5 epistemic assurance only. No deterministic audit-decision or authorization integration.
 
