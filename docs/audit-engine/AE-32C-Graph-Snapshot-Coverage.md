@@ -124,3 +124,31 @@ The resulting coverage state was `COMPLETE_WITH_DECLARED_EXCLUSIONS`. This is co
 - `tests/semantic_graph/test_ae32c_graph_snapshot.py`
 - `docs/audit-engine/schemas/ae32c-graph-snapshot-manifest-v1.schema.json`
 - `.github/workflows/ae32c_source_snapshot_manifest.yml`
+
+
+## 10. Generated Graphify analysis artifacts — source-scope boundary
+
+The tracked directory `branch-graphify-results/` contains generated Graphify reports,
+interactive graph exports, run logs and derived JSON summaries. These are analysis
+artifacts, not repository source inputs for the AE-32A/AE-32B source-evidence graph.
+
+The source-evidence scanner therefore excludes the exact directory prefix
+`branch-graphify-results/` from its semantic source inventory. This is a directory-
+scoped policy, not a filename-wide exclusion: JSON, Markdown or Python files elsewhere
+remain subject to the normal source-suffix and ingestion rules.
+
+This exclusion does **not** remove the files from the canonical Git source snapshot.
+The Phase 1 Git inventory continues to enumerate and hash every tracked Git blob,
+including Graphify outputs. The graph coverage manifest accounts for these entries
+as `outside_declared_source_scope`, with the declared scope policy recorded in the
+audit report. They are not silently dropped from repository identity or source
+inventory accounting.
+
+Graphify results remain available as separately retained analysis evidence. Their
+presence or digest does not establish that a graph backend is operational, that
+an adapter is invoked, or that a finding is semantically supported. Those questions
+require branch-specific operational evidence and explicit validation.
+
+The exclusion is deliberately limited to the generated results directory. It does
+not exclude the Graphify implementation under `tools/branch-graphify/`, its workflow,
+or its requirements file from source analysis.
