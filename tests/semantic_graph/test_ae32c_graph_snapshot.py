@@ -190,6 +190,12 @@ class GraphSnapshotTests(unittest.TestCase):
 
     def test_lfs_pointer_record_omission_is_rejected(self):
         attestation = lfs_attestation(pointer_paths={"README.md"})
+        attestation["records"] = []
+        attestation["pointer_count"] = 0
+        attestation["unverified_payload_count"] = 0
+        attestation["attestation_sha256"] = digest({
+            key: value for key, value in attestation.items() if key != "attestation_sha256"
+        })
         with self.assertRaisesRegex(GraphSnapshotError, "lfs_pointer_records_incomplete_or_extra"):
             self._build(lfs=attestation)
 
@@ -198,11 +204,17 @@ class GraphSnapshotTests(unittest.TestCase):
         changed = dict(result)
         changed["lfs_attestation"] = dict(result["lfs_attestation"])
         changed["lfs_attestation"]["status"] = "VERIFIED_LOCAL_PAYLOADS"
-        with self.assertRaisesRegex(GraphSnapshotError, "graph_manifest_digest_mismatch"):
+        changed["manifest_sha256"] = digest({
+            key: value for key, value in changed.items() if key != "manifest_sha256"
+        })
+        with self.assertRaisesRegex(GraphSnapshotError, "lfs_attestation_digest_mismatch"):
             verify_graph_manifest(changed)
         missing = dict(result)
         missing.pop("lfs_attestation")
-        with self.assertRaisesRegex(GraphSnapshotError, "graph_manifest_digest_mismatch"):
+        missing["manifest_sha256"] = digest({
+            key: value for key, value in missing.items() if key != "manifest_sha256"
+        })
+        with self.assertRaisesRegex(GraphSnapshotError, "graph_lfs_attestation_reference_mismatch"):
             verify_graph_manifest(missing)
 
     def test_lfs_attestation_is_in_graph_identity_and_coverage(self):
