@@ -23,7 +23,7 @@ from audit_engine.semantic_audit.epistemic.execution_obligation_reconciliation i
 
 
 def seal(value):
-    return hashlib.sha256((json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False) + "\\n").encode()).hexdigest()
+    return hashlib.sha256((json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False) + "\n").encode()).hexdigest()
 
 
 def source_manifest(entries):
@@ -41,7 +41,7 @@ class ExecutionObligationReconciliationTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.py = b"import os\\nos.getenv('MODEL_URL')\\n"
+        self.py = b"import os\nos.getenv('MODEL_URL')\n"
         (self.root/"src").mkdir()
         (self.root/"src/app.py").write_bytes(self.py)
         self.source = source_manifest([{"path":"src/app.py","mode":"100644","object_type":"blob",
@@ -101,7 +101,7 @@ class ExecutionObligationReconciliationTests(unittest.TestCase):
         self.assertTrue(result["dossier_unchanged"])
 
     def test_changed_source_invalidates_attachment(self):
-        (self.root/"src/app.py").write_bytes(b"print('changed')\\n")
+        (self.root/"src/app.py").write_bytes(b"print('changed')\n")
         with self.assertRaisesRegex(ExecutionObligationReconciliationError,"upstream_execution_evidence_verification_failed"):
             build_and_persist_execution_obligation_reconciliation(
                 reconciliation_store=self.reconciliations,**self.kwargs())
@@ -122,7 +122,7 @@ class ExecutionObligationReconciliationTests(unittest.TestCase):
         payload=json.loads(row[2]); payload["summary"]["epistemic_coverage_upgraded"]=True
         replacement=json.dumps(payload,sort_keys=True,separators=(",",":"),ensure_ascii=False)
         ph=hashlib.sha256(replacement.encode()).hexdigest()
-        eh=hashlib.sha256(f"{row[0]}\\n{row[1]}\\n{ph}\\n{row[3]}".encode()).hexdigest()
+        eh=hashlib.sha256(f"{row[0]}\n{row[1]}\n{ph}\n{row[3]}".encode()).hexdigest()
         raw.execute("UPDATE execution_obligation_events SET payload=?,payload_sha256=?,event_hash=?",(replacement,ph,eh))
         raw.commit(); raw.close()
         self.reconciliations=ExecutionObligationReconciliationStore(self.root/"reconciliations.sqlite")
