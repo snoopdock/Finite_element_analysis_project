@@ -5,7 +5,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audit_engine.semantic_audit.epistemic import (\n    AssuranceClaim, CoverageObligation, ObligationDisposition,\n    derive_rule_coverage_plan, build_rule_derived_coverage_manifest,\n)\nfrom audit_engine.semantic_audit.epistemic.semantic_qualification import (
+from audit_engine.semantic_audit.epistemic import (
+    AssuranceClaim, CoverageObligation, ObligationDisposition,
+    derive_rule_coverage_plan, build_rule_derived_coverage_manifest,
+)
+from audit_engine.semantic_audit.epistemic.semantic_qualification import (
     SemanticQualificationError,
     qualify_typed_evidence_observations,
     semantic_evidence_contract_registry,
@@ -72,8 +76,30 @@ class SemanticQualificationTests(unittest.TestCase):
             "manifest_schema": "ae32c/source-snapshot-manifest/v1",
             "source_snapshot_id": self.source_id,
             "source_inventory": inventory,
-        }
+        self.manifest["manifest_sha256"] = digest(self.manifest)
+        self.claim = AssuranceClaim("claim:m7516", "prop:m7516", "repository",
+                                    "scope:repo", self.source_id, "M7.5.16 qualification test")
+        self.plan = derive_rule_coverage_plan(
+            self.claim, source_snapshot_id=self.source_id, graph_snapshot_id="graph:m7516",
+            rule_ids=("AE32A-GRAPH-SERVICE-UNUSED", "AE32A-INCOMPLETE-PYTHON-SCAN",
+                      "AE32A-SCOPE-EXCLUSIONS", "AE32A-AE28-EXTERNAL-MODEL-INPUT"))
+        self.coverage_manifest = build_rule_derived_coverage_manifest(
+            self.claim, self.plan, assessments={oid: CoverageObligation(
+                oid, ObligationDisposition.UNKNOWN, limitation="M7.5.16 test fixture")
+                for oid in self.plan.expected_obligation_ids})
         self.manifest["manifest_sha256"] = digest(self.manifest)\n        self.claim = AssuranceClaim("claim:m7516", "prop:m7516", "repository",\n                                    "scope:repo", self.source_id, "M7.5.16 qualification test")\n        self.plan = derive_rule_coverage_plan(\n            self.claim, source_snapshot_id=self.source_id, graph_snapshot_id="graph:m7516",\n            rule_ids=("AE32A-GRAPH-SERVICE-UNUSED", "AE32A-INCOMPLETE-PYTHON-SCAN",\n                      "AE32A-SCOPE-EXCLUSIONS", "AE32A-AE28-EXTERNAL-MODEL-INPUT"))\n        self.coverage_manifest = build_rule_derived_coverage_manifest(\n            self.claim, self.plan, assessments={oid: CoverageObligation(\n                oid, ObligationDisposition.UNKNOWN, limitation="M7.5.16 test fixture")\n                for oid in self.plan.expected_obligation_ids})
+
+    def qualify(self, bundle, **kwargs):
+        return qualify_typed_evidence_observations(
+            bundle, claim=self.claim, plan=self.plan,
+            coverage_manifest=self.coverage_manifest,
+            source_manifest=self.manifest, repository_root=self.root, **kwargs)
+
+    def verify(self, result, bundle, **kwargs):
+        return verify_semantic_evidence_qualification(
+            result, bundle, claim=self.claim, plan=self.plan,
+            coverage_manifest=self.coverage_manifest,
+            source_manifest=self.manifest, repository_root=self.root, **kwargs)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -106,8 +132,7 @@ class SemanticQualificationTests(unittest.TestCase):
                           "python_import_statement",
                           {"module": "networkx", "imported_symbols": [], "matched_module_root": "networkx"})
         bundle = self.bundle([obs])
-        result = qualify_typed_evidence_observations(
-            bundle, source_manifest=self.manifest, repository_root=self.root)
+        result = self.qualify(bundle)
         self.assertEqual(result["qualifications"][0]["qualification"], "INSUFFICIENT")
         self.assertFalse(result["authority"]["proposition_truth_established"])
 
@@ -118,8 +143,7 @@ class SemanticQualificationTests(unittest.TestCase):
                           "python_ast_parse_failure",
                           {"exception_type": "SyntaxError", "diagnostic_code": "source_parse_failed",
                            "message": "invalid syntax"})
-        result = qualify_typed_evidence_observations(
-            self.bundle([obs]), source_manifest=self.manifest, repository_root=self.root)
+        result = self.qualify(self.bundle([obs]))
         self.assertEqual(result["qualifications"][0]["qualification"], "SUPPORTED")
         self.assertIn("parse-coverage limitation", result["qualifications"][0]["limitation"])
 
@@ -159,9 +183,7 @@ class SemanticQualificationTests(unittest.TestCase):
             "source_line_sha256": hashlib.sha256(raw.splitlines()[0]).hexdigest(),
             "reason": "Independent reviewer disputes the interpretation.",
         }
-        result = qualify_typed_evidence_observations(
-            self.bundle([obs]), source_manifest=self.manifest, repository_root=self.root,
-            defeaters=(defeater,))
+        result = self.qualify(self.bundle([obs]), defeaters=(defeater,))
         item = result["qualifications"][0]
         self.assertEqual(item["qualification"], "CONTESTED")
         self.assertEqual(item["defeaters"][0]["validation"], "NOT_ESTABLISHED")
@@ -175,13 +197,11 @@ class SemanticQualificationTests(unittest.TestCase):
         bundle = self.bundle([obs])
         result = qualify_typed_evidence_observations(
             bundle, source_manifest=self.manifest, repository_root=self.root)
-        replay = verify_semantic_evidence_qualification(
-            result, bundle, source_manifest=self.manifest, repository_root=self.root)
+        replay = self.verify(result, bundle)
         self.assertTrue(replay["semantic_replay"])
         (self.root / "src/graph.py").write_text("import os\n")
         with self.assertRaises(SemanticQualificationError):
-            verify_semantic_evidence_qualification(
-                result, bundle, source_manifest=self.manifest, repository_root=self.root)
+            self.verify(result, bundle)
 
     def test_line_tampering_and_invalid_source_references_rejected(self):
         raw = self.files["src/graph.py"]
@@ -192,15 +212,13 @@ class SemanticQualificationTests(unittest.TestCase):
         obs["source_line_sha256"] = "0" * 64
         obs["evidence_observation_id"] = digest({k:v for k,v in obs.items() if k != "evidence_observation_id"})
         with self.assertRaises(SemanticQualificationError):
-            qualify_typed_evidence_observations(
-                self.bundle([obs]), source_manifest=self.manifest, repository_root=self.root)
+            self.qualify(self.bundle([obs]))
 
     def test_bundle_digest_tampering_rejected(self):
         bundle = self.bundle([])
         bundle["summary"]["semantic_evidence_accepted_count"] = 9
         with self.assertRaisesRegex(SemanticQualificationError, "observation_bundle_digest_mismatch"):
-            qualify_typed_evidence_observations(
-                bundle, source_manifest=self.manifest, repository_root=self.root)
+            self.qualify(bundle)
 
 
 if __name__ == "__main__":
