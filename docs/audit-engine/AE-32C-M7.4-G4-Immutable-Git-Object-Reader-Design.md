@@ -1,6 +1,6 @@
 # AE-32C M7.4 G4 — Immutable Git-object source reader design
 
-**Status:** Implemented for committed-tree graph construction; exact-source hosted validation passed. Cross-platform qualification and broader atomicity gates remain open.  
+**Status:** Implemented for committed-tree graph construction; exact-source Linux and Windows validation passed. Broader atomicity gates remain open.  
 **Development branch:** `stage1/section-uuids`  
 **Baseline:** `6fad135910d14dc47f086ec9d343eb1a7d04a265`
 
@@ -176,3 +176,34 @@ The graph snapshot reported:
 This implementation closes the mixed filesystem/Git-object read path for the committed-tree graph build. It does not establish a snapshot of dirty or untracked working-tree content, recursive submodule content, hydrated Git LFS payload integrity, or an atomic snapshot of all external filesystem state. The provider tests now include ignored/untracked exclusion, worktree mutation independence, manifest/tree mismatch, symlink non-following and Git LFS pointer classification. The integrated workflow has been executed on Ubuntu 24.04; Windows qualification remains pending. The graph coverage status is still constrained by its declared exclusions and does not authorize negative findings by default.
 
 Accordingly, this implementation advances G4 from partial source identity binding to an integrated immutable committed-tree source path, but does not authorize production approval. \`production_approval=false\` remains invariant.
+
+
+## 10. Follow-up hardening and cross-platform validation
+
+The implementation was hardened and revalidated on the later Stage1 source revision:
+
+- **Stage1 commit:** \`308e3cb6fe35099bfe8b85af2784a5cca4f4b101\`
+- **Source/graph workflow:** [45797000319](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45797000319) — success
+- **Windows and cost workflow:** [45797000329](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45797000329) — success
+- **Windows result:** 33 passed, 46 skipped across the provider and existing source-snapshot/lifecycle test selection
+- **Cost report artifact:** [m7-4-g4-source-snapshot-cost-45797000329-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45797000329/artifacts/15105711296)
+- **Cost artifact SHA-256:** \`796de7abd8a6aee895f47537d6e3709f07df5a100870a37c51a18e278704b9da\`
+
+The provider now identifies Git LFS pointer blobs when their committed bytes are read and reports the pointer paths separately; it explicitly keeps \`lfs_payload_verified=false\`. Graph coverage now treats only regular Git blobs as eligible represented source paths, rejecting graph paths that point to symlinks or gitlinks as well as paths absent from the committed tree. The Windows workflow executes the Git-object provider tests; symlink-specific test setup is skipped only where the host does not permit creating symlinks.
+
+The exact-source graph run reported:
+
+- source snapshot ID: \`f74a062bb4638bac51add1513e40965efc8741826fedfcbe043844bea149feae\`;
+- graph snapshot ID: \`6e9f41db6b8dd169df12244c67b9b8e2d0a1f897dd6450100b01ef68a6b36941\`;
+- graph content SHA-256: \`ea48f39fc4707889ca10ad4422ccfd721997b9091696af047109daebbf73bf74\`;
+- source inventory entries: 1,970;
+- represented source units: 1,902;
+- unaccounted source units: 0;
+- coverage: \`COMPLETE_WITH_DECLARED_EXCLUSIONS\`;
+- postflight source status: \`VERIFIED\`.
+
+The cost-characterization workflow completed ten repetitions and verified its report against the exact source and runner revision. Its report explicitly retained \`atomic_snapshot_established=false\`; this is expected and is not a failed source-identity check. It measures the existing filesystem audit/content-load/second-validation path, not a comparative performance claim for graph libraries or a complete benchmark of the Git-object provider.
+
+The separate M7.4 native-conformance workflow also completed successfully on this source revision for NetworkX, igraph, SciPy, graph-tool and the isolated SNAP worker.
+
+The implementation therefore has Linux and Windows evidence for the committed Git-object provider and end-to-end graph construction. The remaining exclusions are still material: working-tree/dirty input snapshots, recursive submodule contents, hydrated LFS payloads, and repository-wide atomicity beyond the immutable committed-object boundary. Production approval remains false.
