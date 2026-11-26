@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ae32c-source-snapshot-${{ github.event.pull_request.number || github.ref }}
+  group: ae32c-source-snapshot-lfs-attestation-v2-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
