@@ -462,7 +462,7 @@ class EpistemicStore:
                 ).fetchall()
                 actual = {row["record_id"] for row in rows}
                 declared = set(manifest["edge_ids"])
-                if actual == declared and declared:
+                if actual == declared:
                     return FreshnessResult(
                         node_id=node_id, status=FreshnessStatus.FRESH,
                         reason="a closed dependency manifest exactly matches the recorded dependency edges",
@@ -563,3 +563,133 @@ class EpistemicStore:
                 return False
             previous_hash = calculated
         return True
+
+    def freshness_closure(self, node_id: str) -> FreshnessResult:
+        """Assess freshness across the complete recursively declared dependency closure.
+
+        Unlike freshness_status(), this operation does not stop at the root's
+        manifest. Every reachable dependency must itself have an exact manifest.
+        An exact empty manifest is an explicit terminal-node declaration.
+        All reads are evaluated from one SQLite snapshot.
+        """
+        if not isinstance(node_id, str) or not node_id.strip():
+            raise ValueError("node_id must be a non-empty string")
+        root = node_id.strip()
+        with self._connection:
+            self._connection.execute("BEGIN")
+            if not self.verify_integrity():
+                raise StoreError("event ledger integrity check failed; freshness closure cannot be established")
+
+            edge_rows = self._connection.execute(
+                "SELECT record_id, payload FROM epistemic_events WHERE record_type = 'dependency' ORDER BY sequence"
+            ).fetchall()
+            manifest_rows = self._connection.execute(
+                "SELECT payload FROM epistemic_events WHERE record_type = 'dependency_manifest' ORDER BY sequence"
+            ).fetchall()
+            invalidation_rows = self._connection.execute(
+                "SELECT record_id, payload FROM epistemic_events WHERE record_type = 'invalidation' ORDER BY sequence"
+            ).fetchall()
+
+            edges_by_node: dict[str, list[tuple[str, str]]] = {}
+            edge_ids_by_node: dict[str, set[str]] = {}
+            for row in edge_rows:
+                edge = json.loads(row["payload"])
+                dependent = edge["dependent_id"]
+                dependency = edge["dependency_id"]
+                edges_by_node.setdefault(dependent, []).append((row["record_id"], dependency))
+                edge_ids_by_node.setdefault(dependent, set()).add(row["record_id"])
+
+            manifests: dict[str, set[str]] = {}
+            for row in manifest_rows:
+                manifest = json.loads(row["payload"])
+                # The latest append-only manifest for a node is authoritative.
+                manifests[manifest["node_id"]] = set(manifest["edge_ids"])
+
+            invalidations: dict[str, set[str]] = {}
+            for row in invalidation_rows:
+                payload = json.loads(row["payload"])
+                invalidations.setdefault(payload["node_id"], set()).add(row["record_id"])
+
+        # Iterative depth-first evaluation avoids Python recursion-depth failure.
+        results: dict[str, FreshnessStatus] = {}
+        reasons: dict[str, str] = {}
+        closure_invalidations: dict[str, set[str]] = {}
+        active: set[str] = set()
+        stack: list[tuple[str, bool]] = [(root, False)]
+
+        while stack:
+            current, expanded = stack.pop()
+            if current in results:
+                continue
+
+            if not expanded:
+                if current in invalidations:
+                    results[current] = FreshnessStatus.INVALIDATED
+                    reasons[current] = "node has persisted invalidation events"
+                    closure_invalidations[current] = set(invalidations[current])
+                    continue
+
+                if current not in manifests:
+                    results[current] = FreshnessStatus.UNKNOWN
+                    reasons[current] = "dependency node has no manifest"
+                    closure_invalidations[current] = set()
+                    continue
+
+                actual_ids = edge_ids_by_node.get(current, set())
+                declared_ids = manifests[current]
+                if actual_ids != declared_ids:
+                    results[current] = FreshnessStatus.UNKNOWN
+                    reasons[current] = "dependency manifest does not exactly match recorded outgoing edges"
+                    closure_invalidations[current] = set()
+                    continue
+
+                dependencies = sorted({dependency for _, dependency in edges_by_node.get(current, [])})
+                if not dependencies:
+                    # An exact empty manifest is an explicit terminal declaration.
+                    results[current] = FreshnessStatus.FRESH
+                    reasons[current] = "explicit terminal manifest is exact"
+                    closure_invalidations[current] = set()
+                    continue
+
+                if current in active:
+                    results[current] = FreshnessStatus.UNKNOWN
+                    reasons[current] = "cycle detected in dependency closure"
+                    closure_invalidations[current] = set()
+                    continue
+
+                active.add(current)
+                stack.append((current, True))
+                for dependency in reversed(dependencies):
+                    if dependency in active and dependency not in results:
+                        results[dependency] = FreshnessStatus.UNKNOWN
+                        reasons[dependency] = "cycle detected in dependency closure"
+                        closure_invalidations[dependency] = set()
+                    elif dependency not in results:
+                        stack.append((dependency, False))
+                continue
+
+            active.discard(current)
+            dependencies = sorted({dependency for _, dependency in edges_by_node.get(current, [])})
+            child_statuses = [results.get(dependency, FreshnessStatus.UNKNOWN) for dependency in dependencies]
+            child_invalidations: set[str] = set()
+            for dependency in dependencies:
+                child_invalidations.update(closure_invalidations.get(dependency, set()))
+            closure_invalidations[current] = child_invalidations
+
+            if any(status is FreshnessStatus.INVALIDATED for status in child_statuses):
+                results[current] = FreshnessStatus.INVALIDATED
+                reasons[current] = "one or more transitive dependencies are invalidated"
+            elif any(status is FreshnessStatus.UNKNOWN for status in child_statuses):
+                results[current] = FreshnessStatus.UNKNOWN
+                reasons[current] = "one or more transitive dependencies have unknown freshness"
+            else:
+                results[current] = FreshnessStatus.FRESH
+                reasons[current] = "all nodes in the declared dependency closure are fresh"
+
+        status = results.get(root, FreshnessStatus.UNKNOWN)
+        return FreshnessResult(
+            node_id=root,
+            status=status,
+            invalidation_ids=tuple(sorted(closure_invalidations.get(root, set()))),
+            reason=reasons.get(root, "freshness closure could not be established"),
+        )
