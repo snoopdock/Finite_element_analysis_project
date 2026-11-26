@@ -183,7 +183,7 @@ class EpistemicStore:
             ).fetchone()
             previous_hash = previous["event_hash"] if previous else "0" * 64
             sequence = count + 1
-            event_material = f"{sequence}\\n{event_id}\\n{payload_hash}\\n{previous_hash}"
+            event_material = f"{sequence}\n{event_id}\n{payload_hash}\n{previous_hash}"
             event_hash = hashlib.sha256(event_material.encode("utf-8")).hexdigest()
             self._connection.execute(
                 """INSERT INTO epistemic_events
