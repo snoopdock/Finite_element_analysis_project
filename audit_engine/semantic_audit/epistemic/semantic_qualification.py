@@ -308,7 +308,8 @@ def qualify_typed_evidence_observations(
                 })
                 continue
             attached = defeaters_by_observation.get(identity, [])
-            outcome = "CONTESTED" if attached else contract["qualification"]
+            outcome = ("CONTESTED" if attached and contract["qualification"] == "SUPPORTED"
+                       else contract["qualification"])
             results.append({
                 "obligation_id": obligation_id, "observation_id": identity,
                 "rule_id": rule_id, "evidence_kind": evidence_kind,
@@ -316,7 +317,7 @@ def qualify_typed_evidence_observations(
                 "proposition": contract["proposition"],
                 "qualification": outcome,
                 "reason": ("source-bound counterclaim recorded; counterclaim validity not established"
-                           if attached else contract["reason"]),
+                           if outcome == "CONTESTED" else contract["reason"]),
                 "limitation": contract["limitation"],
                 "defeaters": attached,
             })
