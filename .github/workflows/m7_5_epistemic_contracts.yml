@@ -133,9 +133,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p reports
-          python -m unittest discover \\
-            -s tests/semantic_graph \\
-            -p 'test_m758_epistemic_coverage.py' \\
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_m758_epistemic_coverage.py' \
             -v 2>&1 | tee reports/m75-8-epistemic-coverage.log
 
       - name: Upload exact-source validation logs
@@ -162,7 +162,7 @@ jobs:
           {
             echo "## M7.5 epistemic validation"
             echo "- Source SHA: $GITHUB_SHA"
-            echo "- Scope: immutable contracts, append-only persistence, scope-bound completeness, negative-claim admissibility, provenance dependencies, local freshness, recursive freshness closure, deterministic invalidation, assurance arguments, defeater lifecycle and provenance-backed persisted assurance evaluation"
+            echo "- Scope: immutable contracts, append-only persistence, scope-bound completeness, negative-claim admissibility, provenance dependencies, local freshness, recursive freshness closure, deterministic invalidation, assurance arguments, defeater lifecycle and provenance-backed persisted assurance evaluation, and claim-relative epistemic coverage/unknown-state assessment"
             echo "- No proposition-truth inference, automatic completeness promotion, registry authentication, network, solver, or decision-gate integration"
             echo "- Passing does not establish production durability or production approval"
           } >> "$GITHUB_STEP_SUMMARY"
