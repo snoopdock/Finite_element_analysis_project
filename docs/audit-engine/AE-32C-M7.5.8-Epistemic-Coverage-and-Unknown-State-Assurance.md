@@ -1,6 +1,6 @@
 # AE-32C M7.5.8 — Epistemic Coverage and Unknown-State Assurance
 
-**Status:** Implementation tranche — initial contract and evaluator  
+**Status:** Implemented and CI-validated on the exact Stage1 source revision  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.1–M7.5.7  
 **Authority:** claim-relative coverage assessment only; no proposition-truth or audit-gate authority
@@ -74,6 +74,22 @@ The workflow runs this suite after M7.5.1–M7.5.7 regression suites.
 - Add mutation tests showing that omission of a required obligation is detected when the trusted registry changes.
 - Only after these controls are validated should a later milestone define controlled consumption by deterministic audit rules.
 
-## 7. Validation boundary
+## 7. Validation result
+
+Exact-source workflow: [45903022544](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45903022544)
+
+- Validated source revision: `075107d9e37b4bd29a0325595961d3661b6a50f4`
+- Runtime: Ubuntu 24.04, Python 3.11
+- M7.5.8 dedicated suite: 10 passed
+- M7.5.1–M7.5.7 regression suites: 76 passed
+- Total: 86 passed
+- Epistemic package compile: passed
+- Artifact: `m7-5-epistemic-validation-45903022544-1`
+- Artifact ID: `15156258964`
+- Artifact SHA-256: `7452724dc6f01ca9cabb4976854c2fbf87165b9f35fe4e9e723cf76423d300e8`
+
+The first run against the preceding workflow revision failed because the newly inserted shell command contained doubled line-continuation characters. The workflow was corrected, and the exact-source run above passed all eight suites. The failed attempt is not counted as validation.
+
+## 8. Validation boundary
 
 Passing tests establish behavior for the supplied manifest and persisted stores. They do not establish that the manifest represents every relevant epistemic obligation, that all unknown unknowns are discoverable, or that the proposition is true. Production approval is not granted.
