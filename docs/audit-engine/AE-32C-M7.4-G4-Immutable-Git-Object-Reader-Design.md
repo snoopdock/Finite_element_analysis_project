@@ -1,6 +1,6 @@
 # AE-32C M7.4 G4 — Immutable Git-object source reader design
 
-**Status:** Design decision; implementation and exact-source execution pending.  
+**Status:** Implemented for committed-tree graph construction; exact-source hosted validation passed. Cross-platform qualification and broader atomicity gates remain open.  
 **Development branch:** `stage1/section-uuids`  
 **Baseline:** `6fad135910d14dc47f086ec9d343eb1a7d04a265`
 
@@ -127,3 +127,52 @@ The following remain separate and unresolved:
 Until the above integration and tests pass, G4 remains **Partial** and `atomic_snapshot_established=false`. The existing filesystem path remains explicitly `BEST_EFFORT_NON_ATOMIC`; no code path may silently upgrade its status.
 
 `production_approval=false` remains invariant.
+
+
+## 9. Implementation and exact-source validation record
+
+The first integrated implementation is committed on \`stage1/section-uuids\`:
+
+- **Commit:** \`159354d9444695b66fed468fbf8ad4d2cdc1c4ac\`
+- **Workflow run:** [45796042025](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45796042025)
+- **Workflow result:** success
+- **Artifact:** [ae32c-source-graph-snapshot-45796042025-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45796042025/artifacts/15105580104)
+- **Artifact SHA-256:** \`a9b8d2e24839bf019adee10506d82ec1686ff317e8549652d02f3c868315391c\`
+
+The implementation adds \`GitObjectSourceProvider\` at \`audit_engine/semantic_audit/ae32c/git_object_source.py\`. It verifies the source manifest and its inventory digest, checks the exact commit and root tree against the local Git object database, compares the complete NUL-delimited Git tree inventory with the manifest, and reads regular-file bytes by blob object ID. It verifies both the Git blob object ID and the SHA-256 digest before returning bytes. It rejects symlink reads and does not silently fall back to worktree paths.
+
+The same provider instance is passed into AE-32A's \`audit_repository\` and AE-32B's \`RepositoryEvidenceTools\`. The architecture scanner's committed-tree inventory and the graph evidence content loader therefore consume the same Git-object source. The second source-validation pass rereads the pinned Git objects rather than reopening repository paths. The provider declares its consistency class as \`IMMUTABLE_GIT_OBJECTS\` and its scope as \`committed_tree_only\`.
+
+Graph coverage now rejects any represented path or file-hash key that is absent from the committed Git inventory. Existing missing-source accounting remains in place. The source snapshot workflow now runs the provider tests and is restricted to push and pull-request events for \`stage1/section-uuids\`; the documented branch scope is aligned with the workflow.
+
+### Exact-source execution result
+
+The successful run checked out the exact commit above and passed:
+
+- source snapshot manifest unit tests;
+- immutable Git-object provider tests (ignored/untracked exclusion, worktree mutation independence, manifest/tree mismatch);
+- graph snapshot identity and coverage tests, including rejection of extra uncommitted graph paths;
+- rule coverage and finding-provenance tests;
+- publication state-machine tests;
+- durable GitHub publication backend tests;
+- trusted artifact validation tests;
+- trusted publisher orchestration tests;
+- end-to-end graph snapshot capture;
+- source postflight verification after graph projection.
+
+The graph snapshot reported:
+
+- source snapshot ID: \`03528e4f05c028d43234da54c1c527a5c1d6033e39cc59259340028f1c9a8dc3\`;
+- graph snapshot ID: \`b228fd1fc3883f8c5614be51d26d4489636b24c793b50575d050d492967d34d9\`;
+- graph content SHA-256: \`ec5e91549aff324ab0a259c31b14ddab5f314b2b034be4249834ea52962d48dc\`;
+- committed inventory entries: 1,970;
+- represented source units: 1,902;
+- unaccounted source units: 0;
+- coverage: \`COMPLETE_WITH_DECLARED_EXCLUSIONS\`;
+- source postflight: \`VERIFIED\`.
+
+### Remaining limits
+
+This implementation closes the mixed filesystem/Git-object read path for the committed-tree graph build. It does not establish a snapshot of dirty or untracked working-tree content, recursive submodule content, hydrated Git LFS payload integrity, or an atomic snapshot of all external filesystem state. The provider tests and integrated workflow have been executed on Ubuntu 24.04; Windows qualification remains pending. The graph coverage status is still constrained by its declared exclusions and does not authorize negative findings by default.
+
+Accordingly, this implementation advances G4 from partial source identity binding to an integrated immutable committed-tree source path, but does not authorize production approval. \`production_approval=false\` remains invariant.
