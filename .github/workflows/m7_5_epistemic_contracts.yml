@@ -20,6 +20,8 @@ on:
       - "tests/semantic_graph/test_m758_epistemic_coverage.py"
       - "tests/semantic_graph/test_m759_rule_derived_coverage.py"
       - "audit_engine/semantic_audit/ae32c/rule_contracts.py"
+      - "audit_engine/semantic_audit/ae32c/__init__.py"
+      - "docs/audit-engine/AE-32C-M7.5.9-Trusted-Rule-Derived-Coverage-Registry.md"
       - "docs/audit-engine/AE-32C-M7.5.7-Provenance-Backed-Assurance-Evaluation.md"
       - "docs/audit-engine/AE-32C-M7.5.6-Recursive-Provenance-Freshness-Closure.md"
       - "audit_engine/semantic_audit/epistemic/assurance.py"
