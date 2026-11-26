@@ -1,7 +1,9 @@
 # AE-32C M7.5.5 — Assurance Claims, Argument Links and Defeaters
 
-**Status:** Implementation candidate; CI validation pending  
+**Status:** Implemented; CI-validated on the exact Stage1 source revision  
 **Branch:** `stage1/section-uuids`  
+**Source revision:** `5baa282a0dcd0079ff9055a1a1c3c6bf68ad062c`  
+**Validation:** [GitHub Actions run 45899503579](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45899503579)  
 **Scope:** Typed assurance arguments and append-only persistence. No truth calculus or audit-gate integration.
 
 ## 1. Purpose
@@ -71,6 +73,19 @@ This is a local integrity mechanism, not a distributed consensus protocol, signe
 
 The M7.5.5 suite checks immutable contract validation, relation typing, undercutter target binding, missing/stale evidence, open/closed/accepted-residual lifecycle behavior, challenge handling, duplicate identity, storage bounds, append-only enforcement and tamper detection.
 
-## 8. Exit criteria
+The exact-source workflow completed successfully on `5baa282a0dcd0079ff9055a1a1c3c6bf68ad062c`:
 
-M7.5.5 is considered implemented only after the exact Stage1 source revision passes the full M7.5.1–M7.5.5 workflow. Passing tests do not constitute production approval or authorize consumption by deterministic audit gates.
+- M7.5.1: 14 tests passed.
+- M7.5.2: 9 tests passed.
+- M7.5.3: 14 tests passed.
+- M7.5.4: 12 tests passed.
+- M7.5.5: 8 tests passed.
+- Total: 57 tests passed; Python 3.11 compile step passed.
+- Artifact: `m7-5-epistemic-validation-45899503579-1`.
+- Artifact SHA-256: `33d637f95fefadc8374fa401637a1acf08668c5cf9e0d0ae328e91802cd81101`.
+
+See [the validation record](AE-32C-M7.5.5-Validation-Record-45899503579.md) for the run and evidence details.
+
+## 8. Exit criteria and validation boundary
+
+The implementation and CI exit criterion for M7.5.5 are met for the exact source revision above. Passing tests do not constitute production approval or authorize consumption by deterministic audit gates. The limitations in Section 6 remain open and must be addressed explicitly before any broader integration.
