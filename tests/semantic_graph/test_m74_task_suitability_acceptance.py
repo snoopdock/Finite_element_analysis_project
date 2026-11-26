@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 from importlib.util import find_spec
+from pathlib import Path
 
 import pytest
 
@@ -21,6 +22,7 @@ from audit_engine.semantic_audit.core.semantic_graph import (
 from audit_engine.semantic_audit.graph.analysis import AnalysisStatus
 from audit_engine.semantic_audit.graph.queries import GraphQuery, QueryType
 from audit_engine.semantic_audit.graph.service import SemanticGraphAnalysisService
+from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
 
 
 BACKENDS = ("networkx", "scipy", "igraph", "graph-tool", "snap")
@@ -898,3 +900,114 @@ def test_m74_fem_repository_workload_exercises_all_public_audit_tasks(backend):
     cycle = impact.metadata["dependency_cycles"][0]
     assert set(cycle["node_ids"]) == {"module:fem.mesh", "module:fem.solver"}
     assert graph.to_dict() == before
+
+
+_REPOSITORY_INCIDENT_FIXTURE = (
+    Path(__file__).resolve().parents[1]
+    / "semantic_audit"
+    / "fixtures"
+    / "ae32c_provider_interface_incident"
+)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_m74_controlled_repository_incident_workload_exercises_all_public_audit_tasks(backend):
+    """Exercise task semantics against a source-derived repository graph, not a hand-built graph."""
+    _require_backend(backend)
+    tools = RepositoryEvidenceTools(
+        _REPOSITORY_INCIDENT_FIXTURE,
+        graph_backend="reference",
+    )
+    try:
+        graph = tools.graph
+        before = graph.to_dict()
+        queries = (
+            GraphQuery(
+                "m74-incident-structural-consumer-import",
+                QueryType.STRUCTURAL,
+                ("module:pipeline.extractor",),
+                {"direction": "outgoing", "relation_types": ("IMPORTS",)},
+            ),
+            GraphQuery(
+                "m74-incident-transitive-provider-dependency",
+                QueryType.DEPENDENCY,
+                ("module:main",),
+                {
+                    "direction": "outgoing",
+                    "relation_types": ("IMPORTS", "DEPENDS_ON"),
+                    "max_depth": 4,
+                    "max_visited_nodes": 64,
+                    "max_traversal_steps": 256,
+                },
+            ),
+            GraphQuery(
+                "m74-incident-path-to-provider-source",
+                QueryType.PATH,
+                ("module:main",),
+                {
+                    "target_entity": "file:providers/adapter.py",
+                    "direction": "outgoing",
+                    "relation_types": ("IMPORTS", "IMPLEMENTED_BY"),
+                    "max_depth": 4,
+                    "max_visited_nodes": 64,
+                    "max_traversal_steps": 256,
+                },
+            ),
+            GraphQuery(
+                "m74-incident-provider-change-impact",
+                QueryType.IMPACT,
+                ("file:providers/adapter.py",),
+                {
+                    "max_depth": 4,
+                    "max_visited_nodes": 128,
+                    "max_traversal_steps": 512,
+                },
+            ),
+        )
+
+        results = {}
+        for query in queries:
+            service = SemanticGraphAnalysisService(
+                graph,
+                traversal_backend=backend,
+                verify_backend_parity=True,
+            )
+            reference = SemanticGraphAnalysisService(
+                graph,
+                traversal_backend="reference",
+                verify_backend_parity=True,
+            )
+            actual = service.analyze(query)
+            expected = reference.analyze(query)
+            _assert_reference_equivalence(actual, expected)
+            assert actual.status is AnalysisStatus.COMPLETED
+            results[query.query_type] = actual
+            if query.query_type is QueryType.IMPACT:
+                _assert_m74_impact_native_execution(service, actual, backend)
+            else:
+                _assert_native_execution(service, actual, backend)
+
+        structural = results[QueryType.STRUCTURAL]
+        assert structural.discovered_entities == ("module:providers.adapter",)
+        assert any(item.predicate == "IMPORTS" for item in structural.evidence)
+
+        dependency = results[QueryType.DEPENDENCY]
+        assert {
+            "module:pipeline.extractor",
+            "module:providers.factory",
+            "module:providers.adapter",
+        }.issubset(set(dependency.discovered_entities))
+
+        path = results[QueryType.PATH]
+        assert path.discovered_entities == ("file:providers/adapter.py",)
+        assert path.metadata["path_length"] == 3
+        assert len(path.evidence) == 3
+
+        impact = results[QueryType.IMPACT]
+        assert "file:tests/checks.py" in impact.metadata["affected_test_candidate_ids"]
+        assert impact.metadata["cycle_analysis_status"] == "complete"
+        assert impact.metadata["runtime_execution_proven"] is False
+        assert impact.metadata["automatic_approval_permitted"] is False
+        assert graph.to_dict() == before
+    finally:
+        tools.close()
