@@ -327,3 +327,10 @@ The qualification still does not establish atomicity against arbitrary concurren
 ### CI finding and fixture correction
 
 The first CI execution of this qualification exposed a test-fixture path error, not a provider failure. Git returned a repository-relative path for the object directory; the alternate-file fixture wrote under the workflow checkout's current directory instead of the temporary test repository. The same relative-path assumption affected the new promisor, graft and read-race fixtures. This was corrected by resolving every relative `--git-path` result against the specific temporary repository before touching it. The first run therefore remains recorded as failed; the corrected test revision requires a fresh exact-source run.
+
+
+### Windows status/configuration compatibility finding
+
+The first Windows CI run after environment isolation failed before provider construction: the manifest builder classified clean temporary repositories as dirty. The cause was that the same isolated environment disabled system/global Git configuration for the status operation. On Windows, the runner's checkout semantics rely on user Git configuration such as core.autocrlf; removing it changes how Git compares working-tree bytes with committed blobs.
+
+The correction is scoped to worktree cleanliness inspection. Git status still receives the sanitized GIT_* environment and explicit no-replacement/no-lazy-fetch settings, but it may load system/global configuration so it evaluates the worktree using the host checkout's conversion settings. Commit/tree/blob resolution and reads remain under the stricter config-isolated environment. This is a compatibility correction, not a relaxation of object identity checks. A new Windows and Linux run is required to establish the correction.

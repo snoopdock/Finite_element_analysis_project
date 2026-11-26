@@ -67,13 +67,25 @@ def _git_text(root: Path, *args: str) -> str:
 
 
 def _working_tree_state(root: Path) -> dict[str, Any]:
-    raw = _git(root, "status", "--porcelain=v1", "-z",
-               "--untracked-files=all", "--ignore-submodules=none")
-    records = [item for item in raw.split(b"\0") if item]
+    # Worktree cleanliness must use the same platform/user conversion settings
+    # as the checkout (notably core.autocrlf on Windows). Keep the sanitized
+    # GIT_* environment and no-replace/no-lazy-fetch policy, but let Git load
+    # system/global config for this status-only operation.
+    env = _git_environment()
+    env.pop("GIT_CONFIG_NOSYSTEM", None)
+    env.pop("GIT_CONFIG_GLOBAL", None)
+    completed = subprocess.run(
+        ["git", "status", "--porcelain=v1", "-z",
+         "--untracked-files=all", "--ignore-submodules=none"],
+        cwd=root, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+    )
+    if completed.returncode:
+        detail = completed.stderr.decode("utf-8", errors="replace").strip()
+        raise SnapshotError("git_command_failed:status:" + detail[:500])
+    records = [item for item in completed.stdout.split(bytes([0])) if item]
     sample = [item.decode("utf-8", errors="replace")[:500] for item in records[:25]]
     return {"clean": not records, "changed_entry_count": len(records),
             "changed_entries_sample": sample}
-
 
 def _tree_entries(root: Path) -> list[dict[str, Any]]:
     raw = _git(root, "ls-tree", "-r", "-z", "--full-tree", "HEAD")
