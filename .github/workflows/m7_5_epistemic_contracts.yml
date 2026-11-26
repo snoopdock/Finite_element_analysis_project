@@ -1,4 +1,4 @@
-name: AE-32C M7.5 Epistemic Contracts and Persistence
+name: AE-32C M7.5 Epistemic Contracts, Persistence and Provenance
 
 on:
   push:
@@ -10,6 +10,7 @@ on:
       - "tests/semantic_graph/test_m75_epistemic_contracts.py"
       - "tests/semantic_graph/test_m75_epistemic_store.py"
       - "tests/semantic_graph/test_m75_epistemic_completeness.py"
+      - "tests/semantic_graph/test_m75_epistemic_provenance.py"
       - "docs/audit-engine/AE-32C-M7.5.1-Epistemic-Contracts.md"
       - "docs/audit-engine/AE-32C-M7.5.2-Append-Only-Epistemic-Persistence.md"
       - "docs/audit-engine/AE-32C-M7.5.3-Scope-Bound-Completeness-and-Negative-Claims.md"
@@ -24,7 +25,7 @@ concurrency:
 
 jobs:
   epistemic-validation:
-    name: M7.5.1–M7.5.3 structural and behavioral validation
+    name: M7.5.1–M7.5.4 structural and behavioral validation
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -72,6 +73,16 @@ jobs:
             -p 'test_m75_epistemic_completeness.py' \
             -v 2>&1 | tee reports/m75-3-completeness.log
 
+      - name: Run M7.5.4 provenance and invalidation tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_m75_epistemic_provenance.py' \
+            -v 2>&1 | tee reports/m75-4-provenance.log
+
       - name: Upload exact-source validation logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -81,6 +92,7 @@ jobs:
             reports/m75-1-epistemic-contracts.log
             reports/m75-2-epistemic-store.log
             reports/m75-3-completeness.log
+            reports/m75-4-provenance.log
           if-no-files-found: warn
           retention-days: 30
 
@@ -90,7 +102,7 @@ jobs:
           {
             echo "## M7.5 epistemic validation"
             echo "- Source SHA: $GITHUB_SHA"
-            echo "- Scope: immutable contracts, append-only persistence, scope-bound completeness, negative-claim admissibility"
+            echo "- Scope: immutable contracts, append-only persistence, scope-bound completeness, negative-claim admissibility, provenance dependencies, freshness and deterministic invalidation"
             echo "- No proposition-truth inference, automatic completeness promotion, network, solver, or decision-gate integration"
             echo "- Passing does not establish production durability or production approval"
           } >> "$GITHUB_STEP_SUMMARY"
