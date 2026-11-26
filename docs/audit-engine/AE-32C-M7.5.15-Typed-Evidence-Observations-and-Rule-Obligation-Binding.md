@@ -53,17 +53,17 @@ Structural and behavioral tests cover:
 
 ## 7. Exact-source CI validation
 
-Workflow: [45911646917](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45911646917)
+Workflow: [45911767553](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45911767553)
 
-- Validated source revision: `ac2eff047d5fc9e52b008b48bf30d1501f07ce6d`
+- Validated source revision: `106e4e99beab2cb6299c131cd48dd84f4a703061`
 - Runtime: Ubuntu 24.04, Python 3.11
 - Epistemic package compilation: passed
 - Dedicated M7.5.15 tests: 8 passed
 - Complete M7.5 regression: 156 passed
-- Job ID: `140221179378`
+- Job ID: `140221597454`
 - Final job conclusion: success
 
-The integration tests now require the actual M7.5.14 reconciliation ledger and independently replay its dossier-bound reconciliation before typed evidence observations can be persisted. A fabricated or missing reconciliation is rejected.
+The integration tests require the actual M7.5.14 reconciliation ledger and independently replay its dossier-bound reconciliation before typed evidence observations can be persisted. A fabricated or missing reconciliation is rejected. Bundle replay also re-verifies the source manifest, extractor inventory, and execution report rather than trusting caller-supplied digests alone.
 
 ## 8. Limitations
 
