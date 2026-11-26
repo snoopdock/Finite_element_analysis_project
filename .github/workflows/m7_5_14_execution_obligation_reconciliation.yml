@@ -1,0 +1,46 @@
+name: AE-32C M7.5.14 Execution-to-Obligation Reconciliation
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_14_execution_obligation_reconciliation.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tests/semantic_graph/test_m751*.py"
+      - "docs/audit-engine/AE-32C-M7.5.14-*"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ae32c-m7514-stage1
+  cancel-in-progress: false
+jobs:
+  reconciliation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile implementation
+        run: python -m compileall -q audit_engine/semantic_audit/epistemic
+      - name: Dedicated M7.5.14 tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7514_execution_obligation_reconciliation.py' -v
+      - name: Complete M7.5 regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
+      - name: Assurance boundary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.14 execution-to-obligation reconciliation"
+            echo "- Extractor execution is not typed semantic evidence"
+            echo "- Unknown evidence obligations remain UNKNOWN"
+            echo "- Existing coverage dossiers are not mutated"
+            echo "- No proposition truth, audit decision, authorization, or production approval"
+          } >> "$GITHUB_STEP_SUMMARY"
