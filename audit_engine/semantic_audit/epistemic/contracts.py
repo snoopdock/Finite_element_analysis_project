@@ -304,5 +304,5 @@ class ProvenanceManifest:
         for name in ("manifest_id", "node_id", "manifest_version"):
             object.__setattr__(self, name, _required(getattr(self, name), name))
         object.__setattr__(self, "edge_ids", _unique_texts(self.edge_ids, "edge_ids"))
-        if not self.edge_ids:
-            raise ContractError("a provenance manifest must declare at least one dependency edge")
+        # An explicit empty manifest declares a terminal provenance node.
+        # Absence of a manifest remains UNKNOWN; empty is not inferred implicitly.
