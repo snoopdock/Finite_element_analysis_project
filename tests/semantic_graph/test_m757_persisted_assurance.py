@@ -144,6 +144,21 @@ class PersistedAssuranceTests(unittest.TestCase):
         self.assertIs(result.assessment, ArgumentAssessment.INCOMPLETE)
         self.assertTrue(any("different source snapshot" in x for x in result.reasons))
 
+    def test_evidence_assertion_must_match_claim_proposition_and_scope(self):
+        self.persist_valid_evidence()
+        unrelated = EvidenceAssertion(
+            "assertion:unrelated", "different-proposition",
+            AssertionPolarity.SUPPORTS, (self.ref,),
+            "scope:repo", "method:inventory", "2026-11-27T10:00:02Z",
+        )
+        self.epistemic.record_assertion(unrelated)
+        self.persist_claim_and_link()
+        result = evaluate_persisted_assurance(
+            "claim:1", self.assurance, self.epistemic
+        )
+        self.assertIs(result.assessment, ArgumentAssessment.INCOMPLETE)
+        self.assertTrue(any("claim proposition and scope" in x for x in result.reasons))
+
     def test_conflicting_persisted_evidence_metadata_is_incomplete(self):
         self.epistemic.record_assertion(self.assertion)
         conflict_ref = EvidenceRef(
