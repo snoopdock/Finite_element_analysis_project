@@ -41,7 +41,7 @@ The dossier stores:
 Every gap present in the captured epistemic ledger must be mapped to one or more obligations in the derived plan. Each mapping must also be represented by the corresponding assessed `CoverageObligation.gap_ids`.
 
 - A mapping to a nonexistent gap is rejected.
-- A mapping outside the derived obligation universe is rejected.
+- A mapping outside the derived obligation universe is rejected.\n- A gap whose persisted scope differs from the assurance claim scope cannot be reconciled to that claim.
 - A mapping not reflected in the manifest assessment is rejected.
 - A persisted gap omitted from the mapping is retained in `unreconciled_gap_ids` and forces overall status `INCOMPLETE`.
 - Gaps are not silently discarded or inferred to be resolved.
