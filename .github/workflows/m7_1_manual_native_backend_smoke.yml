@@ -63,27 +63,33 @@ jobs:
     timeout-minutes: 5
     outputs:
       source_sha: ${{ steps.resolve.outputs.source_sha }}
+      repeats: ${{ steps.resolve.outputs.repeats }}
+      warmup: ${{ steps.resolve.outputs.warmup }}
     steps:
       - name: Checkout requested source ref
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.source_ref }}
+          ref: ${{ inputs.source_ref || github.sha }}
           persist-credentials: false
       - name: Resolve and publish exact source SHA
         id: resolve
         shell: bash
         env:
           REQUESTED_REF: ${{ inputs.source_ref || github.sha }}
-          REPEATS: ${{ inputs.repeats || '5' }}
-          WARMUP: ${{ inputs.warmup || '2' }}
+          REPEATS_INPUT: ${{ github.event.inputs.repeats }}
+          WARMUP_INPUT: ${{ github.event.inputs.warmup }}
         run: |
           set -euo pipefail
           test -n "$REQUESTED_REF"
+          REPEATS="${REPEATS_INPUT:-5}"
+          WARMUP="${WARMUP_INPUT:-2}"
           case "$REPEATS" in 3|5|7|10|15) ;; *) echo "Invalid repeats: $REPEATS" >&2; exit 2 ;; esac
           case "$WARMUP" in 0|1|2|3|5) ;; *) echo "Invalid warmup: $WARMUP" >&2; exit 2 ;; esac
           SOURCE_SHA="$(git rev-parse HEAD)"
           [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
           echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "repeats=$REPEATS" >> "$GITHUB_OUTPUT"
+          echo "warmup=$WARMUP" >> "$GITHUB_OUTPUT"
           {
             echo "### M7.1 source resolution"
             echo "- Requested ref: $REQUESTED_REF"
@@ -141,8 +147,8 @@ jobs:
       - name: Capture runner and dependency provenance
         shell: bash
         env:
-          REPEATS: ${{ inputs.repeats || '5' }}
-          WARMUP: ${{ inputs.warmup || '2' }}
+          REPEATS: ${{ needs.resolve-source.outputs.repeats }}
+          WARMUP: ${{ needs.resolve-source.outputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -162,8 +168,8 @@ jobs:
         shell: bash
         env:
           BACKEND: ${{ matrix.backend }}
-          REPEATS: ${{ inputs.repeats || '5' }}
-          WARMUP: ${{ inputs.warmup || '2' }}
+          REPEATS: ${{ needs.resolve-source.outputs.repeats }}
+          WARMUP: ${{ needs.resolve-source.outputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -226,8 +232,8 @@ jobs:
       - name: Capture runner and dependency provenance
         shell: micromamba-shell {0}
         env:
-          REPEATS: ${{ inputs.repeats || '5' }}
-          WARMUP: ${{ inputs.warmup || '2' }}
+          REPEATS: ${{ needs.resolve-source.outputs.repeats }}
+          WARMUP: ${{ needs.resolve-source.outputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -247,8 +253,8 @@ jobs:
         shell: micromamba-shell {0}
         env:
           PYTHONPATH: source
-          REPEATS: ${{ inputs.repeats || '5' }}
-          WARMUP: ${{ inputs.warmup || '2' }}
+          REPEATS: ${{ needs.resolve-source.outputs.repeats }}
+          WARMUP: ${{ needs.resolve-source.outputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -311,8 +317,8 @@ jobs:
       - name: Capture runner and dependency provenance
         shell: bash
         env:
-          REPEATS: ${{ inputs.repeats || '5' }}
-          WARMUP: ${{ inputs.warmup || '2' }}
+          REPEATS: ${{ needs.resolve-source.outputs.repeats }}
+          WARMUP: ${{ needs.resolve-source.outputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -333,8 +339,8 @@ jobs:
         shell: bash
         env:
           PYTHONPATH: source
-          REPEATS: ${{ inputs.repeats || '5' }}
-          WARMUP: ${{ inputs.warmup || '2' }}
+          REPEATS: ${{ needs.resolve-source.outputs.repeats }}
+          WARMUP: ${{ needs.resolve-source.outputs.warmup }}
         run: |
           set -euo pipefail
           mkdir -p reports
@@ -369,8 +375,8 @@ jobs:
           GRAPH_TOOL: ${{ needs.graph-tool-native.result }}
           SNAP: ${{ needs.snap-isolated-worker.result }}
           SOURCE_SHA: ${{ needs.resolve-source.outputs.source_sha }}
-          REPEATS: ${{ inputs.repeats || '5' }}
-          WARMUP: ${{ inputs.warmup || '2' }}
+          REPEATS: ${{ needs.resolve-source.outputs.repeats }}
+          WARMUP: ${{ needs.resolve-source.outputs.warmup }}
         run: |
           {
             echo "## M7.1 five-backend smoke outcome"
