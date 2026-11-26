@@ -19,7 +19,10 @@ from .contracts import (
     GapState,
     KnowledgeGap,
 )
-from .evaluation import (\n    AdmissibilityDecision, NegativeClaimRequest, evaluate_negative_claim,\n    evaluate_negative_claim_with_freshness,\n)
+from .evaluation import (
+    AdmissibilityDecision, NegativeClaimRequest, evaluate_negative_claim,
+    evaluate_negative_claim_with_freshness,
+)
 from .store import (
     DuplicateRecordError,
     EpistemicStore,
