@@ -10,11 +10,15 @@ from .contracts import (
     CompletenessStatus,
     EvidenceAssertion,
     EvidenceRef,
+    FreshnessResult,
+    FreshnessStatus,
+    ProvenanceDependency,
+    ProvenanceInvalidation,
     GapKind,
     GapState,
     KnowledgeGap,
 )
-from .evaluation import AdmissibilityDecision, NegativeClaimRequest, evaluate_negative_claim
+from .evaluation import (AdmissibilityDecision, NegativeClaimRequest, evaluate_negative_claim,\n                         evaluate_negative_claim_with_freshness)
 from .store import (
     DuplicateRecordError,
     EpistemicStore,
@@ -33,6 +37,10 @@ __all__ = [
     "EpistemicStore",
     "EvidenceAssertion",
     "EvidenceRef",
+    "FreshnessResult",
+    "FreshnessStatus",
+    "ProvenanceDependency",
+    "ProvenanceInvalidation",
     "GapKind",
     "GapState",
     "InvalidTransitionError",
@@ -42,4 +50,5 @@ __all__ = [
     "StorageLimitError",
     "StoreError",
     "evaluate_negative_claim",
+    "evaluate_negative_claim_with_freshness",
 ]
