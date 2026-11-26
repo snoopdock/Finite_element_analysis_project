@@ -257,3 +257,49 @@ The Windows reader now opens/holds the root handle, opens the candidate with `FI
 The exact five artifact archives were detached-verified in [run 45602963647](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602963647). Artifact IDs, byte counts and SHA-256 values matched the pinned manifest; report schemas and source/run/attempt identities, native modes, versions, parity telemetry, graph/source snapshot identity, context telemetry, side-effect declarations, SciPy hybrid semantics and SNAP worker identity/policy/deadlines passed. The committed machine-readable dossier is `evidence/m74-e85-e88-run-45602554671/verified-dossier.json`; see [the detailed dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45602554671.md). **G7 is Pass for this exact set.**
 
 **Current status:** G4 is improved but remains Partial because repository-wide snapshot atomicity, complete filesystem metadata/external-side-effect coverage, hard-link aliasing, arbitrary mutation/restoration schedules and native projection postflight-to-return concurrency remain unresolved. G5/G6 and PATH/IMPACT task-domain qualification remain open. Exact-source G9.42 has not been run against this SHA. All 20 task/backend outcomes remain Insufficient evidence; `production_approval=false`.
+
+
+## 19. Current M7.4 status after domain-shaped workload, detached task evidence and M7.1 environment correction — 2026-11-26
+
+This section supersedes earlier statements in Sections 14–18 that G5/G6 were wholly open. It does not supersede their run-specific evidence records or the explicit G4 limitations.
+
+### 19.1 Exact-source task workload and G7
+
+- E.8.5/E.8.8 plus M7.4 task suite: [run 45773593165](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45773593165), source `e15c18b1506fb9c4d4c71b6435eb1c42aa7ac187`.
+- Each of five backends passed 22 M7.4 task tests, with 88 expected skips for the other backend partitions, zero failures and zero errors.
+- The new FEM repository-shaped fixture exercises structural, dependency, path-to-evidence and impact operations with source/module/symbol/test/workflow/evidence node types and an explicit dependency cycle.
+- Each backend artifact includes its JUnit XML report. The detached verifier checks 110 cases, 22 passes, 88 skips, zero failures/errors, and binds every passing test name to the backend in the archive.
+- Detached G7 verification: [run 45774121550](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45774121550), artifact 15095590785. G7 is Pass for the exact run 45773593165 artifact set. See [run-specific dossier](AE-32C-M7.4-Detached-E85-E88-Evidence-Dossier-45773593165.md).
+
+G5 is **Partial**, not Pass: the new fixture is task-shaped and domain-relevant, but remains small and deterministic. Larger full-repository and problem-driven task workloads are still required before task/backend suitability can be concluded.
+
+### 19.2 G6 CI execution envelope
+
+M7.1 [run 45774182880](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45774182880), source `5d6d4089edc5b147f5e94e0364330acf09780113`, passed all five backend jobs and the aggregate summary. Each backend ran seven fixed smoke queries with two warm-ups and five measured repetitions; the reports include integrity-audit timings, query samples, engine construction, native adjacency telemetry, environment and worker provenance.
+
+The graph-tool CPU compatibility defect was corrected: graph-tool now resolves to the generic x86-64 `_100` build after a fresh solve with `CONDA_OVERRIDE_ARCHSPEC=x86_64`; the workflow disables the stale environment cache and asserts the build. The earlier `_400` build caused SIGILL on an AMD EPYC 7763 runner because it was built for x86-64 microarchitecture level 4. The E.8.5/E.8.8 graph-tool job also passed with the generic build.
+
+G6 is **Pass for the tested CI execution envelope**. This is not a production deployment qualification: representative task-level cost at larger sizes, peak memory, controlled runner variance and deployment-specific resource limits remain uncharacterized. See [M7.1 integrity-cost report](AE-32C-M7.1-Integrity-Cost-Smoke-2026-11-26.md).
+
+### 19.3 Current gate matrix
+
+| Gate | Current status | Basis / remaining boundary |
+|---|---|---|
+| G1 — Task definition | Pass | Four public graph-analysis task identities and query envelopes are specified |
+| G2 — Semantic correctness | Pass for bounded fixtures | Independent expected-result and adversarial cases; not an exhaustive domain corpus |
+| G3 — Public-path execution | Pass for tested paths | Native API instrumentation and reference parity in exact five-backend runs |
+| G4 — Snapshot and mutation safety | **Partial** | Tested file/path/side-effect cases pass; repository-wide point-in-time atomicity, ABA schedules, all namespace aliases and projection postflight-to-return concurrency remain open |
+| G5 — Task workload | **Partial** | Generic seeded topologies plus small FEM repository-shaped four-task fixture; larger full-repository and problem-driven workloads remain |
+| G6 — Environment and operations | Pass within tested CI envelope | Versions, runner/Python strata, generic graph-tool ISA build, SNAP worker image, timeouts/cleanup and smoke cost recorded; no production deployment qualification |
+| G7 — Evidence integrity | Pass for cited exact sets | Detached archive and embedded JUnit/report verification for run 45773593165 |
+| G8 — Scope discipline | Pass | No ranking, global score, automatic selection, scientific approval or production approval |
+
+### 19.4 Decision matrix remains unchanged
+
+All 20 task/backend pairs remain **Insufficient evidence**. G4 and G5 are mandatory and still partial; therefore no pair can be promoted to Suitable or Conditionally suitable. The five backends remain alternative computational options chosen by task relevance, not performance competitors. No ranking, automatic selector, scientific approval or production approval is authorized; `production_approval=false`.
+
+The updated `validation/profiles/G9.42.yaml` now includes the M7.4 task suite, G4 snapshot/mutation tests, repository-side-effect tests and detached dossier tests. It has not yet been run against the current source revision; the five-backend E.8.5/E.8.8 workflows and detached G7 run above are separate evidence.
+
+### 19.5 Out-of-scope architecture layers
+
+This matrix covers graph traversal backends for the four public graph-analysis tasks only. It does not accept the pluggable LLM integration, remediation decision optimization, formal-solver portfolio or governed self-examination/termination layers. Each needs its own task contract, authority boundary, evidence model, tests and acceptance decision. Passing M7.4 does not imply acceptance of those layers or of the overall audit engine.
