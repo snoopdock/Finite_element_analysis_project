@@ -4,7 +4,7 @@ This package defines immutable descriptive records only. It has no persistence,
 inference, network, solver, or decision-gate side effects.
 """
 
-from .contracts import (
+from .store import (\n    DuplicateRecordError, EpistemicStore, InvalidTransitionError,\n    RevisionConflictError, StorageLimitError, StoreError,\n)\n\nfrom .contracts import (
     AssertionPolarity,
     CompletenessClaim,
     CompletenessStatus,
@@ -16,7 +16,7 @@ from .contracts import (
 )
 
 __all__ = [
-    "AssertionPolarity",
+    "DuplicateRecordError",\n    "EpistemicStore",\n    "InvalidTransitionError",\n    "RevisionConflictError",\n    "StorageLimitError",\n    "StoreError",\n    "AssertionPolarity",
     "CompletenessClaim",
     "CompletenessStatus",
     "EvidenceAssertion",
