@@ -640,3 +640,51 @@ The follow-up workflow changes classify this exact cap as an explicit skipped fu
 This is the first full-repository source-derived workload in the M7.4 campaign. It closes an important gap between small fixtures and repository-scale graph execution for four backends. It does not yet establish task suitability for the full 20-task/backend matrix: the workload is one Python repository, one bounded seed-selection strategy and one impact cone. It is not a scientific FEM mesh/field workload or a representative cross-language repository campaign.
 
 **G5 remains Partial.** The 20 formal task/backend outcomes remain **Insufficient evidence**. SNAP's full-repository task envelope is specifically unverified under the current 16 MiB worker protocol cap.
+
+
+## 33. M7.4 five-backend acceptance execution — 2026-11-26
+
+**Workflow:** [45778108441](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45778108441), attempt 1, push-triggered, conclusion `success`.  
+**Exact tested source:** `stage1/section-uuids` at `e8c8b45ef345fca1da25f34bb468d111f03f8417`. The later branch tip `6fad135910d14dc47f086ec9d343eb1a7d04a265` is three documentation-only commits ahead; it is not the tested source revision.
+
+### 33.1 Backend test suites
+
+All five backend jobs and the aggregate acceptance job completed successfully. Combined task/G4/repository-side-effect suite results:
+
+| Backend | Passed | Skipped | Failures / errors |
+|---|---:|---:|---:|
+| NetworkX | 37 | 140 | 0 |
+| SciPy | 37 | 140 | 0 |
+| python-igraph | 37 | 140 | 0 |
+| graph-tool | 37 | 140 | 0 |
+| SNAP isolated worker | 39 | 138 | 0 |
+
+Skips include the other backend partitions not selected in each job and platform-specific exclusions. They are not counted as executions. The SNAP-specific additional passes reflect its worker-specific test cases; they do not establish the full-repository workload.
+
+### 33.2 Full-repository campaign
+
+The same run exercised the source-derived full-repository campaign:
+
+- NetworkX: one campaign test passed; four backend-selection cases skipped.
+- SciPy: one passed; four skipped.
+- python-igraph: one passed; four skipped.
+- graph-tool: one passed; four skipped.
+- SNAP: five cases skipped with the explicit reason `snap_worker_request_exceeds_size_limit`; its graph was not initialized and no full-repository SNAP query ran.
+
+The graph contained 1,897 repository files, 11,426 semantic nodes and 40,765 edge occurrences. The selected dependency path and impact query completed for the four in-process backends with reference parity. This remains one Python repository workload, not a representative scientific FEM mesh/field workload or cross-language campaign.
+
+### 33.3 Artifact identities
+
+All five artifacts are bound by the GitHub Actions artifact metadata to run `45778108441`, branch `stage1/section-uuids`, and exact source SHA `e8c8b45ef345fca1da25f34bb468d111f03f8417`:
+
+| Backend | Artifact ID | ZIP size | Actions SHA-256 |
+|---|---:|---:|---|
+| NetworkX | 15096918574 | 4,561 bytes | `559cb3a9f10b0b445f6121a18e1debed7648b1de01161306d0a3738e6d78ab74` |
+| SciPy | 15096704491 | 4,542 bytes | `26a6a26b7bb574d59e08bf4a0f6d9571e87527453395ba677b397afaf5e8961f` |
+| python-igraph | 15097301390 | 4,554 bytes | `d2f4206117c940317df8571c4ae7065df376b7b40fc60523eb758b86ba203d8f` |
+| graph-tool | 15097545996 | 4,626 bytes | `9d37fc83c855d18061142ff123aa5c902fdae68d72a41d98e35b34e4991fc8e1` |
+| SNAP | 15096867178 | 4,483 bytes | `601f67e96e37dfd0c8e9d264963719e020968bb67a97b7df7ae0fbc5dfc39627` |
+
+These are GitHub Actions-reported ZIP digests. This record does not claim a detached G7 verifier accepted these five artifacts; the existing detached dossier tool is hard-bound to a different historical E.8.5/E.8.8 campaign and must not be reused as though it verified this M7.4 run.
+
+**Decision:** M7.4 CI gate passed for the declared suites and workload envelope. G5 remains **Partial**. All 20 task/backend suitability outcomes remain **Insufficient evidence**. SNAP full-repository suitability remains unverified until a bounded, integrity-checked streaming initialization protocol is implemented and tested. No backend ranking or automatic selection follows; `production_approval=false`.
