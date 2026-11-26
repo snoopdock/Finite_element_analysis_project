@@ -211,5 +211,68 @@ class GitObjectSourceProviderTests(unittest.TestCase):
                 GitObjectSourceProvider(root, manifest)
 
 
+    def test_replacement_ref_cannot_change_pinned_commit_tree(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            manifest = self._verified_manifest(root)
+            pinned = self._git(root, "rev-parse", "HEAD")
+            (root / "src" / "module.py").write_text("VALUE = 'replacement commit'\n", encoding="utf-8")
+            self._git(root, "add", "src/module.py")
+            self._git(root, "commit", "-m", "replacement target")
+            replacement = self._git(root, "rev-parse", "HEAD")
+            self._git(root, "replace", pinned, replacement)
+            provider = GitObjectSourceProvider(root, manifest)
+            self.assertEqual(provider.snapshot_identity()["commit_oid"], pinned)
+            self.assertEqual(provider.read_entry("src/module.py"), b"VALUE = 'committed'\n")
+
+    def test_inherited_git_repository_routing_environment_is_ignored(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temp:
+            sandbox = Path(temp)
+            root = sandbox / "target"
+            other = sandbox / "other"
+            root.mkdir()
+            other.mkdir()
+            self._repository(root)
+            self._git(other, "init")
+            self._git(other, "config", "user.email", "other@example.invalid")
+            self._git(other, "config", "user.name", "Other")
+            (other / "foreign.txt").write_text("foreign\n", encoding="utf-8")
+            self._git(other, "add", ".")
+            self._git(other, "commit", "-m", "foreign repository")
+            with patch.dict(os.environ, {
+                "GIT_DIR": str(other / ".git"),
+                "GIT_WORK_TREE": str(other),
+                "GIT_OBJECT_DIRECTORY": str(other / ".git" / "objects"),
+                "GIT_NO_REPLACE_OBJECTS": "0",
+                "GIT_NO_LAZY_FETCH": "0",
+            }):
+                manifest = self._verified_manifest(root)
+                provider = GitObjectSourceProvider(root, manifest)
+            self.assertEqual(provider.snapshot_identity()["commit_oid"],
+                             self._git(root, "rev-parse", "HEAD"))
+            paths = {item["path"] for item in provider.iter_entries()}
+            self.assertIn("src/module.py", paths)
+            self.assertNotIn("foreign.txt", paths)
+
+    def test_sha256_object_format_repository_is_supported(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            result = subprocess.run(["git", "init", "--object-format=sha256"], cwd=root,
+                                    text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode:
+                self.skipTest("installed Git does not support SHA-256 repositories")
+            self._git(root, "config", "user.email", "audit-test@example.invalid")
+            self._git(root, "config", "user.name", "Audit Test")
+            (root / "src").mkdir()
+            (root / "src" / "module.py").write_text("VALUE = 'sha256'\n", encoding="utf-8")
+            self._git(root, "add", ".")
+            self._git(root, "commit", "-m", "sha256 object format")
+            provider = GitObjectSourceProvider(root, self._verified_manifest(root))
+            self.assertEqual(provider.snapshot_identity()["object_hash_algorithm"], "sha256")
+            self.assertEqual(provider.read_entry("src/module.py"), b"VALUE = 'sha256'\n")
+
+
 if __name__ == "__main__":
     unittest.main()
