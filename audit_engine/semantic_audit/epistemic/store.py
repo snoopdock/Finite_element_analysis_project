@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from .contracts import (
-    CompletenessClaim, EvidenceAssertion, KnowledgeGap, GapState,
+    AssertionPolarity, EvidenceRef, CompletenessClaim, EvidenceAssertion, KnowledgeGap, GapState,
     ProvenanceDependency, ProvenanceInvalidation, ProvenanceManifest,
     FreshnessResult, FreshnessStatus,
 )
@@ -693,3 +693,44 @@ class EpistemicStore:
             invalidation_ids=tuple(sorted(closure_invalidations.get(root, set()))),
             reason=reasons.get(root, "freshness closure could not be established"),
         )
+
+    def assertion_records_snapshot(self) -> tuple[EvidenceAssertion, ...]:
+        """Return all typed evidence assertions from one verified read snapshot."""
+        with self._connection:
+            self._connection.execute("BEGIN")
+            if not self.verify_integrity():
+                raise StoreError("event ledger integrity check failed; evidence snapshot is unavailable")
+            rows = self._connection.execute(
+                "SELECT payload FROM epistemic_events WHERE record_type = 'assertion' ORDER BY sequence"
+            ).fetchall()
+            records = []
+            for row in rows:
+                payload = json.loads(row["payload"])
+                refs = tuple(EvidenceRef(**item) for item in payload["evidence_refs"])
+                records.append(EvidenceAssertion(
+                    assertion_id=payload["assertion_id"],
+                    proposition_id=payload["proposition_id"],
+                    polarity=AssertionPolarity(payload["polarity"]),
+                    evidence_refs=refs,
+                    scope_id=payload["scope_id"],
+                    method_id=payload["method_id"],
+                    observed_at=payload["observed_at"],
+                    limitations=tuple(payload.get("limitations", ())),
+                    invalidation_triggers=tuple(payload.get("invalidation_triggers", ())),
+                ))
+            return tuple(records)
+
+    def snapshot_token(self) -> tuple[int, str]:
+        """Return a verified ledger version token for optimistic cross-ledger reads."""
+        with self._connection:
+            self._connection.execute("BEGIN")
+            if not self.verify_integrity():
+                raise StoreError("event ledger integrity check failed; snapshot token is unavailable")
+            count = self._connection.execute(
+                "SELECT COUNT(*) AS n FROM epistemic_events"
+            ).fetchone()["n"]
+            row = self._connection.execute(
+                "SELECT event_hash FROM epistemic_events ORDER BY sequence DESC LIMIT 1"
+            ).fetchone()
+            return count, row["event_hash"] if row else "0" * 64
+
