@@ -261,5 +261,5 @@ def verify_coverage_dossier_replay(
         raise
     except Exception as exc:
         raise CoverageDossierError(
-            f"coverage dossier semantic verification failed: {type(exc).__name__}"
+            f"coverage dossier semantic verification failed: {type(exc).__name__}: {exc}"
         ) from exc
