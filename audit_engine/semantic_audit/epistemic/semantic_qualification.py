@@ -84,7 +84,7 @@ def _source_entries(source_manifest: Mapping[str, Any]) -> dict[str, Mapping[str
     manifest_payload = {k: v for k, v in source_manifest.items() if k != "manifest_sha256"}
     if source_manifest.get("manifest_sha256") != _digest(manifest_payload):
         raise SemanticQualificationError("source_manifest_digest_mismatch")
-    entries: dict[str, Mapping[str, Any]] =
+    entries: dict[str, Mapping[str, Any]] = {}
     for item in inventory["entries"]:
         if not isinstance(item, Mapping) or not isinstance(item.get("path"), str):
             raise SemanticQualificationError("source_inventory_entry_invalid")
