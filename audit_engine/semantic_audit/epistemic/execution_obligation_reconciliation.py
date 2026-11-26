@@ -240,6 +240,14 @@ class ExecutionObligationReconciliationStore:
             if (row["sequence"] != expected or row["payload_sha256"] != digest
                     or row["previous_hash"] != previous or row["event_hash"] != calculated):
                 return False
+            try:
+                decoded = json.loads(row["payload"])
+                identity = decoded.get("reconciliation_sha256")
+                semantic_payload = {k: v for k, v in decoded.items() if k != "reconciliation_sha256"}
+                if identity != row["reconciliation_id"] or identity != _digest(semantic_payload):
+                    return False
+            except (TypeError, ValueError, AttributeError):
+                return False
             previous = calculated
         return True
 
