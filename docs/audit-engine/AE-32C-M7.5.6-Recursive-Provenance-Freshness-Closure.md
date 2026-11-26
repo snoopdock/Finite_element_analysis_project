@@ -1,8 +1,10 @@
 # AE-32C M7.5.6 — Recursive Provenance Freshness Closure
 
-**Status:** Design baseline; implementation not yet validated  
+**Status:** Implemented and CI-validated  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.4 provenance dependencies, freshness and invalidation; M7.5.5 assurance arguments and defeaters  
+**Validated source revision:** `89624f59beb3274d07043f13530ca243d72233c1`  
+**Validation run:** [45900529432](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45900529432)  
 **Authority:** provenance closure reporting only; no proposition-truth inference or audit-gate authority
 
 ## 1. Problem statement
@@ -94,4 +96,32 @@ M7.5.6 does not:
 
 ## 8. Exit criterion
 
-M7.5.6 is complete only after the exact Stage1 source revision passes the dedicated structural and behavioral suite plus all M7.5.1–M7.5.5 regression suites. The validation record must identify the exact source SHA, workflow run, test counts and artifact digest. A successful run is CI validation, not production approval.
+The M7.5.6 implementation and CI exit criterion are met for the exact Stage1 revision recorded above. The dedicated suite and all M7.5.1–M7.5.5 regression suites passed. The detailed evidence is recorded in [AE-32C-M7.5.6-Validation-Record-45900529432.md](AE-32C-M7.5.6-Validation-Record-45900529432.md).
+
+## 9. Implementation and validation result
+
+The implementation:
+
+- permits an exact empty dependency manifest as an explicit terminal declaration;
+- updates local `freshness_status` to recognize an exact empty manifest as fresh;
+- adds `EpistemicStore.freshness_closure(node_id)`, an iterative depth-first traversal that avoids Python recursion-depth failure;
+- reads dependencies, manifests and invalidations from one SQLite read snapshot after verifying the event hash chain;
+- returns `INVALIDATED` if the root or any reachable dependency is invalidated;
+- returns `UNKNOWN` if a reachable node lacks a manifest, has a manifest mismatch, or participates in a detected cycle;
+- returns `FRESH` only when every reachable node has an exact manifest and every terminal is explicitly declared.
+
+Validation on the exact revision:
+
+- M7.5.1: 14 passed
+- M7.5.2: 9 passed
+- M7.5.3: 14 passed
+- M7.5.4: 12 passed
+- M7.5.5: 8 passed
+- M7.5.6: 9 passed
+- **Total: 66 passed**
+- Python 3.11 compile: passed
+- Workflow run: `45900529432`
+- Artifact: `m7-5-epistemic-validation-45900529432-1`
+- Artifact SHA-256: `5478734c9f4b63afd7a607832864e893f364edd24aca3bc2fb32fb8bd5ba8bdc`
+
+Passing tests establish CI validation only. They do not authenticate terminal declarations, verify source-change notifications, or establish production approval.
