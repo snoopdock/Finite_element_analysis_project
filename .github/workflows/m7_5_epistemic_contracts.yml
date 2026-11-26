@@ -12,6 +12,8 @@ on:
       - "tests/semantic_graph/test_m75_epistemic_completeness.py"
       - "tests/semantic_graph/test_m75_epistemic_provenance.py"
       - "tests/semantic_graph/test_m755_assurance_arguments.py"
+      - "tests/semantic_graph/test_m756_freshness_closure.py"
+      - "docs/audit-engine/AE-32C-M7.5.6-Recursive-Provenance-Freshness-Closure.md"
       - "audit_engine/semantic_audit/epistemic/assurance.py"
       - "audit_engine/semantic_audit/epistemic/assurance_store.py"
       - "docs/audit-engine/AE-32C-M7.5.5-Assurance-Arguments-and-Defeaters.md"
@@ -103,6 +105,16 @@ jobs:
             -p 'test_m755_assurance_arguments.py' \
             -v 2>&1 | tee reports/m75-5-assurance-arguments.log
 
+      - name: Run M7.5.6 recursive freshness closure tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_m756_freshness_closure.py' \
+            -v 2>&1 | tee reports/m75-6-freshness-closure.log
+
       - name: Upload exact-source validation logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -115,6 +127,7 @@ jobs:
             reports/m75-3-completeness.log
             reports/m75-4-provenance.log
             reports/m75-5-assurance-arguments.log
+            reports/m75-6-freshness-closure.log
           if-no-files-found: warn
           retention-days: 30
 
@@ -124,7 +137,7 @@ jobs:
           {
             echo "## M7.5 epistemic validation"
             echo "- Source SHA: $GITHUB_SHA"
-            echo "- Scope: immutable contracts, append-only persistence, scope-bound completeness, negative-claim admissibility, provenance dependencies, freshness, deterministic invalidation, assurance arguments and defeater lifecycle"
+            echo "- Scope: immutable contracts, append-only persistence, scope-bound completeness, negative-claim admissibility, provenance dependencies, local freshness, recursive freshness closure, deterministic invalidation, assurance arguments and defeater lifecycle"
             echo "- No proposition-truth inference, automatic completeness promotion, network, solver, or decision-gate integration"
             echo "- Passing does not establish production durability or production approval"
           } >> "$GITHUB_STEP_SUMMARY"
