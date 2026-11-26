@@ -22,15 +22,50 @@ def source_manifest():
             "root_tree_oid": "2" * 40,
         },
         "source_inventory": {"entries": [
-            {"path": "src/a.py", "mode": "100644", "object_type": "blob",
-             "git_object_oid": "3" * 40, "content_sha256": "4" * 64},
             {"path": "README.md", "mode": "100644", "object_type": "blob",
              "git_object_oid": "5" * 40, "content_sha256": "6" * 64},
+            {"path": "src/a.py", "mode": "100644", "object_type": "blob",
+             "git_object_oid": "3" * 40, "content_sha256": "4" * 64},
         ]},
         "verification": {"status": "VERIFIED"},
     }
+    payload["source_inventory"]["entry_count"] = len(payload["source_inventory"]["entries"])
+    payload["source_inventory"]["sha256"] = digest(payload["source_inventory"]["entries"])
     payload["manifest_sha256"] = digest(payload)
     return payload
+
+
+def lfs_attestation(manifest=None, pointer_paths=()):
+    manifest = manifest or source_manifest()
+    entries = [
+        {"path": item["path"], "git_object_oid": item["git_object_oid"],
+         "content_sha256": item["content_sha256"], "is_lfs_pointer": item["path"] in pointer_paths}
+        for item in manifest["source_inventory"]["entries"]
+        if item["object_type"] == "blob" and item["mode"] in {"100644", "100755"}
+    ]
+    pointers = []
+    for item in entries:
+        if item["is_lfs_pointer"]:
+            pointers.append({
+                "path": item["path"], "git_object_oid": item["git_object_oid"],
+                "pointer_sha256": item["content_sha256"], "status": "UNVERIFIED",
+                "reason": "lfs_object_store_not_supplied",
+            })
+    result = {
+        "schema": "ae32c/lfs-payload-verification/v2",
+        "source_snapshot_id": manifest["source_snapshot_id"],
+        "commit_oid": manifest["source"]["commit_oid"],
+        "source_inventory_sha256": manifest["source_inventory"]["sha256"],
+        "object_store_mode": "NOT_SUPPLIED_NO_NETWORK",
+        "status": "NOT_SUPPLIED", "scan_complete": True,
+        "scanned_regular_blob_count": len(entries), "regular_blob_inventory": entries,
+        "pointer_count": len(pointers), "verified_payload_count": 0,
+        "unverified_payload_count": len(pointers), "lfs_payload_verified": False,
+        "records": pointers, "remote_payload_provenance_verified": False,
+        "atomic_snapshot_established": False, "production_approval": False,
+    }
+    result["attestation_sha256"] = digest(result)
+    return result
 
 
 def report():
@@ -46,7 +81,7 @@ def report():
 
 
 class GraphSnapshotTests(unittest.TestCase):
-    def _build(self, graph=None, evidence=None, represented=None, hashes=None):
+    def _build(self, graph=None, evidence=None, represented=None, hashes=None, lfs=None):
         return build_graph_snapshot(
             source_manifest=source_manifest(),
             graph=graph or {"nodes": [{"id": "file:src/a.py", "type": "PythonSourceFile",
@@ -56,6 +91,7 @@ class GraphSnapshotTests(unittest.TestCase):
             represented_paths=represented if represented is not None else {"src/a.py"},
             file_hashes=hashes if hashes is not None else {"src/a.py": "4" * 64},
             python_runtime="3.test",
+            lfs_attestation=lfs if lfs is not None else lfs_attestation(),
         )
 
     def test_identity_is_deterministic_and_order_independent(self):
@@ -78,6 +114,7 @@ class GraphSnapshotTests(unittest.TestCase):
                               "attributes": {"sha256": "4" * 64}, "metadata": {}}], "edges": []},
             evidence_report=report(), represented_paths={"src/a.py"},
             file_hashes={"src/a.py": "4" * 64}, python_runtime="3.test",
+            lfs_attestation=lfs_attestation(changed),
         )
         self.assertNotEqual(first["graph_snapshot_id"], second["graph_snapshot_id"])
 
@@ -130,6 +167,51 @@ class GraphSnapshotTests(unittest.TestCase):
         self.assertEqual(result["manifest_sha256"], digest({
             key: value for key, value in result.items() if key != "manifest_sha256"
         }))
+
+
+    def test_lfs_attestation_is_bound_to_source_and_inventory(self):
+        attestation = lfs_attestation()
+        attestation["source_inventory_sha256"] = "f" * 64
+        attestation["attestation_sha256"] = digest({
+            key: value for key, value in attestation.items() if key != "attestation_sha256"
+        })
+        with self.assertRaisesRegex(GraphSnapshotError, "lfs_attestation_source_binding_mismatch"):
+            self._build(lfs=attestation)
+
+    def test_lfs_attestation_rejects_duplicate_regular_blob_inventory(self):
+        attestation = lfs_attestation()
+        attestation["regular_blob_inventory"].append(dict(attestation["regular_blob_inventory"][0]))
+        attestation["scanned_regular_blob_count"] += 1
+        attestation["attestation_sha256"] = digest({
+            key: value for key, value in attestation.items() if key != "attestation_sha256"
+        })
+        with self.assertRaisesRegex(GraphSnapshotError, "lfs_regular_blob_inventory_count_mismatch|lfs_regular_blob_inventory_duplicate"):
+            self._build(lfs=attestation)
+
+    def test_lfs_pointer_record_omission_is_rejected(self):
+        attestation = lfs_attestation(pointer_paths={"README.md"})
+        with self.assertRaisesRegex(GraphSnapshotError, "lfs_pointer_records_incomplete_or_extra"):
+            self._build(lfs=attestation)
+
+    def test_graph_manifest_rejects_lfs_attestation_tampering_and_omission(self):
+        result = self._build()
+        changed = dict(result)
+        changed["lfs_attestation"] = dict(result["lfs_attestation"])
+        changed["lfs_attestation"]["status"] = "VERIFIED_LOCAL_PAYLOADS"
+        with self.assertRaisesRegex(GraphSnapshotError, "graph_manifest_digest_mismatch"):
+            verify_graph_manifest(changed)
+        missing = dict(result)
+        missing.pop("lfs_attestation")
+        with self.assertRaisesRegex(GraphSnapshotError, "graph_manifest_digest_mismatch"):
+            verify_graph_manifest(missing)
+
+    def test_lfs_attestation_is_in_graph_identity_and_coverage(self):
+        result = self._build()
+        self.assertEqual(result["identity"]["lfs_attestation_sha256"],
+                         result["lfs_attestation"]["attestation_sha256"])
+        self.assertEqual(result["coverage"]["lfs_payloads"]["status"], "NOT_SUPPLIED")
+        self.assertEqual(result["coverage"]["lfs_payloads"]["scanned_regular_blob_count"], 2)
+        self.assertFalse(result["lfs_attestation"]["production_approval"])
 
     def test_extractor_issue_makes_coverage_incomplete(self):
         evidence = report()
