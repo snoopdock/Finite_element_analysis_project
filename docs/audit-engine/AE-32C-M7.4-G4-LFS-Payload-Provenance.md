@@ -1,6 +1,6 @@
 # AE-32C M7.4 G4 — Git LFS payload provenance
 
-**Status:** Local-cache payload verification implemented as a separately bound attestation; remote provenance and repository-wide atomicity remain unverified.  
+**Status:** LFS pointer scanning is integrated into graph coverage and identity. Local payload verification is optional; remote provenance and repository-wide atomicity remain unverified.  
 **Branch:** `stage1/section-uuids`
 
 ## 1. Source-derived format contract
@@ -18,7 +18,8 @@ The project distinguishes:
 New module: `audit_engine/semantic_audit/ae32c/lfs_payload_verifier.py`.
 
 The verifier:
-- accepts an explicit local LFS object-store root; it does not discover or fetch a remote;
+- scans every committed regular blob and emits a complete classification inventory, whether or not a local LFS object-store root is supplied;
+- accepts an optional explicit local LFS object-store root; it does not discover or fetch a remote;
 - scans every regular committed blob through the pinned Git-object provider;
 - parses canonical Git LFS v1 pointers conservatively and rejects malformed/unsupported encodings;
 - resolves the standard sharded cache path `<oid[0:2]>/<oid[2:4]>/<oid>`;
@@ -26,10 +27,14 @@ The verifier:
 - streams payload bytes in bounded 1 MiB chunks;
 - checks exact byte size and SHA-256 against the pointer;
 - checks file identity/metadata before and after reading to detect common replacement or mutation races;
-- returns a report bound to `source_snapshot_id`, commit OID and source inventory digest;
+- emits one explicit `UNVERIFIED` record for every detected pointer when no cache is supplied, with status `NOT_SUPPLIED`;
+- emits a deterministic regular-blob inventory containing each path, Git blob OID, content digest, and LFS-pointer classification;
+- seals the attestation and binds it to `source_snapshot_id`, commit OID and source inventory digest;
+- is invoked by graph capture; the attestation digest is included in graph coverage, the graph manifest, and graph identity;
+- validates exact regular-blob inventory coverage, pointer-record uniqueness/completeness, source binding, count consistency, and non-escalation of authority claims when verifying a graph manifest;
 - never runs Git LFS smudge, invokes credentials, or accesses a network endpoint.
 
-The output reports `lfs_payload_verified=true` only when every discovered pointer has a verified local payload. An empty pointer inventory is a completed scan with no external payloads to verify. The report always retains `remote_payload_provenance_verified=false`, `atomic_snapshot_established=false`, and `production_approval=false`.
+The output uses `NOT_SUPPLIED` when no local object-store root is supplied, `UNVERIFIED` when a supplied cache cannot verify every pointer, and `VERIFIED_LOCAL_PAYLOADS` only when all pointer payloads are verified. `lfs_payload_verified` is true only for `VERIFIED_LOCAL_PAYLOADS`; an empty pointer inventory is considered locally verified only when an explicit cache root was supplied. The report always retains `remote_payload_provenance_verified=false`, `atomic_snapshot_established=false`, and `production_approval=false`.
 
 ## 3. Adversarial tests
 
@@ -94,3 +99,26 @@ The native graph backend conformance workflow [45814193964](https://github.com/s
 An earlier run [45814103757](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45814103757) failed because its corruption fixture had the same byte length as the expected payload while the test asserted a size-mismatch error. The fixture was changed to a different length and the exact-source rerun passed. The verifier's behavior was correct in the first run; the failed assertion was in the test fixture.
 
 These results establish local payload content verification for the explicit cache fixtures and cross-platform execution of the verifier. They do not establish trusted remote provenance, recursive submodule LFS verification, or atomicity across Git and LFS object stores. `submodule_content_verified=false`, `remote_payload_provenance_verified=false`, `atomic_snapshot_established=false`, and `production_approval=false` remain invariant.
+
+
+## 7. Graph integration — 2026-11-26
+
+The verifier now emits schema `ae32c/lfs-payload-verification/v2`. A completed scan includes:
+
+- `scan_complete=true` and `scanned_regular_blob_count`;
+- a sorted inventory of every regular committed blob, with path, Git blob OID, source content SHA-256, and pointer classification;
+- exactly one record for every detected LFS pointer, including an explicit `UNVERIFIED` result when no local cache is supplied;
+- verified and unverified pointer counts, an explicit status, and an attestation SHA-256;
+- fixed false values for remote payload provenance, atomic snapshot establishment, and production approval.
+
+Graph capture calls the verifier against the same immutable Git-object provider used for evidence projection. The graph coverage record contains the LFS status, scan count, pointer counts, and attestation digest. The full attestation is retained in the graph manifest; its digest is included in graph identity. `verify_graph_manifest()` checks the attestation digest and source snapshot / commit / source-inventory binding, validates that the regular-blob inventory exactly matches the graph's committed source-unit inventory, and rejects missing, duplicate, extra, or inconsistent pointer records.
+
+The graph capture CLI accepts `--lfs-object-store` for an explicitly supplied local cache. Omitting it does not trigger network access: the scan completes and records pointers as `UNVERIFIED`. No Git LFS smudge, credentials, remote API, or implicit fetch is used.
+
+### Structural and behavioral acceptance tests
+
+The updated tests cover no-cache complete scanning, explicit unverified pointer evidence, source binding, complete regular-blob inventory, duplicate inventory rejection, missing pointer-record rejection, graph-identity binding, and graph-manifest tampering or omission. Existing valid-cache, missing/corrupt-cache, pointer parsing, and symlink rejection tests remain.
+
+**Validation state:** implementation and tests have been committed to `stage1/section-uuids`; CI acceptance is pending. No claim of milestone completion is made until the exact-HEAD workflows pass.
+
+The following limitations remain unchanged: submodule LFS content is not recursively verified; remote payload provenance is not authenticated; Git and external LFS payload reads are not an atomic cross-store snapshot; production approval remains false.
