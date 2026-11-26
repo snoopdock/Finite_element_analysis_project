@@ -1,6 +1,6 @@
 # AE-32C M7.5.2 — Append-only epistemic persistence
 
-**Status:** Implemented; exact-source CI validation pending  
+**Status:** Implemented; final hardened-source CI validation pending  
 **Branch:** `stage1/section-uuids`  
 **Parent tranche:** M7.5.1 immutable epistemic contracts  
 **Authority:** descriptive persistence only; no inference or decision-gate authority
@@ -44,7 +44,7 @@ SQLite triggers reject UPDATE and DELETE operations against the event table. The
 - `gap_id` is the stable identity.
 - The initial record is revision 1.
 - Each lifecycle change appends a new revision; prior payloads remain queryable through `gap_history()`.
-- The caller supplies `expected_revision`; stale revisions raise `RevisionConflictError`.
+- The caller supplies `expected_revision`; stale revisions raise `RevisionConflictError`. The read/check/append sequence is serialized with SQLite's `BEGIN IMMEDIATE` transaction so concurrent writers cannot both advance the same revision.
 - Subject, kind, scope and discovery method are invariant across revisions.
 - Terminal states (`RESOLVED`, `ACCEPTED_RESIDUAL`) cannot be reopened through the current transition API.
 - Contract-level requirements still apply: resolved gaps need resolution evidence; accepted residual gaps need disposition and authority.
@@ -80,7 +80,7 @@ The M7.5.2 test suite covers:
 7. close/reopen durability and hash-chain verification;
 8. detection of out-of-band payload tampering.
 
-These tests are structural and behavioral. They do not establish production durability under power loss, filesystem corruption, concurrent multi-process stress, backup/restore correctness, external authenticity, or a hostile administrator.
+These tests are structural and behavioral. They do not establish production durability under power loss, filesystem corruption, sustained concurrent multi-process stress, backup/restore correctness, external authenticity, or a hostile administrator. The implementation targets a local SQLite database; it is not a distributed event store.
 
 ## 7. Explicit non-goals
 
