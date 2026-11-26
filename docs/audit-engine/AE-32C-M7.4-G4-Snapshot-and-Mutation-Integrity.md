@@ -804,3 +804,37 @@ The next G4 tranche should test and specify:
 - Fail-closed behavior when a stable snapshot cannot be established.
 
 **G4 remains Partial.** The Linux and Windows path-confinement primitives support safe individual file opens under tested conditions; neither closes the repository-wide atomicity, full filesystem-side-effect, mutation/restoration or postflight-to-return gaps. No M7.4 task/backend suitability outcome is upgraded by this research note.
+
+## 27. G4 source-snapshot cost and cross-platform regression — 2026-11-26
+
+**Exact source revision:** `219cf5ef5c3c9f538d9711549236b87c648194c8`  
+**Workflow:** [run 45775992695](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45775992695), success  
+**Linux job:** `139759660790`, success  
+**Windows job:** `139759661154`, success  
+**Cost artifact:** `15096625375`, SHA-256 `2049ea4058b1541e28f4a506dbba39f4ae5cbb2fddc3d0372d2133f611c6fc0c`
+
+### 27.1 Exact-source test execution
+
+The Linux job ran the source-snapshot report-contract tests (12 passed), then the NetworkX-selected G4 mutation and repository-side-effect suites (**14 passed, 48 expected skips**). The Windows Server 2022 job ran the source-snapshot, mutation and repository-side-effect suites (**28 passed, 46 expected skips**). The skips are declared platform/backend partitions, not failures.
+
+### 27.2 Repository snapshot cost observation
+
+The ten-repeat report covers the exact repository tree at the source revision above:
+
+- 1,895 included files and 9,934,320 included bytes;
+- 1,895 file reads / 9,934,320 bytes for the content-load pass;
+- another 1,895 file reads / 9,934,320 bytes for the second identity/hash validation pass;
+- median repository-audit time: **4.7450 s**;
+- median first content-load time: **43.52 ms**;
+- median second validation time: **39.88 ms**;
+- median measured source-snapshot pipeline time: **4.8357 s**.
+
+The repository-audit phase dominates this measurement. The two explicit content passes together account for approximately 83.4 ms at the reported medians. Graph construction and native backend initialization are excluded. These measurements describe this repository, runner and exact source revision; they are not a universal cost estimate or a backend comparison.
+
+Report SHA-256: `bf6ea5d494a5343c6154626acf6326e831cd1d1c008856f4944f3a7abfd0a2f8`. The run and independent verification both returned `status=verified`.
+
+### 27.3 Assurance boundary
+
+The report explicitly records `atomic_snapshot_established=false`. The test and cost runs strengthen evidence for individual file containment, change detection, read-only behavior and the observed cost of the second validation pass. They do not prove that the 1,895 files were observed at one common instant. The existing limitations remain: repository-wide point-in-time atomicity, broader filesystem namespace/alias coverage, mutation-and-restoration schedules, external side effects and the native projection postflight-to-return race.
+
+**G4 remains Partial.** No task/backend suitability verdict is promoted by this run; `production_approval=false` remains invariant.
