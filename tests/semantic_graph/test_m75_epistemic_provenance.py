@@ -9,7 +9,7 @@ from pathlib import Path
 from audit_engine.semantic_audit.epistemic import (
     CompletenessClaim, CompletenessStatus, DuplicateRecordError, EpistemicStore, EvidenceRef,
     FreshnessStatus, NegativeClaimRequest, ProvenanceDependency,
-    ProvenanceManifest, StoreError, evaluate_negative_claim_with_freshness,
+    ProvenanceManifest, StorageLimitError, StoreError, evaluate_negative_claim_with_freshness,
 )
 
 
@@ -177,6 +177,37 @@ class ProvenanceGraphTests(unittest.TestCase):
         result = evaluate_negative_claim_with_freshness(item, request(), stale)
         self.assertFalse(result.admissible)
         self.assertIn("completeness claim has been invalidated by a dependency change", result.reasons)
+
+    def test_claim_dependency_registration_rolls_back_all_edges_on_storage_limit(self):
+        self.store.max_events = 2
+        with self.assertRaises(StorageLimitError):
+            self.store.record_completeness_dependencies(claim())
+        self.assertEqual(self.store.event_count(), 0)
+        self.assertTrue(self.store.verify_integrity())
+        self.assertEqual(self.store.freshness_status("claim:claim-1").status, FreshnessStatus.UNKNOWN)
+
+    def test_transitive_invalidation_rolls_back_all_nodes_on_storage_limit(self):
+        self.store.record_dependency(self.edge("claim-snapshot", "claim:A", "snapshot:A"))
+        self.store.record_dependency(self.edge("report-claim", "report:A", "claim:A"))
+        self.store.record_dependency_manifest(ProvenanceManifest(
+            manifest_id="manifest-claim-A", node_id="claim:A",
+            edge_ids=("claim-snapshot",), manifest_version="v1",
+        ))
+        self.store.record_dependency_manifest(ProvenanceManifest(
+            manifest_id="manifest-report-A", node_id="report:A",
+            edge_ids=("report-claim",), manifest_version="v1",
+        ))
+        before = self.store.event_count()
+        self.store.max_events = before + 1
+        with self.assertRaises(StorageLimitError):
+            self.store.invalidate_dependency(
+                "snapshot:A", root_change_id="limited-change",
+                reason="source changed", observed_at="now",
+            )
+        self.assertEqual(self.store.event_count(), before)
+        self.assertEqual(self.store.freshness_status("claim:A").status, FreshnessStatus.FRESH)
+        self.assertEqual(self.store.freshness_status("report:A").status, FreshnessStatus.FRESH)
+        self.assertTrue(self.store.verify_integrity())
 
     def test_m753_database_migrates_to_provenance_schema_without_rehashing_history(self):
         database = Path(self.temp.name) / "m753.sqlite"
