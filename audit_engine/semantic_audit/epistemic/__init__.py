@@ -42,6 +42,13 @@ from .rule_coverage import (
     derive_rule_coverage_plan, build_rule_derived_coverage_manifest,
     verify_rule_derived_manifest,
 )
+from .coverage_dossier import (
+    CoverageDossier,
+    CoverageDossierError,
+    CoverageDossierStore,
+    build_and_persist_coverage_dossier,
+    verify_dossier_against_current_stores,
+)
 from .persisted_assurance import (
     PersistedAssuranceResult,
     evaluate_persisted_assurance,
@@ -56,6 +63,12 @@ from .store import (
 )
 
 __all__ = [
+    "CoverageDossier",
+    "CoverageDossierError",
+    "CoverageDossierStore",
+    "build_and_persist_coverage_dossier",
+    "verify_dossier_against_current_stores",
+
     "RuleCoverageDerivationError",
     "RuleCoveragePlan",
     "derive_rule_coverage_plan",
