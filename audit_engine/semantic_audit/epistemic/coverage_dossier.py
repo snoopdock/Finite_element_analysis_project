@@ -330,5 +330,6 @@ def verify_dossier_against_current_stores(
         "current_epistemic_snapshot_matches": list(current_epistemic) == payload["epistemic_token_after"],
         "current_assurance_snapshot_matches": list(current_assurance) == payload["assurance_token_after"],
         "unreconciled_gap_ids": payload["unreconciled_gap_ids"],
+        "out_of_scope_gap_ids": payload["out_of_scope_gap_ids"],
         "overall_status_at_capture": payload["overall_status"],
     }
