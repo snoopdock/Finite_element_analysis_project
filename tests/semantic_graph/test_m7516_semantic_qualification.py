@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audit_engine.semantic_audit.epistemic.semantic_qualification import (
+from audit_engine.semantic_audit.epistemic import (\n    AssuranceClaim, CoverageObligation, ObligationDisposition,\n    derive_rule_coverage_plan, build_rule_derived_coverage_manifest,\n)\nfrom audit_engine.semantic_audit.epistemic.semantic_qualification import (
     SemanticQualificationError,
     qualify_typed_evidence_observations,
     semantic_evidence_contract_registry,
@@ -73,7 +73,7 @@ class SemanticQualificationTests(unittest.TestCase):
             "source_snapshot_id": self.source_id,
             "source_inventory": inventory,
         }
-        self.manifest["manifest_sha256"] = digest(self.manifest)
+        self.manifest["manifest_sha256"] = digest(self.manifest)\n        self.claim = AssuranceClaim("claim:m7516", "prop:m7516", "repository",\n                                    "scope:repo", self.source_id, "M7.5.16 qualification test")\n        self.plan = derive_rule_coverage_plan(\n            self.claim, source_snapshot_id=self.source_id, graph_snapshot_id="graph:m7516",\n            rule_ids=("AE32A-GRAPH-SERVICE-UNUSED", "AE32A-INCOMPLETE-PYTHON-SCAN",\n                      "AE32A-SCOPE-EXCLUSIONS", "AE32A-AE28-EXTERNAL-MODEL-INPUT"))\n        self.coverage_manifest = build_rule_derived_coverage_manifest(\n            self.claim, self.plan, assessments={oid: CoverageObligation(\n                oid, ObligationDisposition.UNKNOWN, limitation="M7.5.16 test fixture")\n                for oid in self.plan.expected_obligation_ids})
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -82,7 +82,7 @@ class SemanticQualificationTests(unittest.TestCase):
         payload = {
             "schema": "ae32c/typed-evidence-observation-bundle/v1",
             "source_snapshot_id": self.source_id,
-            "plan_sha256": "a" * 64,
+            "plan_sha256": self.plan.plan_sha256,
             "inventory_sha256": "b" * 64,
             "execution_report_sha256": "c" * 64,
             "observation_count": len(observations),
