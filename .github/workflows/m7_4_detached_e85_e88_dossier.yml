@@ -97,7 +97,7 @@ jobs:
       - name: Upload detached verification dossier
         uses: actions/upload-artifact@v4
         with:
-          name: m74-detached-dossier-45773593165
+          name: m74-detached-dossier-45776273051
           path: artifacts/verified-dossier.json
           if-no-files-found: error
           retention-days: 30
