@@ -103,6 +103,7 @@ class GitObjectSourceProvider:
         self.entries = {item["path"]: dict(original) for item, original in
                         zip(tree_entries, sorted(entries, key=lambda x: x["path"].encode("utf-8")))}
         self._verified_bytes: dict[str, bytes] = {}
+        self._lfs_pointer_paths: set[str] = set()
 
     def _git_bytes(self, *args: str, input_bytes: bytes | None = None) -> bytes:
         completed = subprocess.run(["git", *args], cwd=self.root, input=input_bytes,
@@ -158,6 +159,8 @@ class GitObjectSourceProvider:
         expected = entry.get("content_sha256")
         if not isinstance(expected, str) or _sha256(data) != expected:
             raise GitObjectSourceError("git_blob_sha256_mismatch:" + path)
+        if data.startswith(b"version https://git-lfs.github.com/spec/v1\n"):
+            self._lfs_pointer_paths.add(path)
         self._verified_bytes[path] = data
         return data
 
@@ -172,6 +175,8 @@ class GitObjectSourceProvider:
             "entry_count": len(self.entries),
             "verified_blob_count": len(self._verified_bytes),
             "materialization_kinds": dict(sorted(kinds.items())),
+            "lfs_pointer_blob_count": len(self._lfs_pointer_paths),
+            "lfs_pointer_paths": sorted(self._lfs_pointer_paths),
             "submodule_content_verified": False,
             "lfs_payload_verified": False,
         }

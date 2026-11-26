@@ -173,6 +173,6 @@ The graph snapshot reported:
 
 ### Remaining limits
 
-This implementation closes the mixed filesystem/Git-object read path for the committed-tree graph build. It does not establish a snapshot of dirty or untracked working-tree content, recursive submodule content, hydrated Git LFS payload integrity, or an atomic snapshot of all external filesystem state. The provider tests and integrated workflow have been executed on Ubuntu 24.04; Windows qualification remains pending. The graph coverage status is still constrained by its declared exclusions and does not authorize negative findings by default.
+This implementation closes the mixed filesystem/Git-object read path for the committed-tree graph build. It does not establish a snapshot of dirty or untracked working-tree content, recursive submodule content, hydrated Git LFS payload integrity, or an atomic snapshot of all external filesystem state. The provider tests now include ignored/untracked exclusion, worktree mutation independence, manifest/tree mismatch, symlink non-following and Git LFS pointer classification. The integrated workflow has been executed on Ubuntu 24.04; Windows qualification remains pending. The graph coverage status is still constrained by its declared exclusions and does not authorize negative findings by default.
 
 Accordingly, this implementation advances G4 from partial source identity binding to an integrated immutable committed-tree source path, but does not authorize production approval. \`production_approval=false\` remains invariant.

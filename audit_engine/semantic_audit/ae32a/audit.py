@@ -1355,7 +1355,7 @@ def audit_repository(
             "root_label": ".",
             "source_revision": source_revision,
             "runner_revision": runner_revision,
-            "source_provider": source_provider.snapshot_identity() if source_provider is not None else {"consistency_class": "BEST_EFFORT_NON_ATOMIC", "source_scope": "filesystem_scan"},
+            "source_provider": ({**source_provider.snapshot_identity(), "coverage": source_provider.coverage_report()} if source_provider is not None else {"consistency_class": "BEST_EFFORT_NON_ATOMIC", "source_scope": "filesystem_scan"}),
             "included_file_count": sum(row["status"] == "included" for row in manifest),
             "included_bytes": sum(row["size"] or 0 for row in manifest if row["status"] == "included"),
             "python_file_count": len(python_paths),

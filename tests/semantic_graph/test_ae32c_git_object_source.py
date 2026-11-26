@@ -32,6 +32,10 @@ class GitObjectSourceProviderTests(unittest.TestCase):
         self._git(root, "config", "user.name", "Audit Test")
         (root / "src").mkdir()
         (root / "src" / "module.py").write_text("VALUE = 'committed'\n", encoding="utf-8")
+        (root / "src" / "lfs-pointer.txt").write_text(
+            "version https://git-lfs.github.com/spec/v1\n"
+            "oid sha256:" + "a" * 64 + "\nsize 123\n", encoding="utf-8")
+        (root / "src" / "linked.py").symlink_to("module.py")
         (root / ".gitignore").write_text("scratch.py\n", encoding="utf-8")
         self._git(root, "add", ".")
         self._git(root, "commit", "-m", "initial")
@@ -61,6 +65,25 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             report = audit_repository(root, source_provider=provider)
             row = next(item for item in report["source_manifest"] if item["path"] == "src/module.py")
             self.assertEqual(row["sha256"], provider.entry_metadata("src/module.py")["content_sha256"])
+
+    def test_symlink_blob_is_not_followed_or_read_as_source(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            provider = GitObjectSourceProvider(root, self._verified_manifest(root))
+            from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceError
+            with self.assertRaisesRegex(GitObjectSourceError, "entry_not_regular_file_blob"):
+                provider.read_entry("src/linked.py")
+
+    def test_lfs_pointer_is_identified_without_claiming_payload_verification(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            provider = GitObjectSourceProvider(root, self._verified_manifest(root))
+            provider.read_entry("src/lfs-pointer.txt")
+            coverage = provider.coverage_report()
+            self.assertEqual(coverage["lfs_pointer_blob_count"], 1)
+            self.assertFalse(coverage["lfs_payload_verified"])
 
     def test_manifest_tree_mismatch_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:

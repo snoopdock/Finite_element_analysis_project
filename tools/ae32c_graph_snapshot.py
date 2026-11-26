@@ -97,7 +97,11 @@ def build_coverage_manifest(
     counts: Counter[str] = Counter()
     unaccounted: list[str] = []
     inventory_entries = source_manifest.get("source_inventory", {}).get("entries", [])
-    inventory_paths = {item.get("path") for item in inventory_entries if isinstance(item, dict)}
+    inventory_paths = {
+        item.get("path") for item in inventory_entries
+        if isinstance(item, dict) and item.get("object_type") == "blob"
+        and item.get("mode") in {"100644", "100755"}
+    }
     unexpected_paths = (set(represented_paths) | set(file_hashes)) - inventory_paths
     if unexpected_paths:
         sample = sorted(unexpected_paths, key=lambda item: str(item).encode("utf-8"))[:10]
