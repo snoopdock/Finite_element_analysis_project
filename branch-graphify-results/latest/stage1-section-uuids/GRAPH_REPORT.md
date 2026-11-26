@@ -1,4 +1,4 @@
-# Graph Report - stage1-section-uuids  (2026-11-25)
+# Graph Report - stage1-section-uuids  (2026-11-26)
 
 ## Corpus Check
 - cluster-only mode — file stats not available

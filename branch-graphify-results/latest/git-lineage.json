@@ -1,10 +1,10 @@
 {
   "base_branch": "main",
   "compare_branch": "stage1/section-uuids",
-  "base_sha": "1178c312e8e5237e2aad702c53a0fd99a0f5bfb2",
+  "base_sha": "8a35df7268a9cead7f41da305244d375a5387ae9",
   "compare_sha": "2efb8b44e69a0f3a4512f8164668c41af4127d75",
   "merge_base_sha": "2713797451965a14b2512cdf497f2619d844749f",
-  "base_only_commit_count": 332,
+  "base_only_commit_count": 334,
   "compare_only_commit_count": 1420,
   "base_changes_since_merge_base": [
     {
@@ -150,6 +150,10 @@
     {
       "status": "A",
       "path": ".github/workflows/ae32c-round-robin-evaluation.yml"
+    },
+    {
+      "status": "A",
+      "path": ".github/workflows/ae32c_publisher_readiness_preflight.yml"
     },
     {
       "status": "A",
@@ -689,6 +693,10 @@
     },
     {
       "status": "A",
+      "path": "tests/semantic_graph/test_ae32c_publisher_preflight.py"
+    },
+    {
+      "status": "A",
       "path": "tests/semantic_graph/test_ae32c_rule_contracts.py"
     },
     {
@@ -726,6 +734,10 @@
     {
       "status": "A",
       "path": "tools/ae32c_graph_snapshot.py"
+    },
+    {
+      "status": "A",
+      "path": "tools/ae32c_publisher_preflight.py"
     },
     {
       "status": "A",
@@ -7867,6 +7879,16 @@
     }
   ],
   "symmetric_commits": [
+    {
+      "side": "<",
+      "sha": "8a35df7268a9cead7f41da305244d375a5387ae9",
+      "subject": "Add read-only AE-32C publisher readiness preflight"
+    },
+    {
+      "side": "<",
+      "sha": "3a58a7a3ea04cd3affa5db8541f581327a6a7773",
+      "subject": "Update Graphify branch analysis [skip ci]"
+    },
     {
       "side": "<",
       "sha": "1178c312e8e5237e2aad702c53a0fd99a0f5bfb2",
