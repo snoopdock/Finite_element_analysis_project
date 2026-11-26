@@ -94,7 +94,10 @@ class EvidenceRef:
             object.__setattr__(self, name, _required(getattr(self, name), name))
         for name in ("source_uri", "independence_group"):
             object.__setattr__(self, name, _optional_text(getattr(self, name), name))
-        if self.artifact_sha256 is not None and not _SHA256_RE.fullmatch(self.artifact_sha256):
+        if self.artifact_sha256 is not None and (
+            not isinstance(self.artifact_sha256, str)
+            or not _SHA256_RE.fullmatch(self.artifact_sha256)
+        ):
             raise ContractError("artifact_sha256 must be 64 lowercase hexadecimal characters")
 
 
@@ -197,17 +200,20 @@ class CompletenessClaim:
             raise ContractError("covered_units cannot exceed expected_units")
         if not isinstance(self.evidence_refs, tuple) or any(not isinstance(ref, EvidenceRef) for ref in self.evidence_refs):
             raise ContractError("evidence_refs must be a tuple of EvidenceRef values")
-        if self.status is CompletenessStatus.SUPPORTED_WITHIN_SCOPE:
-            if self.expected_units is None or self.covered_units != self.expected_units:
-                raise ContractError("supported completeness requires a known denominator and exact coverage")
-            if not self.evidence_refs:
-                raise ContractError("supported completeness requires evidence_refs")
-            if not self.verification_method_id or not self.verification_method_id.strip():
-                raise ContractError("supported completeness requires verification_method_id")
-            if self.unsupported_constructs:
-                raise ContractError("unsupported constructs prevent supported completeness")
+        evidence_ids = tuple(ref.evidence_id for ref in self.evidence_refs)
+        if len(set(evidence_ids)) != len(evidence_ids):
+            raise ContractError("evidence_refs must not repeat evidence_id values")
         object.__setattr__(self, "verification_method_id", _optional_text(self.verification_method_id, "verification_method_id"))
         object.__setattr__(self, "exclusions", _unique_texts(self.exclusions, "exclusions"))
         object.__setattr__(self, "unsupported_constructs", _unique_texts(self.unsupported_constructs, "unsupported_constructs"))
         object.__setattr__(self, "assumptions", _unique_texts(self.assumptions, "assumptions"))
         object.__setattr__(self, "invalidation_triggers", _unique_texts(self.invalidation_triggers, "invalidation_triggers"))
+        if self.status is CompletenessStatus.SUPPORTED_WITHIN_SCOPE:
+            if self.expected_units is None or self.covered_units != self.expected_units:
+                raise ContractError("supported completeness requires a known denominator and exact coverage")
+            if not self.evidence_refs:
+                raise ContractError("supported completeness requires evidence_refs")
+            if self.verification_method_id is None:
+                raise ContractError("supported completeness requires verification_method_id")
+            if self.unsupported_constructs:
+                raise ContractError("unsupported constructs prevent supported completeness")

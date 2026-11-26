@@ -165,3 +165,14 @@ The existing 001/003/004/005/006 architecture notes remain design inputs:
 - No constructor performs persistence, I/O, network access, solver calls or decision-gate mutation.
 
 **M7.5.1 status after implementation:** contract and pure value-object layer only. Runtime integration and production approval remain false.
+
+## 8. Exact-source validation — 2026-11-26
+
+Workflow [45891830771](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45891830771) completed successfully on exact source SHA `b70445fe77993ae1ee41ccc39f263b950c4e7b4a`.
+
+- Python 3.11 compilation passed.
+- All 11 structural and behavioral tests passed.
+- Artifact: [m7-5-1-epistemic-contracts-45891830771-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45891830771/artifacts/15151747657).
+- Artifact ZIP SHA-256: `174baa7845872c1c61dd4c6f93e5b32b718b81fe3262979bceb02b07f53b1250`.
+
+This validates the local contract constructors and their stated invariants only. It does not validate persistence, inference, completeness of the repository's knowledge, independence, defeater reasoning, or decision-gate integration.

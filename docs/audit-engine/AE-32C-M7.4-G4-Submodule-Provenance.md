@@ -1,6 +1,6 @@
 # AE-32C G4 — Submodule provenance boundary
 
-**Status:** Pointer-level provenance is now explicit in the immutable Git-object provider. Recursive submodule content verification is not implemented.  
+**Status:** The initial sections below describe the pointer-only implementation stage. A later M7.4 tranche added bounded recursive local submodule accounting; the current repository snapshot had zero gitlinks, so no actual submodule content was verified. See section 8 and [M7.4 Closure and Transition](AE-32C-M7.4-Closure-and-Transition.md).  
 **Branch:** `stage1/section-uuids`  
 **Baseline:** `b478cd37fb516beafbab4c07e43a1296eccc11fb`
 
@@ -105,3 +105,31 @@ Implementation commit: `7027b5bf0aa0c18d6180c37695ecea7090d69eb9`.
 The full E.8.5/E.8.8 native backend workflow [45812298248](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45812298248) also completed successfully on the same implementation commit. NetworkX, SciPy, igraph, graph-tool and isolated SNAP jobs all passed, including their existing G4 snapshot/mutation and repository side-effect suites. This is regression evidence for the wider audit engine; it is not a claim that the submodule provider recursively audits submodule content.
 
 The submodule boundary is therefore implemented and tested on Linux and Windows as **pointer accounting with explicit content abstention**. Recursive submodule content remains unverified. `submodule_content_verified=false`, `lfs_payload_verified=false`, `atomic_snapshot_established=false`, and `production_approval=false` remain invariant.
+
+## 8. Subsequent recursive accounting implementation
+
+The pointer-only implementation described in sections 1–6 was extended during the later M7.4 G4 tranche by:
+
+- `audit_engine/semantic_audit/ae32c/submodule_lfs_accounting.py`;
+- `tools/ae32c_submodule_lfs_accounting.py`;
+- `tests/semantic_graph/test_ae32c_submodule_lfs_accounting.py`;
+- the recursive-accounting stage in `.github/workflows/ae32c_source_snapshot_manifest.yml`.
+
+The recursive scanner requires an explicit mapping from each gitlink path to an already-present local repository. It checks that the local HEAD equals the exact gitlink commit OID, verifies a source manifest for that repository, and recursively processes nested gitlinks. Nested mappings use superproject-relative paths. Traversal is bounded (maximum depth 8 and maximum repositories 256) and runs without clone, fetch, checkout, network access or credential use. Optional local LFS stores are also explicitly mapped.
+
+The report separates:
+- `NOT_SUPPLIED`: no local repository was supplied for a gitlink;
+- `UNVERIFIED`: a pointer is known but the referenced payload/content was not verified;
+- `SCANNED`: the supplied pinned local repository was scanned;
+- `BUDGET_EXCEEDED`: the declared recursion/repository bound prevented complete traversal.
+
+It also distinguishes `recursive_scan_complete` from `recursive_content_verified`. A repository with no gitlinks can have a complete recursive scan while content verification is `NOT_APPLICABLE_NO_GITLINKS`; that does not set `recursive_content_verified=true`.
+
+The exact-source source/graph workflow [45876247336](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45876247336) passed at the frozen M7.4 source revision. The actual inventory contained zero gitlinks and no local LFS object store was supplied. Synthetic tests exercise missing mappings, pinned commits, nested traversal, local LFS cache verification and no-gitlink semantics. Therefore the implementation and synthetic recursive behavior are CI-validated, but the actual repository snapshot did not verify external submodule contents or LFS payloads.
+
+The remaining invariants are:
+- `remote_payload_provenance_verified=false`;
+- `atomic_snapshot_established=false`;
+- `production_approval=false`.
+
+This later implementation does not retroactively change the historical meaning of the earlier sections; it supersedes their "not implemented" status as a current-code statement.

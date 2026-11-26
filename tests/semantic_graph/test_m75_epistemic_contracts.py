@@ -131,5 +131,29 @@ class CompletenessClaimTests(unittest.TestCase):
             )
 
 
+
+class ContractTypeValidationTests(unittest.TestCase):
+    def test_non_string_artifact_digest_is_rejected_cleanly(self):
+        with self.assertRaises(ContractError):
+            EvidenceRef("ev-1", "snap-1", "producer", "method", "now", 123)
+
+    def test_non_string_verification_method_is_rejected_cleanly(self):
+        with self.assertRaises(ContractError):
+            CompletenessClaim(
+                "cc-1", "source", "scope-1", "git:abc", "enumerator", "v1",
+                1, 1, CompletenessStatus.SUPPORTED_WITHIN_SCOPE,
+                evidence_refs=(evidence(),), verification_method_id=123,
+            )
+
+    def test_completeness_evidence_references_must_be_unique(self):
+        with self.assertRaises(ContractError):
+            CompletenessClaim(
+                "cc-1", "source", "scope-1", "git:abc", "enumerator", "v1",
+                1, 1, CompletenessStatus.SUPPORTED_WITHIN_SCOPE,
+                evidence_refs=(evidence("same"), evidence("same")),
+                verification_method_id="postflight:v1",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
