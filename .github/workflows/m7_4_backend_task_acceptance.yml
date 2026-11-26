@@ -284,6 +284,7 @@ jobs:
             echo "- SNAP isolated worker: $SNAP"
             echo "- Passing establishes only the tested G4 and task envelopes."
             echo "- No library ranking, automatic selection, scientific approval, or production approval is established."
+            echo "- Full-repository workload: NetworkX, SciPy, igraph and graph-tool must execute; SNAP may be explicitly skipped when its isolated 16 MiB initialization envelope is exceeded. That skip is not a SNAP suitability pass."
           } >> "$GITHUB_STEP_SUMMARY"
           if [[ "$SOURCE" != success || "$PIP_BACKENDS" != success || \
                 "$GRAPH_TOOL" != success || "$SNAP" != success ]]; then
