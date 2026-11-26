@@ -93,7 +93,7 @@ class LfsPayloadVerifierTests(unittest.TestCase):
             oid = hashlib.sha256(payload).hexdigest()
             object_path = store / oid[:2] / oid[2:4] / oid
             object_path.parent.mkdir(parents=True)
-            object_path.write_bytes(b"corrupt")
+            object_path.write_bytes(b"corrupt-content")
             report = verify_lfs_payloads(provider, store)
             self.assertFalse(report["lfs_payload_verified"])
             self.assertIn("lfs_payload_size_mismatch", report["records"][0]["reason"])
