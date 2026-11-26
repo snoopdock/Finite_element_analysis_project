@@ -1,6 +1,6 @@
 # AE-32C M7.5.9 — Trusted Rule-Derived Coverage Registry
 
-**Status:** Implemented; exact-source CI validation pending  
+**Status:** Implemented and exact-source CI validated  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.8 — Epistemic Coverage and Unknown-State Assurance  
 **Authority:** Derives a finite obligation set from the built-in AE-32C rule contracts; no proposition-truth, closed-world authorization or audit-gate authority
@@ -70,7 +70,23 @@ The dedicated suite covers:
 
 The CI workflow runs M7.5.9 after the M7.5.1–M7.5.8 regression suites and stores its log as an artifact.
 
-## 6. Remaining limitations
+## 6. Validation result
+
+Exact-source workflow: [45903996222](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45903996222)
+
+- Validated source revision: `121339f4816eb51df521a73d1a926bfeb7e12af2`
+- Runtime: Ubuntu 24.04, Python 3.11
+- M7.5.9 dedicated suite: 10 passed
+- M7.5.1–M7.5.8 regression suites: 87 passed
+- Total: 97 passed
+- Epistemic package compilation: passed
+- Artifact: `m7-5-epistemic-validation-45903996222-1`
+- Artifact ID: `15157530475`
+- Artifact SHA-256: `f51dc5b57f16fa2bef5014539eee49797d7ac406fffd44c3e1a588a0f8ee71e9`
+
+The initial M7.5.9 attempts exposed two integration defects: eager AE-32C package initialization imported an optional YAML-dependent investigator when only rule contracts were needed, and the new workflow step contained doubled shell continuations. The package exports were made lazy, the workflow command was corrected, and a later test assertion was aligned with the actual error text. The successful exact-source run above validates the final source revision; failed attempts are not included in the passing counts.
+
+## 7. Remaining limitations
 
 1. Rule selection is caller-supplied; the plan does not prove every applicable rule was selected.
 2. Source-unit and extractor candidate inventories are not derived at per-file granularity here. Coverage dimensions are those declared in each rule contract.
@@ -80,6 +96,6 @@ The CI workflow runs M7.5.9 after the M7.5.1–M7.5.8 regression suites and stor
 6. No automatic association of all repository knowledge gaps to rule obligations is added.
 7. No deterministic audit-gate consumption, ALLOW/DENY transition, or production approval is introduced.
 
-## 7. Closure implication
+## 8. Closure implication
 
 M7.5.9 closes the specific gap where a caller could silently omit a required evidence-kind or coverage obligation after selecting a rule. It does not close the larger trust question of whether the selected rule set, source universe, extractor inventory or gap inventory is exhaustive. M7.5 remains open.
