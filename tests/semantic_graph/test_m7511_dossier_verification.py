@@ -109,7 +109,7 @@ class DossierVerificationTests(unittest.TestCase):
         decoded["manifest"]["expected_obligation_ids"] = decoded["manifest"]["expected_obligation_ids"][:-1]
         replacement = json.dumps(decoded, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         payload_hash = hashlib.sha256(replacement.encode("utf-8")).hexdigest()
-        event_material = f"{sequence}\\n{dossier_id}\\n{payload_hash}\\n{previous_hash}"
+        event_material = f"{sequence}\n{dossier_id}\n{payload_hash}\n{previous_hash}"
         event_hash = hashlib.sha256(event_material.encode("utf-8")).hexdigest()
         raw.execute(
             "UPDATE coverage_dossier_events SET payload=?, payload_sha256=?, event_hash=? WHERE dossier_id=?",
@@ -134,7 +134,7 @@ class DossierVerificationTests(unittest.TestCase):
         replacement = json.dumps(decoded, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         payload_hash = hashlib.sha256(replacement.encode("utf-8")).hexdigest()
         event_hash = hashlib.sha256(
-            f"{sequence}\\n{dossier_id}\\n{payload_hash}\\n{previous_hash}".encode("utf-8")
+            f"{sequence}\n{dossier_id}\n{payload_hash}\n{previous_hash}".encode("utf-8")
         ).hexdigest()
         raw.execute(
             "UPDATE coverage_dossier_events SET payload=?, payload_sha256=?, event_hash=? WHERE dossier_id=?",
