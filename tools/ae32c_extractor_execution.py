@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Build and replay M7.5.13 extractor execution evidence."""
-import argparse,json
+import argparse,json,sys
 from pathlib import Path
+# Executing a script from tools/ puts that directory, not the repository root,
+# at sys.path[0]. Pin imports to this checkout explicitly.
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from audit_engine.semantic_audit.epistemic.source_inventory import build_source_extractor_inventory
 from audit_engine.semantic_audit.epistemic.extractor_execution import build_extractor_execution_report,verify_extractor_execution_report
 def read(p): return json.loads(Path(p).read_text(encoding="utf-8"))
