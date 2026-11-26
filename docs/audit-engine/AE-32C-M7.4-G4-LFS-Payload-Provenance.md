@@ -146,3 +146,40 @@ The attestation SHA-256 is an integrity digest, not a digital signature or proof
 These results qualify the bounded streaming Git-object prefix verifier on Linux and Windows. They do not establish LFS remote provenance or cross-store atomicity.
 
 The following limitations remain unchanged: submodule LFS content is not recursively verified; remote payload provenance is not authenticated; Git and external LFS payload reads are not an atomic cross-store snapshot; production approval remains false.
+
+
+## 8. Recursive submodule LFS accounting — 2026-11-26
+
+A separate bounded stage now accounts for every committed mode-160000 gitlink and optionally scans the corresponding already-present local submodule repository. It is intentionally separate from the superproject graph identity: a submodule is an independently versioned repository with its own commit, tree, object inventory, and LFS payload namespace.
+
+Implementation:
+- `audit_engine/semantic_audit/ae32c/submodule_lfs_accounting.py` implements recursive accounting.
+- `tools/ae32c_submodule_lfs_accounting.py` provides the command-line entry point.
+- `tests/semantic_graph/test_ae32c_submodule_lfs_accounting.py` exercises missing repositories, explicit submodule scans, pointer discovery, and local payload verification.
+- The source/graph workflow runs the tests and publishes `submodule-lfs-accounting.json` as part of the source evidence artifact.
+
+The stage accepts only explicit mappings from a committed gitlink path to an already-present local repository directory. Nested mappings use paths relative to the superproject (for example, `vendor/solver` and `vendor/solver/dependency`). Optional local LFS stores are mapped to the same gitlink paths. Each supplied repository must have HEAD exactly equal to the gitlink commit OID and must pass the source snapshot's clean-worktree and Git-object checks. It then scans that repository's regular committed blobs and recursively accounts for its own gitlinks.
+
+Example:
+```bash
+python tools/ae32c_submodule_lfs_accounting.py \
+  --repository . \
+  --source-manifest source-snapshot-manifest.json \
+  --output submodule-lfs-accounting.json \
+  --submodule-repository vendor/solver=/local/solver \
+  --submodule-repository vendor/solver/dependency=/local/dependency \
+  --lfs-object-store vendor/solver=/local/solver-lfs-objects
+```
+
+Status semantics are deliberately separate:
+- `NOT_SUPPLIED`: the gitlink is recorded, but no local repository was supplied.
+- `UNVERIFIED`: a supplied repository was unreadable, dirty, or did not match the pinned commit.
+- `SCANNED`: the supplied repository matched the gitlink and its committed tree was scanned.
+- `recursive_scan_complete`: every encountered nested gitlink had a supplied, successfully scanned repository.
+- `recursive_content_verified`: every scanned repository's LFS payloads were verified against an explicit local cache and all nested submodule content was likewise verified.
+
+The workflow does not initialize or fetch submodules. Therefore its default report records gitlinks as `NOT_SUPPLIED`; that is an explicit accounting result, not recursive verification. To obtain a positive recursive scan, the caller must provide local repositories pinned at the exact gitlink commits. A scan can be complete while payload verification remains false when no local LFS store is supplied.
+
+Hard bounds are enforced by configurable maximum recursion depth (default 8) and maximum number of inspected repositories (default 256). The stage disables Git replacement refs and lazy fetch, strips inherited Git routing variables, rejects external object alternates through the existing provider, and performs no network access, credential use, or implicit checkout.
+
+This stage does not authenticate the origin of a submodule commit or an LFS cache, does not establish an atomic snapshot across repositories/object stores, and does not grant production approval. Its accounting digest is an integrity checksum, not a signature.
