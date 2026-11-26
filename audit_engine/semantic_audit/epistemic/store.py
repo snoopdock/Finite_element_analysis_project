@@ -206,6 +206,81 @@ class EpistemicStore:
             raise TypeError("assertion must be an EvidenceAssertion")
         return self._append("assertion", assertion.assertion_id, 1, _canonical_payload(assertion))
 
+    def record_assertion_dependencies(self, assertion: EvidenceAssertion) -> tuple[str, ...]:
+        """Bind each persisted evidence ID to its snapshot, producer, method and digest.
+
+        Terminal metadata nodes must still receive explicit empty manifests from
+        the caller. This method records only the dependencies derivable from the
+        EvidenceRef itself.
+        """
+        if not isinstance(assertion, EvidenceAssertion):
+            raise TypeError("assertion must be an EvidenceAssertion")
+        if not self.assertion_history(assertion.assertion_id):
+            raise StoreError("evidence assertion must be persisted before declaring its dependencies")
+
+        with self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            if not self.verify_integrity():
+                raise StoreError("event ledger integrity check failed; refusing assertion dependency writes")
+            adjacency = self._dependency_adjacency()
+            recorded: list[str] = []
+            for ref in assertion.evidence_refs:
+                dependent = f"evidence:{ref.evidence_id}"
+                dependencies = [
+                    ("source_snapshot", f"snapshot:{ref.source_snapshot_id}", ref.source_snapshot_id),
+                    ("evidence_producer", f"producer:{ref.producer_id}", ref.producer_id),
+                    ("evidence_method", f"method:{ref.method_id}", ref.method_id),
+                ]
+                if ref.artifact_sha256:
+                    dependencies.append((
+                        "artifact_digest",
+                        f"artifact-sha256:{ref.artifact_sha256}",
+                        ref.artifact_sha256,
+                    ))
+                expected_edges = [
+                    ProvenanceDependency(
+                        edge_id=f"evidence-dep:{ref.evidence_id}:{kind}",
+                        dependent_id=dependent,
+                        dependency_id=dependency_id,
+                        dependency_kind=kind,
+                        expected_revision=revision,
+                    )
+                    for kind, dependency_id, revision in dependencies
+                ]
+                existing_rows = self._connection.execute(
+                    """SELECT record_id FROM epistemic_events
+                       WHERE record_type = 'dependency'
+                       AND json_extract(payload, '$.dependent_id') = ?""",
+                    (dependent,),
+                ).fetchall()
+                existing_ids = {row["record_id"] for row in existing_rows}
+                expected_ids = {edge.edge_id for edge in expected_edges}
+                if existing_ids and existing_ids != expected_ids:
+                    raise StoreError(
+                        f"evidence node {dependent} already has a different dependency declaration"
+                    )
+                if self.invalidation_history(dependent):
+                    raise StoreError(f"evidence node {dependent} is invalidated")
+                for edge in expected_edges:
+                    if self.invalidation_history(edge.dependency_id):
+                        raise StoreError(f"evidence dependency {edge.dependency_id} is invalidated")
+                    if self._reachable(adjacency, edge.dependency_id, edge.dependent_id):
+                        raise StoreError(f"evidence dependency edge {edge.edge_id} would introduce a cycle")
+                    self._append(
+                        "dependency", edge.edge_id, 1, _canonical_payload(edge),
+                        transaction_open=True,
+                    )
+                    adjacency.setdefault(edge.dependent_id, set()).add(edge.dependency_id)
+                    recorded.append(edge.edge_id)
+                manifest = ProvenanceManifest(
+                    manifest_id=f"manifest:{dependent}:evidence-v1",
+                    node_id=dependent,
+                    edge_ids=tuple(edge.edge_id for edge in expected_edges),
+                    manifest_version="m7.5.7/evidence-v1",
+                )
+                self.record_dependency_manifest(manifest, transaction_open=True)
+            return tuple(recorded)
+
     def record_gap(self, gap: KnowledgeGap) -> bool:
         if not isinstance(gap, KnowledgeGap):
             raise TypeError("gap must be a KnowledgeGap")
