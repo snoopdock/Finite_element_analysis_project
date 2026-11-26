@@ -8,6 +8,7 @@ on:
       - ".github/workflows/m7_5_epistemic_contracts.yml"
       - "docs/audit-engine/AE-32C-M7.5.8-Epistemic-Coverage-and-Unknown-State-Assurance.md"
       - "docs/audit-engine/AE-32C-M7.5.8-Validation-Record-45903022544.md"
+      - "docs/audit-engine/AE-32C-M7.5.8-Validation-Record-45903188231.md"
       - "audit_engine/semantic_audit/epistemic/**"
       - "tests/semantic_graph/test_m75_epistemic_contracts.py"
       - "tests/semantic_graph/test_m75_epistemic_store.py"
