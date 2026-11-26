@@ -7,8 +7,6 @@ It does not infer proposition truth or make audit/authorization decisions.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
-
 from .assurance import (
     ArgumentAssessment,
     AssuranceClaim,
@@ -18,13 +16,13 @@ from .assurance import (
     DefeaterEvent,
     evaluate_assurance,
 )
-from .assurance_store import AssuranceStore, AssuranceStoreError
+from .assurance_store import AssuranceStore
 from .contracts import (
     EvidenceRef,
     FreshnessResult,
     FreshnessStatus,
 )
-from .store import EpistemicStore, StoreError
+from .store import EpistemicStore
 
 
 @dataclass(frozen=True)
@@ -109,8 +107,12 @@ def evaluate_persisted_assurance(
 
         evidence_by_id: dict[str, EvidenceRef] = {}
         conflicting_ids: set[str] = set()
+        assertion_contexts: dict[str, set[tuple[str, str]]] = {}
         for assertion in evidence_assertions:
             for ref in assertion.evidence_refs:
+                assertion_contexts.setdefault(ref.evidence_id, set()).add(
+                    (assertion.proposition_id, assertion.scope_id)
+                )
                 prior = evidence_by_id.get(ref.evidence_id)
                 if prior is not None and prior != ref:
                     conflicting_ids.add(ref.evidence_id)
@@ -131,6 +133,12 @@ def evaluate_persisted_assurance(
             reasons.append("one or more assurance evidence IDs have no persisted EvidenceAssertion")
         if conflicting_ids & used_evidence_ids:
             reasons.append("one or more evidence IDs resolve to conflicting persisted EvidenceRef metadata")
+        if any(
+            (claim.proposition_id, claim.scope_id) not in assertion_contexts.get(item, set())
+            for item in used_evidence_ids
+            if item in evidence_by_id
+        ):
+            reasons.append("one or more evidence references lack an assertion for the claim proposition and scope")
         if any(
             evidence_by_id[item].source_snapshot_id != claim.source_snapshot_id
             for item in used_evidence_ids
