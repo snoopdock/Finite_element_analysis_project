@@ -38,12 +38,12 @@ The dossier stores:
 
 ## 3. Gap reconciliation contract
 
-Every gap present in the captured epistemic ledger must be mapped to one or more obligations in the derived plan. Each mapping must also be represented by the corresponding assessed `CoverageObligation.gap_ids`.
+Every gap in the captured epistemic ledger whose persisted `scope_id` matches the assurance claim must be mapped to one or more obligations in the derived plan. Gaps from other scopes remain in the complete inventory but are recorded separately as `out_of_scope_gap_ids`; they do not make this claim incomplete. Each in-scope mapping must also be represented by the corresponding assessed `CoverageObligation.gap_ids`.
 
 - A mapping to a nonexistent gap is rejected.
 - A mapping outside the derived obligation universe is rejected.\n- A gap whose persisted scope differs from the assurance claim scope cannot be reconciled to that claim.
 - A mapping not reflected in the manifest assessment is rejected.
-- A persisted gap omitted from the mapping is retained in `unreconciled_gap_ids` and forces overall status `INCOMPLETE`.
+- An in-scope persisted gap omitted from the mapping is retained in `unreconciled_gap_ids` and forces overall status `INCOMPLETE`.\n- Out-of-scope gaps remain visible in the dossier's complete inventory and `out_of_scope_gap_ids`, but do not affect claim-relative completeness.
 - Gaps are not silently discarded or inferred to be resolved.
 - The M7.5.8 evaluator continues to determine the state of gaps explicitly attached to obligations.
 
