@@ -1,7 +1,7 @@
 # AE-32C M7.4 — Task-Specific Backend Suitability Assessment Contract
 
 **Contract version:** `ae32c/m7-4-suitability-contract/v1`  
-**Status:** The exact-source five-backend E.8.5/E.8.8 regression [run 45776273051](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273051) passed on Stage1 SHA `69f0dcd7f18471c07558fcc469378b75315bf018`; each backend reported 14/14 E.8.5 and 43/43 E.8.8 parity-verified queries, with zero query or parity failures. The task-acceptance JUnit artifacts were independently detached-verified in [run 45776871604](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776871604); G7 is Pass for that exact five-backend artifact set. The separate M7.4 task/G4 workflow [run 45776273052](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273052) also passed all five backend jobs. The G4 source-snapshot cost and cross-platform regression passed in [run 45775992695](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45775992695), including Linux and Windows tests and a ten-repeat repository cost report. Exact-source G9.42 has not been rerun against `69f0dcd7f18471c07558fcc469378b75315bf018`. G4 and G5 remain Partial. All 20 formal task/backend outcomes remain Insufficient evidence pending the remaining atomic-snapshot, full-repository workload, deployment-envelope and task-domain gates.
+**Status:** The exact-source five-backend E.8.5/E.8.8 regression [run 45776273051](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273051) passed on Stage1 SHA `69f0dcd7f18471c07558fcc469378b75315bf018`; each backend reported 14/14 E.8.5 and 43/43 E.8.8 parity-verified queries, with zero query or parity failures. The task-acceptance JUnit artifacts were independently detached-verified in [run 45776931242](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776931242); G7 is Pass for that exact five-backend artifact set. The separate M7.4 task/G4 workflow [run 45776273052](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273052) also passed all five backend jobs. The G4 source-snapshot cost and cross-platform regression passed in [run 45775992695](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45775992695), including Linux and Windows tests and a ten-repeat repository cost report. Exact-source G9.42 has not been rerun against `69f0dcd7f18471c07558fcc469378b75315bf018`. G4 and G5 remain Partial. All 20 formal task/backend outcomes remain Insufficient evidence pending the remaining atomic-snapshot, full-repository workload, deployment-envelope and task-domain gates.
 **Target branch:** `stage1/section-uuids` only  
 **Baseline Stage1 source:** `47eb1ae6777e1d34c445af219c96840797739f23`  
 **M7.2 campaign:** [run 44940960831](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940960831)  
@@ -549,7 +549,8 @@ The earlier graph-tool signal-132 failure is classified as a CI binary/CPU compa
 **Exact Stage1 source:** `69f0dcd7f18471c07558fcc469378b75315bf018`  
 **Task/G4 workflow:** [run 45776273052](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273052), success  
 **E.8.5/E.8.8 regression:** [run 45776273051](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273051), success  
-**Detached verification:** [run 45776871604](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776871604), success  
+**Detached verification:** [run 45776931242](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776931242), success  
+**Detached dossier artifact:** `15096855737` (`m74-detached-dossier-45776273051`)  
 **SNAP worker image:** `sha256:90fd08a95f537056c416ad9edd6d02cb12600aa14ee05aba9848124056a549a6`
 
 ### 31.1 Additional source-derived task workload
@@ -578,7 +579,7 @@ All five E.8.5 reports contained 14/14 parity-verified queries; all five E.8.8 r
 
 ### 31.3 Detached artifact verification
 
-The detached verifier [run 45776871604](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776871604) passed its 15 adversarial verifier tests, downloaded all five exact Actions archives, checked archive bytes and report identities, and verified the M7.4 task JUnit artifacts. Each artifact contained 115 task test cases: 23 selected-backend passes and 92 expected skips. The machine-readable dossier records `m74_task_acceptance_artifacts_verified=true` and `task_suitability_decision_established=false`.
+The detached verifier [run 45776931242](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776931242) passed its 15 adversarial verifier tests, downloaded all five exact Actions archives, checked archive bytes and report identities, and verified the M7.4 task JUnit artifacts. Each artifact contained 115 task test cases: 23 selected-backend passes and 92 expected skips. The machine-readable dossier records `m74_task_acceptance_artifacts_verified=true` and `task_suitability_decision_established=false`.
 
 **G7 conclusion:** Pass for the exact five-backend artifact set from run 45776273051. This is archive-byte, source-binding and report-consistency verification; it is not historical re-execution or physical-runner attestation.
 
