@@ -178,6 +178,15 @@ class GraphSnapshotTests(unittest.TestCase):
         with self.assertRaisesRegex(GraphSnapshotError, "lfs_attestation_source_binding_mismatch"):
             self._build(lfs=attestation)
 
+    def test_lfs_attestation_commit_mismatch_is_rejected(self):
+        attestation = lfs_attestation()
+        attestation["commit_oid"] = "f" * 40
+        attestation["attestation_sha256"] = digest({
+            key: value for key, value in attestation.items() if key != "attestation_sha256"
+        })
+        with self.assertRaisesRegex(GraphSnapshotError, "lfs_attestation_source_binding_mismatch"):
+            self._build(lfs=attestation)
+
     def test_lfs_attestation_rejects_duplicate_regular_blob_inventory(self):
         attestation = lfs_attestation()
         attestation["regular_blob_inventory"].append(dict(attestation["regular_blob_inventory"][0]))
