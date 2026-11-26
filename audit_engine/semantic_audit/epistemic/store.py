@@ -276,13 +276,17 @@ class EpistemicStore:
                 )
                 adjacency.setdefault(edge.dependent_id, set()).add(edge.dependency_id)
                 recorded.append(edge.edge_id)
-            manifest = ProvenanceManifest(
-                manifest_id=f"manifest:{claim_node}:v1",
-                node_id=claim_node,
-                edge_ids=tuple(recorded),
-                manifest_version="m7.5.4/v1",
-            )
-            self.record_dependency_manifest(manifest, transaction_open=True)
+            grouped: dict[str, list[str]] = {}
+            for edge in edges:
+                grouped.setdefault(edge.dependent_id, []).append(edge.edge_id)
+            for node_id, edge_ids in sorted(grouped.items()):
+                manifest = ProvenanceManifest(
+                    manifest_id=f"manifest:{node_id}:v1",
+                    node_id=node_id,
+                    edge_ids=tuple(edge_ids),
+                    manifest_version="m7.5.4/v1",
+                )
+                self.record_dependency_manifest(manifest, transaction_open=True)
         return tuple(recorded)
 
     def record_dependency_manifest(
