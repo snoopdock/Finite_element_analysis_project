@@ -135,7 +135,7 @@ class EpistemicStore:
             CREATE TABLE IF NOT EXISTS epistemic_events (
                 sequence INTEGER PRIMARY KEY AUTOINCREMENT,
                 event_id TEXT NOT NULL UNIQUE,
-                record_type TEXT NOT NULL CHECK(record_type IN ('assertion', 'gap', 'completeness')),
+                record_type TEXT NOT NULL CHECK(record_type IN ('assertion', 'gap', 'completeness', 'dependency', 'invalidation', 'dependency_manifest')),
                 record_id TEXT NOT NULL,
                 revision INTEGER NOT NULL CHECK(revision >= 1),
                 payload TEXT NOT NULL,
