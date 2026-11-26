@@ -417,43 +417,47 @@ class EpistemicStore:
         if not isinstance(node_id, str) or not node_id.strip():
             raise ValueError("node_id must be a non-empty string")
         node_id = node_id.strip()
-        history = self.invalidation_history(node_id)
-        if history:
-            return FreshnessResult(
-                node_id=node_id, status=FreshnessStatus.INVALIDATED,
-                invalidation_ids=tuple(item["invalidation_id"] for item in history),
-                reason="one or more dependency changes invalidated this node",
-            )
-        manifest_row = self._connection.execute(
-            """SELECT payload FROM epistemic_events
-               WHERE record_type = 'dependency_manifest'
-               AND json_extract(payload, '$.node_id') = ?
-               ORDER BY sequence DESC LIMIT 1""",
-            (node_id,),
-        ).fetchone()
-        if manifest_row:
-            manifest = json.loads(manifest_row["payload"])
-            rows = self._connection.execute(
-                """SELECT record_id FROM epistemic_events
-                   WHERE record_type = 'dependency'
-                   AND json_extract(payload, '$.dependent_id') = ?""",
-                (node_id,),
-            ).fetchall()
-            actual = {row["record_id"] for row in rows}
-            declared = set(manifest["edge_ids"])
-            if actual == declared and declared:
+        # Read all three facts from one SQLite snapshot so a concurrent invalidation
+        # cannot be missed between the invalidation and manifest checks.
+        with self._connection:
+            self._connection.execute("BEGIN")
+            history = self.invalidation_history(node_id)
+            if history:
                 return FreshnessResult(
-                    node_id=node_id, status=FreshnessStatus.FRESH,
-                    reason="a closed dependency manifest exactly matches the recorded dependency edges",
+                    node_id=node_id, status=FreshnessStatus.INVALIDATED,
+                    invalidation_ids=tuple(item["invalidation_id"] for item in history),
+                    reason="one or more dependency changes invalidated this node",
+                )
+            manifest_row = self._connection.execute(
+                """SELECT payload FROM epistemic_events
+                   WHERE record_type = 'dependency_manifest'
+                   AND json_extract(payload, '$.node_id') = ?
+                   ORDER BY sequence DESC LIMIT 1""",
+                (node_id,),
+            ).fetchone()
+            if manifest_row:
+                manifest = json.loads(manifest_row["payload"])
+                rows = self._connection.execute(
+                    """SELECT record_id FROM epistemic_events
+                       WHERE record_type = 'dependency'
+                       AND json_extract(payload, '$.dependent_id') = ?""",
+                    (node_id,),
+                ).fetchall()
+                actual = {row["record_id"] for row in rows}
+                declared = set(manifest["edge_ids"])
+                if actual == declared and declared:
+                    return FreshnessResult(
+                        node_id=node_id, status=FreshnessStatus.FRESH,
+                        reason="a closed dependency manifest exactly matches the recorded dependency edges",
+                    )
+                return FreshnessResult(
+                    node_id=node_id, status=FreshnessStatus.UNKNOWN,
+                    reason="dependency manifest is missing edges or does not match the current dependency set",
                 )
             return FreshnessResult(
                 node_id=node_id, status=FreshnessStatus.UNKNOWN,
-                reason="dependency manifest is missing edges or does not match the current dependency set",
+                reason="no dependency declaration establishes freshness",
             )
-        return FreshnessResult(
-            node_id=node_id, status=FreshnessStatus.UNKNOWN,
-            reason="no dependency declaration establishes freshness",
-        )
 
     def transition_gap(self, gap: KnowledgeGap, *, expected_revision: int) -> int:
         """Append a new gap revision; the prior revision remains immutable."""
