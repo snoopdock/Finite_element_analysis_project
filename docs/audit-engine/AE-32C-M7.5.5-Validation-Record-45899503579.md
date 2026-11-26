@@ -54,16 +54,29 @@ All 57 tests passed. The Python 3.11 compile step also passed; its log was empty
 
 The downloaded archive was inspected. Each test log reports its expected test count and `OK`.
 
-## 4. What this establishes
+## 4. Follow-up documentation validation
 
-This run establishes that the exact source commit above:
+After recording the successful implementation validation in the M7.5.5 specification, the documentation commit `5a6d6966e016c4e34f1c464535ca637b584967cc` triggered the same workflow again.
+
+- Follow-up run: [45899817024](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45899817024)
+- Run conclusion: `success`
+- Job: `M7.5.1–M7.5.5 structural and behavioral validation`
+- All compile and five test-suite steps reported `success`.
+- Artifact: `m7-5-epistemic-validation-45899817024-1`
+- Artifact SHA-256: `19a65654dfdb0e45facab2ec56818e137d17bccbe3451aacb26cb09a7134d528`
+
+This second run confirms that the specification update did not break the workflow or the test suites. The first run remains the direct exact-source validation for implementation commit `5baa282a0dcd0079ff9055a1a1c3c6bf68ad062c`.
+
+## 5. What this establishes
+
+The exact implementation source commit above:
 
 - imports and compiles the epistemic package under Python 3.11;
 - passes the five M7.5.1–M7.5.5 test suites in the repository workflow;
 - passes the assurance argument and defeater lifecycle, persistence, append-only and tamper-detection tests;
 - produces and uploads the six expected validation logs.
 
-## 5. What this does not establish
+## 6. What this does not establish
 
 This is CI validation, not production approval. It does not establish:
 
@@ -77,9 +90,10 @@ This is CI validation, not production approval. It does not establish:
 
 Those limitations remain as recorded in the M7.5.5 specification.
 
-## 6. Reproducibility links
+## 7. Reproducibility links
 
 - [Validated source commit](https://github.com/snoopdock/Finite_element_analysis_project/commit/5baa282a0dcd0079ff9055a1a1c3c6bf68ad062c)
-- [Workflow run](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45899503579)
+- [Implementation validation run](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45899503579)
+- [Documentation follow-up run](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45899817024)
 - [Workflow definition](https://github.com/snoopdock/Finite_element_analysis_project/blob/stage1/section-uuids/.github/workflows/m7_5_epistemic_contracts.yml)
 - [M7.5.5 implementation specification](AE-32C-M7.5.5-Assurance-Arguments-and-Defeaters.md)
