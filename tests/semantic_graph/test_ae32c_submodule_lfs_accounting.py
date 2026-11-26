@@ -58,6 +58,19 @@ class SubmoduleLfsAccountingTests(unittest.TestCase):
                 f"oid sha256:{hashlib.sha256(payload).hexdigest()}\n"
                 f"size {len(payload)}\n").encode("ascii")
 
+    def test_empty_gitlink_inventory_is_not_misreported_as_verified_content(self):
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            root = temp / "plain"
+            self._repo(root, {"src/module.py": b"VALUE = 1\\n"})
+            provider = self._provider(root, temp)
+            report = account_submodule_lfs(provider)
+            self.assertEqual(report["gitlink_count"], 0)
+            self.assertTrue(report["recursive_scan_complete"])
+            self.assertFalse(report["recursive_content_verified"])
+            self.assertEqual(report["content_verification_status"],
+                             "NOT_APPLICABLE_NO_GITLINKS")
+
     def test_missing_submodule_repository_is_explicitly_unverified(self):
         with tempfile.TemporaryDirectory() as directory:
             temp = Path(directory)
