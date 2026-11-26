@@ -51,7 +51,21 @@ Structural and behavioral tests cover:
 - Bundle digest tampering.
 - Append-only persistence, idempotence, and restart recovery.
 
-## 6. Limitations
+## 7. Exact-source CI validation
+
+Workflow: [45911493746](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45911493746)
+
+- Validated source revision: `7b2abccc058842c75511b1a0f40135f2351e6c7b`
+- Runtime: Ubuntu 24.04, Python 3.11
+- Epistemic package compilation: passed
+- Dedicated M7.5.15 tests: 8 passed
+- Complete M7.5 regression: 156 passed
+- Job ID: `140220687772`
+- Final job conclusion: success
+
+An earlier run caught an invalid literal escape in the package export list before tests could execute. The export formatting was corrected; the successful run above compiled the package and passed both test layers.
+
+## 8. Limitations
 
 M7.5.15 does not:
 1. Treat structural observations as accepted semantic evidence.
