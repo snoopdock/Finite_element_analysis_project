@@ -1,4 +1,4 @@
-name: AE-32C M7.5.1 Epistemic Contract Validation
+name: AE-32C M7.5 Epistemic Contracts and Persistence
 
 on:
   push:
@@ -8,20 +8,21 @@ on:
       - ".github/workflows/m7_5_epistemic_contracts.yml"
       - "audit_engine/semantic_audit/epistemic/**"
       - "tests/semantic_graph/test_m75_epistemic_contracts.py"
+      - "tests/semantic_graph/test_m75_epistemic_store.py"
       - "docs/audit-engine/AE-32C-M7.5.1-Epistemic-Contracts.md"
-      - "docs/audit-engine/AE-32C-M7.4-Closure-and-Transition.md"
+      - "docs/audit-engine/AE-32C-M7.5.2-Append-Only-Epistemic-Persistence.md"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ae32c-m75-epistemic-contracts-stage1
+  group: ae32c-m75-epistemic-stage1
   cancel-in-progress: false
 
 jobs:
-  contract-tests:
-    name: M7.5.1 immutable contract tests
+  epistemic-validation:
+    name: M7.5.1 and M7.5.2 structural and behavioral validation
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -36,10 +37,10 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Compile the epistemic contract package
+      - name: Compile the epistemic package
         run: python -m compileall -q audit_engine/semantic_audit/epistemic
 
-      - name: Run M7.5.1 structural and behavioral tests
+      - name: Run M7.5.1 contract tests
         shell: bash
         run: |
           set -euo pipefail
@@ -49,7 +50,7 @@ jobs:
             -p 'test_m75_epistemic_contracts.py' \
             -v 2>&1 | tee reports/m75-1-epistemic-contracts.log
 
-      - name: Run M7.5.2 append-only store tests
+      - name: Run M7.5.2 persistence tests
         shell: bash
         run: |
           set -euo pipefail
@@ -59,12 +60,14 @@ jobs:
             -p 'test_m75_epistemic_store.py' \
             -v 2>&1 | tee reports/m75-2-epistemic-store.log
 
-      - name: Upload exact-source validation log
+      - name: Upload exact-source validation logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: m7-5-1-epistemic-contracts-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |\n            reports/m75-1-epistemic-contracts.log\n            reports/m75-2-epistemic-store.log
+          name: m7-5-epistemic-validation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            reports/m75-1-epistemic-contracts.log
+            reports/m75-2-epistemic-store.log
           if-no-files-found: warn
           retention-days: 30
 
@@ -72,9 +75,9 @@ jobs:
         if: always()
         run: |
           {
-            echo "## M7.5.1 epistemic contract validation"
+            echo "## M7.5 epistemic validation"
             echo "- Source SHA: $GITHUB_SHA"
-            echo "- Scope: immutable value-object validation only"
-            echo "- No persistence, inference, network, solver, or decision-gate integration"
-            echo "- Passing does not establish epistemic completeness or production approval"
+            echo "- Scope: immutable contracts and append-only SQLite event persistence"
+            echo "- No inference, completeness promotion, network, solver, or decision-gate integration"
+            echo "- Passing does not establish production durability or production approval"
           } >> "$GITHUB_STEP_SUMMARY"
