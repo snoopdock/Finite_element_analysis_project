@@ -223,18 +223,51 @@ def build_and_persist_coverage_dossier(
         raise TypeError("gap_to_obligations must be a mapping")
     verify_rule_derived_manifest(claim, plan, manifest)
 
+    # Validate mapping shape first, but defer semantic checks until the
+    # persisted inventory is available. This establishes deterministic error
+    # precedence: existence -> claim scope -> derived-plan membership ->
+    # assessed-manifest representation.
     mapping: dict[str, tuple[str, ...]] = {}
     for gap_id, obligation_ids in gap_to_obligations.items():
         if not isinstance(gap_id, str) or not gap_id.strip():
             raise CoverageDossierError("gap mapping contains an invalid gap ID")
         if not isinstance(obligation_ids, tuple) or not obligation_ids:
             raise CoverageDossierError(f"gap {gap_id} must map to a non-empty tuple of obligations")
+        if any(not isinstance(item, str) or not item.strip() for item in obligation_ids):
+            raise CoverageDossierError(f"gap {gap_id} contains an invalid obligation ID")
         normalized = tuple(sorted(set(obligation_ids)))
         if len(normalized) != len(obligation_ids):
             raise CoverageDossierError(f"gap {gap_id} contains duplicate obligation mappings")
-        if set(normalized) - set(plan.expected_obligation_ids):
-            raise CoverageDossierError(f"gap {gap_id} maps outside the derived obligation universe")
         mapping[gap_id] = normalized
+
+    epistemic_before = epistemic_store.snapshot_token()
+    assurance_before = assurance_store.snapshot_token()
+    gap_inventory = _gap_inventory(epistemic_store)
+    gap_by_id = {item["gap_id"]: item for item in gap_inventory}
+
+    absent_mapping_ids = set(mapping) - set(gap_by_id)
+    if absent_mapping_ids:
+        raise CoverageDossierError(
+            "gap mapping references absent persisted gaps: " + ",".join(sorted(absent_mapping_ids))
+        )
+
+    out_of_scope_mapping_ids = {
+        gap_id for gap_id in mapping
+        if gap_by_id[gap_id]["payload"].get("scope_id") != claim.scope_id
+    }
+    if out_of_scope_mapping_ids:
+        raise CoverageDossierError(
+            "gap mapping references gaps outside the assurance claim scope: "
+            + ",".join(sorted(out_of_scope_mapping_ids))
+        )
+
+    for gap_id, obligation_ids in mapping.items():
+        outside_plan = set(obligation_ids) - set(plan.expected_obligation_ids)
+        if outside_plan:
+            raise CoverageDossierError(
+                f"gap {gap_id} maps outside the derived obligation universe: "
+                + ",".join(sorted(outside_plan))
+            )
 
     assessed_gap_pairs = {
         (obligation.obligation_id, gap_id)
@@ -248,21 +281,11 @@ def build_and_persist_coverage_dossier(
                     f"gap mapping {gap_id}->{obligation_id} is not represented in the manifest assessment"
                 )
 
-    epistemic_before = epistemic_store.snapshot_token()
-    assurance_before = assurance_store.snapshot_token()
-    gap_inventory = _gap_inventory(epistemic_store)
-    gap_by_id = {item["gap_id"]: item for item in gap_inventory}
     in_scope_gap_ids = {
         gap_id for gap_id, item in gap_by_id.items()
         if item["payload"].get("scope_id") == claim.scope_id
     }
     out_of_scope_gap_ids = tuple(sorted(set(gap_by_id) - in_scope_gap_ids))
-    unknown_mapping_ids = set(mapping) - in_scope_gap_ids
-    if unknown_mapping_ids:
-        absent = unknown_mapping_ids - set(gap_by_id)
-        if absent:
-            raise CoverageDossierError("gap mapping references absent persisted gaps: " + ",".join(sorted(absent)))
-        raise CoverageDossierError("gap mapping references gaps outside the assurance claim scope: " + ",".join(sorted(unknown_mapping_ids)))
     unreconciled = tuple(sorted(in_scope_gap_ids - set(mapping)))
 
     result = evaluate_epistemic_coverage(
