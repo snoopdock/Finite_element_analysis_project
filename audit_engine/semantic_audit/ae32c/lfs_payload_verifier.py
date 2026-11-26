@@ -16,16 +16,16 @@ class LfsPayloadVerificationError(RuntimeError):
 
 _POINTER_VERSION = b"version https://git-lfs.github.com/spec/v1"
 _POINTER_PREFIX = b"version https://git-lfs.github.com/spec/"
-_OID_RE = re.compile(r"sha256:([0-9a-f]{64})\\Z")
-_KEY_RE = re.compile(r"[a-z0-9.-]+\\Z")
-_EXT_RE = re.compile(r"ext-[0-9]+-[A-Za-z0-9_-]+\\Z")
+_OID_RE = re.compile(r"sha256:([0-9a-f]{64})\Z")
+_KEY_RE = re.compile(r"[a-z0-9.-]+\Z")
+_EXT_RE = re.compile(r"ext-[0-9]+-[A-Za-z0-9_-]+\Z")
 _MAX_POINTER_BYTES = 1024
 _CHUNK_SIZE = 1024 * 1024
 
 
 def _canonical_bytes(value: Any) -> bytes:
     return (json.dumps(value, ensure_ascii=False, sort_keys=True,
-                       separators=(",", ":"), allow_nan=False) + "\\n").encode("utf-8")
+                       separators=(",", ":"), allow_nan=False) + "\n").encode("utf-8")
 
 
 def _seal(report: dict[str, Any]) -> dict[str, Any]:
@@ -38,7 +38,7 @@ def parse_lfs_pointer(data: bytes) -> dict[str, Any]:
     """Parse a canonical v1 pointer conservatively; reject ambiguous encodings."""
     if not isinstance(data, bytes) or not data or len(data) >= _MAX_POINTER_BYTES:
         raise LfsPayloadVerificationError("lfs_pointer_size_invalid")
-    if not data.endswith(b"\\n") or b"\\r" in data or b"\\0" in data:
+    if not data.endswith(b"\n") or b"\r" in data or b"\0" in data:
         raise LfsPayloadVerificationError("lfs_pointer_line_ending_invalid")
     try:
         lines = data.decode("ascii", errors="strict").splitlines()
