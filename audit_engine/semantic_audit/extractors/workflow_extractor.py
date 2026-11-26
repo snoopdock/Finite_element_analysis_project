@@ -1,6 +1,6 @@
 """Line-oriented workflow YAML observations; not a YAML parser."""
 import re
-_PATTERN = re.compile(r"^(?P<indent> *)(?P<key>name|on|jobs|steps|uses|run|with|if|needs|permissions|env|strategy|matrix)\s*:\s*(?P<value>.*)$")
+_PATTERN = re.compile(r"^(?P<indent> *)(?:-\s+)?(?P<key>name|on|jobs|steps|uses|run|with|if|needs|permissions|env|strategy|matrix)\s*:\s*(?P<value>.*)$")
 class WorkflowLexicalExtractor:
     def extract_source(self, source, file_path):
         text = source.decode("utf-8", errors="strict")
