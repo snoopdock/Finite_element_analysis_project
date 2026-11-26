@@ -14,6 +14,7 @@ on:
       - "docs/audit-engine/AE-32C-M7.5.1-Epistemic-Contracts.md"
       - "docs/audit-engine/AE-32C-M7.5.2-Append-Only-Epistemic-Persistence.md"
       - "docs/audit-engine/AE-32C-M7.5.3-Scope-Bound-Completeness-and-Negative-Claims.md"
+      - "docs/audit-engine/AE-32C-M7.5.4-Provenance-Dependencies-Freshness-and-Invalidation.md"
   workflow_dispatch:
 
 permissions:
