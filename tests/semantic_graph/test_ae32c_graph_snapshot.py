@@ -31,6 +31,8 @@ def source_manifest():
     }
     payload["source_inventory"]["entry_count"] = len(payload["source_inventory"]["entries"])
     payload["source_inventory"]["sha256"] = digest(payload["source_inventory"]["entries"])
+    payload["source"]["source_inventory_sha256"] = payload["source_inventory"]["sha256"]
+    payload["source_snapshot_id"] = digest(payload["source"])
     payload["manifest_sha256"] = digest(payload)
     return payload
 
@@ -106,7 +108,8 @@ class GraphSnapshotTests(unittest.TestCase):
     def test_source_snapshot_identity_is_bound_into_graph_identity(self):
         first = self._build()
         changed = source_manifest()
-        changed["source_snapshot_id"] = "b" * 64
+        changed["source"]["repository"] = "example/other-repo"
+        changed["source_snapshot_id"] = digest(changed["source"])
         changed["manifest_sha256"] = digest({k: v for k, v in changed.items() if k != "manifest_sha256"})
         second = build_graph_snapshot(
             source_manifest=changed,
