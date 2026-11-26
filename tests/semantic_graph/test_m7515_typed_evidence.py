@@ -134,13 +134,13 @@ class TypedEvidenceObservationTests(unittest.TestCase):
             plan=self.plan,inventory=self.inventory,execution_report=self.execution,
             repository_root=self.root)
         replay = verify_typed_evidence_observation_bundle(
-            bundle,plan=self.plan,inventory=self.inventory,
+            bundle,plan=self.plan,source_manifest=self.source,inventory=self.inventory,
             execution_report=self.execution,repository_root=self.root)
         self.assertTrue(replay["semantic_replay"])
         (self.root/"src/graph.py").write_text("import os\n")
         with self.assertRaises(TypedEvidenceError):
             verify_typed_evidence_observation_bundle(
-                bundle,plan=self.plan,inventory=self.inventory,
+                bundle,plan=self.plan,source_manifest=self.source,inventory=self.inventory,
                 execution_report=self.execution,repository_root=self.root)
 
     def test_bundle_digest_tampering_rejected(self):
@@ -150,7 +150,7 @@ class TypedEvidenceObservationTests(unittest.TestCase):
         bundle["summary"]["semantic_evidence_accepted_count"] = 4
         with self.assertRaisesRegex(TypedEvidenceError,"bundle_digest_mismatch"):
             verify_typed_evidence_observation_bundle(
-                bundle,plan=self.plan,inventory=self.inventory,
+                bundle,plan=self.plan,source_manifest=self.source,inventory=self.inventory,
                 execution_report=self.execution,repository_root=self.root)
 
     def test_persistence_requires_independently_replayed_m7514_reconciliation(self):
