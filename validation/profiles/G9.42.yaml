@@ -47,6 +47,7 @@ target_tests:
   - tests/semantic_graph/test_m72_task_suitability_campaign.py
   - tests/semantic_graph/test_m73_campaign_dossier.py
   - tests/semantic_graph/test_m74_task_suitability_acceptance.py
+  - tests/semantic_graph/test_m74_full_repository_task_campaign.py
   - tests/semantic_graph/test_m74_snapshot_mutation_integrity.py
   - tests/semantic_graph/test_m74_repository_side_effects.py
   - tests/semantic_graph/test_m74_detached_native_conformance_dossier.py
