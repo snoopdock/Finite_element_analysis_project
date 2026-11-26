@@ -347,3 +347,19 @@ Cross-platform rerun `45810640820` is now testing the corrected manifest behavio
 The G4 cost workflow's path filter was also missing `tools/ae32c_source_snapshot_manifest.py`; that utility is now included so future manifest changes trigger both Linux and Windows validation. The latest workflow-path change is commit `0f7eca103c53e3fb89f9f51efb34bd35af2febd3`.
 
 Do not close cross-platform qualification until run `45810640820` completes successfully. The separate source/graph workflow must also complete on a post-fix commit; this documentation update is intended to trigger that exact-source validation. `atomic_snapshot_established=false` and `production_approval=false` remain invariant.
+
+
+## 15. Cross-platform object-database qualification results — 2026-11-26
+
+The corrected cross-platform run completed successfully against source commit `0f7eca103c53e3fb89f9f51efb34bd35af2febd3`:
+
+- **Workflow:** [45810640820](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45810640820) — success; both Linux and Windows jobs passed.
+- **Linux cost job:** 10 repetitions; report verification returned `status=verified`; source and runner revisions both matched `0f7eca103c53e3fb89f9f51efb34bd35af2febd3`; report SHA-256 `00d3376cd525edf4428751d584eed8370d6f50224406c38cf908b70c0168ba9f`; manifest SHA-256 `97fdc783e535cf64eb91d433c1189e8cc1856031a800b2c5a487101b25dcd0f8`.
+- **Cost artifact:** [m7-4-g4-source-snapshot-cost-45810640820-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45810640820/artifacts/15114370198); artifact SHA-256 `03793dfa451d06d618102668a818206df0a9b65bb344267f424ed2fddc401df0`.
+- **Windows job:** 47 passed, 46 skipped; the job completed successfully. Skips are reported by pytest as platform/backend-specific selections, not failures.
+- **Linux provider qualification:** 19 tests passed, including all five new object-database cases: alternates rejection, shallow tree reading, graft isolation, promisor lazy-fetch suppression and object disappearance between type check and read.
+- **Linux source/graph workflow:** [45810640934](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45810640934) — success on `0f7eca1...`; source/graph capture, post-projection source verification, graph identity/coverage and all unit-test groups passed.
+
+The documentation-only follow-up commit is `a511912bc59275e7edcd7c488dd164acf676067b`. Its exact-current-HEAD source/graph validation, [run 45810832063](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45810832063), also completed successfully, including graph projection and postflight source verification.
+
+The G4 cross-platform qualification for these object-database cases is therefore established on Linux and Windows. It does not imply that the entire object database is transactionally immutable against arbitrary concurrent writes, and it does not expand scope to dirty working-tree snapshots, recursive submodule contents, or hydrated LFS payloads. The accepted alternate-object-store policy is fail-closed. `atomic_snapshot_established=false` and `production_approval=false` remain invariant.
