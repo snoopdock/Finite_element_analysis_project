@@ -377,9 +377,26 @@ def build_and_persist_typed_evidence_observations(
     *, store: TypedEvidenceObservationStore, plan: RuleCoveragePlan,
     claim: AssuranceClaim, manifest: EpistemicCoverageManifest,
     source_manifest: Mapping[str, Any], inventory: Mapping[str, Any],
-    execution_report: Mapping[str, Any], repository_root: str | Path,
+    execution_report: Mapping[str, Any], execution_reconciliation: Mapping[str, Any],
+    repository_root: str | Path,
 ) -> dict[str, Any]:
     verify_rule_derived_manifest(claim, plan, manifest)
+    reconciliation = dict(execution_reconciliation)
+    reconciliation_digest = reconciliation.get("reconciliation_sha256")
+    reconciliation_payload = {k: v for k, v in reconciliation.items()
+                              if k != "reconciliation_sha256"}
+    if reconciliation_digest != _digest(reconciliation_payload):
+        raise TypedEvidenceError("execution_reconciliation_digest_mismatch")
+    if (reconciliation.get("source_snapshot_id") != plan.source_snapshot_id
+            or reconciliation.get("plan_sha256") != plan.plan_sha256
+            or reconciliation.get("execution_report_sha256") != execution_report.get("report_sha256")):
+        raise TypedEvidenceError("execution_reconciliation_binding_mismatch")
+    if reconciliation.get("authority", {}).get("extractor_execution_reconciled_to_declared_obligations") is not True:
+        raise TypedEvidenceError("execution_reconciliation_not_authoritative_for_execution_accounting")
+    reconciled_ids = {x.get("obligation_id") for x in reconciliation.get("obligations", [])
+                      if isinstance(x, Mapping)}
+    if reconciled_ids != set(plan.expected_obligation_ids):
+        raise TypedEvidenceError("execution_reconciliation_obligation_universe_mismatch")
     try:
         verify_source_extractor_inventory(source_manifest, inventory)
         verify_extractor_execution_report(source_manifest, inventory, execution_report, repository_root)
