@@ -284,7 +284,10 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             self._repository(root)
             manifest = self._verified_manifest(root)
             self._git(sandbox, "clone", "--bare", str(root), str(alternate))
-            alternates = Path(self._git(root, "rev-parse", "--git-path", "objects")) / "info" / "alternates"
+            object_dir = Path(self._git(root, "rev-parse", "--git-path", "objects"))
+            if not object_dir.is_absolute():
+                object_dir = root / object_dir
+            alternates = object_dir / "info" / "alternates"
             alternates.parent.mkdir(parents=True, exist_ok=True)
             alternates.write_text(str(alternate / "objects") + "\n", encoding="utf-8")
             with self.assertRaisesRegex(SnapshotError, "external_object_store_not_allowed"):
@@ -318,6 +321,8 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             self._git(root, "commit", "-m", "graft parent candidate")
             graft_parent = self._git(root, "rev-parse", "HEAD")
             grafts = Path(self._git(root, "rev-parse", "--git-path", "info/grafts"))
+            if not grafts.is_absolute():
+                grafts = root / grafts
             grafts.parent.mkdir(parents=True, exist_ok=True)
             grafts.write_text(pinned + " " + graft_parent + "\n", encoding="ascii")
             provider = GitObjectSourceProvider(root, manifest)
@@ -339,6 +344,8 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             provider = GitObjectSourceProvider(root, manifest)
             oid = provider.entry_metadata("src/module.py")["git_object_oid"]
             object_dir = Path(self._git(root, "rev-parse", "--git-path", "objects"))
+            if not object_dir.is_absolute():
+                object_dir = root / object_dir
             loose_object = object_dir / oid[:2] / oid[2:]
             if not loose_object.is_file():
                 self.skipTest("test fixture blob is not stored as a loose object")
@@ -357,6 +364,8 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             provider = GitObjectSourceProvider(root, self._verified_manifest(root))
             oid = provider.entry_metadata("src/module.py")["git_object_oid"]
             object_dir = Path(self._git(root, "rev-parse", "--git-path", "objects"))
+            if not object_dir.is_absolute():
+                object_dir = root / object_dir
             loose_object = object_dir / oid[:2] / oid[2:]
             if not loose_object.is_file():
                 self.skipTest("test fixture blob is not stored as a loose object")

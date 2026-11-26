@@ -322,3 +322,8 @@ A deterministic race test removes the loose blob after its type check but before
 These are newly authored adversarial tests and policy changes. They are not yet validated by CI. The source/graph workflow and Windows/cost workflow must complete against the exact resulting Stage1 commit before these behaviors can be treated as established.
 
 The qualification still does not establish atomicity against arbitrary concurrent mutation of the entire object database. The accepted guarantee remains: each successfully returned blob is bound to its Git object ID and independently checked SHA-256; failed or missing reads do not become verified cache entries. `atomic_snapshot_established=false` and `production_approval=false` remain invariant.
+
+
+### CI finding and fixture correction
+
+The first CI execution of this qualification exposed a test-fixture path error, not a provider failure. Git returned a repository-relative path for the object directory; the alternate-file fixture wrote under the workflow checkout's current directory instead of the temporary test repository. The same relative-path assumption affected the new promisor, graft and read-race fixtures. This was corrected by resolving every relative `--git-path` result against the specific temporary repository before touching it. The first run therefore remains recorded as failed; the corrected test revision requires a fresh exact-source run.
