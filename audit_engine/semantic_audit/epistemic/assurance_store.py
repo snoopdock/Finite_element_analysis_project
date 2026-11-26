@@ -82,3 +82,54 @@ class AssuranceStore:
         rows = (self._db.execute("SELECT * FROM assurance_events ORDER BY sequence").fetchall()
                 if event_type is None else self._db.execute("SELECT * FROM assurance_events WHERE event_type=? ORDER BY sequence", (event_type,)).fetchall())
         return [dict(row) for row in rows]
+
+    def records_snapshot(self) -> tuple[Any, ...]:
+        """Return typed records in append order from one verified read snapshot."""
+        with self._db:
+            self._db.execute("BEGIN")
+            if not self.verify_integrity():
+                raise AssuranceStoreError("assurance ledger integrity failure")
+            rows = self._db.execute(
+                "SELECT event_type, payload FROM assurance_events ORDER BY sequence"
+            ).fetchall()
+            decoded = []
+            for row in rows:
+                payload = json.loads(row["payload"])
+                kind = row["event_type"]
+                if kind == "claim":
+                    record = AssuranceClaim(**payload)
+                elif kind == "link":
+                    from .assurance import ArgumentRelation
+                    payload["relation"] = ArgumentRelation(payload["relation"])
+                    for name in ("premise_ids", "evidence_ids", "provenance_node_ids"):
+                        payload[name] = tuple(payload[name])
+                    record = ArgumentLink(**payload)
+                elif kind == "defeater":
+                    from .assurance import DefeaterKind
+                    payload["kind"] = DefeaterKind(payload["kind"])
+                    payload["evidence_ids"] = tuple(payload["evidence_ids"])
+                    record = Defeater(**payload)
+                elif kind == "defeater_event":
+                    from .assurance import DefeaterAction
+                    payload["action"] = DefeaterAction(payload["action"])
+                    payload["evidence_ids"] = tuple(payload["evidence_ids"])
+                    record = DefeaterEvent(**payload)
+                else:
+                    raise AssuranceStoreError(f"unknown persisted record type: {kind}")
+                decoded.append(record)
+            return tuple(decoded)
+
+    def snapshot_token(self) -> tuple[int, str]:
+        """Return a verified ledger version token for optimistic cross-ledger reads."""
+        with self._db:
+            self._db.execute("BEGIN")
+            if not self.verify_integrity():
+                raise AssuranceStoreError("assurance ledger integrity failure")
+            count = self._db.execute(
+                "SELECT COUNT(*) AS n FROM assurance_events"
+            ).fetchone()["n"]
+            row = self._db.execute(
+                "SELECT event_hash FROM assurance_events ORDER BY sequence DESC LIMIT 1"
+            ).fetchone()
+            return count, row["event_hash"] if row else "0" * 64
+
