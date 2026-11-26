@@ -141,6 +141,27 @@ class EpistemicCoverageTests(unittest.TestCase):
         result = self.evaluate(manifest)
         self.assertIs(result.status, EpistemicCoverageStatus.INCOMPLETE)
 
+
+    def test_resolved_gap_requires_matching_persisted_resolution_evidence(self):
+        from audit_engine.semantic_audit.epistemic import GapKind, GapState, KnowledgeGap
+        unpersisted = EvidenceRef(
+            "resolution:missing", "snapshot:1", "reviewer:v1",
+            "review:v1", "2026-11-27T12:00:00Z",
+        )
+        gap = KnowledgeGap(
+            "gap:resolved", "repo", GapKind.PARTIAL_EXTRACTION, GapState.RESOLVED,
+            "scope:repo", "parser-inspection:v1", "resolved by review",
+            resolution_evidence_refs=(unpersisted,),
+        )
+        self.epistemic.record_gap(gap)
+        manifest = self.manifest(obligations=(
+            CoverageObligation("inventory", ObligationDisposition.EVIDENCE_BOUND,
+                               ("evidence:1",), ("gap:resolved",)),
+            CoverageObligation("parser", ObligationDisposition.EVIDENCE_BOUND, ("evidence:1",)),
+        ))
+        result = self.evaluate(manifest)
+        self.assertIs(result.status, EpistemicCoverageStatus.INCOMPLETE)
+
     def test_registry_and_manifest_are_explicitly_bound_in_digest(self):
         first = self.manifest()
         second = EpistemicCoverageManifest(
