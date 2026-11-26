@@ -251,3 +251,47 @@ The exact-source graph capture reported:
 The cost report explicitly retains \`atomic_snapshot_established=false\`. The result characterizes the existing repository audit/content-load/second-validation path; it is not evidence that the full audit transaction has become atomic.
 
 These tests strengthen confidence in the immutable committed-tree boundary. They do not close the separately declared exclusions: dirty/untracked working-tree snapshots, recursive submodule content, hydrated LFS payloads, and repository-wide transaction atomicity. \`production_approval=false\` remains invariant.
+
+
+## 12. Git subprocess environment isolation — 2026-11-26
+
+A further object-database review identified that both source-manifest capture and the immutable provider inherited the caller's Git environment. This left the Git interpretation dependent on ambient variables that can redirect repository discovery or object lookup, and did not explicitly suppress replacement-object semantics or partial-clone lazy fetching.
+
+The source-capture utility and provider now construct a controlled environment for every Git subprocess:
+
+- remove inherited variables whose names begin with `GIT_`, including repository/object-directory routing, namespace, replacement-policy overrides, and command-scope configuration injection;
+- set `GIT_NO_REPLACE_OBJECTS=1`, so `refs/replace/*` cannot substitute another object for the pinned OID;
+- set `GIT_NO_LAZY_FETCH=1`, so a missing promisor object cannot be fetched implicitly during capture or reading;
+- disable optional locks and system/global Git configuration for deterministic subprocess behavior.
+
+The source manifest's streaming `cat-file --batch` process uses the same environment policy as its other Git commands. The provider uses the same policy for commit/tree resolution, inventory enumeration, blob type/content reads, and object-ID verification.
+
+### Added adversarial tests
+
+The provider test suite now includes:
+
+- a replacement ref mapping the pinned commit to a different commit; provider construction and reads must still resolve the literal pinned commit and its original committed bytes;
+- inherited `GIT_DIR`, `GIT_WORK_TREE`, `GIT_OBJECT_DIRECTORY`, `GIT_NO_REPLACE_OBJECTS=0`, and `GIT_NO_LAZY_FETCH=0`; manifest capture and provider construction must remain bound to the requested repository;
+- a SHA-256-format Git repository, where supported by the installed Git version, to verify object-format-aware commit, tree and blob identity handling.
+
+### Implementation revisions
+
+The changes were applied only to `stage1/section-uuids`:
+
+- provider environment isolation: `faa0f2f8d61c86896e6b50a615cb1e7df3ee21ec`;
+- source-manifest environment isolation: `adc8ce3849544aa92f4cff8e11add4ea027c8048`;
+- replacement-ref, inherited-environment and SHA-256 tests: `60c4b913f70404eb5fae8b598da828aafa894c7d`.
+
+**Validation status at documentation time:** GitHub Actions execution for the new source revision is pending inspection. These commits are implementation evidence, not a test-pass claim.
+
+### Remaining object-database qualification
+
+The following cases remain open and must not be inferred as solved by environment isolation:
+
+- on-disk alternates configured through `.git/objects/info/alternates`; inherited `GIT_ALTERNATE_OBJECT_DIRECTORIES` is removed, but repository-configured alternates are still part of Git's object lookup and their provenance policy has not yet been accepted or rejected;
+- shallow repositories and graft files; the current provider reads the pinned commit's tree and does not traverse history, but the boundary behavior still needs executable qualification;
+- partial-clone/promisor repositories; lazy fetch is disabled, but an adversarial missing-promisor-object test has not yet demonstrated the fail-closed behavior;
+- concurrent object disappearance or replacement during an in-flight read;
+- repository SHA-256 compatibility on each supported CI runner family.
+
+The next pass should test these cases directly, distinguish immutable content identity from object-database provenance, and record the resulting trust boundary. `atomic_snapshot_established=false` and `production_approval=false` remain invariant.
