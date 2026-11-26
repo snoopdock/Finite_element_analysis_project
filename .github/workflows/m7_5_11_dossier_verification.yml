@@ -1,0 +1,75 @@
+name: AE-32C M7.5.11 Independent Coverage Dossier Verification
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_11_dossier_verification.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tests/semantic_graph/test_m75*.py"
+      - "docs/audit-engine/AE-32C-M7.5.11-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7511-stage1
+  cancel-in-progress: false
+
+jobs:
+  dossier-verification:
+    name: M7.5.11 semantic verification and replay
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile epistemic package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m compileall -q audit_engine/semantic_audit/epistemic 2>&1 | tee reports/m7511-compile.log
+
+      - name: Run complete M7.5 regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_m75*.py' \
+            -v 2>&1 | tee reports/m7511-regression.log
+
+      - name: Upload exact-source validation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m7-5-11-dossier-verification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            reports/m7511-compile.log
+            reports/m7511-regression.log
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Summarize assurance boundary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.11 independent dossier verification"
+            echo "- Source SHA: $GITHUB_SHA"
+            echo "- Verifies plan/manifest binding, persisted result consistency, mapping and scope partitions, status precedence, and captured token semantics"
+            echo "- Replays evaluation only when both current source-ledger tokens still match the captured after-tokens"
+            echo "- Source drift preserves historical dossier verification but prevents current-state replay"
+            echo "- No proposition-truth inference, audit decision, authorization, or production approval"
+          } >> "$GITHUB_STEP_SUMMARY"
