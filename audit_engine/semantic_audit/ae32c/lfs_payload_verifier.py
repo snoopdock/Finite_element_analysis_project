@@ -1,7 +1,8 @@
-"""Verify Git LFS payload bytes against committed pointer OIDs without network access."""
+"""Verify Git LFS payloads and emit complete, source-bound pointer attestations."""
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 from pathlib import Path
 import re
@@ -14,18 +15,30 @@ class LfsPayloadVerificationError(RuntimeError):
 
 
 _POINTER_VERSION = b"version https://git-lfs.github.com/spec/v1"
-_OID_RE = re.compile(r"sha256:([0-9a-f]{64})\Z")
-_KEY_RE = re.compile(r"[a-z0-9.-]+\Z")
-_EXT_RE = re.compile(r"ext-[0-9]+-[A-Za-z0-9_-]+\Z")
+_POINTER_PREFIX = b"version https://git-lfs.github.com/spec/"
+_OID_RE = re.compile(r"sha256:([0-9a-f]{64})\\Z")
+_KEY_RE = re.compile(r"[a-z0-9.-]+\\Z")
+_EXT_RE = re.compile(r"ext-[0-9]+-[A-Za-z0-9_-]+\\Z")
 _MAX_POINTER_BYTES = 1024
 _CHUNK_SIZE = 1024 * 1024
+
+
+def _canonical_bytes(value: Any) -> bytes:
+    return (json.dumps(value, ensure_ascii=False, sort_keys=True,
+                       separators=(",", ":"), allow_nan=False) + "\\n").encode("utf-8")
+
+
+def _seal(report: dict[str, Any]) -> dict[str, Any]:
+    payload = {key: value for key, value in report.items() if key != "attestation_sha256"}
+    report["attestation_sha256"] = hashlib.sha256(_canonical_bytes(payload)).hexdigest()
+    return report
 
 
 def parse_lfs_pointer(data: bytes) -> dict[str, Any]:
     """Parse a canonical v1 pointer conservatively; reject ambiguous encodings."""
     if not isinstance(data, bytes) or not data or len(data) >= _MAX_POINTER_BYTES:
         raise LfsPayloadVerificationError("lfs_pointer_size_invalid")
-    if not data.endswith(b"\n") or b"\r" in data or b"\0" in data:
+    if not data.endswith(b"\\n") or b"\\r" in data or b"\\0" in data:
         raise LfsPayloadVerificationError("lfs_pointer_line_ending_invalid")
     try:
         lines = data.decode("ascii", errors="strict").splitlines()
@@ -116,42 +129,85 @@ def _hash_payload(path: Path, oid: str, expected_size: int) -> dict[str, Any]:
             "sha256": actual, "status": "VERIFIED_LOCAL_PAYLOAD"}
 
 
-def verify_lfs_payloads(provider: Any, object_store_root: str | Path) -> dict[str, Any]:
-    """Scan the pinned tree and verify each LFS payload in an explicit local cache."""
-    root = Path(object_store_root).expanduser().resolve(strict=True)
-    if not root.is_dir():
-        raise LfsPayloadVerificationError("lfs_object_store_not_directory")
+def verify_lfs_payloads(provider: Any,
+                        object_store_root: str | Path | None = None) -> dict[str, Any]:
+    """Scan every committed regular blob; optionally verify pointers in an explicit cache.
+
+    No network lookup, Git LFS smudge, credential use, or implicit cache discovery occurs.
+    Without a cache, every discovered pointer receives an explicit UNVERIFIED record.
+    """
+    root = None
+    if object_store_root is not None:
+        root = Path(object_store_root).expanduser().resolve(strict=True)
+        if not root.is_dir():
+            raise LfsPayloadVerificationError("lfs_object_store_not_directory")
+
+    regular_inventory: list[dict[str, Any]] = []
     pointers: list[dict[str, Any]] = []
+    scanned = 0
     for entry in provider.iter_entries():
-        if entry.get("object_type") != "blob" or entry.get("mode") not in {"100644", "100755"}:
+        if (entry.get("object_type") != "blob"
+                or entry.get("mode") not in {"100644", "100755"}):
             continue
         raw = provider.read_entry(entry["path"])
-        if not raw.startswith(b"version https://git-lfs.github.com/spec/"):
+        scanned += 1
+        is_candidate = raw.startswith(_POINTER_PREFIX)
+        regular_inventory.append({
+            "path": entry["path"],
+            "git_object_oid": entry["git_object_oid"],
+            "content_sha256": entry["content_sha256"],
+            "is_lfs_pointer": is_candidate,
+        })
+        if not is_candidate:
             continue
+        pointer_sha256 = hashlib.sha256(raw).hexdigest()
+        base = {
+            "path": entry["path"],
+            "git_object_oid": entry["git_object_oid"],
+            "pointer_sha256": pointer_sha256,
+        }
         try:
             parsed = parse_lfs_pointer(raw)
+            base.update({"oid": parsed["oid"], "expected_size": parsed["size"]})
+            if root is None:
+                raise LfsPayloadVerificationError("lfs_object_store_not_supplied")
             payload_path = _safe_object_path(root, parsed["oid"])
-            verified = _hash_payload(payload_path, parsed["oid"], parsed["size"])
-            pointers.append({"path": entry["path"], **verified})
+            base.update(_hash_payload(payload_path, parsed["oid"], parsed["size"]))
         except LfsPayloadVerificationError as exc:
-            pointers.append({"path": entry["path"], "status": "UNVERIFIED",
-                             "reason": str(exc)})
-    verified_count = sum(item.get("status") == "VERIFIED_LOCAL_PAYLOAD"
-                         for item in pointers)
-    failed_count = len(pointers) - verified_count
+            base.update({"status": "UNVERIFIED", "reason": str(exc)})
+        pointers.append(base)
+
+    regular_inventory.sort(key=lambda item: item["path"].encode("utf-8"))
+    pointers.sort(key=lambda item: item["path"].encode("utf-8"))
+    verified_count = sum(item.get("status") == "VERIFIED_LOCAL_PAYLOAD" for item in pointers)
+    unverified_count = len(pointers) - verified_count
+    if root is None:
+        status = "NOT_SUPPLIED"
+        object_store_mode = "NOT_SUPPLIED_NO_NETWORK"
+    elif unverified_count:
+        status = "UNVERIFIED"
+        object_store_mode = "EXPLICIT_LOCAL_CACHE_NO_NETWORK"
+    else:
+        status = "VERIFIED_LOCAL_PAYLOADS"
+        object_store_mode = "EXPLICIT_LOCAL_CACHE_NO_NETWORK"
     identity = provider.snapshot_identity()
-    return {
-        "schema": "ae32c/lfs-payload-verification/v1",
+    report = {
+        "schema": "ae32c/lfs-payload-verification/v2",
         "source_snapshot_id": identity["source_snapshot_id"],
         "commit_oid": identity["commit_oid"],
         "source_inventory_sha256": identity["source_inventory_sha256"],
-        "object_store_mode": "EXPLICIT_LOCAL_CACHE_NO_NETWORK",
+        "object_store_mode": object_store_mode,
+        "status": status,
+        "scan_complete": True,
+        "scanned_regular_blob_count": scanned,
+        "regular_blob_inventory": regular_inventory,
         "pointer_count": len(pointers),
         "verified_payload_count": verified_count,
-        "unverified_payload_count": failed_count,
-        "lfs_payload_verified": failed_count == 0,
+        "unverified_payload_count": unverified_count,
+        "lfs_payload_verified": status == "VERIFIED_LOCAL_PAYLOADS",
         "records": pointers,
         "remote_payload_provenance_verified": False,
         "atomic_snapshot_established": False,
         "production_approval": False,
     }
+    return _seal(report)
