@@ -10,6 +10,7 @@ on:
       - "audit_engine/semantic_audit/graph/**"
       - "audit_engine/semantic_audit/ae32b/evidence_tools.py"
       - "tests/semantic_graph/test_m74_task_suitability_acceptance.py"
+      - "tests/semantic_graph/test_m74_full_repository_task_campaign.py"
       - "tests/semantic_graph/test_m74_snapshot_mutation_integrity.py"
       - "tests/semantic_graph/test_m74_repository_side_effects.py"
       - ".github/environments/e85-graph-tool.yml"
@@ -59,7 +60,7 @@ jobs:
     name: M7.4 G4 + task acceptance — ${{ matrix.backend }}
     needs: resolve-source
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 50
     strategy:
       fail-fast: false
       matrix:
@@ -103,6 +104,18 @@ jobs:
             source/tests/semantic_graph/test_m74_repository_side_effects.py \
             --junitxml="reports/m74-$BACKEND-junit.xml" \
             2>&1 | tee "reports/m74-$BACKEND-tests.log"
+      - name: Run full-repository source-derived task campaign
+        shell: bash
+        env:
+          BACKEND: ${{ matrix.backend }}
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q -s -ra \
+            source/tests/semantic_graph/test_m74_full_repository_task_campaign.py \
+            --junitxml="reports/m74-full-repository-$BACKEND-junit.xml" \
+            2>&1 | tee "reports/m74-full-repository-$BACKEND-tests.log"
       - name: Upload backend-specific M7.4 evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -116,7 +129,7 @@ jobs:
     name: M7.4 G4 + task acceptance — graph-tool
     needs: resolve-source
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 50
     env:
       AE32C_M74_BACKEND: graph-tool
       CONDA_OVERRIDE_ARCHSPEC: x86_64
@@ -159,6 +172,17 @@ jobs:
             source/tests/semantic_graph/test_m74_repository_side_effects.py \
             --junitxml=reports/m74-graph-tool-junit.xml \
             2>&1 | tee reports/m74-graph-tool-tests.log
+      - name: Run full-repository source-derived task campaign
+        shell: micromamba-shell {0}
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q -s -ra \
+            source/tests/semantic_graph/test_m74_full_repository_task_campaign.py \
+            --junitxml=reports/m74-full-repository-graph-tool-junit.xml \
+            2>&1 | tee reports/m74-full-repository-graph-tool-tests.log
       - name: Upload graph-tool M7.4 evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -172,7 +196,7 @@ jobs:
     name: M7.4 G4 + task acceptance — SNAP isolated worker
     needs: resolve-source
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       AE32C_M74_BACKEND: snap
       AE32C_SNAP_WORKER_IMAGE: ae32c-snap-worker:m74
@@ -216,6 +240,17 @@ jobs:
             source/tests/semantic_graph/test_m74_repository_side_effects.py \
             --junitxml=reports/m74-snap-junit.xml \
             2>&1 | tee reports/m74-snap-tests.log
+      - name: Run full-repository source-derived task campaign
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q -s -ra \
+            source/tests/semantic_graph/test_m74_full_repository_task_campaign.py \
+            --junitxml=reports/m74-full-repository-snap-junit.xml \
+            2>&1 | tee reports/m74-full-repository-snap-tests.log
       - name: Upload SNAP M7.4 evidence
         if: always()
         uses: actions/upload-artifact@v4
