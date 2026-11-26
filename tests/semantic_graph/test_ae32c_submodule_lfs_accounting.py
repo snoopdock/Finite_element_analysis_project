@@ -92,6 +92,39 @@ class SubmoduleLfsAccountingTests(unittest.TestCase):
             self.assertFalse(record["recursive_content_verified"])
             self.assertFalse(report["recursive_content_verified"])
 
+    def test_nested_gitlinks_are_accounted_using_superproject_relative_paths(self):
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            nested = temp / "nested"
+            self._repo(nested, {"src/dependency.py": b"DEPENDENCY = True\\n"})
+            child = temp / "child"
+            child.mkdir()
+            self._git(child, "init")
+            self._git(child, "config", "user.email", "audit-test@example.invalid")
+            self._git(child, "config", "user.name", "Audit Test")
+            self._git(child, "-c", "protocol.file.allow=always", "submodule", "add",
+                      str(nested), "dependency")
+            self._git(child, "add", ".")
+            self._git(child, "commit", "-m", "add nested submodule")
+            parent, _ = self._parent_with_submodule(temp, child)
+            provider = self._provider(parent, temp)
+            report = account_submodule_lfs(
+                provider,
+                submodule_repositories={
+                    "vendor/child": child,
+                    "vendor/child/dependency": nested,
+                },
+            )
+            top = report["records"][0]
+            self.assertEqual(top["status"], "SCANNED")
+            self.assertEqual(top["nested_gitlink_count"], 1)
+            self.assertEqual(top["nested"][0]["path"], "vendor/child/dependency")
+            self.assertEqual(top["nested"][0]["status"], "SCANNED")
+            self.assertTrue(top["recursive_scan_complete"])
+            self.assertTrue(report["recursive_scan_complete"])
+            # Scanning a Git tree does not imply its LFS payloads were supplied.
+            self.assertFalse(report["recursive_content_verified"])
+
     def test_explicit_submodule_lfs_cache_verifies_payload_and_binds_commit(self):
         payload = b"submodule LFS payload"
         with tempfile.TemporaryDirectory() as directory:
