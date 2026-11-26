@@ -10,10 +10,8 @@ from audit_engine.semantic_audit.epistemic import (
     derive_rule_coverage_plan, build_rule_derived_coverage_manifest,
 )
 from audit_engine.semantic_audit.epistemic.semantic_qualification import (
-    SemanticQualificationError,
-    qualify_typed_evidence_observations,
-    semantic_evidence_contract_registry,
-    verify_semantic_evidence_qualification,
+    SemanticQualificationError, qualify_typed_evidence_observations,
+    semantic_evidence_contract_registry, verify_semantic_evidence_qualification,
 )
 
 
@@ -67,39 +65,31 @@ class SemanticQualificationTests(unittest.TestCase):
             target = self.root / path
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(raw)
-            entries.append({"path": path, "content_sha256": hashlib.sha256(raw).hexdigest(),
-                            "mode": "100644", "object_type": "blob"})
-        entries.sort(key=lambda x: x["path"])
+            entries.append({
+                "path": path, "content_sha256": hashlib.sha256(raw).hexdigest(),
+                "mode": "100644", "object_type": "blob",
+            })
+        entries.sort(key=lambda item: item["path"])
         inventory = {"entries": entries, "entry_count": len(entries)}
         inventory["sha256"] = digest(entries)
-        self.manifest = {
+        self.source_manifest = {
             "manifest_schema": "ae32c/source-snapshot-manifest/v1",
             "source_snapshot_id": self.source_id,
             "source_inventory": inventory,
-        self.manifest["manifest_sha256"] = digest(self.manifest)
-        self.claim = AssuranceClaim("claim:m7516", "prop:m7516", "repository",
-                                    "scope:repo", self.source_id, "M7.5.16 qualification test")
+        }
+        self.source_manifest["manifest_sha256"] = digest(self.source_manifest)
+        self.claim = AssuranceClaim(
+            "claim:m7516", "prop:m7516", "repository", "scope:repo",
+            self.source_id, "M7.5.16 qualification test")
         self.plan = derive_rule_coverage_plan(
             self.claim, source_snapshot_id=self.source_id, graph_snapshot_id="graph:m7516",
             rule_ids=("AE32A-GRAPH-SERVICE-UNUSED", "AE32A-INCOMPLETE-PYTHON-SCAN",
                       "AE32A-SCOPE-EXCLUSIONS", "AE32A-AE28-EXTERNAL-MODEL-INPUT"))
         self.coverage_manifest = build_rule_derived_coverage_manifest(
-            self.claim, self.plan, assessments={oid: CoverageObligation(
-                oid, ObligationDisposition.UNKNOWN, limitation="M7.5.16 test fixture")
+            self.claim, self.plan, assessments={
+                oid: CoverageObligation(oid, ObligationDisposition.UNKNOWN,
+                                        limitation="M7.5.16 test fixture")
                 for oid in self.plan.expected_obligation_ids})
-        self.manifest["manifest_sha256"] = digest(self.manifest)\n        self.claim = AssuranceClaim("claim:m7516", "prop:m7516", "repository",\n                                    "scope:repo", self.source_id, "M7.5.16 qualification test")\n        self.plan = derive_rule_coverage_plan(\n            self.claim, source_snapshot_id=self.source_id, graph_snapshot_id="graph:m7516",\n            rule_ids=("AE32A-GRAPH-SERVICE-UNUSED", "AE32A-INCOMPLETE-PYTHON-SCAN",\n                      "AE32A-SCOPE-EXCLUSIONS", "AE32A-AE28-EXTERNAL-MODEL-INPUT"))\n        self.coverage_manifest = build_rule_derived_coverage_manifest(\n            self.claim, self.plan, assessments={oid: CoverageObligation(\n                oid, ObligationDisposition.UNKNOWN, limitation="M7.5.16 test fixture")\n                for oid in self.plan.expected_obligation_ids})
-
-    def qualify(self, bundle, **kwargs):
-        return qualify_typed_evidence_observations(
-            bundle, claim=self.claim, plan=self.plan,
-            coverage_manifest=self.coverage_manifest,
-            source_manifest=self.manifest, repository_root=self.root, **kwargs)
-
-    def verify(self, result, bundle, **kwargs):
-        return verify_semantic_evidence_qualification(
-            result, bundle, claim=self.claim, plan=self.plan,
-            coverage_manifest=self.coverage_manifest,
-            source_manifest=self.manifest, repository_root=self.root, **kwargs)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -119,61 +109,74 @@ class SemanticQualificationTests(unittest.TestCase):
         }
         return {**payload, "bundle_sha256": digest(payload)}
 
+    def qualify(self, bundle, **kwargs):
+        return qualify_typed_evidence_observations(
+            bundle, claim=self.claim, plan=self.plan,
+            coverage_manifest=self.coverage_manifest,
+            source_manifest=self.source_manifest, repository_root=self.root, **kwargs)
+
+    def verify(self, result, bundle, **kwargs):
+        return verify_semantic_evidence_qualification(
+            result, bundle, claim=self.claim, plan=self.plan,
+            coverage_manifest=self.coverage_manifest,
+            source_manifest=self.source_manifest, repository_root=self.root, **kwargs)
+
     def test_registry_is_versioned_and_digest_bound(self):
         registry = semantic_evidence_contract_registry()
         self.assertEqual(registry["schema"], "ae32c/semantic-evidence-contract-registry/v1")
         self.assertEqual(registry["registry_sha256"], digest({
             "schema": registry["schema"], "contracts": registry["contracts"]}))
 
-    def test_graph_import_does_not_support_unused_or_not_in_llm_path(self):
+    def test_graph_import_is_insufficient_for_unused_or_llm_path_claim(self):
         raw = self.files["src/graph.py"]
-        obs = observation(self.source_id, "src/graph.py", raw, "graph_import", 1,
-                          "rule:AE32A-GRAPH-SERVICE-UNUSED:evidence:graph_import",
-                          "python_import_statement",
-                          {"module": "networkx", "imported_symbols": [], "matched_module_root": "networkx"})
-        bundle = self.bundle([obs])
-        result = self.qualify(bundle)
+        obs = observation(
+            self.source_id, "src/graph.py", raw, "graph_import", 1,
+            "rule:AE32A-GRAPH-SERVICE-UNUSED:evidence:graph_import",
+            "python_import_statement",
+            {"module": "networkx", "imported_symbols": [], "matched_module_root": "networkx"})
+        result = self.qualify(self.bundle([obs]))
         self.assertEqual(result["qualifications"][0]["qualification"], "INSUFFICIENT")
         self.assertFalse(result["authority"]["proposition_truth_established"])
 
     def test_ast_parse_failure_supports_only_narrow_scan_limitation(self):
         raw = self.files["src/broken.py"]
-        obs = observation(self.source_id, "src/broken.py", raw, "python_syntax_error", 1,
-                          "rule:AE32A-INCOMPLETE-PYTHON-SCAN:evidence:python_syntax_error",
-                          "python_ast_parse_failure",
-                          {"exception_type": "SyntaxError", "diagnostic_code": "source_parse_failed",
-                           "message": "invalid syntax"})
+        obs = observation(
+            self.source_id, "src/broken.py", raw, "python_syntax_error", 1,
+            "rule:AE32A-INCOMPLETE-PYTHON-SCAN:evidence:python_syntax_error",
+            "python_ast_parse_failure",
+            {"exception_type": "SyntaxError", "diagnostic_code": "source_parse_failed",
+             "message": "invalid syntax"})
         result = self.qualify(self.bundle([obs]))
         self.assertEqual(result["qualifications"][0]["qualification"], "SUPPORTED")
         self.assertIn("parse-coverage limitation", result["qualifications"][0]["limitation"])
 
-    def test_scope_exclusion_supports_declaration_not_adequacy(self):
+    def test_scope_exclusion_remains_insufficient_without_inventory_replay(self):
         raw = self.files["src/excluded.py"]
-        obs = observation(self.source_id, "src/excluded.py", raw, "scope_exclusion", None,
-                          "rule:AE32A-SCOPE-EXCLUSIONS:evidence:scope_exclusion",
-                          "declared_scope_exclusion", {"reason": "fixture exclusion"})
-        result = qualify_typed_evidence_observations(
-            self.bundle([obs]), source_manifest=self.manifest, repository_root=self.root)
+        obs = observation(
+            self.source_id, "src/excluded.py", raw, "scope_exclusion", None,
+            "rule:AE32A-SCOPE-EXCLUSIONS:evidence:scope_exclusion",
+            "declared_scope_exclusion", {"reason": "fixture exclusion"})
+        result = self.qualify(self.bundle([obs]))
         self.assertEqual(result["qualifications"][0]["qualification"], "INSUFFICIENT")
         self.assertIn("independent verification", result["qualifications"][0]["limitation"])
 
-    def test_unregistered_rule_remains_unknown(self):
+    def test_unsupported_evidence_kind_remains_unknown(self):
         raw = self.files["src/graph.py"]
-        obs = observation(self.source_id, "src/graph.py", raw, "graph_import", 1,
-                          "rule:AE32A-UNKNOWN-RULE:evidence:graph_import",
-                          "python_import_statement",
-                          {"module": "networkx", "imported_symbols": [], "matched_module_root": "networkx"})
-        result = qualify_typed_evidence_observations(
-            self.bundle([obs]), source_manifest=self.manifest, repository_root=self.root)
+        obs = observation(
+            self.source_id, "src/graph.py", raw, "external_model_response_intake", 1,
+            "rule:AE32A-AE28-EXTERNAL-MODEL-INPUT:evidence:external_model_response_intake",
+            "unvalidated_external_model_response", {"response": "untrusted"})
+        result = self.qualify(self.bundle([obs]))
         self.assertEqual(result["qualifications"][0]["qualification"], "UNKNOWN")
 
     def test_source_bound_defeater_makes_result_contested_but_unverified(self):
         raw = self.files["src/broken.py"]
-        obs = observation(self.source_id, "src/broken.py", raw, "python_syntax_error", 1,
-                          "rule:AE32A-INCOMPLETE-PYTHON-SCAN:evidence:python_syntax_error",
-                          "python_ast_parse_failure",
-                          {"exception_type": "SyntaxError", "diagnostic_code": "source_parse_failed",
-                           "message": "invalid syntax"})
+        obs = observation(
+            self.source_id, "src/broken.py", raw, "python_syntax_error", 1,
+            "rule:AE32A-INCOMPLETE-PYTHON-SCAN:evidence:python_syntax_error",
+            "python_ast_parse_failure",
+            {"exception_type": "SyntaxError", "diagnostic_code": "source_parse_failed",
+             "message": "invalid syntax"})
         defeater = {
             "target_observation_id": obs["evidence_observation_id"],
             "source_snapshot_id": self.source_id,
@@ -190,34 +193,36 @@ class SemanticQualificationTests(unittest.TestCase):
 
     def test_replay_and_source_drift_rejection(self):
         raw = self.files["src/graph.py"]
-        obs = observation(self.source_id, "src/graph.py", raw, "graph_import", 1,
-                          "rule:AE32A-GRAPH-SERVICE-UNUSED:evidence:graph_import",
-                          "python_import_statement",
-                          {"module": "networkx", "imported_symbols": [], "matched_module_root": "networkx"})
+        obs = observation(
+            self.source_id, "src/graph.py", raw, "graph_import", 1,
+            "rule:AE32A-GRAPH-SERVICE-UNUSED:evidence:graph_import",
+            "python_import_statement",
+            {"module": "networkx", "imported_symbols": [], "matched_module_root": "networkx"})
         bundle = self.bundle([obs])
-        result = qualify_typed_evidence_observations(
-            bundle, source_manifest=self.manifest, repository_root=self.root)
-        replay = self.verify(result, bundle)
-        self.assertTrue(replay["semantic_replay"])
+        result = self.qualify(bundle)
+        self.assertTrue(self.verify(result, bundle)["semantic_replay"])
         (self.root / "src/graph.py").write_text("import os\n")
         with self.assertRaises(SemanticQualificationError):
             self.verify(result, bundle)
 
     def test_line_tampering_and_invalid_source_references_rejected(self):
         raw = self.files["src/graph.py"]
-        obs = observation(self.source_id, "src/graph.py", raw, "graph_import", 1,
-                          "rule:AE32A-GRAPH-SERVICE-UNUSED:evidence:graph_import",
-                          "python_import_statement",
-                          {"module": "networkx", "imported_symbols": [], "matched_module_root": "networkx"})
+        obs = observation(
+            self.source_id, "src/graph.py", raw, "graph_import", 1,
+            "rule:AE32A-GRAPH-SERVICE-UNUSED:evidence:graph_import",
+            "python_import_statement",
+            {"module": "networkx", "imported_symbols": [], "matched_module_root": "networkx"})
         obs["source_line_sha256"] = "0" * 64
-        obs["evidence_observation_id"] = digest({k:v for k,v in obs.items() if k != "evidence_observation_id"})
+        obs["evidence_observation_id"] = digest({
+            k: v for k, v in obs.items() if k != "evidence_observation_id"})
         with self.assertRaises(SemanticQualificationError):
             self.qualify(self.bundle([obs]))
 
     def test_bundle_digest_tampering_rejected(self):
         bundle = self.bundle([])
         bundle["summary"]["semantic_evidence_accepted_count"] = 9
-        with self.assertRaisesRegex(SemanticQualificationError, "observation_bundle_digest_mismatch"):
+        with self.assertRaisesRegex(SemanticQualificationError,
+                                    "observation_bundle_digest_mismatch"):
             self.qualify(bundle)
 
 
