@@ -281,6 +281,12 @@ def build_and_persist_coverage_dossier(
     unknown_mapping_ids = set(mapping) - known_gap_ids
     if unknown_mapping_ids:
         raise CoverageDossierError("gap mapping references absent persisted gaps: " + ",".join(sorted(unknown_mapping_ids)))
+    gap_by_id = {item["gap_id"]: item for item in gap_inventory}
+    for gap_id in mapping:
+        if gap_by_id[gap_id]["payload"].get("scope_id") != claim.scope_id:
+            raise CoverageDossierError(
+                f"gap {gap_id} is outside the assurance claim scope"
+            )
     unreconciled = tuple(sorted(known_gap_ids - set(mapping)))
 
     result = evaluate_epistemic_coverage(
