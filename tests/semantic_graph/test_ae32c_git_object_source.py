@@ -19,7 +19,9 @@ class GitObjectSourceProviderTests(unittest.TestCase):
         return result.stdout.strip()
 
     def _verified_manifest(self, root: Path) -> dict:
-        manifest = self._verified_manifest(root)
+        manifest = capture_manifest(root, event_name="push",
+                                    repository_name="test/repo",
+                                    ref="refs/heads/test")
         manifest_path = root.parent / (root.name + "-source-manifest.json")
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
         return verify_manifest(root, manifest_path)
