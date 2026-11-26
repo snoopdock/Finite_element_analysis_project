@@ -214,6 +214,73 @@ class GitObjectSourceProvider:
         self._verified_bytes[path] = data
         return data
 
+    def read_entry_prefix(self, path: str, max_bytes: int = 1024) -> tuple[bytes, int]:
+        """Verify a committed blob while retaining only a bounded content prefix.
+
+        This path is intended for classification scans over the complete tree.
+        It streams the full Git object through both the Git object hash and the
+        manifest SHA-256 check without populating the provider's full-byte cache.
+        """
+        if not isinstance(max_bytes, int) or isinstance(max_bytes, bool) or max_bytes < 1:
+            raise GitObjectSourceError("blob_prefix_limit_invalid")
+        entry = self.entry_metadata(path)
+        if entry.get("object_type") != "blob" or entry.get("mode") not in {"100644", "100755"}:
+            raise GitObjectSourceError("entry_not_regular_file_blob:" + path)
+        oid = str(entry.get("git_object_oid", ""))
+        try:
+            git_digest = hashlib.new(self.object_format)
+        except ValueError as exc:
+            raise GitObjectSourceError("git_object_hash_algorithm_unsupported") from exc
+        content_digest = hashlib.sha256()
+        prefix = bytearray()
+        process = subprocess.Popen(
+            ["git", "cat-file", "--batch"], cwd=self.root, env=self._git_environment(),
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+        try:
+            assert process.stdin is not None and process.stdout is not None
+            process.stdin.write(oid.encode("ascii") + b"\\n")
+            process.stdin.flush()
+            header = process.stdout.readline().rstrip(b"\\n").split()
+            if (len(header) != 3 or header[0].decode("ascii", errors="replace") != oid
+                    or header[1] != b"blob"):
+                raise GitObjectSourceError("git_blob_header_invalid:" + path)
+            try:
+                size = int(header[2])
+            except ValueError as exc:
+                raise GitObjectSourceError("git_blob_size_invalid:" + path) from exc
+            git_digest.update(f"blob {size}\\0".encode("ascii"))
+            remaining = size
+            while remaining:
+                chunk = process.stdout.read(min(_CHUNK_SIZE, remaining))
+                if not chunk:
+                    raise GitObjectSourceError("git_blob_truncated:" + path)
+                git_digest.update(chunk)
+                content_digest.update(chunk)
+                if len(prefix) < max_bytes:
+                    prefix.extend(chunk[:max_bytes - len(prefix)])
+                remaining -= len(chunk)
+            if process.stdout.read(1) != b"\\n":
+                raise GitObjectSourceError("git_blob_terminator_invalid:" + path)
+            process.stdin.close()
+            stderr = process.stderr.read() if process.stderr else b""
+            if process.wait() != 0:
+                raise GitObjectSourceError(
+                    "git_command_failed:" + stderr.decode("utf-8", errors="replace")[:300]
+                )
+        except (OSError, UnicodeError) as exc:
+            raise GitObjectSourceError("git_blob_stream_failed:" + path) from exc
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+        if git_digest.hexdigest() != oid:
+            raise GitObjectSourceError("git_blob_oid_mismatch:" + path)
+        expected = entry.get("content_sha256")
+        if not isinstance(expected, str) or content_digest.hexdigest() != expected:
+            raise GitObjectSourceError("git_blob_sha256_mismatch:" + path)
+        return bytes(prefix), size
+
     def coverage_report(self) -> dict[str, Any]:
         kinds: dict[str, int] = {}
         for entry in self.entries.values():
