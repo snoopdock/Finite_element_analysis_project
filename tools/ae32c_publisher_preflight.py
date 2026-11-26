@@ -96,10 +96,23 @@ def evaluate(
     else:
         publication_ref = f"refs/heads/{PUBLICATION_BRANCH}"
 
-        def pattern_matches(pattern: Any) -> bool:
-            # Unknown patterns and GitHub's all-refs token are treated as
-            # potentially applicable. This is deliberately fail-closed.
-            if not isinstance(pattern, str) or not pattern or pattern == "~ALL":
+        def pattern_may_match(pattern: Any) -> bool:
+            # Unknown include patterns are treated as potentially applicable.
+            if not isinstance(pattern, str) or not pattern:
+                return True
+            if pattern == "~ALL":
+                return True
+            return (
+                fnmatch.fnmatchcase(publication_ref, pattern)
+                or fnmatch.fnmatchcase(PUBLICATION_BRANCH, pattern)
+            )
+
+        def pattern_definitely_matches(pattern: Any) -> bool:
+            # An exclusion is honored only when it is a valid, explicit
+            # pattern. Malformed exclusions must not hide an overlapping rule.
+            if not isinstance(pattern, str) or not pattern:
+                return False
+            if pattern == "~ALL":
                 return True
             return (
                 fnmatch.fnmatchcase(publication_ref, pattern)
@@ -133,8 +146,8 @@ def evaluate(
                 return True
             if not isinstance(excludes, list):
                 return True
-            included = any(pattern_matches(pattern) for pattern in includes)
-            excluded = any(pattern_matches(pattern) for pattern in excludes)
+            included = any(pattern_may_match(pattern) for pattern in includes)
+            excluded = any(pattern_definitely_matches(pattern) for pattern in excludes)
             return included and not excluded
 
         applicable = [item for item in rulesets if may_apply_to_publication_ref(item)]
