@@ -3,6 +3,7 @@
 from __future__ import annotations
 import argparse, hashlib, json, re, stat, sys, zipfile
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 RUN, ATTEMPT = 45395352748, 1
 SOURCE = "51d025fd328b00a59988a05fe72d9092262434f5"
@@ -38,6 +39,31 @@ def load_json(raw, name):
     try: obj=json.loads(raw)
     except Exception as e: raise DossierError("invalid_json:"+name) from e
     need(isinstance(obj,dict), "json_root_invalid:"+name); return obj
+
+
+M74_TASK_XML = "reports/m74-task-acceptance.xml"
+
+
+def verify_m74_task_acceptance(raw, backend):
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError as e:
+        raise DossierError("m74_task_xml_invalid:" + backend) from e
+    need(root.tag in {"testsuite", "testsuites"}, "m74_task_xml_root:" + backend)
+    cases = list(root.iter("testcase"))
+    skipped = sum(case.find("skipped") is not None for case in cases)
+    failures = sum(case.find("failure") is not None for case in cases)
+    errors = sum(case.find("error") is not None for case in cases)
+    passed = len(cases) - skipped - failures - errors
+    need((len(cases), passed, skipped, failures, errors) == (110, 22, 88, 0, 0),
+         "m74_task_acceptance_counts:" + backend)
+    passed_names = [case.attrib.get("name", "") for case in cases
+                    if case.find("skipped") is None and case.find("failure") is None
+                    and case.find("error") is None]
+    need(len(passed_names) == 22 and all(backend in name for name in passed_names),
+         "m74_task_acceptance_backend_binding:" + backend)
+    return {"tests": 110, "passed": 22, "skipped": 88, "failures": 0, "errors": 0}
+
 
 def identity(r,b,schema,label,run_id=RUN,source_revision=SOURCE):
     need(r.get("schema_version")==schema, f"schema_mismatch:{b}:{label}")
@@ -157,29 +183,33 @@ def verify(artifact_dir, manifest, *, expected_run_id=RUN, expected_source_revis
         try:
             with zipfile.ZipFile(p) as z:
                 infos=z.infolist(); names=[x.filename for x in infos]
-                expected={f"e85-{b}.json",f"e88-{b}-repository.json"}
+                expected={f"e85-{b}.json",f"e88-{b}-repository.json",M74_TASK_XML}
                 need(len(names)==len(set(names)) and set(names)==expected, "zip_member_set:"+b)
                 for info in infos:
                     mode=(info.external_attr>>16)&0xffff
                     need(not info.is_dir() and not stat.S_ISLNK(mode) and info.file_size<=2_000_000, "zip_member_safety:"+b)
                 raw_e85=z.read(f"e85-{b}.json")
                 raw_e88=z.read(f"e88-{b}-repository.json")
+                raw_m74=z.read(M74_TASK_XML)
                 e85=load_json(raw_e85,b+":e85")
                 e88=load_json(raw_e88,b+":e88")
+                m74=verify_m74_task_acceptance(raw_m74,b)
         except zipfile.BadZipFile as e: raise DossierError("zip_invalid:"+b) from e
         a=verify_e85(e85,b,expected_run_id,expected_source_revision,expected_snap_image); c=verify_e88(e88,b,expected_run_id,expected_source_revision,expected_snap_image)
         records.append({"backend":b,"artifact_id":item["id"],"artifact_name":item["name"],
           "artifact_archive_sha256":item["digest"],"artifact_archive_size_bytes":len(raw),
           "e85_report_sha256":sha(raw_e85), "e88_report_sha256":sha(raw_e88),
-          "native_query_mode":MODES[b],"library_version":VERSIONS[b],"e85":a,"e88":c})
+          "native_query_mode":MODES[b],"library_version":VERSIONS[b],"e85":a,"e88":c,
+          "m74_task_acceptance":m74,"m74_task_acceptance_junit_sha256":sha(raw_m74)})
     return {"schema_version":"ae32c/m7.4-e85-e88-detached-dossier/v1","status":"verified",
       "campaign":{"workflow_run_id":expected_run_id,"workflow_run_attempt":ATTEMPT,"source_revision":expected_source_revision,
        "source_branch":"stage1/section-uuids","backends":list(BACKENDS),"workflow_name":WORKFLOW},
       "artifacts":records,"cross_backend_invariants":{"e85_graph_fingerprint":E85_FP,"e88_repository_snapshot":REPO,
        "backend_specific_native_modes_verified":True},
       "interpretation":{"computational_options_not_competitors":True,"performance_winner_established":False,
-       "task_suitability_decision_established":False,"backend_auto_selection_permitted":False,
-       "production_approval":False,"scope":"artifact identity and declared E.8.5/E.8.8 evidence; not historical re-execution or physical-runner attestation"}}
+       "m74_task_acceptance_artifacts_verified":True,"task_suitability_decision_established":False,
+       "backend_auto_selection_permitted":False,"production_approval":False,
+       "scope":"artifact identity, declared E.8.5/E.8.8 evidence, and task-level M7.4 test execution; not historical re-execution or physical-runner attestation"}}
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
