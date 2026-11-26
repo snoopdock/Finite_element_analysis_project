@@ -1,0 +1,256 @@
+name: AE-32C M7.4 Five-Backend Task and G4 Acceptance
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_4_backend_task_acceptance.yml"
+      - "audit_engine/semantic_audit/core/semantic_graph.py"
+      - "audit_engine/semantic_audit/graph/**"
+      - "audit_engine/semantic_audit/ae32b/evidence_tools.py"
+      - "tests/semantic_graph/test_m74_task_suitability_acceptance.py"
+      - "tests/semantic_graph/test_m74_snapshot_mutation_integrity.py"
+      - "tests/semantic_graph/test_m74_repository_side_effects.py"
+      - ".github/environments/e85-graph-tool.yml"
+      - ".github/environments/e85-snap-python39-requirements.txt"
+      - ".github/snap-worker/Dockerfile"
+      - "tools/snap_worker.py"
+      - "requirements.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m74-task-acceptance-stage1
+  cancel-in-progress: false
+
+jobs:
+  resolve-source:
+    name: Resolve exact Stage1 source
+    runs-on: ubuntu-24.04
+    outputs:
+      source_sha: ${{ steps.resolve.outputs.source_sha }}
+    steps:
+      - name: Checkout triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: source
+          persist-credentials: false
+      - name: Verify immutable source identity
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_SHA="$(git -C source rev-parse HEAD)"
+          test "$SOURCE_SHA" = "$GITHUB_SHA"
+          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          {
+            echo "### M7.4 source identity"
+            echo "- Exact source SHA: $SOURCE_SHA"
+            echo "- Branch: $GITHUB_REF_NAME"
+            echo "- Tests: task-level semantic parity, native execution, mutation integrity, repository side effects"
+            echo "- This workflow does not rank backends or authorize production selection."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  pip-native-backends:
+    name: M7.4 G4 + task acceptance — ${{ matrix.backend }}
+    needs: resolve-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [networkx, scipy, igraph]
+    env:
+      AE32C_M74_BACKEND: ${{ matrix.backend }}
+    steps:
+      - name: Checkout exact resolved source SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve-source.outputs.source_sha }}
+          path: source
+          persist-credentials: false
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project and selected native backend
+        shell: bash
+        env:
+          BACKEND: ${{ matrix.backend }}
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r source/requirements.txt
+          if [[ "$BACKEND" == "igraph" ]]; then
+            python -m pip install 'igraph>=0.11,<2.0'
+          fi
+          python -m pip check
+      - name: Run M7.4 task and G4 integrity suites
+        shell: bash
+        env:
+          BACKEND: ${{ matrix.backend }}
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q -ra \
+            source/tests/semantic_graph/test_m74_task_suitability_acceptance.py \
+            source/tests/semantic_graph/test_m74_snapshot_mutation_integrity.py \
+            source/tests/semantic_graph/test_m74_repository_side_effects.py \
+            --junitxml="reports/m74-$BACKEND-junit.xml" \
+            2>&1 | tee "reports/m74-$BACKEND-tests.log"
+      - name: Upload backend-specific M7.4 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m7-4-task-g4-${{ matrix.backend }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          if-no-files-found: error
+          retention-days: 30
+
+  graph-tool-native:
+    name: M7.4 G4 + task acceptance — graph-tool
+    needs: resolve-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      AE32C_M74_BACKEND: graph-tool
+      CONDA_OVERRIDE_ARCHSPEC: x86_64
+    steps:
+      - name: Checkout exact resolved source SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve-source.outputs.source_sha }}
+          path: source
+          persist-credentials: false
+      - name: Provision portable graph-tool environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: source/.github/environments/e85-graph-tool.yml
+          environment-name: ae32c-m74-graph-tool
+          cache-environment: false
+          init-shell: bash
+      - name: Assert generic x86-64 graph-tool binary
+        shell: micromamba-shell {0}
+        run: |
+          set -euo pipefail
+          PACKAGE="$(micromamba list --explicit -n ae32c-m74-graph-tool | grep 'graph-tool-base-' | tail -n 1)"
+          case "$PACKAGE" in
+            *"_100.conda") echo "Verified generic x86-64 graph-tool build: $PACKAGE" ;;
+            *)
+              echo "Expected generic x86-64 graph-tool-base build (_100), got: $PACKAGE" >&2
+              exit 1
+              ;;
+          esac
+      - name: Run M7.4 task and G4 integrity suites
+        shell: micromamba-shell {0}
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q -ra \
+            source/tests/semantic_graph/test_m74_task_suitability_acceptance.py \
+            source/tests/semantic_graph/test_m74_snapshot_mutation_integrity.py \
+            source/tests/semantic_graph/test_m74_repository_side_effects.py \
+            --junitxml=reports/m74-graph-tool-junit.xml \
+            2>&1 | tee reports/m74-graph-tool-tests.log
+      - name: Upload graph-tool M7.4 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m7-4-task-g4-graph-tool-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          if-no-files-found: error
+          retention-days: 30
+
+  snap-isolated-worker:
+    name: M7.4 G4 + task acceptance — SNAP isolated worker
+    needs: resolve-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      AE32C_M74_BACKEND: snap
+      AE32C_SNAP_WORKER_IMAGE: ae32c-snap-worker:m74
+    steps:
+      - name: Checkout exact resolved source SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve-source.outputs.source_sha }}
+          path: source
+          persist-credentials: false
+      - name: Set up Python 3.11 orchestrator
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install orchestrator dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r source/requirements.txt
+          python -m pip check
+      - name: Build restricted SNAP 6.0 worker image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build --pull --file source/.github/snap-worker/Dockerfile \
+            --tag "$AE32C_SNAP_WORKER_IMAGE" source
+          IMAGE_ID="$(docker image inspect "$AE32C_SNAP_WORKER_IMAGE" --format '{{.Id}}')"
+          [[ "$IMAGE_ID" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "AE32C_SNAP_WORKER_IMAGE_ID=$IMAGE_ID" >> "$GITHUB_ENV"
+          echo "SNAP worker image: $IMAGE_ID"
+      - name: Run M7.4 task and G4 integrity suites
+        shell: bash
+        env:
+          PYTHONPATH: source
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m pytest -q -ra \
+            source/tests/semantic_graph/test_m74_task_suitability_acceptance.py \
+            source/tests/semantic_graph/test_m74_snapshot_mutation_integrity.py \
+            source/tests/semantic_graph/test_m74_repository_side_effects.py \
+            --junitxml=reports/m74-snap-junit.xml \
+            2>&1 | tee reports/m74-snap-tests.log
+      - name: Upload SNAP M7.4 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m7-4-task-g4-snap-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          if-no-files-found: error
+          retention-days: 30
+
+  acceptance-summary:
+    name: M7.4 five-backend acceptance gate
+    if: always()
+    needs: [resolve-source, pip-native-backends, graph-tool-native, snap-isolated-worker]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require all five backend acceptance jobs
+        shell: bash
+        env:
+          SOURCE: ${{ needs.resolve-source.result }}
+          PIP_BACKENDS: ${{ needs.pip-native-backends.result }}
+          GRAPH_TOOL: ${{ needs.graph-tool-native.result }}
+          SNAP: ${{ needs.snap-isolated-worker.result }}
+          SOURCE_SHA: ${{ needs.resolve-source.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          {
+            echo "## M7.4 five-backend acceptance"
+            echo "- Exact source SHA: $SOURCE_SHA"
+            echo "- NetworkX / SciPy / igraph: $PIP_BACKENDS"
+            echo "- graph-tool: $GRAPH_TOOL"
+            echo "- SNAP isolated worker: $SNAP"
+            echo "- Passing establishes only the tested G4 and task envelopes."
+            echo "- No library ranking, automatic selection, scientific approval, or production approval is established."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$SOURCE" != success || "$PIP_BACKENDS" != success || \
+                "$GRAPH_TOOL" != success || "$SNAP" != success ]]; then
+            exit 1
+          fi
