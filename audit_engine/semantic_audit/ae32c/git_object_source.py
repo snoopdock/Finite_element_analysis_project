@@ -239,9 +239,9 @@ class GitObjectSourceProvider:
         )
         try:
             assert process.stdin is not None and process.stdout is not None
-            process.stdin.write(oid.encode("ascii") + b"\\n")
+            process.stdin.write(oid.encode("ascii") + b"\n")
             process.stdin.flush()
-            header = process.stdout.readline().rstrip(b"\\n").split()
+            header = process.stdout.readline().rstrip(b"\n").split()
             if (len(header) != 3 or header[0].decode("ascii", errors="replace") != oid
                     or header[1] != b"blob"):
                 raise GitObjectSourceError("git_blob_header_invalid:" + path)
@@ -249,7 +249,7 @@ class GitObjectSourceProvider:
                 size = int(header[2])
             except ValueError as exc:
                 raise GitObjectSourceError("git_blob_size_invalid:" + path) from exc
-            git_digest.update(f"blob {size}\\0".encode("ascii"))
+            git_digest.update(f"blob {size}\0".encode("ascii"))
             remaining = size
             while remaining:
                 chunk = process.stdout.read(min(_CHUNK_SIZE, remaining))
@@ -260,7 +260,7 @@ class GitObjectSourceProvider:
                 if len(prefix) < max_bytes:
                     prefix.extend(chunk[:max_bytes - len(prefix)])
                 remaining -= len(chunk)
-            if process.stdout.read(1) != b"\\n":
+            if process.stdout.read(1) != b"\n":
                 raise GitObjectSourceError("git_blob_terminator_invalid:" + path)
             process.stdin.close()
             stderr = process.stderr.read() if process.stderr else b""
