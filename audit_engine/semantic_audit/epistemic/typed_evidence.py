@@ -97,6 +97,12 @@ def derive_typed_evidence_observations(
     """
     if not isinstance(plan, RuleCoveragePlan):
         raise TypeError("plan must be a RuleCoveragePlan")
+    if inventory.get("source_snapshot_id") != plan.source_snapshot_id:
+        raise TypedEvidenceError("inventory_source_snapshot_mismatch")
+    if execution_report.get("source_snapshot_id") != plan.source_snapshot_id:
+        raise TypedEvidenceError("execution_report_source_snapshot_mismatch")
+    if execution_report.get("inventory_sha256") != inventory.get("inventory_sha256"):
+        raise TypedEvidenceError("execution_report_inventory_binding_mismatch")
     requirements = _rule_evidence_requirements(plan)
     candidates = inventory.get("extractor_candidates")
     outcomes = execution_report.get("outcomes")
@@ -270,8 +276,8 @@ def derive_typed_evidence_observations(
 
 def verify_typed_evidence_observation_bundle(
     bundle: Mapping[str, Any], *, plan: RuleCoveragePlan,
-    inventory: Mapping[str, Any], execution_report: Mapping[str, Any],
-    repository_root: str | Path,
+    source_manifest: Mapping[str, Any], inventory: Mapping[str, Any],
+    execution_report: Mapping[str, Any], repository_root: str | Path,
 ) -> dict[str, Any]:
     if not isinstance(bundle, Mapping):
         raise TypedEvidenceError("bundle_must_be_an_object")
@@ -280,6 +286,13 @@ def verify_typed_evidence_observation_bundle(
     payload = {k: v for k, v in submitted.items() if k != "bundle_sha256"}
     if digest != _digest(payload):
         raise TypedEvidenceError("bundle_digest_mismatch")
+    try:
+        verify_source_extractor_inventory(source_manifest, inventory)
+        verify_extractor_execution_report(source_manifest, inventory, execution_report, repository_root)
+    except (ValueError, KeyError, TypeError) as exc:
+        raise TypedEvidenceError("upstream_evidence_verification_failed:" + type(exc).__name__) from exc
+    if source_manifest.get("source_snapshot_id") != plan.source_snapshot_id:
+        raise TypedEvidenceError("source_snapshot_mismatch")
     expected = derive_typed_evidence_observations(
         plan=plan, inventory=inventory, execution_report=execution_report,
         repository_root=repository_root)
