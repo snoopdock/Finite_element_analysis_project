@@ -19,7 +19,7 @@ A dependency, import, adapter class, or graph edge alone is not execution proof.
 | main | `b1199ee3bf2f4cbbc5b99f13f43f9230996d10aa` | 0.9.112 | 5,964 | 10,042 | 439 | `eefe018ddc7302399093ee002bf99c64e52e44f9179e32ad8d2df18991de59f1` |
 | stage1/section-uuids | `2efb8b44e69a0f3a4512f8164668c41af4127d75` | 0.9.112 | 18,720 | 47,744 | 1,034 | `f458d649222ba8bf2a125e89d03b0efbc67e648b0dd9f9aef6e2c69c7d72e0b2` |
 
-The Graphify workflow completed successfully in run [45770252227](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45770252227). The source and graph snapshot pipeline completed successfully in run [45770251815](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45770251815).
+The Graphify workflow completed successfully in run [45770252227](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45770252227). The source and graph snapshot pipeline completed successfully in run [45770251815](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45770251815). The Stage1 source tip at analysis time was `2efb8b44e69a0f3a4512f8164668c41af4127d75`. This assessment was subsequently committed as a documentation-only change, commit `6c90c40244494fa31272f87e0288a3a3a44aea5a`; that commit changes only this report and does not change the analyzed application or backend code.
 
 Artifacts are stored under:
 - `branch-graphify-results/latest/main/`
