@@ -147,7 +147,7 @@ def account_submodule_lfs(
                         child_lfs["lfs_payload_verified"] and nested_content_verified
                     ),
                 })
-            except (OSError, ValueError, KeyError, SubmoduleAccountingError) as exc:
+            except (OSError, ValueError, KeyError, RuntimeError) as exc:
                 reason = str(exc) if isinstance(exc, SubmoduleAccountingError) else "submodule_repository_unreadable"
                 records.append({**base, "status": "UNVERIFIED", "reason": reason[:160],
                                 "recursive_content_verified": False})
