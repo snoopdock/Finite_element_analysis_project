@@ -7,13 +7,14 @@ integration workload, not a suitability verdict for every task/backend pair.
 from __future__ import annotations
 
 from collections import defaultdict, deque
+from pathlib import Path
 
 import pytest
 
 from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
 from audit_engine.semantic_audit.graph.queries.models import GraphQuery, QueryType
 from audit_engine.semantic_audit.graph.service import SemanticGraphAnalysisService
-from audit_engine.semantic_audit.graph.analysis.models import AnalysisStatus
+from audit_engine.semantic_audit.graph.analysis import AnalysisStatus
 
 
 BACKENDS = ("networkx", "scipy", "igraph", "graph-tool", "snap")
@@ -142,7 +143,7 @@ def _assert_same_semantics(actual, expected):
 def test_m74_full_repository_source_derived_task_campaign(backend):
     """Exercise all four public audit tasks on the actual checked-out repository graph."""
     _require_selected_backend(backend)
-    repository_root = __import__("pathlib").Path(__file__).resolve().parents[2]
+    repository_root = Path(__file__).resolve().parents[2]
     tools = RepositoryEvidenceTools(repository_root, graph_backend="reference")
     service = None
     try:
@@ -244,6 +245,7 @@ def test_m74_full_repository_source_derived_task_campaign(backend):
         assert impact.metadata["runtime_execution_proven"] is False
         assert impact.metadata["automatic_approval_permitted"] is False
         assert impact.metadata["authoritative_graph_mutation_permitted"] is False
+        assert any(node_id.startswith("file:tests/") for node_id in impact.discovered_entities)
         if impact.status is AnalysisStatus.INCOMPLETE:
             assert (
                 impact.metadata["truncated"] is True
