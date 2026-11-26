@@ -14,6 +14,7 @@ on:
       - "tests/semantic_graph/test_m755_assurance_arguments.py"
       - "tests/semantic_graph/test_m756_freshness_closure.py"
       - "tests/semantic_graph/test_m757_persisted_assurance.py"
+      - "tests/semantic_graph/test_m758_epistemic_coverage.py"
       - "docs/audit-engine/AE-32C-M7.5.7-Provenance-Backed-Assurance-Evaluation.md"
       - "docs/audit-engine/AE-32C-M7.5.6-Recursive-Provenance-Freshness-Closure.md"
       - "audit_engine/semantic_audit/epistemic/assurance.py"
@@ -127,6 +128,16 @@ jobs:
             -p 'test_m757_persisted_assurance.py' \
             -v 2>&1 | tee reports/m75-7-persisted-assurance.log
 
+      - name: Run M7.5.8 epistemic coverage and unknown-state tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m unittest discover \\
+            -s tests/semantic_graph \\
+            -p 'test_m758_epistemic_coverage.py' \\
+            -v 2>&1 | tee reports/m75-8-epistemic-coverage.log
+
       - name: Upload exact-source validation logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -141,6 +152,7 @@ jobs:
             reports/m75-5-assurance-arguments.log
             reports/m75-6-freshness-closure.log
             reports/m75-7-persisted-assurance.log
+            reports/m75-8-epistemic-coverage.log
           if-no-files-found: warn
           retention-days: 30
 
@@ -151,6 +163,6 @@ jobs:
             echo "## M7.5 epistemic validation"
             echo "- Source SHA: $GITHUB_SHA"
             echo "- Scope: immutable contracts, append-only persistence, scope-bound completeness, negative-claim admissibility, provenance dependencies, local freshness, recursive freshness closure, deterministic invalidation, assurance arguments, defeater lifecycle and provenance-backed persisted assurance evaluation"
-            echo "- No proposition-truth inference, automatic completeness promotion, network, solver, or decision-gate integration"
+            echo "- No proposition-truth inference, automatic completeness promotion, registry authentication, network, solver, or decision-gate integration"
             echo "- Passing does not establish production durability or production approval"
           } >> "$GITHUB_STEP_SUMMARY"
