@@ -32,6 +32,10 @@ from .assurance_store import (
     AssuranceDuplicateError, AssuranceStorageLimitError, AssuranceStore,
     AssuranceStoreError,
 )
+from .persisted_assurance import (
+    PersistedAssuranceResult,
+    evaluate_persisted_assurance,
+)
 from .store import (
     DuplicateRecordError,
     EpistemicStore,
@@ -42,6 +46,8 @@ from .store import (
 )
 
 __all__ = [
+    "PersistedAssuranceResult",
+    "evaluate_persisted_assurance",
     "AdmissibilityDecision",
     "AssuranceClaim",
     "AssuranceContractError",
