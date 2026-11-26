@@ -13,7 +13,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from .contracts import EvidenceAssertion, KnowledgeGap, GapState
+from .contracts import CompletenessClaim, EvidenceAssertion, KnowledgeGap, GapState
 
 
 class StoreError(RuntimeError):
@@ -94,7 +94,7 @@ class EpistemicStore:
             CREATE TABLE IF NOT EXISTS epistemic_events (
                 sequence INTEGER PRIMARY KEY AUTOINCREMENT,
                 event_id TEXT NOT NULL UNIQUE,
-                record_type TEXT NOT NULL CHECK(record_type IN ('assertion', 'gap')),
+                record_type TEXT NOT NULL CHECK(record_type IN ('assertion', 'gap', 'completeness')),
                 record_id TEXT NOT NULL,
                 revision INTEGER NOT NULL CHECK(revision >= 1),
                 payload TEXT NOT NULL,
@@ -164,6 +164,23 @@ class EpistemicStore:
         if not isinstance(gap, KnowledgeGap):
             raise TypeError("gap must be a KnowledgeGap")
         return self._append("gap", gap.gap_id, 1, _canonical_payload(gap))
+
+    def record_completeness_claim(self, claim: CompletenessClaim) -> bool:
+        if not isinstance(claim, CompletenessClaim):
+            raise TypeError("claim must be a CompletenessClaim")
+        return self._append("completeness", claim.claim_id, 1, _canonical_payload(claim))
+
+    def completeness_history(self, claim_id: str) -> list[dict[str, Any]]:
+        rows = self._connection.execute(
+            """SELECT sequence, payload, event_hash FROM epistemic_events
+               WHERE record_type = 'completeness' AND record_id = ? ORDER BY sequence""",
+            (claim_id,),
+        ).fetchall()
+        return [
+            {"sequence": row["sequence"], "payload": json.loads(row["payload"]),
+             "event_hash": row["event_hash"]}
+            for row in rows
+        ]
 
     def transition_gap(self, gap: KnowledgeGap, *, expected_revision: int) -> int:
         """Append a new gap revision; the prior revision remains immutable."""
