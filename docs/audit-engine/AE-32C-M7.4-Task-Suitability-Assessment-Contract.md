@@ -590,3 +590,53 @@ The source-derived incident fixture improves G5 evidence because all four public
 G4 remains **Partial**: the exact-source mutation and repository-side-effect tests pass, but the source snapshot cost report explicitly records `atomic_snapshot_established=false`. Repository-wide point-in-time consistency, additional filesystem namespace/alias cases, broader mutation/restoration schedules and the projection postflight-to-return race remain unresolved.
 
 **No task/backend outcome is promoted to Suitable or Conditionally suitable.** All 20 outcomes remain **Insufficient evidence** until the remaining mandatory gates are closed or explicitly bounded. No global ranking, automatic selector, scientific approval or production approval is inferred; preserve `production_approval=false`.
+
+## 32. Full-repository source-derived workload — first five-backend campaign — 2026-11-26
+
+**Exact Stage1 source:** `91c7a910c44a7bebfe20df62eb63d28684b3e916`  
+**Workflow:** [run 45777363583](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45777363583)  
+**Scope:** the checked-out Stage1 repository itself, not a synthetic graph or the small incident fixture.
+
+### 32.1 Canonical graph and workload selection
+
+The source-derived graph contained:
+
+- **1,897** repository files;
+- **11,426** semantic nodes;
+- **40,763** edge occurrences.
+
+The deterministic workload selected:
+- structural: `module:analysis.acquisition_adapter` → `module:research.evidence`;
+- dependency chain: `module:analysis.acquisition_adapter` → `module:research.evidence` → `module:research.article_sectioner`;
+- path: bounded path from the same source module to the terminal module;
+- impact: `file:analysis/acquisition_adapter.py`, owned by `module:analysis.acquisition_adapter`.
+
+For each completed backend, the impact result was `COMPLETED` with 61 discovered impact candidates. The graph remained unchanged and the repository evidence report stated that source files were not modified. Each task campaign recorded 19 native query operations and passed reference-result equivalence plus native-adjacency telemetry assertions.
+
+### 32.2 Backend execution results
+
+NetworkX, SciPy, python-igraph and graph-tool all completed the full-repository task campaign successfully:
+
+| Backend | Full-repository campaign | Observed elapsed time |
+|---|---:|---:|
+| NetworkX | Pass | 308.14 s |
+| SciPy | Pass | 176.55 s |
+| python-igraph | Pass | 203.14 s |
+| graph-tool | Pass | 163.09 s |
+| SNAP 6.0 isolated worker | Not executed | Initialization rejected |
+
+The elapsed times are run observations only. They are not a ranking, benchmark adjudication or basis for selecting one library over another.
+
+### 32.3 SNAP transport boundary
+
+SNAP passed the smaller M7.4 task/G4 suites in this run, but full-repository initialization failed closed with `snap_worker_request_exceeds_size_limit`. The host adapter enforces a **16 MiB** JSON-lines request limit; the isolated worker independently enforces the same line limit. The worker is also constrained to 512 MiB memory, one CPU and 64 PIDs.
+
+This is an adapter/worker transport-envelope limitation, not evidence of a SNAP traversal parity defect. The full-repository graph was not loaded into SNAP, so no full-repository SNAP query was executed and no suitability conclusion is available. The 16 MiB cap is deliberately retained pending a measured memory and protocol design; it has not been raised to force this test through.
+
+The follow-up workflow changes classify this exact cap as an explicit skipped full-repository test with a visible reason. That skip must not be interpreted as a SNAP pass.
+
+### 32.4 G5 interpretation
+
+This is the first full-repository source-derived workload in the M7.4 campaign. It closes an important gap between small fixtures and repository-scale graph execution for four backends. It does not yet establish task suitability for the full 20-task/backend matrix: the workload is one Python repository, one bounded seed-selection strategy and one impact cone. It is not a scientific FEM mesh/field workload or a representative cross-language repository campaign.
+
+**G5 remains Partial.** The 20 formal task/backend outcomes remain **Insufficient evidence**. SNAP's full-repository task envelope is specifically unverified under the current 16 MiB worker protocol cap.
