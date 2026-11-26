@@ -1,6 +1,6 @@
 # AE-32C M7.5.12 — Source and Extractor Inventory Reconciliation
 
-**Status:** Implemented; exact-source CI validation pending  
+**Status:** Implemented and exact-source CI-validated; 127 M7.5 regression tests passed (run [45908133784](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45908133784))  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.11 — Independent Coverage Dossier Verification and Replay  
 **Authority:** deterministic inventory reconciliation relative to a verified source manifest and a versioned built-in extractor-candidate registry only
@@ -58,7 +58,23 @@ The dedicated suite `tests/semantic_graph/test_m7512_source_inventory.py` covers
 - Rehashed semantic tampering rejection.
 - Independent verification of a valid inventory.
 
-## 5. Explicit limitations
+## 5. Validation
+
+Exact-source workflow: [45908133784](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45908133784)
+
+- Validated source revision: `6944c0edeb5343edf6cb267121d704e700c2c68c`
+- Runtime: Ubuntu 24.04, Python 3.11
+- Dedicated M7.5.12 tests: 12 passed
+- Complete M7.5 regression: 127 passed
+- Epistemic package compilation: passed
+- Job ID: `140209754323`
+- Artifact: `m7-5-12-source-inventory-45908133784-1`
+- Artifact ID: `15158666628`
+- Artifact ZIP SHA-256: `6740799eb20885afc2757a6721326b529498c6646c5294f10ade7fa510e0aa26`
+
+The workflow checks out the exact triggering SHA. The dedicated suite and the complete M7.5 regression both passed. A documentation-only validation-record commit follows; the implementation source is unchanged.
+
+## 6. Explicit limitations
 
 M7.5.12 does **not** establish:
 
@@ -72,11 +88,9 @@ M7.5.12 does **not** establish:
 
 The result is complete only relative to the verified source-manifest entries and the exact built-in registry version/digest recorded in the inventory. Unsupported source units remain visible rather than silently disappearing.
 
-## 6. Validation command
+## 7. Validation commands
 
 ```bash
-python -m unittest tests.semantic_graph.test_m7512_source_inventory -v
+python -m unittest discover -s tests/semantic_graph -p 'test_m7512_source_inventory.py' -v
 python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
 ```
-
-The milestone is not CI-validated until the exact-source workflow succeeds.
