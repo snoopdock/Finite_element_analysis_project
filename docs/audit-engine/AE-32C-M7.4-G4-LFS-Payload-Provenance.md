@@ -176,9 +176,9 @@ Status semantics are deliberately separate:
 - `UNVERIFIED`: a supplied repository was unreadable, dirty, or did not match the pinned commit.
 - `SCANNED`: the supplied repository matched the gitlink and its committed tree was scanned.
 - `recursive_scan_complete`: every encountered nested gitlink had a supplied, successfully scanned repository.
-- `recursive_content_verified`: every scanned repository's LFS payloads were verified against an explicit local cache and all nested submodule content was likewise verified.
+- `recursive_content_verified`: every scanned repository's LFS payloads were verified against an explicit local cache and all nested submodule content was likewise verified. It remains false when there are no gitlinks; the companion status is `NOT_APPLICABLE_NO_GITLINKS`, avoiding a vacuous positive verification claim.
 
-The workflow does not initialize or fetch submodules. Therefore its default report records gitlinks as `NOT_SUPPLIED`; that is an explicit accounting result, not recursive verification. To obtain a positive recursive scan, the caller must provide local repositories pinned at the exact gitlink commits. A scan can be complete while payload verification remains false when no local LFS store is supplied.
+The workflow does not initialize or fetch submodules. Therefore its default report records any gitlinks as `NOT_SUPPLIED`; that is an explicit accounting result, not recursive verification. If the committed tree contains no gitlinks, the report records `NOT_APPLICABLE_NO_GITLINKS` rather than claiming that recursive content was verified. To obtain a positive recursive scan, the caller must provide local repositories pinned at the exact gitlink commits. A scan can be complete while payload verification remains false when no local LFS store is supplied.
 
 Hard bounds are enforced by configurable maximum recursion depth (default 8) and maximum number of inspected repositories (default 256). The stage disables Git replacement refs and lazy fetch, strips inherited Git routing variables, rejects external object alternates through the existing provider, and performs no network access, credential use, or implicit checkout.
 
