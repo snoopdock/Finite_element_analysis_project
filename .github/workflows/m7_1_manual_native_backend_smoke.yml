@@ -260,7 +260,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p reports
-          python source/tools/gb05_native_backend_performance_benchmark.py run \
+          python -u -X faulthandler source/tools/gb05_native_backend_performance_benchmark.py run \
             --backend graph-tool --repeats "$REPEATS" --warmup "$WARMUP" \
             --report reports/m7-graph-tool.json 2>&1 | tee reports/m7-graph-tool-run.log
           python -c 'import json, os; p=json.load(open("reports/m7-graph-tool.json", encoding="utf-8")); c=p.get("configuration", {}); expected={"repeats": int(os.environ["REPEATS"]), "warmup": int(os.environ["WARMUP"])}; assert c == expected, f"report configuration mismatch: expected {expected}, got {c}"'
