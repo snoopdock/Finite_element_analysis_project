@@ -196,7 +196,7 @@ The repository now has a manual, read-only preflight entry point:
 
 - `tools/ae32c_publisher_preflight.py` queries the default-branch protection, repository rulesets, and `ae32c-publication` environment through GitHub's REST API.
 - It requires at least one approval, administrator enforcement, and required status checks for the default branch.
-- It requires exactly one active ruleset targeting only `ae32c-publication-state`, with update/deletion/non-fast-forward protections and a single GitHub App integration bypass whose actor ID exactly matches repository variable `AE32C_PUBLISHER_APP_ID`.
+- It paginates the rulesets endpoint and examines every active ruleset that may apply to `ae32c-publication-state`, including wildcard and global scopes. It rejects overlapping or duplicate rulesets and requires exactly one branch-targeted rule with an exact publication-ref include, no exclusions, update/deletion/non-fast-forward protections, and a single GitHub App integration bypass whose actor ID exactly matches repository variable `AE32C_PUBLISHER_APP_ID`.
 - It requires environment reviewers and deployment restricted to protected branches.
 - It reports App client-ID/private-key presence as `PRESENT_UNVERIFIED`; it does not read or print secret values, mint an App token, or verify the installation.
 - The workflow expects repository variable `AE32C_PUBLISHER_APP_ID` so the ruleset bypass is checked against the intended App identity. It optionally accepts `AE32C_PREFLIGHT_READ_TOKEN`, a fine-grained, repository-scoped token with read-only Administration and Actions permissions. Without it, the workflow falls back to `GITHUB_TOKEN`; endpoints not readable by that token are reported as `UNVERIFIED`, never as a pass.
