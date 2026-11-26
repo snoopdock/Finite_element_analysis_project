@@ -32,6 +32,7 @@ class GitObjectSourceProvider:
 
     CONSISTENCY_CLASS = "IMMUTABLE_GIT_OBJECTS"
     SOURCE_SCOPE = "committed_tree_only"
+    _STREAM_CHUNK_SIZE = 1024 * 1024
 
     def __init__(self, repository: str | Path, source_manifest: dict[str, Any]) -> None:
         self.root = Path(repository).expanduser().resolve(strict=True)
@@ -252,7 +253,7 @@ class GitObjectSourceProvider:
             git_digest.update(f"blob {size}\0".encode("ascii"))
             remaining = size
             while remaining:
-                chunk = process.stdout.read(min(_CHUNK_SIZE, remaining))
+                chunk = process.stdout.read(min(self._STREAM_CHUNK_SIZE, remaining))
                 if not chunk:
                     raise GitObjectSourceError("git_blob_truncated:" + path)
                 git_digest.update(chunk)
@@ -274,6 +275,9 @@ class GitObjectSourceProvider:
             if process.poll() is None:
                 process.kill()
                 process.wait()
+            for stream in (process.stdin, process.stdout, process.stderr):
+                if stream is not None and not stream.closed:
+                    stream.close()
         if git_digest.hexdigest() != oid:
             raise GitObjectSourceError("git_blob_oid_mismatch:" + path)
         expected = entry.get("content_sha256")
