@@ -252,6 +252,8 @@ class EpistemicStore:
 
         with self._connection:
             self._connection.execute("BEGIN IMMEDIATE")
+            if self.invalidation_history(claim_node):
+                raise StoreError("cannot add provenance dependencies to an invalidated claim; issue a new claim ID")
             adjacency = self._dependency_adjacency()
             recorded: list[str] = []
             for edge in edges:
@@ -303,6 +305,10 @@ class EpistemicStore:
             raise TypeError("dependency must be a ProvenanceDependency")
         with self._connection:
             self._connection.execute("BEGIN IMMEDIATE")
+            if self.invalidation_history(dependency.dependency_id):
+                raise StoreError("cannot attach a dependency to an invalidated node; use a new versioned node")
+            if self.invalidation_history(dependency.dependent_id):
+                raise StoreError("cannot extend an invalidated dependent node; use a new versioned node")
             adjacency = self._dependency_adjacency()
             if self._reachable(adjacency, dependency.dependency_id, dependency.dependent_id):
                 raise StoreError(
@@ -329,25 +335,25 @@ class EpistemicStore:
                 raise ValueError(f"{name} must be a non-empty string")
         changed_node_id = changed_node_id.strip()
         root_change_id = root_change_id.strip()
-        reverse: dict[str, set[str]] = {}
-        for dependent, dependencies in self._dependency_adjacency().items():
-            for dependency in dependencies:
-                reverse.setdefault(dependency, set()).add(dependent)
-
-        ordered: list[tuple[str, str]] = []
-        queue = [(changed_node_id, changed_node_id)]
-        visited = {changed_node_id}
-        while queue:
-            changed_parent, node = queue.pop(0)
-            for dependent in sorted(reverse.get(node, ())):
-                if dependent in visited:
-                    continue
-                visited.add(dependent)
-                ordered.append((dependent, changed_node_id))
-                queue.append((changed_parent, dependent))
-
         with self._connection:
             self._connection.execute("BEGIN IMMEDIATE")
+            reverse: dict[str, set[str]] = {}
+            for dependent, dependencies in self._dependency_adjacency().items():
+                for dependency in dependencies:
+                    reverse.setdefault(dependency, set()).add(dependent)
+
+            ordered: list[tuple[str, str]] = []
+            queue = [changed_node_id]
+            visited = {changed_node_id}
+            while queue:
+                node = queue.pop(0)
+                for dependent in sorted(reverse.get(node, ())):
+                    if dependent in visited:
+                        continue
+                    visited.add(dependent)
+                    ordered.append((dependent, changed_node_id))
+                    queue.append(dependent)
+
             for node_id, root_id in ordered:
                 invalidation = ProvenanceInvalidation(
                     invalidation_id=f"{root_change_id}:{node_id}",
