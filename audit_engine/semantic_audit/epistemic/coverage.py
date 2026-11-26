@@ -225,6 +225,7 @@ def evaluate_epistemic_coverage(
                         reasons.append(f"obligation {oid} references absent persisted evidence {evidence_id}")
                         continue
                     valid_context = False
+                    support_found = False
                     for assertion, ref in records:
                         if claim is not None and (
                             assertion.proposition_id == claim.proposition_id
@@ -232,16 +233,18 @@ def evaluate_epistemic_coverage(
                             and ref.source_snapshot_id == claim.source_snapshot_id
                         ):
                             valid_context = True
+                            if assertion.polarity is AssertionPolarity.SUPPORTS:
+                                support_found = True
                         elif claim is not None:
                             reasons.append(f"evidence {evidence_id} is not bound to the claim proposition, scope and snapshot")
                             incomplete = True
                         if assertion.polarity is AssertionPolarity.CHALLENGES:
                             contested.add(oid)
-                        if assertion.polarity is AssertionPolarity.SUPPORTS:
-                            valid_context = valid_context and True
-                    if not valid_context:
+                    if not valid_context or not support_found:
                         unresolved.add(oid)
                         incomplete = True
+                        if valid_context and not support_found:
+                            reasons.append(f"evidence {evidence_id} has no supporting assertion for this claim")
                     closure = epistemic_store.freshness_closure(f"evidence:{evidence_id}")
                     freshness[evidence_id] = closure.status.value
                     if closure.status is FreshnessStatus.INVALIDATED:
