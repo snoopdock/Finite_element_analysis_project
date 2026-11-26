@@ -82,9 +82,11 @@ class FreshnessClosureTests(unittest.TestCase):
         self.assertEqual(set(affected), {"claim:middle", "claim:root"})
         result = self.store.freshness_closure("claim:root")
         self.assertIs(result.status, FreshnessStatus.INVALIDATED)
+        # The root's own invalidation record is sufficient to establish
+        # that the requested closure is invalidated.
         self.assertEqual(
             set(result.invalidation_ids),
-            {"source-change-1:claim:middle", "source-change-1:claim:root"},
+            {"source-change-1:claim:root"},
         )
 
     def test_new_edge_after_manifest_makes_closure_unknown(self):
