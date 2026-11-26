@@ -55,17 +55,17 @@ Structural and behavioral tests cover:
 
 ## 7. Exact-source CI validation
 
-Workflow: [45910779312](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45910779312)
+Workflow: [45910913764](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45910913764)
 
-- Validated source revision: `6ae7907b99e6e009b0b90ac54b77e5ea99f31294`
+- Validated source revision: `d5b5422eee6ba79cd66751e14ca4db90eb839a4e`
 - Runtime: Ubuntu 24.04, Python 3.11
 - Epistemic package compilation: passed
-- Dedicated M7.5.14 tests: 6 passed
-- Complete M7.5 regression: 147 passed
-- Job ID: `140218328336`
+- Dedicated M7.5.14 tests: 7 passed
+- Complete M7.5 regression: 148 passed
+- Job ID: `140218772228`
 - Final job conclusion: success
 
-The first run exposed a real ledger-verification defect: the append-only event hash chain could be recomputed after changing the payload while leaving the reconciliation's own content digest unchanged. The verifier now checks both the event chain and the embedded reconciliation identity/digest. The corrective exact-source run passed.
+The first run exposed a real ledger-verification defect: the append-only event hash chain could be recomputed after changing the payload while leaving the reconciliation's own content digest unchanged. The verifier now checks both the event chain and the embedded reconciliation identity/digest. Follow-up tests also verify idempotent recording, append-only SQL protections, and restart recovery.
 
 ## 8. Limitations
 
