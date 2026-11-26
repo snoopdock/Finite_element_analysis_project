@@ -1,7 +1,7 @@
 # AE-32C M7.4 — Task-Specific Backend Suitability Assessment Contract
 
 **Contract version:** `ae32c/m7-4-suitability-contract/v1`  
-**Status:** The latest E.8.5/E.8.8 regression [run 45602554671](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602554671) passed all five backend jobs and the aggregate summary. Its exact artifact set was independently detached-verified in [run 45602963647](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602963647); G7 is Pass for this exact set. The preceding artifact sets from runs 45600944022 and 45473007901 also have separate G7 passes. The G4 source-snapshot cost and Windows handle-bound junction-replacement test passed in [run 45602554567](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45602554567); the Windows job passed 28 tests with 46 expected skips. Exact-source G9.42 previously passed at Stage1 SHA `d66f10b5c8af74b33a661c2453da3aca9982d565` in run `45400741779`; it has not been rerun against `0b37e79c9942e483cea770fc96138c4f185753e1`. G4 remains Partial. All 20 formal task/backend outcomes remain Insufficient evidence pending remaining semantic, mutation-safety, workload, operational and task-domain gates
+**Status:** The exact-source five-backend E.8.5/E.8.8 regression [run 45776273051](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273051) passed on Stage1 SHA `69f0dcd7f18471c07558fcc469378b75315bf018`; each backend reported 14/14 E.8.5 and 43/43 E.8.8 parity-verified queries, with zero query or parity failures. The task-acceptance JUnit artifacts were independently detached-verified in [run 45776871604](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776871604); G7 is Pass for that exact five-backend artifact set. The separate M7.4 task/G4 workflow [run 45776273052](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273052) also passed all five backend jobs. The G4 source-snapshot cost and cross-platform regression passed in [run 45775992695](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45775992695), including Linux and Windows tests and a ten-repeat repository cost report. Exact-source G9.42 has not been rerun against `69f0dcd7f18471c07558fcc469378b75315bf018`. G4 and G5 remain Partial. All 20 formal task/backend outcomes remain Insufficient evidence pending the remaining atomic-snapshot, full-repository workload, deployment-envelope and task-domain gates.
 **Target branch:** `stage1/section-uuids` only  
 **Baseline Stage1 source:** `47eb1ae6777e1d34c445af219c96840797739f23`  
 **M7.2 campaign:** [run 44940960831](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/44940960831)  
@@ -543,3 +543,49 @@ The supporting report is [AE-32C-M7.1-Integrity-Cost-Smoke-2026-11-26.md](AE-32C
 The earlier graph-tool signal-132 failure is classified as a CI binary/CPU compatibility defect. It was reproduced on an AMD EPYC 7763 runner with the `_400` CPU-specific build and avoided by selecting the generic `_100` build. The benchmark itself passed after the workflow correction. This does not change graph-tool traversal semantics or establish a performance ranking.
 
 **No task/backend pair is promoted to Suitable or Conditionally suitable.** G6 passing within the CI envelope is necessary but not sufficient while G4 and G5 remain partial. The 20 task/backend outcomes remain Insufficient evidence; no automatic selector, ranking, scientific approval or production approval is authorized.
+
+## 31. Source-derived repository incident workload and exact-source five-backend verification — 2026-11-26
+
+**Exact Stage1 source:** `69f0dcd7f18471c07558fcc469378b75315bf018`  
+**Task/G4 workflow:** [run 45776273052](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273052), success  
+**E.8.5/E.8.8 regression:** [run 45776273051](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273051), success  
+**Detached verification:** [run 45776871604](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776871604), success  
+**SNAP worker image:** `sha256:90fd08a95f537056c416ad9edd6d02cb12600aa14ee05aba9848124056a549a6`
+
+### 31.1 Additional source-derived task workload
+
+The task-acceptance suite now has two complementary domain-oriented fixtures:
+
+1. The FEM repository-shaped semantic graph exercises structural neighborhood, transitive dependency, claim-to-evidence path and change-impact behavior over typed source, module, symbol, evidence, test and workflow nodes.
+2. The controlled provider-interface incident workload constructs its graph through `RepositoryEvidenceTools` from actual fixture files. It exercises:
+   - the extractor-to-provider-adapter import neighborhood;
+   - transitive imports from the entrypoint to the provider adapter;
+   - a bounded path from the entrypoint to the provider adapter source file;
+   - change impact from the provider adapter source, including the dependent test file.
+
+For every selected backend, the test compares public-service results with the reference service, checks native query telemetry, verifies expected task-specific entities/evidence, and confirms that analysis leaves the constructed graph unchanged. The second fixture is source-derived rather than a hand-authored graph, but it remains a small controlled incident fixture and does not constitute a full-repository-scale workload.
+
+### 31.2 Five-backend task and G4 execution
+
+The separate M7.4 task/G4 workflow [run 45776273052](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273052) completed all five jobs and its aggregate acceptance gate. The combined task, mutation-integrity and repository-side-effect suite reported:
+
+- NetworkX, SciPy, igraph and graph-tool: **37 passed, 140 backend/platform skips** per selected-backend job.
+- SNAP isolated worker: **39 passed, 138 backend/platform skips**.
+
+The E.8.5/E.8.8 workflow [run 45776273051](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776273051) independently reran the task, G4 and native conformance partitions on the same exact source. Every backend's task JUnit report contained **23 passed, 92 expected backend-selection skips, zero failures and zero errors**. G4 mutation tests reported 7 passed / 33 expected skips for the four in-process backends and 8 passed / 32 expected skips for SNAP. Repository side-effect tests reported 7 passed / 15 expected skips for the in-process backends and 8 passed / 14 expected skips for SNAP.
+
+All five E.8.5 reports contained 14/14 parity-verified queries; all five E.8.8 reports contained 43/43 parity-verified repository queries. Query failures and parity failures were zero. SNAP also passed its isolated worker protocol, live Docker timeout/cleanup, resource-teardown, task acceptance, G4 and repository-backed conformance steps using the image identity recorded above.
+
+### 31.3 Detached artifact verification
+
+The detached verifier [run 45776871604](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776871604) passed its 15 adversarial verifier tests, downloaded all five exact Actions archives, checked archive bytes and report identities, and verified the M7.4 task JUnit artifacts. Each artifact contained 115 task test cases: 23 selected-backend passes and 92 expected skips. The machine-readable dossier records `m74_task_acceptance_artifacts_verified=true` and `task_suitability_decision_established=false`.
+
+**G7 conclusion:** Pass for the exact five-backend artifact set from run 45776273051. This is archive-byte, source-binding and report-consistency verification; it is not historical re-execution or physical-runner attestation.
+
+### 31.4 Acceptance interpretation
+
+The source-derived incident fixture improves G5 evidence because all four public analyzer routes now have expected-result assertions over a graph derived from real source files. The FEM fixture supplies a second domain-shaped workload. Neither is yet a representative full-repository or production-scale workload. Larger and problem-driven evidence/impact cones, resource pressure, and deployment-specific behavior remain untested.
+
+G4 remains **Partial**: the exact-source mutation and repository-side-effect tests pass, but the source snapshot cost report explicitly records `atomic_snapshot_established=false`. Repository-wide point-in-time consistency, additional filesystem namespace/alias cases, broader mutation/restoration schedules and the projection postflight-to-return race remain unresolved.
+
+**No task/backend outcome is promoted to Suitable or Conditionally suitable.** All 20 outcomes remain **Insufficient evidence** until the remaining mandatory gates are closed or explicitly bounded. No global ranking, automatic selector, scientific approval or production approval is inferred; preserve `production_approval=false`.
