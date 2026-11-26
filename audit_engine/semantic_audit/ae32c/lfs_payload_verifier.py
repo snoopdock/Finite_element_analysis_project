@@ -149,7 +149,7 @@ def verify_lfs_payloads(provider: Any,
         if (entry.get("object_type") != "blob"
                 or entry.get("mode") not in {"100644", "100755"}):
             continue
-        raw = provider.read_entry(entry["path"])
+        raw, blob_size = provider.read_entry_prefix(entry["path"], _MAX_POINTER_BYTES)
         scanned += 1
         is_candidate = raw.startswith(_POINTER_PREFIX)
         regular_inventory.append({
@@ -160,7 +160,7 @@ def verify_lfs_payloads(provider: Any,
         })
         if not is_candidate:
             continue
-        pointer_sha256 = hashlib.sha256(raw).hexdigest()
+        pointer_sha256 = entry["content_sha256"]
         base = {
             "path": entry["path"],
             "git_object_oid": entry["git_object_oid"],
