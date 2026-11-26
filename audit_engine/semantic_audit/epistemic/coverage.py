@@ -211,6 +211,7 @@ def evaluate_epistemic_coverage(
             ))
 
         def check_persisted_ref(ref: EvidenceRef, obligation_id: str) -> None:
+            nonlocal invalidated, unknown, incomplete
             records = evidence_by_id.get(ref.evidence_id, [])
             if not records or all(stored_ref != ref for _, stored_ref in records):
                 unresolved.add(obligation_id)
