@@ -1,6 +1,6 @@
 # AE-32C M7.5.2 — Append-only epistemic persistence
 
-**Status:** Implemented; final hardened-source CI validation pending  
+**Status:** IMPLEMENTED AND CI-VALIDATED (exact-source run 45895536917)  
 **Branch:** `stage1/section-uuids`  
 **Parent tranche:** M7.5.1 immutable epistemic contracts  
 **Authority:** descriptive persistence only; no inference or decision-gate authority
@@ -81,6 +81,8 @@ The M7.5.2 test suite covers:
 8. detection of out-of-band payload tampering.
 
 These tests are structural and behavioral. They do not establish production durability under power loss, filesystem corruption, sustained concurrent multi-process stress, backup/restore correctness, external authenticity, or a hostile administrator. The implementation targets a local SQLite database; it is not a distributed event store.
+
+Exact-source validation record: [AE-32C-M7.5.2-Validation-Record-45895536917.md](AE-32C-M7.5.2-Validation-Record-45895536917.md). The validated source SHA is `ba8f0ed6516feb8b36673778cce9bbd7813f1bb4`.
 
 ## 7. Explicit non-goals
 
