@@ -79,6 +79,24 @@ def fixtures(*, represented=True):
         "python_parse_issues": [], "scope_issues": [],
         "python_source_root_issues": [], "workflow_issues": [],
     }
+    regular_inventory = [
+        {"path": item["path"], "git_object_oid": item["git_object_oid"],
+         "content_sha256": item["content_sha256"], "is_lfs_pointer": False}
+        for item in entries if item["object_type"] == "blob" and item["mode"] in {"100644", "100755"}
+    ]
+    lfs_attestation = {
+        "schema": "ae32c/lfs-payload-verification/v2",
+        "source_snapshot_id": source_id, "commit_oid": COMMIT,
+        "source_inventory_sha256": inventory_sha,
+        "object_store_mode": "NOT_SUPPLIED_NO_NETWORK", "status": "NOT_SUPPLIED",
+        "scan_complete": True, "scanned_regular_blob_count": len(regular_inventory),
+        "regular_blob_inventory": regular_inventory, "pointer_count": 0,
+        "verified_payload_count": 0, "unverified_payload_count": 0,
+        "lfs_payload_verified": False, "records": [],
+        "remote_payload_provenance_verified": False,
+        "atomic_snapshot_established": False, "production_approval": False,
+    }
+    lfs_attestation["attestation_sha256"] = digest(lfs_attestation)
     graph_manifest = build_graph_snapshot(
         source_manifest=source_manifest,
         graph={"nodes": [{"id": "file:src/a.py", "type": "PythonSourceFile",
@@ -88,6 +106,7 @@ def fixtures(*, represented=True):
         represented_paths={"src/a.py"} if represented else set(),
         file_hashes={"src/a.py": "6" * 64} if represented else {},
         python_runtime="3.test",
+        lfs_attestation=lfs_attestation,
     )
     expected = {
         "repository": REPOSITORY, "default_branch": "main", "head_branch": "main",
