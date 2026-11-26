@@ -54,6 +54,16 @@ def _verify_source_manifest(manifest: dict[str, Any], expected_revision: str | N
     source = manifest.get("source")
     if not isinstance(source, dict) or not source.get("commit_oid") or not source.get("root_tree_oid"):
         raise GraphSnapshotError("source_identity_missing")
+    inventory = manifest.get("source_inventory")
+    if not isinstance(inventory, dict) or not isinstance(inventory.get("entries"), list):
+        raise GraphSnapshotError("source_inventory_invalid")
+    if (inventory.get("entry_count") != len(inventory["entries"])
+            or inventory.get("sha256") != digest(inventory["entries"])):
+        raise GraphSnapshotError("source_inventory_digest_mismatch")
+    if source.get("source_inventory_sha256") != inventory.get("sha256"):
+        raise GraphSnapshotError("source_inventory_source_binding_mismatch")
+    if manifest.get("source_snapshot_id") != digest(source):
+        raise GraphSnapshotError("source_snapshot_identity_mismatch")
     if expected_revision and source["commit_oid"].lower() != expected_revision.lower():
         raise GraphSnapshotError("source_revision_mismatch")
 
@@ -434,6 +444,10 @@ def verify_graph_manifest(manifest: dict[str, Any]) -> None:
     if identity.get("source_snapshot_id") != manifest.get("source_snapshot_id"):
         raise GraphSnapshotError("graph_source_identity_mismatch")
     source = manifest.get("source", {})
+    if (identity.get("source_commit_oid") != source.get("commit_oid")
+            or identity.get("source_root_tree_oid") != source.get("root_tree_oid")
+            or not source.get("source_inventory_sha256")):
+        raise GraphSnapshotError("graph_source_commit_or_tree_mismatch")
     attestation = manifest.get("lfs_attestation")
     coverage_lfs = coverage.get("lfs_payloads", {})
     if (not isinstance(attestation, dict)
