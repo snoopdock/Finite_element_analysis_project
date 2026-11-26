@@ -23,6 +23,15 @@ from .evaluation import (
     AdmissibilityDecision, NegativeClaimRequest, evaluate_negative_claim,
     evaluate_negative_claim_with_freshness,
 )
+from .assurance import (
+    AssuranceClaim, AssuranceContractError, ArgumentAssessment, ArgumentLink,
+    ArgumentRelation, Defeater, DefeaterAction, DefeaterEvent, DefeaterKind,
+    evaluate_assurance,
+)
+from .assurance_store import (
+    AssuranceDuplicateError, AssuranceStorageLimitError, AssuranceStore,
+    AssuranceStoreError,
+)
 from .store import (
     DuplicateRecordError,
     EpistemicStore,
@@ -34,6 +43,19 @@ from .store import (
 
 __all__ = [
     "AdmissibilityDecision",
+    "AssuranceClaim",
+    "AssuranceContractError",
+    "AssuranceDuplicateError",
+    "AssuranceStorageLimitError",
+    "AssuranceStore",
+    "AssuranceStoreError",
+    "ArgumentAssessment",
+    "ArgumentLink",
+    "ArgumentRelation",
+    "Defeater",
+    "DefeaterAction",
+    "DefeaterEvent",
+    "DefeaterKind",
     "AssertionPolarity",
     "CompletenessClaim",
     "CompletenessStatus",
@@ -54,6 +76,7 @@ __all__ = [
     "RevisionConflictError",
     "StorageLimitError",
     "StoreError",
+    "evaluate_assurance",
     "evaluate_negative_claim",
     "evaluate_negative_claim_with_freshness",
 ]
