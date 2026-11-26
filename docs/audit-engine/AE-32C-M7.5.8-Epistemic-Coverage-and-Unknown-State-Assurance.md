@@ -76,19 +76,19 @@ The workflow runs this suite after M7.5.1–M7.5.7 regression suites.
 
 ## 7. Validation result
 
-Exact-source workflow: [45903022544](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45903022544)
+Exact-source workflow: [45903188231](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45903188231)
 
-- Validated source revision: `075107d9e37b4bd29a0325595961d3661b6a50f4`
+- Validated source revision: `7d4ee3e852e627cde02025ae8894362e7e46393e`
 - Runtime: Ubuntu 24.04, Python 3.11
-- M7.5.8 dedicated suite: 10 passed
+- M7.5.8 dedicated suite: 11 passed
 - M7.5.1–M7.5.7 regression suites: 76 passed
-- Total: 86 passed
+- Total: 87 passed
 - Epistemic package compile: passed
-- Artifact: `m7-5-epistemic-validation-45903022544-1`
-- Artifact ID: `15156258964`
-- Artifact SHA-256: `7452724dc6f01ca9cabb4976854c2fbf87165b9f35fe4e9e723cf76423d300e8`
+- Artifact: `m7-5-epistemic-validation-45903188231-1`
+- Artifact ID: `15156553705`
+- Artifact SHA-256: `9119270727485758a81fe67cf594546af95dd2a94d3ba909a684f3472b108d3f`
 
-The first run against the preceding workflow revision failed because the newly inserted shell command contained doubled line-continuation characters. The workflow was corrected, and the exact-source run above passed all eight suites. The failed attempt is not counted as validation.
+The initial M7.5.8 workflow attempt failed because the inserted shell command contained doubled line-continuation characters. The workflow was corrected before the successful exact-source validation recorded above. A subsequent hardening change added explicit provenance-edge matching and resolution-evidence validation; this latest run includes those checks. The failed attempt is not counted as validation.
 
 ## 8. Validation boundary
 
