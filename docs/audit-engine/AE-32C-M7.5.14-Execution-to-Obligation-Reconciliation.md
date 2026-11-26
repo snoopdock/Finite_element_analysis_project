@@ -53,7 +53,21 @@ Structural and behavioral tests cover:
 - Rehashed ledger tampering rejection.
 - Dossier-manifest identity mismatch rejection.
 
-## 6. Limitations
+## 7. Exact-source CI validation
+
+Workflow: [45910779312](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45910779312)
+
+- Validated source revision: `6ae7907b99e6e009b0b90ac54b77e5ea99f31294`
+- Runtime: Ubuntu 24.04, Python 3.11
+- Epistemic package compilation: passed
+- Dedicated M7.5.14 tests: 6 passed
+- Complete M7.5 regression: 147 passed
+- Job ID: `140218328336`
+- Final job conclusion: success
+
+The first run exposed a real ledger-verification defect: the append-only event hash chain could be recomputed after changing the payload while leaving the reconciliation's own content digest unchanged. The verifier now checks both the event chain and the embedded reconciliation identity/digest. The corrective exact-source run passed.
+
+## 8. Limitations
 
 M7.5.14 does not:
 1. Prove universal source, extractor, rule, or obligation exhaustiveness.
