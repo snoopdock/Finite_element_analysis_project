@@ -697,3 +697,12 @@ The latest run establishes that SNAP passes its selected small task/G4 suite but
 G5 also requires a domain-relevant scientific workload. The repository contains FEM-related source and formal artifacts, but the existing M7.4 campaign does not yet demonstrate graph-native queries over a real mesh/field/solver dependency workload. The next workload must be source-derived from the repository's actual FEM code and formal artifacts, preserve the distinction between mathematical specification, implementation, tests and scientific evidence, and avoid inventing numerical simulation outputs. Each backend must receive the same graph, task definitions and query seeds; results are evaluated against the reference semantics independently, not as a performance contest.
 
 **Current decision:** no M7.4 task/backend suitability outcome is promoted. G5 remains Partial; all 20 outcomes remain Insufficient evidence. SNAP full-repository execution and scientific FEM workload acceptance are open.
+
+
+## 35. FEM workload source inventory and scope decision
+
+Repository inspection found a concrete, source-backed FEM numerical-evidence fixture in AE-11: a three-degree-of-freedom linear-static bar problem, a SHA-256-bound JSON input, seven Decimal-based numerical checks, an independent arithmetic oracle, known-defect mutations, malformed-input abstention tests and a documented limitation boundary. The AE-11 graph records `FEMModel`, `EvidenceArtifact` and seven `FEMNumericalCheck` nodes linked by `EVIDENCED_BY` and `CHECKED_BY`.
+
+The four files under `formal/lean/FEA/FEM/` (WeakForm, Stiffness, Galerkin and Convergence) are zero-byte files at the inspected source revision. They must not be treated as formal proofs. The H6 literature manifest contains four bibliographic metadata records but no passage evidence, propositions or evidence-relation IDs; it must not generate claim-support edges.
+
+The source-grounded workload and its graph bridge, tasks, adversarial cases and acceptance limits are specified in [AE-32C M7.4 G5 FEM Numerical-Evidence Workload Design](AE-32C-M7.4-G5-FEM-Numerical-Evidence-Workload-Design.md). It is deliberately scoped as FEM numerical-evidence traceability, not a full mesh/field solver workload. The composed graph and five-backend tests remain to be implemented and executed.
