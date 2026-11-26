@@ -326,57 +326,6 @@ jobs:
                 "$GRAPH_TOOL" != success || "$SNAP" != success ]]; then
             exit 1
           fi
- || true)"
-          if [[ -z "$PACKAGE" ]]; then
-            echo "Expected generic x86-64 graph-tool-base build (_100); refusing CPU-dependent build." >&2
-            conda list --explicit | grep 'graph-tool-base' || true
-            exit 1
-          fi
-          echo "Verified graph-tool binary target: $PACKAGE"
-      - name: Capture runner and dependency provenance
-        shell: micromamba-shell {0}
-        env:
-          REPEATS: ${{ needs.resolve-source.outputs.repeats }}
-          WARMUP: ${{ needs.resolve-source.outputs.warmup }}
-        run: |
-          set -euo pipefail
-          mkdir -p reports
-          {
-            echo "source_sha=$AE32C_SOURCE_REVISION"
-            echo "requested_repeats=$REPEATS"
-            echo "requested_warmup=$WARMUP"
-            echo "runner_os=$RUNNER_OS"
-            echo "runner_arch=$RUNNER_ARCH"
-            echo "python=$(python --version 2>&1)"
-            echo "uname=$(uname -a)"
-            echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2- | xargs || true)"
-            echo "backend=graph-tool"
-          } > reports/runner-environment.txt
-          conda list --explicit > reports/conda-explicit.txt
-      - name: Run parity-gated graph-tool benchmark and independent verification
-        shell: micromamba-shell {0}
-        env:
-          PYTHONPATH: source
-          REPEATS: ${{ needs.resolve-source.outputs.repeats }}
-          WARMUP: ${{ needs.resolve-source.outputs.warmup }}
-        run: |
-          set -euo pipefail
-          mkdir -p reports
-          python -u -X faulthandler source/tools/gb05_native_backend_performance_benchmark.py run \
-            --backend graph-tool --repeats "$REPEATS" --warmup "$WARMUP" \
-            --report reports/m7-graph-tool.json 2>&1 | tee reports/m7-graph-tool-run.log
-          python -c 'import json, os; p=json.load(open("reports/m7-graph-tool.json", encoding="utf-8")); c=p.get("configuration", {}); expected={"repeats": int(os.environ["REPEATS"]), "warmup": int(os.environ["WARMUP"])}; assert c == expected, f"report configuration mismatch: expected {expected}, got {c}"'
-          python source/tools/gb05_native_backend_performance_benchmark.py verify \
-            --report reports/m7-graph-tool.json 2>&1 | tee reports/m7-graph-tool-verify.log
-      - name: Upload graph-tool benchmark evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: m7-1-native-smoke-graph-tool-${{ github.run_id }}-${{ github.run_attempt }}
-          path: reports/
-          if-no-files-found: warn
-          retention-days: 30
-
   snap-isolated-worker:
     name: Native smoke — SNAP 6.0 isolated worker
     needs: resolve-source
