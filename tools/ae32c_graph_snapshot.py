@@ -153,13 +153,16 @@ def _verify_lfs_attestation(
         raise GraphSnapshotError("lfs_pointer_record_counts_mismatch")
     status = attestation.get("status")
     if status == "NOT_SUPPLIED":
-        if verified or unverified != len(records):
+        if (attestation.get("object_store_mode") != "NOT_SUPPLIED_NO_NETWORK"
+                or verified or unverified != len(records)):
             raise GraphSnapshotError("lfs_not_supplied_status_mismatch")
     elif status == "UNVERIFIED":
-        if not unverified:
+        if (attestation.get("object_store_mode") != "EXPLICIT_LOCAL_CACHE_NO_NETWORK"
+                or not unverified):
             raise GraphSnapshotError("lfs_unverified_status_mismatch")
     elif status == "VERIFIED_LOCAL_PAYLOADS":
-        if unverified or verified != len(records):
+        if (attestation.get("object_store_mode") != "EXPLICIT_LOCAL_CACHE_NO_NETWORK"
+                or unverified or verified != len(records)):
             raise GraphSnapshotError("lfs_verified_status_mismatch")
     else:
         raise GraphSnapshotError("lfs_attestation_status_invalid")
