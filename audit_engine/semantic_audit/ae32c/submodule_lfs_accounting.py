@@ -166,8 +166,18 @@ def account_submodule_lfs(
             item.get("status") == "SCANNED" and item.get("recursive_scan_complete") is True
             for item in records
         ),
-        "recursive_content_verified": all(
+        "recursive_content_verified": bool(records) and all(
             item.get("recursive_content_verified") is True for item in records
+        ),
+        "content_verification_status": (
+            "NOT_APPLICABLE_NO_GITLINKS" if not records
+            else "VERIFIED_LOCAL_CONTENT" if all(
+                item.get("recursive_content_verified") is True for item in records
+            )
+            else "SCANNED_CONTENT_UNVERIFIED" if all(
+                item.get("status") == "SCANNED" for item in records
+            )
+            else "INCOMPLETE"
         ),
         "records": records,
         "network_accessed": False,
