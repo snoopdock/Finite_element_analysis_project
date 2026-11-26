@@ -50,6 +50,12 @@ from .coverage_dossier import (
     verify_dossier_against_current_stores,
 )
 from .dossier_verification import verify_coverage_dossier_replay
+from .source_inventory import (
+    SourceExtractorInventoryError,
+    extractor_candidate_registry,
+    build_source_extractor_inventory,
+    verify_source_extractor_inventory,
+)
 from .persisted_assurance import (
     PersistedAssuranceResult,
     evaluate_persisted_assurance,
@@ -70,6 +76,11 @@ __all__ = [
     "build_and_persist_coverage_dossier",
     "verify_dossier_against_current_stores",
     "verify_coverage_dossier_replay",
+
+    "SourceExtractorInventoryError",
+    "extractor_candidate_registry",
+    "build_source_extractor_inventory",
+    "verify_source_extractor_inventory",
 
     "RuleCoverageDerivationError",
     "RuleCoveragePlan",

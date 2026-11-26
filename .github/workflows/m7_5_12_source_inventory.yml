@@ -1,0 +1,85 @@
+name: AE-32C M7.5.12 Source and Extractor Inventory Reconciliation
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_12_source_inventory.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tests/semantic_graph/test_m75*.py"
+      - "docs/audit-engine/AE-32C-M7.5.12-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7512-stage1
+  cancel-in-progress: false
+
+jobs:
+  source-inventory:
+    name: M7.5.12 source/extractor inventory reconciliation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile epistemic package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m compileall -q audit_engine/semantic_audit/epistemic 2>&1 | tee reports/m7512-compile.log
+
+      - name: Run dedicated M7.5.12 structural and behavioral tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_m7512_source_inventory.py' \
+            -v 2>&1 | tee reports/m7512-dedicated.log
+
+      - name: Run complete M7.5 regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_m75*.py' \
+            -v 2>&1 | tee reports/m7512-regression.log
+
+      - name: Upload exact-source validation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m7-5-12-source-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            reports/m7512-compile.log
+            reports/m7512-dedicated.log
+            reports/m7512-regression.log
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Summarize assurance boundary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.12 source/extractor inventory reconciliation"
+            echo "- Source SHA: $GITHUB_SHA"
+            echo "- Reconciles every entry in a postflight-verified source manifest against the versioned built-in extractor-candidate registry"
+            echo "- Unsupported source units, Gitlinks and explicit scope exclusions remain visible"
+            echo "- Candidate status is not extractor execution or output validation"
+            echo "- No universal exhaustiveness, proposition truth, audit decision, authorization, or production approval"
+          } >> "$GITHUB_STEP_SUMMARY"
