@@ -293,39 +293,6 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-  benchmark-summary:
-    name: Five-backend M7.1 smoke summary
-    if: always()
-    needs: [resolve-source, pip-native-backends, graph-tool-native, snap-isolated-worker]
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Enforce all five backend smoke jobs
-        shell: bash
-        env:
-          SOURCE_RESOLUTION: ${{ needs.resolve-source.result }}
-          PIP_BACKENDS: ${{ needs.pip-native-backends.result }}
-          GRAPH_TOOL: ${{ needs.graph-tool-native.result }}
-          SNAP: ${{ needs.snap-isolated-worker.result }}
-          SOURCE_SHA: ${{ needs.resolve-source.outputs.source_sha }}
-          REPEATS: ${{ needs.resolve-source.outputs.repeats }}
-          WARMUP: ${{ needs.resolve-source.outputs.warmup }}
-        run: |
-          {
-            echo "## M7.1 five-backend smoke outcome"
-            echo "- Immutable source SHA: $SOURCE_SHA"
-            echo "- Requested timed repetitions per query: $REPEATS"
-            echo "- Requested warm-up calls per query: $WARMUP"
-            echo "- NetworkX / SciPy / igraph job: $PIP_BACKENDS"
-            echo "- graph-tool job: $GRAPH_TOOL"
-            echo "- SNAP isolated-worker job: $SNAP"
-            echo "- These are independent smoke reports on separate runner instances."
-            echo "- Runner and CPU provenance must be examined before any timing comparison."
-            echo "- No universal winner, automatic backend selection, scientific approval, or production approval is established."
-          } >> "$GITHUB_STEP_SUMMARY"
-          if [[ "$SOURCE_RESOLUTION" != success || "$PIP_BACKENDS" != success || \
-                "$GRAPH_TOOL" != success || "$SNAP" != success ]]; then
-            exit 1
-          fi
   snap-isolated-worker:
     name: Native smoke — SNAP 6.0 isolated worker
     needs: resolve-source
