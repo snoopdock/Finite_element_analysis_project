@@ -161,9 +161,8 @@ class EpistemicStore:
     ) -> bool:
         payload_hash = hashlib.sha256(payload.encode("utf-8")).hexdigest()
         event_id = f"{record_type}:{record_id}:{revision}"
-        with self._connection:
-            if not transaction_open:
-                self._connection.execute("BEGIN IMMEDIATE")
+
+        def append_locked() -> bool:
             if not self.verify_integrity():
                 raise StoreError("event ledger integrity check failed; refusing further writes")
             existing = self._connection.execute(
@@ -184,7 +183,7 @@ class EpistemicStore:
             ).fetchone()
             previous_hash = previous["event_hash"] if previous else "0" * 64
             sequence = count + 1
-            event_material = f"{sequence}\n{event_id}\n{payload_hash}\n{previous_hash}"
+            event_material = f"{sequence}\\n{event_id}\\n{payload_hash}\\n{previous_hash}"
             event_hash = hashlib.sha256(event_material.encode("utf-8")).hexdigest()
             self._connection.execute(
                 """INSERT INTO epistemic_events
@@ -195,6 +194,12 @@ class EpistemicStore:
                  payload_hash, previous_hash, event_hash),
             )
             return True
+
+        if transaction_open:
+            return append_locked()
+        with self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            return append_locked()
 
     def record_assertion(self, assertion: EvidenceAssertion) -> bool:
         if not isinstance(assertion, EvidenceAssertion):
