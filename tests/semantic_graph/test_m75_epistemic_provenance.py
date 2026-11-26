@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from audit_engine.semantic_audit.epistemic import (
-    CompletenessClaim, CompletenessStatus, EpistemicStore, EvidenceRef,
+    CompletenessClaim, CompletenessStatus, DuplicateRecordError, EpistemicStore, EvidenceRef,
     FreshnessStatus, NegativeClaimRequest, ProvenanceDependency,
     ProvenanceManifest, StoreError, evaluate_negative_claim_with_freshness,
 )
@@ -70,7 +70,7 @@ class ProvenanceGraphTests(unittest.TestCase):
         item = self.edge("edge-1", "claim:X", "snapshot:X")
         self.assertTrue(self.store.record_dependency(item))
         self.assertFalse(self.store.record_dependency(item))
-        with self.assertRaises(Exception):
+        with self.assertRaises(DuplicateRecordError):
             self.store.record_dependency(self.edge("edge-1", "claim:X", "snapshot:Y"))
         self.assertEqual(len(self.store.dependency_history()), 1)
 
