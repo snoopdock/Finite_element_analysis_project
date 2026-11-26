@@ -64,7 +64,7 @@ class PublisherPreflightTests(unittest.TestCase):
             branch_protection_status=404, branch_protection={},
             rulesets_status=200, rulesets=ruleset(),
             environment_status=200, environment=environment(),
-            app_client_id_present=True, app_private_key_present=True,
+            app_client_id_present=True, app_private_key_present=True, publisher_app_id=12345,
         )
         self.assertEqual(result["checks"]["default_branch_protection"]["status"], "BLOCKED")
 
@@ -91,7 +91,7 @@ class PublisherPreflightTests(unittest.TestCase):
             branch_protection_status=200, branch_protection=protection(),
             rulesets_status=200, rulesets=unsafe,
             environment_status=200, environment=environment(),
-            app_client_id_present=True, app_private_key_present=True,
+            app_client_id_present=True, app_private_key_present=True, publisher_app_id=12345,
         )
         self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "BLOCKED")
 
@@ -103,7 +103,7 @@ class PublisherPreflightTests(unittest.TestCase):
             branch_protection_status=200, branch_protection=protection(),
             rulesets_status=200, rulesets=unsafe,
             environment_status=200, environment=environment(),
-            app_client_id_present=True, app_private_key_present=True,
+            app_client_id_present=True, app_private_key_present=True, publisher_app_id=12345,
         )
         self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "BLOCKED")
 
@@ -115,7 +115,7 @@ class PublisherPreflightTests(unittest.TestCase):
             branch_protection_status=200, branch_protection=protection(),
             rulesets_status=200, rulesets=unsafe,
             environment_status=200, environment=environment(),
-            app_client_id_present=True, app_private_key_present=True,
+            app_client_id_present=True, app_private_key_present=True, publisher_app_id=12345,
         )
         self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "BLOCKED")
 
