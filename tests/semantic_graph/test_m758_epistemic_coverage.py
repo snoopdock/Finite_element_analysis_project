@@ -4,8 +4,7 @@ import unittest
 from pathlib import Path
 
 from audit_engine.semantic_audit.epistemic import (
-    AssuranceClaim, AssuranceStore, ArgumentAssessment, ArgumentLink,
-    ArgumentRelation, AssertionPolarity, CoverageObligation,
+    AssuranceClaim, AssuranceStore, AssertionPolarity, CoverageObligation,
     EpistemicCoverageManifest, EpistemicCoverageStatus, EpistemicStore,
     EvidenceAssertion, EvidenceRef, ObligationDisposition, ProvenanceManifest,
     evaluate_epistemic_coverage,
@@ -152,5 +151,5 @@ class EpistemicCoverageTests(unittest.TestCase):
         self.assertNotEqual(first.manifest_sha256, second.manifest_sha256)
 
 
-if __Name__ == "__main__":
+if __name__ == "__main__":
     unittest.main()
