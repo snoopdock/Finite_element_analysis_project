@@ -163,6 +163,37 @@ class CoverageDossierTests(unittest.TestCase):
         with self.assertRaisesRegex(CoverageDossierError, "integrity failure"):
             self.dossiers.get("dossier:tamper")
 
+    def test_concurrent_mutation_during_capture_forces_unknown(self):
+        self.add_gap("gap:assigned")
+        original = self.epistemic.snapshot_token
+        calls = {"count": 0}
+
+        def changing_snapshot_token():
+            calls["count"] += 1
+            if calls["count"] == 2:
+                self.add_gap("gap:concurrent")
+            return original()
+
+        self.epistemic.snapshot_token = changing_snapshot_token
+        dossier = self.build(
+            "dossier:concurrent", "gap:assigned",
+            {"gap:assigned": (self.obligation_id,)},
+        )
+        self.assertFalse(dossier.snapshot_consistent)
+        self.assertEqual(dossier.overall_status, "unknown")
+
+    def test_gap_outside_claim_scope_cannot_be_reconciled(self):
+        self.epistemic.record_gap(KnowledgeGap(
+            "gap:other-scope", "source:unit-1", GapKind.PARTIAL_EXTRACTION,
+            GapState.OPEN, "scope:other", "inventory:v1",
+            "The gap belongs to another scope",
+        ))
+        with self.assertRaisesRegex(CoverageDossierError, "outside the assurance claim scope"):
+            self.build(
+                "dossier:scope-mismatch", "gap:manifest-only",
+                {"gap:other-scope": (self.obligation_id,)},
+            )
+
     def test_append_only_trigger_blocks_update_and_delete(self):
         self.add_gap("gap:assigned")
         self.build(
