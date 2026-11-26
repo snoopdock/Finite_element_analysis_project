@@ -26,6 +26,9 @@ EXCLUDED_DIRECTORY_NAMES = frozenset({
     ".ruff_cache", "node_modules", "dist", "build", ".tox", ".nox",
 })
 EXCLUDED_RUNTIME_PREFIXES = ("state/", "output/", "artifacts/", ".graph-state/", ".cache/")
+# Graphify outputs are separately retained analysis artifacts, not source inputs.
+# Git snapshot manifests still inventory and hash every tracked blob in this directory.
+EXCLUDED_GENERATED_ARTIFACT_PREFIXES = ("branch-graphify-results/",)
 MAX_FILE_BYTES = 8 * 1024 * 1024
 MAX_TOTAL_BYTES = 200 * 1024 * 1024
 MAX_FILES = 30000
@@ -57,6 +60,8 @@ def _is_excluded(rel: str, output_rel: str | None) -> bool:
     if any(part in EXCLUDED_DIRECTORY_NAMES for part in parts):
         return True
     if any(rel == prefix.rstrip("/") or rel.startswith(prefix) for prefix in EXCLUDED_RUNTIME_PREFIXES):
+        return True
+    if any(rel == prefix.rstrip("/") or rel.startswith(prefix) for prefix in EXCLUDED_GENERATED_ARTIFACT_PREFIXES):
         return True
     if output_rel and (rel == output_rel or rel.startswith(output_rel.rstrip("/") + "/")):
         return True
@@ -953,6 +958,7 @@ def audit_repository(
                 "extensions": sorted(SOURCE_SUFFIXES),
                 "excluded_directory_names": sorted(EXCLUDED_DIRECTORY_NAMES),
                 "excluded_runtime_prefixes": list(EXCLUDED_RUNTIME_PREFIXES),
+                "excluded_generated_artifact_prefixes": list(EXCLUDED_GENERATED_ARTIFACT_PREFIXES),
                 "output_directory_excluded": output_rel,
                 "symlinks_followed": False,
                 "maximum_file_bytes": MAX_FILE_BYTES,
