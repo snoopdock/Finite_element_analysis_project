@@ -90,7 +90,7 @@ class PersistedAssuranceTests(unittest.TestCase):
         )
         self.assertIs(result.assessment, ArgumentAssessment.INCOMPLETE)
         self.assertEqual(result.missing_evidence_ids, ("evidence:1",))
-        self.assertFalse(result.ledger_consistent is False)
+        self.assertTrue(result.ledger_consistent)
 
     def test_evidence_without_closed_terminal_provenance_is_incomplete(self):
         self.epistemic.record_assertion(self.assertion)
