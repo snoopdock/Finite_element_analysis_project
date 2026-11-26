@@ -44,6 +44,12 @@ from .extractor_execution import (
     ExtractorExecutionError, extractor_executor_registry,
     build_extractor_execution_report, verify_extractor_execution_report,
 )
+from .execution_obligation_reconciliation import (
+    ExecutionObligationReconciliationError, ExecutionObligationReconciliationStore,
+    build_execution_obligation_reconciliation,
+    build_and_persist_execution_obligation_reconciliation,
+    verify_execution_obligation_reconciliation,
+)
 from .persisted_assurance import PersistedAssuranceResult, evaluate_persisted_assurance
 from .store import (
     DuplicateRecordError, EpistemicStore, InvalidTransitionError,
@@ -51,7 +57,7 @@ from .store import (
 )
 
 __all__ = [
-    "CoverageDossier", "CoverageDossierError", "CoverageDossierStore",
+    "ExecutionObligationReconciliationError", "ExecutionObligationReconciliationStore",\n    "build_execution_obligation_reconciliation",\n    "build_and_persist_execution_obligation_reconciliation",\n    "verify_execution_obligation_reconciliation",\n    "CoverageDossier", "CoverageDossierError", "CoverageDossierStore",
     "build_and_persist_coverage_dossier", "verify_dossier_against_current_stores",
     "verify_coverage_dossier_replay",
     "SourceExtractorInventoryError", "extractor_candidate_registry",
