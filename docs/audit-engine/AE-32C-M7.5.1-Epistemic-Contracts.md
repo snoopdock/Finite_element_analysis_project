@@ -139,7 +139,7 @@ The dataclasses are frozen and validate their local invariants at construction. 
 |---|---|
 | M7.5.2 | Append-only knowledge-gap and evidence-assertion persistence; stable IDs, duplicate handling, history and bounded storage without silent deletion |
 | M7.5.3 | Scope-bound completeness evaluation and negative-claim admissibility — implemented; see the M7.5.3 specification |
-| M7.5.4 | Provenance dependency graph, freshness and deterministic invalidation |
+| M7.5.4 | Provenance dependency graph, freshness and deterministic invalidation — implemented; exact-source validation pending |
 | M7.5.5 | Assurance claims, argument links, rebutting/undercutting defeaters and response evidence |
 | M7.5.6 | Independence/common-cause analysis and independent challenge mechanisms |
 | M7.5.7 | Controlled consumption by existing audit rules and deterministic gates |
