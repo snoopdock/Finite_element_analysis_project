@@ -13,7 +13,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from .contracts import (CompletenessClaim, EvidenceAssertion, KnowledgeGap, GapState,\n                        ProvenanceDependency, ProvenanceInvalidation, ProvenanceManifest, FreshnessResult, FreshnessStatus)
+from .contracts import (\n    CompletenessClaim, EvidenceAssertion, KnowledgeGap, GapState,\n    ProvenanceDependency, ProvenanceInvalidation, ProvenanceManifest,\n    FreshnessResult, FreshnessStatus,\n)
 
 
 class StoreError(RuntimeError):
