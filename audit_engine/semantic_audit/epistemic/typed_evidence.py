@@ -18,6 +18,13 @@ from .coverage import EpistemicCoverageManifest
 from .extractor_execution import verify_extractor_execution_report
 from .rule_coverage import RuleCoveragePlan, verify_rule_derived_manifest
 from .source_inventory import verify_source_extractor_inventory
+from .execution_obligation_reconciliation import (
+    ExecutionObligationReconciliationStore,
+    verify_execution_obligation_reconciliation,
+)
+from .assurance_store import AssuranceStore
+from .coverage_dossier import CoverageDossierStore
+from .store import EpistemicStore
 
 SCHEMA = "ae32c/typed-evidence-observation-bundle/v1"
 STORE_SCHEMA = "ae32c/typed-evidence-observation-ledger/v1"
@@ -377,31 +384,30 @@ def build_and_persist_typed_evidence_observations(
     *, store: TypedEvidenceObservationStore, plan: RuleCoveragePlan,
     claim: AssuranceClaim, manifest: EpistemicCoverageManifest,
     source_manifest: Mapping[str, Any], inventory: Mapping[str, Any],
-    execution_report: Mapping[str, Any], execution_reconciliation: Mapping[str, Any],
-    repository_root: str | Path,
+    execution_report: Mapping[str, Any], dossier_id: str,
+    reconciliation_id: str,
+    reconciliation_store: ExecutionObligationReconciliationStore,
+    assurance_store: AssuranceStore, epistemic_store: EpistemicStore,
+    dossier_store: CoverageDossierStore, repository_root: str | Path,
 ) -> dict[str, Any]:
+    """Persist observations only after independent M7.5.14 semantic replay."""
     verify_rule_derived_manifest(claim, plan, manifest)
-    reconciliation = dict(execution_reconciliation)
-    reconciliation_digest = reconciliation.get("reconciliation_sha256")
-    reconciliation_payload = {k: v for k, v in reconciliation.items()
-                              if k != "reconciliation_sha256"}
-    if reconciliation_digest != _digest(reconciliation_payload):
-        raise TypedEvidenceError("execution_reconciliation_digest_mismatch")
-    if (reconciliation.get("source_snapshot_id") != plan.source_snapshot_id
-            or reconciliation.get("plan_sha256") != plan.plan_sha256
-            or reconciliation.get("execution_report_sha256") != execution_report.get("report_sha256")):
-        raise TypedEvidenceError("execution_reconciliation_binding_mismatch")
-    if reconciliation.get("authority", {}).get("extractor_execution_reconciled_to_declared_obligations") is not True:
-        raise TypedEvidenceError("execution_reconciliation_not_authoritative_for_execution_accounting")
-    reconciled_ids = {x.get("obligation_id") for x in reconciliation.get("obligations", [])
-                      if isinstance(x, Mapping)}
-    if reconciled_ids != set(plan.expected_obligation_ids):
-        raise TypedEvidenceError("execution_reconciliation_obligation_universe_mismatch")
     try:
         verify_source_extractor_inventory(source_manifest, inventory)
         verify_extractor_execution_report(source_manifest, inventory, execution_report, repository_root)
+        reconciliation_check = verify_execution_obligation_reconciliation(
+            reconciliation_id,
+            reconciliation_store=reconciliation_store,
+            dossier_id=dossier_id, claim=claim, plan=plan, manifest=manifest,
+            source_manifest=source_manifest, inventory=inventory,
+            execution_report=execution_report, repository_root=repository_root,
+            assurance_store=assurance_store, epistemic_store=epistemic_store,
+            dossier_store=dossier_store,
+        )
     except (ValueError, KeyError, TypeError) as exc:
         raise TypedEvidenceError("upstream_evidence_verification_failed:" + type(exc).__name__) from exc
+    if reconciliation_check.get("semantic_replay") is not True:
+        raise TypedEvidenceError("execution_reconciliation_replay_not_verified")
     if source_manifest.get("source_snapshot_id") != plan.source_snapshot_id:
         raise TypedEvidenceError("source_snapshot_mismatch")
     if execution_report.get("source_snapshot_id") != plan.source_snapshot_id:
