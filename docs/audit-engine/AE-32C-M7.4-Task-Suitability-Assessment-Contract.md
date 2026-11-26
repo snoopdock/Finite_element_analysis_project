@@ -481,3 +481,47 @@ The exact artifact set from run 45602554671 passed detached G7 verification in [
 **G4 interpretation:** the tested Windows component-inspection-to-open junction escape is now rejected by a handle-bound final-path check. This is a bounded, adversarially tested mitigation, not a universal Windows filesystem guarantee. It does not exhaust mount points, network shares, all volume aliases, hard-link aliasing, root replacement schedules or all permission states. It also does not create an atomic repository-wide snapshot, cover every external filesystem effect, eliminate all mutation/restoration schedules, or close native projection postflight-to-return concurrency. G4 remains Partial.
 
 The exact-source G9.42 profile has not been run against `0b37e79c9942e483cea770fc96138c4f185753e1`; the earlier G9.42 pass remains bound to its own recorded source SHA. All 20 task/backend outcomes remain Insufficient evidence. No ranking, automatic selection, scientific approval or production approval follows; `production_approval=false`.
+
+
+## 29. Domain-shaped M7.4 task workload and detached task-evidence verification — 2026-11-26
+
+### 29.1 Task workload expansion
+
+Implementation/test source revision: `e15c18b1506fb9c4d4c71b6435eb1c42aa7ac187`.
+
+The task-level acceptance suite now includes `test_m74_fem_repository_workload_exercises_all_public_audit_tasks`. Its typed fixture models a small FEM software repository with source files, Python modules, a material-property symbol, a constitutive-assumption evidence record, a test file, a validation workflow and dependency relations including a two-module cycle. It exercises the public structural, dependency, path-to-evidence and change-impact analyzers.
+
+For each selected backend, the test checks reference parity and native execution, then checks explicit task semantics: the structural import neighborhood, transitive dependency entities, the supported-by evidence path, impacted test/workflow candidates and the bounded dependency-cycle result. The graph is also checked for mutation after analysis. This is a domain-shaped deterministic fixture, not a claim that the full FEM repository has been exhaustively audited at production scale.
+
+### 29.2 Exact five-backend run
+
+The exact-source E.8.5/E.8.8 workflow [run 45773593165](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45773593165), attempt 1, completed successfully on Stage1 source `e15c18b1506fb9c4d4c71b6435eb1c42aa7ac187`. All five backend jobs and the aggregate summary passed. Each backend's M7.4 task suite produced **22 passed, 88 backend-target skips, zero failures and zero errors**. The 110-case JUnit XML report is embedded in each backend artifact.
+
+The same run retained the native conformance evidence: for each backend, E.8.5 passed seven cases and 14/14 parity-verified queries; E.8.8 passed 43/43 parity-verified repository-context queries. Query and parity failures were zero. The report records backend-specific native adjacency modes, library versions, edge-occurrence telemetry, context operations and the shared repository snapshot identity. SNAP remained an isolated CPython 3.9 worker; SciPy remained a CSR/CSC topology implementation with semantic edge-occurrence side channels.
+
+### 29.3 Detached G7 verification
+
+The exact five artifacts from run 45773593165 were downloaded by artifact ID and independently verified in detached workflow [run 45774121550](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45774121550). The verifier checked all five archive byte counts and SHA-256 digests, report/source/run bindings, E.8.5/E.8.8 report contracts, and the embedded M7.4 JUnit report in every archive. For each backend it verified 110 cases, 22 passes, 88 expected skips, zero failures and zero errors, and bound all 22 passing test names to the backend whose artifact contained them.
+
+The detached dossier artifact is ID `15095590785`, 2,509 bytes, SHA-256 `7a00295967aa12c992704434acd0e0640e7c0adfb459a6e353d79f7438a88c93`. Its machine-readable report records the per-backend JUnit hashes and confirms `m74_task_acceptance_artifacts_verified=true`. This is artifact-byte and report-consistency verification; it is not a historical re-execution or physical-runner attestation.
+
+**G7 conclusion:** Pass for the exact five-backend artifact set from run 45773593165, including task-level acceptance evidence.
+
+### 29.4 G5 interpretation and remaining gates
+
+The FEM repository-shaped fixture strengthens G5 because all four public analyzer paths are now exercised against domain-relevant node types and relations, with explicit expected semantic outcomes. It does not yet establish suitability for every real audit workload: the fixture is deliberately small, and the generated topology campaign remains synthetic. Representative full-repository and problem-driven workloads, including larger evidence and impact cones, remain necessary before a task/backend suitability decision.
+
+The new JUnit artifact closes the task-test observability gap for this exact run; it does not close G4. G4 remains Partial because repository-wide point-in-time snapshot semantics, broader filesystem namespace/side-effect coverage, mutation-and-restoration schedules and native projection postflight-to-return concurrency remain open. The M7.1 integrity-cost characterization workflow is being corrected to make its graph-tool binary and benchmark execution portable across the heterogeneous GitHub runner pool; until that run passes, G6 remains open.
+
+**No task/backend outcome is promoted to Suitable or Conditionally suitable by this update.** All 20 outcomes remain Insufficient evidence pending the mandatory gates and workload evidence. No library ranking, automatic selector, scientific approval or production approval follows. Preserve `production_approval=false`.
+
+### 29.5 M7.4 scope boundary
+
+M7.4 in this contract qualifies graph-traversal backends for the four public graph-analysis tasks. It does not validate the separate architectural layers described in the project design notes:
+
+- Pluggable LLM integration, residual-only model use, prompt/authority boundaries, abstention and provider-failure behavior.
+- Remediation decision quantification, hard-constraint feasibility, Pareto alternatives, conflict handling, safe no-plan outcomes and post-application verification.
+- The formal-solver portfolio (SAT/SMT feasibility, CP-SAT/MILP optimization, proof/invariant checking and counting).
+- Governed self-examination, frozen trusted checkers, authorization boundaries, candidate budgets, cycle detection and termination guarantees.
+
+Those require their own task contracts, evidence types, independent tests and acceptance gates. Passing M7.4 must not be interpreted as accepting those layers or the overall audit engine.
