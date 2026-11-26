@@ -274,5 +274,109 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             self.assertEqual(provider.read_entry("src/module.py"), b"VALUE = 'sha256'\n")
 
 
+    def test_external_object_alternates_are_rejected_by_capture_and_provider(self):
+        from tools.ae32c_source_snapshot_manifest import SnapshotError
+        with tempfile.TemporaryDirectory() as temp:
+            sandbox = Path(temp)
+            root = sandbox / "repo"
+            alternate = sandbox / "alternate.git"
+            root.mkdir()
+            self._repository(root)
+            manifest = self._verified_manifest(root)
+            self._git(sandbox, "clone", "--bare", str(root), str(alternate))
+            alternates = Path(self._git(root, "rev-parse", "--git-path", "objects")) / "info" / "alternates"
+            alternates.parent.mkdir(parents=True, exist_ok=True)
+            alternates.write_text(str(alternate / "objects") + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(SnapshotError, "external_object_store_not_allowed"):
+                capture_manifest(root, event_name="push", repository_name="test/repo",
+                                 ref="refs/heads/test")
+            from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceError
+            with self.assertRaisesRegex(GitObjectSourceError, "external_object_store_not_allowed"):
+                GitObjectSourceProvider(root, manifest)
+
+    def test_shallow_repository_tree_is_read_without_history_assumptions(self):
+        with tempfile.TemporaryDirectory() as temp:
+            sandbox = Path(temp)
+            source = sandbox / "source"
+            shallow = sandbox / "shallow"
+            source.mkdir()
+            self._repository(source)
+            self._git(sandbox, "clone", "--depth=1", "file://" + str(source), str(shallow))
+            shallow_file = Path(self._git(shallow, "rev-parse", "--git-path", "shallow"))
+            self.assertTrue(shallow_file.is_file())
+            provider = GitObjectSourceProvider(shallow, self._verified_manifest(shallow))
+            self.assertEqual(provider.read_entry("src/module.py"), b"VALUE = 'committed'\n")
+
+    def test_grafts_do_not_change_pinned_commit_tree_content(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            manifest = self._verified_manifest(root)
+            pinned = self._git(root, "rev-parse", "HEAD")
+            (root / "src" / "module.py").write_text("VALUE = 'later commit'\n", encoding="utf-8")
+            self._git(root, "add", "src/module.py")
+            self._git(root, "commit", "-m", "graft parent candidate")
+            graft_parent = self._git(root, "rev-parse", "HEAD")
+            grafts = Path(self._git(root, "rev-parse", "--git-path", "info/grafts"))
+            grafts.parent.mkdir(parents=True, exist_ok=True)
+            grafts.write_text(pinned + " " + graft_parent + "\n", encoding="ascii")
+            provider = GitObjectSourceProvider(root, manifest)
+            self.assertEqual(provider.snapshot_identity()["commit_oid"], pinned)
+            self.assertEqual(provider.read_entry("src/module.py"), b"VALUE = 'committed'\n")
+
+    def test_missing_promisor_blob_does_not_trigger_lazy_fetch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            sandbox = Path(temp)
+            root = sandbox / "repo"
+            remote = sandbox / "remote.git"
+            root.mkdir()
+            self._repository(root)
+            manifest = self._verified_manifest(root)
+            self._git(sandbox, "clone", "--bare", str(root), str(remote))
+            self._git(root, "config", "extensions.partialClone", "origin")
+            self._git(root, "config", "remote.origin.promisor", "true")
+            self._git(root, "config", "remote.origin.url", "file://" + str(remote))
+            provider = GitObjectSourceProvider(root, manifest)
+            oid = provider.entry_metadata("src/module.py")["git_object_oid"]
+            object_dir = Path(self._git(root, "rev-parse", "--git-path", "objects"))
+            loose_object = object_dir / oid[:2] / oid[2:]
+            if not loose_object.is_file():
+                self.skipTest("test fixture blob is not stored as a loose object")
+            loose_object.chmod(0o666)
+            loose_object.unlink()
+            from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceError
+            with self.assertRaisesRegex(GitObjectSourceError, "git_command_failed"):
+                provider.read_entry("src/module.py")
+            self.assertFalse(loose_object.exists(), "provider unexpectedly restored the promisor object")
+
+    def test_object_disappearance_between_type_check_and_read_fails_closed(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            provider = GitObjectSourceProvider(root, self._verified_manifest(root))
+            oid = provider.entry_metadata("src/module.py")["git_object_oid"]
+            object_dir = Path(self._git(root, "rev-parse", "--git-path", "objects"))
+            loose_object = object_dir / oid[:2] / oid[2:]
+            if not loose_object.is_file():
+                self.skipTest("test fixture blob is not stored as a loose object")
+            original_git_bytes = provider._git_bytes
+            removed = False
+            def remove_after_type_check(*args, input_bytes=None):
+                nonlocal removed
+                result = original_git_bytes(*args, input_bytes=input_bytes)
+                if args[:2] == ("cat-file", "-t") and not removed:
+                    loose_object.chmod(0o666)
+                    loose_object.unlink()
+                    removed = True
+                return result
+            from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceError
+            with patch.object(provider, "_git_bytes", side_effect=remove_after_type_check):
+                with self.assertRaisesRegex(GitObjectSourceError, "git_command_failed"):
+                    provider.read_entry("src/module.py")
+            self.assertTrue(removed)
+            self.assertNotIn("src/module.py", provider._verified_bytes)
+
+
 if __name__ == "__main__":
     unittest.main()

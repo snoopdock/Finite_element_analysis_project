@@ -150,6 +150,18 @@ def _blob_content_digests(root: Path, entries: list[dict[str, Any]]) -> dict[str
     return digests
 
 
+def _reject_external_object_stores(root: Path) -> None:
+    for relative in ("objects/info/alternates", "objects/info/http-alternates"):
+        raw_path = Path(_git_text(root, "rev-parse", "--git-path", relative))
+        path = raw_path if raw_path.is_absolute() else root / raw_path
+        try:
+            configured = path.is_file() and bool(path.read_text(encoding="utf-8").strip())
+        except (OSError, UnicodeError) as exc:
+            raise SnapshotError("object_alternates_metadata_unreadable") from exc
+        if configured:
+            raise SnapshotError("external_object_store_not_allowed:" + relative)
+
+
 def _event_context(event_name, repository_name, ref, event_path) -> dict[str, Any]:
     name = event_name or os.environ.get("GITHUB_EVENT_NAME", "unknown")
     repository = repository_name or os.environ.get("GITHUB_REPOSITORY", "unknown/unknown")
@@ -185,6 +197,7 @@ def _build_snapshot(repository, *, expected_source_revision=None, event_name=Non
     root = Path(repository).expanduser().resolve(strict=True)
     if not root.is_dir():
         raise SnapshotError("repository_not_directory")
+    _reject_external_object_stores(root)
     commit_oid = _git_text(root, "rev-parse", "HEAD")
     if expected_source_revision and commit_oid.lower() != expected_source_revision.lower():
         raise SnapshotError("checked_out_commit_does_not_match_expected_source_revision")

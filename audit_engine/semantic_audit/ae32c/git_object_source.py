@@ -37,6 +37,7 @@ class GitObjectSourceProvider:
         self.root = Path(repository).expanduser().resolve(strict=True)
         if not self.root.is_dir():
             raise GitObjectSourceError("repository_not_directory")
+        self._assert_no_external_object_stores()
         self.manifest = source_manifest
         payload = {key: value for key, value in source_manifest.items() if key != "manifest_sha256"}
         if source_manifest.get("manifest_schema") != "ae32c/source-snapshot-manifest/v1":
@@ -122,6 +123,20 @@ class GitObjectSourceProvider:
             "GIT_CONFIG_GLOBAL": os.devnull,
         })
         return env
+
+    def _assert_no_external_object_stores(self) -> None:
+        # Object alternates are outside this repository's declared source trust
+        # boundary. Content hashes still detect corruption, but cannot establish
+        # the provenance or availability of an external object store.
+        for relative in ("objects/info/alternates", "objects/info/http-alternates"):
+            raw_path = Path(self._git_text("rev-parse", "--git-path", relative))
+            path = raw_path if raw_path.is_absolute() else self.root / raw_path
+            try:
+                configured = path.is_file() and bool(path.read_text(encoding="utf-8").strip())
+            except (OSError, UnicodeError) as exc:
+                raise GitObjectSourceError("object_alternates_metadata_unreadable") from exc
+            if configured:
+                raise GitObjectSourceError("external_object_store_not_allowed:" + relative)
 
     def _git_bytes(self, *args: str, input_bytes: bytes | None = None) -> bytes:
         completed = subprocess.run(["git", *args], cwd=self.root, env=self._git_environment(),

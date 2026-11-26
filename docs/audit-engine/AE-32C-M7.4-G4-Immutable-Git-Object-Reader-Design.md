@@ -295,3 +295,30 @@ The following cases remain open and must not be inferred as solved by environmen
 - repository SHA-256 compatibility on each supported CI runner family.
 
 The next pass should test these cases directly, distinguish immutable content identity from object-database provenance, and record the resulting trust boundary. `atomic_snapshot_established=false` and `production_approval=false` remain invariant.
+
+
+## 13. External object stores, shallow boundaries, promisor behavior and read races — 2026-11-26
+
+The object-database qualification has been extended from ambient environment isolation to repository-local object-database metadata and runtime failure behavior.
+
+### External alternates: fail-closed policy
+
+The source manifest builder and immutable provider now reject non-empty Git object alternate metadata in both `objects/info/alternates` and `objects/info/http-alternates`. This is deliberately stricter than merely hashing bytes returned by Git: a matching object ID and SHA-256 establish content identity, but do not establish the provenance, availability, or administrative control of an external object store. Until an explicit external-store trust policy exists, these stores are outside the accepted source boundary.
+
+### Shallow and graft metadata
+
+New tests exercise a depth-one local clone and a repository with a graft entry. The expected invariant is narrow: the provider reads the tree and blobs of the pinned commit without claiming complete commit ancestry. Shallow boundaries and grafted parentage must not silently redefine the pinned commit's tree content.
+
+### Promisor/lazy-fetch behavior
+
+A test configures a promisor remote that can supply the missing blob, removes the local loose object, and then attempts a provider read. The test requires a closed failure and verifies that the missing object was not restored. This directly tests the `GIT_NO_LAZY_FETCH=1` policy rather than relying only on environment inspection.
+
+### Concurrent object disappearance
+
+A deterministic race test removes the loose blob after its type check but before its content read. The read must fail closed and must not populate the verified-byte cache.
+
+### Validation status
+
+These are newly authored adversarial tests and policy changes. They are not yet validated by CI. The source/graph workflow and Windows/cost workflow must complete against the exact resulting Stage1 commit before these behaviors can be treated as established.
+
+The qualification still does not establish atomicity against arbitrary concurrent mutation of the entire object database. The accepted guarantee remains: each successfully returned blob is bound to its Git object ID and independently checked SHA-256; failed or missing reads do not become verified cache entries. `atomic_snapshot_established=false` and `production_approval=false` remain invariant.
