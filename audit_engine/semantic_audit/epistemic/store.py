@@ -114,10 +114,17 @@ class EpistemicStore:
         """)
         self._connection.commit()
 
-    def _append(self, record_type: str, record_id: str, revision: int, payload: str) -> bool:
+    def _append(
+        self, record_type: str, record_id: str, revision: int, payload: str,
+        *, transaction_open: bool = False,
+    ) -> bool:
         payload_hash = hashlib.sha256(payload.encode("utf-8")).hexdigest()
         event_id = f"{record_type}:{record_id}:{revision}"
         with self._connection:
+            if not transaction_open:
+                self._connection.execute("BEGIN IMMEDIATE")
+            if not self.verify_integrity():
+                raise StoreError("event ledger integrity check failed; refusing further writes")
             existing = self._connection.execute(
                 "SELECT payload_sha256 FROM epistemic_events WHERE event_id = ?", (event_id,)
             ).fetchone()
@@ -164,24 +171,29 @@ class EpistemicStore:
             raise TypeError("gap must be a KnowledgeGap")
         if isinstance(expected_revision, bool) or not isinstance(expected_revision, int) or expected_revision < 1:
             raise ValueError("expected_revision must be a positive integer")
-        current = self.latest_gap(gap.gap_id)
-        if current is None:
-            raise RevisionConflictError(f"gap {gap.gap_id} has no initial record")
-        if current["revision"] != expected_revision:
-            raise RevisionConflictError(
-                f"expected revision {expected_revision}, current revision is {current['revision']}"
+        with self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            current = self.latest_gap(gap.gap_id)
+            if current is None:
+                raise RevisionConflictError(f"gap {gap.gap_id} has no initial record")
+            if current["revision"] != expected_revision:
+                raise RevisionConflictError(
+                    f"expected revision {expected_revision}, current revision is {current['revision']}"
+                )
+            prior = current["payload"]
+            stable_fields = ("subject_id", "kind", "scope_id", "discovery_method")
+            for field in stable_fields:
+                prior_value = prior[field]
+                next_value = gap.kind.value if field == "kind" else getattr(gap, field)
+                if prior_value != next_value:
+                    raise StoreError(f"gap identity field {field} cannot change across revisions")
+            old_state = GapState(prior["state"])
+            if gap.state not in _ALLOWED_GAP_TRANSITIONS[old_state]:
+                raise InvalidTransitionError(f"transition {old_state.value} -> {gap.state.value} is not permitted")
+            self._append(
+                "gap", gap.gap_id, expected_revision + 1, _canonical_payload(gap),
+                transaction_open=True,
             )
-        prior = current["payload"]
-        stable_fields = ("subject_id", "kind", "scope_id", "discovery_method")
-        for field in stable_fields:
-            prior_value = prior[field]
-            next_value = gap.kind.value if field == "kind" else getattr(gap, field)
-            if prior_value != next_value:
-                raise StoreError(f"gap identity field {field} cannot change across revisions")
-        old_state = GapState(prior["state"])
-        if gap.state not in _ALLOWED_GAP_TRANSITIONS[old_state]:
-            raise InvalidTransitionError(f"transition {old_state.value} -> {gap.state.value} is not permitted")
-        self._append("gap", gap.gap_id, expected_revision + 1, _canonical_payload(gap))
         return expected_revision + 1
 
     def latest_gap(self, gap_id: str) -> dict[str, Any] | None:
