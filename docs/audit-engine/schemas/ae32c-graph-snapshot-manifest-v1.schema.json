@@ -19,7 +19,8 @@
     "authority",
     "rule_registry_sha256",
     "finding_ledger",
-    "finding_ledger_sha256"
+    "finding_ledger_sha256",
+    "lfs_attestation"
   ],
   "properties": {
     "manifest_schema": {
@@ -42,7 +43,8 @@
       "required": [
         "repository",
         "commit_oid",
-        "root_tree_oid"
+        "root_tree_oid",
+        "source_inventory_sha256"
       ],
       "properties": {
         "repository": {
@@ -55,6 +57,9 @@
         "root_tree_oid": {
           "type": "string",
           "minLength": 40
+        },
+        "source_inventory_sha256": {
+          "$ref": "#/$defs/digest"
         }
       },
       "additionalProperties": false
@@ -112,7 +117,42 @@
       "$ref": "#/$defs/digest"
     },
     "identity": {
-      "type": "object"
+      "type": "object",
+      "required": [
+        "source_snapshot_id",
+        "source_commit_oid",
+        "source_root_tree_oid",
+        "builder",
+        "graph_content_sha256",
+        "coverage_sha256",
+        "lfs_attestation_sha256"
+      ],
+      "properties": {
+        "source_snapshot_id": {
+          "$ref": "#/$defs/digest"
+        },
+        "source_commit_oid": {
+          "type": "string",
+          "minLength": 40
+        },
+        "source_root_tree_oid": {
+          "type": "string",
+          "minLength": 40
+        },
+        "builder": {
+          "type": "object"
+        },
+        "graph_content_sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "coverage_sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "lfs_attestation_sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "additionalProperties": false
     },
     "authority": {
       "type": "object",
@@ -191,6 +231,171 @@
     },
     "finding_ledger_sha256": {
       "$ref": "#/$defs/digest"
+    },
+    "lfs_attestation": {
+      "type": "object",
+      "required": [
+        "schema",
+        "source_snapshot_id",
+        "commit_oid",
+        "source_inventory_sha256",
+        "object_store_mode",
+        "status",
+        "scan_complete",
+        "scanned_regular_blob_count",
+        "regular_blob_inventory",
+        "pointer_count",
+        "verified_payload_count",
+        "unverified_payload_count",
+        "lfs_payload_verified",
+        "records",
+        "remote_payload_provenance_verified",
+        "atomic_snapshot_established",
+        "production_approval",
+        "attestation_sha256"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ae32c/lfs-payload-verification/v2"
+        },
+        "source_snapshot_id": {
+          "$ref": "#/$defs/digest"
+        },
+        "commit_oid": {
+          "type": "string",
+          "minLength": 40
+        },
+        "source_inventory_sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "object_store_mode": {
+          "enum": [
+            "NOT_SUPPLIED_NO_NETWORK",
+            "EXPLICIT_LOCAL_CACHE_NO_NETWORK"
+          ]
+        },
+        "status": {
+          "enum": [
+            "NOT_SUPPLIED",
+            "UNVERIFIED",
+            "VERIFIED_LOCAL_PAYLOADS"
+          ]
+        },
+        "scan_complete": {
+          "const": true
+        },
+        "scanned_regular_blob_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "regular_blob_inventory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "git_object_oid",
+              "content_sha256",
+              "is_lfs_pointer"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "git_object_oid": {
+                "type": "string",
+                "minLength": 40
+              },
+              "content_sha256": {
+                "$ref": "#/$defs/digest"
+              },
+              "is_lfs_pointer": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "pointer_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "verified_payload_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unverified_payload_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "lfs_payload_verified": {
+          "type": "boolean"
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "git_object_oid",
+              "pointer_sha256",
+              "status"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "git_object_oid": {
+                "type": "string",
+                "minLength": 40
+              },
+              "pointer_sha256": {
+                "$ref": "#/$defs/digest"
+              },
+              "oid": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "expected_size": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "actual_size": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sha256": {
+                "$ref": "#/$defs/digest"
+              },
+              "status": {
+                "enum": [
+                  "UNVERIFIED",
+                  "VERIFIED_LOCAL_PAYLOAD"
+                ]
+              },
+              "reason": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "remote_payload_provenance_verified": {
+          "const": false
+        },
+        "atomic_snapshot_established": {
+          "const": false
+        },
+        "production_approval": {
+          "const": false
+        },
+        "attestation_sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "$defs": {
