@@ -382,6 +382,8 @@ class EpistemicStore:
         root_change_id = root_change_id.strip()
         with self._connection:
             self._connection.execute("BEGIN IMMEDIATE")
+            if not self.verify_integrity():
+                raise StoreError("event ledger integrity check failed; refusing dependency invalidation")
             reverse: dict[str, set[str]] = {}
             for dependent, dependencies in self._dependency_adjacency().items():
                 for dependency in dependencies:
@@ -434,6 +436,8 @@ class EpistemicStore:
         # cannot be missed between the invalidation and manifest checks.
         with self._connection:
             self._connection.execute("BEGIN")
+            if not self.verify_integrity():
+                raise StoreError("event ledger integrity check failed; freshness cannot be established")
             history = self.invalidation_history(node_id)
             if history:
                 return FreshnessResult(
