@@ -42,6 +42,13 @@ jobs:
           python -m pip install -r tools/branch-graphify/requirements.txt
           graphify --help
 
+      - name: Test single-branch Graphify analysis contract
+        run: |
+          python -m unittest discover \
+            -s tests/branch_graphify \
+            -p 'test_*.py' \
+            -v
+
       - name: Fetch and pin branch snapshots
         id: refs
         shell: bash
