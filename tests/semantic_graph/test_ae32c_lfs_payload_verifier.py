@@ -98,6 +98,35 @@ class LfsPayloadVerifierTests(unittest.TestCase):
             self.assertFalse(report["lfs_payload_verified"])
             self.assertIn("lfs_payload_size_mismatch", report["records"][0]["reason"])
 
+
+    def test_no_cache_emits_complete_unverified_pointer_attestation(self):
+        payload = b"payload without local cache"
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "repo"
+            root.mkdir()
+            self._repository(root, self._pointer(payload))
+            provider = self._provider(root)
+            report = verify_lfs_payloads(provider)
+            self.assertEqual(report["status"], "NOT_SUPPLIED")
+            self.assertTrue(report["scan_complete"])
+            self.assertEqual(report["scanned_regular_blob_count"], 2)
+            self.assertEqual(len(report["regular_blob_inventory"]), 2)
+            self.assertEqual(report["pointer_count"], 1)
+            self.assertEqual(report["unverified_payload_count"], 1)
+            self.assertEqual(report["records"][0]["status"], "UNVERIFIED")
+            self.assertIn("lfs_object_store_not_supplied", report["records"][0]["reason"])
+            self.assertFalse(report["lfs_payload_verified"])
+            self.assertFalse(report["production_approval"])
+            self.assertEqual(
+                report["attestation_sha256"],
+                __import__("hashlib").sha256(
+                    (json.dumps({key: value for key, value in report.items()
+                                 if key != "attestation_sha256"},
+                                ensure_ascii=False, sort_keys=True,
+                                separators=(",", ":"), allow_nan=False) + "\\n").encode("utf-8")
+                ).hexdigest(),
+            )
+
     def test_symlinked_cache_object_is_rejected(self):
         payload = b"payload"
         with tempfile.TemporaryDirectory() as temp:
