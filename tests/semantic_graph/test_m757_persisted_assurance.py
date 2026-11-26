@@ -145,13 +145,18 @@ class PersistedAssuranceTests(unittest.TestCase):
         self.assertTrue(any("different source snapshot" in x for x in result.reasons))
 
     def test_evidence_assertion_must_match_claim_proposition_and_scope(self):
-        self.persist_valid_evidence()
         unrelated = EvidenceAssertion(
             "assertion:unrelated", "different-proposition",
             AssertionPolarity.SUPPORTS, (self.ref,),
             "scope:repo", "method:inventory", "2026-11-27T10:00:02Z",
         )
         self.epistemic.record_assertion(unrelated)
+        self.epistemic.record_assertion_dependencies(unrelated)
+        for node in (
+            "snapshot:snap-1", "producer:scanner", "method:inventory",
+            f"artifact-sha256:{'a' * 64}",
+        ):
+            self.declare_terminal(node)
         self.persist_claim_and_link()
         result = evaluate_persisted_assurance(
             "claim:1", self.assurance, self.epistemic
