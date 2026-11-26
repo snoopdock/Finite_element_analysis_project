@@ -334,3 +334,16 @@ The first CI execution of this qualification exposed a test-fixture path error, 
 The first Windows CI run after environment isolation failed before provider construction: the manifest builder classified clean temporary repositories as dirty. The cause was that the same isolated environment disabled system/global Git configuration for the status operation. On Windows, the runner's checkout semantics rely on user Git configuration such as core.autocrlf; removing it changes how Git compares working-tree bytes with committed blobs.
 
 The correction is scoped to worktree cleanliness inspection. Git status still receives the sanitized GIT_* environment and explicit no-replacement/no-lazy-fetch settings, but it may load system/global configuration so it evaluates the worktree using the host checkout's conversion settings. Commit/tree/blob resolution and reads remain under the stricter config-isolated environment. This is a compatibility correction, not a relaxation of object identity checks. A new Windows and Linux run is required to establish the correction.
+
+
+## 14. Cross-platform requalification and workflow coverage — 2026-11-26
+
+The first corrected Linux run on commit `15ba25339d060b335bea27408770cb9b6bcce3b6` completed successfully. Its source/graph workflow passed all steps; the immutable-provider suite ran 19 tests, including alternates rejection, shallow clone, graft, promisor no-lazy-fetch and inter-read object disappearance. The same run also passed the remaining graph identity, rule provenance, publication state, durable publication, trusted artifact and trusted publisher test groups. Native graph backend conformance also completed successfully on that commit.
+
+The paired Windows G4 run on `15ba253...` failed because manifest worktree cleanliness checks did not preserve the Windows runner's global `core.autocrlf` setting. The manifest status check was changed to preserve host conversion settings while still stripping inherited `GIT_*` variables and retaining no-replacement/no-lazy-fetch policy. All object resolution and content reads remain config-isolated.
+
+Cross-platform rerun `45810640820` is now testing the corrected manifest behavior on the exact source commit `0f7eca103c53e3fb89f9f51efb34bd35af2febd3`. Its Linux benchmark and Windows provider/snapshot test jobs were still in progress at the time this record was written. The earlier exact-source source/graph run for commit `5056617f87f14a899e345df44fefecc2ab4d5ce2` was cancelled by the subsequent push and is not counted as a pass.
+
+The G4 cost workflow's path filter was also missing `tools/ae32c_source_snapshot_manifest.py`; that utility is now included so future manifest changes trigger both Linux and Windows validation. The latest workflow-path change is commit `0f7eca103c53e3fb89f9f51efb34bd35af2febd3`.
+
+Do not close cross-platform qualification until run `45810640820` completes successfully. The separate source/graph workflow must also complete on a post-fix commit; this documentation update is intended to trigger that exact-source validation. `atomic_snapshot_established=false` and `production_approval=false` remain invariant.
