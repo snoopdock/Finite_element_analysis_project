@@ -344,6 +344,8 @@ def qualify_typed_evidence_observations(
 
 def verify_semantic_evidence_qualification(
     qualification: Mapping[str, Any], bundle: Mapping[str, Any], *,
+    claim: AssuranceClaim, plan: RuleCoveragePlan,
+    coverage_manifest: EpistemicCoverageManifest,
     source_manifest: Mapping[str, Any], repository_root: str | Path,
     defeaters: tuple[Mapping[str, Any], ...] = (),
 ) -> dict[str, Any]:
