@@ -13,7 +13,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from .contracts import (CompletenessClaim, EvidenceAssertion, KnowledgeGap, GapState,\n                        ProvenanceDependency, ProvenanceInvalidation, FreshnessResult, FreshnessStatus)
+from .contracts import (CompletenessClaim, EvidenceAssertion, KnowledgeGap, GapState,\n                        ProvenanceDependency, ProvenanceInvalidation, ProvenanceManifest, FreshnessResult, FreshnessStatus)
 
 
 class StoreError(RuntimeError):
@@ -94,7 +94,7 @@ class EpistemicStore:
             "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'epistemic_events'"
         ).fetchone()
         schema_sql = existing["sql"] or "" if existing else ""
-        if existing and any(f"'{kind}'" not in schema_sql for kind in ("completeness", "dependency", "invalidation")):
+        if existing and any(f"'{kind}'" not in schema_sql for kind in ("completeness", "dependency", "invalidation", "dependency_manifest")):
             # Migrate earlier append-only schemas without discarding or rehashing history.
             with self._connection:
                 self._connection.execute("BEGIN IMMEDIATE")
@@ -107,7 +107,7 @@ class EpistemicStore:
                     CREATE TABLE epistemic_events (
                         sequence INTEGER PRIMARY KEY AUTOINCREMENT,
                         event_id TEXT NOT NULL UNIQUE,
-                        record_type TEXT NOT NULL CHECK(record_type IN ('assertion', 'gap', 'completeness', 'dependency', 'invalidation')),
+                        record_type TEXT NOT NULL CHECK(record_type IN ('assertion', 'gap', 'completeness', 'dependency', 'invalidation', 'dependency_manifest')),
                         record_id TEXT NOT NULL,
                         revision INTEGER NOT NULL CHECK(revision >= 1),
                         payload TEXT NOT NULL,
