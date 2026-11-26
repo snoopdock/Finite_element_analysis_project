@@ -1,0 +1,77 @@
+name: AE-32C M7.5.13 Extractor Execution Evidence and Reconciliation
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_13_extractor_execution.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "audit_engine/semantic_audit/extractors/**"
+      - "tools/ae32c_extractor_execution.py"
+      - "tools/ae32c_source_snapshot_manifest.py"
+      - "tests/semantic_graph/test_m75*.py"
+      - "docs/audit-engine/AE-32C-M7.5.13-*"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ae32c-m7513-stage1
+  cancel-in-progress: false
+jobs:
+  extractor-execution:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile implementation
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/m7513"
+          python -m compileall -q audit_engine/semantic_audit/epistemic audit_engine/semantic_audit/extractors tools/ae32c_extractor_execution.py
+      - name: Dedicated M7.5.13 tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7513_extractor_execution.py' -v
+      - name: Capture and verify source snapshot
+        run: |
+          set -euo pipefail
+          python tools/ae32c_source_snapshot_manifest.py capture --repository . --output "$RUNNER_TEMP/m7513/source.json" --expected-source-revision "$GITHUB_SHA"
+          python tools/ae32c_source_snapshot_manifest.py verify --repository . --manifest "$RUNNER_TEMP/m7513/source.json" --expected-source-revision "$GITHUB_SHA"
+      - name: Execute all candidates
+        run: |
+          set -euo pipefail
+          python tools/ae32c_extractor_execution.py execute --repository . --source-manifest "$RUNNER_TEMP/m7513/source.json" --inventory-output "$RUNNER_TEMP/m7513/inventory.json" --report-output "$RUNNER_TEMP/m7513/report.json"
+      - name: Verify source identity after extraction
+        run: python tools/ae32c_source_snapshot_manifest.py verify --repository . --manifest "$RUNNER_TEMP/m7513/source.json" --expected-source-revision "$GITHUB_SHA"
+      - name: Independently replay outcomes
+        run: python tools/ae32c_extractor_execution.py verify --repository . --source-manifest "$RUNNER_TEMP/m7513/source.json" --inventory "$RUNNER_TEMP/m7513/inventory.json" --report "$RUNNER_TEMP/m7513/report.json"
+      - name: Complete M7.5 regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
+      - name: Upload exact-source evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m7-5-13-extractor-execution-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/m7513/source.json
+            ${{ runner.temp }}/m7513/inventory.json
+            ${{ runner.temp }}/m7513/report.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Assurance boundary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.13 extractor execution"
+            echo "- Source SHA: $GITHUB_SHA"
+            echo "- RECONCILED means accounted for, not successfully extracted"
+            echo "- Python source parsed but never executed"
+            echo "- Workflow YAML scan is lexical only"
+            echo "- No proposition truth, audit decision, authorization, or production approval"
+          } >> "$GITHUB_STEP_SUMMARY"

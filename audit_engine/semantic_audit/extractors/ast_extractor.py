@@ -1,138 +1,21 @@
+"""Snapshot-safe Python AST extraction; repository source is never executed."""
 import ast
-
-from ..core.models import  (
-    ImportReference,
-    SymbolUsage
-)
-
-
+from ..core.models import ImportReference, SymbolUsage
 class ASTExtractor:
-
-
     def extract(self, file_path):
-
-        source = file_path.read_text(
-            encoding="utf-8"
-        )
-
-        tree = ast.parse(
-            source
-        )
-
-
-        imports = []
-
-        symbols = []
-
-
+        return self.extract_source(file_path.read_bytes(), str(file_path))
+    def extract_source(self, source, file_path="<memory>"):
+        tree = ast.parse(source, filename=str(file_path))
+        imports, symbols = [], []
         for node in ast.walk(tree):
-
-
-            if isinstance(
-                node,
-                ast.Import
-            ):
-
+            if isinstance(node, ast.Import):
                 for item in node.names:
-
-                    imports.append(
-                        ImportReference(
-
-                            file=str(file_path),
-
-                            line=node.lineno,
-
-                            module=item.name
-
-                        )
-                    )
-
-
-            elif isinstance(
-                node,
-                ast.ImportFrom
-            ):
-
-
-                module = node.module or ""
-
-
-                names = [
-                    x.name
-                    for x in node.names
-                ]
-
-
-                imports.append(
-
-                    ImportReference(
-
-                        file=str(file_path),
-
-                        line=node.lineno,
-
-                        module=module,
-
-                        imported_symbols=names
-
-                    )
-
-                )
-
-
-
-            elif isinstance(
-                node,
-                ast.Call
-            ):
-
-
-                if isinstance(
-                    node.func,
-                    ast.Name
-                ):
-
-                    symbols.append(
-
-                        SymbolUsage(
-
-                            file=str(file_path),
-
-                            line=node.lineno,
-
-                            symbol=node.func.id,
-
-                            module="",
-
-                            usage_type="CALL"
-
-                        )
-
-                    )
-
-
-                elif isinstance(
-                    node.func,
-                    ast.Attribute
-                ):
-
-                    symbols.append(
-
-                        SymbolUsage(
-
-                            file=str(file_path),
-
-                            line=node.lineno,
-
-                            symbol=node.func.attr,
-
-                            module="",
-
-                            usage_type="CALL"
-
-                        )
-
-                    )
-
-
+                    imports.append(ImportReference(str(file_path), node.lineno, item.name))
+            elif isinstance(node, ast.ImportFrom):
+                imports.append(ImportReference(str(file_path), node.lineno, node.module or "", [x.name for x in node.names]))
+            elif isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name):
+                    symbols.append(SymbolUsage(str(file_path), node.lineno, node.func.id, "", "CALL"))
+                elif isinstance(node.func, ast.Attribute):
+                    symbols.append(SymbolUsage(str(file_path), node.lineno, node.func.attr, "", "CALL"))
         return imports, symbols
