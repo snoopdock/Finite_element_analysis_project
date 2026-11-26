@@ -54,7 +54,7 @@ jobs:
         run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
       - name: Validate complete GitHub Actions workflow
         run: |
-          "$(go env GOPATH)/bin/actionlint" -color -verbose .github/workflows/m7_1_manual_native_backend_smoke.yml .github/workflows/e85-native-graph-backend-conformance.yml
+          "$(go env GOPATH)/bin/actionlint" -color -verbose .github/workflows/m7_1_manual_native_backend_smoke.yml .github/workflows/e85-native-graph-backend-conformance.yml .github/workflows/m7_4_backend_task_acceptance.yml
 
   resolve-source:
     needs: workflow-lint
