@@ -80,6 +80,7 @@ class ProvenanceGraphTests(unittest.TestCase):
         self.assertGreaterEqual(len(edges), 7)
         status = self.store.freshness_status("claim:claim-1")
         self.assertEqual(status.status, FreshnessStatus.FRESH)
+        self.assertEqual(self.store.freshness_status("evidence:evidence-1").status, FreshnessStatus.FRESH)
         self.assertEqual(self.store.record_completeness_dependencies(item), edges)
         self.assertTrue(self.store.verify_integrity())
 
