@@ -180,6 +180,7 @@ jobs:
                   "- Gitlinks: " + str(submodules.get("gitlink_count")),
                   "- Locally scanned submodule repositories: " + str(submodules.get("scanned_repository_count")),
                   "- Recursive scan complete: " + str(submodules.get("recursive_scan_complete")),
+                  "- Recursive content status: " + str(submodules.get("content_verification_status")),
                   "- Recursive LFS content verified: " + str(submodules.get("recursive_content_verified")),
                   "- Accounting SHA-256: " + str(submodules.get("accounting_sha256")),
                   "- Network / credentials / implicit checkout: false / false / false",
