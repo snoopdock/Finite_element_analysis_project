@@ -126,10 +126,13 @@ class NegativeClaimAdmissibilityTests(unittest.TestCase):
         self.assertIn("one or more completeness invalidation triggers are active", result.reasons)
 
     def test_evidence_must_bind_to_the_claim_snapshot(self):
-        item = claim(evidence_refs=(EvidenceRef(
-            evidence_id="wrong-snapshot", source_snapshot_id="git:other",
-            producer_id="enumerator", method_id="walk", observed_at="now",
-        ),))
+        item = claim(
+            status=CompletenessStatus.PARTIAL,
+            evidence_refs=(EvidenceRef(
+                evidence_id="wrong-snapshot", source_snapshot_id="git:other",
+                producer_id="enumerator", method_id="walk", observed_at="now",
+            ),),
+        )
         result = evaluate_negative_claim(item, request())
         self.assertFalse(result.admissible)
         self.assertIn("evidence snapshot does not match completeness snapshot", result.reasons)
