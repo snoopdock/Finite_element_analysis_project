@@ -1,0 +1,16 @@
+{
+  "branch": "stage1/section-uuids",
+  "source_commit": "2efb8b44e69a0f3a4512f8164668c41af4127d75",
+  "graphify_version": "0.9.112",
+  "generated_at_utc": "2026-11-26T06:45:36.368023+00:00",
+  "node_count": 18720,
+  "edge_count": 47744,
+  "graph_json_sha256": "f458d649222ba8bf2a125e89d03b0efbc67e648b0dd9f9aef6e2c69c7d72e0b2",
+  "artifacts": {
+    "html": "graph.html",
+    "json": "graph.json",
+    "report": "GRAPH_REPORT.md",
+    "log": "graphify-run.log"
+  },
+  "interpretation_boundary": "Code-structure extraction only. Presence of an adapter, import, or graph relationship is not evidence that the adapter is invoked or computes correctly."
+}
