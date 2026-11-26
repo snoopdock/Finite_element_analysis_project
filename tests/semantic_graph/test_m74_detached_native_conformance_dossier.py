@@ -7,9 +7,36 @@ import json
 import tempfile
 import unittest
 import zipfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from tools import gb08_m74_native_conformance_dossier as dossier
+
+
+def _m74_junit(backend: str, *, passed_backend: str | None = None, failures: int = 0) -> bytes:
+    passed_backend = backend if passed_backend is None else passed_backend
+    root = ET.Element("testsuites")
+    suite = ET.SubElement(root, "testsuite", {
+        "name": "M7.4 task-level analyzer acceptance",
+        "tests": "110", "failures": str(failures), "errors": "0", "skipped": "88",
+    })
+    for index in range(22):
+        case = ET.SubElement(suite, "testcase", {
+            "classname": "tests.semantic_graph.test_m74_task_suitability_acceptance",
+            "name": f"test_task_{index}[{passed_backend}]",
+        })
+        if failures and index == 0:
+            ET.SubElement(case, "failure", {"message": "deliberate test failure"}).text = "failure"
+    for other in dossier.BACKENDS:
+        if other == backend:
+            continue
+        for index in range(22):
+            case = ET.SubElement(suite, "testcase", {
+                "classname": "tests.semantic_graph.test_m74_task_suitability_acceptance",
+                "name": f"test_task_{index}[{other}]",
+            })
+            ET.SubElement(case, "skipped", {"message": "backend not selected"})
+    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
 
 def _report_e85(backend: str) -> dict:
@@ -157,6 +184,7 @@ class DossierVerifierTests(unittest.TestCase):
             with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
                 archive.writestr(f"e85-{backend}.json", json.dumps(_report_e85(backend)))
                 archive.writestr(f"e88-{backend}-repository.json", json.dumps(_report_e88(backend)))
+                archive.writestr(dossier.M74_TASK_XML, _m74_junit(backend))
             self.manifest["artifacts"].append({
                 "id": 900000 + index,
                 "name": dossier.ARTIFACTS[backend],
@@ -177,7 +205,6 @@ class DossierVerifierTests(unittest.TestCase):
         artifact = next(item for item in self.manifest["artifacts"]
                         if item["name"] == dossier.ARTIFACTS[backend])
         path = self.artifact_dir / (backend.replace("-", "_") + ".zip")
-        artifact["size_in_bytes"] = path.stat().st_size
         artifact["size_in_bytes"] = path.stat().st_size
         artifact["digest"] = "sha256:" + dossier.file_sha(path)
 
@@ -282,6 +309,40 @@ class DossierVerifierTests(unittest.TestCase):
 
 
 
+
+    def test_missing_task_acceptance_junit_is_rejected(self):
+        path = self.artifact_dir / "networkx.zip"
+        with zipfile.ZipFile(path) as source:
+            members = {name: source.read(name) for name in source.namelist()
+                       if name != dossier.M74_TASK_XML}
+        with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as target:
+            for name, content in members.items(): target.writestr(name, content)
+        self._refresh_metadata("networkx")
+        with self.assertRaisesRegex(dossier.DossierError, "zip_member_set:networkx"):
+            dossier.verify(self.artifact_dir, self.manifest)
+
+    def test_task_acceptance_failure_is_rejected(self):
+        path = self.artifact_dir / "networkx.zip"
+        with zipfile.ZipFile(path) as source:
+            members = {name: source.read(name) for name in source.namelist()}
+        members[dossier.M74_TASK_XML] = _m74_junit("networkx", failures=1)
+        with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as target:
+            for name, content in members.items(): target.writestr(name, content)
+        self._refresh_metadata("networkx")
+        with self.assertRaisesRegex(dossier.DossierError, "m74_task_acceptance_counts:networkx"):
+            dossier.verify(self.artifact_dir, self.manifest)
+
+    def test_task_acceptance_for_wrong_backend_is_rejected(self):
+        path = self.artifact_dir / "networkx.zip"
+        with zipfile.ZipFile(path) as source:
+            members = {name: source.read(name) for name in source.namelist()}
+        members[dossier.M74_TASK_XML] = _m74_junit("networkx", passed_backend="scipy")
+        with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as target:
+            for name, content in members.items(): target.writestr(name, content)
+        self._refresh_metadata("networkx")
+        with self.assertRaisesRegex(dossier.DossierError, "m74_task_acceptance_backend_binding:networkx"):
+            dossier.verify(self.artifact_dir, self.manifest)
+
     def test_run_specific_identity_and_worker_image_are_parameterized(self):
         run_id = 45473007901
         source_revision = "098a87394d972010f04466c540fcf5f43b490f9b"
@@ -300,6 +361,8 @@ class DossierVerifierTests(unittest.TestCase):
             with zipfile.ZipFile(path) as source:
                 members = {name: source.read(name) for name in source.namelist()}
             for name, raw in list(members.items()):
+                if not name.endswith(".json"):
+                    continue
                 report = json.loads(raw)
                 report["source_revision"] = source_revision
                 report["workflow_run_id"] = str(run_id)
