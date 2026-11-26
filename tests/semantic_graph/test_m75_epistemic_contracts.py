@@ -102,6 +102,9 @@ class CompletenessClaimTests(unittest.TestCase):
             status=CompletenessStatus.SUPPORTED_WITHIN_SCOPE,
             evidence_refs=(evidence("inventory-manifest"),),
             verification_method_id="manifest-postflight:v1",
+            predicate_id="enumerates:git-blob",
+            covered_unit_ids=tuple(f"blob-{i}" for i in range(12)),
+            expected_unit_ids=tuple(f"blob-{i}" for i in range(12)),
         )
         self.assertEqual(claim.status, CompletenessStatus.SUPPORTED_WITHIN_SCOPE)
 
@@ -143,6 +146,8 @@ class ContractTypeValidationTests(unittest.TestCase):
                 "cc-1", "source", "scope-1", "git:abc", "enumerator", "v1",
                 1, 1, CompletenessStatus.SUPPORTED_WITHIN_SCOPE,
                 evidence_refs=(evidence(),), verification_method_id=123,
+                predicate_id="enumerates:source-unit",
+                covered_unit_ids=("unit-1",), expected_unit_ids=("unit-1",),
             )
 
     def test_completeness_evidence_references_must_be_unique(self):
@@ -151,7 +156,8 @@ class ContractTypeValidationTests(unittest.TestCase):
                 "cc-1", "source", "scope-1", "git:abc", "enumerator", "v1",
                 1, 1, CompletenessStatus.SUPPORTED_WITHIN_SCOPE,
                 evidence_refs=(evidence("same"), evidence("same")),
-                verification_method_id="postflight:v1",
+                verification_method_id="postflight:v1", predicate_id="enumerates:source-unit",
+                covered_unit_ids=("unit-1",), expected_unit_ids=("unit-1",),
             )
 
 
