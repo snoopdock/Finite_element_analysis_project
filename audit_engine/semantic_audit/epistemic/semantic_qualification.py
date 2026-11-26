@@ -295,6 +295,8 @@ def qualify_typed_evidence_observations(
             raise SemanticQualificationError("observation_obligation_not_in_verified_plan")
         for obligation_id in obligation_ids:
             rule_id, evidence_kind = _obligation_parts(obligation_id)
+            if observation.get("evidence_kind") != evidence_kind:
+                raise SemanticQualificationError("observation_kind_obligation_mismatch")
             contract = contracts.get(rule_id)
             if contract is None or contract.get("evidence_kind") != evidence_kind:
                 results.append({
@@ -305,8 +307,6 @@ def qualify_typed_evidence_observations(
                     "defeaters": [],
                 })
                 continue
-            if observation.get("evidence_kind") != evidence_kind:
-                raise SemanticQualificationError("observation_kind_obligation_mismatch")
             attached = defeaters_by_observation.get(identity, [])
             outcome = "CONTESTED" if attached else contract["qualification"]
             results.append({
