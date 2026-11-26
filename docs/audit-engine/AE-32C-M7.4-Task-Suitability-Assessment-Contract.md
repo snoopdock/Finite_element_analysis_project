@@ -688,3 +688,12 @@ All five artifacts are bound by the GitHub Actions artifact metadata to run `457
 These are GitHub Actions-reported ZIP digests. This record does not claim a detached G7 verifier accepted these five artifacts; the existing detached dossier tool is hard-bound to a different historical E.8.5/E.8.8 campaign and must not be reused as though it verified this M7.4 run.
 
 **Decision:** M7.4 CI gate passed for the declared suites and workload envelope. G5 remains **Partial**. All 20 task/backend suitability outcomes remain **Insufficient evidence**. SNAP full-repository suitability remains unverified until a bounded, integrity-checked streaming initialization protocol is implemented and tested. No backend ranking or automatic selection follows; `production_approval=false`.
+
+
+## 34. M7.4 next implementation tranche — SNAP stream and scientific workload
+
+The latest run establishes that SNAP passes its selected small task/G4 suite but does not execute the full-repository graph. The next SNAP work is specified in [AE-32C M7.4 SNAP Bounded Streaming Transport Design](AE-32C-M7.4-SNAP-Bounded-Streaming-Transport-Design.md). It covers both initialization and full G4 audit readback; chunking initialization alone would leave the large audit response unbounded. The 16 MiB v1 limit remains unchanged until the versioned protocol, adversarial tests and measured worker memory envelope are available.
+
+G5 also requires a domain-relevant scientific workload. The repository contains FEM-related source and formal artifacts, but the existing M7.4 campaign does not yet demonstrate graph-native queries over a real mesh/field/solver dependency workload. The next workload must be source-derived from the repository's actual FEM code and formal artifacts, preserve the distinction between mathematical specification, implementation, tests and scientific evidence, and avoid inventing numerical simulation outputs. Each backend must receive the same graph, task definitions and query seeds; results are evaluated against the reference semantics independently, not as a performance contest.
+
+**Current decision:** no M7.4 task/backend suitability outcome is promoted. G5 remains Partial; all 20 outcomes remain Insufficient evidence. SNAP full-repository execution and scientific FEM workload acceptance are open.
