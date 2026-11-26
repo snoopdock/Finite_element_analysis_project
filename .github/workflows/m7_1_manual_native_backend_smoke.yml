@@ -263,10 +263,10 @@ jobs:
             echo "python=$(python --version 2>&1)"
             echo "uname=$(uname -a)"
             echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2- | xargs || true)"
-            echo "backend=snap"
-            cat worker-image.txt
+            echo "backend=graph-tool"
+            echo "cpu_flags=$(grep -m1 '^flags' /proc/cpuinfo | cut -d: -f2- | xargs || true)"
           } > reports/runner-environment.txt
-          python -m pip freeze > reports/pip-freeze.txt
+          "$MAMBA_EXE" list --explicit -n ae32c-m7-graph-tool > reports/conda-explicit.txt
       - name: Run parity-gated SNAP worker benchmark and independent verification
         shell: bash
         env:
