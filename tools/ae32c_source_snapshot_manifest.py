@@ -19,6 +19,22 @@ class SnapshotError(RuntimeError):
     """A source snapshot could not be established or verified."""
 
 
+def _git_environment() -> dict[str, str]:
+    # Pin Git discovery/object semantics to the requested checkout. In
+    # particular, ignore inherited repository-routing variables, replacement
+    # refs and partial-clone lazy fetching.
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_")}
+    env.update({
+        "GIT_NO_REPLACE_OBJECTS": "1",
+        "GIT_NO_LAZY_FETCH": "1",
+        "GIT_OPTIONAL_LOCKS": "0",
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_CONFIG_GLOBAL": os.devnull,
+    })
+    return env
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
@@ -38,8 +54,8 @@ def _seal_manifest(manifest: dict[str, Any]) -> None:
 
 
 def _git(root: Path, *args: str) -> bytes:
-    completed = subprocess.run(["git", *args], cwd=root, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, check=False)
+    completed = subprocess.run(["git", *args], cwd=root, env=_git_environment(),
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
     if completed.returncode != 0:
         detail = completed.stderr.decode("utf-8", errors="replace").strip()
         raise SnapshotError(f"git_command_failed:{args[0]}:{detail[:500]}")
@@ -85,7 +101,7 @@ def _blob_content_digests(root: Path, entries: list[dict[str, Any]]) -> dict[str
                          if item["object_type"] == "blob"})
     if not object_ids:
         return {}
-    process = subprocess.Popen(["git", "cat-file", "--batch"], cwd=root,
+    process = subprocess.Popen(["git", "cat-file", "--batch"], cwd=root, env=_git_environment(),
                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
     assert process.stdin is not None and process.stdout is not None
