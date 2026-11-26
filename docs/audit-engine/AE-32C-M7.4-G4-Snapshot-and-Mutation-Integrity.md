@@ -838,3 +838,30 @@ Report SHA-256: `bf6ea5d494a5343c6154626acf6326e831cd1d1c008856f4944f3a7abfd0a2f
 The report explicitly records `atomic_snapshot_established=false`. The test and cost runs strengthen evidence for individual file containment, change detection, read-only behavior and the observed cost of the second validation pass. They do not prove that the 1,895 files were observed at one common instant. The existing limitations remain: repository-wide point-in-time atomicity, broader filesystem namespace/alias coverage, mutation-and-restoration schedules, external side effects and the native projection postflight-to-return race.
 
 **G4 remains Partial.** No task/backend suitability verdict is promoted by this run; `production_approval=false` remains invariant.
+
+## 28. G4 next tranche — snapshot consistency classes and acceptance boundary
+
+The current implementation and tests establish path containment, handle-bound identity checks, read-only behavior, mutation detection across the two observation passes, and a measured second-pass cost. They do **not** establish one repository-wide point-in-time snapshot. The G4 acceptance contract must keep that distinction explicit.
+
+### 28.1 Required consistency classes
+
+The next implementation should expose the source-consistency class as part of the snapshot manifest, rather than returning one undifferentiated "snapshot verified" status:
+
+1. **Immutable object snapshot** — a named, immutable source object set (for example, a Git tree/blob set) with every included path, mode and object identity bound into the manifest. This covers exactly the declared object scope; it must not silently omit untracked or dirty working-tree content.
+2. **Filesystem snapshot** — a platform snapshot facility with a documented snapshot identifier and a stable view of the declared repository namespace. This is the appropriate class for a true working-tree point-in-time claim.
+3. **Best-effort live-tree capture** — the current handle/identity and revalidation approach. It can detect many races and mutations, but must report `BEST_EFFORT_NON_ATOMIC` and cannot satisfy the atomic-snapshot gate.
+
+A clean Git commit tree and a dirty working tree are different source scopes. The engine must not silently substitute `HEAD` for a dirty worktree. If staged, unstaged, untracked or ignored content is outside the chosen snapshot class, that exclusion must be explicit in the coverage denominator and source manifest.
+
+### 28.2 Acceptance work before G4 can become Pass
+
+- Define source-scope semantics for committed, index, working-tree and untracked content.
+- Implement an immutable-object reader for the committed-tree scope, binding tree SHA, path, mode, blob object ID and content digest.
+- Keep the existing live-tree reader as a separate best-effort mode until a platform snapshot provider is available.
+- On Windows and Linux, test rename/replacement, symlink or reparse-point substitution, hard-link aliases, mutation followed by restoration, parent-directory replacement, and mutation immediately after the final identity check.
+- Prove that the graph, evidence index, findings and coverage report all carry the same source-snapshot identity.
+- Make unsupported or inconsistent source modes abstain; do not downgrade them to a passing snapshot.
+
+The immutable-object reader is a candidate next implementation, not yet present. It will not close the working-tree snapshot case by itself.
+
+**Decision:** retain the 16 MiB SNAP worker request cap and current source-snapshot behavior until a separately reviewed design and measured resource envelope justify changes. G4 remains **Partial**; `atomic_snapshot_established=false` remains the authoritative status.
