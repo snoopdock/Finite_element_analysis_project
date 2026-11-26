@@ -32,6 +32,11 @@ from .assurance_store import (
     AssuranceDuplicateError, AssuranceStorageLimitError, AssuranceStore,
     AssuranceStoreError,
 )
+from .coverage import (
+    CoverageContractError, CoverageObligation, ObligationDisposition,
+    EpistemicCoverageManifest, EpistemicCoverageStatus,
+    EpistemicCoverageResult, evaluate_epistemic_coverage,
+)
 from .persisted_assurance import (
     PersistedAssuranceResult,
     evaluate_persisted_assurance,
@@ -46,6 +51,14 @@ from .store import (
 )
 
 __all__ = [
+    "CoverageContractError",
+    "CoverageObligation",
+    "ObligationDisposition",
+    "EpistemicCoverageManifest",
+    "EpistemicCoverageStatus",
+    "EpistemicCoverageResult",
+    "evaluate_epistemic_coverage",
+
     "PersistedAssuranceResult",
     "evaluate_persisted_assurance",
     "AdmissibilityDecision",
