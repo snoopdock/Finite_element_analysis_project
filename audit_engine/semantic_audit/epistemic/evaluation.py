@@ -20,6 +20,21 @@ class NegativeClaimRequest:
     rule_allows_closed_world: bool
     active_invalidation_triggers: tuple[str, ...] = ()
 
+    def __post_init__(self) -> None:
+        for name in ("subject_id", "predicate_id", "scope_id", "source_snapshot_id", "closed_world_rule_id"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{name} must be a non-empty string")
+            object.__setattr__(self, name, value.strip())
+        if not isinstance(self.rule_allows_closed_world, bool):
+            raise ValueError("rule_allows_closed_world must be a bool")
+        if not isinstance(self.active_invalidation_triggers, tuple):
+            raise ValueError("active_invalidation_triggers must be an immutable tuple")
+        if any(not isinstance(item, str) or not item.strip() for item in self.active_invalidation_triggers):
+            raise ValueError("active invalidation triggers must be non-empty strings")
+        if len(set(self.active_invalidation_triggers)) != len(self.active_invalidation_triggers):
+            raise ValueError("active invalidation triggers must be unique")
+
 
 @dataclass(frozen=True)
 class AdmissibilityDecision:
