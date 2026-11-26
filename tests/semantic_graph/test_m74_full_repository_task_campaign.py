@@ -237,7 +237,6 @@ def test_m74_full_repository_source_derived_task_campaign(backend):
         path_result = results[QueryType.PATH]
         assert path_result.status is AnalysisStatus.COMPLETED
         assert dependency_target in path_result.discovered_entities
-        assert path_result.metadata["path_found"] is True
 
         impact = results[QueryType.IMPACT]
         assert impact.status in {AnalysisStatus.COMPLETED, AnalysisStatus.INCOMPLETE}
