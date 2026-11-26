@@ -104,7 +104,9 @@ class CoverageDossierTests(unittest.TestCase):
             {"gap:assigned": (self.obligation_id,)},
         )
         self.assertEqual(dossier.unreconciled_gap_ids, ("gap:orphan",))
-        self.assertEqual(dossier.overall_status, "incomplete")
+        # The assessed obligation is explicitly UNKNOWN. UNKNOWN has
+        # precedence over claim-relative INCOMPLETE caused by the orphan gap.
+        self.assertEqual(dossier.overall_status, "unknown")
 
     def test_gap_mapping_must_be_reflected_in_assessed_obligation(self):
         self.add_gap("gap:assigned")
@@ -215,6 +217,25 @@ class CoverageDossierTests(unittest.TestCase):
         self.assertEqual(dossier.unreconciled_gap_ids, ())
         self.assertEqual(dossier.out_of_scope_gap_ids, ("gap:unrelated",))
         self.assertEqual(dossier.gap_inventory[0]["gap_id"], "gap:unrelated")
+
+    def test_absent_gap_error_precedes_invalid_plan_and_manifest_mappings(self):
+        with self.assertRaisesRegex(CoverageDossierError, "absent persisted gaps"):
+            self.build(
+                "dossier:precedence-absent", "gap:manifest-only",
+                {"gap:does-not-exist": ("obligation:not-in-plan",)},
+            )
+
+    def test_scope_error_precedes_invalid_plan_and_manifest_mappings(self):
+        self.epistemic.record_gap(KnowledgeGap(
+            "gap:precedence-other-scope", "source:unit-1", GapKind.PARTIAL_EXTRACTION,
+            GapState.OPEN, "scope:other", "inventory:v1",
+            "The gap belongs to another scope",
+        ))
+        with self.assertRaisesRegex(CoverageDossierError, "outside the assurance claim scope"):
+            self.build(
+                "dossier:precedence-scope", "gap:manifest-only",
+                {"gap:precedence-other-scope": ("obligation:not-in-plan",)},
+            )
 
     def test_gap_outside_claim_scope_cannot_be_reconciled(self):
         self.epistemic.record_gap(KnowledgeGap(
