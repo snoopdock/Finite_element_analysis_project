@@ -26,6 +26,7 @@ on:
       - "tools/gb05_native_backend_performance_benchmark.py"
       - "tests/semantic_graph/test_m7_native_backend_performance_benchmark.py"
       - ".github/workflows/m7_1_manual_native_backend_smoke.yml"
+      - ".github/workflows/m7_4_backend_task_acceptance.yml"
 
 permissions:
   contents: read
