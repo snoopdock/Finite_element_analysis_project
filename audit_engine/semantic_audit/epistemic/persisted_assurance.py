@@ -108,7 +108,6 @@ def evaluate_persisted_assurance(
         )
 
         evidence_by_id: dict[str, EvidenceRef] = {}
-        assertion_ids_by_evidence: dict[str, set[str]] = {}
         conflicting_ids: set[str] = set()
         for assertion in evidence_assertions:
             for ref in assertion.evidence_refs:
@@ -117,7 +116,6 @@ def evaluate_persisted_assurance(
                     conflicting_ids.add(ref.evidence_id)
                 else:
                     evidence_by_id[ref.evidence_id] = ref
-                assertion_ids_by_evidence.setdefault(ref.evidence_id, set()).add(assertion.assertion_id)
 
         used_evidence_ids = set()
         for link in links:
@@ -155,7 +153,6 @@ def evaluate_persisted_assurance(
             for link in links
             for node_id in link.provenance_node_ids
         }
-        expected_evidence_dependencies: dict[str, set[tuple[str, str, str]]] = {}
         for evidence_id in used_evidence_ids & set(evidence_by_id):
             ref = evidence_by_id[evidence_id]
             node_id = f"evidence:{evidence_id}"
@@ -170,7 +167,6 @@ def evaluate_persisted_assurance(
                     f"artifact-sha256:{ref.artifact_sha256}",
                     ref.artifact_sha256,
                 ))
-            expected_evidence_dependencies[node_id] = expected
             required_nodes.add(node_id)
             actual = edges_by_dependent.get(node_id, set())
             if actual != expected:
@@ -235,7 +231,7 @@ def evaluate_persisted_assurance(
             reasons=(),
             ledger_consistent=True,
         )
-    except (AssuranceStoreError, StoreError) as exc:
+    except Exception as exc:
         return _incomplete(
             claim_id, None,
             (f"persisted ledger integrity or read failure: {exc}",),
