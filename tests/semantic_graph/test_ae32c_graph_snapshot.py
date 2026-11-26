@@ -22,10 +22,10 @@ def source_manifest():
             "root_tree_oid": "2" * 40,
         },
         "source_inventory": {"entries": [
-            {"path": "src/a.py", "mode": "100644", "git_object_oid": "3" * 40,
-             "content_sha256": "4" * 64},
-            {"path": "README.md", "mode": "100644", "git_object_oid": "5" * 40,
-             "content_sha256": "6" * 64},
+            {"path": "src/a.py", "mode": "100644", "object_type": "blob",
+             "git_object_oid": "3" * 40, "content_sha256": "4" * 64},
+            {"path": "README.md", "mode": "100644", "object_type": "blob",
+             "git_object_oid": "5" * 40, "content_sha256": "6" * 64},
         ]},
         "verification": {"status": "VERIFIED"},
     }
