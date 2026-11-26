@@ -66,11 +66,14 @@ class SemanticQualificationTests(unittest.TestCase):
             entries.append({"path": path, "content_sha256": hashlib.sha256(raw).hexdigest(),
                             "mode": "100644", "object_type": "blob"})
         entries.sort(key=lambda x: x["path"])
+        inventory = {"entries": entries, "entry_count": len(entries)}
+        inventory["sha256"] = digest(entries)
         self.manifest = {
             "manifest_schema": "ae32c/source-snapshot-manifest/v1",
             "source_snapshot_id": self.source_id,
-            "source_inventory": {"entries": entries},
+            "source_inventory": inventory,
         }
+        self.manifest["manifest_sha256"] = digest(self.manifest)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -127,8 +130,8 @@ class SemanticQualificationTests(unittest.TestCase):
                           "declared_scope_exclusion", {"reason": "fixture exclusion"})
         result = qualify_typed_evidence_observations(
             self.bundle([obs]), source_manifest=self.manifest, repository_root=self.root)
-        self.assertEqual(result["qualifications"][0]["qualification"], "SUPPORTED")
-        self.assertIn("does not establish", result["qualifications"][0]["limitation"])
+        self.assertEqual(result["qualifications"][0]["qualification"], "INSUFFICIENT")
+        self.assertIn("independent verification", result["qualifications"][0]["limitation"])
 
     def test_unregistered_rule_remains_unknown(self):
         raw = self.files["src/graph.py"]
