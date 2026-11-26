@@ -238,7 +238,7 @@ jobs:
         shell: micromamba-shell {0}
         run: |
           set -euo pipefail
-          PACKAGE="$(\"$MAMBA_EXE\" list --explicit -n ae32c-m7-graph-tool | grep 'graph-tool-base-' | tail -n 1)"
+          PACKAGE="$(micromamba list --explicit -n ae32c-m7-graph-tool | grep 'graph-tool-base-' | tail -n 1)"
           case "$PACKAGE" in
             *"_100.conda") echo "Verified generic x86-64 graph-tool build: $PACKAGE" ;;
             *)
