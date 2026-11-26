@@ -211,10 +211,11 @@ def build_and_persist_coverage_dossier(
 ) -> CoverageDossier:
     """Evaluate, reconcile every persisted gap, and append a recoverable dossier.
 
-    Each persisted gap must be mapped to one or more derived obligations.
-    Missing mappings are retained as explicit unreconciled gaps and force the
-    dossier's overall status to INCOMPLETE. A mapping must also be reflected in
-    the corresponding assessed CoverageObligation.gap_ids.
+    Each in-scope persisted gap must be mapped to one or more derived
+    obligations. Missing mappings are retained as explicit unreconciled gaps
+    and contribute INCOMPLETE unless a stronger evaluator state (INVALIDATED,
+    CONTESTED or UNKNOWN) applies. A mapping must also be reflected in the
+    corresponding assessed CoverageObligation.gap_ids.
     """
     for name, value in (("dossier_id", dossier_id), ("captured_at", captured_at)):
         if not isinstance(value, str) or not value.strip():
