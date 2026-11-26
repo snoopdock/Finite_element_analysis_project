@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 from typing import Any, Iterator
@@ -105,9 +106,27 @@ class GitObjectSourceProvider:
         self._verified_bytes: dict[str, bytes] = {}
         self._lfs_pointer_paths: set[str] = set()
 
+    @staticmethod
+    def _git_environment() -> dict[str, str]:
+        # Git repository-routing and object-lookup variables are ambient authority.
+        # The provider is bound to self.root and must not inherit a caller's
+        # alternate repository, object directory, namespace, replacement policy,
+        # or lazy-fetch behavior.
+        env = {key: value for key, value in os.environ.items()
+               if not key.startswith("GIT_")}
+        env.update({
+            "GIT_NO_REPLACE_OBJECTS": "1",
+            "GIT_NO_LAZY_FETCH": "1",
+            "GIT_OPTIONAL_LOCKS": "0",
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_CONFIG_GLOBAL": os.devnull,
+        })
+        return env
+
     def _git_bytes(self, *args: str, input_bytes: bytes | None = None) -> bytes:
-        completed = subprocess.run(["git", *args], cwd=self.root, input=input_bytes,
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        completed = subprocess.run(["git", *args], cwd=self.root, env=self._git_environment(),
+                                   input=input_bytes, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE, check=False)
         if completed.returncode:
             detail = completed.stderr.decode("utf-8", errors="replace").strip()
             raise GitObjectSourceError("git_command_failed:" + detail[:300])
