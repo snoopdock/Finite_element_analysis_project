@@ -592,6 +592,37 @@ class EpistemicStore:
             return None
         return {"revision": row["revision"], "payload": json.loads(row["payload"])}
 
+    def gap_records_snapshot(self) -> tuple[dict[str, Any], ...]:
+        """Return every latest knowledge-gap revision from one verified read snapshot.
+
+        Each item contains gap_id, revision, payload, and event_hash. The returned
+        tuple is ordered by stable gap ID and is bound to the ledger state observed
+        within this SQLite read transaction.
+        """
+        with self._connection:
+            self._connection.execute("BEGIN")
+            if not self.verify_integrity():
+                raise StoreError("event ledger integrity check failed; gap snapshot is unavailable")
+            rows = self._connection.execute(
+                """SELECT e.record_id, e.revision, e.payload, e.event_hash
+                   FROM epistemic_events AS e
+                   JOIN (
+                       SELECT record_id, MAX(revision) AS revision
+                       FROM epistemic_events
+                       WHERE record_type = 'gap'
+                       GROUP BY record_id
+                   ) AS latest
+                   ON e.record_id = latest.record_id AND e.revision = latest.revision
+                   WHERE e.record_type = 'gap'
+                   ORDER BY e.record_id"""
+            ).fetchall()
+            return tuple({
+                "gap_id": row["record_id"],
+                "revision": row["revision"],
+                "payload": json.loads(row["payload"]),
+                "event_hash": row["event_hash"],
+            } for row in rows)
+
     def gap_history(self, gap_id: str) -> list[dict[str, Any]]:
         rows = self._connection.execute(
             """SELECT sequence, revision, payload, event_hash FROM epistemic_events
