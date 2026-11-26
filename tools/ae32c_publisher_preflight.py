@@ -6,6 +6,7 @@ repository settings, creates tokens, changes refs, or publishes audit results.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import os
 import sys
@@ -93,32 +94,79 @@ def evaluate(
             state, f"GitHub rulesets API returned HTTP {rulesets_status}; scoped ref ruleset could not be confirmed."
         )
     else:
-        expected_refs = {
-            f"refs/heads/{PUBLICATION_BRANCH}",
+        publication_ref = f"refs/heads/{PUBLICATION_BRANCH}"
+
+        def pattern_matches(pattern: Any) -> bool:
+            # Unknown patterns and GitHub's all-refs token are treated as
+            # potentially applicable. This is deliberately fail-closed.
+            if not isinstance(pattern, str) or not pattern or pattern == "~ALL":
+                return True
+            return (
+                fnmatch.fnmatchcase(publication_ref, pattern)
+                or fnmatch.fnmatchcase(PUBLICATION_BRANCH, pattern)
+            )
+
+        def may_apply_to_publication_ref(ruleset: Any) -> bool:
+            if not isinstance(ruleset, dict):
+                return True
+            if ruleset.get("enforcement") != "active":
+                return False
+            # Tag-only rulesets cannot govern a branch. Unknown targets are
+            # conservatively treated as potentially applicable.
+            if ruleset.get("target") == "tag":
+                return False
+            if ruleset.get("target") not in {"branch", None}:
+                return True
+            conditions = ruleset.get("conditions")
+            if conditions is None:
+                return True
+            if not isinstance(conditions, dict):
+                return True
+            ref_condition = conditions.get("ref_name")
+            if ref_condition is None:
+                return True
+            if not isinstance(ref_condition, dict):
+                return True
+            includes = ref_condition.get("include")
+            excludes = ref_condition.get("exclude", [])
+            if not isinstance(includes, list) or not includes:
+                return True
+            if not isinstance(excludes, list):
+                return True
+            included = any(pattern_matches(pattern) for pattern in includes)
+            excluded = any(pattern_matches(pattern) for pattern in excludes)
+            return included and not excluded
+
+        applicable = [item for item in rulesets if may_apply_to_publication_ref(item)]
+        exact_refs = {
+            publication_ref,
             PUBLICATION_BRANCH,
         }
-        matches = []
-        for ruleset in rulesets:
-            if not isinstance(ruleset, dict) or ruleset.get("enforcement") != "active":
-                continue
+        if len(applicable) != 1:
+            checks["publication_ref_ruleset"] = _check(
+                "BLOCKED",
+                "Expected exactly one active ruleset that may apply to the publication ref; "
+                f"found {len(applicable)}. Overlapping wildcard/global rulesets are not permitted."
+            )
+        else:
+            ruleset = applicable[0]
             conditions = ruleset.get("conditions")
             ref_condition = conditions.get("ref_name") if isinstance(conditions, dict) else None
-            includes = ref_condition.get("include", []) if isinstance(ref_condition, dict) else []
-            excludes = ref_condition.get("exclude", []) if isinstance(ref_condition, dict) else []
-            if (
-                isinstance(includes, list)
+            includes = ref_condition.get("include") if isinstance(ref_condition, dict) else None
+            excludes = ref_condition.get("exclude", []) if isinstance(ref_condition, dict) else None
+            exact_scope = (
+                ruleset.get("target") == "branch"
+                and isinstance(includes, list)
                 and len(includes) == 1
-                and includes[0] in expected_refs
-                and not excludes
-            ):
-                matches.append(ruleset)
-        valid = []
-        for ruleset in matches:
+                and includes[0] in exact_refs
+                and excludes == []
+            )
             rules = ruleset.get("rules", [])
-            names = {item.get("type") for item in rules if isinstance(item, dict)}
+            names = {
+                item.get("type") for item in rules
+                if isinstance(item, dict) and isinstance(item.get("type"), str)
+            } if isinstance(rules, list) else set()
             bypass = ruleset.get("bypass_actors", [])
-            # A single integration bypass is required for the publisher App;
-            # broad role/team/user bypasses are rejected.
             app_bypass = (
                 isinstance(bypass, list) and len(bypass) == 1
                 and isinstance(bypass[0], dict)
@@ -128,20 +176,19 @@ def evaluate(
                 and publisher_app_id is not None
                 and bypass[0].get("actor_id") == publisher_app_id
             )
-            if REQUIRED_RULES.issubset(names) and app_bypass:
-                valid.append(ruleset)
-        if len(valid) == 1:
-            checks["publication_ref_ruleset"] = _check(
-                "PASS", "Exactly one active ruleset targets only the publication ref, requires update/deletion/non-fast-forward controls, and grants bypass only to one GitHub App integration."
-            )
-        elif not matches:
-            checks["publication_ref_ruleset"] = _check(
-                "BLOCKED", f"No active ruleset exactly targets {PUBLICATION_BRANCH}."
-            )
-        else:
-            checks["publication_ref_ruleset"] = _check(
-                "BLOCKED", "Publication-ref ruleset is ambiguous or lacks required protections / single-App bypass."
-            )
+            if exact_scope and REQUIRED_RULES.issubset(names) and app_bypass:
+                checks["publication_ref_ruleset"] = _check(
+                    "PASS",
+                    "Exactly one active branch ruleset applies to only the publication ref, "
+                    "requires update/deletion/non-fast-forward controls, and grants bypass "
+                    "only to the configured GitHub App integration."
+                )
+            else:
+                checks["publication_ref_ruleset"] = _check(
+                    "BLOCKED",
+                    "The sole applicable ruleset is not an exact publication-branch rule "
+                    "with all required protections and the single configured-App bypass."
+                )
 
     if environment_status != 200 or not isinstance(environment, dict):
         state = "BLOCKED" if environment_status == 404 else "UNVERIFIED"
@@ -217,7 +264,19 @@ def run(api_url: str, token: str, repository: str, app_client_id_present: bool,
     protection_status, protection = api_get(
         api_url, token, f"/repos/{repository}/branches/{branch}/protection"
     )
-    rulesets_status, rulesets = api_get(api_url, token, f"/repos/{repository}/rulesets?per_page=100")
+    rulesets_status, rulesets = 200, []
+    for page in range(1, 101):
+        page_status, page_rulesets = api_get(
+            api_url, token, f"/repos/{repository}/rulesets?per_page=100&page={page}"
+        )
+        if page_status != 200 or not isinstance(page_rulesets, list):
+            rulesets_status, rulesets = page_status, page_rulesets
+            break
+        rulesets.extend(page_rulesets)
+        if len(page_rulesets) < 100:
+            break
+    else:
+        rulesets_status, rulesets = 0, {"message": "ruleset_pagination_limit"}
     env_name = urllib.parse.quote(ENVIRONMENT_NAME, safe="")
     environment_status, environment = api_get(
         api_url, token, f"/repos/{repository}/environments/{env_name}"
