@@ -42,7 +42,11 @@ jobs:
           python-version: "3.11"
 
       - name: Compile the epistemic package
-        run: python -m compileall -q audit_engine/semantic_audit/epistemic
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m compileall -q audit_engine/semantic_audit/epistemic 2>&1 | tee reports/m75-compile.log
 
       - name: Run M7.5.1 contract tests
         shell: bash
@@ -90,6 +94,7 @@ jobs:
         with:
           name: m7-5-epistemic-validation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
+            reports/m75-compile.log
             reports/m75-1-epistemic-contracts.log
             reports/m75-2-epistemic-store.log
             reports/m75-3-completeness.log
