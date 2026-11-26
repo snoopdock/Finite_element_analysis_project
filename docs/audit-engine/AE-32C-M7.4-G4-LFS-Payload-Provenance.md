@@ -119,7 +119,7 @@ The graph capture CLI accepts `--lfs-object-store` for an explicitly supplied lo
 
 The updated tests cover no-cache complete scanning, explicit unverified pointer evidence, source binding, complete regular-blob inventory, duplicate inventory rejection, missing pointer-record rejection, graph-identity binding, and graph-manifest tampering or omission. Existing valid-cache, missing/corrupt-cache, pointer parsing, and symlink rejection tests remain.
 
-**Validation state:** the exact-source graph workflow passed on 2026-11-26; cross-platform and cost qualification is being checked separately.
+**Validation state:** exact-source graph capture, postflight, cross-platform qualification, and cost characterization all passed on 2026-11-26.
 
 ### Exact-source graph integration validation — 2026-11-26
 
@@ -132,5 +132,17 @@ The updated tests cover no-cache complete scanning, explicit unverified pointer 
 - **Artifact:** [ae32c-source-graph-snapshot-45872916271-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45872916271/artifacts/15144510118); artifact SHA-256 `c5a960c275e87a217ebbe4d9650ca14a7666bfac111cfb6f7bd352477039fa64`.
 
 The attestation SHA-256 is an integrity digest, not a digital signature or proof of the identity of a payload supplier. The scan proves classification against the pinned committed Git tree; it does not authenticate a remote source.
+
+
+### Cross-platform and cost qualification — 2026-11-26
+
+- **Workflow:** [45872916275](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45872916275) — success on the same implementation revision `9746756784a90f07439e812dda62c4c2c7582d19`.
+- **Windows G4 compatibility suite:** 55 passed, 46 skipped, using Python 3.11.
+- **Linux mutation and repository side-effect acceptance:** passed.
+- **Cost characterization:** 10 repetitions; report verification returned `status=verified`; source and runner revisions both matched the implementation revision.
+- **Cost report SHA-256:** `9888b94e6ad95c3305d624f279bb3043c512e72ec2429193644cfe18644617f4`.
+- **Cost artifact:** [m7-4-g4-source-snapshot-cost-45872916275-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45872916275/artifacts/15143313518); artifact ZIP SHA-256 `d31088dc620c2b8c6ff83ba398407432b665472e16c3abf3b31068d61c482906`.
+
+These results qualify the bounded streaming Git-object prefix verifier on Linux and Windows. They do not establish LFS remote provenance or cross-store atomicity.
 
 The following limitations remain unchanged: submodule LFS content is not recursively verified; remote payload provenance is not authenticated; Git and external LFS payload reads are not an atomic cross-store snapshot; production approval remains false.
