@@ -126,7 +126,11 @@ def account_submodule_lfs(
                 from audit_engine.semantic_audit.ae32c.lfs_payload_verifier import verify_lfs_payloads
                 child_lfs = verify_lfs_payloads(child_provider, stores.get(path))
                 nested = walk(child_provider, path, depth + 1, ancestors | {identity})
-                recursive_complete = all(
+                nested_scan_complete = all(
+                    item.get("status") == "SCANNED"
+                    and item.get("recursive_scan_complete") is True for item in nested
+                )
+                nested_content_verified = all(
                     item.get("recursive_content_verified") is True for item in nested
                 )
                 records.append({
@@ -138,7 +142,10 @@ def account_submodule_lfs(
                     "child_lfs_verified_payload_count": child_lfs["verified_payload_count"],
                     "child_lfs_unverified_payload_count": child_lfs["unverified_payload_count"],
                     "nested_gitlink_count": len(nested), "nested": nested,
-                    "recursive_content_verified": recursive_complete,
+                    "recursive_scan_complete": nested_scan_complete,
+                    "recursive_content_verified": (
+                        child_lfs["lfs_payload_verified"] and nested_content_verified
+                    ),
                 })
             except (OSError, ValueError, KeyError, SubmoduleAccountingError) as exc:
                 reason = str(exc) if isinstance(exc, SubmoduleAccountingError) else "submodule_repository_unreadable"
@@ -155,6 +162,10 @@ def account_submodule_lfs(
         "source_inventory_sha256": identity["source_inventory_sha256"],
         "gitlink_count": len(records),
         "scanned_repository_count": visited,
+        "recursive_scan_complete": all(
+            item.get("status") == "SCANNED" and item.get("recursive_scan_complete") is True
+            for item in records
+        ),
         "recursive_content_verified": all(
             item.get("recursive_content_verified") is True for item in records
         ),
