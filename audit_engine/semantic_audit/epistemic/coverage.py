@@ -202,6 +202,42 @@ def evaluate_epistemic_coverage(
         for assertion in assertions:
             for ref in assertion.evidence_refs:
                 evidence_by_id.setdefault(ref.evidence_id, []).append((assertion, ref))
+        dependency_edges = epistemic_store.dependency_history()
+        edges_by_dependent: dict[str, set[tuple[str, str, str]]] = {}
+        for edge in dependency_edges:
+            payload = edge["payload"]
+            edges_by_dependent.setdefault(payload["dependent_id"], set()).add((
+                payload["dependency_kind"], payload["dependency_id"], payload["expected_revision"],
+            ))
+
+        def check_persisted_ref(ref: EvidenceRef, obligation_id: str) -> None:
+            records = evidence_by_id.get(ref.evidence_id, [])
+            if not records or all(stored_ref != ref for _, stored_ref in records):
+                unresolved.add(obligation_id)
+                incomplete = True
+                reasons.append(f"knowledge-gap resolution evidence {ref.evidence_id} is not persisted with matching metadata")
+                return
+            node_id = f"evidence:{ref.evidence_id}"
+            expected = {
+                ("source_snapshot", f"snapshot:{ref.source_snapshot_id}", ref.source_snapshot_id),
+                ("evidence_producer", f"producer:{ref.producer_id}", ref.producer_id),
+                ("evidence_method", f"method:{ref.method_id}", ref.method_id),
+            }
+            if ref.artifact_sha256:
+                expected.add(("artifact_digest", f"artifact-sha256:{ref.artifact_sha256}", ref.artifact_sha256))
+            if edges_by_dependent.get(node_id, set()) != expected:
+                unresolved.add(obligation_id)
+                incomplete = True
+                reasons.append(f"provenance edges for resolution evidence {ref.evidence_id} do not match its metadata")
+            closure = epistemic_store.freshness_closure(node_id)
+            freshness[ref.evidence_id] = closure.status.value
+            if closure.status is FreshnessStatus.INVALIDATED:
+                invalidated = True
+                reasons.append(f"resolution evidence {ref.evidence_id} provenance is invalidated")
+            elif closure.status is FreshnessStatus.UNKNOWN:
+                unresolved.add(obligation_id)
+                unknown = True
+                reasons.append(f"resolution evidence {ref.evidence_id} provenance closure is unknown")
 
         for obligation in manifest.obligations:
             oid = obligation.obligation_id
@@ -224,6 +260,23 @@ def evaluate_epistemic_coverage(
                         unknown = True
                         reasons.append(f"obligation {oid} references absent persisted evidence {evidence_id}")
                         continue
+                    metadata = {ref for _, ref in records}
+                    if len(metadata) != 1:
+                        unresolved.add(oid)
+                        incomplete = True
+                        reasons.append(f"evidence {evidence_id} has conflicting persisted metadata")
+                    selected_ref = records[0][1]
+                    expected_edges = {
+                        ("source_snapshot", f"snapshot:{selected_ref.source_snapshot_id}", selected_ref.source_snapshot_id),
+                        ("evidence_producer", f"producer:{selected_ref.producer_id}", selected_ref.producer_id),
+                        ("evidence_method", f"method:{selected_ref.method_id}", selected_ref.method_id),
+                    }
+                    if selected_ref.artifact_sha256:
+                        expected_edges.add(("artifact_digest", f"artifact-sha256:{selected_ref.artifact_sha256}", selected_ref.artifact_sha256))
+                    if edges_by_dependent.get(f"evidence:{evidence_id}", set()) != expected_edges:
+                        unresolved.add(oid)
+                        incomplete = True
+                        reasons.append(f"evidence provenance edges for {evidence_id} do not match its persisted metadata")
                     valid_context = False
                     support_found = False
                     for assertion, ref in records:
@@ -263,10 +316,32 @@ def evaluate_epistemic_coverage(
                         continue
                     state = GapState(gap["payload"]["state"])
                     if state is GapState.RESOLVED:
-                        if not gap["payload"].get("resolution_evidence_refs"):
+                        resolution_refs = gap["payload"].get("resolution_evidence_refs", [])
+                        if not resolution_refs:
                             unresolved.add(oid)
                             incomplete = True
                             reasons.append(f"resolved gap {gap_id} lacks resolution evidence")
+                        for raw_ref in resolution_refs:
+                            try:
+                                resolution_ref = EvidenceRef(**raw_ref)
+                            except Exception:
+                                unresolved.add(oid)
+                                incomplete = True
+                                reasons.append(f"resolved gap {gap_id} contains an invalid resolution evidence reference")
+                                continue
+                            if claim is None or (
+                                resolution_ref.source_snapshot_id != claim.source_snapshot_id
+                                or not any(
+                                    assertion.proposition_id == claim.proposition_id
+                                    and assertion.scope_id == claim.scope_id
+                                    for assertion, stored_ref in evidence_by_id.get(resolution_ref.evidence_id, [])
+                                    if stored_ref == resolution_ref
+                                )
+                            ):
+                                unresolved.add(oid)
+                                incomplete = True
+                                reasons.append(f"resolved gap {gap_id} resolution evidence is not bound to the claim")
+                            check_persisted_ref(resolution_ref, oid)
                     else:
                         unresolved.add(oid)
                         if state is GapState.ACCEPTED_RESIDUAL:
@@ -275,8 +350,8 @@ def evaluate_epistemic_coverage(
                             incomplete = True
                         reasons.append(f"knowledge gap {gap_id} remains {state.value}")
 
-        assurance_after = assurance_store.snapshot_token()
         epistemic_after = epistemic_store.snapshot_token()
+        assurance_after = assurance_store.snapshot_token()
         ledger_consistent = assurance_before == assurance_after and epistemic_before == epistemic_after
         if not ledger_consistent:
             unknown = True
