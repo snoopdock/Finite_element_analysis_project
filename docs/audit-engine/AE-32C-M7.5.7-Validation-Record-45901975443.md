@@ -97,7 +97,22 @@ This is CI validation, not production approval. It does not establish:
 - formal premise/warrant registry validation;
 - proposition truth, probability, confidence or authorization for audit-gate transitions.
 
-## 7. Reproducibility
+## 7. Documentation follow-up validation
+
+After the specification was updated with the exact M7.5.7 result, the documentation commit `50375230658377e6c427f92e6f9518052c581cd1` triggered the same workflow again.
+
+- Follow-up run: [45902084056](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45902084056)
+- Conclusion: `success`
+- Exact tested revision: `50375230658377e6c427f92e6f9518052c581cd1`
+- All compile and seven test-suite steps succeeded.
+- Test counts remained 76 total, including 10 M7.5.7 tests.
+- Artifact: `m7-5-epistemic-validation-45902084056-1`
+- Artifact ID: `15155468620`
+- Artifact SHA-256: `24bf5ee8d92363a3d4f99907f8e23bb95992e3a5040f25bd3b456aacd85d7a82`
+
+The original run validates the implementation source revision `dbe2f63aa9756408883019380bfaf3df09e05191`. The follow-up run confirms the specification update did not break the combined workflow.
+
+## 8. Reproducibility
 
 - [Validated source commit](https://github.com/snoopdock/Finite_element_analysis_project/commit/dbe2f63aa9756408883019380bfaf3df09e05191)
 - [Workflow run](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45901975443)
