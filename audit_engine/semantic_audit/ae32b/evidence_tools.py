@@ -969,6 +969,7 @@ class RepositoryEvidenceTools:
         source_revision: str | None = None,
         runner_revision: str | None = None,
         graph_backend: str = "networkx",
+        source_provider: Any | None = None,
     ) -> None:
         self.root = _validate_root(repo_root)
         if graph_backend not in {"networkx", "scipy", "igraph", "graph-tool", "snap", "reference"}:
@@ -980,10 +981,12 @@ class RepositoryEvidenceTools:
         self.graph_backend = graph_backend
         self.source_revision = _validate_revision(source_revision, "source_revision")
         self.runner_revision = _validate_revision(runner_revision, "runner_revision")
+        self.source_provider = source_provider
         self.report = audit_repository(
             self.root,
             source_revision=self.source_revision,
             runner_revision=self.runner_revision,
+            source_provider=self.source_provider,
         )
         self.manifest_sha256 = self.report["audit"]["manifest_sha256"]
         self.python_source_roots = tuple(self.report.get("audit", {}).get("python_source_roots", []))
@@ -1074,8 +1077,12 @@ class RepositoryEvidenceTools:
             if not isinstance(expected_hash, str) or not isinstance(expected_size, int) or expected_size < 0:
                 raise EvidenceToolError("invalid_source_manifest", "Included source has an invalid size or digest")
             try:
-                data, file_identity = _read_snapshot_file_with_identity(self.root, rel, expected_size)
-            except (OSError, ValueError) as exc:
+                if self.source_provider is not None:
+                    data = self.source_provider.read_entry(rel)
+                    file_identity = ()
+                else:
+                    data, file_identity = _read_snapshot_file_with_identity(self.root, rel, expected_size)
+            except (OSError, ValueError, RuntimeError) as exc:
                 raise EvidenceToolError(
                     "source_changed_during_index",
                     f"Indexed source changed, became unavailable, or crossed a path boundary: {rel}",
@@ -1119,18 +1126,22 @@ class RepositoryEvidenceTools:
             if not isinstance(expected_hash, str) or not isinstance(expected_size, int) or expected_size < 0:
                 raise EvidenceToolError("invalid_source_manifest", "Included source has an invalid size or digest")
             try:
-                data, file_identity = _read_snapshot_file_with_identity(self.root, rel, expected_size)
-            except (OSError, ValueError) as exc:
+                if self.source_provider is not None:
+                    data = self.source_provider.read_entry(rel)
+                    file_identity = ()
+                else:
+                    data, file_identity = _read_snapshot_file_with_identity(self.root, rel, expected_size)
+            except (OSError, ValueError, RuntimeError) as exc:
                 raise EvidenceToolError(
                     "source_changed_during_index",
                     f"Indexed source changed or became unavailable during snapshot validation: {rel}",
                 ) from exc
-            if file_identity != self.file_identities.get(rel):
+            if self.source_provider is None and file_identity != self.file_identities.get(rel):
                 raise EvidenceToolError(
                     "source_changed_during_index",
                     f"Indexed source metadata changed during snapshot validation: {rel}",
                 )
-            if _sha256(data) != expected_hash:
+            if len(data) != expected_size or _sha256(data) != expected_hash:
                 raise EvidenceToolError(
                     "source_changed_during_index",
                     f"Indexed source changed during snapshot validation: {rel}",

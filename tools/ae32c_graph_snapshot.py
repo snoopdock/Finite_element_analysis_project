@@ -96,7 +96,13 @@ def build_coverage_manifest(
     units: list[dict[str, Any]] = []
     counts: Counter[str] = Counter()
     unaccounted: list[str] = []
-    for entry in source_manifest.get("source_inventory", {}).get("entries", []):
+    inventory_entries = source_manifest.get("source_inventory", {}).get("entries", [])
+    inventory_paths = {item.get("path") for item in inventory_entries if isinstance(item, dict)}
+    unexpected_paths = (set(represented_paths) | set(file_hashes)) - inventory_paths
+    if unexpected_paths:
+        sample = sorted(unexpected_paths, key=lambda item: str(item).encode("utf-8"))[:10]
+        raise GraphSnapshotError("graph_contains_uncommitted_source_path:" + ",".join(map(str, sample)))
+    for entry in inventory_entries:
         path = entry.get("path")
         if not isinstance(path, str) or not path:
             raise GraphSnapshotError("source_inventory_path_invalid")
@@ -325,11 +331,13 @@ def capture(repository: str | Path, source_manifest_path: str | Path,
         RepositoryEvidenceTools,
         _is_sensitive_path,
     )
+    from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceProvider
     if PROJECTION_VERSION != GRAPH_PROJECTION_VERSION or BUILDER_VERSION != GRAPH_BUILDER_VERSION:
         raise GraphSnapshotError("graph_builder_contract_version_mismatch")
+    source_provider = GitObjectSourceProvider(repository_root, source_manifest)
     builder = RepositoryEvidenceTools(
         repository_root, source_revision=source_manifest["source"]["commit_oid"],
-        graph_backend="reference",
+        graph_backend="reference", source_provider=source_provider,
     )
     if builder.report.get("audit", {}).get("source_revision") != source_manifest["source"]["commit_oid"]:
         raise GraphSnapshotError("evidence_builder_source_revision_mismatch")

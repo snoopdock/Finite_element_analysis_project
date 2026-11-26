@@ -122,11 +122,63 @@ def _validate_output_dir(root: Path, output_dir: Path | str | None) -> tuple[Pat
     return supplied, rel
 
 
-def _inventory(root: Path, output_rel: str | None) -> tuple[list[dict[str, Any]], dict[str, bytes], list[dict[str, str]]]:
+def _inventory(root: Path, output_rel: str | None, source_provider: Any | None = None) -> tuple[list[dict[str, Any]], dict[str, bytes], list[dict[str, str]]]:
     rows: list[dict[str, Any]] = []
     contents: dict[str, bytes] = {}
     scope_issues: list[dict[str, str]] = []
     included_bytes = 0
+    if source_provider is not None:
+        seen_paths: set[str] = set()
+        for entry in source_provider.iter_entries():
+            rel = entry["path"]
+            if rel in seen_paths:
+                raise ValueError(f"Git source provider returned duplicate path: {rel}")
+            seen_paths.add(rel)
+            parts = PurePosixPath(rel).parts
+            if (not rel or rel.startswith(EXCLUDED_RUNTIME_PREFIXES)
+                    or any(part in EXCLUDED_DIRECTORY_NAMES for part in parts)
+                    or (output_rel and (rel == output_rel or rel.startswith(output_rel + "/")))):
+                continue
+            if PurePosixPath(rel).suffix.lower() not in SOURCE_SUFFIXES:
+                continue
+            if entry.get("mode") == "120000":
+                scope_issues.append({"path": rel, "kind": "symlink_file_excluded"})
+                rows.append({"path": rel, "status": "excluded_symlink", "size": None,
+                             "sha256": None, "git_object_oid": entry.get("git_object_oid"),
+                             "git_mode": entry.get("mode")})
+                continue
+            if entry.get("mode") not in {"100644", "100755"} or entry.get("object_type") != "blob":
+                scope_issues.append({"path": rel, "kind": "unsupported_git_entry"})
+                rows.append({"path": rel, "status": "unsupported_git_entry", "size": None,
+                             "sha256": None, "git_object_oid": entry.get("git_object_oid"),
+                             "git_mode": entry.get("mode")})
+                continue
+            try:
+                data = source_provider.read_entry(rel)
+            except Exception as exc:
+                raise ValueError(f"Immutable Git source read failed for {rel}: {exc}") from exc
+            size = len(data)
+            if size > MAX_FILE_BYTES:
+                scope_issues.append({"path": rel, "kind": "oversized_file_excluded"})
+                rows.append({"path": rel, "status": "oversized", "size": size, "sha256": None,
+                             "git_object_oid": entry.get("git_object_oid"), "git_mode": entry.get("mode")})
+                continue
+            if included_bytes + size > MAX_TOTAL_BYTES:
+                scope_issues.append({"path": rel, "kind": "total_source_byte_budget_exceeded"})
+                rows.append({"path": rel, "status": "total_budget_exceeded", "size": size, "sha256": None,
+                             "git_object_oid": entry.get("git_object_oid"), "git_mode": entry.get("mode")})
+                continue
+            digest = _sha256(data)
+            expected = entry.get("content_sha256")
+            if not isinstance(expected, str) or digest != expected:
+                raise ValueError(f"Git source provider digest mismatch for {rel}")
+            included_bytes += size
+            rows.append({"path": rel, "status": "included", "size": size, "sha256": digest,
+                         "git_object_oid": entry.get("git_object_oid"), "git_mode": entry.get("mode")})
+            contents[rel] = data
+        rows.sort(key=lambda row: row["path"].encode("utf-8"))
+        scope_issues.sort(key=lambda row: (row["path"], row["kind"]))
+        return rows, contents, scope_issues
     for current, dirs, filenames in os.walk(root, topdown=True, followlinks=False):
         current_path = Path(current)
         kept_dirs: list[str] = []
@@ -1249,6 +1301,7 @@ def audit_repository(
     output_dir: Path | str | None = None,
     source_revision: str | None = None,
     runner_revision: str | None = None,
+    source_provider: Any | None = None,
 ) -> dict[str, Any]:
     """Inspect a repository without importing or executing its code.
 
@@ -1259,7 +1312,7 @@ def audit_repository(
     source_revision = _validate_revision(source_revision, "source_revision")
     runner_revision = _validate_revision(runner_revision, "runner_revision")
     out_dir, output_rel = _validate_output_dir(repo_root, output_dir)
-    manifest, contents, scope_issues = _inventory(repo_root, output_rel)
+    manifest, contents, scope_issues = _inventory(repo_root, output_rel, source_provider)
     source_roots, source_root_issues = _configured_python_source_roots(contents)
     python_paths = sorted(p for p in contents if PurePosixPath(p).suffix.lower() == ".py")
     modules, packages = _module_index(python_paths, source_roots)
@@ -1302,6 +1355,7 @@ def audit_repository(
             "root_label": ".",
             "source_revision": source_revision,
             "runner_revision": runner_revision,
+            "source_provider": source_provider.snapshot_identity() if source_provider is not None else {"consistency_class": "BEST_EFFORT_NON_ATOMIC", "source_scope": "filesystem_scan"},
             "included_file_count": sum(row["status"] == "included" for row in manifest),
             "included_bytes": sum(row["size"] or 0 for row in manifest if row["status"] == "included"),
             "python_file_count": len(python_paths),

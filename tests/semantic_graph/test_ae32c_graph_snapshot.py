@@ -93,6 +93,11 @@ class GraphSnapshotTests(unittest.TestCase):
         self.assertFalse(result["coverage"]["limitations"]["negative_findings_permitted_by_default"])
         self.assertFalse(result["authority"]["negative_findings_permitted_by_default"])
 
+    def test_extra_uncommitted_graph_path_is_rejected(self):
+        with self.assertRaisesRegex(GraphSnapshotError, "graph_contains_uncommitted_source_path"):
+            self._build(represented={"src/a.py", "scratch.py"},
+                        hashes={"src/a.py": "4" * 64, "scratch.py": "5" * 64})
+
     def test_source_to_graph_digest_mismatch_fails_closed(self):
         with self.assertRaisesRegex(GraphSnapshotError, "source_to_graph_digest_mismatch"):
             self._build(hashes={"src/a.py": "f" * 64})
