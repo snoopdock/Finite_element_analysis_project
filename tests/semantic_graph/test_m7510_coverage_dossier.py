@@ -70,6 +70,15 @@ class CoverageDossierTests(unittest.TestCase):
             dossier_store=self.dossiers,
         )
 
+    def test_public_gap_snapshot_returns_latest_revisions_without_private_access(self):
+        self.add_gap("gap:snapshot")
+        snapshot = self.epistemic.gap_records_snapshot()
+        self.assertEqual(len(snapshot), 1)
+        self.assertEqual(snapshot[0]["gap_id"], "gap:snapshot")
+        self.assertEqual(snapshot[0]["revision"], 1)
+        self.assertEqual(snapshot[0]["payload"]["scope_id"], "scope:repo")
+        self.assertTrue(snapshot[0]["event_hash"])
+
     def test_persisted_dossier_survives_restart_and_recovery(self):
         self.add_gap("gap:assigned")
         dossier = self.build(
