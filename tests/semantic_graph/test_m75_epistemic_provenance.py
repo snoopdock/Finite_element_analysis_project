@@ -188,6 +188,7 @@ class ProvenanceGraphTests(unittest.TestCase):
         self.store._connection.execute(
             "UPDATE epistemic_events SET payload = '{}' WHERE event_id = 'dependency:edge-1:1'"
         )
+        self.store._connection.commit()
         with self.assertRaises(StoreError):
             self.store.freshness_status("claim:X")
         with self.assertRaises(StoreError):
