@@ -1,6 +1,6 @@
 # AE-32C M7.5.4 — Provenance dependencies, freshness and deterministic invalidation
 
-**Status:** IMPLEMENTED; exact-source CI validation pending  
+**Status:** IMPLEMENTED AND CI-VALIDATED (exact-source run 45898608483)  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.1 epistemic contracts; M7.5.2 append-only persistence; M7.5.3 scope-bound completeness  
 **Authority:** provenance lifecycle and freshness reporting only; no proposition-truth inference or decision-gate authority
@@ -120,6 +120,8 @@ The M7.5.4 suite covers:
 - M7.5.3-to-M7.5.4 schema migration with hash-chain preservation.
 
 The workflow reruns the M7.5.1, M7.5.2 and M7.5.3 suites as regression protection.
+
+Exact-source validation record: [AE-32C-M7.5.4-Validation-Record-45898608483.md](AE-32C-M7.5.4-Validation-Record-45898608483.md). The validated source SHA is `3c2a1a2f76b9bf8520d3e7b3d245d8768b038ad0`; all 49 tests across M7.5.1–M7.5.4 passed.
 
 ## 8. Explicit limitations and non-goals
 
