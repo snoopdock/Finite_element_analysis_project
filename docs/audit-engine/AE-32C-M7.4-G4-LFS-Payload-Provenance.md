@@ -56,7 +56,7 @@ The test suite intentionally does not test network downloads. Remote retrieval i
 - It does not establish an atomic snapshot across Git objects and external LFS files.
 - It does not recurse into submodule LFS stores.
 - A cache payload that changes after verification can invalidate the attestation; downstream consumers must retain or reverify the same immutable payload bytes before use.
-- The current verifier reads committed regular blobs through the provider API; peak memory remains bounded by the largest blob passed through that API, not by the 1 MiB payload hashing chunk. This is a known optimization target.
+- Complete LFS classification uses `GitObjectSourceProvider.read_entry_prefix()`: each regular blob is streamed through Git-object OID and source SHA-256 verification while retaining at most a 1024-byte prefix. The scan does not populate the provider's full-byte cache. Graph evidence projection may separately load selected source files through `read_entry()`; that existing projection behavior is outside the LFS scan's memory bound.
 
 ## 5. Acceptance gate
 
@@ -119,6 +119,18 @@ The graph capture CLI accepts `--lfs-object-store` for an explicitly supplied lo
 
 The updated tests cover no-cache complete scanning, explicit unverified pointer evidence, source binding, complete regular-blob inventory, duplicate inventory rejection, missing pointer-record rejection, graph-identity binding, and graph-manifest tampering or omission. Existing valid-cache, missing/corrupt-cache, pointer parsing, and symlink rejection tests remain.
 
-**Validation state:** implementation and tests have been committed to `stage1/section-uuids`; CI acceptance is pending. No claim of milestone completion is made until the exact-HEAD workflows pass.
+**Validation state:** the exact-source graph workflow passed on 2026-11-26; cross-platform and cost qualification is being checked separately.
+
+### Exact-source graph integration validation — 2026-11-26
+
+- **Branch revision:** `9746756784a90f07439e812dda62c4c2c7582d19`.
+- **Source and graph workflow:** [45872916271](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45872916271) — success. All source, provider, LFS, graph, rule, publication, trusted-artifact, and trusted-publisher test groups passed; exact source capture and post-projection identity verification also passed.
+- **Source graph snapshot ID:** `d11714cf4740613d342abbd7fa79c54957c6a338c64cdee21e737707d3bd2688`.
+- **Graph coverage:** 1,906 represented source units; zero unaccounted units.
+- **LFS scan:** 1,974 regular committed blobs scanned; zero LFS pointer candidates found. Because no local cache was supplied, the attestation status is correctly `NOT_SUPPLIED`, not `VERIFIED_LOCAL_PAYLOADS`. The zero-pointer count does not establish remote provenance.
+- **Attestation SHA-256:** `5bc03acb0d78d4a5c9e1ab85cb27ef4890ea100384648d5b60163d0b86ad2c80`.
+- **Artifact:** [ae32c-source-graph-snapshot-45872916271-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45872916271/artifacts/15144510118); artifact SHA-256 `c5a960c275e87a217ebbe4d9650ca14a7666bfac111cfb6f7bd352477039fa64`.
+
+The attestation SHA-256 is an integrity digest, not a digital signature or proof of the identity of a payload supplier. The scan proves classification against the pinned committed Git tree; it does not authenticate a remote source.
 
 The following limitations remain unchanged: submodule LFS content is not recursively verified; remote payload provenance is not authenticated; Git and external LFS payload reads are not an atomic cross-store snapshot; production approval remains false.
