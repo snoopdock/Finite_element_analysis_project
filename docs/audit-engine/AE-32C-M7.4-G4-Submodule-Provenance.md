@@ -72,3 +72,36 @@ This change establishes **explicit pointer accounting**, not recursive submodule
 A future recursive verifier requires a separately specified repository identity and trust policy for every submodule, exact commit resolution without branch movement, object-format-aware inventory and blob verification, bounded recursion/depth and cycle handling, rejection of missing/promisor/alternate object stores under the same policy, and recursive treatment of nested gitlinks and LFS pointers. It must not rely on a worktree checkout as its source of bytes.
 
 Only after that verifier is implemented and exercised on real nested-submodule fixtures on Linux and Windows may the status be upgraded. The next independent target after this pointer-accounting tranche is hydrated Git LFS payload provenance, followed by repository-wide transaction consistency.
+
+
+## 7. Exact-source cross-platform validation — 2026-11-26
+
+Implementation commit: `7027b5bf0aa0c18d6180c37695ecea7090d69eb9`.
+
+### Immutable provider and graph snapshot
+
+- **Workflow:** [45812297850](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45812297850) — success on the exact implementation commit.
+- **Linux immutable-provider suite:** 21 passed, including the real initialized-submodule fixture and all prior adversarial object-database cases.
+- **Source inventory:** 1,971 entries; inventory SHA-256 `bf89d9524470905264b5000ea2814531a39689a6bea91afb1161d54d0568fbc1`.
+- **Source snapshot ID:** `6eeb4fda92cf43f2ff2f6f1cc0fd7eea176b6123842bd302166a4ffec3aeaba2`.
+- **Graph snapshot ID:** `006c95a081292d2840b50d724f4f3511a27b4873e9818db7c4ea58e4fb738a22`.
+- **Graph content SHA-256:** `38f4d390b124c31c5e9fdb558b20ef76eee72ef60be380c224bfc24b2adb605a`.
+- **Graph coverage:** 1,903 represented source units; zero unaccounted units; `COMPLETE_WITH_DECLARED_EXCLUSIONS`.
+- **Source postflight:** `VERIFIED`.
+- **Source/graph artifact:** [ae32c-source-graph-snapshot-45812297850-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45812297850/artifacts/15114297316), Actions SHA-256 `26b981a1180f59f69b52cf7b5ff310a6e48f74fa636140b4d47db34a418d4276`.
+
+### Windows and cost qualification
+
+- **Workflow:** [45812297784](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45812297784) — success on the exact implementation commit.
+- **Windows source/provider and selected G4 suites:** 49 passed, 46 skipped. Skips are backend-selection/platform-specific cases in the combined selection; the run completed successfully.
+- **Linux repository mutation/side-effect acceptance:** passed.
+- **Cost characterization:** 10 repetitions; report verification returned `status=verified`; source and runner revisions both matched the implementation commit.
+- **Cost report SHA-256:** `a2a196558333adb94d4d4b4fc1681041855a69bd6ac76be46cccb9ae9152f39b`.
+- **Cost manifest SHA-256:** `f8f3bb4e007e3fcd41ad9098a51cfe886c9d62a281c28ded8a497d21e027ca6b`.
+- **Cost artifact:** [m7-4-g4-source-snapshot-cost-45812297784-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45812297784/artifacts/15113627530), Actions SHA-256 `88ceabdca137de4ef09c43d43206c98ee8fb8ba63047dd6be294d653369f332d`.
+
+### Native backend regression
+
+The full E.8.5/E.8.8 native backend workflow [45812298248](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45812298248) also completed successfully on the same implementation commit. NetworkX, SciPy, igraph, graph-tool and isolated SNAP jobs all passed, including their existing G4 snapshot/mutation and repository side-effect suites. This is regression evidence for the wider audit engine; it is not a claim that the submodule provider recursively audits submodule content.
+
+The submodule boundary is therefore implemented and tested on Linux and Windows as **pointer accounting with explicit content abstention**. Recursive submodule content remains unverified. `submodule_content_verified=false`, `lfs_payload_verified=false`, `atomic_snapshot_established=false`, and `production_approval=false` remain invariant.
