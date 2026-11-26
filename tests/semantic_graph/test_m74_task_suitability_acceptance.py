@@ -854,15 +854,14 @@ def test_m74_fem_repository_workload_exercises_all_public_audit_tasks(backend):
             },
         ),
     )
-    service = SemanticGraphAnalysisService(
-        graph, traversal_backend=backend, verify_backend_parity=True,
-    )
-    reference = SemanticGraphAnalysisService(
-        graph, traversal_backend="reference", verify_backend_parity=True,
-    )
-
     results = {}
     for query in queries:
+        service = SemanticGraphAnalysisService(
+            graph, traversal_backend=backend, verify_backend_parity=True,
+        )
+        reference = SemanticGraphAnalysisService(
+            graph, traversal_backend="reference", verify_backend_parity=True,
+        )
         actual = service.analyze(query)
         expected = reference.analyze(query)
         _assert_reference_equivalence(actual, expected)
@@ -885,8 +884,9 @@ def test_m74_fem_repository_workload_exercises_all_public_audit_tasks(backend):
     assert evidence_target in path.discovered_entities
     assert path.evidence
     assert any(
-        getattr(item, "source_id", None) == "module:fem.materials"
-        or getattr(item, "target_id", None) == evidence_target
+        item.subject_id == "module:fem.materials"
+        and item.predicate == "SUPPORTED_BY"
+        and item.object_id == evidence_target
         for item in path.evidence
     )
 
