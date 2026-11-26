@@ -10,6 +10,7 @@ on:
       - "audit_engine/semantic_audit/ae32b/evidence_tools.py"
       - "audit_engine/semantic_audit/ae32c/git_object_source.py"
       - "tools/ae32c_graph_snapshot.py"
+      - "tools/ae32c_source_snapshot_manifest.py"
       - "tests/semantic_graph/test_ae32c_git_object_source.py"
       - "tests/semantic_graph/test_ae32c_graph_snapshot.py"
       - "tools/gb06_source_snapshot_integrity_benchmark.py"
