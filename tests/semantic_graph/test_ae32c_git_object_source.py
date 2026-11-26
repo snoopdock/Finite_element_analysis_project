@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import tempfile
@@ -65,7 +66,11 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             self._repository(root)
             manifest = self._verified_manifest(root)
             manifest["source_inventory"]["entries"][0]["git_object_oid"] = "0" * 40
-            from tools.ae32c_source_snapshot_manifest import _seal_manifest
+            from tools.ae32c_source_snapshot_manifest import _canonical_bytes, _seal_manifest
+            inventory = manifest["source_inventory"]
+            inventory["sha256"] = hashlib.sha256(_canonical_bytes(inventory["entries"])).hexdigest()
+            manifest["source"]["source_inventory_sha256"] = inventory["sha256"]
+            manifest["source_snapshot_id"] = hashlib.sha256(_canonical_bytes(manifest["source"])).hexdigest()
             _seal_manifest(manifest)
             with self.assertRaisesRegex(RuntimeError, "manifest_tree_inventory_mismatch"):
                 GitObjectSourceProvider(root, manifest)
