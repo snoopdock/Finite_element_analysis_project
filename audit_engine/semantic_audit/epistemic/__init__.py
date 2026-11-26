@@ -49,6 +49,7 @@ from .coverage_dossier import (
     build_and_persist_coverage_dossier,
     verify_dossier_against_current_stores,
 )
+from .dossier_verification import verify_coverage_dossier_replay
 from .persisted_assurance import (
     PersistedAssuranceResult,
     evaluate_persisted_assurance,
@@ -68,6 +69,7 @@ __all__ = [
     "CoverageDossierStore",
     "build_and_persist_coverage_dossier",
     "verify_dossier_against_current_stores",
+    "verify_coverage_dossier_replay",
 
     "RuleCoverageDerivationError",
     "RuleCoveragePlan",
