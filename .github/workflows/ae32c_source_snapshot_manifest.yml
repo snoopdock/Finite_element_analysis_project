@@ -172,6 +172,13 @@ jobs:
                   "- Unaccounted source units: " + str(coverage.get("unaccounted_count")),
                   "- Negative findings permitted by default: false",
               ]
+              lfs = coverage.get("lfs_payloads", {})
+              lines += [
+                  "- LFS payload status: " + str(lfs.get("status")),
+                  "- LFS regular blobs scanned: " + str(lfs.get("scanned_regular_blob_count")),
+                  "- LFS pointers: " + str(lfs.get("pointer_count")) + " (verified " + str(lfs.get("verified_payload_count")) + ", unverified " + str(lfs.get("unverified_payload_count")) + ")",
+                  "- LFS attestation SHA-256: " + str(lfs.get("attestation_sha256")),
+              ]
               ledger = graph.get("finding_ledger", {})
               findings = ledger.get("findings", [])
               statuses = {}
