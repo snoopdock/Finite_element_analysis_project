@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from tools.ae32c_source_snapshot_manifest import capture_manifest
+from tools.ae32c_source_snapshot_manifest import capture_manifest, verify_manifest
 from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceProvider
 from audit_engine.semantic_audit.ae32a.audit import audit_repository
 
@@ -15,6 +16,12 @@ class GitObjectSourceProviderTests(unittest.TestCase):
         result = subprocess.run(["git", *args], cwd=root, text=True,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
         return result.stdout.strip()
+
+    def _verified_manifest(self, root: Path) -> dict:
+        manifest = self._verified_manifest(root)
+        manifest_path = root.parent / (root.name + "-source-manifest.json")
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        return verify_manifest(root, manifest_path)
 
     def _repository(self, root: Path) -> None:
         self._git(root, "init")
@@ -31,9 +38,7 @@ class GitObjectSourceProviderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             self._repository(root)
-            manifest = capture_manifest(root, event_name="push",
-                                        repository_name="test/repo",
-                                        ref="refs/heads/test")
+            manifest = self._verified_manifest(root)
             provider = GitObjectSourceProvider(root, manifest)
             report = audit_repository(root, source_provider=provider)
             paths = {row["path"] for row in report["source_manifest"]}
@@ -46,9 +51,7 @@ class GitObjectSourceProviderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             self._repository(root)
-            manifest = capture_manifest(root, event_name="push",
-                                        repository_name="test/repo",
-                                        ref="refs/heads/test")
+            manifest = self._verified_manifest(root)
             provider = GitObjectSourceProvider(root, manifest)
             (root / "src" / "module.py").write_text("VALUE = 'mutated'\n", encoding="utf-8")
             self.assertEqual(provider.read_entry("src/module.py"), b"VALUE = 'committed'\n")
@@ -60,9 +63,7 @@ class GitObjectSourceProviderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             self._repository(root)
-            manifest = capture_manifest(root, event_name="push",
-                                        repository_name="test/repo",
-                                        ref="refs/heads/test")
+            manifest = self._verified_manifest(root)
             manifest["source_inventory"]["entries"][0]["git_object_oid"] = "0" * 40
             from tools.ae32c_source_snapshot_manifest import _seal_manifest
             _seal_manifest(manifest)
