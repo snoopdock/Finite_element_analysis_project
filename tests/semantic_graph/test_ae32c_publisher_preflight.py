@@ -105,6 +105,28 @@ class PublisherPreflightTests(unittest.TestCase):
         self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "BLOCKED")
         self.assertIn("found 2", result["checks"]["publication_ref_ruleset"]["detail"])
 
+    def test_malformed_exclusion_cannot_hide_overlapping_ruleset(self):
+        overlapping = {
+            "id": 15,
+            "name": "Malformed exclusion",
+            "enforcement": "active",
+            "target": "branch",
+            "conditions": {"ref_name": {
+                "include": ["refs/heads/*"],
+                "exclude": [None],
+            }},
+            "rules": [],
+            "bypass_actors": [],
+        }
+        result = evaluate(
+            repository="owner/repo", default_branch="main",
+            branch_protection_status=200, branch_protection=protection(),
+            rulesets_status=200, rulesets=ruleset() + [overlapping],
+            environment_status=200, environment=environment(),
+            app_client_id_present=True, app_private_key_present=True, publisher_app_id=12345,
+        )
+        self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "BLOCKED")
+
     def test_duplicate_exact_rulesets_block(self):
         duplicated = ruleset() + [{**ruleset()[0], "id": 99}]
         result = evaluate(
