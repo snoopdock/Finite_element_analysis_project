@@ -54,9 +54,7 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             self.assertEqual(provider.read_entry("src/module.py"), b"VALUE = 'committed'\n")
             report = audit_repository(root, source_provider=provider)
             row = next(item for item in report["source_manifest"] if item["path"] == "src/module.py")
-            self.assertEqual(row["sha256"], manifest["source_inventory"]["entries"][1]["content_sha256"]
-                             if manifest["source_inventory"]["entries"][1]["path"] == "src/module.py"
-                             else provider.entry_metadata("src/module.py")["content_sha256"])
+            self.assertEqual(row["sha256"], provider.entry_metadata("src/module.py")["content_sha256"])
 
     def test_manifest_tree_mismatch_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -4,10 +4,8 @@ on:
   push:
     branches:
       - stage1/section-uuids
-      - main
   pull_request:
     branches:
-      - main
       - stage1/section-uuids
   workflow_dispatch:
 
@@ -67,6 +65,13 @@ jobs:
             --repository . \
             --manifest "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" \
             --expected-source-revision "$GITHUB_SHA"
+
+      - name: Run immutable Git-object source provider tests
+        run: |
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_ae32c_git_object_source.py' \
+            -v
 
       - name: Run graph snapshot identity and coverage unit tests
         run: |

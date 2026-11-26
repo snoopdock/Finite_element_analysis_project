@@ -57,6 +57,8 @@ class GitObjectSourceProvider:
         self.snapshot_id = str(source_manifest.get("source_snapshot_id", ""))
         if not self.commit_oid or not self.root_tree_oid or not self.snapshot_id:
             raise GitObjectSourceError("source_identity_missing")
+        if hashlib.sha256(_canonical_bytes(source)).hexdigest() != self.snapshot_id:
+            raise GitObjectSourceError("source_snapshot_identity_mismatch")
         if source_manifest.get("status") != "VERIFIED" or source_manifest.get("verification", {}).get("status") != "VERIFIED":
             raise GitObjectSourceError("source_manifest_not_verified")
 
@@ -110,9 +112,9 @@ class GitObjectSourceProvider:
             raise GitObjectSourceError("git_command_failed:" + detail[:300])
         return completed.stdout
 
-    def _git_text(self, *args: str) -> str:
+    def _git_text(self, *args: str, input_bytes: bytes | None = None) -> str:
         try:
-            return self._git_bytes(*args).decode("ascii").strip()
+            return self._git_bytes(*args, input_bytes=input_bytes).decode("ascii").strip()
         except UnicodeDecodeError as exc:
             raise GitObjectSourceError("git_identity_encoding_invalid") from exc
 
