@@ -746,3 +746,155 @@ def test_m74_seeded_topology_workloads_cover_all_public_analysis_tasks(
     assert execution["native_adjacency_lookups"] > 0
     assert execution["native_edge_occurrences_read"] > 0
     assert graph.to_dict() == before
+
+
+def _m74_fem_repository_graph() -> SemanticGraph:
+    """Small domain-shaped FEM repository graph with explicit evidence paths."""
+    graph = SemanticGraph()
+    nodes = [
+        ("file:src/fem/mesh.py", "PythonSourceFile", {"path": "src/fem/mesh.py"}),
+        ("module:fem.mesh", "PythonModule", {"path": "src/fem/mesh.py"}),
+        ("file:src/fem/solver.py", "PythonSourceFile", {"path": "src/fem/solver.py"}),
+        ("module:fem.solver", "PythonModule", {"path": "src/fem/solver.py"}),
+        ("file:src/fem/materials.py", "PythonSourceFile", {"path": "src/fem/materials.py"}),
+        ("module:fem.materials", "PythonModule", {"path": "src/fem/materials.py"}),
+        ("symbol:fem.materials.relative_permeability", "PythonSymbol", {
+            "path": "src/fem/materials.py", "name": "relative_permeability",
+        }),
+        ("evidence:docs/constitutive-assumptions.md", "EvidenceRecord", {
+            "path": "docs/constitutive-assumptions.md", "claim": "relative permeability",
+        }),
+        ("file:tests/test_solver.py", "TestFile", {"path": "tests/test_solver.py"}),
+        ("file:.github/workflows/fem-validation.yml", "WorkflowFile", {
+            "path": ".github/workflows/fem-validation.yml",
+        }),
+        ("module:fem.postprocess", "PythonModule", {"path": "src/fem/postprocess.py"}),
+        ("module:fem.reporting", "PythonModule", {"path": "src/fem/reporting.py"}),
+    ]
+    for node_id, kind, attributes in nodes:
+        graph.add_node(SemanticNode(
+            node_id, kind, attributes,
+            {"source_sha256": f"sha-{node_id}", "snapshot": "fem-repository-fixture-v1"},
+        ))
+
+    edges = [
+        ("file:src/fem/mesh.py", "module:fem.mesh", "IMPLEMENTS"),
+        ("module:fem.mesh", "file:src/fem/mesh.py", "IMPLEMENTED_BY"),
+        ("file:src/fem/solver.py", "module:fem.solver", "IMPLEMENTS"),
+        ("module:fem.solver", "file:src/fem/solver.py", "IMPLEMENTED_BY"),
+        ("file:src/fem/materials.py", "module:fem.materials", "IMPLEMENTS"),
+        ("module:fem.materials", "file:src/fem/materials.py", "IMPLEMENTED_BY"),
+        ("module:fem.mesh", "module:fem.solver", "IMPORTS"),
+        ("module:fem.solver", "module:fem.materials", "IMPORTS"),
+        ("module:fem.solver", "module:fem.mesh", "DEPENDS_ON"),
+        ("module:fem.materials", "symbol:fem.materials.relative_permeability", "DEFINES"),
+        ("symbol:fem.materials.relative_permeability", "module:fem.materials", "MEMBER_OF"),
+        ("module:fem.materials", "evidence:docs/constitutive-assumptions.md", "SUPPORTED_BY"),
+        ("file:tests/test_solver.py", "module:fem.solver", "TESTS"),
+        ("file:.github/workflows/fem-validation.yml", "module:fem.solver", "INVOKES"),
+        ("module:fem.postprocess", "module:fem.solver", "IMPORTS"),
+        ("module:fem.reporting", "module:fem.postprocess", "IMPORTS"),
+    ]
+    for ordinal, (source, target, relation) in enumerate(edges, start=1):
+        graph.add_edge(SemanticEdge(
+            source, target, relation,
+            {"ordinal": ordinal},
+            {"path": f"evidence/fem-repository/{ordinal}.json", "line": ordinal},
+        ))
+    return graph
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_m74_fem_repository_workload_exercises_all_public_audit_tasks(backend):
+    """Exercise task-shaped repository/FEM evidence paths, not only generic topology."""
+    _require_backend(backend)
+    graph = _m74_fem_repository_graph()
+    before = graph.to_dict()
+    evidence_target = "evidence:docs/constitutive-assumptions.md"
+    queries = (
+        GraphQuery(
+            "m74-fem-structural-neighborhood",
+            QueryType.STRUCTURAL,
+            ("module:fem.solver",),
+            {"direction": "outgoing", "relation_types": ("IMPORTS",)},
+        ),
+        GraphQuery(
+            "m74-fem-dependency-context",
+            QueryType.DEPENDENCY,
+            ("module:fem.mesh",),
+            {
+                "direction": "outgoing",
+                "relation_types": ("IMPORTS", "DEPENDS_ON"),
+                "max_depth": 4,
+                "max_visited_nodes": 32,
+                "max_traversal_steps": 128,
+            },
+        ),
+        GraphQuery(
+            "m74-fem-claim-evidence-path",
+            QueryType.PATH,
+            ("module:fem.mesh",),
+            {
+                "target_entity": evidence_target,
+                "direction": "outgoing",
+                "relation_types": ("IMPORTS", "DEPENDS_ON", "SUPPORTED_BY"),
+                "max_depth": 4,
+                "max_visited_nodes": 32,
+                "max_traversal_steps": 128,
+            },
+        ),
+        GraphQuery(
+            "m74-fem-change-impact",
+            QueryType.IMPACT,
+            ("file:src/fem/materials.py",),
+            {
+                "max_depth": 5,
+                "max_visited_nodes": 32,
+                "max_traversal_steps": 256,
+            },
+        ),
+    )
+    service = SemanticGraphAnalysisService(
+        graph, traversal_backend=backend, verify_backend_parity=True,
+    )
+    reference = SemanticGraphAnalysisService(
+        graph, traversal_backend="reference", verify_backend_parity=True,
+    )
+
+    results = {}
+    for query in queries:
+        actual = service.analyze(query)
+        expected = reference.analyze(query)
+        _assert_reference_equivalence(actual, expected)
+        assert actual.status is AnalysisStatus.COMPLETED
+        results[query.query_type] = actual
+        if query.query_type is QueryType.IMPACT:
+            _assert_m74_impact_native_execution(service, actual, backend)
+        else:
+            _assert_native_execution(service, actual, backend)
+
+    structural = results[QueryType.STRUCTURAL]
+    assert structural.discovered_entities == ("module:fem.materials",)
+
+    dependency = results[QueryType.DEPENDENCY]
+    assert {"module:fem.solver", "module:fem.materials"}.issubset(
+        set(dependency.discovered_entities)
+    )
+
+    path = results[QueryType.PATH]
+    assert evidence_target in path.discovered_entities
+    assert path.evidence
+    assert any(
+        getattr(item, "source_id", None) == "module:fem.materials"
+        or getattr(item, "target_id", None) == evidence_target
+        for item in path.evidence
+    )
+
+    impact = results[QueryType.IMPACT]
+    assert "file:tests/test_solver.py" in impact.metadata["affected_test_candidate_ids"]
+    assert "file:.github/workflows/fem-validation.yml" in impact.metadata["affected_workflow_candidate_ids"]
+    assert impact.metadata["cycle_analysis_status"] == "complete"
+    assert impact.metadata["dependency_cycle_count"] == 1
+    cycle = impact.metadata["dependency_cycles"][0]
+    assert set(cycle["node_ids"]) == {"module:fem.mesh", "module:fem.solver"}
+    assert graph.to_dict() == before
