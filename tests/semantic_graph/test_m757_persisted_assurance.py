@@ -74,6 +74,15 @@ class PersistedAssuranceTests(unittest.TestCase):
     def test_store_backed_evaluation_uses_persisted_evidence_and_closure(self):
         self.persist_valid_evidence()
         self.persist_claim_and_link()
+        leaf_nodes = (
+            "snapshot:snap-1", "producer:scanner", "method:inventory",
+            f"artifact-sha256:{'a' * 64}",
+        )
+        leaf_results = {node: self.epistemic.freshness_closure(node) for node in leaf_nodes}
+        self.assertTrue(
+            all(item.status is FreshnessStatus.FRESH for item in leaf_results.values()),
+            repr(leaf_results),
+        )
         result = evaluate_persisted_assurance(
             "claim:1", self.assurance, self.epistemic
         )
