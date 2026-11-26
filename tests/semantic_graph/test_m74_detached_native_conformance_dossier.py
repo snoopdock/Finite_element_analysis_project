@@ -18,9 +18,9 @@ def _m74_junit(backend: str, *, passed_backend: str | None = None, failures: int
     root = ET.Element("testsuites")
     suite = ET.SubElement(root, "testsuite", {
         "name": "M7.4 task-level analyzer acceptance",
-        "tests": "110", "failures": str(failures), "errors": "0", "skipped": "88",
+        "tests": "115", "failures": str(failures), "errors": "0", "skipped": "92",
     })
-    for index in range(22):
+    for index in range(23):
         case = ET.SubElement(suite, "testcase", {
             "classname": "tests.semantic_graph.test_m74_task_suitability_acceptance",
             "name": f"test_task_{index}[{passed_backend}]",
