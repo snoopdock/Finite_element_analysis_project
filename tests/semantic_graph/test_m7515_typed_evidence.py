@@ -15,6 +15,7 @@ from audit_engine.semantic_audit.epistemic.extractor_execution import build_extr
 from audit_engine.semantic_audit.epistemic.typed_evidence import (
     TypedEvidenceError, TypedEvidenceObservationStore,
     derive_typed_evidence_observations, verify_typed_evidence_observation_bundle,
+    build_and_persist_typed_evidence_observations,
 )
 
 
@@ -124,6 +125,50 @@ class TypedEvidenceObservationTests(unittest.TestCase):
             verify_typed_evidence_observation_bundle(
                 bundle,plan=self.plan,inventory=self.inventory,
                 execution_report=self.execution,repository_root=self.root)
+
+    def test_persistence_requires_matching_m7514_execution_reconciliation(self):
+        payload = {
+            "schema":"ae32c/execution-obligation-reconciliation/v1",
+            "source_snapshot_id":self.plan.source_snapshot_id,
+            "plan_sha256":self.plan.plan_sha256,
+            "execution_report_sha256":self.execution["report_sha256"],
+            "authority":{"extractor_execution_reconciled_to_declared_obligations":True},
+            "obligations":[{"obligation_id":oid} for oid in self.plan.expected_obligation_ids],
+        }
+        reconciliation = {**payload,"reconciliation_sha256":seal(payload)}
+        store = TypedEvidenceObservationStore(self.root/"integrated.sqlite")
+        try:
+            bundle = build_and_persist_typed_evidence_observations(
+                store=store,plan=self.plan,claim=self.claim,manifest=self.manifest,
+                source_manifest=self.source,inventory=self.inventory,
+                execution_report=self.execution,execution_reconciliation=reconciliation,
+                repository_root=self.root)
+            self.assertEqual(store.get(bundle["bundle_sha256"]),bundle)
+            self.assertEqual(bundle["summary"]["semantic_evidence_accepted_count"],0)
+        finally:
+            store.close()
+
+    def test_wrong_execution_reconciliation_is_rejected(self):
+        payload = {
+            "schema":"ae32c/execution-obligation-reconciliation/v1",
+            "source_snapshot_id":"another-snapshot",
+            "plan_sha256":self.plan.plan_sha256,
+            "execution_report_sha256":self.execution["report_sha256"],
+            "authority":{"extractor_execution_reconciled_to_declared_obligations":True},
+            "obligations":[{"obligation_id":oid} for oid in self.plan.expected_obligation_ids],
+        }
+        reconciliation = {**payload,"reconciliation_sha256":seal(payload)}
+        store = TypedEvidenceObservationStore(self.root/"rejected.sqlite")
+        try:
+            with self.assertRaisesRegex(TypedEvidenceError,"execution_reconciliation_binding_mismatch"):
+                build_and_persist_typed_evidence_observations(
+                    store=store,plan=self.plan,claim=self.claim,manifest=self.manifest,
+                    source_manifest=self.source,inventory=self.inventory,
+                    execution_report=self.execution,execution_reconciliation=reconciliation,
+                    repository_root=self.root)
+            self.assertEqual(store.history(),())
+        finally:
+            store.close()
 
     def test_ledger_idempotence_immutability_and_restart(self):
         bundle = derive_typed_evidence_observations(
