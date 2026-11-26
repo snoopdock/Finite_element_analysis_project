@@ -163,6 +163,7 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             loose_object = object_dir / oid[:2] / oid[2:]
             if not loose_object.is_file():
                 self.skipTest("test fixture blob is not stored as a loose object")
+            loose_object.chmod(0o644)
             loose_object.write_bytes(b"corrupt-object-data")
             from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceError
             with self.assertRaisesRegex(GitObjectSourceError, "git_command_failed"):
@@ -170,13 +171,21 @@ class GitObjectSourceProviderTests(unittest.TestCase):
 
     def test_gitlink_is_not_read_as_regular_source_blob(self):
         with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp)
+            sandbox = Path(temp)
+            root = sandbox / "parent"
+            nested = sandbox / "nested"
+            root.mkdir()
+            nested.mkdir()
             self._repository(root)
-            commit_oid = self._git(root, "rev-parse", "HEAD")
-            (root / "vendor").mkdir()
-            self._git(root, "update-index", "--add", "--cacheinfo",
-                      "160000," + commit_oid + ",vendor/submodule")
-            self._git(root, "commit", "-m", "add gitlink fixture")
+            self._git(nested, "init")
+            self._git(nested, "config", "user.email", "audit-test@example.invalid")
+            self._git(nested, "config", "user.name", "Audit Test")
+            (nested / "README.md").write_text("submodule fixture\n", encoding="utf-8")
+            self._git(nested, "add", "README.md")
+            self._git(nested, "commit", "-m", "nested repository")
+            self._git(root, "-c", "protocol.file.allow=always", "submodule", "add",
+                      str(nested), "vendor/submodule")
+            self._git(root, "commit", "-m", "add submodule fixture")
             provider = GitObjectSourceProvider(root, self._verified_manifest(root))
             metadata = provider.entry_metadata("vendor/submodule")
             self.assertEqual(metadata["mode"], "160000")
