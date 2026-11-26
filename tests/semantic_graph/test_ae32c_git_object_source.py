@@ -78,7 +78,7 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             provider = GitObjectSourceProvider(root, self._verified_manifest(root))
             prefix, size = provider.read_entry_prefix("src/module.py", max_bytes=5)
             self.assertEqual(prefix, b"VALUE")
-            self.assertEqual(size, len(b"VALUE = 'committed'\\n"))
+            self.assertEqual(size, len(b"VALUE = 'committed'\n"))
             self.assertNotIn("src/module.py", provider._verified_bytes)
 
     def test_symlink_blob_is_not_followed_or_read_as_source(self):
