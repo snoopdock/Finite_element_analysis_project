@@ -11,6 +11,10 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+from .assurance import AssuranceClaim
+from .coverage import EpistemicCoverageManifest
+from .rule_coverage import RuleCoveragePlan, verify_rule_derived_manifest
+
 SCHEMA = "ae32c/semantic-evidence-qualification/v1"
 CONTRACT_SCHEMA = "ae32c/semantic-evidence-contract-registry/v1"
 
@@ -197,7 +201,8 @@ def _obligation_parts(obligation_id: str) -> tuple[str, str]:
 
 
 def qualify_typed_evidence_observations(
-    bundle: Mapping[str, Any], *, source_manifest: Mapping[str, Any],
+    bundle: Mapping[str, Any], *, claim: AssuranceClaim, plan: RuleCoveragePlan,
+    coverage_manifest: EpistemicCoverageManifest, source_manifest: Mapping[str, Any],
     repository_root: str | Path, defeaters: tuple[Mapping[str, Any], ...] = (),
 ) -> dict[str, Any]:
     """Qualify each observed item against exact rule-specific contracts.
@@ -211,9 +216,15 @@ def qualify_typed_evidence_observations(
     payload = {k: v for k, v in bundle.items() if k != "bundle_sha256"}
     if bundle.get("bundle_sha256") != _digest(payload):
         raise SemanticQualificationError("observation_bundle_digest_mismatch")
+    try:
+        verify_rule_derived_manifest(claim, plan, coverage_manifest)
+    except (ValueError, TypeError, KeyError) as exc:
+        raise SemanticQualificationError("rule_coverage_plan_verification_failed:" + type(exc).__name__) from exc
     source_id = source_manifest.get("source_snapshot_id")
     if not isinstance(source_id, str) or source_id != bundle.get("source_snapshot_id"):
         raise SemanticQualificationError("source_snapshot_binding_mismatch")
+    if plan.source_snapshot_id != source_id or bundle.get("plan_sha256") != plan.plan_sha256:
+        raise SemanticQualificationError("rule_coverage_plan_binding_mismatch")
     entries = _source_entries(source_manifest)
     root = Path(repository_root).expanduser().resolve(strict=True)
     if not root.is_dir():
@@ -278,6 +289,8 @@ def qualify_typed_evidence_observations(
         obligation_ids = observation.get("rule_obligation_ids")
         if not isinstance(obligation_ids, list) or not obligation_ids:
             raise SemanticQualificationError("observation_obligation_binding_missing")
+        if any(item not in plan.expected_obligation_ids for item in obligation_ids):
+            raise SemanticQualificationError("observation_obligation_not_in_verified_plan")
         for obligation_id in obligation_ids:
             rule_id, evidence_kind = _obligation_parts(obligation_id)
             contract = contracts.get(rule_id)
@@ -342,8 +355,8 @@ def verify_semantic_evidence_qualification(
     if digest != _digest(payload):
         raise SemanticQualificationError("qualification_digest_mismatch")
     expected = qualify_typed_evidence_observations(
-        bundle, source_manifest=source_manifest, repository_root=repository_root,
-        defeaters=defeaters)
+        bundle, claim=claim, plan=plan, coverage_manifest=coverage_manifest,
+        source_manifest=source_manifest, repository_root=repository_root, defeaters=defeaters)
     if _canonical(expected) != _canonical(submitted):
         raise SemanticQualificationError("qualification_semantic_replay_mismatch")
     return {"qualification_sha256": digest, "semantic_replay": True,
