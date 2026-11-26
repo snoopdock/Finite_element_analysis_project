@@ -189,8 +189,10 @@ def _verify_observation_semantics(observation: Mapping[str, Any], raw: bytes) ->
             raise SemanticQualificationError("scope_exclusion_observation_type_invalid")
         if not isinstance(value.get("reason"), str) or not value["reason"].strip():
             raise SemanticQualificationError("scope_exclusion_reason_missing")
+    # Unsupported evidence kinds remain UNKNOWN. Source identity is checked by
+    # the caller, but no semantic interpretation is attempted here.
     else:
-        raise SemanticQualificationError("no_semantic_validator_for_evidence_kind:" + str(kind))
+        return
 
 
 def _obligation_parts(obligation_id: str) -> tuple[str, str]:
