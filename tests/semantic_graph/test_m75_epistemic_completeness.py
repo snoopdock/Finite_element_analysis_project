@@ -156,7 +156,7 @@ class CompletenessPersistenceTests(unittest.TestCase):
             event_id = "assertion:legacy-assertion:1"
             previous_hash = "0" * 64
             event_hash = hashlib.sha256(
-                f"1\\n{event_id}\\n{payload_hash}\\n{previous_hash}".encode()
+                f"1\n{event_id}\n{payload_hash}\n{previous_hash}".encode()
             ).hexdigest()
             raw = sqlite3.connect(database)
             raw.execute("""
