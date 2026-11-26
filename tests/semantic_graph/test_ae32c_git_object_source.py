@@ -356,6 +356,44 @@ class GitObjectSourceProviderTests(unittest.TestCase):
                 provider.read_entry("src/module.py")
             self.assertFalse(loose_object.exists(), "provider unexpectedly restored the promisor object")
 
+    def test_gitlink_is_reported_as_pointer_and_never_as_verified_submodule_content(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            pinned_commit = self._git(root, "rev-parse", "HEAD")
+            self._git(root, "update-index", "--add", "--cacheinfo",
+                      "160000," + pinned_commit + ",vendor/dependency")
+            self._git(root, "commit", "-m", "record submodule gitlink")
+            manifest = self._verified_manifest(root)
+            provider = GitObjectSourceProvider(root, manifest)
+
+            coverage = provider.coverage_report()
+            self.assertEqual(coverage["submodule_entry_count"], 1)
+            self.assertEqual(coverage["submodule_resolution_policy"],
+                             "POINTER_ONLY_NO_NETWORK_NO_CHECKOUT")
+            self.assertFalse(coverage["submodule_content_verified"])
+            self.assertEqual(coverage["submodule_entries"], [{
+                "path": "vendor/dependency",
+                "expected_commit_oid": pinned_commit,
+                "pointer_status": "SUPERPROJECT_GITLINK_VERIFIED",
+                "content_status": "UNVERIFIED_EXTERNAL_REPOSITORY",
+                "recursive_content_verified": False,
+            }])
+
+            from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceError
+            with self.assertRaisesRegex(GitObjectSourceError, "entry_not_regular_file_blob"):
+                provider.read_entry("vendor/dependency")
+
+    def test_repository_without_gitlinks_reports_empty_submodule_inventory(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._repository(root)
+            provider = GitObjectSourceProvider(root, self._verified_manifest(root))
+            coverage = provider.coverage_report()
+            self.assertEqual(coverage["submodule_entry_count"], 0)
+            self.assertEqual(coverage["submodule_entries"], [])
+            self.assertFalse(coverage["submodule_content_verified"])
+
     def test_object_disappearance_between_type_check_and_read_fails_closed(self):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory() as temp:

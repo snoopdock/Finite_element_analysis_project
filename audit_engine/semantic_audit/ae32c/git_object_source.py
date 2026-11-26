@@ -104,6 +104,22 @@ class GitObjectSourceProvider:
             raise GitObjectSourceError("manifest_tree_inventory_mismatch")
         self.entries = {item["path"]: dict(original) for item, original in
                         zip(tree_entries, sorted(entries, key=lambda x: x["path"].encode("utf-8")))}
+        # A mode-160000 gitlink is a commit pointer owned by another repository.
+        # The superproject tree does not contain that repository's file inventory.
+        # Keep the pointer explicit; never interpret it as an ordinary blob or
+        # infer recursive verification from the presence of a checked-out path.
+        self._submodule_entries = [
+            {
+                "path": path,
+                "expected_commit_oid": str(entry.get("git_object_oid", "")),
+                "pointer_status": "SUPERPROJECT_GITLINK_VERIFIED",
+                "content_status": "UNVERIFIED_EXTERNAL_REPOSITORY",
+                "recursive_content_verified": False,
+            }
+            for path, entry in sorted(self.entries.items(),
+                                      key=lambda item: item[0].encode("utf-8"))
+            if entry.get("mode") == "160000" and entry.get("object_type") == "commit"
+        ]
         self._verified_bytes: dict[str, bytes] = {}
         self._lfs_pointer_paths: set[str] = set()
 
@@ -211,6 +227,9 @@ class GitObjectSourceProvider:
             "materialization_kinds": dict(sorted(kinds.items())),
             "lfs_pointer_blob_count": len(self._lfs_pointer_paths),
             "lfs_pointer_paths": sorted(self._lfs_pointer_paths),
+            "submodule_entry_count": len(self._submodule_entries),
+            "submodule_entries": [dict(item) for item in self._submodule_entries],
             "submodule_content_verified": False,
+            "submodule_resolution_policy": "POINTER_ONLY_NO_NETWORK_NO_CHECKOUT",
             "lfs_payload_verified": False,
         }
