@@ -18,6 +18,8 @@ on:
       - "tests/semantic_graph/test_m756_freshness_closure.py"
       - "tests/semantic_graph/test_m757_persisted_assurance.py"
       - "tests/semantic_graph/test_m758_epistemic_coverage.py"
+      - "tests/semantic_graph/test_m759_rule_derived_coverage.py"
+      - "audit_engine/semantic_audit/ae32c/rule_contracts.py"
       - "docs/audit-engine/AE-32C-M7.5.7-Provenance-Backed-Assurance-Evaluation.md"
       - "docs/audit-engine/AE-32C-M7.5.6-Recursive-Provenance-Freshness-Closure.md"
       - "audit_engine/semantic_audit/epistemic/assurance.py"
@@ -39,7 +41,7 @@ concurrency:
 
 jobs:
   epistemic-validation:
-    name: M7.5.1–M7.5.8 structural and behavioral validation
+    name: M7.5.1–M7.5.9 structural and behavioral validation
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -141,6 +143,16 @@ jobs:
             -p 'test_m758_epistemic_coverage.py' \
             -v 2>&1 | tee reports/m75-8-epistemic-coverage.log
 
+      - name: Run M7.5.9 trusted rule-derived coverage tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m unittest discover \\
+            -s tests/semantic_graph \\
+            -p 'test_m759_rule_derived_coverage.py' \\
+            -v 2>&1 | tee reports/m75-9-rule-derived-coverage.log
+
       - name: Upload exact-source validation logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -156,6 +168,7 @@ jobs:
             reports/m75-6-freshness-closure.log
             reports/m75-7-persisted-assurance.log
             reports/m75-8-epistemic-coverage.log
+            reports/m75-9-rule-derived-coverage.log
           if-no-files-found: warn
           retention-days: 30
 
@@ -165,7 +178,7 @@ jobs:
           {
             echo "## M7.5 epistemic validation"
             echo "- Source SHA: $GITHUB_SHA"
-            echo "- Scope: immutable contracts, append-only persistence, scope-bound completeness, negative-claim admissibility, provenance dependencies, local freshness, recursive freshness closure, deterministic invalidation, assurance arguments, defeater lifecycle and provenance-backed persisted assurance evaluation, and claim-relative epistemic coverage/unknown-state assessment"
+            echo "- Scope: immutable contracts, append-only persistence, scope-bound completeness, negative-claim admissibility, provenance dependencies, local freshness, recursive freshness closure, deterministic invalidation, assurance arguments, defeater lifecycle and provenance-backed persisted assurance evaluation, and claim-relative epistemic coverage/unknown-state assessment, and versioned AE-32C rule-derived obligation generation"
             echo "- No proposition-truth inference, automatic completeness promotion, registry authentication, network, solver, or decision-gate integration"
             echo "- Passing does not establish production durability or production approval"
           } >> "$GITHUB_STEP_SUMMARY"
