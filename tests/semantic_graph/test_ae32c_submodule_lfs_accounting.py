@@ -96,7 +96,7 @@ class SubmoduleLfsAccountingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             temp = Path(directory)
             nested = temp / "nested"
-            self._repo(nested, {"src/dependency.py": b"DEPENDENCY = True\\n"})
+            self._repo(nested, {"src/dependency.py": b"DEPENDENCY = True\n"})
             child = temp / "child"
             child.mkdir()
             self._git(child, "init")
