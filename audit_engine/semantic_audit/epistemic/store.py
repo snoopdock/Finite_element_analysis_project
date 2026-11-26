@@ -96,6 +96,7 @@ class EpistemicStore:
         if existing and "'completeness'" not in (existing["sql"] or ""):
             # Migrate the M7.5.2 two-record-type schema without discarding history.
             with self._connection:
+                self._connection.execute("BEGIN IMMEDIATE")
                 self._connection.execute("DROP TRIGGER IF EXISTS epistemic_events_no_update")
                 self._connection.execute("DROP TRIGGER IF EXISTS epistemic_events_no_delete")
                 self._connection.execute(
