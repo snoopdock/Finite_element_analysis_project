@@ -62,7 +62,7 @@ class SubmoduleLfsAccountingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             temp = Path(directory)
             root = temp / "plain"
-            self._repo(root, {"src/module.py": b"VALUE = 1\\n"})
+            self._repo(root, {"src/module.py": b"VALUE = 1\n"})
             provider = self._provider(root, temp)
             report = account_submodule_lfs(provider)
             self.assertEqual(report["gitlink_count"], 0)
