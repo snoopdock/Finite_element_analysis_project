@@ -101,3 +101,20 @@ The workflow's actionlint job passed after validating the M7.1 smoke workflow, E
 - SNAP 6.0 through its isolated worker.
 
 The run retained the fixed smoke protocol of 7 E.8.5 queries, 2 warm-ups and 5 measured repetitions per query, with independently verified reports. This is a repeat smoke result on the stated source revision; it does not replace the M7.4 task-level workload and G4 acceptance run at SHA `69f0dcd7f18471c07558fcc469378b75315bf018`. No backend ranking, performance winner or automatic selection is inferred.
+
+## 8. M7.4 workflow-lint-triggered five-backend smoke — 2026-11-26
+
+**Run:** [45778108469](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45778108469)  
+**Exact source revision:** `e8c8b45ef345fca1da25f34bb468d111f03f8417`  
+**Result:** all five backend jobs, aggregate summary and actionlint job passed.
+
+Actionlint validated the current M7.1, E.8.5/E.8.8, M7.4 task/G4 and M7.4 snapshot-cost workflow definitions. Each backend's smoke report recorded seven queries, two warm-ups and five measured repetitions, with `status=verified` and `winner_established=false`.
+
+Report SHA-256 values:
+- NetworkX: `b2414acb0680293232fed2b9541661c8cdf2991368bbf798d86de81a3cf4c74b`
+- SciPy: `0a9908570c55ddeb704641ffd889c051675f86c6a847d570bc31f959b2700136`
+- python-igraph: `6c3e549e63e0b0150f603fe454a860f59f697723b016688aa1a38efdac518913`
+- graph-tool: `fe767b63433e8372d8f6b619055b48960096e0a6c67bd1a67acf180d6ae7a4b5`
+- SNAP: `074f5b74d7d75eb21d211ff4367e63bb512c7e9bf0448e5804436990e6ba6939`
+
+This smoke validates workflow wiring and the bounded E.8.5 query set. It does not substitute for the full-repository M7.4 workload, and it does not remove SNAP's 16 MiB full-repository initialization limit.
