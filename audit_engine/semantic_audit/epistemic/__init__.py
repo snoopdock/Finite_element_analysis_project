@@ -37,6 +37,11 @@ from .coverage import (
     EpistemicCoverageManifest, EpistemicCoverageStatus,
     EpistemicCoverageResult, evaluate_epistemic_coverage,
 )
+from .rule_coverage import (
+    RuleCoverageDerivationError, RuleCoveragePlan,
+    derive_rule_coverage_plan, build_rule_derived_coverage_manifest,
+    verify_rule_derived_manifest,
+)
 from .persisted_assurance import (
     PersistedAssuranceResult,
     evaluate_persisted_assurance,
@@ -51,6 +56,12 @@ from .store import (
 )
 
 __all__ = [
+    "RuleCoverageDerivationError",
+    "RuleCoveragePlan",
+    "derive_rule_coverage_plan",
+    "build_rule_derived_coverage_manifest",
+    "verify_rule_derived_manifest",
+
     "CoverageContractError",
     "CoverageObligation",
     "ObligationDisposition",
