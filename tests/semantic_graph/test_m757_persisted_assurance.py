@@ -30,11 +30,11 @@ class PersistedAssuranceTests(unittest.TestCase):
         self.assurance = AssuranceStore(root / "assurance.sqlite")
         self.claim = AssuranceClaim(
             "claim:1", "proposition:1", "repo", "scope:repo",
-            "snapshot:1", "The source snapshot contains the declared object",
+            "snap-1", "The source snapshot contains the declared object",
         )
         self.ref = EvidenceRef(
-            "evidence:1", "snapshot:1", "producer:scanner",
-            "method:inventory", "2026-11-27T10:00:00Z",
+            "e1", "snap-1", "scanner",
+            "inventory", "2026-11-27T10:00:00Z",
             "a" * 64,
         )
         self.assertion = EvidenceAssertion(
@@ -44,8 +44,8 @@ class PersistedAssuranceTests(unittest.TestCase):
         )
         self.link = ArgumentLink(
             "link:1", "claim:1", ArgumentRelation.SUPPORTS,
-            ("premise:1",), "warrant:1", ("evidence:1",),
-            ("evidence:evidence:1",),
+            ("premise:1",), "warrant:1", ("e1",),
+            ("evidence:e1",),
         )
 
     def tearDown(self):
@@ -62,7 +62,7 @@ class PersistedAssuranceTests(unittest.TestCase):
         self.epistemic.record_assertion(self.assertion)
         self.epistemic.record_assertion_dependencies(self.assertion)
         for node in (
-            "snapshot:1", "producer:scanner", "method:inventory",
+            "snap-1", "scanner", "inventory",
             f"artifact-sha256:{'a' * 64}",
         ):
             self.declare_terminal(node)
@@ -89,7 +89,7 @@ class PersistedAssuranceTests(unittest.TestCase):
             "claim:1", self.assurance, self.epistemic
         )
         self.assertIs(result.assessment, ArgumentAssessment.INCOMPLETE)
-        self.assertEqual(result.missing_evidence_ids, ("evidence:1",))
+        self.assertEqual(result.missing_evidence_ids, ("e1",))
         self.assertTrue(result.ledger_consistent)
 
     def test_evidence_without_closed_terminal_provenance_is_incomplete(self):
@@ -119,8 +119,8 @@ class PersistedAssuranceTests(unittest.TestCase):
 
     def test_evidence_metadata_must_match_claim_snapshot(self):
         wrong_ref = EvidenceRef(
-            "evidence:1", "snapshot:other", "producer:scanner",
-            "method:inventory", "2026-11-27T10:00:00Z",
+            "e1", "other-snapshot", "scanner",
+            "inventory", "2026-11-27T10:00:00Z",
         )
         wrong_assertion = EvidenceAssertion(
             "assertion:wrong", "proposition:1", AssertionPolarity.SUPPORTS,
@@ -138,8 +138,8 @@ class PersistedAssuranceTests(unittest.TestCase):
     def test_conflicting_persisted_evidence_metadata_is_incomplete(self):
         self.epistemic.record_assertion(self.assertion)
         conflict_ref = EvidenceRef(
-            "evidence:1", "snapshot:1", "producer:other",
-            "method:inventory", "2026-11-27T10:00:00Z",
+            "e1", "snap-1", "other-producer",
+            "inventory", "2026-11-27T10:00:00Z",
         )
         conflict = EvidenceAssertion(
             "assertion:conflict", "proposition:1", AssertionPolarity.SUPPORTS,
@@ -157,8 +157,8 @@ class PersistedAssuranceTests(unittest.TestCase):
     def test_defeater_resolution_evidence_must_also_be_persisted_and_fresh(self):
         self.persist_valid_evidence()
         second_ref = EvidenceRef(
-            "evidence:response", "snapshot:1", "producer:reviewer",
-            "method:independent-review", "2026-11-27T12:00:00Z",
+            "e-response", "snap-1", "reviewer",
+            "independent-review", "2026-11-27T12:00:00Z",
         )
         second_assertion = EvidenceAssertion(
             "assertion:response", "proposition:1", AssertionPolarity.SUPPORTS,
@@ -171,12 +171,12 @@ class PersistedAssuranceTests(unittest.TestCase):
             self.declare_terminal(node)
         defeater = Defeater(
             "defeater:1", "claim:1", DefeaterKind.REBUTTING, None,
-            "The scanner may omit generated files", ("evidence:1",),
+            "The scanner may omit generated files", ("e1",),
         )
         event = DefeaterEvent(
             "event:resolve", "defeater:1", DefeaterAction.RESOLVE,
             "Independent review answered the objection",
-            ("evidence:response",),
+            ("e-response",),
         )
         self.assurance.record(defeater)
         self.assurance.record(event)
@@ -199,7 +199,7 @@ class PersistedAssuranceTests(unittest.TestCase):
                     "assertion:concurrent", "other-proposition",
                     AssertionPolarity.NEUTRAL,
                     (EvidenceRef(
-                        "evidence:concurrent", "snapshot:1", "producer:scanner",
+                        "evidence:concurrent", "snap-1", "scanner",
                         "method:inventory", "2026-11-27T13:00:00Z",
                     ),),
                     "scope:repo", "method:inventory", "2026-11-27T13:00:01Z",
