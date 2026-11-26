@@ -56,14 +56,14 @@ from .typed_evidence import (
     verify_typed_evidence_observation_bundle,
     build_and_persist_typed_evidence_observations,
 )
-from .persisted_assurance import PersistedAssuranceResult, evaluate_persisted_assurance
+from .semantic_qualification import (\n    SemanticQualificationError, semantic_evidence_contract_registry,\n    qualify_typed_evidence_observations, verify_semantic_evidence_qualification,\n)\nfrom .persisted_assurance import PersistedAssuranceResult, evaluate_persisted_assurance
 from .store import (
     DuplicateRecordError, EpistemicStore, InvalidTransitionError,
     RevisionConflictError, StorageLimitError, StoreError,
 )
 
 __all__ = [
-    "TypedEvidenceError", "TypedEvidenceObservationStore",
+    "SemanticQualificationError", "semantic_evidence_contract_registry",\n    "qualify_typed_evidence_observations", "verify_semantic_evidence_qualification",\n    "TypedEvidenceError", "TypedEvidenceObservationStore",
     "derive_typed_evidence_observations",
     "verify_typed_evidence_observation_bundle",
     "build_and_persist_typed_evidence_observations",
