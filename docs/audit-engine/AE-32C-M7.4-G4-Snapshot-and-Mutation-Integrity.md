@@ -865,3 +865,17 @@ A clean Git commit tree and a dirty working tree are different source scopes. Th
 The immutable-object reader is a candidate next implementation, not yet present. It will not close the working-tree snapshot case by itself.
 
 **Decision:** retain the 16 MiB SNAP worker request cap and current source-snapshot behavior until a separately reviewed design and measured resource envelope justify changes. G4 remains **Partial**; `atomic_snapshot_established=false` remains the authoritative status.
+
+
+## 29. M7.4 exact-source G4 regression matrix — 2026-11-26
+
+**Workflow:** [45778108441](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45778108441), attempt 1, completed with conclusion `success`.  
+**Tested source:** `e8c8b45ef345fca1da25f34bb468d111f03f8417` on `stage1/section-uuids`.
+
+All five backend-specific jobs ran the G4/snapshot mutation module as part of the combined task/G4/repository-side-effect suite and completed without failures or errors. Aggregate suite counts were NetworkX 37 passed / 140 skipped; SciPy 37 / 140; python-igraph 37 / 140; graph-tool 37 / 140; SNAP 39 / 138. The skips include backend-selection exclusions and platform-specific cases. The separate Windows reparse-point evidence remains the earlier Windows run; this M7.4 workflow is Linux-hosted and does not replace it.
+
+The full-repository campaign in the same run passed for NetworkX, SciPy, python-igraph and graph-tool. SNAP was explicitly skipped because the full graph's initialization request exceeded the worker's 16 MiB JSON-lines request limit. This is not a G4 failure, but it also provides no SNAP full-repository integrity evidence.
+
+Artifact metadata binds all five backend archives to run `45778108441` and source `e8c8b45ef345fca1da25f34bb468d111f03f8417`. Artifact IDs and Actions-reported digests are recorded in Section 33 of the companion Task Suitability Assessment Contract.
+
+**G4 interpretation:** the regression matrix passed for its declared tests and the four in-process full-repository executions. It does not close the atomic-snapshot gap, mutation/restoration schedules, all filesystem alias/replacement races, the final-postflight race, or the need to prove a graph/evidence/finding set derives from one immutable source identity. The SNAP 16 MiB cap remains unchanged. G4 remains **Partial**; `atomic_snapshot_established=false`; `production_approval=false`.
