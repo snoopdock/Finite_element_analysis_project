@@ -10,7 +10,11 @@ on:
       - "tests/semantic_graph/test_m75_epistemic_contracts.py"
       - "tests/semantic_graph/test_m75_epistemic_store.py"
       - "tests/semantic_graph/test_m75_epistemic_completeness.py"
-      - "tests/semantic_graph/test_m75_epistemic_provenance.py"\n      - "tests/semantic_graph/test_m755_assurance_arguments.py"\n      - "audit_engine/semantic_audit/epistemic/assurance.py"\n      - "audit_engine/semantic_audit/epistemic/assurance_store.py"\n      - "docs/audit-engine/AE-32C-M7.5.5-Assurance-Arguments-and-Defeaters.md"
+      - "tests/semantic_graph/test_m75_epistemic_provenance.py"
+      - "tests/semantic_graph/test_m755_assurance_arguments.py"
+      - "audit_engine/semantic_audit/epistemic/assurance.py"
+      - "audit_engine/semantic_audit/epistemic/assurance_store.py"
+      - "docs/audit-engine/AE-32C-M7.5.5-Assurance-Arguments-and-Defeaters.md"
       - "docs/audit-engine/AE-32C-M7.5.1-Epistemic-Contracts.md"
       - "docs/audit-engine/AE-32C-M7.5.2-Append-Only-Epistemic-Persistence.md"
       - "docs/audit-engine/AE-32C-M7.5.3-Scope-Bound-Completeness-and-Negative-Claims.md"
@@ -89,7 +93,17 @@ jobs:
             -p 'test_m75_epistemic_provenance.py' \
             -v 2>&1 | tee reports/m75-4-provenance.log
 
-      - name: Run M7.5.5 assurance argument and defeater tests\n        shell: bash\n        run: |\n          set -euo pipefail\n          mkdir -p reports\n          python -m unittest discover \\\n            -s tests/semantic_graph \\\n            -p 'test_m755_assurance_arguments.py' \\\n            -v 2>&1 | tee reports/m75-5-assurance-arguments.log\n\n      - name: Upload exact-source validation logs
+      - name: Run M7.5.5 assurance argument and defeater tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m unittest discover \\
+            -s tests/semantic_graph \\
+            -p 'test_m755_assurance_arguments.py' \\
+            -v 2>&1 | tee reports/m75-5-assurance-arguments.log
+
+      - name: Upload exact-source validation logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -99,7 +113,8 @@ jobs:
             reports/m75-1-epistemic-contracts.log
             reports/m75-2-epistemic-store.log
             reports/m75-3-completeness.log
-            reports/m75-4-provenance.log\n            reports/m75-5-assurance-arguments.log
+            reports/m75-4-provenance.log
+            reports/m75-5-assurance-arguments.log
           if-no-files-found: warn
           retention-days: 30
 
