@@ -37,38 +37,11 @@ def _digest(value: str) -> str:
 
 
 def _gap_inventory(store: EpistemicStore) -> tuple[dict, ...]:
-    """Read every latest gap revision from one verified SQLite read snapshot.
-
-    The current EpistemicStore public API exposes latest_gap(gap_id) but not a
-    complete gap-ID enumeration. This adapter intentionally reads the existing
-    append-only table; it must be replaced by a public store method when the
-    store schema is next extended.
-    """
-    if not store.verify_integrity():
-        raise CoverageDossierError("epistemic ledger integrity check failed")
-    with store._connection:
-        store._connection.execute("BEGIN")
-        rows = store._connection.execute(
-            """SELECT e.record_id, e.revision, e.payload, e.event_hash
-               FROM epistemic_events AS e
-               JOIN (
-                   SELECT record_id, MAX(revision) AS revision
-                   FROM epistemic_events
-                   WHERE record_type = 'gap'
-                   GROUP BY record_id
-               ) AS latest
-               ON e.record_id = latest.record_id AND e.revision = latest.revision
-               WHERE e.record_type = 'gap'
-               ORDER BY e.record_id"""
-        ).fetchall()
-        if not store.verify_integrity():
-            raise CoverageDossierError("epistemic ledger changed or failed integrity during gap inventory")
-        return tuple({
-            "gap_id": row["record_id"],
-            "revision": row["revision"],
-            "payload": json.loads(row["payload"]),
-            "event_hash": row["event_hash"],
-        } for row in rows)
+    """Use the store's verified, transaction-scoped all-gap snapshot contract."""
+    try:
+        return store.gap_records_snapshot()
+    except Exception as exc:
+        raise CoverageDossierError("verified epistemic gap inventory is unavailable") from exc
 
 
 @dataclass(frozen=True)
