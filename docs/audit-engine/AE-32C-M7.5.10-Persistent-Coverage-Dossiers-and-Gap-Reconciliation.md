@@ -47,7 +47,7 @@ Every gap present in the captured epistemic ledger must be mapped to one or more
 - Gaps are not silently discarded or inferred to be resolved.
 - The M7.5.8 evaluator continues to determine the state of gaps explicitly attached to obligations.
 
-The complete gap inventory is currently read by a narrowly scoped adapter over the existing `EpistemicStore` SQLite event table because the store exposes per-ID history but not a public all-gaps snapshot API. This private-connection dependency is an explicit encapsulation limitation; it must be replaced by a public `EpistemicStore.gap_records_snapshot()` interface in a future storage-contract revision. It does not change or rewrite existing epistemic events.
+The complete gap inventory is provided by the public `EpistemicStore.gap_records_snapshot()` API. It verifies the event hash chain and returns every latest gap revision in stable gap-ID order from one SQLite read transaction. The dossier layer no longer accesses the store's private connection or duplicates its table schema.
 
 ## 4. Persistence and recovery
 
@@ -79,7 +79,7 @@ New tests: `tests/semantic_graph/test_m7510_coverage_dossier.py`
 The tests cover:
 
 - Restart/recovery of a persisted dossier.
-- Full persisted gap inventory.
+- Full persisted gap inventory through the public verified `gap_records_snapshot()` API.
 - Omitted/unreconciled gap detection.
 - Rejection of invalid or unrepresented gap mappings.
 - Epistemic-ledger drift after capture.
@@ -105,4 +105,4 @@ The graph snapshot ID is retained through the rule-derived plan and its digest; 
 
 ## 8. Next engineering boundary
 
-Before M7.5.11 or any decision-gate integration, replace the private gap-table adapter with a public verified all-gap snapshot API and decide whether cross-ledger atomicity is required. If atomicity is required, the architecture must consolidate the relevant records into one transactional store or introduce a formally specified commit protocol; simply comparing tokens is insufficient.
+Before M7.5.11 or any decision-gate integration, decide whether cross-ledger atomicity is required. If atomicity is required, the architecture must consolidate the relevant records into one transactional store or introduce a formally specified commit protocol; simply comparing tokens is insufficient.
