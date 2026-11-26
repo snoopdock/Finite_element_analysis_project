@@ -76,6 +76,9 @@ jobs:
       - name: Run Git LFS payload provenance tests
         run: python -m unittest discover -s tests/semantic_graph -p 'test_ae32c_lfs_payload_verifier.py' -v
 
+      - name: Run recursive submodule LFS accounting tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_ae32c_submodule_lfs_accounting.py' -v
+
       - name: Run graph snapshot identity and coverage unit tests
         run: |
           python -m unittest discover \
@@ -115,6 +118,15 @@ jobs:
             --output "$RUNNER_TEMP/ae32c-source-snapshot/graph-snapshot-manifest.json" \
             --expected-source-revision "$GITHUB_SHA"
 
+      - name: Account for recursive submodule and LFS scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/ae32c_submodule_lfs_accounting.py \
+            --repository . \
+            --source-manifest "$RUNNER_TEMP/ae32c-source-snapshot/source-snapshot-manifest.json" \
+            --output "$RUNNER_TEMP/ae32c-source-snapshot/submodule-lfs-accounting.json"
+
       - name: Verify source identity after graph projection
         shell: bash
         run: |
@@ -132,6 +144,7 @@ jobs:
           path: |
             ${{ runner.temp }}/ae32c-source-snapshot/source-snapshot-manifest.json
             ${{ runner.temp }}/ae32c-source-snapshot/graph-snapshot-manifest.json
+            ${{ runner.temp }}/ae32c-source-snapshot/submodule-lfs-accounting.json
           if-no-files-found: warn
           retention-days: 30
 
@@ -159,6 +172,20 @@ jobs:
               ]
           else:
               lines.append("- Source manifest missing")
+          submodule_path = root / "submodule-lfs-accounting.json"
+          if submodule_path.is_file():
+              submodules = json.loads(submodule_path.read_text(encoding="utf-8"))
+              lines += [
+                  "### AE-32C recursive submodule accounting",
+                  "- Gitlinks: " + str(submodules.get("gitlink_count")),
+                  "- Locally scanned submodule repositories: " + str(submodules.get("scanned_repository_count")),
+                  "- Recursive scan complete: " + str(submodules.get("recursive_scan_complete")),
+                  "- Recursive LFS content verified: " + str(submodules.get("recursive_content_verified")),
+                  "- Accounting SHA-256: " + str(submodules.get("accounting_sha256")),
+                  "- Network / credentials / implicit checkout: false / false / false",
+              ]
+          else:
+              lines.append("- Recursive submodule accounting report missing")
           graph_path = root / "graph-snapshot-manifest.json"
           if graph_path.is_file():
               graph = json.loads(graph_path.read_text(encoding="utf-8"))
