@@ -1,4 +1,4 @@
-""""Epistemic assurance contracts for the graph-native audit engine.
+"""Epistemic assurance contracts for the graph-native audit engine.
 
 The package contains immutable descriptive records and an explicit append-only store.
 It does not infer proposition truth or authorize audit decisions.
@@ -14,6 +14,7 @@ from .contracts import (
     GapState,
     KnowledgeGap,
 )
+from .evaluation import AdmissibilityDecision, NegativeClaimRequest, evaluate_negative_claim
 from .store import (
     DuplicateRecordError,
     EpistemicStore,
@@ -24,6 +25,7 @@ from .store import (
 )
 
 __all__ = [
+    "AdmissibilityDecision",
     "AssertionPolarity",
     "CompletenessClaim",
     "CompletenessStatus",
@@ -35,7 +37,9 @@ __all__ = [
     "GapState",
     "InvalidTransitionError",
     "KnowledgeGap",
+    "NegativeClaimRequest",
     "RevisionConflictError",
     "StorageLimitError",
     "StoreError",
+    "evaluate_negative_claim",
 ]
