@@ -150,9 +150,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p reports
-          python -m unittest discover \\
-            -s tests/semantic_graph \\
-            -p 'test_m759_rule_derived_coverage.py' \\
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_m759_rule_derived_coverage.py' \
             -v 2>&1 | tee reports/m75-9-rule-derived-coverage.log
 
       - name: Upload exact-source validation logs
