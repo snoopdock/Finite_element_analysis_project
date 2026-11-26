@@ -30,7 +30,7 @@ def _m74_junit(backend: str, *, passed_backend: str | None = None, failures: int
     for other in dossier.BACKENDS:
         if other == backend:
             continue
-        for index in range(22):
+        for index in range(23):
             case = ET.SubElement(suite, "testcase", {
                 "classname": "tests.semantic_graph.test_m74_task_suitability_acceptance",
                 "name": f"test_task_{index}[{other}]",
