@@ -1068,6 +1068,7 @@ class RepositoryEvidenceTools:
             self.structured_record_issues.append({"path": path, "code": code})
 
     def _load_indexed_content(self) -> None:
+        source_provider = getattr(self, "source_provider", None)
         for rel, row in sorted(self.manifest_rows.items()):
             if _is_sensitive_path(rel):
                 self.skipped_sensitive_files += 1
@@ -1077,8 +1078,8 @@ class RepositoryEvidenceTools:
             if not isinstance(expected_hash, str) or not isinstance(expected_size, int) or expected_size < 0:
                 raise EvidenceToolError("invalid_source_manifest", "Included source has an invalid size or digest")
             try:
-                if self.source_provider is not None:
-                    data = self.source_provider.read_entry(rel)
+                if source_provider is not None:
+                    data = source_provider.read_entry(rel)
                     file_identity = ()
                 else:
                     data, file_identity = _read_snapshot_file_with_identity(self.root, rel, expected_size)
@@ -1118,6 +1119,7 @@ class RepositoryEvidenceTools:
         filesystem snapshot and cannot detect every ABA schedule or mutations
         hidden by coarse or synthetic filesystem metadata.
         """
+        source_provider = getattr(self, "source_provider", None)
         for rel, row in sorted(self.manifest_rows.items()):
             if _is_sensitive_path(rel):
                 continue
@@ -1126,8 +1128,8 @@ class RepositoryEvidenceTools:
             if not isinstance(expected_hash, str) or not isinstance(expected_size, int) or expected_size < 0:
                 raise EvidenceToolError("invalid_source_manifest", "Included source has an invalid size or digest")
             try:
-                if self.source_provider is not None:
-                    data = self.source_provider.read_entry(rel)
+                if source_provider is not None:
+                    data = source_provider.read_entry(rel)
                     file_identity = ()
                 else:
                     data, file_identity = _read_snapshot_file_with_identity(self.root, rel, expected_size)
@@ -1136,7 +1138,7 @@ class RepositoryEvidenceTools:
                     "source_changed_during_index",
                     f"Indexed source changed or became unavailable during snapshot validation: {rel}",
                 ) from exc
-            if self.source_provider is None and file_identity != self.file_identities.get(rel):
+            if source_provider is None and file_identity != self.file_identities.get(rel):
                 raise EvidenceToolError(
                     "source_changed_during_index",
                     f"Indexed source metadata changed during snapshot validation: {rel}",
