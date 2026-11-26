@@ -1,4 +1,7 @@
 """M7.5.3 scope-bound completeness and negative-claim admissibility tests."""
+import hashlib
+import json
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -140,6 +143,50 @@ class NegativeClaimAdmissibilityTests(unittest.TestCase):
 
 
 class CompletenessPersistenceTests(unittest.TestCase):
+    def test_m752_database_migrates_without_losing_existing_event_history(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database = Path(directory) / "legacy.sqlite"
+            payload = json.dumps({
+                "assertion_id": "legacy-assertion", "proposition_id": "prop",
+                "polarity": "supports", "scope_id": "scope",
+                "method_id": "method", "observed_at": "now",
+                "evidence_refs": [], "limitations": [], "invalidation_triggers": [],
+            }, sort_keys=True, separators=(",", ":"))
+            payload_hash = hashlib.sha256(payload.encode()).hexdigest()
+            event_id = "assertion:legacy-assertion:1"
+            previous_hash = "0" * 64
+            event_hash = hashlib.sha256(
+                f"1\\n{event_id}\\n{payload_hash}\\n{previous_hash}".encode()
+            ).hexdigest()
+            raw = sqlite3.connect(database)
+            raw.execute("""
+                CREATE TABLE epistemic_events (
+                    sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_id TEXT NOT NULL UNIQUE,
+                    record_type TEXT NOT NULL CHECK(record_type IN ('assertion', 'gap')),
+                    record_id TEXT NOT NULL,
+                    revision INTEGER NOT NULL CHECK(revision >= 1),
+                    payload TEXT NOT NULL,
+                    payload_sha256 TEXT NOT NULL,
+                    previous_hash TEXT NOT NULL,
+                    event_hash TEXT NOT NULL UNIQUE,
+                    UNIQUE(record_type, record_id, revision)
+                )
+            """)
+            raw.execute("""
+                INSERT INTO epistemic_events VALUES
+                (1, ?, 'assertion', 'legacy-assertion', 1, ?, ?, ?, ?)
+            """, (event_id, payload, payload_hash, previous_hash, event_hash))
+            raw.commit()
+            raw.close()
+
+            with EpistemicStore(database) as store:
+                self.assertEqual(store.event_count(), 1)
+                self.assertTrue(store.verify_integrity())
+                self.assertTrue(store.record_completeness_claim(claim()))
+                self.assertEqual(store.event_count(), 2)
+                self.assertTrue(store.verify_integrity())
+
     def test_completeness_claim_is_persisted_idempotently_and_retrievable(self):
         with tempfile.TemporaryDirectory() as directory:
             with EpistemicStore(Path(directory) / "epistemic.sqlite") as store:
