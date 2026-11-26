@@ -1,5 +1,6 @@
 """M7.5.9 rule-derived trusted coverage registry tests."""
 import unittest
+from dataclasses import replace
 
 from audit_engine.semantic_audit.epistemic import (
     AssuranceClaim, CoverageObligation, ObligationDisposition,
@@ -72,7 +73,7 @@ class RuleDerivedCoverageTests(unittest.TestCase):
             self.plan(("UNREGISTERED-RULE",))
 
     def test_duplicate_rule_ids_rejected(self):
-        with self.assertRaisesRegex(RuleCoverageDerivationError, "must_not_contain_duplicates"):
+        with self.assertRaisesRegex(RuleCoverageDerivationError, "must not contain duplicates"):
             self.plan(("AE32A-AE28-EXTERNAL-MODEL-INPUT", "AE32A-AE28-EXTERNAL-MODEL-INPUT"))
 
     def test_claim_and_snapshot_binding_is_enforced(self):
@@ -83,6 +84,13 @@ class RuleDerivedCoverageTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(RuleCoverageDerivationError, "plan_claim_or_source_snapshot_mismatch"):
             build_rule_derived_coverage_manifest(other_claim, plan)
+
+
+    def test_forged_plan_is_rejected_before_manifest_build(self):
+        plan = self.plan()
+        forged = replace(plan, expected_obligation_ids=plan.expected_obligation_ids[:-1])
+        with self.assertRaisesRegex(RuleCoverageDerivationError, "plan_integrity_mismatch"):
+            build_rule_derived_coverage_manifest(self.claim, forged)
 
     def test_manifest_registry_digest_is_pinned_to_plan(self):
         plan = self.plan()
