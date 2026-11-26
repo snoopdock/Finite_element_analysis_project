@@ -18,7 +18,7 @@ from audit_engine.semantic_audit.epistemic.contracts import ContractError
 def evidence(evidence_id="ev-1"):
     return EvidenceRef(
         evidence_id=evidence_id,
-        source_snapshot_id="git:abc123",
+        source_snapshot_id="git:abc",
         producer_id="git-object-reader:v2",
         method_id="sha256-stream:v1",
         observed_at="2026-11-26T10:00:00Z",
