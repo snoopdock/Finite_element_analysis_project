@@ -116,7 +116,7 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             source.write_bytes(b"VALUE = 'temporary mutation'\n")
             source.write_bytes(original)
             self.assertEqual(source.read_bytes(), original)
-            self.assertEqual(provider.read_entry("src/module.py"), original)
+            self.assertEqual(provider.read_entry("src/module.py"), b"VALUE = 'committed'\n")
 
     def test_hard_link_replacement_does_not_change_pinned_bytes(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -146,6 +146,7 @@ class GitObjectSourceProviderTests(unittest.TestCase):
             loose_object = object_dir / oid[:2] / oid[2:]
             if not loose_object.is_file():
                 self.skipTest("test fixture blob is not stored as a loose object")
+            loose_object.chmod(0o666)
             loose_object.unlink()
             from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceError
             with self.assertRaisesRegex(GitObjectSourceError, "git_command_failed"):
