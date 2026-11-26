@@ -58,7 +58,7 @@ For supported evidence kinds, the validator independently replays the AST operat
 
 Every obligation ID must occur in the verified rule-derived plan. A source-bound reference is not enough if it is bound to an obligation outside that plan. Qualification results are content-addressed and independently reproducible through `verify_semantic_evidence_qualification(...)`.
 
-Defeater records must identify a target observation and a source path/digest (and line digest when a line is supplied). They produce `CONTESTED`, but are explicitly retained as unverified counterclaims until a dedicated semantic defeater validator is implemented.
+Defeater records must identify a target observation and a source path/digest (and line digest when a line is supplied). A source-bound defeater changes an otherwise `SUPPORTED` result to `CONTESTED`; for an already `INSUFFICIENT` result it is retained without overstating the outcome. Counterclaim validity remains `NOT_ESTABLISHED` until a dedicated semantic defeater validator is implemented.
 
 ## 5. Public API
 
