@@ -352,7 +352,11 @@ def validate_publication_artifact(
     _verify_source_manifest(source_manifest, expected)
     try:
         verify_graph_manifest(dict(graph_manifest))
-    except (GraphSnapshotError, ValueError, TypeError, KeyError) as exc:
+    except GraphSnapshotError as exc:
+        if str(exc) == "graph_source_commit_or_tree_mismatch":
+            raise TrustedArtifactError("graph_source_identity_mismatch") from exc
+        raise TrustedArtifactError("graph_manifest_invalid:" + str(exc)) from exc
+    except (ValueError, TypeError, KeyError) as exc:
         raise TrustedArtifactError("graph_manifest_invalid:" + str(exc)) from exc
     if graph_manifest.get("status") != "CAPTURED":
         raise TrustedArtifactError("graph_manifest_not_captured")
