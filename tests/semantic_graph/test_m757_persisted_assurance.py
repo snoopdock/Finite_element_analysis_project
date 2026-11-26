@@ -77,7 +77,7 @@ class PersistedAssuranceTests(unittest.TestCase):
         result = evaluate_persisted_assurance(
             "claim:1", self.assurance, self.epistemic
         )
-        self.assertIs(result.assessment, ArgumentAssessment.SUPPORTS_WITHOUT_OPEN_DEFEATERS)
+        self.assertIs(result.assessment, ArgumentAssessment.SUPPORTS_WITHOUT_OPEN_DEFEATERS, repr(result))
         self.assertTrue(result.ledger_consistent)
         self.assertEqual(result.missing_evidence_ids, ())
         self.assertTrue(result.freshness_results)
@@ -115,7 +115,7 @@ class PersistedAssuranceTests(unittest.TestCase):
             "claim:1", self.assurance, self.epistemic
         )
         self.assertIs(result.assessment, ArgumentAssessment.INCOMPLETE)
-        self.assertTrue(any(x.status is FreshnessStatus.INVALIDATED for x in result.freshness_results))
+        self.assertTrue(any(x.status is FreshnessStatus.INVALIDATED for x in result.freshness_results), repr(result))
 
     def test_evidence_metadata_must_match_claim_snapshot(self):
         wrong_ref = EvidenceRef(
