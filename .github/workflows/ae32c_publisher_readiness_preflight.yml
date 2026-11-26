@@ -1,0 +1,69 @@
+name: AE-32C Publisher Readiness Preflight (Read Only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ae32c-publisher-readiness-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Inspect publisher activation controls without changing them
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted main revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Establish Python runtime
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
+
+      - name: Inspect repository protection, ruleset, environment and App configuration
+        id: preflight
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PREFLIGHT_READ_TOKEN: ${{ secrets.AE32C_PREFLIGHT_READ_TOKEN }}
+          AE32C_APP_CLIENT_ID_PRESENT: ${{ vars.AE32C_PUBLISHER_APP_CLIENT_ID != '' }}
+          AE32C_PUBLISHER_APP_ID: ${{ vars.AE32C_PUBLISHER_APP_ID }}
+          AE32C_APP_PRIVATE_KEY_PRESENT: ${{ secrets.AE32C_PUBLISHER_APP_PRIVATE_KEY != '' }}
+        run: |
+          set +e
+          python tools/ae32c_publisher_preflight.py --output "$RUNNER_TEMP/ae32c-publisher-preflight.json"
+          result=$?
+          set -e
+          if [[ -f "$RUNNER_TEMP/ae32c-publisher-preflight.json" ]]; then
+            cat "$RUNNER_TEMP/ae32c-publisher-preflight.json" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$result"
+
+      - name: Preserve read-only preflight report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ae32c-publisher-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ae32c-publisher-preflight.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Enforce readiness result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ steps.preflight.outcome }}" != "success" ]]; then
+            echo "Publisher activation preflight has blockers or could not verify required controls." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
