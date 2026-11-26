@@ -59,6 +59,7 @@ class CoverageDossier:
     assurance_token_after: tuple[int, str]
     snapshot_consistent: bool
     unreconciled_gap_ids: tuple[str, ...]
+    out_of_scope_gap_ids: tuple[str, ...]
     overall_status: str
     captured_at: str
 
@@ -250,17 +251,19 @@ def build_and_persist_coverage_dossier(
     epistemic_before = epistemic_store.snapshot_token()
     assurance_before = assurance_store.snapshot_token()
     gap_inventory = _gap_inventory(epistemic_store)
-    known_gap_ids = {item["gap_id"] for item in gap_inventory}
-    unknown_mapping_ids = set(mapping) - known_gap_ids
-    if unknown_mapping_ids:
-        raise CoverageDossierError("gap mapping references absent persisted gaps: " + ",".join(sorted(unknown_mapping_ids)))
     gap_by_id = {item["gap_id"]: item for item in gap_inventory}
-    for gap_id in mapping:
-        if gap_by_id[gap_id]["payload"].get("scope_id") != claim.scope_id:
-            raise CoverageDossierError(
-                f"gap {gap_id} is outside the assurance claim scope"
-            )
-    unreconciled = tuple(sorted(known_gap_ids - set(mapping)))
+    in_scope_gap_ids = {
+        gap_id for gap_id, item in gap_by_id.items()
+        if item["payload"].get("scope_id") == claim.scope_id
+    }
+    out_of_scope_gap_ids = tuple(sorted(set(gap_by_id) - in_scope_gap_ids))
+    unknown_mapping_ids = set(mapping) - in_scope_gap_ids
+    if unknown_mapping_ids:
+        absent = unknown_mapping_ids - set(gap_by_id)
+        if absent:
+            raise CoverageDossierError("gap mapping references absent persisted gaps: " + ",".join(sorted(absent)))
+        raise CoverageDossierError("gap mapping references gaps outside the assurance claim scope: " + ",".join(sorted(unknown_mapping_ids)))
+    unreconciled = tuple(sorted(in_scope_gap_ids - set(mapping)))
 
     result = evaluate_epistemic_coverage(
         claim.claim_id, manifest, assurance_store, epistemic_store
@@ -299,6 +302,7 @@ def build_and_persist_coverage_dossier(
         assurance_token_after=assurance_after,
         snapshot_consistent=consistent,
         unreconciled_gap_ids=unreconciled,
+        out_of_scope_gap_ids=out_of_scope_gap_ids,
         overall_status=overall,
         captured_at=captured_at,
     )
