@@ -164,6 +164,12 @@ def build_rule_derived_coverage_manifest(
         raise TypeError("claim and plan must be AssuranceClaim and RuleCoveragePlan")
     if claim.claim_id != plan.claim_id or claim.source_snapshot_id != plan.source_snapshot_id:
         raise RuleCoverageDerivationError("plan_claim_or_source_snapshot_mismatch")
+    expected_plan = derive_rule_coverage_plan(
+        claim, source_snapshot_id=plan.source_snapshot_id,
+        graph_snapshot_id=plan.graph_snapshot_id, rule_ids=plan.rule_ids,
+    )
+    if expected_plan != plan:
+        raise RuleCoverageDerivationError("rule_coverage_plan_integrity_mismatch")
     supplied = dict(assessments or {})
     unexpected = set(supplied) - set(plan.expected_obligation_ids)
     if unexpected:
@@ -194,6 +200,12 @@ def verify_rule_derived_manifest(
     manifest: EpistemicCoverageManifest,
 ) -> None:
     """Reject a manifest unless it exactly retains the derived obligation universe."""
+    expected_plan = derive_rule_coverage_plan(
+        claim, source_snapshot_id=plan.source_snapshot_id,
+        graph_snapshot_id=plan.graph_snapshot_id, rule_ids=plan.rule_ids,
+    )
+    if expected_plan != plan:
+        raise RuleCoverageDerivationError("rule_coverage_plan_integrity_mismatch")
     if manifest.claim_id != claim.claim_id:
         raise RuleCoverageDerivationError("manifest_claim_mismatch")
     if manifest.source_snapshot_id != plan.source_snapshot_id:
