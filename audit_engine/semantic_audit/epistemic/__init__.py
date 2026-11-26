@@ -1,10 +1,10 @@
-"""Epistemic assurance contracts for the graph-native audit engine.
+""""Epistemic assurance contracts for the graph-native audit engine.
 
-This package defines immutable descriptive records only. It has no persistence,
-inference, network, solver, or decision-gate side effects.
+The package contains immutable descriptive records and an explicit append-only store.
+It does not infer proposition truth or authorize audit decisions.
 """
 
-from .store import (\n    DuplicateRecordError, EpistemicStore, InvalidTransitionError,\n    RevisionConflictError, StorageLimitError, StoreError,\n)\n\nfrom .contracts import (
+from .contracts import (
     AssertionPolarity,
     CompletenessClaim,
     CompletenessStatus,
@@ -14,14 +14,28 @@ from .store import (\n    DuplicateRecordError, EpistemicStore, InvalidTransitio
     GapState,
     KnowledgeGap,
 )
+from .store import (
+    DuplicateRecordError,
+    EpistemicStore,
+    InvalidTransitionError,
+    RevisionConflictError,
+    StorageLimitError,
+    StoreError,
+)
 
 __all__ = [
-    "DuplicateRecordError",\n    "EpistemicStore",\n    "InvalidTransitionError",\n    "RevisionConflictError",\n    "StorageLimitError",\n    "StoreError",\n    "AssertionPolarity",
+    "AssertionPolarity",
     "CompletenessClaim",
     "CompletenessStatus",
+    "DuplicateRecordError",
+    "EpistemicStore",
     "EvidenceAssertion",
     "EvidenceRef",
     "GapKind",
     "GapState",
+    "InvalidTransitionError",
     "KnowledgeGap",
+    "RevisionConflictError",
+    "StorageLimitError",
+    "StoreError",
 ]
