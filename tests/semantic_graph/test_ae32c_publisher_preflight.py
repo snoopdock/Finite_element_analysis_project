@@ -184,6 +184,25 @@ class PublisherPreflightTests(unittest.TestCase):
         )
         self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "BLOCKED")
 
+    def test_run_paginates_rulesets_until_short_page(self):
+        first_page = [{"id": i, "enforcement": "disabled", "target": "branch"} for i in range(100)]
+        responses = [
+            (200, {"default_branch": "main"}),
+            (404, {}),
+            (200, first_page),
+            (200, []),
+            (404, {}),
+        ]
+        with patch("tools.ae32c_publisher_preflight.api_get", side_effect=responses) as get:
+            result = run(
+                "https://api.github.com", "read-token", "owner/repo",
+                False, False, None,
+            )
+        self.assertEqual(get.call_count, 5)
+        self.assertIn("page=1", get.call_args_list[2].args[2])
+        self.assertIn("page=2", get.call_args_list[3].args[2])
+        self.assertFalse(result["activation_ready"])
+
     def test_run_queries_only_read_endpoints(self):
         responses = [
             (200, {"default_branch": "main"}),
