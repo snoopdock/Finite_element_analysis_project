@@ -49,12 +49,22 @@ jobs:
             -p 'test_m75_epistemic_contracts.py' \
             -v 2>&1 | tee reports/m75-1-epistemic-contracts.log
 
+      - name: Run M7.5.2 append-only store tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python -m unittest discover \
+            -s tests/semantic_graph \
+            -p 'test_m75_epistemic_store.py' \
+            -v 2>&1 | tee reports/m75-2-epistemic-store.log
+
       - name: Upload exact-source validation log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: m7-5-1-epistemic-contracts-${{ github.run_id }}-${{ github.run_attempt }}
-          path: reports/m75-1-epistemic-contracts.log
+          path: |\n            reports/m75-1-epistemic-contracts.log\n            reports/m75-2-epistemic-store.log
           if-no-files-found: warn
           retention-days: 30
 
