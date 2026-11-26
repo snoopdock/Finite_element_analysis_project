@@ -1,6 +1,6 @@
 # AE-32C M7.5.11 — Independent Coverage Dossier Verification and Replay
 
-**Status:** Implemented; exact-source M7.5 regression validation pending  
+**Status:** Implemented and exact-source CI-validated; 115 M7.5 regression tests passed on source commit `438f61ff3bf76ae4f1d5d2c889acf94f66d9b7f2` (run [45907322696](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45907322696))  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.10 — Persistent Coverage Dossiers and Gap Reconciliation  
 **Authority:** historical dossier integrity and reproducible evaluation only; no proposition-truth, audit-decision or authorization authority
@@ -85,7 +85,20 @@ This is not a general atomicity guarantee and must not be described as one. A fu
 
 ## 7. Validation
 
-The dedicated workflow `.github/workflows/m7_5_11_dossier_verification.yml` compiles the epistemic package and runs the full M7.5 regression discovery set:
+The dedicated workflow `.github/workflows/m7_5_11_dossier_verification.yml` compiles the epistemic package and runs the full M7.5 regression discovery set.
+
+Exact-source validation: [45907322696](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45907322696)
+
+- Validated source revision: `438f61ff3bf76ae4f1d5d2c889acf94f66d9b7f2`
+- Runtime: Ubuntu 24.04, Python 3.11
+- M7.5 regression: 115 passed
+- Epistemic package compilation: passed
+- Job: `140207068336`
+- Artifact: `m7-5-11-dossier-verification-45907322696-1`
+- Artifact ID: `15157459846`
+- Artifact SHA-256: `6776f2df0755c7e312d002d2fbda6e1d3c055ea829664cff41ced352caaafe5e`
+
+The validation-record commit changes documentation only; implementation files are unchanged from the validated source revision.
 
 ```bash
 python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
