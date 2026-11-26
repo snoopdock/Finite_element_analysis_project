@@ -17,6 +17,7 @@ def ruleset():
         "id": 12,
         "name": "AE-32C publication ref only",
         "enforcement": "active",
+        "target": "branch",
         "conditions": {"ref_name": {
             "include": ["refs/heads/ae32c-publication-state"],
             "exclude": [],
@@ -80,6 +81,58 @@ class PublisherPreflightTests(unittest.TestCase):
         self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "UNVERIFIED")
         self.assertEqual(result["checks"]["protected_environment"]["status"], "UNVERIFIED")
         self.assertFalse(result["activation_ready"])
+
+    def test_overlapping_wildcard_ruleset_blocks_exact_ruleset(self):
+        overlapping = {
+            "id": 13,
+            "name": "Broad branch ruleset",
+            "enforcement": "active",
+            "target": "branch",
+            "conditions": {"ref_name": {
+                "include": ["refs/heads/*"],
+                "exclude": [],
+            }},
+            "rules": [{"type": "deletion"}],
+            "bypass_actors": [],
+        }
+        result = evaluate(
+            repository="owner/repo", default_branch="main",
+            branch_protection_status=200, branch_protection=protection(),
+            rulesets_status=200, rulesets=ruleset() + [overlapping],
+            environment_status=200, environment=environment(),
+            app_client_id_present=True, app_private_key_present=True, publisher_app_id=12345,
+        )
+        self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "BLOCKED")
+        self.assertIn("found 2", result["checks"]["publication_ref_ruleset"]["detail"])
+
+    def test_duplicate_exact_rulesets_block(self):
+        duplicated = ruleset() + [{**ruleset()[0], "id": 99}]
+        result = evaluate(
+            repository="owner/repo", default_branch="main",
+            branch_protection_status=200, branch_protection=protection(),
+            rulesets_status=200, rulesets=duplicated,
+            environment_status=200, environment=environment(),
+            app_client_id_present=True, app_private_key_present=True, publisher_app_id=12345,
+        )
+        self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "BLOCKED")
+
+    def test_global_active_ruleset_blocks_exact_ruleset(self):
+        global_ruleset = {
+            "id": 14,
+            "enforcement": "active",
+            "target": "branch",
+            "conditions": {},
+            "rules": [],
+            "bypass_actors": [],
+        }
+        result = evaluate(
+            repository="owner/repo", default_branch="main",
+            branch_protection_status=200, branch_protection=protection(),
+            rulesets_status=200, rulesets=ruleset() + [global_ruleset],
+            environment_status=200, environment=environment(),
+            app_client_id_present=True, app_private_key_present=True, publisher_app_id=12345,
+        )
+        self.assertEqual(result["checks"]["publication_ref_ruleset"]["status"], "BLOCKED")
 
     def test_ruleset_with_broad_bypass_is_rejected(self):
         unsafe = ruleset()
