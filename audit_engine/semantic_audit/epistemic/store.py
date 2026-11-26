@@ -219,6 +219,143 @@ class EpistemicStore:
             for row in rows
         ]
 
+    def dependency_history(self) -> list[dict[str, Any]]:
+        rows = self._connection.execute(
+            """SELECT sequence, record_id, payload, event_hash FROM epistemic_events
+               WHERE record_type = 'dependency' ORDER BY sequence"""
+        ).fetchall()
+        return [
+            {"sequence": row["sequence"], "edge_id": row["record_id"],
+             "payload": json.loads(row["payload"]), "event_hash": row["event_hash"]}
+            for row in rows
+        ]
+
+    def _dependency_adjacency(self) -> dict[str, set[str]]:
+        adjacency: dict[str, set[str]] = {}
+        for item in self.dependency_history():
+            payload = item["payload"]
+            adjacency.setdefault(payload["dependent_id"], set()).add(payload["dependency_id"])
+        return adjacency
+
+    @staticmethod
+    def _reachable(adjacency: dict[str, set[str]], start: str, target: str) -> bool:
+        pending = [start]
+        visited: set[str] = set()
+        while pending:
+            node = pending.pop()
+            if node == target:
+                return True
+            if node in visited:
+                continue
+            visited.add(node)
+            pending.extend(sorted(adjacency.get(node, ()), reverse=True))
+        return False
+
+    def record_dependency(self, dependency: ProvenanceDependency) -> bool:
+        """Append an edge; reject any edge that would make the dependency graph cyclic."""
+        if not isinstance(dependency, ProvenanceDependency):
+            raise TypeError("dependency must be a ProvenanceDependency")
+        with self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            adjacency = self._dependency_adjacency()
+            if self._reachable(adjacency, dependency.dependency_id, dependency.dependent_id):
+                raise StoreError(
+                    f"dependency edge {dependency.edge_id} would introduce a cycle"
+                )
+            return self._append(
+                "dependency", dependency.edge_id, 1, _canonical_payload(dependency),
+                transaction_open=True,
+            )
+
+    def invalidate_dependency(
+        self, changed_node_id: str, *, root_change_id: str,
+        reason: str, observed_at: str,
+    ) -> tuple[str, ...]:
+        """Invalidate every transitive dependent of a changed provenance node.
+
+        The root node is not itself marked stale; only records that depend on it
+        are invalidated. Repeating the same root_change_id is idempotent.
+        """
+        for name, value in (("changed_node_id", changed_node_id),
+                            ("root_change_id", root_change_id),
+                            ("reason", reason), ("observed_at", observed_at)):
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{name} must be a non-empty string")
+        changed_node_id = changed_node_id.strip()
+        root_change_id = root_change_id.strip()
+        reverse: dict[str, set[str]] = {}
+        for dependent, dependencies in self._dependency_adjacency().items():
+            for dependency in dependencies:
+                reverse.setdefault(dependency, set()).add(dependent)
+
+        ordered: list[tuple[str, str]] = []
+        queue = [(changed_node_id, changed_node_id)]
+        visited = {changed_node_id}
+        while queue:
+            changed_parent, node = queue.pop(0)
+            for dependent in sorted(reverse.get(node, ())):
+                if dependent in visited:
+                    continue
+                visited.add(dependent)
+                ordered.append((dependent, changed_node_id))
+                queue.append((changed_parent, dependent))
+
+        with self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            for node_id, root_id in ordered:
+                invalidation = ProvenanceInvalidation(
+                    invalidation_id=f"{root_change_id}:{node_id}",
+                    node_id=node_id,
+                    root_change_id=root_change_id,
+                    changed_dependency_id=root_id,
+                    reason=reason,
+                    observed_at=observed_at,
+                )
+                self._append(
+                    "invalidation", invalidation.invalidation_id, 1,
+                    _canonical_payload(invalidation), transaction_open=True,
+                )
+        return tuple(node_id for node_id, _ in ordered)
+
+    def invalidation_history(self, node_id: str) -> list[dict[str, Any]]:
+        rows = self._connection.execute(
+            """SELECT sequence, record_id, payload, event_hash FROM epistemic_events
+               WHERE record_type = 'invalidation' AND json_extract(payload, '$.node_id') = ?
+               ORDER BY sequence""", (node_id,)
+        ).fetchall()
+        return [
+            {"sequence": row["sequence"], "invalidation_id": row["record_id"],
+             "payload": json.loads(row["payload"]), "event_hash": row["event_hash"]}
+            for row in rows
+        ]
+
+    def freshness_status(self, node_id: str) -> FreshnessResult:
+        if not isinstance(node_id, str) or not node_id.strip():
+            raise ValueError("node_id must be a non-empty string")
+        node_id = node_id.strip()
+        history = self.invalidation_history(node_id)
+        if history:
+            return FreshnessResult(
+                node_id=node_id, status=FreshnessStatus.INVALIDATED,
+                invalidation_ids=tuple(item["invalidation_id"] for item in history),
+                reason="one or more dependency changes invalidated this node",
+            )
+        has_dependencies = self._connection.execute(
+            """SELECT 1 FROM epistemic_events
+               WHERE record_type = 'dependency'
+               AND json_extract(payload, '$.dependent_id') = ? LIMIT 1""",
+            (node_id,),
+        ).fetchone()
+        if has_dependencies:
+            return FreshnessResult(
+                node_id=node_id, status=FreshnessStatus.FRESH,
+                reason="declared dependencies have no recorded invalidation",
+            )
+        return FreshnessResult(
+            node_id=node_id, status=FreshnessStatus.UNKNOWN,
+            reason="no dependency declaration establishes freshness",
+        )
+
     def transition_gap(self, gap: KnowledgeGap, *, expected_revision: int) -> int:
         """Append a new gap revision; the prior revision remains immutable."""
         if not isinstance(gap, KnowledgeGap):
