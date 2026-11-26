@@ -358,11 +358,24 @@ class GitObjectSourceProviderTests(unittest.TestCase):
 
     def test_gitlink_is_reported_as_pointer_and_never_as_verified_submodule_content(self):
         with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp)
+            sandbox = Path(temp)
+            root = sandbox / "superproject"
+            dependency = sandbox / "dependency"
+            root.mkdir()
+            dependency.mkdir()
             self._repository(root)
-            pinned_commit = self._git(root, "rev-parse", "HEAD")
-            self._git(root, "update-index", "--add", "--cacheinfo",
-                      "160000," + pinned_commit + ",vendor/dependency")
+            self._git(dependency, "init")
+            self._git(dependency, "config", "user.email", "audit-test@example.invalid")
+            self._git(dependency, "config", "user.name", "Audit Test")
+            (dependency / "dependency.py").write_text("DEPENDENCY = True\\n", encoding="utf-8")
+            self._git(dependency, "add", ".")
+            self._git(dependency, "commit", "-m", "submodule initial commit")
+            pinned_commit = self._git(dependency, "rev-parse", "HEAD")
+
+            # Use a real initialized submodule so the superproject worktree is
+            # clean at capture time; a bare index gitlink is a dirty fixture.
+            self._git(root, "-c", "protocol.file.allow=always", "submodule",
+                      "add", str(dependency), "vendor/dependency")
             self._git(root, "commit", "-m", "record submodule gitlink")
             manifest = self._verified_manifest(root)
             provider = GitObjectSourceProvider(root, manifest)
