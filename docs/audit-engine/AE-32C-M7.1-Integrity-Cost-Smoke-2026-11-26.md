@@ -86,3 +86,18 @@ The workflow reports explicitly preserve:
 - `production_approval=false`.
 
 The libraries remain alternative computational options selected only by relevance to a future audit task. M7.1 smoke timing is supporting evidence, not a selection policy or suitability verdict.
+
+## 7. Follow-up five-backend smoke and workflow-lint verification — 2026-11-26
+
+**Run:** [45776007834](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45776007834)  
+**Exact source revision:** `edeafc17b8d9944464328f2ae53f10253c580996`
+
+The workflow's actionlint job passed after validating the M7.1 smoke workflow, E.8.5/E.8.8 conformance workflow, M7.4 task/G4 acceptance workflow and M7.4 source-snapshot cost workflow. All five native smoke jobs and the aggregate summary then completed successfully:
+
+- NetworkX;
+- SciPy;
+- python-igraph;
+- graph-tool, using the asserted generic x86-64 `graph-tool-base` build `_100`;
+- SNAP 6.0 through its isolated worker.
+
+The run retained the fixed smoke protocol of 7 E.8.5 queries, 2 warm-ups and 5 measured repetitions per query, with independently verified reports. This is a repeat smoke result on the stated source revision; it does not replace the M7.4 task-level workload and G4 acceptance run at SHA `69f0dcd7f18471c07558fcc469378b75315bf018`. No backend ranking, performance winner or automatic selection is inferred.
