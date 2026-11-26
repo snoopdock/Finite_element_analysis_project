@@ -178,6 +178,24 @@ class ProvenanceGraphTests(unittest.TestCase):
         self.assertFalse(result.admissible)
         self.assertIn("completeness claim has been invalidated by a dependency change", result.reasons)
 
+    def test_tampered_ledger_cannot_produce_freshness_or_invalidation(self):
+        self.store.record_dependency(self.edge("edge-1", "claim:X", "snapshot:X"))
+        self.store.record_dependency_manifest(ProvenanceManifest(
+            manifest_id="manifest-X", node_id="claim:X",
+            edge_ids=("edge-1",), manifest_version="v1",
+        ))
+        self.store._connection.execute("DROP TRIGGER epistemic_events_no_update")
+        self.store._connection.execute(
+            "UPDATE epistemic_events SET payload = '{}' WHERE event_id = 'dependency:edge-1:1'"
+        )
+        with self.assertRaises(StoreError):
+            self.store.freshness_status("claim:X")
+        with self.assertRaises(StoreError):
+            self.store.invalidate_dependency(
+                "snapshot:X", root_change_id="tamper-change",
+                reason="test", observed_at="now",
+            )
+
     def test_claim_dependency_registration_rolls_back_all_edges_on_storage_limit(self):
         self.store.max_events = 2
         with self.assertRaises(StorageLimitError):
