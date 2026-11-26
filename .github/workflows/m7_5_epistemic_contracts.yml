@@ -1,4 +1,4 @@
-name: AE-32C M7.5 Epistemic Contracts, Persistence and Provenance
+name: AE-32C M7.5 Epistemic Contracts, Provenance and Assurance Arguments
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
       - "tests/semantic_graph/test_m75_epistemic_contracts.py"
       - "tests/semantic_graph/test_m75_epistemic_store.py"
       - "tests/semantic_graph/test_m75_epistemic_completeness.py"
-      - "tests/semantic_graph/test_m75_epistemic_provenance.py"
+      - "tests/semantic_graph/test_m75_epistemic_provenance.py"\n      - "tests/semantic_graph/test_m755_assurance_arguments.py"\n      - "audit_engine/semantic_audit/epistemic/assurance.py"\n      - "audit_engine/semantic_audit/epistemic/assurance_store.py"\n      - "docs/audit-engine/AE-32C-M7.5.5-Assurance-Arguments-and-Defeaters.md"
       - "docs/audit-engine/AE-32C-M7.5.1-Epistemic-Contracts.md"
       - "docs/audit-engine/AE-32C-M7.5.2-Append-Only-Epistemic-Persistence.md"
       - "docs/audit-engine/AE-32C-M7.5.3-Scope-Bound-Completeness-and-Negative-Claims.md"
@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   epistemic-validation:
-    name: M7.5.1–M7.5.4 structural and behavioral validation
+    name: M7.5.1–M7.5.5 structural and behavioral validation
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -89,7 +89,7 @@ jobs:
             -p 'test_m75_epistemic_provenance.py' \
             -v 2>&1 | tee reports/m75-4-provenance.log
 
-      - name: Upload exact-source validation logs
+      - name: Run M7.5.5 assurance argument and defeater tests\n        shell: bash\n        run: |\n          set -euo pipefail\n          mkdir -p reports\n          python -m unittest discover \\\n            -s tests/semantic_graph \\\n            -p 'test_m755_assurance_arguments.py' \\\n            -v 2>&1 | tee reports/m75-5-assurance-arguments.log\n\n      - name: Upload exact-source validation logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -99,7 +99,7 @@ jobs:
             reports/m75-1-epistemic-contracts.log
             reports/m75-2-epistemic-store.log
             reports/m75-3-completeness.log
-            reports/m75-4-provenance.log
+            reports/m75-4-provenance.log\n            reports/m75-5-assurance-arguments.log
           if-no-files-found: warn
           retention-days: 30
 
@@ -109,7 +109,7 @@ jobs:
           {
             echo "## M7.5 epistemic validation"
             echo "- Source SHA: $GITHUB_SHA"
-            echo "- Scope: immutable contracts, append-only persistence, scope-bound completeness, negative-claim admissibility, provenance dependencies, freshness and deterministic invalidation"
+            echo "- Scope: immutable contracts, append-only persistence, scope-bound completeness, negative-claim admissibility, provenance dependencies, freshness, deterministic invalidation, assurance arguments and defeater lifecycle"
             echo "- No proposition-truth inference, automatic completeness promotion, network, solver, or decision-gate integration"
             echo "- Passing does not establish production durability or production approval"
           } >> "$GITHUB_STEP_SUMMARY"
