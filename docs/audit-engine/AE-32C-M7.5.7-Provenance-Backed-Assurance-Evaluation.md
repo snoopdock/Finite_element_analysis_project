@@ -18,7 +18,7 @@ Add `evaluate_persisted_assurance(claim_id, assurance_store, epistemic_store)` t
 1. Load typed assurance records from the append-only assurance ledger.
 2. Resolve every evidence ID used by argument links, defeaters and defeater events against persisted `EvidenceAssertion` / `EvidenceRef` records.
 3. Reject missing or conflicting evidence metadata.
-4. Require evidence references to bind to the assurance claim's source snapshot.
+4. Require evidence references to bind to the assurance claim's source snapshot and require a persisted assertion for the same proposition and scope.
 5. Require each evidence node's dependency edges to match its persisted snapshot, producer, method and optional artifact digest metadata.
 6. Derive freshness from `EpistemicStore.freshness_closure()` for every referenced evidence node and every provenance node named by an argument link.
 7. Return `INCOMPLETE` if evidence, provenance, integrity or cross-ledger consistency cannot be established.
@@ -55,7 +55,7 @@ The read intervals overlap. If both ledgers remain unchanged throughout their re
 - explicit reasons for incomplete evaluation;
 - whether both ledger version tokens remained stable.
 
-Missing/ambiguous claim, absent evidence, conflicting EvidenceRef metadata, snapshot mismatch, missing or mismatched evidence dependency edges, non-fresh closure, integrity/read failure, and concurrent ledger changes all fail closed to `INCOMPLETE`.
+Missing/ambiguous claim, absent evidence, conflicting EvidenceRef metadata, proposition/scope mismatch, snapshot mismatch, missing or mismatched evidence dependency edges, non-fresh closure, integrity/read failure, and concurrent ledger changes all fail closed to `INCOMPLETE`.
 
 The existing pure `evaluate_assurance` remains available for isolated contract testing. It is not silently upgraded or removed.
 
