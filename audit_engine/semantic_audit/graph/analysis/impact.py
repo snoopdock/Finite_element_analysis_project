@@ -742,5 +742,7 @@ class ImpactAnalyzer:
                 "runtime_execution_proven": False,
                 "severity_assessed": False,
                 "semantic_correctness_assessed": False,
+                "automatic_approval_permitted": False,
+                "authoritative_graph_mutation_permitted": False,
             },
         )
