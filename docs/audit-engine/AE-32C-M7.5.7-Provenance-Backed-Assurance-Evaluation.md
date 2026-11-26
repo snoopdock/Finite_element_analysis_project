@@ -1,8 +1,10 @@
 # AE-32C M7.5.7 — Provenance-Backed Assurance Evaluation
 
-**Status:** Implementation candidate; exact-source CI validation pending  
+**Status:** Implemented and CI-validated  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.1–M7.5.6  
+**Validated source revision:** `dbe2f63aa9756408883019380bfaf3df09e05191`  
+**Validation run:** [45901975443](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45901975443)  
 **Authority:** Evaluation-only; no proposition-truth inference and no audit-gate authority
 
 ## 1. Problem statement
@@ -68,6 +70,7 @@ The M7.5.7 suite checks:
 - missing terminal manifests;
 - transitive invalidation of an evidence producer;
 - source-snapshot mismatch;
+- proposition/scope mismatch between persisted evidence assertions and the assurance claim;
 - conflicting metadata for one evidence ID;
 - persistence and freshness of defeater-resolution evidence;
 - a ledger write during evaluation;
@@ -88,4 +91,31 @@ The workflow continues to run all M7.5.1–M7.5.6 regression suites before the M
 
 ## 8. Exit criterion
 
-M7.5.7 is complete only after the exact Stage1 source revision passes the dedicated structural/behavioral suite and all M7.5.1–M7.5.6 regression suites. The validation record must state the exact source SHA, run ID, test counts and artifact digest. Passing CI is not production approval.
+The M7.5.7 implementation and CI exit criterion are met for the exact Stage1 revision recorded above. The dedicated suite and all M7.5.1–M7.5.6 regression suites passed. See [AE-32C-M7.5.7-Validation-Record-45901975443.md](AE-32C-M7.5.7-Validation-Record-45901975443.md) for exact evidence.
+
+## 9. Implementation and validation result
+
+The implementation adds:
+
+- `AssuranceStore.records_snapshot()` to reconstruct typed assurance records from one verified ledger snapshot;
+- `EpistemicStore.assertion_records_snapshot()` to retrieve typed evidence assertions from one verified ledger snapshot;
+- verified `snapshot_token()` methods for optimistic cross-ledger read validation;
+- `EpistemicStore.record_assertion_dependencies()` to bind evidence IDs to declared snapshot, producer, method and optional artifact-digest nodes;
+- `evaluate_persisted_assurance()` and `PersistedAssuranceResult` as the store-backed API.
+
+Validation on the exact revision:
+
+- M7.5.1: 14 passed
+- M7.5.2: 9 passed
+- M7.5.3: 14 passed
+- M7.5.4: 12 passed
+- M7.5.5: 8 passed
+- M7.5.6: 9 passed
+- M7.5.7: 10 passed
+- **Total: 76 passed**
+- Python 3.11 compile: passed
+- Workflow run: `45901975443`
+- Artifact: `m7-5-epistemic-validation-45901975443-1`
+- Artifact SHA-256: `bb509455cf69092ff7c1bcfad8fde5d14618684e32f763a0c6bdc64f45c161c2`
+
+Passing tests establish CI validation only, not production approval.
