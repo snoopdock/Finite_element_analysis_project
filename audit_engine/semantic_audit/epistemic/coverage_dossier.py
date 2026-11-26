@@ -295,6 +295,12 @@ def build_and_persist_coverage_dossier(
 
     if not consistent:
         overall = EpistemicCoverageStatus.UNKNOWN.value
+    elif result.status is EpistemicCoverageStatus.INVALIDATED:
+        overall = EpistemicCoverageStatus.INVALIDATED.value
+    elif result.status is EpistemicCoverageStatus.CONTESTED:
+        overall = EpistemicCoverageStatus.CONTESTED.value
+    elif result.status is EpistemicCoverageStatus.UNKNOWN:
+        overall = EpistemicCoverageStatus.UNKNOWN.value
     elif unreconciled:
         overall = EpistemicCoverageStatus.INCOMPLETE.value
     else:
