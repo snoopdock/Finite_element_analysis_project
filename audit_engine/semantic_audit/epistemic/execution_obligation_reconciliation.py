@@ -34,7 +34,7 @@ class ExecutionObligationReconciliationError(ValueError):
 
 def _digest(value: Any) -> str:
     raw = (json.dumps(value, sort_keys=True, separators=(",", ":"),
-                      ensure_ascii=False, allow_nan=False) + "\\n").encode("utf-8")
+                      ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
     return hashlib.sha256(raw).hexdigest()
 
 
@@ -235,7 +235,7 @@ class ExecutionObligationReconciliationStore:
         rows = self._db.execute("SELECT * FROM execution_obligation_events ORDER BY sequence").fetchall()
         for expected, row in enumerate(rows, 1):
             digest = hashlib.sha256(row["payload"].encode("utf-8")).hexdigest()
-            material = f"{expected}\\n{row['reconciliation_id']}\\n{digest}\\n{previous}"
+            material = f"{expected}\n{row['reconciliation_id']}\n{digest}\n{previous}"
             calculated = hashlib.sha256(material.encode("utf-8")).hexdigest()
             if (row["sequence"] != expected or row["payload_sha256"] != digest
                     or row["previous_hash"] != previous or row["event_hash"] != calculated):
@@ -268,7 +268,7 @@ class ExecutionObligationReconciliationStore:
                 raise ExecutionObligationReconciliationError("reconciliation_storage_bound_reached")
             row = self._db.execute("SELECT event_hash FROM execution_obligation_events ORDER BY sequence DESC LIMIT 1").fetchone()
             previous = row["event_hash"] if row else "0" * 64
-            material = f"{sequence}\\n{rid}\\n{payload_hash}\\n{previous}"
+            material = f"{sequence}\n{rid}\n{payload_hash}\n{previous}"
             event_hash = hashlib.sha256(material.encode("utf-8")).hexdigest()
             self._db.execute("INSERT INTO execution_obligation_events VALUES (?, ?, ?, ?, ?, ?)",
                              (sequence, rid, payload, payload_hash, previous, event_hash))
