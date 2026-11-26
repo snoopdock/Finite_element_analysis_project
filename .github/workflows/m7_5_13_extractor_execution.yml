@@ -47,9 +47,22 @@ jobs:
         run: |
           set -euo pipefail
           python tools/ae32c_extractor_execution.py execute --repository . --source-manifest "$RUNNER_TEMP/m7513/source.json" --inventory-output "$RUNNER_TEMP/m7513/inventory.json" --report-output "$RUNNER_TEMP/m7513/report.json"
-      - name: Verify source identity after extraction
-        run: python tools/ae32c_source_snapshot_manifest.py verify --repository . --manifest "$RUNNER_TEMP/m7513/source.json" --expected-source-revision "$GITHUB_SHA"
-      - name: Independently replay outcomes
+      - name: Postflight-verify a separate source-manifest copy
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/m7513/source.json" "$RUNNER_TEMP/m7513/source-postflight.json"
+          python tools/ae32c_source_snapshot_manifest.py verify --repository . --manifest "$RUNNER_TEMP/m7513/source-postflight.json" --expected-source-revision "$GITHUB_SHA"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "m7513"
+          before = json.loads((root / "source.json").read_text(encoding="utf-8"))
+          after = json.loads((root / "source-postflight.json").read_text(encoding="utf-8"))
+          assert before["source_snapshot_id"] == after["source_snapshot_id"]
+          assert before["source_inventory"]["sha256"] == after["source_inventory"]["sha256"]
+          assert after["status"] == "VERIFIED"
+          PY
+      - name: Independently replay outcomes against original verified manifest
         run: python tools/ae32c_extractor_execution.py verify --repository . --source-manifest "$RUNNER_TEMP/m7513/source.json" --inventory "$RUNNER_TEMP/m7513/inventory.json" --report "$RUNNER_TEMP/m7513/report.json"
       - name: Complete M7.5 regression
         run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
@@ -60,6 +73,7 @@ jobs:
           name: m7-5-13-extractor-execution-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/m7513/source.json
+            ${{ runner.temp }}/m7513/source-postflight.json
             ${{ runner.temp }}/m7513/inventory.json
             ${{ runner.temp }}/m7513/report.json
           if-no-files-found: warn
