@@ -50,6 +50,12 @@ from .execution_obligation_reconciliation import (
     build_and_persist_execution_obligation_reconciliation,
     verify_execution_obligation_reconciliation,
 )
+from .typed_evidence import (
+    TypedEvidenceError, TypedEvidenceObservationStore,
+    derive_typed_evidence_observations,
+    verify_typed_evidence_observation_bundle,
+    build_and_persist_typed_evidence_observations,
+)
 from .persisted_assurance import PersistedAssuranceResult, evaluate_persisted_assurance
 from .store import (
     DuplicateRecordError, EpistemicStore, InvalidTransitionError,
@@ -57,7 +63,7 @@ from .store import (
 )
 
 __all__ = [
-    "ExecutionObligationReconciliationError", "ExecutionObligationReconciliationStore",
+    "TypedEvidenceError", "TypedEvidenceObservationStore",\n    "derive_typed_evidence_observations",\n    "verify_typed_evidence_observation_bundle",\n    "build_and_persist_typed_evidence_observations",\n    "ExecutionObligationReconciliationError", "ExecutionObligationReconciliationStore",
     "build_execution_obligation_reconciliation",
     "build_and_persist_execution_obligation_reconciliation",
     "verify_execution_obligation_reconciliation",
