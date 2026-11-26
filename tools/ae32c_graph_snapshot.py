@@ -454,10 +454,6 @@ def verify_graph_manifest(manifest: dict[str, Any]) -> None:
             or identity.get("lfs_attestation_sha256") != attestation.get("attestation_sha256")
             or coverage_lfs.get("attestation_sha256") != attestation.get("attestation_sha256")):
         raise GraphSnapshotError("graph_lfs_attestation_reference_mismatch")
-    for field in ("status", "scanned_regular_blob_count", "pointer_count",
-                  "verified_payload_count", "unverified_payload_count"):
-        if coverage_lfs.get(field) != attestation.get(field):
-            raise GraphSnapshotError("graph_lfs_coverage_summary_mismatch:" + field)
     source_units = coverage.get("source_units", [])
     regular_inventory = [
         {"path": item.get("path"), "git_object_oid": item.get("git_object_oid"),
@@ -472,6 +468,10 @@ def verify_graph_manifest(manifest: dict[str, Any]) -> None:
         source_inventory_sha256=source.get("source_inventory_sha256", ""),
         regular_inventory=regular_inventory,
     )
+    for field in ("status", "scanned_regular_blob_count", "pointer_count",
+                  "verified_payload_count", "unverified_payload_count"):
+        if coverage_lfs.get(field) != attestation.get(field):
+            raise GraphSnapshotError("graph_lfs_coverage_summary_mismatch:" + field)
     ledger = manifest.get("finding_ledger")
     if not isinstance(ledger, dict):
         raise GraphSnapshotError("finding_ledger_missing")
