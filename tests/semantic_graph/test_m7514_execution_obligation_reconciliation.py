@@ -112,6 +112,26 @@ class ExecutionObligationReconciliationTests(unittest.TestCase):
             from audit_engine.semantic_audit.epistemic.execution_obligation_reconciliation import build_execution_obligation_reconciliation
             build_execution_obligation_reconciliation(**args)
 
+    def test_ledger_is_idempotent_append_only_and_restart_safe(self):
+        report = build_and_persist_execution_obligation_reconciliation(
+            reconciliation_store=self.reconciliations,**self.kwargs())
+        self.assertFalse(self.reconciliations.record(report))
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.reconciliations._db.execute(
+                "UPDATE execution_obligation_events SET payload='{}' WHERE reconciliation_id=?",
+                (report["reconciliation_sha256"],))
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.reconciliations._db.execute(
+                "DELETE FROM execution_obligation_events WHERE reconciliation_id=?",
+                (report["reconciliation_sha256"],))
+        self.reconciliations.close()
+        self.reconciliations = ExecutionObligationReconciliationStore(
+            self.root/"reconciliations.sqlite")
+        self.assertTrue(self.reconciliations.verify_integrity())
+        self.assertEqual(
+            self.reconciliations.get(report["reconciliation_sha256"]),
+            report)
+
     def test_tampered_persisted_reconciliation_rejected(self):
         report = build_and_persist_execution_obligation_reconciliation(
             reconciliation_store=self.reconciliations,**self.kwargs())
