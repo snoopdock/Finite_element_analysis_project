@@ -289,3 +289,20 @@ class FreshnessResult:
             raise ContractError("status must be a FreshnessStatus")
         object.__setattr__(self, "invalidation_ids", _unique_texts(self.invalidation_ids, "invalidation_ids"))
         object.__setattr__(self, "reason", _optional_text(self.reason, "reason"))
+
+
+@dataclass(frozen=True)
+class ProvenanceManifest:
+    """Closed declaration of the dependency edges required to assess one node."""
+
+    manifest_id: str
+    node_id: str
+    edge_ids: Tuple[str, ...]
+    manifest_version: str
+
+    def __post_init__(self) -> None:
+        for name in ("manifest_id", "node_id", "manifest_version"):
+            object.__setattr__(self, name, _required(getattr(self, name), name))
+        object.__setattr__(self, "edge_ids", _unique_texts(self.edge_ids, "edge_ids"))
+        if not self.edge_ids:
+            raise ContractError("a provenance manifest must declare at least one dependency edge")
