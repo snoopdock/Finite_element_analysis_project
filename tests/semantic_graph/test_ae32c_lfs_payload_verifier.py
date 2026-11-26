@@ -111,6 +111,8 @@ class LfsPayloadVerifierTests(unittest.TestCase):
             self.assertTrue(report["scan_complete"])
             self.assertEqual(report["scanned_regular_blob_count"], 2)
             self.assertEqual(len(report["regular_blob_inventory"]), 2)
+            self.assertEqual(provider._verified_bytes, {},
+                             "complete LFS inventory scan must not cache full regular blobs")
             self.assertEqual(report["pointer_count"], 1)
             self.assertEqual(report["unverified_payload_count"], 1)
             self.assertEqual(report["records"][0]["status"], "UNVERIFIED")
