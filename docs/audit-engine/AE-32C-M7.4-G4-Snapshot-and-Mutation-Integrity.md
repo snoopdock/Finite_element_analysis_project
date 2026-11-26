@@ -879,3 +879,14 @@ The full-repository campaign in the same run passed for NetworkX, SciPy, python-
 Artifact metadata binds all five backend archives to run `45778108441` and source `e8c8b45ef345fca1da25f34bb468d111f03f8417`. Artifact IDs and Actions-reported digests are recorded in Section 33 of the companion Task Suitability Assessment Contract.
 
 **G4 interpretation:** the regression matrix passed for its declared tests and the four in-process full-repository executions. It does not close the atomic-snapshot gap, mutation/restoration schedules, all filesystem alias/replacement races, the final-postflight race, or the need to prove a graph/evidence/finding set derives from one immutable source identity. The SNAP 16 MiB cap remains unchanged. G4 remains **Partial**; `atomic_snapshot_established=false`; `production_approval=false`.
+
+
+## 30. G4 immutable-object implementation contract
+
+The next implementation must connect the Git object inventory to the actual bytes parsed into the semantic graph. The current source manifest uses `git ls-tree` and `git cat-file --batch` to identify and hash committed blobs, but `RepositoryEvidenceTools` still builds its inventory and loads parser input through the filesystem-oriented `audit_repository(root)` path. A Git-backed manifest alone therefore does not prove that graph construction consumed immutable Git-object bytes.
+
+The source-reader contract, Git modes (regular blob, symlink, gitlink and LFS pointer), source-scope rules, graph/evidence identity propagation, and adversarial test matrix are specified in [AE-32C M7.4 G4 Immutable Git-object Source Reader Design](AE-32C-M7.4-G4-Immutable-Git-Object-Reader-Design.md).
+
+This is a design record, not an implementation claim. The existing live-tree path remains `BEST_EFFORT_NON_ATOMIC`. The immutable Git-object path must not be reported as implemented until the audit scanner and evidence graph builder consume the provider's object bytes directly and every derived artifact carries the same source snapshot identity. Dirty/untracked working-tree capture remains a separate problem.
+
+**Decision:** G4 remains Partial; `atomic_snapshot_established=false`.
