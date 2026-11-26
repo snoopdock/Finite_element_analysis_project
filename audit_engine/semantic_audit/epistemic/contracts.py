@@ -235,3 +235,57 @@ class CompletenessClaim:
                 raise ContractError("supported completeness requires exact unit-manifest coverage")
             if any(ref.source_snapshot_id != self.source_snapshot_id for ref in self.evidence_refs):
                 raise ContractError("completeness evidence must bind to the claim source snapshot")
+
+
+@dataclass(frozen=True)
+class ProvenanceDependency:
+    """A directed edge: dependent_id relies on dependency_id."""
+
+    edge_id: str
+    dependent_id: str
+    dependency_id: str
+    dependency_kind: str
+    expected_revision: str
+
+    def __post_init__(self) -> None:
+        for name in ("edge_id", "dependent_id", "dependency_id", "dependency_kind", "expected_revision"):
+            object.__setattr__(self, name, _required(getattr(self, name), name))
+        if self.dependent_id == self.dependency_id:
+            raise ContractError("a provenance node cannot depend on itself")
+
+
+@dataclass(frozen=True)
+class ProvenanceInvalidation:
+    """Append-only record that a changed node invalidates a dependent node."""
+
+    invalidation_id: str
+    node_id: str
+    root_change_id: str
+    changed_dependency_id: str
+    reason: str
+    observed_at: str
+
+    def __post_init__(self) -> None:
+        for name in ("invalidation_id", "node_id", "root_change_id", "changed_dependency_id", "reason", "observed_at"):
+            object.__setattr__(self, name, _required(getattr(self, name), name))
+
+
+class FreshnessStatus(str, Enum):
+    FRESH = "fresh"
+    INVALIDATED = "invalidated"
+    UNKNOWN = "unknown"
+
+
+@dataclass(frozen=True)
+class FreshnessResult:
+    node_id: str
+    status: FreshnessStatus
+    invalidation_ids: Tuple[str, ...] = ()
+    reason: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "node_id", _required(self.node_id, "node_id"))
+        if not isinstance(self.status, FreshnessStatus):
+            raise ContractError("status must be a FreshnessStatus")
+        object.__setattr__(self, "invalidation_ids", _unique_texts(self.invalidation_ids, "invalidation_ids"))
+        object.__setattr__(self, "reason", _optional_text(self.reason, "reason"))
