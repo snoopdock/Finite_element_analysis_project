@@ -81,6 +81,18 @@ class EpistemicStoreTests(unittest.TestCase):
         self.assertEqual(history[0]["payload"]["state"], "open")
         self.assertEqual(history[-1]["payload"]["state"], "resolved")
 
+    def test_gap_identity_cannot_be_rewritten_in_a_later_revision(self):
+        self.store.record_gap(gap())
+        changed = KnowledgeGap(
+            gap_id="gap-1", subject_id="different-source", kind=GapKind.SOURCE_UNAVAILABLE,
+            state=GapState.INVESTIGATING, scope_id="scope-1",
+            discovery_method="inventory:v1", impact="source content not available",
+        )
+        from audit_engine.semantic_audit.epistemic.store import StoreError
+        with self.assertRaises(StoreError):
+            self.store.transition_gap(changed, expected_revision=1)
+        self.assertEqual(len(self.store.gap_history("gap-1")), 1)
+
     def test_stale_revision_and_terminal_reopening_are_rejected(self):
         self.store.record_gap(gap())
         self.store.transition_gap(gap(GapState.INVESTIGATING), expected_revision=1)
