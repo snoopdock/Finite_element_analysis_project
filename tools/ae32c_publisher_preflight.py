@@ -105,7 +105,12 @@ def evaluate(
             ref_condition = conditions.get("ref_name") if isinstance(conditions, dict) else None
             includes = ref_condition.get("include", []) if isinstance(ref_condition, dict) else []
             excludes = ref_condition.get("exclude", []) if isinstance(ref_condition, dict) else []
-            if isinstance(includes, list) and any(x in expected_refs for x in includes) and not excludes:
+            if (
+                isinstance(includes, list)
+                and len(includes) == 1
+                and includes[0] in expected_refs
+                and not excludes
+            ):
                 matches.append(ruleset)
         valid = []
         for ruleset in matches:
