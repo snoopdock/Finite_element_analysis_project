@@ -14,16 +14,16 @@ permissions:
   contents: write
 
 concurrency:
-  group: branch-graphify-analysis-main
+  group: branch-graphify-analysis
   cancel-in-progress: false
 
 jobs:
   map-branches:
-    name: Map main and stage1/section-uuids
+    name: Build independent branch snapshots
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - name: Check out repository
+      - name: Check out default branch
         uses: actions/checkout@v4
         with:
           ref: main
@@ -42,24 +42,47 @@ jobs:
           python -m pip install -r tools/branch-graphify/requirements.txt
           graphify --help
 
-      - name: Fetch branch refs
+      - name: Test single-branch Graphify analysis contract
         run: |
-          git fetch origin '+refs/heads/*:refs/remotes/origin/*' --prune
-          git show-ref --verify refs/remotes/origin/main
-          git show-ref --verify refs/remotes/origin/stage1/section-uuids
+          python -m unittest discover \
+            -s tests/branch_graphify \
+            -p 'test_*.py' \
+            -v
 
-      - name: Build Graphify maps and Git comparison
+      - name: Fetch and pin branch snapshots
+        id: refs
+        shell: bash
         run: |
+          set -euo pipefail
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*' --prune
+          main_sha="$(git rev-parse refs/remotes/origin/main)"
+          stage1_sha="$(git rev-parse refs/remotes/origin/stage1/section-uuids)"
+          echo "main_sha=$main_sha" >> "$GITHUB_OUTPUT"
+          echo "stage1_sha=$stage1_sha" >> "$GITHUB_OUTPUT"
+          printf 'main: %s\nstage1/section-uuids: %s\n' "$main_sha" "$stage1_sha"
+
+      - name: Build independent Graphify snapshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_root="$RUNNER_TEMP/branch-graphify-results/latest"
           python tools/branch-graphify/run_analysis.py \
             --repo . \
-            --base main \
-            --compare stage1/section-uuids \
-            --output "$RUNNER_TEMP/branch-graphify-results/latest"
+            --branch main \
+            --commit "${{ steps.refs.outputs.main_sha }}" \
+            --output "$output_root/main"
+          python tools/branch-graphify/run_analysis.py \
+            --repo . \
+            --branch stage1/section-uuids \
+            --commit "${{ steps.refs.outputs.stage1_sha }}" \
+            --output "$output_root/stage1-section-uuids"
 
-      - name: Publish analysis results to main
+      - name: Publish per-branch analysis artifacts to main
+        shell: bash
         run: |
-          # Rebase publication onto the newest main without disturbing the
-          # immutable branch snapshots used by the analysis above.
+          set -euo pipefail
+          test -s "$RUNNER_TEMP/branch-graphify-results/latest/main/run-metadata.json"
+          test -s "$RUNNER_TEMP/branch-graphify-results/latest/stage1-section-uuids/run-metadata.json"
           git fetch origin main
           git reset --hard origin/main
           mkdir -p branch-graphify-results
@@ -67,10 +90,10 @@ jobs:
           cp -a "$RUNNER_TEMP/branch-graphify-results/latest" branch-graphify-results/latest
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add branch-graphify-results/latest
+          git add -A branch-graphify-results/latest
           if git diff --cached --quiet; then
-            echo "Analysis results are unchanged; nothing to commit."
+            echo "Per-branch Graphify snapshots are unchanged; nothing to commit."
           else
-            git commit -m "Update Graphify branch analysis [skip ci]"
+            git commit -m "Update independent Graphify branch snapshots [skip ci]"
             git push origin HEAD:main
           fi

@@ -81,6 +81,45 @@ class GraphSnapshotTests(unittest.TestCase):
         )
         self.assertNotEqual(first["graph_snapshot_id"], second["graph_snapshot_id"])
 
+    def test_graphify_generated_artifact_is_accounted_as_declared_scope_exclusion(self):
+        manifest = source_manifest()
+        manifest["source_inventory"]["entries"].append({
+            "path": "branch-graphify-results/latest/main/graph.json",
+            "mode": "100644",
+            "git_object_oid": "7" * 40,
+            "content_sha256": "8" * 64,
+        })
+        manifest["manifest_sha256"] = digest({
+            key: value for key, value in manifest.items() if key != "manifest_sha256"
+        })
+        evidence = report()
+        evidence["audit"]["scope_policy"]["excluded_generated_artifact_prefixes"] = [
+            "branch-graphify-results/"
+        ]
+        result = build_graph_snapshot(
+            source_manifest=manifest,
+            graph={"nodes": [{
+                "id": "file:src/a.py", "type": "PythonSourceFile",
+                "attributes": {"sha256": "4" * 64}, "metadata": {}
+            }], "edges": []},
+            evidence_report=evidence,
+            represented_paths={"src/a.py"},
+            file_hashes={"src/a.py": "4" * 64},
+            python_runtime="3.test",
+        )
+        coverage = result["coverage"]
+        excluded = next(
+            item for item in coverage["source_units"]
+            if item["path"] == "branch-graphify-results/latest/main/graph.json"
+        )
+        self.assertEqual(coverage["status"], "COMPLETE_WITH_DECLARED_EXCLUSIONS")
+        self.assertEqual(coverage["unaccounted_count"], 0)
+        self.assertEqual(excluded["status"], "outside_declared_source_scope")
+        self.assertEqual(
+            excluded["reason"],
+            "not_selected_by_ae32a_source_suffix_or_directory_policy",
+        )
+
     def test_unaccounted_source_unit_makes_coverage_incomplete(self):
         result = self._build(represented=set(), hashes={})
         self.assertEqual(result["coverage"]["status"], "INCOMPLETE")
