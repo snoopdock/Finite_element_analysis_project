@@ -1,6 +1,6 @@
 # AE-32C M7.5.3 — Scope-bound completeness and negative-claim admissibility
 
-**Status:** IMPLEMENTED; exact-source CI validation pending  
+**Status:** IMPLEMENTED AND CI-VALIDATED (exact-source run 45896939277)  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.1 epistemic contracts; M7.5.2 append-only persistence  
 **Authority:** admissibility checking only; no proposition-truth inference or decision-gate authority
@@ -95,6 +95,8 @@ The M7.5.3 suite covers:
 12. lossless M7.5.2-to-M7.5.3 schema migration.
 
 The workflow also reruns M7.5.1 and M7.5.2 suites to guard the existing contracts and store.
+
+Exact-source validation record: [AE-32C-M7.5.3-Validation-Record-45896939277.md](AE-32C-M7.5.3-Validation-Record-45896939277.md). The validated source SHA is `ac07aade9c5400f8cf5f20a72ef5add4158633fa`; all 37 tests across M7.5.1–M7.5.3 passed.
 
 ## 6. Explicit non-goals and residual risks
 
