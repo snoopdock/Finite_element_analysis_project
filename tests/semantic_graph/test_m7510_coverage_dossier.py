@@ -191,6 +191,31 @@ class CoverageDossierTests(unittest.TestCase):
         self.assertFalse(dossier.snapshot_consistent)
         self.assertEqual(dossier.overall_status, "unknown")
 
+    def test_other_scope_gaps_are_recorded_but_do_not_incomplete_this_claim(self):
+        self.epistemic.record_gap(KnowledgeGap(
+            "gap:unrelated", "source:unit-2", GapKind.PARTIAL_EXTRACTION,
+            GapState.OPEN, "scope:other", "inventory:v1",
+            "A gap belonging to a different claim scope",
+        ))
+        manifest = build_rule_derived_coverage_manifest(
+            self.claim, self.plan,
+            assessments={
+                self.obligation_id: CoverageObligation(
+                    self.obligation_id, ObligationDisposition.UNKNOWN,
+                )
+            },
+        )
+        dossier = build_and_persist_coverage_dossier(
+            dossier_id="dossier:other-scope", claim=self.claim, plan=self.plan,
+            manifest=manifest, gap_to_obligations={},
+            captured_at="2026-11-27T12:00:00Z",
+            assurance_store=self.assurance, epistemic_store=self.epistemic,
+            dossier_store=self.dossiers,
+        )
+        self.assertEqual(dossier.unreconciled_gap_ids, ())
+        self.assertEqual(dossier.out_of_scope_gap_ids, ("gap:unrelated",))
+        self.assertEqual(dossier.gap_inventory[0]["gap_id"], "gap:unrelated")
+
     def test_gap_outside_claim_scope_cannot_be_reconciled(self):
         self.epistemic.record_gap(KnowledgeGap(
             "gap:other-scope", "source:unit-1", GapKind.PARTIAL_EXTRACTION,
