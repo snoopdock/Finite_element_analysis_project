@@ -219,6 +219,52 @@ class EpistemicStore:
             for row in rows
         ]
 
+    def record_completeness_dependencies(self, claim: CompletenessClaim) -> tuple[str, ...]:
+        """Declare the claim's snapshot, method and evidence provenance dependencies."""
+        if not isinstance(claim, CompletenessClaim):
+            raise TypeError("claim must be a CompletenessClaim")
+        claim_node = f"claim:{claim.claim_id}"
+        edges: list[ProvenanceDependency] = []
+
+        def add(dependent: str, dependency: str, kind: str, revision: str) -> None:
+            edge_id = f"dep:{dependent}<-{dependency}:{kind}"
+            edges.append(ProvenanceDependency(
+                edge_id=edge_id, dependent_id=dependent, dependency_id=dependency,
+                dependency_kind=kind, expected_revision=revision,
+            ))
+
+        snapshot_node = f"snapshot:{claim.source_snapshot_id}"
+        add(claim_node, snapshot_node, "source_snapshot", claim.source_snapshot_id)
+        add(claim_node, f"enumerator:{claim.enumeration_method}", "enumeration_method", claim.method_version)
+        if claim.verification_method_id:
+            add(claim_node, f"verification:{claim.verification_method_id}",
+                "verification_method", claim.verification_method_id)
+        for ref in claim.evidence_refs:
+            evidence_node = f"evidence:{ref.evidence_id}"
+            add(claim_node, evidence_node, "evidence_reference", ref.evidence_id)
+            add(evidence_node, f"snapshot:{ref.source_snapshot_id}",
+                "evidence_snapshot", ref.source_snapshot_id)
+            add(evidence_node, f"producer:{ref.producer_id}", "evidence_producer", ref.producer_id)
+            add(evidence_node, f"method:{ref.method_id}", "evidence_method", ref.method_id)
+            if ref.artifact_sha256:
+                add(evidence_node, f"artifact-sha256:{ref.artifact_sha256}",
+                    "artifact_digest", ref.artifact_sha256)
+
+        with self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            adjacency = self._dependency_adjacency()
+            recorded: list[str] = []
+            for edge in edges:
+                if self._reachable(adjacency, edge.dependency_id, edge.dependent_id):
+                    raise StoreError(f"dependency edge {edge.edge_id} would introduce a cycle")
+                self._append(
+                    "dependency", edge.edge_id, 1, _canonical_payload(edge),
+                    transaction_open=True,
+                )
+                adjacency.setdefault(edge.dependent_id, set()).add(edge.dependency_id)
+                recorded.append(edge.edge_id)
+        return tuple(recorded)
+
     def dependency_history(self) -> list[dict[str, Any]]:
         rows = self._connection.execute(
             """SELECT sequence, record_id, payload, event_hash FROM epistemic_events
