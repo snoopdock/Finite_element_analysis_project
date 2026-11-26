@@ -87,9 +87,11 @@ jobs:
           case "$WARMUP" in 0|1|2|3|5) ;; *) echo "Invalid warmup: $WARMUP" >&2; exit 2 ;; esac
           SOURCE_SHA="$(git rev-parse HEAD)"
           [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
-          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
-          echo "repeats=$REPEATS" >> "$GITHUB_OUTPUT"
-          echo "warmup=$WARMUP" >> "$GITHUB_OUTPUT"
+          {
+            echo "source_sha=$SOURCE_SHA"
+            echo "repeats=$REPEATS"
+            echo "warmup=$WARMUP"
+          } >> "$GITHUB_OUTPUT"
           {
             echo "### M7.1 source resolution"
             echo "- Requested ref: $REQUESTED_REF"
