@@ -771,3 +771,36 @@ The same source passed the Linux source-snapshot cost characterization job and a
 This does not create an atomic repository-wide snapshot. It also does not close every filesystem metadata/external-side-effect boundary, every mutation-and-restoration schedule, or the native-projection postflight-to-return window. A validated file handle secures the identity and containment of that individual read; it does not prove that all files in a multi-file repository view existed in one common instant.
 
 **G4 status:** improved; Windows component-inspection-to-open escape is closed for the tested junction-replacement schedule. G4 remains **Partial** pending a declared/implemented repository-wide snapshot consistency contract, broader filesystem namespace and side-effect coverage, and native projection concurrency/postflight closure. All 20 task/backend suitability outcomes remain Insufficient evidence; `production_approval=false`.
+
+
+## 26. Research-informed boundary: path confinement is not repository snapshot atomicity — 2026-11-26
+
+The current reader now has two distinct containment mechanisms: POSIX descriptor-relative component traversal with no-follow handling, and Windows handle-bound final-path validation with reparse-point rejection. The Windows implementation is stronger than a path-only check because it validates the actual opened object. Neither mechanism establishes that all files in a multi-file repository view were observed at one common instant.
+
+### 26.1 Relevant platform primitives
+
+Linux `openat2(2)` provides a single kernel path-resolution operation relative to a directory descriptor. Its `RESOLVE_BENEATH` constraint rejects resolution that escapes the supplied directory; `RESOLVE_NO_SYMLINKS` rejects symbolic links in every path component; and `RESOLVE_NO_MAGICLINKS` explicitly rejects magic-link resolution. The manual page notes that `RESOLVE_BENEATH` currently also disables magic links but recommends specifying `RESOLVE_NO_MAGICLINKS` explicitly because that behavior may change. `openat2` has been available since Linux 5.6. These flags can strengthen or simplify the Linux path-confinement implementation, but they do not create an atomic snapshot across multiple independent file opens. Reference: [Linux openat2(2) manual](https://man7.org/linux/man-pages/man2/openat2.2.html).
+
+Windows `CreateFileW` with `FILE_FLAG_OPEN_REPARSE_POINT` opens the reparse point itself instead of following normal reparse-point processing. That is the relevant primitive behind the current handle-bound check; the final opened handle still has to be inspected and checked against the held root handle. It is not a repository-wide snapshot primitive. Reference: [Microsoft CreateFileW documentation](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew).
+
+### 26.2 Snapshot consistency decision
+
+Do not treat stronger pathname resolution as a substitute for snapshot consistency. The next G4 design decision should separate two input classes:
+
+1. **Committed source state:** resolve the exact Git commit/tree identity first and read the immutable Git object graph (or a detached worktree pinned to that commit). The graph and its coverage denominator must bind to that same source identity.
+2. **Dirty working-tree state:** capture a private immutable staging snapshot or use a filesystem snapshot/copy-on-write facility where available. If a point-in-time snapshot cannot be obtained, the reader must report a bounded, non-atomic observation or abstain; a before/after manifest alone must not be described as atomic.
+
+A multi-pass manifest remains useful for detecting tested changes, but it cannot rule out a mutation-and-restoration schedule between observations or prove that every file came from one simultaneous filesystem state.
+
+### 26.3 Remaining adversarial acceptance work
+
+The next G4 tranche should test and specify:
+
+- Multi-file writes during enumeration and during content loading, including a writer that changes one file while another is being read.
+- Mutation-and-restoration (ABA) schedules that restore file bytes, size and timestamps before postflight.
+- Directory rename, symlink, junction, mount-point and hard-link alias schedules on the platforms where those objects are supported.
+- Mutation of the canonical graph after the final projection audit but before the query result is returned.
+- A positive consistency test proving that an accepted result corresponds to one immutable source snapshot, not merely two matching observations.
+- Fail-closed behavior when a stable snapshot cannot be established.
+
+**G4 remains Partial.** The Linux and Windows path-confinement primitives support safe individual file opens under tested conditions; neither closes the repository-wide atomicity, full filesystem-side-effect, mutation/restoration or postflight-to-return gaps. No M7.4 task/backend suitability outcome is upgraded by this research note.
