@@ -66,7 +66,7 @@
       "id": 15095470377,
       "name": "e85-e88-snap-isolated-worker",
       "size_in_bytes": 5149,
-      "digest": "sha256:4b4373bd50bbb1d786724c62f4f5fd79ec7882f5e4dfe94a18398337a94c3e8",
+      "digest": "sha256:4b4373bd50bbb1d7867244c62f4f5fd79ec7882f5e4dfe94a18398337a94c3e8",
       "expired": false,
       "workflow_run": {
         "id": 45773593165,
