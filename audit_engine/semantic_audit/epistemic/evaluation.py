@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
 
-from .contracts import CompletenessClaim, CompletenessStatus
+from .contracts import (CompletenessClaim, CompletenessStatus, FreshnessResult, FreshnessStatus)
 
 
 @dataclass(frozen=True)
@@ -107,4 +107,34 @@ def evaluate_negative_claim(
         admissible=not reasons,
         reasons=tuple(reasons),
         claim_id=claim.claim_id,
+    )
+
+
+
+def evaluate_negative_claim_with_freshness(
+    claim: CompletenessClaim,
+    request: NegativeClaimRequest,
+    freshness: FreshnessResult,
+) -> AdmissibilityDecision:
+    """Evaluate M7.5.3 preconditions and require an explicit FRESH result.
+
+    UNKNOWN is fail-closed: absence of invalidation records is not evidence of
+    freshness unless a dependency declaration establishes what was checked.
+    """
+    if not isinstance(freshness, FreshnessResult):
+        raise TypeError("freshness must be a FreshnessResult")
+    if freshness.node_id != f"claim:{claim.claim_id}":
+        raise ValueError("freshness result belongs to a different claim")
+    decision = evaluate_negative_claim(claim, request)
+    if freshness.status is FreshnessStatus.FRESH:
+        return decision
+    reason = (
+        "completeness claim has been invalidated by a dependency change"
+        if freshness.status is FreshnessStatus.INVALIDATED
+        else "completeness claim freshness is unknown because dependencies are not declared"
+    )
+    return AdmissibilityDecision(
+        admissible=False,
+        reasons=decision.reasons + (reason,),
+        claim_id=decision.claim_id,
     )
