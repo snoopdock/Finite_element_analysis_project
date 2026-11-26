@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import platform
+import re
 import sys
 from typing import Any
 
@@ -21,6 +22,7 @@ from audit_engine.semantic_audit.ae32c.rule_contracts import (
     rule_registry,
     verify_finding_ledger,
 )
+from audit_engine.semantic_audit.ae32c.lfs_payload_verifier import verify_lfs_payloads
 
 GRAPH_MANIFEST_SCHEMA = "ae32c/graph-snapshot-manifest/v1"
 GRAPH_SCHEMA_VERSION = "semantic_graph/v1"
@@ -76,6 +78,98 @@ def _canonical_graph(graph: Any) -> dict[str, Any]:
     return {"nodes": nodes, "edges": edges}
 
 
+
+def _verify_lfs_attestation(
+    attestation: dict[str, Any],
+    *,
+    source_snapshot_id: str,
+    commit_oid: str,
+    source_inventory_sha256: str,
+    regular_inventory: list[dict[str, Any]],
+) -> None:
+    """Validate complete regular-blob classification and exact pointer evidence."""
+    if not isinstance(attestation, dict) or attestation.get("schema") != "ae32c/lfs-payload-verification/v2":
+        raise GraphSnapshotError("lfs_attestation_schema_invalid")
+    payload = {key: value for key, value in attestation.items() if key != "attestation_sha256"}
+    if attestation.get("attestation_sha256") != digest(payload):
+        raise GraphSnapshotError("lfs_attestation_digest_mismatch")
+    if (attestation.get("source_snapshot_id") != source_snapshot_id
+            or attestation.get("commit_oid") != commit_oid
+            or attestation.get("source_inventory_sha256") != source_inventory_sha256):
+        raise GraphSnapshotError("lfs_attestation_source_binding_mismatch")
+    if attestation.get("scan_complete") is not True:
+        raise GraphSnapshotError("lfs_regular_blob_scan_incomplete")
+    expected = [
+        {"path": item["path"], "git_object_oid": item["git_object_oid"],
+         "content_sha256": item["content_sha256"]}
+        for item in regular_inventory
+    ]
+    actual = attestation.get("regular_blob_inventory")
+    if not isinstance(actual, list) or len(actual) != len(expected):
+        raise GraphSnapshotError("lfs_regular_blob_inventory_count_mismatch")
+    actual_keys = [(item.get("path"), item.get("git_object_oid"), item.get("content_sha256"))
+                   for item in actual if isinstance(item, dict)]
+    expected_keys = [(item["path"], item["git_object_oid"], item["content_sha256"])
+                     for item in expected]
+    if len(actual_keys) != len(actual) or len(set(item[0] for item in actual_keys)) != len(actual_keys):
+        raise GraphSnapshotError("lfs_regular_blob_inventory_duplicate_or_invalid")
+    if actual_keys != expected_keys or any(not isinstance(item.get("is_lfs_pointer"), bool) for item in actual):
+        raise GraphSnapshotError("lfs_regular_blob_inventory_mismatch")
+    if attestation.get("scanned_regular_blob_count") != len(expected):
+        raise GraphSnapshotError("lfs_regular_blob_scan_count_mismatch")
+    pointer_paths = [item["path"] for item in actual if item["is_lfs_pointer"]]
+    records = attestation.get("records")
+    if not isinstance(records, list):
+        raise GraphSnapshotError("lfs_pointer_records_invalid")
+    record_paths = [item.get("path") for item in records if isinstance(item, dict)]
+    if len(record_paths) != len(records) or len(set(record_paths)) != len(record_paths):
+        raise GraphSnapshotError("lfs_pointer_records_duplicate_or_invalid")
+    if record_paths != pointer_paths:
+        raise GraphSnapshotError("lfs_pointer_records_incomplete_or_extra")
+    by_path = {item["path"]: item for item in actual}
+    verified = 0
+    unverified = 0
+    for record in records:
+        inventory_item = by_path[record["path"]]
+        if (record.get("git_object_oid") != inventory_item["git_object_oid"]
+                or record.get("pointer_sha256") != inventory_item["content_sha256"]):
+            raise GraphSnapshotError("lfs_pointer_record_inventory_mismatch")
+        if record.get("status") == "VERIFIED_LOCAL_PAYLOAD":
+            oid = record.get("oid")
+            size = record.get("expected_size")
+            if (not isinstance(oid, str) or not re.fullmatch(r"[0-9a-f]{64}", oid)
+                    or record.get("sha256") != oid
+                    or not isinstance(size, int) or isinstance(size, bool) or size < 0
+                    or record.get("actual_size") != size):
+                raise GraphSnapshotError("lfs_verified_payload_record_invalid")
+            verified += 1
+        elif record.get("status") == "UNVERIFIED" and isinstance(record.get("reason"), str):
+            unverified += 1
+        else:
+            raise GraphSnapshotError("lfs_pointer_record_status_invalid")
+    if (attestation.get("pointer_count") != len(records)
+            or attestation.get("verified_payload_count") != verified
+            or attestation.get("unverified_payload_count") != unverified):
+        raise GraphSnapshotError("lfs_pointer_record_counts_mismatch")
+    status = attestation.get("status")
+    if status == "NOT_SUPPLIED":
+        if verified or unverified != len(records):
+            raise GraphSnapshotError("lfs_not_supplied_status_mismatch")
+    elif status == "UNVERIFIED":
+        if not unverified:
+            raise GraphSnapshotError("lfs_unverified_status_mismatch")
+    elif status == "VERIFIED_LOCAL_PAYLOADS":
+        if unverified or verified != len(records):
+            raise GraphSnapshotError("lfs_verified_status_mismatch")
+    else:
+        raise GraphSnapshotError("lfs_attestation_status_invalid")
+    if attestation.get("lfs_payload_verified") is not (status == "VERIFIED_LOCAL_PAYLOADS"):
+        raise GraphSnapshotError("lfs_payload_verified_flag_mismatch")
+    for forbidden in ("remote_payload_provenance_verified", "atomic_snapshot_established", "production_approval"):
+        if attestation.get(forbidden) is not False:
+            raise GraphSnapshotError("lfs_forbidden_authority_claim:" + forbidden)
+
+
 def build_coverage_manifest(
     source_manifest: dict[str, Any],
     evidence_report: dict[str, Any],
@@ -86,6 +180,7 @@ def build_coverage_manifest(
     structured_issues: list[dict[str, Any]] | None = None,
     module_identity_issues: list[dict[str, Any]] | None = None,
     evidence_index_status: str = "complete",
+    lfs_attestation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Account for every Git tree entry and every AE-32A candidate source unit."""
     sensitive_paths = sensitive_paths or set()
@@ -97,6 +192,21 @@ def build_coverage_manifest(
     counts: Counter[str] = Counter()
     unaccounted: list[str] = []
     inventory_entries = source_manifest.get("source_inventory", {}).get("entries", [])
+    regular_inventory = [
+        item for item in inventory_entries
+        if isinstance(item, dict) and item.get("object_type") == "blob"
+        and item.get("mode") in {"100644", "100755"}
+    ]
+    if lfs_attestation is None:
+        raise GraphSnapshotError("lfs_attestation_required")
+    source = source_manifest.get("source", {})
+    _verify_lfs_attestation(
+        lfs_attestation,
+        source_snapshot_id=source_manifest.get("source_snapshot_id", ""),
+        commit_oid=source.get("commit_oid", ""),
+        source_inventory_sha256=source_manifest.get("source_inventory", {}).get("sha256", ""),
+        regular_inventory=regular_inventory,
+    )
     inventory_paths = {
         item.get("path") for item in inventory_entries
         if isinstance(item, dict) and item.get("object_type") == "blob"
@@ -131,6 +241,8 @@ def build_coverage_manifest(
         counts[status] += 1
         units.append({
             "path": path,
+            "mode": entry.get("mode"),
+            "object_type": entry.get("object_type"),
             "git_object_oid": entry.get("git_object_oid"),
             "source_content_sha256": entry.get("content_sha256"),
             "status": status,
@@ -187,6 +299,14 @@ def build_coverage_manifest(
         "unaccounted_count": counts["unaccounted"],
         "status_counts": dict(sorted(counts.items())),
         "source_units": units,
+        "lfs_payloads": {
+            "status": lfs_attestation["status"],
+            "scanned_regular_blob_count": lfs_attestation["scanned_regular_blob_count"],
+            "pointer_count": lfs_attestation["pointer_count"],
+            "verified_payload_count": lfs_attestation["verified_payload_count"],
+            "unverified_payload_count": lfs_attestation["unverified_payload_count"],
+            "attestation_sha256": lfs_attestation["attestation_sha256"],
+        },
         "extractor_coverage": extractor_coverage,
         "limitations": {
             "source_scope_policy": audit.get("scope_policy", {}),
@@ -209,6 +329,7 @@ def build_graph_snapshot(
     module_identity_issues: list[dict[str, Any]] | None = None,
     evidence_index_status: str = "complete",
     python_runtime: str | None = None,
+    lfs_attestation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     _verify_source_manifest(source_manifest, source_manifest.get("source", {}).get("commit_oid"))
     canonical_graph = _canonical_graph(graph)
@@ -217,6 +338,7 @@ def build_graph_snapshot(
         sensitive_paths=sensitive_paths, structured_issues=structured_issues,
         module_identity_issues=module_identity_issues,
         evidence_index_status=evidence_index_status,
+        lfs_attestation=lfs_attestation,
     )
     graph_content_sha256 = digest({
         "graph_schema_version": GRAPH_SCHEMA_VERSION,
@@ -238,6 +360,7 @@ def build_graph_snapshot(
         "builder": builder,
         "graph_content_sha256": graph_content_sha256,
         "coverage_sha256": coverage_sha256,
+        "lfs_attestation_sha256": lfs_attestation["attestation_sha256"],
     }
     finding_ledger = build_finding_ledger(
         list(evidence_report.get("findings", [])),
@@ -260,6 +383,7 @@ def build_graph_snapshot(
             "repository": source["repository"],
             "commit_oid": source["commit_oid"],
             "root_tree_oid": source["root_tree_oid"],
+            "source_inventory_sha256": source_manifest["source_inventory"]["sha256"],
         },
         "builder": builder,
         "graph": {
@@ -269,6 +393,7 @@ def build_graph_snapshot(
         },
         "coverage": coverage,
         "coverage_sha256": coverage_sha256,
+        "lfs_attestation": lfs_attestation,
         "identity": identity,
         "rule_registry_sha256": finding_ledger["rule_registry_sha256"],
         "finding_ledger": finding_ledger,
@@ -305,6 +430,27 @@ def verify_graph_manifest(manifest: dict[str, Any]) -> None:
         raise GraphSnapshotError("graph_coverage_identity_mismatch")
     if identity.get("source_snapshot_id") != manifest.get("source_snapshot_id"):
         raise GraphSnapshotError("graph_source_identity_mismatch")
+    source = manifest.get("source", {})
+    attestation = manifest.get("lfs_attestation")
+    coverage_lfs = coverage.get("lfs_payloads", {})
+    if (not isinstance(attestation, dict)
+            or identity.get("lfs_attestation_sha256") != attestation.get("attestation_sha256")
+            or coverage_lfs.get("attestation_sha256") != attestation.get("attestation_sha256")):
+        raise GraphSnapshotError("graph_lfs_attestation_reference_mismatch")
+    source_units = coverage.get("source_units", [])
+    regular_inventory = [
+        {"path": item.get("path"), "git_object_oid": item.get("git_object_oid"),
+         "content_sha256": item.get("source_content_sha256")}
+        for item in source_units if isinstance(item, dict)
+        and item.get("object_type") == "blob" and item.get("mode") in {"100644", "100755"}
+    ]
+    _verify_lfs_attestation(
+        attestation,
+        source_snapshot_id=manifest.get("source_snapshot_id", ""),
+        commit_oid=source.get("commit_oid", ""),
+        source_inventory_sha256=source.get("source_inventory_sha256", ""),
+        regular_inventory=regular_inventory,
+    )
     ledger = manifest.get("finding_ledger")
     if not isinstance(ledger, dict):
         raise GraphSnapshotError("finding_ledger_missing")
@@ -323,7 +469,8 @@ def verify_graph_manifest(manifest: dict[str, Any]) -> None:
 
 
 def capture(repository: str | Path, source_manifest_path: str | Path,
-            expected_source_revision: str | None = None) -> dict[str, Any]:
+            expected_source_revision: str | None = None,
+            lfs_object_store: str | Path | None = None) -> dict[str, Any]:
     source_manifest = json.loads(Path(source_manifest_path).read_text(encoding="utf-8"))
     _verify_source_manifest(source_manifest, expected_source_revision)
     repository_root = Path(repository).expanduser().resolve(strict=True)
@@ -345,6 +492,7 @@ def capture(repository: str | Path, source_manifest_path: str | Path,
     )
     if builder.report.get("audit", {}).get("source_revision") != source_manifest["source"]["commit_oid"]:
         raise GraphSnapshotError("evidence_builder_source_revision_mismatch")
+    lfs_attestation = verify_lfs_payloads(source_provider, lfs_object_store)
     snapshot = build_graph_snapshot(
         source_manifest=source_manifest,
         graph=builder.graph,
@@ -355,6 +503,7 @@ def capture(repository: str | Path, source_manifest_path: str | Path,
         structured_issues=builder.structured_record_issues,
         module_identity_issues=builder.module_identity_issues,
         evidence_index_status=builder.evidence_index_status,
+        lfs_attestation=lfs_attestation,
     )
     return snapshot
 
@@ -365,9 +514,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source-manifest", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--expected-source-revision")
+    parser.add_argument("--lfs-object-store", help="Explicit local Git LFS object-store root; no network fetch is performed")
     args = parser.parse_args(argv)
     try:
-        result = capture(args.repository, args.source_manifest, args.expected_source_revision)
+        result = capture(args.repository, args.source_manifest, args.expected_source_revision, args.lfs_object_store)
         path = Path(args.output)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(canonical_bytes(result))
