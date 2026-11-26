@@ -8,6 +8,10 @@ on:
       - ".github/workflows/m7_4_source_snapshot_integrity_cost.yml"
       - "audit_engine/semantic_audit/ae32a/audit.py"
       - "audit_engine/semantic_audit/ae32b/evidence_tools.py"
+      - "audit_engine/semantic_audit/ae32c/git_object_source.py"
+      - "tools/ae32c_graph_snapshot.py"
+      - "tests/semantic_graph/test_ae32c_git_object_source.py"
+      - "tests/semantic_graph/test_ae32c_graph_snapshot.py"
       - "tools/gb06_source_snapshot_integrity_benchmark.py"
       - "tests/semantic_graph/test_m7_g4_source_snapshot_integrity_benchmark.py"
       - "tests/semantic_graph/test_m74_snapshot_mutation_integrity.py"
@@ -126,5 +130,5 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
           python -m pip check
-      - name: Run source snapshot and repository side-effect tests on Windows fallback
-        run: python -m pytest -q tests/semantic_graph/test_m7_g4_source_snapshot_integrity_benchmark.py tests/semantic_graph/test_m74_snapshot_mutation_integrity.py tests/semantic_graph/test_m74_repository_side_effects.py
+      - name: Run immutable Git-object provider and source snapshot tests on Windows
+        run: python -m pytest -q tests/semantic_graph/test_ae32c_git_object_source.py tests/semantic_graph/test_m7_g4_source_snapshot_integrity_benchmark.py tests/semantic_graph/test_m74_snapshot_mutation_integrity.py tests/semantic_graph/test_m74_repository_side_effects.py

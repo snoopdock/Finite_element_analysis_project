@@ -35,7 +35,11 @@ class GitObjectSourceProviderTests(unittest.TestCase):
         (root / "src" / "lfs-pointer.txt").write_text(
             "version https://git-lfs.github.com/spec/v1\n"
             "oid sha256:" + "a" * 64 + "\nsize 123\n", encoding="utf-8")
-        (root / "src" / "linked.py").symlink_to("module.py")
+        self.symlink_available = True
+        try:
+            (root / "src" / "linked.py").symlink_to("module.py")
+        except (OSError, NotImplementedError):
+            self.symlink_available = False
         (root / ".gitignore").write_text("scratch.py\n", encoding="utf-8")
         self._git(root, "add", ".")
         self._git(root, "commit", "-m", "initial")
@@ -70,6 +74,8 @@ class GitObjectSourceProviderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             self._repository(root)
+            if not self.symlink_available:
+                self.skipTest("host does not permit creating a test symlink")
             provider = GitObjectSourceProvider(root, self._verified_manifest(root))
             from audit_engine.semantic_audit.ae32c.git_object_source import GitObjectSourceError
             with self.assertRaisesRegex(GitObjectSourceError, "entry_not_regular_file_blob"):
