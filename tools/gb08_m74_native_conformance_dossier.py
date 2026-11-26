@@ -55,14 +55,14 @@ def verify_m74_task_acceptance(raw, backend):
     failures = sum(case.find("failure") is not None for case in cases)
     errors = sum(case.find("error") is not None for case in cases)
     passed = len(cases) - skipped - failures - errors
-    need((len(cases), passed, skipped, failures, errors) == (110, 22, 88, 0, 0),
+    need((len(cases), passed, skipped, failures, errors) == (115, 23, 92, 0, 0),
          "m74_task_acceptance_counts:" + backend)
     passed_names = [case.attrib.get("name", "") for case in cases
                     if case.find("skipped") is None and case.find("failure") is None
                     and case.find("error") is None]
-    need(len(passed_names) == 22 and all(backend in name for name in passed_names),
+    need(len(passed_names) == 23 and all(backend in name for name in passed_names),
          "m74_task_acceptance_backend_binding:" + backend)
-    return {"tests": 110, "passed": 22, "skipped": 88, "failures": 0, "errors": 0}
+    return {"tests": 115, "passed": 23, "skipped": 92, "failures": 0, "errors": 0}
 
 
 def identity(r,b,schema,label,run_id=RUN,source_revision=SOURCE):
