@@ -1,6 +1,6 @@
 # AE-32C M7.5.10 — Persistent Coverage Dossiers, Snapshot Binding and Gap Reconciliation
 
-**Status:** Implemented; exact-source CI validation pending.  
+**Status:** Implemented; corrective validation-precedence changes committed; exact-source CI validation pending.  
 **Branch:** `stage1/section-uuids`  
 **Scope:** M7.5 epistemic assurance only. No deterministic audit-decision or authorization integration.
 
@@ -49,7 +49,7 @@ Every gap in the captured epistemic ledger whose persisted `scope_id` matches th
 
 The complete gap inventory is provided by the public `EpistemicStore.gap_records_snapshot()` API. It verifies the event hash chain and returns every latest gap revision in stable gap-ID order from one SQLite read transaction. The dossier layer no longer accesses the store's private connection or duplicates its table schema.
 
-## 4. Persistence and recovery
+## 4. Mapping validation precedence\n\nMapping validation has a deterministic order so that a downstream defect cannot mask a more fundamental one:\n\n1. Mapping shape and identifier syntax.\n2. Gap existence in the verified persisted inventory.\n3. Gap scope equality with the assurance claim.\n4. Target obligation membership in the derived plan.\n5. Representation of each gap/obligation pair in the assessed manifest.\n\nRegression tests exercise simultaneous defects to ensure nonexistent-gap and out-of-scope errors take precedence over invalid target or manifest mappings.\n\n## 5. Persistence and recovery
 
 `CoverageDossierStore` is a separate SQLite append-only ledger. It has:
 
@@ -64,7 +64,7 @@ The complete gap inventory is provided by the public `EpistemicStore.gap_records
 
 A dossier survives closing and reopening the store. Recovery reads the persisted payload only after verifying the dossier ledger's full chain.
 
-## 5. Snapshot binding and concurrency semantics
+## 6. Snapshot binding and concurrency semantics
 
 The dossier captures both source-ledger tokens before and after gap inventory and coverage evaluation. If either token changes during the capture interval, `snapshot_consistent` is false and overall status is `UNKNOWN`.
 
@@ -72,7 +72,7 @@ The verifier compares current source-ledger tokens with the captured after-token
 
 **Important transaction boundary:** the assurance and epistemic ledgers are independent SQLite databases, and the dossier is a third database. M7.5.10 does not claim a distributed atomic transaction. Before/after token comparison is optimistic concurrency detection, not cross-database locking or consensus. A mutation after the final token read is detectable by a later current-snapshot verification, but cannot retroactively change the immutable capture record.
 
-## 6. Validation
+## 7. Validation
 
 New tests: `tests/semantic_graph/test_m7510_coverage_dossier.py`
 
@@ -89,7 +89,7 @@ The tests cover:
 
 The workflow `.github/workflows/m7_5_10_coverage_dossier.yml` compiles the epistemic package and runs the complete `test_m75*.py` regression set on the exact triggering revision. The milestone must not be called CI-validated until that run succeeds.
 
-## 7. Explicit limitations
+## 8. Explicit limitations
 
 M7.5.10 does not establish:
 
@@ -103,6 +103,6 @@ M7.5.10 does not establish:
 
 The graph snapshot ID is retained through the rule-derived plan and its digest; M7.5.8's existing manifest schema remains unchanged.
 
-## 8. Next engineering boundary
+## 9. Next engineering boundary
 
 Before M7.5.11 or any decision-gate integration, decide whether cross-ledger atomicity is required. If atomicity is required, the architecture must consolidate the relevant records into one transactional store or introduce a formally specified commit protocol; simply comparing tokens is insufficient.
