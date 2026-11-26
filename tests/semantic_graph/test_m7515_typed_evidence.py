@@ -7,8 +7,11 @@ import unittest
 from pathlib import Path
 
 from audit_engine.semantic_audit.epistemic import (
-    AssuranceClaim, CoverageObligation, ObligationDisposition,
+    AssuranceClaim, AssuranceStore, CoverageDossierStore, EpistemicStore,
+    CoverageObligation, ObligationDisposition, build_and_persist_coverage_dossier,
     build_rule_derived_coverage_manifest, derive_rule_coverage_plan,
+    build_and_persist_execution_obligation_reconciliation,
+    ExecutionObligationReconciliationStore,
 )
 from audit_engine.semantic_audit.epistemic.source_inventory import build_source_extractor_inventory
 from audit_engine.semantic_audit.epistemic.extractor_execution import build_extractor_execution_report
@@ -66,8 +69,32 @@ class TypedEvidenceObservationTests(unittest.TestCase):
             assessments={oid:CoverageObligation(oid,ObligationDisposition.UNKNOWN,
                 limitation="structural observations are not semantic acceptance")
                 for oid in self.plan.expected_obligation_ids})
+        self.assurance = AssuranceStore(self.root/"assurance.sqlite")
+        self.epistemic = EpistemicStore(self.root/"epistemic.sqlite")
+        self.dossiers = CoverageDossierStore(self.root/"dossiers.sqlite")
+        self.reconciliation_store = ExecutionObligationReconciliationStore(
+            self.root/"execution-reconciliation.sqlite")
+        self.observation_store = TypedEvidenceObservationStore(self.root/"typed-evidence.sqlite")
+        self.assurance.record(self.claim)
+        build_and_persist_coverage_dossier(
+            dossier_id="dossier:m7515",claim=self.claim,plan=self.plan,manifest=self.manifest,
+            gap_to_obligations={},captured_at="2026-11-27T00:00:00Z",
+            assurance_store=self.assurance,epistemic_store=self.epistemic,
+            dossier_store=self.dossiers)
+        self.execution_reconciliation = build_and_persist_execution_obligation_reconciliation(
+            reconciliation_store=self.reconciliation_store,dossier_id="dossier:m7515",
+            claim=self.claim,plan=self.plan,manifest=self.manifest,
+            source_manifest=self.source,inventory=self.inventory,
+            execution_report=self.execution,repository_root=self.root,
+            assurance_store=self.assurance,epistemic_store=self.epistemic,
+            dossier_store=self.dossiers)
 
     def tearDown(self):
+        self.observation_store.close()
+        self.reconciliation_store.close()
+        self.dossiers.close()
+        self.assurance.close()
+        self.epistemic.close()
         self.tmp.cleanup()
 
     def test_graph_import_is_exact_source_bound_observation_not_rule_satisfaction(self):
@@ -126,49 +153,29 @@ class TypedEvidenceObservationTests(unittest.TestCase):
                 bundle,plan=self.plan,inventory=self.inventory,
                 execution_report=self.execution,repository_root=self.root)
 
-    def test_persistence_requires_matching_m7514_execution_reconciliation(self):
-        payload = {
-            "schema":"ae32c/execution-obligation-reconciliation/v1",
-            "source_snapshot_id":self.plan.source_snapshot_id,
-            "plan_sha256":self.plan.plan_sha256,
-            "execution_report_sha256":self.execution["report_sha256"],
-            "authority":{"extractor_execution_reconciled_to_declared_obligations":True},
-            "obligations":[{"obligation_id":oid} for oid in self.plan.expected_obligation_ids],
-        }
-        reconciliation = {**payload,"reconciliation_sha256":seal(payload)}
-        store = TypedEvidenceObservationStore(self.root/"integrated.sqlite")
-        try:
-            bundle = build_and_persist_typed_evidence_observations(
-                store=store,plan=self.plan,claim=self.claim,manifest=self.manifest,
-                source_manifest=self.source,inventory=self.inventory,
-                execution_report=self.execution,execution_reconciliation=reconciliation,
-                repository_root=self.root)
-            self.assertEqual(store.get(bundle["bundle_sha256"]),bundle)
-            self.assertEqual(bundle["summary"]["semantic_evidence_accepted_count"],0)
-        finally:
-            store.close()
+    def test_persistence_requires_independently_replayed_m7514_reconciliation(self):
+        bundle = build_and_persist_typed_evidence_observations(
+            store=self.observation_store,plan=self.plan,claim=self.claim,manifest=self.manifest,
+            source_manifest=self.source,inventory=self.inventory,
+            execution_report=self.execution,dossier_id="dossier:m7515",
+            reconciliation_id=self.execution_reconciliation["reconciliation_sha256"],
+            reconciliation_store=self.reconciliation_store,
+            assurance_store=self.assurance,epistemic_store=self.epistemic,
+            dossier_store=self.dossiers,repository_root=self.root)
+        self.assertEqual(self.observation_store.get(bundle["bundle_sha256"]),bundle)
+        self.assertEqual(bundle["summary"]["semantic_evidence_accepted_count"],0)
 
-    def test_wrong_execution_reconciliation_is_rejected(self):
-        payload = {
-            "schema":"ae32c/execution-obligation-reconciliation/v1",
-            "source_snapshot_id":"another-snapshot",
-            "plan_sha256":self.plan.plan_sha256,
-            "execution_report_sha256":self.execution["report_sha256"],
-            "authority":{"extractor_execution_reconciled_to_declared_obligations":True},
-            "obligations":[{"obligation_id":oid} for oid in self.plan.expected_obligation_ids],
-        }
-        reconciliation = {**payload,"reconciliation_sha256":seal(payload)}
-        store = TypedEvidenceObservationStore(self.root/"rejected.sqlite")
-        try:
-            with self.assertRaisesRegex(TypedEvidenceError,"execution_reconciliation_binding_mismatch"):
-                build_and_persist_typed_evidence_observations(
-                    store=store,plan=self.plan,claim=self.claim,manifest=self.manifest,
-                    source_manifest=self.source,inventory=self.inventory,
-                    execution_report=self.execution,execution_reconciliation=reconciliation,
-                    repository_root=self.root)
-            self.assertEqual(store.history(),())
-        finally:
-            store.close()
+    def test_fabricated_or_missing_execution_reconciliation_is_rejected(self):
+        with self.assertRaises(TypedEvidenceError):
+            build_and_persist_typed_evidence_observations(
+                store=self.observation_store,plan=self.plan,claim=self.claim,manifest=self.manifest,
+                source_manifest=self.source,inventory=self.inventory,
+                execution_report=self.execution,dossier_id="dossier:m7515",
+                reconciliation_id="forged-reconciliation",
+                reconciliation_store=self.reconciliation_store,
+                assurance_store=self.assurance,epistemic_store=self.epistemic,
+                dossier_store=self.dossiers,repository_root=self.root)
+        self.assertEqual(self.observation_store.history(),())
 
     def test_ledger_idempotence_immutability_and_restart(self):
         bundle = derive_typed_evidence_observations(
