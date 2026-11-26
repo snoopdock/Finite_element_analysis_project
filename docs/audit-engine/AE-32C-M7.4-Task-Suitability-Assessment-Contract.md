@@ -511,7 +511,7 @@ The detached dossier artifact is ID `15095590785`, 2,509 bytes, SHA-256 `7a00295
 
 The FEM repository-shaped fixture strengthens G5 because all four public analyzer paths are now exercised against domain-relevant node types and relations, with explicit expected semantic outcomes. It does not yet establish suitability for every real audit workload: the fixture is deliberately small, and the generated topology campaign remains synthetic. Representative full-repository and problem-driven workloads, including larger evidence and impact cones, remain necessary before a task/backend suitability decision.
 
-The new JUnit artifact closes the task-test observability gap for this exact run; it does not close G4. G4 remains Partial because repository-wide point-in-time snapshot semantics, broader filesystem namespace/side-effect coverage, mutation-and-restoration schedules and native projection postflight-to-return concurrency remain open. The M7.1 integrity-cost characterization workflow is being corrected to make its graph-tool binary and benchmark execution portable across the heterogeneous GitHub runner pool; until that run passes, G6 remains open.
+The new JUnit artifact closes the task-test observability gap for this exact run; it does not close G4. G4 remains Partial because repository-wide point-in-time snapshot semantics, broader filesystem namespace/side-effect coverage, mutation-and-restoration schedules and native projection postflight-to-return concurrency remain open. The M7.1 integrity-cost characterization workflow has now passed on all five backend jobs with a portable graph-tool binary. G6 is evidenced for the tested CI execution envelope; task-level cost at representative scales, memory behavior and deployment-specific operational envelopes remain uncharacterized.
 
 **No task/backend outcome is promoted to Suitable or Conditionally suitable by this update.** All 20 outcomes remain Insufficient evidence pending the mandatory gates and workload evidence. No library ranking, automatic selector, scientific approval or production approval follows. Preserve `production_approval=false`.
 
@@ -525,3 +525,21 @@ M7.4 in this contract qualifies graph-traversal backends for the four public gra
 - Governed self-examination, frozen trusted checkers, authorization boundaries, candidate budgets, cycle detection and termination guarantees.
 
 Those require their own task contracts, evidence types, independent tests and acceptance gates. Passing M7.4 must not be interpreted as accepting those layers or the overall audit engine.
+
+
+## 30. G6 CI execution-envelope and integrity-cost evidence — 2026-11-26
+
+The corrected M7.1 workflow [run 45774182880](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45774182880) completed successfully on exact Stage1 source revision `5d6d4089edc5b147f5e94e0364330acf09780113`. All five backend jobs and the aggregate summary passed. Each backend ran the fixed seven-query smoke with two warm-ups and five measured repetitions, then independently verified its report.
+
+The supporting report is [AE-32C-M7.1-Integrity-Cost-Smoke-2026-11-26.md](AE-32C-M7.1-Integrity-Cost-Smoke-2026-11-26.md). It records native API versions, runner/Python environments, worker identity, query timing samples, integrity-audit timing samples, engine construction time, native adjacency telemetry and limitations. The successful graph-tool artifact records the generic x86-64 `graph-tool-base` build `_100`; the environment override is applied during a fresh solve and the workflow asserts the selected package build. The E.8.5/E.8.8 run 45773593165 independently passed graph-tool conformance using the same generic build policy.
+
+### 30.1 Gate interpretation
+
+- **G6 — Pass for the tested CI execution envelope:** dependency and native-library versions, Python/platform strata, graph-tool CPU-ISA compatibility, SNAP isolated-worker image, bounded worker/job execution, cleanup path, report provenance and fixed-fixture integrity-cost observations are recorded and verified for the cited runs.
+- **G6 — Not a deployment approval:** the evidence does not establish the environment of a future user deployment, production resource quotas, representative task-level cost at larger graph sizes, memory/peak-RSS behavior or controlled runner-to-runner variance. Those remain explicit deployment and workload questions.
+- **G4 — Partial:** the G6 result does not address repository-wide point-in-time snapshot atomicity or the remaining mutation/namespace races.
+- **G5 — Partial:** the domain-shaped FEM fixture exercises all four public tasks, but full-repository and problem-driven workload envelopes remain outstanding.
+
+The earlier graph-tool signal-132 failure is classified as a CI binary/CPU compatibility defect. It was reproduced on an AMD EPYC 7763 runner with the `_400` CPU-specific build and avoided by selecting the generic `_100` build. The benchmark itself passed after the workflow correction. This does not change graph-tool traversal semantics or establish a performance ranking.
+
+**No task/backend pair is promoted to Suitable or Conditionally suitable.** G6 passing within the CI envelope is necessary but not sufficient while G4 and G5 remain partial. The 20 task/backend outcomes remain Insufficient evidence; no automatic selector, ranking, scientific approval or production approval is authorized.
