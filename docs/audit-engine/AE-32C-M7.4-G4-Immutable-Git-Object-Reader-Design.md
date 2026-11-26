@@ -207,3 +207,47 @@ The cost-characterization workflow completed ten repetitions and verified its re
 The separate M7.4 native-conformance workflow also completed successfully on this source revision for NetworkX, igraph, SciPy, graph-tool and the isolated SNAP worker.
 
 The implementation therefore has Linux and Windows evidence for the committed Git-object provider and end-to-end graph construction. The remaining exclusions are still material: working-tree/dirty input snapshots, recursive submodule contents, hydrated LFS payloads, and repository-wide atomicity beyond the immutable committed-object boundary. Production approval remains false.
+
+
+## 11. Adversarial provider qualification — 2026-11-26
+
+The provider test suite was extended to exercise failure and race boundaries that were previously design requirements but not executable tests:
+
+- pinned Git ref movement after provider construction;
+- worktree ABA mutation (mutate, restore, then read the pinned object);
+- hard-link replacement of a worktree path;
+- missing pinned blob object;
+- corrupt pinned blob object;
+- a real local submodule/gitlink entry, which must not be read as a regular blob;
+- existing ignored/untracked exclusion, worktree mutation independence, symlink rejection, LFS pointer classification, and manifest/tree mismatch.
+
+The first Windows execution exposed two test portability assumptions: Git loose objects are read-only on the Windows runner, and checkout line-ending conversion can make worktree bytes differ from canonical Git blob bytes. The tests were corrected to make the loose object writable before deletion and to assert the committed blob bytes—not the platform checkout representation—after ABA restoration. No production-provider fallback or weakening was introduced.
+
+### Exact-source validation
+
+- **Stage1 commit:** \`f75eb091a11a25dee178b41caba232afe37b3e93\`
+- **Source/graph workflow:** [45805302622](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45805302622) — success
+- **Windows and cost workflow:** [45805302513](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45805302513) — success
+- **Linux provider tests:** 11 passed
+- **Windows provider and source-snapshot selection:** 39 passed, 46 skipped
+- **Cost characterization:** 10 repetitions; report verified against the exact source and runner revision
+- **Cost report SHA-256:** \`8287298799b6a7c776cc23c3e5713a8c023fb634ebf09f2998451b3456f7de73\`
+- **Cost artifact:** [m7-4-g4-source-snapshot-cost-45805302513-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45805302513/artifacts/15108594147)
+- **Cost artifact SHA-256:** \`0e12ba075a194c737b29cb5125651333dd01e9a86518be7bf99b6f116eff19c4\`
+- **Source/graph artifact:** [ae32c-source-graph-snapshot-45805302622-1](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45805302622/artifacts/15109565809)
+- **Source/graph artifact SHA-256:** \`89f086be0827833d6ec17721e3fb6f96c3d77ce3d124b3bfcaa41a8d061fb260\`
+
+The exact-source graph capture reported:
+
+- source snapshot ID: \`fb47b6fb2defd2cd18b67bb14986e4ba8324dfa102ea336d5c939edfd19e64bd\`;
+- graph snapshot ID: \`4e549cc46cbb1b0bd1621403feca4121791000a675883f6bfaa57bc9cc8b71f7\`;
+- graph content SHA-256: \`1229137f5363b2a4585b12cc9a240ffb10aee4f8fa4e80e394420df3d331e5ea\`;
+- source inventory entries: 1,970;
+- represented source units: 1,902;
+- unaccounted source units: 0;
+- coverage: \`COMPLETE_WITH_DECLARED_EXCLUSIONS\`;
+- source postflight: \`VERIFIED\`.
+
+The cost report explicitly retains \`atomic_snapshot_established=false\`. The result characterizes the existing repository audit/content-load/second-validation path; it is not evidence that the full audit transaction has become atomic.
+
+These tests strengthen confidence in the immutable committed-tree boundary. They do not close the separately declared exclusions: dirty/untracked working-tree snapshots, recursive submodule content, hydrated LFS payloads, and repository-wide transaction atomicity. \`production_approval=false\` remains invariant.
