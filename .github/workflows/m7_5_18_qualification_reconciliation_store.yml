@@ -1,0 +1,54 @@
+name: AE-32C M7.5.18 Persistent Qualification Reconciliation
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_18_qualification_reconciliation_store.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tests/semantic_graph/test_m7518_*.py"
+      - "tests/semantic_graph/test_m7517_*.py"
+      - "docs/audit-engine/AE-32C-M7.5.18-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7518-stage1
+  cancel-in-progress: false
+
+jobs:
+  persistent-qualification-reconciliation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile epistemic implementation
+        run: python -m compileall -q audit_engine/semantic_audit/epistemic
+      - name: Dedicated M7.5.18 persistence and invalidation tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7518_*.py' -v
+      - name: M7.5.17 semantic reconciliation regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7517_*.py' -v
+      - name: Complete M7.5 regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
+      - name: Historical integrity and authority boundary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.18 persistent qualification reconciliation"
+            echo "- Reconciliation, qualification, and observation bundle are stored as a linked immutable record"
+            echo "- Ledger events are append-only, content-addressed, hash-chained, and bounded"
+            echo "- Source, rule, semantic-contract, policy, qualification, and bundle drift are explicit invalidation reasons"
+            echo "- Historical records are retained; invalidation never rewrites history"
+            echo "- Historical semantic replay requires the original source snapshot and verification context"
+            echo "- No epistemic assertion, coverage upgrade, proposition truth, ALLOW/DENY, or production approval"
+          } >> "$GITHUB_STEP_SUMMARY"
