@@ -11,6 +11,7 @@ from audit_engine.semantic_audit.epistemic.qualification_reconciliation_store im
     QualificationReconciliationStoreError,
     persist_verified_qualification_reconciliation,
     verify_persisted_qualification_reconciliation,
+    qualification_reconciliation_context,
 )
 from test_m7517_qualification_reconciliation import QualificationReconciliationTests
 
@@ -71,6 +72,17 @@ class QualificationReconciliationLedgerTests(unittest.TestCase):
     def tearDown(self):
         self.store.close()
         self.tmp.cleanup()
+
+    def test_context_helper_exposes_all_invalidation_dimensions(self):
+        reconciliation, qualification, bundle = artifacts()
+        context = qualification_reconciliation_context(
+            reconciliation, qualification, bundle)
+        self.assertEqual(set(context), {
+            "source_snapshot_id", "plan_sha256", "rule_registry_sha256",
+            "coverage_manifest_sha256", "contract_registry_sha256",
+            "aggregation_policy_registry_sha256", "qualification_sha256",
+            "observation_bundle_sha256",
+        })
 
     def test_record_is_content_addressed_idempotent_and_restartable(self):
         reconciliation, qualification, bundle = artifacts()
