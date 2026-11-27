@@ -136,3 +136,16 @@ AE-43–AE-46 are proposed sequencing only, not approved or implemented mileston
 ## 10. Baseline caveats
 
 This reconciliation is based on the project conversation record, uploaded Notes 001–006 (Note 002 supplied with this review), and the Stage1 records available at baseline revision. It is a roadmap/status index, not a fresh exhaustive source-code audit of every subsystem. Where implementation evidence is absent, the status is explicitly architectural or open rather than presumed complete.
+
+
+## 11. AE-42 completion update
+
+AE-42 was implemented and validated after this baseline was first committed.
+
+- Successful workflow: [AE-32D run 46021888511](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46021888511).
+- Validation revision: `31fdc1e19956769bf478b02674daa8646a448fae`.
+- Artifact ID: `15208357689`; SHA-256: `37a9f64404c16a63f4498a7d63513d2627ea6434083465eed016447e1f0b472f`.
+- Provisional registry validation and five exploratory-boundary tests passed, alongside the existing AE-32D verification stages.
+- All six ground-truth labels remain pending; primary eligibility remains false. No actual A/B/C performance results were generated.
+
+AE-42 is validated for its declared scope. Proceed to AE-43 exploratory integration only after identifying real retained or explicitly generated trial outputs. AE-43–AE-46 remain proposed and require repository roadmap reconciliation before formal numbering.
