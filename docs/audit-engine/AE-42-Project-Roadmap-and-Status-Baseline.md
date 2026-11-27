@@ -149,3 +149,9 @@ AE-42 was implemented and validated after this baseline was first committed.
 - All six ground-truth labels remain pending; primary eligibility remains false. No actual A/B/C performance results were generated.
 
 AE-42 is validated for its declared scope. Proceed to AE-43 exploratory integration only after identifying real retained or explicitly generated trial outputs. AE-43–AE-46 remain proposed and require repository roadmap reconciliation before formal numbering.
+
+## 12. AE-43 readiness gate
+
+AE-43 is the correct next workstream, but its input prerequisite is not met. The tracked AE-32D inventory has no actual A/B/C trial-output dataset. The existing AE-32C batch assessor measures protocol/evidence completion and explicitly leaves diagnostic accuracy not assessed; its provider baseline is not AE-32D condition A. The separate FEA provider benchmark evaluates document-generation runs, not the six repository-audit cases. Neither may be mechanically converted into AE-32D diagnostic outcomes.
+
+The AE-43 readiness audit is recorded in [AE-43 Exploratory Trial Integration Readiness](AE-43-Exploratory-Trial-Integration-Readiness.md). Next: obtain a qualifying immutable A/B/C bundle through retained outputs or an explicitly authorized manual execution, then build an offline importer/normalizer. Do not auto-dispatch providers, fabricate trials, or infer defect labels from protocol completion.
