@@ -116,7 +116,7 @@ class DeterministicRulePrimitiveTests(unittest.TestCase):
     except OSError:
         raise
 """
-        report = analyze_exception_contract_suppression(source, "load_config", "OSError", "raise")
+        report = analyze_exception_contract_suppression(source, "load_config", "OSError", "raise", "reader")
         self.assertFalse(report["suppression_observed"])
 
     def test_stale_intermediate_is_detected_at_return_sink(self):
