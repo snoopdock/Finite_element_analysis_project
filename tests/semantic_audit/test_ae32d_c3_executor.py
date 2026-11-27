@@ -138,8 +138,10 @@ class C3ExecutorTests(unittest.TestCase):
 
     def test_limit_mapping_rejects_missing_or_extra_contract_fields(self):
         values = contract()["investigator_limits"]
+        with self.assertRaisesRegex(ValueError, "authorized_limit_out_of_bounds:max_total_tokens"):
+            _build_investigator_limits({**values, "max_total_tokens": 30_721})
         with self.assertRaisesRegex(ValueError, "limit_fields_mismatch"):
-            _build_investigator_limits({**values, "max_total_tokens": 180_000})
+            _build_investigator_limits({**values, "unexpected": 1})
         with self.assertRaisesRegex(ValueError, "limit_fields_mismatch"):
             _build_investigator_limits({key: value for key, value in values.items() if key != "max_cost_usd"})
 
