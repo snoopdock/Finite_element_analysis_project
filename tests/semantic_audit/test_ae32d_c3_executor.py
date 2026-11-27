@@ -261,6 +261,21 @@ class C3ExecutorTests(unittest.TestCase):
                 session.build_investigator(provider)
             session.close()
 
+    def test_scope_manifest_mismatch_blocks_before_graph_construction(self):
+        task, b_report, package, c2, authorization = inputs()
+        with tempfile.TemporaryDirectory() as root, \
+             patch("tools.ae32d_c3_executor.build_c3_execution_contract", return_value=contract()), \
+             patch("tools.ae32d_c3_executor._git_head", return_value=SOURCE_SHA), \
+             patch("tools.ae32d_c3_executor._scope_snapshot",
+                   return_value={"digest": "0" * 64, "issues": []}), \
+             patch("tools.ae32d_c3_executor.RepositoryEvidenceTools") as tools_factory:
+            with self.assertRaisesRegex(ValueError, "declared_scope_manifest_mismatch"):
+                prepare_c3_execution(
+                    task, b_report, package, c2, authorization, root,
+                    manual_dispatch_confirmed=True,
+                )
+        tools_factory.assert_not_called()
+
     def test_rebuilt_graph_mismatch_closes_retained_tools_and_fails_closed(self):
         task, b_report, package, c2, authorization = inputs()
 
