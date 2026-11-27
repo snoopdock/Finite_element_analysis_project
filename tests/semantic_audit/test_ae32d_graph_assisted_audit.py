@@ -12,6 +12,7 @@ from tools.ae32d_trial_contracts import build_sanitized_task_projection
 PINNED = {
     "case": ("AE32D_CASE_SOURCE_ROOT", "dd80be6e7a3e0a912beace92ce0fac446ea6ed61"),
     "candidate": ("AE32D_CANDIDATE_SOURCE_ROOT", "afcb1cba064de6f3d680f6be3085a365c6687c7b"),
+    "extended": ("AE32D_EXTENDED_SOURCE_ROOT", "c0d700c0a2599aabda8957f54e750a812ea2ef5d"),
 }
 
 
