@@ -115,6 +115,21 @@ def _build_investigator_limits(contract_limits: Mapping[str, Any]) -> Investigat
     }
     if set(contract_limits) != required:
         raise ValueError("C3_executor_contract_limit_fields_mismatch")
+    hard_ceilings = {
+        "max_rounds": 11,
+        "max_tool_calls": 12,
+        "max_tokens_per_call": 2_048,
+        "finalization_max_tokens_per_call": 6_144,
+        "max_total_tokens": 30_720,
+        "max_elapsed_seconds": 900,
+        "max_cost_usd": 0.50,
+    }
+    for key, ceiling in hard_ceilings.items():
+        value = contract_limits[key]
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0 or value > ceiling:
+            raise ValueError("C3_executor_authorized_limit_out_of_bounds:" + key)
+    if contract_limits["temperature"] != 0.0:
+        raise ValueError("C3_executor_temperature_must_be_zero")
     values = dict(_FIXED_INVESTIGATOR_LIMITS)
     values.update(dict(contract_limits))
     limits = InvestigationLimits(**values)
