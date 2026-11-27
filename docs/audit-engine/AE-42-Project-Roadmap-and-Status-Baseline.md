@@ -164,3 +164,10 @@ AE-44 defines a paired A/B/C execution contract but does not claim execution cap
 The design requires manual A/B dispatch and a separate explicit authorization gate for C. No push, pull-request, schedule or default workflow event may invoke a provider. A/B must receive no provider secrets. Failed, timed-out, cancelled, missing and abstaining trials remain visible; retries receive new trial identities. Raw reports and diagnostics are immutable and digest-verified.
 
 **Current status:** design only. No A/B/C condition was executed, no provider was called, and no cost was incurred. The next task is G0: source-level mapping of the actual deterministic-audit and graph-retrieval entry points. Do not invent command names or wire a workflow until those call paths are verified.
+
+
+### G0 source-mapping update
+
+The source-level mapping is recorded in [AE-44 G0 Executor Source Mapping](AE-44-G0-Executor-Source-Mapping.md). It confirms that AE-32A is a deterministic architecture/wiring inventory, AE-32B is a bounded evidence-tool interface (including graph queries), and AE-32C is the provider-backed investigator. None can be mechanically substituted for all three AE-32D conditions: A still lacks a case-level deterministic diagnostic executor; B still lacks a fixed deterministic retrieval policy and case-level decision output; C needs adaptation to the pinned AE-32D case/configuration and separate authorization/artifact contract.
+
+**G0 status: partially complete.** Actual component entry points and semantic gaps are identified. The next step is to specify the deterministic A diagnostic contract and deterministic B retrieval policy. No A/B/C workflow, provider invocation, or trial record has been created.
