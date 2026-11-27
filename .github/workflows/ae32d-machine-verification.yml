@@ -1,13 +1,16 @@
-name: AE-32D Machine Verification (Manual)
+name: AE-32D Machine Verification and Boundary Tests
 
 on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - .github/workflows/ae32d-machine-verification.yml
+      - tools/ae32d_machine_verify_candidate.py
+      - tests/semantic_audit/test_ae32d_machine_verification_boundary.py
+      - tests/semantic_audit/fixtures/ae32c_provider_interface_incident/**
   workflow_dispatch:
     inputs:
-      fixture_path:
-        description: "Controlled provider-interface fixture path"
-        required: true
-        type: string
-        default: "tests/semantic_audit/fixtures/ae32c_provider_interface_incident"
       acknowledge:
         description: "Confirm this is machine verification, not human independent adjudication"
         required: true
@@ -23,11 +26,10 @@ concurrency:
 
 jobs:
   verify-candidate:
-    if: inputs.acknowledge == true
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout selected source revision
+      - name: Checkout exact event revision
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
@@ -38,34 +40,38 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Verify controlled incident and reproduce expected failure
+      - name: Test fixed-fixture execution boundary
+        run: |
+          python -m unittest discover \
+            -s tests/semantic_audit \
+            -p 'test_ae32d_machine_verification_boundary.py' \
+            -v
+
+      - name: Verify the fixed controlled incident
         id: verify
+        if: github.event_name == 'workflow_dispatch' && inputs.acknowledge == true
         env:
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           WORKFLOW_REVISION: ${{ github.workflow_sha }}
-          FIXTURE_PATH: ${{ inputs.fixture_path }}
         run: |
           set -euo pipefail
           python tools/ae32d_machine_verify_candidate.py \
-            --fixture "$FIXTURE_PATH" \
             --output "$RUNNER_TEMP/ae32d-machine-verification/machine-verification.json"
 
       - name: Publish result in job summary
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         env:
           REPORT: ${{ runner.temp }}/ae32d-machine-verification/machine-verification.json
-          SOURCE_REVISION: ${{ github.sha }}
-          RUN_ID: ${{ github.run_id }}
         run: |
           python - <<'PY'
           import json, os
           from pathlib import Path
           p = Path(os.environ["REPORT"])
-          print("## AE-32D machine verification", file=open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8"))
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("## AE-32D machine verification\n")
               if not p.is_file():
-                  out.write("\nNo report was produced. Inspect the failing step logs.\n")
+                  out.write("\n- Machine execution was not requested or no report was produced.\n")
               else:
                   d = json.loads(p.read_text(encoding="utf-8"))
                   out.write(f"\n- **Status:** `{d.get('status')}`\n")
@@ -78,7 +84,7 @@ jobs:
           PY
 
       - name: Upload machine-verification report
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.acknowledge == true
         uses: actions/upload-artifact@v4
         with:
           name: ae32d-machine-verification-${{ github.run_id }}
