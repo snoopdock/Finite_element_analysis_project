@@ -114,7 +114,7 @@ class M7530CrossLayerPackageConsumerLifecycleAuditTests(unittest.TestCase):
             if isinstance(node, ast.Call)
         }
         self.assertIn("verify_cross_layer_snapshot_provenance", producer_calls)
-        self.assertIn("verify_cross_layer_obligation_package_envelope", envelope_calls)
+        self.assertIn("verify_cross_layer_snapshot_provenance_envelope", envelope_calls)
         self.assertNotIn("verify_persisted_cross_layer_obligation_package", producer_calls)
         self.assertNotIn("verify_cross_layer_snapshot_provenance", envelope_calls)
 
