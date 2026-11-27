@@ -19,6 +19,7 @@ from tools.ae32d_trial_contracts import canonical_json_bytes
 from tools.ae32d_deterministic_audit import ROOT
 
 REQUEST_PACKAGE_SCHEMA = ROOT / "evaluation" / "ae32d" / "c-request-package.schema.json"
+C_SNAPSHOT_SCHEMA = ROOT / "evaluation" / "ae32d" / "c-snapshot-verification.schema.json"
 PROFILE = ("cloudflare", "@cf/qwen/qwen3.8-27b")
 HARD_LIMITS = {
     "max_model_rounds": 11,
@@ -86,19 +87,24 @@ def _validated_budget(budget: dict[str, Any]) -> dict[str, int | float]:
 def build_c3_execution_contract(
     b_report: dict[str, Any],
     request_package: dict[str, Any],
+    c_snapshot_verification: dict[str, Any],
     authorization: dict[str, Any],
     *,
     manual_dispatch_confirmed: bool = False,
 ) -> dict[str, Any]:
     """Validate C0/C1/C2 bindings and produce a provider-free C3 contract.
 
-    The confirmation flag is a separate operator/workflow control. Even when
-    true, this function only authorizes provider construction; it never
-    constructs a provider or starts an investigation.
+    The exact C2 reconstruction report is mandatory. The confirmation flag is
+    a separate operator/workflow control. Even when true, this function only
+    validates readiness for a later executor; it never constructs a provider
+    or starts an investigation.
     """
     schema = json.loads(REQUEST_PACKAGE_SCHEMA.read_text(encoding="utf-8"))
+    snapshot_schema = json.loads(C_SNAPSHOT_SCHEMA.read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
+    Draft202012Validator.check_schema(snapshot_schema)
     Draft202012Validator(schema).validate(request_package)
+    Draft202012Validator(snapshot_schema).validate(c_snapshot_verification)
 
     if type(manual_dispatch_confirmed) is not bool:
         raise ValueError("C3_manual_dispatch_confirmation_must_be_boolean")
@@ -118,6 +124,13 @@ def build_c3_execution_contract(
     if request_package.get("request_sha256") != request_digest:
         raise ValueError("C3_request_digest_mismatch")
 
+    if c_snapshot_verification.get("status") != "verified":
+        raise ValueError("C3_C2_snapshot_not_verified")
+    if (c_snapshot_verification.get("provider_dispatch_permitted") is not False
+            or c_snapshot_verification.get("provider_calls_attempted") != 0
+            or c_snapshot_verification.get("credentials_accessed") is not False):
+        raise ValueError("C3_C2_snapshot_contains_provider_side_effect_claims")
+
     fresh_preflight = build_c_preflight(b_report, authorization)
     if request_package.get("preflight") != fresh_preflight:
         raise ValueError("C3_preflight_binding_mismatch")
@@ -131,6 +144,24 @@ def build_c3_execution_contract(
             "credentials_accessed": False,
             "investigator_limits": None,
         }
+
+    snapshot_expected = c_snapshot_verification["expected_graph_snapshot"]
+    snapshot_observed = c_snapshot_verification["observed_graph_snapshot"]
+    snapshot_bindings = {
+        "case_id": request["case_id"],
+        "source_commit_sha": request["source_commit_sha"],
+        "task_contract_digest": request["task_contract_digest"],
+        "baseline_source_manifest_digest": b_report["baseline_report"]["source_manifest_digest"],
+    }
+    for key, expected in snapshot_bindings.items():
+        if c_snapshot_verification.get(key) != expected:
+            raise ValueError("C3_C2_snapshot_binding_mismatch:" + key)
+    for key in ("graph_fingerprint", "source_revision", "source_manifest_sha256"):
+        expected = request["graph_fingerprint"] if key == "graph_fingerprint" else request["source_commit_sha"] if key == "source_revision" else b_report["graph_snapshot"]["source_manifest_sha256"]
+        if snapshot_expected.get(key) != expected or snapshot_observed.get(key) != expected:
+            raise ValueError("C3_C2_graph_snapshot_mismatch:" + key)
+    if c_snapshot_verification.get("mismatches"):
+        raise ValueError("C3_C2_snapshot_reports_mismatches")
 
     expected_bindings = {
         "case_id": fresh_preflight["case_id"],
@@ -169,10 +200,17 @@ def build_c3_execution_contract(
             or len(source_paths) != len(set(source_paths))
             or not all(_safe_relative_path(path) for path in source_paths)):
         raise ValueError("C3_required_source_paths_invalid")
+    declared_scope = request.get("context", {}).get("declared_scope", [])
+    if not isinstance(declared_scope, list) or not all(isinstance(path, str) for path in declared_scope):
+        raise ValueError("C3_declared_scope_invalid")
+    if not set(source_paths).issubset(set(declared_scope)):
+        raise ValueError("C3_required_source_paths_outside_declared_scope")
     graph_target = requirements.get("required_graph_target")
     relation_types = requirements.get("required_graph_relation_types")
     if not isinstance(graph_target, str) or not graph_target.strip() or len(graph_target) > 400:
         raise ValueError("C3_required_graph_target_invalid")
+    if graph_target not in source_paths:
+        raise ValueError("C3_required_graph_target_outside_declared_source_paths")
     if (not isinstance(relation_types, list) or not relation_types
             or len(relation_types) > 12
             or len(relation_types) != len(set(relation_types))
@@ -190,7 +228,7 @@ def build_c3_execution_contract(
     confirmed = manual_dispatch_confirmed and authorization.get("approved") is True
     return {
         "schema_version": "ae32d/c3-execution-contract/v1",
-        "status": "authorized_for_provider_construction" if confirmed else "ready_for_manual_confirmation",
+        "status": "ready_for_c3_executor" if confirmed else "ready_for_manual_confirmation",
         "case_id": request["case_id"],
         "source_commit_sha": request["source_commit_sha"],
         "task_contract_digest": request["task_contract_digest"],
