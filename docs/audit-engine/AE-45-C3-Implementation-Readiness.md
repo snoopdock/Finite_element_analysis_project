@@ -143,3 +143,56 @@ Implement a provider-free executor adapter with these ordered boundaries:
 8. Test the executor with a deterministic fake provider and fault-injection cases before any live provider invocation.
 
 No live provider invocation is authorized by the successful run. The Cloudflare Qwen3.8-27B ceiling remains 11 model rounds, 12 tool calls, 2048 normal tokens per call, 6144 finalization tokens per call, 30720 total tokens, 900 seconds, and USD 0.50. A live invocation still requires separate explicit user authorization.
+
+## 9. C3 retained-snapshot executor boundary — implementation candidate (2026-11-28)
+
+### 9.1 Added implementation
+
+The Stage1 implementation now includes:
+
+- `tools/ae32d_c3_executor.py`
+- `tests/semantic_audit/test_ae32d_c3_executor.py`
+
+The executor exposes `prepare_c3_execution(...)`, which:
+
+1. Rebuilds the C3 contract from the exact C1/C2 inputs and requires `ready_for_c3_executor`.
+2. Requires a clean checkout at the exact authorized source commit.
+3. Recreates the declared-scope source snapshot using the shared B/C2 `_scope_snapshot` helper.
+4. Constructs one retained `RepositoryEvidenceTools` instance over that snapshot.
+5. Compares source revision, source manifest, graph fingerprint, projection version, index completeness, backend, node/edge counts and backend wiring against B and both C2 graph records.
+6. Verifies that every required source/context path is indexed.
+7. Maps the seven authorization-controlled limits into an explicit `InvestigationLimits` instance, applies fixed operational bounds, and reasserts the authorized values after construction.
+8. Returns a context-managed `C3ExecutionSession` that retains the graph until explicitly closed.
+
+The session's `build_investigator(provider)` and `run(provider)` methods require the caller to supply an already-created provider object. This module does not import `providers.factory`, construct a provider, read credentials, or perform network I/O. Provider creation remains an external operation and must not be performed until the separate live-dispatch authorization is granted.
+
+### 9.2 Budget mapping and enforcement
+
+The executor does not call `build_live_investigation_limits()`; that helper still carries the incompatible 180,000-token default. It constructs `InvestigationLimits` from the exact C3 contract values and enforces the C3 profile ceilings again at the executor boundary:
+
+- 11 model rounds; 12 tool calls
+- 2,048 normal tokens/call; 6,144 finalization tokens/call
+- 30,720 total tokens
+- 900 seconds
+- USD 0.50
+- temperature 0.0
+
+Additional investigator safeguards are set explicitly rather than inherited silently from dataclass defaults. The Cloudflare cost estimator is imported lazily only after contract, checkout, scope and graph verification. The import itself does not construct a provider.
+
+### 9.3 Tests and workflow integration
+
+The new tests cover:
+
+- exact authorized-limit mapping and rejection of over-ceiling values;
+- comparison of every B/C2 graph-snapshot field;
+- rejection of unconfirmed contracts before graph construction;
+- rejection of a mismatched source checkout before graph construction;
+- retained graph lifetime, required-path binding, investigator constructor arguments and cleanup;
+- cleanup and failure on declared-scope manifest mismatch;
+- absence of eager provider-factory and credential imports in the executor module.
+
+The AE-32D machine-verification workflow now includes this test file and runs it after the C3 contract tests. These are candidate tests until a successful Actions run is observed.
+
+### 9.4 Current boundary
+
+This implementation is a provider-injected execution boundary, not a live-dispatch authorization. It does not create a provider or call `RepositoryInvestigator.run()` during preparation. A caller could only start an investigation by separately supplying a provider object and explicitly invoking the session. No live provider call, credential access, or network activity is authorized by this implementation step.
