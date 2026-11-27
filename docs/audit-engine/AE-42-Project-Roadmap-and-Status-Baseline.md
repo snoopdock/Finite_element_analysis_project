@@ -250,3 +250,12 @@ C1 is implemented and validated. The C request package binds the exact task proj
 The package is permanently manual-only: `manual_dispatch_confirmed=false`, `provider_dispatch_permitted=false`, zero provider calls and no credential access. Full workflow run [46035499302](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46035499302) passed.
 
 **C1 status:** validated. **C2 is not implemented:** it will reconstruct and verify the exact B graph snapshot, instantiate the bounded AE-32C investigator and invoke the selected provider only after a separate explicit manual dispatch confirmation. No provider call is authorized by the current conversation. The registered cost estimator currently supports Cloudflare Qwen3.8-27B only; a different provider/model requires its own reviewed cost estimator before authorization.
+
+
+### AE-45.7 C2 exact B graph snapshot reconstruction
+
+C2 is implemented and validated. Before a future C invocation, it reconstructs the temporary graph root from exactly the A-admitted files, verifies the source checkout and scoped manifest, rebuilds the NetworkX graph and compares the graph fingerprint, graph manifest, projection version, index completeness, backend wiring and graph counts against B. It also reuses C0 integrity checks for every B graph query's provenance.
+
+Full workflow run [46035952443](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46035952443) passed. C2 does not import provider factories, access credentials or call a model.
+
+**C2 status:** validated. The remaining C step is C3, the actual bounded AE-32C provider invocation wrapper. C3 must remain gated until the user explicitly authorizes a supported provider/model and budget. The current C0 profile supports Cloudflare Qwen3.8-27B only; no live C call has been authorized or made.
