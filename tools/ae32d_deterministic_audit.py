@@ -171,6 +171,58 @@ def _assigned_local_names(function: ast.FunctionDef) -> list[str]:
     return sorted(names - parameters)
 
 
+def _direct_store_names(statements: list[ast.stmt]) -> set[str]:
+    names: set[str] = set()
+    for statement in statements:
+        if isinstance(statement, ast.Assign):
+            for target in statement.targets:
+                names.update(
+                    node.id for node in ast.walk(target)
+                    if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store)
+                )
+        elif isinstance(statement, (ast.AnnAssign, ast.AugAssign)):
+            names.update(
+                node.id for node in ast.walk(statement.target)
+                if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store)
+            )
+        elif isinstance(statement, (ast.If, ast.For, ast.While, ast.Try, ast.With)):
+            # Nested control-flow requires a richer path mapping than this rule version supports.
+            continue
+    return names
+
+
+def _unbound_path_covered_by_contract(
+    function: ast.FunctionDef, variable_name: str, input_cases: list[dict[str, Any]]
+) -> bool:
+    parameters = list(function.args.posonlyargs) + list(function.args.args)
+    for statement in function.body:
+        if not isinstance(statement, ast.If):
+            continue
+        test = statement.test
+        inverted = isinstance(test, ast.UnaryOp) and isinstance(test.op, ast.Not) and isinstance(test.operand, ast.Name)
+        parameter_node = test.operand if inverted else test
+        if not isinstance(parameter_node, ast.Name):
+            continue
+        parameter_names = [item.arg for item in parameters]
+        if parameter_node.id not in parameter_names:
+            continue
+        index = parameter_names.index(parameter_node.id)
+        body_stores = _direct_store_names(statement.body)
+        else_stores = _direct_store_names(statement.orelse)
+        if variable_name in body_stores and variable_name not in else_stores:
+            missing_value = True if inverted else False
+        elif variable_name in else_stores and variable_name not in body_stores:
+            missing_value = False if inverted else True
+        else:
+            continue
+        for case in input_cases:
+            if case["expected"]["kind"] != "return" or len(case["arguments"]) <= index:
+                continue
+            if case["arguments"][index] is missing_value:
+                return True
+    return False
+
+
 def _line_evidence(path: str, line: int, digest: str, role: str = "supports") -> dict[str, Any]:
     return {
         "path": path, "line_start": max(1, int(line)), "line_end": max(1, int(line)),
@@ -307,6 +359,10 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
                         if row["expected"]["kind"] == "return"
                     ]
                     if return_cases:
+                        if not _unbound_path_covered_by_contract(function, variable, contract["input_cases"]):
+                            limitations.append("unbound_path_not_mapped_to_task_contract:" + path + ":" + variable)
+                            contract_cases_pass = False
+                            continue
                         evidence = []
                         for row in result.get("evidence", []):
                             evidence.append(_line_evidence(path, row.get("line") or 1, entry["sha256"]))
