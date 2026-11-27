@@ -1,10 +1,12 @@
 """AE-45 C3 retained-snapshot executor boundary.
 
 This module reconstructs the exact C1/C2 contract and retains the declared-scope
-graph for the lifetime of one investigation. It never imports or constructs a
-provider. The caller must supply a provider object explicitly to
-C3ExecutionSession.run(); provider creation and credential access remain an
-external, separately authorized operation.
+graph for the lifetime of one investigation. It does not construct a provider,
+read credentials, or perform network I/O. Provider-factory definitions are only
+loaded transitively by the lazy cost-estimator import after validation. The
+caller must supply a provider object explicitly to C3ExecutionSession.run();
+provider creation and credential access remain an external, separately
+authorized operation.
 """
 from __future__ import annotations
 
