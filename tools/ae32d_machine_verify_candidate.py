@@ -477,6 +477,7 @@ def main(argv: list[str] | None = None) -> int:
         "machine_adjudication": "confirmed_fixture_runtime_defect" if result["passed"] else "not_confirmed",
         "candidate_source_revision": expected_candidate_sha,
         "candidate_source_revision_observed": revision.stdout.strip() if "revision" in locals() and revision.returncode == 0 else "unverified",
+        "candidate_source_revision_observed": revision.stdout.strip() if "revision" in locals() and revision.returncode == 0 else "unverified",
         "status": "machine_verified_candidate" if result["passed"] else "machine_verification_failed",
         "primary_benchmark_eligible": False,
         "human_independent_adjudication": "not_performed",

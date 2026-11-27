@@ -55,7 +55,10 @@ class AE32DMachineVerifierBoundaryTests(unittest.TestCase):
             encoding="utf-8",
         )
         (fixture / "tests" / "checks.py").write_text(
-            "def check():\n    return True\n", encoding="utf-8"
+            "from providers.adapter import ProviderAdapter\n"
+            "from pipeline.extractor import extract\n"
+            "def check_extractor_contract():\n"
+            "    return extract(ProviderAdapter())\n", encoding="utf-8"
         )
         return fixture
 
