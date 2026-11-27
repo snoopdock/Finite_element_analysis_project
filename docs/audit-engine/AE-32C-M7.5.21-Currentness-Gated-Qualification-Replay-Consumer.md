@@ -1,6 +1,6 @@
 # AE-32C M7.5.21 — Currentness-Gated Qualification Replay Consumer
 
-**Status:** Implemented; exact-head CI validation pending  
+**Status:** Implemented and CI-validated  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.20 — Downstream Qualification Currentness Consumer Gate  
 **Consumer integrated:** persisted qualification-reconciliation semantic replay  
@@ -79,4 +79,14 @@ Workflow: [M7.5.21 currentness-gated qualification replay consumer](https://gith
 
 The workflow checks out the exact triggering revision, compiles the epistemic package, runs the dedicated M7.5.21 integration tests, and runs M7.5.20 through M7.5.17 plus the complete M7.5 regression.
 
-Do not mark this milestone CI-validated until a successful run is confirmed for the final branch head.
+Validation evidence:
+- [M7.5.21 workflow run 45963315277](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45963315277) — success on exact tested revision `9707df41b7eff5d3ec13195d474f86fd76e31753`.
+- Dedicated M7.5.21 consumer integration tests: 5 passed.
+- M7.5.20 consumer gate regression: 9 passed.
+- M7.5.19 currentness regression: 10 passed.
+- M7.5.18 persistence regression: 23 passed.
+- M7.5.17 semantic reconciliation regression: 12 passed.
+- Complete M7.5 regression: 224 passed.
+- Python 3.11 compilation: passed.
+
+The workflow checks out the exact triggering revision. The recorded result establishes the tested consumer path and regression behavior; it does not establish global consumer interception, authenticated consumer identity, atomic cross-ledger consistency, evidence acceptance, or audit authorization.
