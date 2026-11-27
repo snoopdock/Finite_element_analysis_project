@@ -19,12 +19,12 @@ from audit_engine.semantic_audit.epistemic.qualification_reconciliation_consumer
     qualification_consumer_current_context,
     verify_persisted_qualification_reconciliation_for_consumer,
 )
-from test_m7517_qualification_reconciliation import QualificationReconciliationTests
+import test_m7517_qualification_reconciliation as m7517
 
 
 class QualificationReconciliationConsumerTests(unittest.TestCase):
     def setUp(self):
-        self.fixture = QualificationReconciliationTests()
+        self.fixture = m7517.QualificationReconciliationTests()
         self.fixture.setUp()
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name)
