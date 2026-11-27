@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ae32d-condition-report.schema.json",
+  "title": "AE-32D deterministic condition report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "condition",
+    "adapter_revision",
+    "source_commit_sha",
+    "task_contract_digest",
+    "config_digest",
+    "source_manifest_digest",
+    "status",
+    "coverage",
+    "findings",
+    "counterevidence",
+    "unresolved_questions",
+    "decision",
+    "limitations",
+    "execution_trace"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ae32d/condition-report/v1"
+    },
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "condition": {
+      "enum": [
+        "A_deterministic",
+        "B_graph"
+      ]
+    },
+    "adapter_revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_commit_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "task_contract_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "config_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source_manifest_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "status": {
+      "enum": [
+        "completed",
+        "failed",
+        "timed_out",
+        "cancelled",
+        "partial"
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "declared_scope_complete",
+        "truncated",
+        "unreadable_paths",
+        "missing_paths"
+      ],
+      "properties": {
+        "declared_scope_complete": {
+          "type": "boolean"
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "unreadable_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missing_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "finding_id",
+          "statement",
+          "classification",
+          "evidence"
+        ],
+        "properties": {
+          "finding_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "classification": {
+            "enum": [
+              "observation",
+              "inference"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "line_start",
+                "line_end",
+                "file_sha256",
+                "role"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "line_start": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "line_end": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "file_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "role": {
+                  "enum": [
+                    "supports",
+                    "contradicts",
+                    "context"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "counterevidence": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "unresolved_questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "decision": {
+        "enum": [
+          "defect",
+          "no_defect",
+          "abstain",
+          null
+        ]
+      },
+      "limitations": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "execution_trace": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "step_id",
+            "operation",
+            "status"
+          ],
+          "properties": {
+            "step_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "operation": {
+              "type": "string",
+              "minLength": 1
+            },
+            "status": {
+              "enum": [
+                "ok",
+                "partial",
+                "error",
+                "skipped"
+              ]
+            },
+            "details": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "error_code": {
+        "type": "string"
+      },
+      "error_message": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "completed"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "decision": {
+            "enum": [
+              "defect",
+              "no_defect",
+              "abstain"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "failed",
+              "timed_out",
+              "cancelled"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "decision": {
+            "const": null
+          },
+          "error_code": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "error_code"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "partial"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "decision": {
+            "enum": [
+              "defect",
+              "no_defect",
+              "abstain",
+              null
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
