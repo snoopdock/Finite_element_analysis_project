@@ -201,3 +201,12 @@ A0's initial failing runs [46030354050](https://github.com/snoopdock/Finite_elem
 Five deterministic rule specifications are registered with explicit preconditions, sufficient evidence, counterevidence, abstention conditions, decision authority and pinned fixture references. The catalog is explicitly specification-only; no labels or expected outcomes are stored. See [AE-45.1 Deterministic Rule Catalog](AE-45.1-Deterministic-Rule-Catalog.md).
 
 The validator and tests are integrated into the AE-32D workflow. A1 validation is pending the run associated with commit `1339e21928c7b1a8d4fb977e45225eb58d2b30a3` and subsequent documentation commits. A1 must not be marked complete until the relevant run concludes successfully. A2 is bounded AST/CFG and safe-expression implementation, with no rule execution or condition decisions until its semantic tests pass.
+
+
+### AE-45.2 A2 bounded deterministic semantics
+
+The provider-free semantic primitives are implemented in `tools/ae32d_deterministic_rules.py`: bounded if-only definite-assignment analysis, safe pure-expression interpretation, scoped exception-contract suppression, stale intermediate/sink checks, and observation-plus-abstention for unresolved provider attributes. Unsupported syntax fails closed. Unit and exact-pinned-fixture integration tests are integrated into the AE-32D workflow.
+
+A2's current scope passed full workflow run [46031679281](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46031679281), including exact SHA verification of all three historical fixture checkouts and five fixture-level tests. Earlier failures remain visible and were corrected. This validates the documented subset only; it does not establish full Python semantics or an end-to-end A condition runner.
+
+**Next:** A3 should assemble a deterministic case-level baseline adapter from the sanitized task projection, explicit rule applicability, common condition-report schema, and evidence/coverage records. It must remain provider-free and fail closed on unsupported syntax. It must not read case ground truth, expected findings in case JSON, machine references or adjudication metadata.
