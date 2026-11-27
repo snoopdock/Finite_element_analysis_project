@@ -180,3 +180,12 @@ AE-45 records the formal deterministic condition contracts in [AE-45 Determinist
 **A0 implementation:** added `evaluation/ae32d/sanitized-task-projection.schema.json` and `evaluation/ae32d/condition-report.schema.json`, plus `tests/semantic_audit/test_ae32d_ab_contract_schemas.py`. The test suite checks schema validity, forbidden-field rejection, exact source/digest shape, explicit decision requirements, infrastructure-error separation, evidence hash/line constraints and abstention handling. The existing AE-32D machine-verification workflow now runs these tests.
 
 **Status:** schemas and boundary tests committed; CI validation is pending. No A/B executor, trial artifact, provider call, or benchmark score has been created. Next: inspect the CI result, then implement A1 rule registration only after defining rules from the actual fixture/task contracts without reading hidden expected findings. B remains gated on A's stable report and rule semantics.
+
+
+### AE-45 A0 implementation update
+
+The A/B boundary now has strict task-projection and condition-report schemas, an allowlisted projection builder (`tools/ae32d_trial_contracts.py`), and a boundary test suite (`tests/semantic_audit/test_ae32d_ab_contract_schemas.py`). The builder binds case/source/task fields into a canonical digest and rejects unsafe declared-scope/fixture paths. It does not accept arbitrary verification commands. The AE-32D workflow executes the new tests and its path filter includes the helper and test files.
+
+**A0 status:** implemented; GitHub Actions validation still needs inspection. A1 rule registration has not begun. No deterministic A/B executor, trial output, provider invocation or score exists. Do not proceed to B until A's rule semantics and report behavior are validated.
+
+**Branch integrity:** `main` is restored to the recorded baseline `6db56ee2281577c034c0a15a2d27a9a9fa55c0e3`; all current AE-44/45 artifacts and code are on `stage1/section-uuids`.
