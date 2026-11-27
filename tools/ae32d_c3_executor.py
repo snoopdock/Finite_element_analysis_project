@@ -247,9 +247,10 @@ def prepare_c3_execution(
 ) -> C3ExecutionSession:
     """Validate C0/C1/C2, rebuild and retain the exact graph, and prepare limits.
 
-    No provider factory is imported or called. A caller-supplied provider is
-    required only if/when C3ExecutionSession.build_investigator() or .run() is
-    explicitly invoked.
+    No provider factory is called and no provider is constructed. The cost
+    estimator is loaded lazily after validation; its current module imports
+    provider-factory definitions but does not invoke them. A caller-supplied
+    provider is required only if/when the session is explicitly invoked.
     """
     contract = build_c3_execution_contract(
         task_projection,
