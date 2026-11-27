@@ -176,6 +176,15 @@ class C3ExecutorTests(unittest.TestCase):
         excessive_tokens.max_tokens_per_call = 2048 + 1
         with self.assertRaisesRegex(ValueError, "provider_token_ceiling_mismatch"):
             _validate_provider_profile(excessive_tokens, contract())
+        used_provider = FakeProviderProfile()
+        used_provider.get_stats = lambda: {
+            "provider": "cloudflare", "logical_calls": 1, "total_calls": 1,
+            "http_attempts": 1,
+            "usage": {"prompt_tokens": 10, "completion_tokens": 10,
+                      "total_tokens": 20, "reported_cost_usd": 0.001},
+        }
+        with self.assertRaisesRegex(ValueError, "provider_must_be_fresh:logical_calls"):
+            _validate_provider_profile(used_provider, contract())
 
     def test_snapshot_comparison_checks_every_b_and_c2_field(self):
         observed = snapshot()
