@@ -119,3 +119,18 @@ Validation evidence:
 - Python 3.11 compilation: passed.
 
 The workflow checked out the exact triggering revision. The documentation-only status update is included in the workflow path filter and is revalidated separately on the resulting final branch head.
+
+
+## 8. Subsequent integration update — M7.5.29
+
+The inventory above is a point-in-time record of the M7.5.27 audit. It correctly recorded that no production M7.5.26 consumer existed at that revision. M7.5.29 subsequently adds one deliberately narrow, versioned consumer:
+
+- `verify_persisted_cross_layer_obligation_package(...)` in `obligation_composition_orchestrator.py` invokes the full M7.5.26 verifier with the exact in-process artifacts and checkout used by the M7.5.24 operation.
+- `verify_cross_layer_obligation_package_envelope(...)` checks the package, M7.5.24 orchestration and M7.5.26 provenance content seals; it does not perform fresh source-state replay.
+- The legacy `verify_persisted_cross_layer_obligation_composition(...)` path and its private operation helper remain free of M7.5.26 calls. Existing callers do not inherit the stricter package guarantee.
+- The M7.5.27 structural guard now permits the exact three provenance API imports only in the orchestrator module, checks that full verification is called only by the strict package producer, checks that envelope verification is called only by the package-envelope checker, and continues to reject provenance imports/references in other production modules.
+- The M7.5.21 qualification consumer, M7.5.14 execution reconciliation, coverage dossier, dossier replay, persisted assurance, and package facade remain independent.
+
+This is not a retroactive change to the M7.5.27 finding. It is a separately scoped, explicit M7.5.29 integration. The original assurance and authority limits in this document remain in force.
+
+Implementation record: [M7.5.29 Single-Pass Source-State-Replayed Cross-Layer Obligation Package](AE-32C-M7.5.29-Single-Pass-Source-State-Replayed-Cross-Layer-Obligation-Package.md).
