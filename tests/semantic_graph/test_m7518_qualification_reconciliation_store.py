@@ -142,6 +142,20 @@ class QualificationReconciliationLedgerTests(unittest.TestCase):
         self.assertEqual(history[0]["reason_codes"], ["SOURCE_SNAPSHOT_CHANGED"])
         self.assertEqual(history[1]["reason_codes"], ["AGGREGATION_POLICY_CHANGED"])
 
+    def test_invalidation_detects_all_eight_context_drift_dimensions(self):
+        reconciliation, qualification, bundle = artifacts()
+        self.store.record(reconciliation, qualification, bundle)
+        record_id = reconciliation["reconciliation_sha256"]
+        context = self.store.get(record_id)["context"]
+        changed = {key: value + ":changed" for key, value in context.items()}
+        result = self.store.invalidate(record_id, changed)
+        self.assertEqual(result["reason_codes"], [
+            "SOURCE_SNAPSHOT_CHANGED", "RULE_PLAN_CHANGED",
+            "RULE_CONTRACT_REGISTRY_CHANGED", "COVERAGE_MANIFEST_CHANGED",
+            "SEMANTIC_CONTRACT_REGISTRY_CHANGED", "AGGREGATION_POLICY_CHANGED",
+            "QUALIFICATION_CHANGED", "OBSERVATION_BUNDLE_CHANGED",
+        ])
+
     def test_sqlite_triggers_reject_update_and_delete(self):
         reconciliation, qualification, bundle = artifacts()
         self.store.record(reconciliation, qualification, bundle)
