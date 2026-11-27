@@ -36,3 +36,8 @@ Validate the candidate case against `case.schema.json` and the manifest against 
 ## Current matrix validation
 
 The three additional fixtures are pinned to `dd80be6e7a3e0a912beace92ce0fac446ea6ed61`. The AE-32D workflow successfully verified all three at run [46010190530](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46010190530). The inventory currently contains six candidate records, zero adjudicated records, and zero primary-score-eligible records. The numeric lower bound of the 6–10-case pilot target is reached; the adjudication, rubric approval, and freeze gates remain open. The exception/data-flow verifier passed at [run 46010847618](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46010847618).
+
+
+## Machine-verification evidence ledger
+
+`machine-verification-ledger.json` and its schema map each of the six cases to the immutable source revision, verifier revision, workflow run, and artifact. The validator rejects missing/duplicate/orphan case records, mismatched source commits, or any ledger attempt to grant primary eligibility or claim independent human adjudication. Ledger validation passed at [run 46011287913](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46011287913).
