@@ -78,18 +78,17 @@ def _aggregate(rule_id: str, evidence_kind: str,
         invalid = states - {"SUPPORTED", "INSUFFICIENT", "CONTESTED", "UNKNOWN"}
         if invalid:
             raise QualificationReconciliationError("qualification_state_invalid")
-        if "CONTESTED" in states:
-            disposition = "CONTESTED"
-            reason = "at_least_one_observation_has_an_unresolved_defeater"
-        elif "UNKNOWN" in states:
-            disposition = "UNKNOWN"
-            reason = "at_least_one_observation_remains_semantically_unqualified"
-        elif "SUPPORTED" in states:
-            disposition = "SUPPORTED_WITHIN_CONTRACT"
-            reason = "at_least_one_observation_supports_the_narrow_contract_and_none_is_contested_or_unknown"
-        else:
-            disposition = "INSUFFICIENT"
-            reason = "all_observations_are_insufficient_for_the_narrow_contract"
+        selected = next((state for state in policy["precedence"] if state in states), None)
+        if selected is None:
+            raise QualificationReconciliationError("aggregation_policy_has_no_matching_state")
+        disposition = "SUPPORTED_WITHIN_CONTRACT" if selected == "SUPPORTED" else selected
+        reasons = {
+            "CONTESTED": "at_least_one_observation_has_an_unresolved_defeater",
+            "UNKNOWN": "at_least_one_observation_remains_semantically_unqualified",
+            "SUPPORTED": "at_least_one_observation_supports_the_narrow_contract_and_none_is_contested_or_unknown",
+            "INSUFFICIENT": "all_observations_are_insufficient_for_the_narrow_contract",
+        }
+        reason = reasons[selected]
     ordered = sorted(rows, key=lambda row: (str(row.get("observation_id")), str(row.get("qualification"))))
     return {
         "obligation_id": f"rule:{rule_id}:evidence:{evidence_kind}",
