@@ -132,7 +132,18 @@ class FakeProviderProfile:
     max_tokens_per_call = 2048
 
     def get_stats(self):
-        return {}
+        return {
+            "provider": "cloudflare",
+            "logical_calls": 0,
+            "total_calls": 0,
+            "http_attempts": 0,
+            "usage": {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+                "reported_cost_usd": 0.0,
+            },
+        }
 
 class C3ExecutorTests(unittest.TestCase):
     def test_limit_mapping_preserves_authorized_values_and_explicit_fixed_bounds(self):
