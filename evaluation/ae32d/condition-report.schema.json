@@ -161,72 +161,72 @@
             }
           }
         }
-      },
-      "counterevidence": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "unresolved_questions": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "decision": {
-        "enum": [
-          "defect",
-          "no_defect",
-          "abstain",
-          null
-        ]
-      },
-      "limitations": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "execution_trace": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "step_id",
-            "operation",
-            "status"
-          ],
-          "properties": {
-            "step_id": {
-              "type": "string",
-              "minLength": 1
-            },
-            "operation": {
-              "type": "string",
-              "minLength": 1
-            },
-            "status": {
-              "enum": [
-                "ok",
-                "partial",
-                "error",
-                "skipped"
-              ]
-            },
-            "details": {
-              "type": "object"
-            }
-          }
-        }
-      },
-      "error_code": {
-        "type": "string"
-      },
-      "error_message": {
+      }
+    },
+    "counterevidence": {
+      "type": "array",
+      "items": {
         "type": "string"
       }
+    },
+    "unresolved_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "decision": {
+      "enum": [
+        "defect",
+        "no_defect",
+        "abstain",
+        null
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "execution_trace": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "step_id",
+          "operation",
+          "status"
+        ],
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error",
+              "skipped"
+            ]
+          },
+          "details": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "error_code": {
+      "type": "string"
+    },
+    "error_message": {
+      "type": "string"
     }
   },
   "allOf": [
