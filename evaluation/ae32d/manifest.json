@@ -34,6 +34,18 @@
       "path": "cases/AE32D-CANDIDATE-AMBIGUOUS-PROVIDER-001.json",
       "status": "candidate",
       "primary_benchmark_eligible": false
+    },
+    {
+      "case_id": "AE32D-CANDIDATE-EXCEPTION-SWALLOW-001",
+      "path": "cases/AE32D-CANDIDATE-EXCEPTION-SWALLOW-001.json",
+      "status": "candidate",
+      "primary_benchmark_eligible": false
+    },
+    {
+      "case_id": "AE32D-CANDIDATE-DATAFLOW-STALE-VALUE-001",
+      "path": "cases/AE32D-CANDIDATE-DATAFLOW-STALE-VALUE-001.json",
+      "status": "candidate",
+      "primary_benchmark_eligible": false
     }
   ],
   "policy": {

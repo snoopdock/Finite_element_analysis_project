@@ -8,6 +8,8 @@ on:
       - .github/workflows/ae32d-machine-verification.yml
       - tools/ae32d_validate_benchmark.py
       - tools/ae32d_verify_case_matrix.py
+      - tools/ae32d_verify_extended_cases.py
+      - tests/semantic_audit/test_ae32d_extended_cases.py
       - tests/semantic_audit/test_ae32d_case_matrix.py
       - tools/ae32d_score_outcomes.py
       - tests/semantic_audit/test_ae32d_score_outcomes.py
@@ -52,6 +54,14 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Checkout immutable extended-case source
+        uses: actions/checkout@v4
+        with:
+          ref: c0d700c0a2599aabda8957f54e750a812ea2ef5d
+          path: .ae32d-extended-source
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -75,6 +85,14 @@ jobs:
         env:
           AE32D_CASE_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-case-source
         run: python tools/ae32d_verify_case_matrix.py --output "$RUNNER_TEMP/ae32d-machine-verification/case-matrix.json"
+
+      - name: Test extended defect families
+        run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_extended_cases.py' -v
+
+      - name: Verify pinned extended cases
+        env:
+          AE32D_EXTENDED_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-extended-source
+        run: python tools/ae32d_verify_extended_cases.py --output "$RUNNER_TEMP/ae32d-machine-verification/extended-cases.json"
 
       - name: Test benchmark record validation
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_benchmark_validation.py' -v

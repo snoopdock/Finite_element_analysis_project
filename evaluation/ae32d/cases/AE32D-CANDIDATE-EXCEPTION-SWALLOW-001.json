@@ -1,0 +1,90 @@
+{
+  "schema_version": "ae32d/case/v1",
+  "case_id": "AE32D-CANDIDATE-EXCEPTION-SWALLOW-001",
+  "case_status": "candidate",
+  "source": {
+    "repository": "snoopdock/Finite_element_analysis_project",
+    "source_commit_sha": "c0d700c0a2599aabda8957f54e750a812ea2ef5d",
+    "fixture_path": "tests/semantic_audit/fixtures/ae32d_exception_swallow_incident",
+    "environment": {
+      "status": "source_fixture_recorded",
+      "runtime_reproduction": "verified_by_pinned_matrix_workflow"
+    }
+  },
+  "task": {
+    "title": "Suppressed I/O exception",
+    "problem_statement": "Determine whether load_config propagates the reader's OSError as required by the declared contract.",
+    "declared_scope": [
+      "loader.py",
+      "expected_behavior.json",
+      "incident.md"
+    ],
+    "constraints": [
+      "Separate structural observation from runtime reproduction.",
+      "Do not modify source."
+    ]
+  },
+  "ground_truth": {
+    "label": "pending_adjudication",
+    "defect_family": "exception_flow_defect",
+    "severity": "pending",
+    "expected_findings": [
+      {
+        "finding_id": "OBS-1",
+        "statement": "load_config catches OSError and returns an empty mapping, suppressing the exception that the declared contract requires to propagate.",
+        "locations": [
+          {
+            "path": "loader.py",
+            "line_start": 1,
+            "line_end": 5,
+            "role": "cause"
+          },
+          {
+            "path": "expected_behavior.json",
+            "line_start": 1,
+            "line_end": 1,
+            "role": "test"
+          }
+        ],
+        "supporting_evidence": [
+          "AST shows OSError handler returning an empty mapping.",
+          "Runtime call with failing_reader returns normally with an empty mapping."
+        ],
+        "counterevidence": [
+          "Synthetic fixture only; not an upstream production defect."
+        ],
+        "acceptable_alternatives": [
+          "Identify suppression and request broader caller-level evidence before assessing impact."
+        ]
+      }
+    ],
+    "verification": {
+      "status": "fixture_construction_only",
+      "method": "Pinned AST and runtime fixture verification; independent adjudication pending.",
+      "artifacts": [
+        "loader.py",
+        "expected_behavior.json",
+        "incident.md"
+      ],
+      "notes": "Machine reproduction is not gold adjudication."
+    }
+  },
+  "review": {
+    "required_independent_reviewers": 2,
+    "status": "pending",
+    "reviewers": [],
+    "adjudication": null,
+    "agreement": "not_assessed"
+  },
+  "evaluation": {
+    "primary_benchmark_eligible": false,
+    "holdout": false,
+    "abstention_acceptable": true,
+    "conditions": [
+      "A_deterministic",
+      "B_graph",
+      "C_graph_llm"
+    ],
+    "exclusion_reason": "Candidate; ground truth and benchmark freeze requirements are not satisfied."
+  }
+}

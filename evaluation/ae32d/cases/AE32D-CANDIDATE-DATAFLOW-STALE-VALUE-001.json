@@ -1,0 +1,91 @@
+{
+  "schema_version": "ae32d/case/v1",
+  "case_id": "AE32D-CANDIDATE-DATAFLOW-STALE-VALUE-001",
+  "case_status": "candidate",
+  "source": {
+    "repository": "snoopdock/Finite_element_analysis_project",
+    "source_commit_sha": "c0d700c0a2599aabda8957f54e750a812ea2ef5d",
+    "fixture_path": "tests/semantic_audit/fixtures/ae32d_dataflow_stale_value_incident",
+    "environment": {
+      "status": "source_fixture_recorded",
+      "runtime_reproduction": "verified_by_pinned_matrix_workflow"
+    }
+  },
+  "task": {
+    "title": "Stale intermediate value at output sink",
+    "problem_statement": "Trace the discounted intermediate through invoice_total and determine whether the return value implements the declared formula.",
+    "declared_scope": [
+      "invoice.py",
+      "expected_behavior.json",
+      "incident.md"
+    ],
+    "constraints": [
+      "Trace values from definition to sink.",
+      "Do not infer correctness from the existence of an intermediate variable.",
+      "Do not modify source."
+    ]
+  },
+  "ground_truth": {
+    "label": "pending_adjudication",
+    "defect_family": "data_flow_defect",
+    "severity": "pending",
+    "expected_findings": [
+      {
+        "finding_id": "OBS-1",
+        "statement": "The function computes subtotal minus discount but returns the original subtotal plus tax, so the discounted value does not reach the output sink.",
+        "locations": [
+          {
+            "path": "invoice.py",
+            "line_start": 2,
+            "line_end": 3,
+            "role": "cause"
+          },
+          {
+            "path": "expected_behavior.json",
+            "line_start": 1,
+            "line_end": 1,
+            "role": "test"
+          }
+        ],
+        "supporting_evidence": [
+          "AST shows discounted assignment and return expression using subtotal.",
+          "Runtime output is 105 while declared expected value is 95."
+        ],
+        "counterevidence": [
+          "Synthetic fixture only; not an upstream production defect."
+        ],
+        "acceptable_alternatives": [
+          "Identify the stale-value path and distinguish it from arithmetic or input-contract uncertainty."
+        ]
+      }
+    ],
+    "verification": {
+      "status": "fixture_construction_only",
+      "method": "Pinned AST and runtime fixture verification; independent adjudication pending.",
+      "artifacts": [
+        "invoice.py",
+        "expected_behavior.json",
+        "incident.md"
+      ],
+      "notes": "Machine reproduction is not gold adjudication."
+    }
+  },
+  "review": {
+    "required_independent_reviewers": 2,
+    "status": "pending",
+    "reviewers": [],
+    "adjudication": null,
+    "agreement": "not_assessed"
+  },
+  "evaluation": {
+    "primary_benchmark_eligible": false,
+    "holdout": false,
+    "abstention_acceptable": true,
+    "conditions": [
+      "A_deterministic",
+      "B_graph",
+      "C_graph_llm"
+    ],
+    "exclusion_reason": "Candidate; ground truth and benchmark freeze requirements are not satisfied."
+  }
+}
