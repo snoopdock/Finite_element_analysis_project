@@ -7,6 +7,7 @@ Unsupported syntax is reported explicitly instead of being guessed.
 from __future__ import annotations
 
 import ast
+import math
 import operator
 from typing import Any
 
@@ -49,14 +50,26 @@ def _target_names(node: ast.AST) -> set[str]:
     return set()
 
 
+def _walk_function_scope(root: ast.AST):
+    """Walk one function scope without descending into nested scopes."""
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        yield node
+        children = list(ast.iter_child_nodes(node))
+        for child in reversed(children):
+            if child is not root and isinstance(
+                child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)
+            ):
+                continue
+            stack.append(child)
+
+
 def _loaded_names(node: ast.AST) -> set[str]:
-    result: set[str] = set()
-    for child in ast.walk(node):
-        if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)) and child is not node:
-            continue
-        if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Load):
-            result.add(child.id)
-    return result
+    return {
+        child.id for child in _walk_function_scope(node)
+        if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Load)
+    }
 
 
 def analyze_unbound_local_return(source: str, function_name: str, variable_name: str) -> dict[str, Any]:
@@ -78,7 +91,7 @@ def analyze_unbound_local_return(source: str, function_name: str, variable_name:
         parameters.add(args.kwarg.arg)
     declared_global: set[str] = set()
     declared_nonlocal: set[str] = set()
-    for node in ast.walk(function):
+    for node in _walk_function_scope(function):
         if isinstance(node, ast.Global):
             declared_global.update(node.names)
         elif isinstance(node, ast.Nonlocal):
@@ -89,7 +102,7 @@ def analyze_unbound_local_return(source: str, function_name: str, variable_name:
     def local_store(node: ast.AST) -> bool:
         return any(
             isinstance(child, ast.Name) and child.id == variable_name and isinstance(child.ctx, ast.Store)
-            for child in ast.walk(node)
+            for child in _walk_function_scope(node)
         )
 
     if not local_store(function):
@@ -169,6 +182,8 @@ def safe_evaluate(node: ast.AST, environment: dict[str, Any], *, depth: int = 0)
     if depth > 32:
         raise UnsupportedRuleSyntax("expression_depth_exceeded")
     if isinstance(node, ast.Constant) and isinstance(node.value, (bool, int, float, str, type(None))):
+        if isinstance(node.value, str) and len(node.value) > 1024:
+            raise UnsupportedRuleSyntax("string_literal_budget_exceeded")
         return node.value
     if isinstance(node, ast.Name):
         if node.id not in environment:
@@ -180,8 +195,12 @@ def safe_evaluate(node: ast.AST, environment: dict[str, Any], *, depth: int = 0)
         if isinstance(node.op, ast.Pow) and (not isinstance(right, int) or abs(right) > 16):
             raise UnsupportedRuleSyntax("power_budget_exceeded")
         value = _BINOPS[type(node.op)](left, right)
+        if isinstance(value, float) and not math.isfinite(value):
+            raise UnsupportedRuleSyntax("non_finite_numeric_result")
         if isinstance(value, (int, float)) and abs(value) > 10**18:
             raise UnsupportedRuleSyntax("numeric_result_budget_exceeded")
+        if isinstance(value, str) and len(value) > 1024:
+            raise UnsupportedRuleSyntax("string_result_budget_exceeded")
         return value
     if isinstance(node, ast.UnaryOp) and type(node.op) in _UNARYOPS:
         return _UNARYOPS[type(node.op)](safe_evaluate(node.operand, environment, depth=depth + 1))
@@ -247,7 +266,8 @@ def evaluate_function_subset(
 
 
 def analyze_exception_contract_suppression(
-    source: str, function_name: str, exception_name: str, contract_kind: str
+    source: str, function_name: str, exception_name: str, contract_kind: str,
+    operation_name: str,
 ) -> dict[str, Any]:
     if contract_kind != "raise":
         return {"status": "unsupported", "reason": "contract_kind_not_raise", "suppression_observed": False}
@@ -256,19 +276,35 @@ def analyze_exception_contract_suppression(
     except (SyntaxError, UnsupportedRuleSyntax) as exc:
         return {"status": "unsupported", "reason": str(exc), "suppression_observed": False}
     evidence = []
-    for node in ast.walk(function):
+    unsupported_handler_shape = False
+    for node in _walk_function_scope(function):
         if not isinstance(node, ast.Try):
+            continue
+        operation_present = any(
+            isinstance(child, ast.Call)
+            and (
+                (isinstance(child.func, ast.Name) and child.func.id == operation_name)
+                or (isinstance(child.func, ast.Attribute) and child.func.attr == operation_name)
+            )
+            for statement in node.body for child in ast.walk(statement)
+        )
+        if not operation_present:
             continue
         for handler in node.handlers:
             caught = handler.type.id if isinstance(handler.type, ast.Name) else None
             if caught != exception_name:
                 continue
-            returns_normally = any(isinstance(child, ast.Return) for child in handler.body)
-            reraises = any(isinstance(child, ast.Raise) and child.exc is None for child in handler.body)
-            if returns_normally and not reraises:
+            if len(handler.body) != 1:
+                unsupported_handler_shape = True
+                continue
+            only_statement = handler.body[0]
+            if isinstance(only_statement, ast.Return):
                 evidence.append({"line": handler.lineno, "caught": caught, "returns_normally": True})
+            elif not isinstance(only_statement, ast.Raise):
+                unsupported_handler_shape = True
     return {
-        "status": "supported",
+        "status": "unsupported" if unsupported_handler_shape else "supported",
+        "reason": "complex_exception_handler_shape" if unsupported_handler_shape else None,
         "suppression_observed": bool(evidence),
         "evidence": evidence,
         "decision_authority": "defect_only_if_task_contract_requires_propagation",
@@ -286,11 +322,14 @@ def analyze_stale_intermediate_sink(
     except (SyntaxError, UnsupportedRuleSyntax) as exc:
         return {"status": "unsupported", "reason": str(exc), "stale_sink_observed": False}
     assigned = any(
-        isinstance(node, ast.Assign)
-        and intermediate_name in set().union(*(_target_names(t) for t in node.targets))
-        for node in ast.walk(function)
+        isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign))
+        and intermediate_name in (
+            set().union(*(_target_names(t) for t in node.targets)) if isinstance(node, ast.Assign)
+            else _target_names(node.target)
+        )
+        for node in _walk_function_scope(function)
     )
-    returns = [node for node in ast.walk(function) if isinstance(node, ast.Return)]
+    returns = [node for node in _walk_function_scope(function) if isinstance(node, ast.Return)]
     if len(returns) != 1:
         return {"status": "unsupported", "reason": "requires_exactly_one_return", "stale_sink_observed": False}
     sink_names = _loaded_names(returns[0].value or ast.Constant(None))
@@ -316,7 +355,8 @@ def analyze_stale_intermediate_sink(
 
 
 def observe_dynamic_attribute_mismatch(
-    consumer_source: str, provider_source: str, function_name: str, provider_class: str
+    consumer_source: str, provider_source: str, function_name: str, provider_class: str,
+    provider_parameter: str = "provider",
 ) -> dict[str, Any]:
     try:
         consumer = _find_function(consumer_source, function_name)
@@ -324,17 +364,23 @@ def observe_dynamic_attribute_mismatch(
     except (SyntaxError, UnsupportedRuleSyntax) as exc:
         return {"status": "unsupported", "reason": str(exc), "decision": "abstain"}
     reads = [
-        node.attr for node in ast.walk(consumer)
-        if isinstance(node, ast.Attribute) and node.attr and isinstance(node.ctx, ast.Load)
+        node.attr for node in _walk_function_scope(consumer)
+        if isinstance(node, ast.Attribute) and node.attr
+        and isinstance(node.ctx, ast.Load)
+        and isinstance(node.value, ast.Name) and node.value.id == provider_parameter
     ]
     classes = [node for node in provider_tree.body if isinstance(node, ast.ClassDef) and node.name == provider_class]
     if len(classes) != 1:
         return {"status": "unsupported", "reason": "provider_class_not_unique", "decision": "abstain"}
     declared: set[str] = set()
-    for node in ast.walk(classes[0]):
+    for node in _walk_function_scope(classes[0]):
         if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == "self":
             if isinstance(node.ctx, ast.Store):
                 declared.add(node.attr)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and any(
+            isinstance(decorator, ast.Name) and decorator.id == "property" for decorator in node.decorator_list
+        ):
+            declared.add(node.name)
     missing = sorted(set(reads) - declared)
     return {
         "status": "supported",
