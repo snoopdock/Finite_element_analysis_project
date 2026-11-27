@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import io
 import os
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -145,7 +146,7 @@ class AE32DMachineVerifierBoundaryTests(unittest.TestCase):
             self.assertIn("-B", args[0])
             self.assertNotIn("GITHUB_TOKEN", kwargs["env"])
             self.assertNotIn("AE32D_TEST_SECRET", kwargs["env"])
-            self.assertEqual(kwargs["stdin"], __import__("subprocess").DEVNULL)
+            self.assertEqual(kwargs["stdin"], subprocess.DEVNULL)
             self.assertEqual(kwargs["timeout"], 15)
 
     def test_cli_does_not_accept_a_fixture_path_argument(self):
