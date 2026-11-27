@@ -112,7 +112,6 @@ class PersistedCompositionOrchestrationTests(unittest.TestCase):
                 current_qualification={},
                 current_observation_bundle={},
             )
-        execution_verify.assert_has_calls([unittest.mock.call(unittest.mock.ANY, **unittest.mock.ANY)] * 2) if False else None
         self.assertEqual(execution_verify.call_count, 2)
         qualification_verify.assert_called_once()
         return result
