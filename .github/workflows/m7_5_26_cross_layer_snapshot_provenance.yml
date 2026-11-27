@@ -1,0 +1,60 @@
+name: AE-32C M7.5.26 Cross-Layer Snapshot Provenance
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_26_cross_layer_snapshot_provenance.yml"
+      - "tools/ae32c_source_snapshot_manifest.py"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tests/semantic_graph/test_m7526_*.py"
+      - "tests/semantic_graph/test_ae32c_source_snapshot_manifest.py"
+      - "tests/semantic_graph/test_m7524_*.py"
+      - "tests/semantic_graph/test_m7525_*.py"
+      - "docs/audit-engine/AE-32C-M7.5.26-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7526-stage1
+  cancel-in-progress: false
+
+jobs:
+  cross-layer-snapshot-provenance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile snapshot and epistemic implementation
+        run: python -m compileall -q tools/ae32c_source_snapshot_manifest.py audit_engine/semantic_audit/epistemic
+      - name: M7.5.26 snapshot identity and provenance tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7526_*.py' -v
+      - name: Source snapshot manifest regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_ae32c_source_snapshot_manifest.py' -v
+      - name: M7.5.24 orchestration regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7524_*.py' -v
+      - name: M7.5.25 failure-injection regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7525_*.py' -v
+      - name: Complete M7.5 regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
+      - name: Snapshot provenance authority summary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.26 cross-layer snapshot identity and provenance"
+            echo "- Declared identity is distinguished from Git source-state replay"
+            echo "- Cross-artifact seals and snapshot/claim/plan/coverage bindings are checked"
+            echo "- No atomic cross-store snapshot or external trust anchor is claimed"
+            echo "- LFS payload bytes and recursive submodule contents remain unverified"
+            echo "- No evidence acceptance, proposition truth, ALLOW/DENY, release, or production authority is created"
+          } >> "$GITHUB_STEP_SUMMARY"

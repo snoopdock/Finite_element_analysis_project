@@ -417,3 +417,74 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def verify_verified_manifest_data(repository, manifest, *, expected_source_revision=None) -> dict[str, Any]:
+    """Independently replay a previously VERIFIED manifest without mutating it.
+
+    This verifies the manifest's content bindings and reconstructs the Git
+    commit/tree/inventory from the supplied repository checkout. It does not
+    authenticate who created the manifest or establish an atomic snapshot
+    across external stores.
+    """
+    if not isinstance(manifest, dict) or manifest.get("manifest_schema") != SCHEMA:
+        raise SnapshotError("manifest_schema_invalid")
+    submitted_digest = manifest.get("manifest_sha256")
+    payload = {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+    if submitted_digest != _sha256(payload):
+        raise SnapshotError("manifest_digest_mismatch")
+    if manifest.get("status") != "VERIFIED":
+        raise SnapshotError("source_manifest_not_verified")
+    verification = manifest.get("verification")
+    if not isinstance(verification, dict) or verification.get("status") != "VERIFIED":
+        raise SnapshotError("source_manifest_verification_not_verified")
+    source = manifest.get("source")
+    inventory = manifest.get("source_inventory")
+    materialization = manifest.get("materialization")
+    if not all(isinstance(item, dict) for item in (source, inventory, materialization)):
+        raise SnapshotError("source_manifest_components_invalid")
+    entries = inventory.get("entries")
+    if not isinstance(entries, list) or inventory.get("entry_count") != len(entries):
+        raise SnapshotError("manifest_inventory_invalid")
+    if inventory.get("sha256") != _sha256(entries):
+        raise SnapshotError("manifest_inventory_digest_mismatch")
+    if source.get("source_inventory_sha256") != inventory.get("sha256"):
+        raise SnapshotError("source_inventory_binding_mismatch")
+    if manifest.get("source_snapshot_id") != _sha256(source):
+        raise SnapshotError("source_snapshot_identity_digest_mismatch")
+    if verification.get("source_snapshot_id_at_verification") != manifest.get("source_snapshot_id"):
+        raise SnapshotError("verified_source_snapshot_identity_mismatch")
+    if verification.get("source_inventory_sha256_at_verification") != inventory.get("sha256"):
+        raise SnapshotError("verified_source_inventory_identity_mismatch")
+    if verification.get("worktree_clean_at_verification") is not True:
+        raise SnapshotError("source_worktree_not_verified_clean")
+    if materialization.get("status") != "CLEAN":
+        raise SnapshotError("source_materialization_not_clean")
+    worktree = materialization.get("worktree")
+    if not isinstance(worktree, dict) or worktree.get("clean") is not True:
+        raise SnapshotError("source_manifest_worktree_not_clean")
+    if (materialization.get("checkout_commit_oid") != source.get("commit_oid")
+            or materialization.get("checkout_root_tree_oid") != source.get("root_tree_oid")):
+        raise SnapshotError("source_materialization_identity_mismatch")
+    snapshot = _build_snapshot(
+        repository,
+        expected_source_revision=expected_source_revision or source.get("commit_oid"),
+        recorded_event=manifest.get("event"),
+    )
+    if (
+        snapshot.get("source_snapshot_id") != manifest.get("source_snapshot_id")
+        or snapshot.get("source") != source
+        or snapshot.get("source_inventory") != inventory
+        or snapshot.get("materialization", {}).get("worktree", {}).get("clean") is not True
+    ):
+        raise SnapshotError("source_state_replay_mismatch")
+    return {
+        "source_snapshot_id": snapshot["source_snapshot_id"],
+        "commit_oid": snapshot["source"]["commit_oid"],
+        "root_tree_oid": snapshot["source"]["root_tree_oid"],
+        "source_inventory_sha256": snapshot["source_inventory"]["sha256"],
+        "source_state_replay_verified": True,
+        "worktree_clean_at_replay": True,
+        "external_lfs_payload_verified": False,
+        "recursive_submodule_state_verified": False,
+    }
