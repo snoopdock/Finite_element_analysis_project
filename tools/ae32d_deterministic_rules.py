@@ -139,7 +139,9 @@ def analyze_unbound_local_return(source: str, function_name: str, variable_name:
                 current = [state | _target_names(statement.target) for state in current]
             elif isinstance(statement, ast.AugAssign):
                 for state in current:
-                    read_check(statement.target, state, "augmented_assignment_target")
+                    if (isinstance(statement.target, ast.Name)
+                            and statement.target.id == variable_name and variable_name not in state):
+                        unbound.append({"line": statement.lineno, "context": "augmented_assignment_target"})
                     read_check(statement.value, state, "augmented_assignment_rhs")
                 current = [state | _target_names(statement.target) for state in current]
             elif isinstance(statement, ast.If):
@@ -192,7 +194,15 @@ def safe_evaluate(node: ast.AST, environment: dict[str, Any], *, depth: int = 0)
     if isinstance(node, ast.Name):
         if node.id not in environment:
             raise UnsupportedRuleSyntax("unbound_name:" + node.id)
-        return environment[node.id]
+        value = environment[node.id]
+        if isinstance(value, str) and len(value) > 1024:
+            raise UnsupportedRuleSyntax("string_input_budget_exceeded")
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            if abs(value) > 10**18 or (isinstance(value, float) and not math.isfinite(value)):
+                raise UnsupportedRuleSyntax("numeric_input_budget_exceeded")
+        if not isinstance(value, (bool, int, float, str, type(None))):
+            raise UnsupportedRuleSyntax("unsupported_input_value")
+        return value
     if isinstance(node, ast.BinOp) and type(node.op) in _BINOPS:
         left = safe_evaluate(node.left, environment, depth=depth + 1)
         right = safe_evaluate(node.right, environment, depth=depth + 1)
@@ -321,6 +331,8 @@ def analyze_stale_intermediate_sink(
     intermediate_name: str,
     input_cases: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    if not input_cases:
+        return {"status": "unsupported", "reason": "input_cases_required", "stale_sink_observed": False}
     try:
         function = _find_function(source, function_name)
     except (SyntaxError, UnsupportedRuleSyntax) as exc:
