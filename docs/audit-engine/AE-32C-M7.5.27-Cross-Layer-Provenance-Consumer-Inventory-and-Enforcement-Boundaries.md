@@ -1,6 +1,6 @@
 # AE-32C M7.5.27 — Cross-Layer Provenance Consumer Inventory and Enforcement Boundaries
 
-**Status:** Implemented; exact-head CI validation pending  
+**Status:** Implemented; M7.5.27 implementation and regression CI-validated (documentation-only follow-up triggers exact-head revalidation)  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.26 — Cross-Layer Snapshot Identity and Provenance Contract  
 **Baseline revision:** `54f926ac00d5f252383c3c8c9fbbf57f93a24e16`  
@@ -108,4 +108,14 @@ The workflow checks out the exact triggering revision and runs:
 - M7.5.22 qualification-consumer dependency-boundary regression.
 - Complete M7.5 regression.
 
-Validation status and exact revision are recorded here after the workflow completes.
+Validation evidence:
+- [M7.5.27 workflow run 45978402244](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45978402244) — success on implementation/test revision `e0db26e083be019ead2181059bc50805e3b3244d`.
+- M7.5.27 dedicated structural inventory tests: 6 passed.
+- M7.5.26 provenance behavioral regression: 9 passed.
+- M7.5.24 persisted orchestration regression: 9 passed.
+- M7.5.25 cross-store failure-injection regression: 3 passed.
+- M7.5.22 qualification-consumer dependency-boundary regression: 5 passed.
+- Complete M7.5 regression: 267 passed.
+- Python 3.11 compilation: passed.
+
+The workflow checked out the exact triggering revision. The documentation-only status update is included in the workflow path filter and is revalidated separately on the resulting final branch head.
