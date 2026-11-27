@@ -329,6 +329,59 @@ class QualificationReconciliationStore:
         return tuple(item for row in rows
                      if (item := json.loads(row["payload"])).get("record_id") == record_id)
 
+    def evaluate_currentness(self, record_id: str,
+                             current_context: Mapping[str, str]) -> dict[str, Any]:
+        """Fail closed when a stored reconciliation has ever been invalidated.
+
+        A drift observation is appended before returning INVALIDATED. Once any
+        invalidation exists, restoring the old context does not restore
+        currentness; a new reconciliation record is required.
+        """
+        envelope = self.get(record_id)
+        if envelope is None:
+            raise QualificationReconciliationStoreError(
+                "reconciliation_record_not_found")
+        if (not isinstance(current_context, Mapping)
+                or set(current_context) != set(_CONTEXT_KEYS)):
+            raise ValueError(
+                "current_context_must_contain_exactly_the_declared_context_keys")
+        current = dict(current_context)
+        if any(not isinstance(current.get(key), str) or not current[key].strip()
+               for key in _CONTEXT_KEYS):
+            raise ValueError(
+                "current_context_values_must_be_non_empty_strings")
+
+        current_reasons = _invalidation_reasons(envelope["context"], current)
+        invalidation_result = None
+        if current_reasons:
+            # Failure to persist the invalidation raises; it never degrades to
+            # a CURRENT result when the append-only ledger is full or damaged.
+            invalidation_result = self.invalidate(record_id, current)
+
+        history = self.invalidation_history(record_id)
+        historical_reasons = []
+        for event in history:
+            for reason in event["reason_codes"]:
+                if reason not in historical_reasons:
+                    historical_reasons.append(reason)
+        invalidated = bool(history)
+        return {
+            "record_id": record_id,
+            "currentness_status": "INVALIDATED" if invalidated else "CURRENT",
+            "current_context_matches_record": not current_reasons,
+            "current_reason_codes": current_reasons,
+            "historical_invalidation_count": len(history),
+            "historical_invalidation_ids": [
+                event["invalidation_id"] for event in history
+            ],
+            "historical_reason_codes": historical_reasons,
+            "invalidation_event_appended": bool(
+                invalidation_result and invalidation_result.get("event_appended")),
+            "ledger_integrity": True,
+            "semantic_replay_performed": False,
+            "downstream_authorization": "NOT_EVALUATED",
+        }
+
     def history(self) -> tuple[dict[str, Any], ...]:
         if not self.verify_integrity():
             raise QualificationReconciliationStoreError("ledger_integrity_failure")
@@ -337,6 +390,16 @@ class QualificationReconciliationStore:
             "ORDER BY sequence"
         ).fetchall()
         return tuple(dict(row) for row in rows)
+
+
+def evaluate_persisted_qualification_reconciliation_currentness(
+    record_id: str,
+    *,
+    store: QualificationReconciliationStore,
+    current_context: Mapping[str, str],
+) -> dict[str, Any]:
+    """Evaluate durable currentness; this does not perform semantic replay."""
+    return store.evaluate_currentness(record_id, current_context)
 
 
 def persist_verified_qualification_reconciliation(

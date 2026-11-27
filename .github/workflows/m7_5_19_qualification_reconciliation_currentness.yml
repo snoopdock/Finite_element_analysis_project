@@ -1,0 +1,56 @@
+name: AE-32C M7.5.19 Qualification Reconciliation Currentness Gate
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_19_qualification_reconciliation_currentness.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tests/semantic_graph/test_m7519_*.py"
+      - "tests/semantic_graph/test_m7518_*.py"
+      - "tests/semantic_graph/test_m7517_*.py"
+      - "docs/audit-engine/AE-32C-M7.5.19-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7519-stage1
+  cancel-in-progress: false
+
+jobs:
+  qualification-reconciliation-currentness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile epistemic implementation
+        run: python -m compileall -q audit_engine/semantic_audit/epistemic
+      - name: Dedicated M7.5.19 currentness-gate tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7519_*.py' -v
+      - name: M7.5.18 persistence and invalidation regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7518_*.py' -v
+      - name: M7.5.17 semantic reconciliation regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7517_*.py' -v
+      - name: Complete M7.5 regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
+      - name: Currentness and authority boundary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.19 qualification reconciliation currentness"
+            echo "- Currentness is fail-closed and bound to the eight M7.5.18 context dimensions"
+            echo "- Detected drift is appended before INVALIDATED is returned"
+            echo "- Invalidation is monotonic; restoring old context does not restore currentness"
+            echo "- Historical records remain unchanged; semantic replay is separate"
+            echo "- No dossier mutation, epistemic assertion, ALLOW/DENY, or downstream authorization"
+          } >> "$GITHUB_STEP_SUMMARY"

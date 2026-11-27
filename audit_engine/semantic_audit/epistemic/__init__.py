@@ -70,6 +70,7 @@ from .qualification_reconciliation_store import (
     persist_verified_qualification_reconciliation,
     qualification_reconciliation_context,
     verify_persisted_qualification_reconciliation,
+    evaluate_persisted_qualification_reconciliation_currentness,
 )
 from .store import (
     DuplicateRecordError, EpistemicStore, InvalidTransitionError,
@@ -83,6 +84,7 @@ __all__ = [
     "persist_verified_qualification_reconciliation",
     "qualification_reconciliation_context",
     "verify_persisted_qualification_reconciliation",
+    "evaluate_persisted_qualification_reconciliation_currentness",
     "SemanticQualificationError", "semantic_evidence_contract_registry",
     "qualify_typed_evidence_observations", "verify_semantic_evidence_qualification",
     "TypedEvidenceError", "TypedEvidenceObservationStore",
