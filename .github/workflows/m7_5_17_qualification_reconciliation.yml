@@ -1,0 +1,53 @@
+name: AE-32C M7.5.17 Qualification-to-Obligation Reconciliation
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_17_qualification_reconciliation.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tests/semantic_graph/test_m7517_*.py"
+      - "tests/semantic_graph/test_m7516_*.py"
+      - "docs/audit-engine/AE-32C-M7.5.17-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7517-stage1
+  cancel-in-progress: false
+
+jobs:
+  qualification-reconciliation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile epistemic implementation
+        run: python -m compileall -q audit_engine/semantic_audit/epistemic
+      - name: Dedicated M7.5.17 tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7517_*.py' -v
+      - name: M7.5.16 qualification regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7516_*.py' -v
+      - name: Complete M7.5 regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
+      - name: Qualification authority boundary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.17 qualification-to-obligation reconciliation"
+            echo "- Every derived evidence obligation is reconciled"
+            echo "- Missing and unsupported evidence remains UNKNOWN"
+            echo "- Contested evidence takes precedence over narrow support"
+            echo "- Coverage obligations remain outside semantic qualification reconciliation"
+            echo "- No coverage manifest/dossier mutation, epistemic assertion, ALLOW/DENY, or production approval"
+          } >> "$GITHUB_STEP_SUMMARY"
