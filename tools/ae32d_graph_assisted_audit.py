@@ -110,6 +110,7 @@ def _tool_record(tool: str, arguments: dict[str, Any], response: dict[str, Any])
         "coverage_status": result.get("coverage_status", "unknown") if isinstance(result, dict) else "unknown",
         "truncated": bool(result.get("truncated", False)) if isinstance(result, dict) else False,
         "response_digest": _sha256(canonical_json_bytes(response)),
+        "provenance": response.get("provenance", {}) if isinstance(response.get("provenance", {}), dict) else {},
         "payload": result if isinstance(result, dict) else {},
         **({"error_code": response.get("error", {}).get("code", "unknown_error")}
            if response.get("status") != "ok" else {}),
@@ -279,6 +280,7 @@ def run_graph_assisted_audit(task_projection: dict[str, Any], source_root: str |
         "adapter_revision": B_ADAPTER_REVISION,
         "baseline_config_digest": baseline_config_digest,
         "graph_policy_digest": graph_policy_digest,
+        "report_schema_sha256": _sha256(REPORT_SCHEMA.read_bytes()),
         "graph_snapshot_fingerprint": graph_snapshot["graph_fingerprint"],
         "graph_backend": GRAPH_BACKEND,
         "runner_source_sha256": _sha256(Path(__file__).read_bytes()),
