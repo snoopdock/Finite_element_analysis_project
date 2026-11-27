@@ -1,0 +1,101 @@
+{
+  "schema_version": "ae32d/case/v1",
+  "case_id": "AE32D-CANDIDATE-AMBIGUOUS-PROVIDER-001",
+  "case_status": "candidate",
+  "source": {
+    "repository": "snoopdock/Finite_element_analysis_project",
+    "source_commit_sha": "PENDING_SOURCE_PIN",
+    "fixture_path": "tests/semantic_audit/fixtures/ae32d_ambiguous_provider_contract",
+    "environment": {
+      "status": "source_fixture_recorded",
+      "runtime_reproduction": "pending_workflow_verification"
+    }
+  },
+  "task": {
+    "title": "Incomplete dynamic provider contract",
+    "problem_statement": "Investigate the incomplete dynamic provider contract using only the declared read-only evidence. Separate direct observations from causal inferences, identify missing evidence, and calibrate uncertainty. Do not modify source code.",
+    "declared_scope": [
+      "extractor.py",
+      "adapter.py",
+      "factory.py",
+      "incident.md"
+    ],
+    "constraints": [
+      "Do not treat lexical anchors as proof of causal correctness.",
+      "Do not claim runtime behavior unless the pinned verification establishes it.",
+      "Do not apply code changes during evaluation."
+    ]
+  },
+  "ground_truth": {
+    "label": "pending_adjudication",
+    "defect_family": "insufficient_evidence",
+    "severity": "pending",
+    "expected_findings": [
+      {
+        "finding_id": "OBS-1",
+        "statement": "The visible extractor reads total_calls while the visible adapter stores calls, but the concrete provider implementation is absent; the available evidence does not establish whether dynamic attribute resolution or an alternate implementation satisfies the access.",
+        "locations": [
+          {
+            "path": "extractor.py",
+            "line_start": 1,
+            "line_end": 2,
+            "role": "trigger"
+          },
+          {
+            "path": "adapter.py",
+            "line_start": 1,
+            "line_end": 6,
+            "role": "context"
+          },
+          {
+            "path": "factory.py",
+            "line_start": 1,
+            "line_end": 5,
+            "role": "counterevidence"
+          }
+        ],
+        "supporting_evidence": [
+          "Visible consumer-side attribute access",
+          "Visible adapter-side counter storage"
+        ],
+        "counterevidence": [
+          "Factory imports an implementation not present in the evidence bundle.",
+          "Dynamic attribute behavior and concrete runtime class are not inspectable."
+        ],
+        "acceptable_alternatives": [
+          "Explicit abstention from a causal defect claim pending runtime_provider source and construction-path evidence."
+        ]
+      }
+    ],
+    "verification": {
+      "status": "fixture_construction_only",
+      "method": "Synthetic fixture and expected-behavior contract are recorded; deterministic workflow verification is pending.",
+      "artifacts": [
+        "extractor.py",
+        "adapter.py",
+        "factory.py",
+        "incident.md"
+      ],
+      "notes": "Candidate intent is not a gold label. Independent adjudication is required before primary scoring."
+    },
+    "notes": "Machine checks may establish bounded fixture facts but do not independently establish benchmark ground truth."
+  },
+  "review": {
+    "required_independent_reviewers": 2,
+    "status": "pending",
+    "reviewers": [],
+    "adjudication": null,
+    "agreement": "not_assessed"
+  },
+  "evaluation": {
+    "primary_benchmark_eligible": false,
+    "holdout": false,
+    "abstention_acceptable": true,
+    "conditions": [
+      "A_deterministic",
+      "B_graph",
+      "C_graph_llm"
+    ],
+    "exclusion_reason": "Candidate case; ground truth and benchmark freeze requirements are not satisfied."
+  }
+}

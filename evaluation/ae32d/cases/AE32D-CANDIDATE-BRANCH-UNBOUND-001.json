@@ -1,0 +1,92 @@
+{
+  "schema_version": "ae32d/case/v1",
+  "case_id": "AE32D-CANDIDATE-BRANCH-UNBOUND-001",
+  "case_status": "candidate",
+  "source": {
+    "repository": "snoopdock/Finite_element_analysis_project",
+    "source_commit_sha": "PENDING_SOURCE_PIN",
+    "fixture_path": "tests/semantic_audit/fixtures/ae32d_branch_unbound_incident",
+    "environment": {
+      "status": "source_fixture_recorded",
+      "runtime_reproduction": "pending_workflow_verification"
+    }
+  },
+  "task": {
+    "title": "Conditional assignment with unbound local",
+    "problem_statement": "Investigate the conditional assignment with unbound local using only the declared read-only evidence. Separate direct observations from causal inferences, identify missing evidence, and calibrate uncertainty. Do not modify source code.",
+    "declared_scope": [
+      "branch_logic.py",
+      "expected_behavior.json",
+      "incident.md"
+    ],
+    "constraints": [
+      "Do not treat lexical anchors as proof of causal correctness.",
+      "Do not claim runtime behavior unless the pinned verification establishes it.",
+      "Do not apply code changes during evaluation."
+    ]
+  },
+  "ground_truth": {
+    "label": "pending_adjudication",
+    "defect_family": "control_flow_defect",
+    "severity": "pending",
+    "expected_findings": [
+      {
+        "finding_id": "OBS-1",
+        "statement": "The function assigns result only when flag is true and returns it unconditionally; the false branch leaves the local unbound, contrary to the declared return-0 contract.",
+        "locations": [
+          {
+            "path": "branch_logic.py",
+            "line_start": 2,
+            "line_end": 4,
+            "role": "trigger"
+          },
+          {
+            "path": "expected_behavior.json",
+            "line_start": 1,
+            "line_end": 1,
+            "role": "test"
+          }
+        ],
+        "supporting_evidence": [
+          "AST structure of conditional assignment and unconditional return",
+          "Declared false-input expected result"
+        ],
+        "counterevidence": [
+          "This is a synthetic local fixture, not an upstream repository defect."
+        ],
+        "acceptable_alternatives": [
+          "A bounded diagnosis that identifies the control-flow defect and requests runtime confirmation."
+        ]
+      }
+    ],
+    "verification": {
+      "status": "fixture_construction_only",
+      "method": "Synthetic fixture and expected-behavior contract are recorded; deterministic workflow verification is pending.",
+      "artifacts": [
+        "branch_logic.py",
+        "expected_behavior.json",
+        "incident.md"
+      ],
+      "notes": "Candidate intent is not a gold label. Independent adjudication is required before primary scoring."
+    },
+    "notes": "Machine checks may establish bounded fixture facts but do not independently establish benchmark ground truth."
+  },
+  "review": {
+    "required_independent_reviewers": 2,
+    "status": "pending",
+    "reviewers": [],
+    "adjudication": null,
+    "agreement": "not_assessed"
+  },
+  "evaluation": {
+    "primary_benchmark_eligible": false,
+    "holdout": false,
+    "abstention_acceptable": true,
+    "conditions": [
+      "A_deterministic",
+      "B_graph",
+      "C_graph_llm"
+    ],
+    "exclusion_reason": "Candidate case; ground truth and benchmark freeze requirements are not satisfied."
+  }
+}
