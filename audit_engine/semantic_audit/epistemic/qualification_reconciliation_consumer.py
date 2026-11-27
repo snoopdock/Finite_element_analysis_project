@@ -16,6 +16,7 @@ from .qualification_reconciliation_store import (
     QualificationReconciliationStore,
     QualificationReconciliationStoreError,
     verify_persisted_qualification_reconciliation,
+    evaluate_persisted_qualification_reconciliation_currentness,
 )
 from .semantic_qualification import semantic_evidence_contract_registry
 
@@ -143,6 +144,16 @@ def verify_persisted_qualification_reconciliation_for_consumer(
             "downstream_authorization": "NOT_EVALUATED",
         }
 
+    # Close the preflight-to-replay window as far as an independent append-only
+    # ledger permits. This second check occurs immediately before replay.
+    replay_preflight = evaluate_persisted_qualification_reconciliation_currentness(
+        record_id, store=reconciliation_store, current_context=expected_context
+    )
+    if replay_preflight["currentness_status"] != "CURRENT":
+        raise QualificationConsumerReplayError(
+            "qualification_invalidated_before_semantic_replay"
+        )
+
     replay = verify_persisted_qualification_reconciliation(
         record_id,
         store=reconciliation_store,
@@ -153,12 +164,24 @@ def verify_persisted_qualification_reconciliation_for_consumer(
         repository_root=repository_root,
         defeaters=defeaters,
     )
+
+    # Detect invalidation concurrent with replay. If it occurred, do not return
+    # a current REPLAY_VERIFIED result even though historical replay completed.
+    postflight = evaluate_persisted_qualification_reconciliation_currentness(
+        record_id, store=reconciliation_store, current_context=expected_context
+    )
+    if postflight["currentness_status"] != "CURRENT":
+        raise QualificationConsumerReplayError(
+            "qualification_invalidated_during_semantic_replay"
+        )
     return {
         "consumer_operation_status": "REPLAY_VERIFIED",
         "record_id": record_id,
         "consumer_id": consumer_id,
         "operation": operation,
         "preflight": preflight,
+        "replay_preflight": replay_preflight,
+        "postflight": postflight,
         "semantic_replay_performed": True,
         "replay_result": replay,
         "downstream_authorization": "NOT_EVALUATED",
