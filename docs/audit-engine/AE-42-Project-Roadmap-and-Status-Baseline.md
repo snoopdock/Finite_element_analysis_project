@@ -219,3 +219,14 @@ A2's current scope passed full workflow run [46031679281](https://github.com/sno
 The runner is tested against all six pinned candidate fixtures in [run 46032688139](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46032688139), which passed in full. The six tests cover branch defect, no-defect control, exception suppression, stale dataflow, provider-interface abstention and ambiguous dynamic-provider abstention, plus wrong-condition rejection. Exact checkout SHAs and evidence paths are verified. Prior evidence-path failures remain visible and were corrected.
 
 **A3 status:** validated bounded implementation. It is not an official trial runner workflow and no trial artifact was generated. The next gate is A4: freeze A's configuration/report contract and implement B as the exact A baseline plus a fixed deterministic AE-32B retrieval policy. B must retain the complete A report and add graph evidence without changing the A config, evidence or decision rules.
+
+
+### AE-45.4 A4 graph-assisted condition B
+
+`tools/ae32d_graph_assisted_audit.py` implements B as the exact A baseline plus bounded AE-32B graph retrieval. It copies only the A-admitted fixture files into a temporary graph root and verifies the copied manifest digest equals A's manifest before graph construction. It selects NetworkX for bounded adjacency/path queries based on task relevance, not performance ranking. The B report embeds the complete A report and binds graph snapshot identity, graph fingerprint, backend wiring, query policy, retrieval responses and digests.
+
+B v0.1 passed full workflow run [46034117729](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46034117729). The tests cover all six pinned cases, exact A/B report pairing, no-defect/defect/abstention decision preservation, declared-context retrieval, nonempty graph-neighbor evidence, and a successful nonempty file-to-symbol graph path. The graph backend is confirmed wired into the AE-32B query path.
+
+**A4 status:** validated as retrieval-only B. No graph-specific diagnostic rule is enabled; B deliberately preserves A's decision. Therefore this milestone validates graph retrieval and provenance, not diagnostic-quality improvement. No official A/B trial artifact has been generated.
+
+**Next:** C0 provider investigation request/authorization preflight. It must consume the B report, preserve all A and graph evidence, and validate a manual authorization envelope and hard budgets without making any provider call. Live C execution remains disabled until separately authorized.
