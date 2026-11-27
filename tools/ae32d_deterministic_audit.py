@@ -198,6 +198,7 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
     fixture_root = _resolve_fixture_root(root, fixture_path)
     files: dict[str, dict[str, Any]] = {}
     missing_paths: list[str] = []
+    unreadable_paths: list[str] = []
     descriptors: list[str] = []
     total_bytes = 0
 
@@ -219,7 +220,7 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
         try:
             text_value = data.decode("utf-8")
         except UnicodeDecodeError:
-            missing_paths.append(relative + ":unsupported_encoding")
+            unreadable_paths.append(relative + ":unsupported_encoding")
             continue
         files[relative] = {"bytes": data, "text": text_value, "sha256": _sha256(data)}
 
@@ -227,7 +228,12 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
         {"path": path, "size": len(item["bytes"]), "sha256": item["sha256"]}
         for path, item in sorted(files.items())
     ]
-    manifest_digest = _canonical_digest(manifest)
+    manifest_digest = _canonical_digest({
+        "files": manifest,
+        "missing_paths": sorted(missing_paths),
+        "unreadable_paths": sorted(unreadable_paths),
+        "scope_descriptors": sorted(descriptors),
+    })
     contract = _load_expected_contract(files)
     findings: list[dict[str, Any]] = []
     counterevidence: list[str] = []
@@ -461,7 +467,8 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
     else:
         decision = "abstain"
 
-    status = "completed" if not missing_paths and not limitations else "partial"
+    semantic_partial = any(step["status"] == "partial" for step in trace)
+    status = "completed" if not missing_paths and not unreadable_paths and not limitations and not semantic_partial else "partial"
     report = {
         "schema_version": "ae32d/condition-report/v1",
         "case_id": task_projection["case_id"],
@@ -474,6 +481,8 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
             "task_schema_sha256": _sha256(TASK_SCHEMA.read_bytes()),
             "report_schema_sha256": _sha256(REPORT_SCHEMA.read_bytes()),
             "rule_catalog_sha256": _sha256((ROOT / "evaluation" / "ae32d" / "deterministic-rule-catalog.json").read_bytes()),
+            "runner_source_sha256": _sha256(Path(__file__).read_bytes()),
+            "semantic_rules_source_sha256": _sha256((ROOT / "tools" / "ae32d_deterministic_rules.py").read_bytes()),
             "search_token_limit": 24,
             "search_result_limit": MAX_SEARCH_RESULTS,
             "scope_file_limit": MAX_SCOPE_FILES,
@@ -485,7 +494,7 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
         "coverage": {
             "declared_scope_complete": not missing_paths and not descriptors,
             "truncated": len(search_matches) >= MAX_SEARCH_RESULTS,
-            "unreadable_paths": [],
+            "unreadable_paths": unreadable_paths,
             "missing_paths": missing_paths,
         },
         "findings": findings,
