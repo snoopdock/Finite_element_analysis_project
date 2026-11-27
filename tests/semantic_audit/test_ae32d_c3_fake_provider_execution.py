@@ -103,7 +103,7 @@ def test_tool_budget_exhaustion_stops_before_second_tool_dispatch():
     assert report["stop_reason"] == "tool_call_budget_exhausted"
     assert provider.calls == 1
     assert [name for name, _ in evidence.calls] == ["repository_summary"]
-    assert report["budget"]["tool_calls"] == 1
+    assert report["budget"]["tool_calls_used"] == 1
     assert report["budget"]["max_tool_calls"] == 1
 
 
