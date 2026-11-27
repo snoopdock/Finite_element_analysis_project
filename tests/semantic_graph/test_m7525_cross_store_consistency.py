@@ -27,9 +27,6 @@ class CrossStoreConsistencyFailureInjectionTests(unittest.TestCase):
             "audit_engine.semantic_audit.epistemic."
             "qualification_reconciliation_consumer"
         )
-        original_gate = (
-            m7521.verify_persisted_qualification_reconciliation_for_consumer
-        )
         # The test patches the imported gate and injects a durable invalidation
         # immediately after CURRENTNESS_CONFIRMED has been recorded.
         from audit_engine.semantic_audit.epistemic import (
