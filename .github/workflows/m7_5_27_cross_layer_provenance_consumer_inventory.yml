@@ -1,0 +1,63 @@
+name: AE-32C M7.5.27 Cross-Layer Provenance Consumer Inventory
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_27_cross_layer_provenance_consumer_inventory.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tools/ae32c_source_snapshot_manifest.py"
+      - "tests/semantic_graph/test_m7527_*.py"
+      - "tests/semantic_graph/test_m7526_*.py"
+      - "tests/semantic_graph/test_m7524_*.py"
+      - "tests/semantic_graph/test_m7525_*.py"
+      - "tests/semantic_graph/test_m7522_*.py"
+      - "tests/semantic_graph/test_m75*.py"
+      - "docs/audit-engine/AE-32C-M7.5.27-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7527-stage1
+  cancel-in-progress: false
+
+jobs:
+  provenance-consumer-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile epistemic and snapshot implementation
+        run: python -m compileall -q audit_engine/semantic_audit/epistemic tools/ae32c_source_snapshot_manifest.py
+      - name: M7.5.27 provenance consumer inventory tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7527_*.py' -v
+      - name: M7.5.26 provenance behavioral regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7526_*.py' -v
+      - name: M7.5.24 persisted orchestration regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7524_*.py' -v
+      - name: M7.5.25 cross-store failure-injection regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7525_*.py' -v
+      - name: M7.5.22 qualification consumer boundary regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7522_*.py' -v
+      - name: Complete M7.5 regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
+      - name: Provenance consumer boundary summary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.27 cross-layer provenance consumer inventory"
+            echo "- Current production code has no downstream M7.5.26 envelope consumer"
+            echo "- DECLARED_ONLY is not source-state replay"
+            echo "- Envelope content-seal verification does not replay the repository or authorize consumers"
+            echo "- No speculative integration, cross-store atomicity, or trust anchor was added"
+          } >> "$GITHUB_STEP_SUMMARY"
