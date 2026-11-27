@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 from tools.ae32d_c3_executor import (
     _build_investigator_limits,
     _compare_graph_snapshot,
+    _validate_provider_profile,
     prepare_c3_execution,
 )
 
@@ -122,6 +123,17 @@ class FakeEvidenceTools:
         self.closed = True
 
 
+
+
+class FakeProviderProfile:
+    provider_name = "cloudflare"
+    models = ["@cf/qwen/qwen3.8-27b"]
+    max_logical_calls = 11
+    max_tokens_per_call = 2048
+
+    def get_stats(self):
+        return {}
+
 class C3ExecutorTests(unittest.TestCase):
     def test_limit_mapping_preserves_authorized_values_and_explicit_fixed_bounds(self):
         limits = _build_investigator_limits(contract()["investigator_limits"])
@@ -144,6 +156,26 @@ class C3ExecutorTests(unittest.TestCase):
             _build_investigator_limits({**values, "unexpected": 1})
         with self.assertRaisesRegex(ValueError, "limit_fields_mismatch"):
             _build_investigator_limits({key: value for key, value in values.items() if key != "max_cost_usd"})
+
+    def test_supplied_provider_must_match_profile_and_tighter_local_caps(self):
+        approved = FakeProviderProfile()
+        _validate_provider_profile(approved, contract())
+        wrong_provider = FakeProviderProfile()
+        wrong_provider.provider_name = "openrouter"
+        with self.assertRaisesRegex(ValueError, "provider_identity_mismatch"):
+            _validate_provider_profile(wrong_provider, contract())
+        wrong_model = FakeProviderProfile()
+        wrong_model.models = ["@cf/meta/llama-3.1-8b-instruct"]
+        with self.assertRaisesRegex(ValueError, "provider_model_mismatch"):
+            _validate_provider_profile(wrong_model, contract())
+        excessive_calls = FakeProviderProfile()
+        excessive_calls.max_logical_calls = 12
+        with self.assertRaisesRegex(ValueError, "provider_call_ceiling_mismatch"):
+            _validate_provider_profile(excessive_calls, contract())
+        excessive_tokens = FakeProviderProfile()
+        excessive_tokens.max_tokens_per_call = 2048 + 1
+        with self.assertRaisesRegex(ValueError, "provider_token_ceiling_mismatch"):
+            _validate_provider_profile(excessive_tokens, contract())
 
     def test_snapshot_comparison_checks_every_b_and_c2_field(self):
         observed = snapshot()
@@ -211,7 +243,7 @@ class C3ExecutorTests(unittest.TestCase):
             self.assertEqual(session.contract["investigator_problem"], "Inspect the pinned source.")
             self.assertFalse(fake_tools.closed)
 
-            provider = object()
+            provider = FakeProviderProfile()
             investigator_factory.return_value = Mock()
             session.build_investigator(provider)
             args = investigator_factory.call_args.args
