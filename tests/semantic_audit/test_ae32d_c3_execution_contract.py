@@ -34,7 +34,7 @@ def valid_inputs():
     source_sha = "a" * 40
     task_digest = digest("b")
     graph_fingerprint = "graph:" + "d" * 32
-    source_manifest = digest("i")
+    source_manifest = digest("9")
     task_projection = {
         "schema_version": "ae32d/sanitized-task-projection/v1",
         "case_id": case_id,
@@ -59,7 +59,7 @@ def valid_inputs():
         "counterevidence": [],
         "unresolved_questions": [],
         "limitations": [],
-        "config_digest": digest("h"),
+        "config_digest": digest("8"),
         "source_manifest_digest": source_manifest,
     }
     graph_snapshot = {
@@ -94,7 +94,7 @@ def valid_inputs():
         "graph_backend": "networkx",
         "prompt_source_sha256": digest("e"),
         "tool_catalog_sha256": digest("f"),
-        "cost_estimator_sha256": digest("g"),
+        "cost_estimator_sha256": digest("7"),
         "provider_dispatch_permitted": False,
         "provider_calls_attempted": 0,
         "credentials_accessed": False,
