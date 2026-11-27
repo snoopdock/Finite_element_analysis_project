@@ -103,14 +103,14 @@ The six cases remain candidates. All have pending ground-truth labels, no indepe
 7. Test adversarial promotion attempts, missing/duplicate cases, unknown conditions, missing trials, failed trials, abstentions and reproducibility.
 8. Record all validation runs and artifacts in the AE-42 document and README.
 
-### Proposed subsequent sequence (subject to repository reconciliation)
+### Revised continuation after AE-43 readiness audit
 
-- **AE-43 — Exploratory evaluation integration:** feed retained deterministic A/B/C outputs and controlled trial records through the scorer; validate denominators, failures, abstentions and replay.
-- **AE-44 — Investigation-quality diagnostics:** score localization, causal explanation, evidence support and counterevidence separately from detection.
-- **AE-45 — Evaluation robustness:** adversarial/ambiguous cases, case-composition sensitivity, configuration sensitivity and holdout controls.
-- **AE-46 — Readiness and transition review:** reconcile benchmark, graph, provider and assurance tracks; determine readiness for integrated operational evaluation.
+- **AE-43 — Exploratory trial integration:** remains blocked until qualifying raw A/B/C outputs exist. It will import and normalize actual immutable artifacts, then use the AE-42 scorer.
+- **AE-44 — Controlled A/B/C trial-generation design:** design the paired execution contract, provenance envelope, condition-adapter boundaries, manual authorization policy, artifact layout, failure/retry semantics and acceptance tests. Design recorded; no condition runner or trial output is claimed.
+- **G0 — Executor source audit:** identify the real deterministic baseline and graph-retrieval call paths before implementing adapters. This is the next implementation task.
+- **G1–G6 — Trial execution/capture gates:** schemas and offline verification, A adapter, B adapter, C authorization/adapter, and paired experiment assembly. These are not yet implemented.
 
-AE-43–AE-46 are proposed sequencing only, not approved or implemented milestones. Confirm against repository records before assigning those numbers.
+The AE-44 design is recorded in [AE-44 Controlled A/B/C Trial Generation Design](AE-44-Controlled-ABC-Trial-Generation-Design.md). Do not advance AE-43 scoring or later quality/robustness milestones until actual trial artifacts exist and pass provenance validation.
 
 ### Parallel architecture backlog (not to be silently displaced by AE-42)
 
@@ -155,3 +155,12 @@ AE-42 is validated for its declared scope. Proceed to AE-43 exploratory integrat
 AE-43 is the correct next workstream, but its input prerequisite is not met. The tracked AE-32D inventory has no actual A/B/C trial-output dataset. The existing AE-32C batch assessor measures protocol/evidence completion and explicitly leaves diagnostic accuracy not assessed; its provider baseline is not AE-32D condition A. The separate FEA provider benchmark evaluates document-generation runs, not the six repository-audit cases. Neither may be mechanically converted into AE-32D diagnostic outcomes.
 
 The AE-43 readiness audit is recorded in [AE-43 Exploratory Trial Integration Readiness](AE-43-Exploratory-Trial-Integration-Readiness.md). Next: obtain a qualifying immutable A/B/C bundle through retained outputs or an explicitly authorized manual execution, then build an offline importer/normalizer. Do not auto-dispatch providers, fabricate trials, or infer defect labels from protocol completion.
+
+
+## 13. AE-44 controlled trial-generation design
+
+AE-44 defines a paired A/B/C execution contract but does not claim execution capability. It requires exact case/source/task/configuration identity; A/B/C differ only by their declared treatment; B/C bind graph snapshot and retrieval provenance; C additionally binds provider/model/prompt/tool revisions and hard budgets. Outcome normalization must consume an explicit structured decision, never infer a diagnosis from exit status, protocol completion, citation count, coverage or confidence.
+
+The design requires manual A/B dispatch and a separate explicit authorization gate for C. No push, pull-request, schedule or default workflow event may invoke a provider. A/B must receive no provider secrets. Failed, timed-out, cancelled, missing and abstaining trials remain visible; retries receive new trial identities. Raw reports and diagnostics are immutable and digest-verified.
+
+**Current status:** design only. No A/B/C condition was executed, no provider was called, and no cost was incurred. The next task is G0: source-level mapping of the actual deterministic-audit and graph-retrieval entry points. Do not invent command names or wire a workflow until those call paths are verified.
