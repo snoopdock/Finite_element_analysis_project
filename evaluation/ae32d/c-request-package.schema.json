@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ae32d-c-request-package.schema.json",
+  "title": "AE-32D C request package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "preflight", "request", "request_sha256",
+    "manual_dispatch_confirmed", "provider_dispatch_permitted",
+    "provider_calls_attempted", "credentials_accessed"
+  ],
+  "properties": {
+    "schema_version": {"const": "ae32d/c-request-package/v1"},
+    "status": {"enum": ["blocked", "prepared_manual_only"]},
+    "preflight": {"type": "object"},
+    "request": {"type": ["object", "null"]},
+    "request_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "manual_dispatch_confirmed": {"const": false},
+    "provider_dispatch_permitted": {"const": false},
+    "provider_calls_attempted": {"const": 0},
+    "credentials_accessed": {"const": false}
+  }
+}
