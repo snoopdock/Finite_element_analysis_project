@@ -1,6 +1,6 @@
 # AE-32C M7.5.23 — Cross-Layer Execution and Semantic-Qualification Composition
 
-**Status:** Implemented; exact-head CI validation pending  
+**Status:** Implemented and CI-validated  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.22 — Qualification-Reconciliation Consumer Inventory and Dependency Boundaries  
 **Scope:** deterministic composition of M7.5.14, M7.5.17 and M7.5.21 outputs into an inspectable per-obligation view  
@@ -96,4 +96,14 @@ Workflow: [M7.5.23 cross-layer obligation composition](https://github.com/snoopd
 
 The workflow checks out the exact triggering revision, compiles the epistemic package, runs M7.5.23 composition tests and the M7.5.14, M7.5.17, M7.5.21 and M7.5.22 regressions, then runs the complete M7.5 suite.
 
-Do not mark this milestone CI-validated until a successful run is confirmed for the final branch head.
+Validation evidence:
+- [M7.5.23 workflow run 45968036484](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45968036484) — success on exact tested revision `d1c428218e09611956ab3ee06ab77a62adb7cd90`.
+- Dedicated M7.5.23 composition tests: 11 passed.
+- M7.5.14 execution-obligation regression: 7 passed.
+- M7.5.17 semantic qualification regression: 12 passed.
+- M7.5.21 currentness-gated consumer regression: 5 passed.
+- M7.5.22 dependency-boundary regression: 5 passed.
+- Complete M7.5 regression: 240 passed.
+- Python 3.11 compilation: passed.
+
+The workflow checked out the exact triggering revision. The successful run validates the tested composition contract and regression suites; it does not authenticate caller-supplied replay-result mappings or create an atomic transaction across the participating stores.
