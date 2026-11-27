@@ -164,7 +164,7 @@ The executor exposes `prepare_c3_execution(...)`, which:
 7. Maps the seven authorization-controlled limits into an explicit `InvestigationLimits` instance, applies fixed operational bounds, and reasserts the authorized values after construction.
 8. Returns a context-managed `C3ExecutionSession` that retains the graph until explicitly closed.
 
-The session's `build_investigator(provider)` and `run(provider)` methods require the caller to supply an already-created provider object. This module does not import `providers.factory`, construct a provider, read credentials, or perform network I/O. Provider creation remains an external operation and must not be performed until the separate live-dispatch authorization is granted.
+The session's `build_investigator(provider)` and `run(provider)` methods require the caller to supply an already-created provider object. This module does not call `providers.factory.build_provider`, construct a provider, read credentials, or perform network I/O. The cost estimator is imported lazily after validation; its current `live_evaluation` module imports provider-factory definitions but does not invoke them. Provider creation remains an external operation and must not be performed until the separate live-dispatch authorization is granted.
 
 ### 9.2 Budget mapping and enforcement
 
@@ -177,7 +177,7 @@ The executor does not call `build_live_investigation_limits()`; that helper stil
 - USD 0.50
 - temperature 0.0
 
-Additional investigator safeguards are set explicitly rather than inherited silently from dataclass defaults. The Cloudflare cost estimator is imported lazily only after contract, checkout, scope and graph verification. The import itself does not construct a provider.
+Additional investigator safeguards are set explicitly rather than inherited silently from dataclass defaults. The Cloudflare cost estimator is imported lazily only after contract, checkout, scope and graph verification. That import loads provider-factory definitions transitively through `live_evaluation.py`, but does not call the factory, construct a provider, or read credentials.
 
 ### 9.3 Tests and workflow integration
 
