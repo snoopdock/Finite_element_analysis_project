@@ -181,6 +181,42 @@ def verify_persisted_cross_layer_obligation_composition(
     except QualificationConsumerReplayError:
         raise
 
+    # Re-run execution reconciliation after qualification verification. This
+    # brackets the qualification operation and detects execution-side drift
+    # observed between the two checks; it is not an atomic cross-store snapshot.
+    try:
+        execution_replay_postflight = verify_execution_obligation_reconciliation(
+            execution_reconciliation_id,
+            reconciliation_store=execution_reconciliation_store,
+            dossier_id=dossier_id,
+            claim=claim,
+            plan=plan,
+            manifest=coverage_manifest,
+            source_manifest=source_manifest,
+            inventory=inventory,
+            execution_report=execution_report,
+            repository_root=repository_root,
+            assurance_store=assurance_store,
+            epistemic_store=epistemic_store,
+            dossier_store=dossier_store,
+        )
+    except ExecutionObligationReconciliationError as exc:
+        raise ObligationCompositionOrchestrationError(
+            "execution_reconciliation_changed_during_cross_layer_verification"
+        ) from exc
+    if execution_replay_postflight != execution_replay:
+        raise ObligationCompositionOrchestrationError(
+            "execution_replay_bracket_mismatch"
+        )
+    execution_replay_bracket = {
+        "pre_qualification_replay_verified": True,
+        "post_qualification_replay_verified": True,
+        "reconciliation_sha256": execution_reconciliation_id,
+        "results_identical": True,
+        "atomic_cross_store_snapshot": False,
+    }
+    execution_replay = execution_replay_postflight
+
     composition = compose_execution_and_semantic_obligations(
         execution_reconciliation,
         execution_replay,
@@ -192,6 +228,7 @@ def verify_persisted_cross_layer_obligation_composition(
         "execution_reconciliation_sha256": execution_reconciliation_id,
         "qualification_reconciliation_sha256": qualification_record_id,
         "execution_replay": execution_replay,
+        "execution_replay_bracket": execution_replay_bracket,
         "qualification_consumer_result": qualification_consumer_result,
         "composition": composition,
         "authority": {
