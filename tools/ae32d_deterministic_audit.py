@@ -56,6 +56,12 @@ def _git_head(root: Path) -> str:
         ["git", "rev-parse", "HEAD"], cwd=root, check=True,
         capture_output=True, text=True, timeout=10,
     )
+    status = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=all"], cwd=root, check=True,
+        capture_output=True, text=True, timeout=10,
+    )
+    if status.stdout.strip():
+        raise ValueError("source_checkout_not_clean")
     return result.stdout.strip()
 
 
@@ -250,7 +256,15 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
             break
     trace.append({"step_id": "A-SEARCH", "operation": "deterministic_scope_search",
                   "status": "partial" if len(search_matches) >= MAX_SEARCH_RESULTS else "ok",
-                  "details": {"query_count": len(tokens[:24]), "match_count": len(search_matches)}})
+                  "details": {
+                      "queries": tokens[:24],
+                      "match_count": len(search_matches),
+                      "matches": [
+                          {"path": row["path"], "line": row["line"], "token": row["token"],
+                           "file_sha256": row["sha256"]}
+                          for row in search_matches
+                      ],
+                  }})
 
     python_files = {
         path: entry for path, entry in files.items() if path.endswith(".py")
@@ -258,7 +272,8 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
     contract_function = contract["function"] if contract else None
     defect_detected = False
     contract_cases_pass = bool(contract and contract["input_cases"])
-    contract_case_count = 0
+    contract_return_cases = ([row for row in contract["input_cases"] if row["expected"]["kind"] == "return"] if contract else [])
+    contract_case_count = len(contract_return_cases)
 
     for path, entry in sorted(python_files.items()):
         try:
@@ -333,11 +348,19 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
             if contract and contract["input_cases"]:
                 return_cases = [
                     {"arguments": row["arguments"], "expected": row["expected"]["value"]}
-                    for row in contract["input_cases"] if row["expected"]["kind"] == "return"
+                    for row in contract_return_cases
                 ]
                 if return_cases:
-                    contract_case_count += len(return_cases)
+                    return_names = set()
+                    for return_node in ast.walk(function):
+                        if isinstance(return_node, ast.Return) and return_node.value is not None:
+                            return_names.update(
+                                node.id for node in ast.walk(return_node.value)
+                                if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
+                            )
                     for variable in _assigned_local_names(function):
+                        if variable in return_names:
+                            continue
                         result = analyze_stale_intermediate_sink(
                             entry["text"], function.name, variable, return_cases
                         )
@@ -371,7 +394,7 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
                     if actual["status"] != "supported" or actual["value"] != row["expected"]["value"]:
                         contract_cases_pass = False
                     trace.append({
-                        "step_id": "A-CONTRACT-" + str(contract_case_count + 1),
+                        "step_id": "A-CONTRACT-" + str(len([x for x in trace if x["operation"] == "safe_contract_example_evaluation"]) + 1),
                         "operation": "safe_contract_example_evaluation",
                         "status": "ok" if actual["status"] == "supported" else "partial",
                         "details": {
@@ -411,7 +434,14 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
                             ),
                             "classification": "observation",
                             "evidence": [
-                                _line_evidence("extractor.py", extractor_function.lineno, extractor["sha256"]),
+                                _line_evidence(
+                                "extractor.py",
+                                next((node.lineno for node in ast.walk(ast.parse(extractor["text"]))
+                                      if isinstance(node, ast.Attribute)
+                                      and node.attr in result.get("observed_unmatched_attribute_reads", [])),
+                                     extractor_function.lineno),
+                                extractor["sha256"],
+                            ),
                                 _line_evidence("adapter.py", 1, adapter["sha256"]),
                             ],
                         })
@@ -427,6 +457,7 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
         decision = "defect"
     elif contract and contract_cases_pass and contract_case_count > 0 and not limitations:
         decision = "no_defect"
+        counterevidence.append("All enumerated task-visible return examples matched under the supported pure-expression interpreter.")
     else:
         decision = "abstain"
 
@@ -440,6 +471,9 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
         "task_contract_digest": task_projection["task_contract_digest"],
         "config_digest": _canonical_digest({
             "adapter_revision": ADAPTER_REVISION,
+            "task_schema_sha256": _sha256(TASK_SCHEMA.read_bytes()),
+            "report_schema_sha256": _sha256(REPORT_SCHEMA.read_bytes()),
+            "rule_catalog_sha256": _sha256((ROOT / "evaluation" / "ae32d" / "deterministic-rule-catalog.json").read_bytes()),
             "search_token_limit": 24,
             "search_result_limit": MAX_SEARCH_RESULTS,
             "scope_file_limit": MAX_SCOPE_FILES,
