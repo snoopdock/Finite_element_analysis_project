@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ae32d/machine-reference-registry.schema.json",
+  "title": "AE-32D provisional machine-reference registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "benchmark_id",
+    "status",
+    "authority",
+    "ground_truth_write_allowed",
+    "primary_benchmark_promotion_allowed",
+    "records"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ae32d/machine-reference-registry/v1"
+    },
+    "benchmark_id": {
+      "const": "AE32D-AUDIT-QUALITY"
+    },
+    "status": {
+      "const": "provisional_machine_reference_only"
+    },
+    "authority": {
+      "const": "fixture_contract_and_machine_verification"
+    },
+    "ground_truth_write_allowed": {
+      "const": false
+    },
+    "primary_benchmark_promotion_allowed": {
+      "const": false
+    },
+    "records": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "provisional_outcome",
+          "source_commit_sha",
+          "verification_class",
+          "workflow_run_id",
+          "artifact_id",
+          "basis",
+          "reference_kind",
+          "independent_adjudication",
+          "primary_benchmark_eligible"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "provisional_outcome": {
+            "enum": [
+              "defect",
+              "no_defect",
+              "ambiguous"
+            ]
+          },
+          "source_commit_sha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "verification_class": {
+            "type": "string",
+            "minLength": 1
+          },
+          "workflow_run_id": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "artifact_id": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "basis": {
+            "type": "string",
+            "minLength": 20
+          },
+          "reference_kind": {
+            "const": "machine_derived_fixture_contract"
+          },
+          "independent_adjudication": {
+            "const": "not_performed"
+          },
+          "primary_benchmark_eligible": {
+            "const": false
+          }
+        }
+      }
+    }
+  }
+}
