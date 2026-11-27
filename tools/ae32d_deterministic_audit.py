@@ -276,6 +276,9 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
         path: entry for path, entry in files.items() if path.endswith(".py")
     }
     contract_function = contract["function"] if contract else None
+    task_identifiers = set(TOKEN_RE.findall(
+        task_projection["task"]["title"] + " " + task_projection["task"]["problem_statement"]
+    ))
     defect_detected = False
     contract_cases_pass = bool(contract and contract["input_cases"])
     contract_return_cases = ([row for row in contract["input_cases"] if row["expected"]["kind"] == "return"] if contract else [])
@@ -331,6 +334,8 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
                         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
                     })
                     for operation_name in call_names:
+                        if operation_name not in task_identifiers:
+                            continue
                         result = analyze_exception_contract_suppression(
                             entry["text"], function.name, exception_name, "raise", operation_name
                         )
@@ -365,7 +370,7 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
                                 if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
                             )
                     for variable in _assigned_local_names(function):
-                        if variable in return_names:
+                        if variable in return_names or variable not in task_identifiers:
                             continue
                         result = analyze_stale_intermediate_sink(
                             entry["text"], function.name, variable, return_cases
@@ -412,11 +417,13 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
     # Provider-interface cases have no complete structured behavior contract.
     # Preserve the visible attribute mismatch as an observation and abstain.
     if not contract:
-        extractor = next((item for path, item in sorted(python_files.items())
-                          if PurePosixPath(path).name == "extractor.py"), None)
-        adapter = next((item for path, item in sorted(python_files.items())
-                        if PurePosixPath(path).name == "adapter.py"), None)
-        if extractor and adapter:
+        extractor_pair = next(((path, item) for path, item in sorted(python_files.items())
+                               if PurePosixPath(path).name == "extractor.py"), None)
+        adapter_pair = next(((path, item) for path, item in sorted(python_files.items())
+                             if PurePosixPath(path).name == "adapter.py"), None)
+        if extractor_pair and adapter_pair:
+            extractor_path, extractor = extractor_pair
+            adapter_path, adapter = adapter_pair
             try:
                 extractor_function = _top_level_functions(extractor["text"])[0]
                 annotation = extractor_function.args.args[0].annotation if extractor_function.args.args else None
@@ -441,7 +448,7 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
                             "classification": "observation",
                             "evidence": [
                                 _line_evidence(
-                                "extractor.py",
+                                extractor_path,
                                 next((node.lineno for node in ast.walk(ast.parse(extractor["text"]))
                                       if isinstance(node, ast.Attribute)
                                       and node.attr in result.get("observed_unmatched_attribute_reads", [])),
