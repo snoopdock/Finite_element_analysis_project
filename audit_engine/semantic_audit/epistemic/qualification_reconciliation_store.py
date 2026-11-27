@@ -63,6 +63,19 @@ def _context(reconciliation: Mapping[str, Any],
     }
 
 
+def qualification_reconciliation_context(
+    reconciliation: Mapping[str, Any],
+    qualification: Mapping[str, Any],
+    observation_bundle: Mapping[str, Any],
+) -> dict[str, str]:
+    """Build the exact eight-field currentness token used by invalidation."""
+    context = _context(reconciliation, qualification, observation_bundle)
+    if any(not isinstance(context.get(key), str) or not context[key].strip()
+           for key in _CONTEXT_KEYS):
+        raise ValueError("reconciliation_context_incomplete")
+    return context
+
+
 def _validate_envelope(envelope: Mapping[str, Any]) -> None:
     if envelope.get("schema") != SCHEMA:
         raise QualificationReconciliationStoreError("record_schema_invalid")
