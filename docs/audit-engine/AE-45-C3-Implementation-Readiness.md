@@ -227,3 +227,18 @@ This is a candidate until GitHub Actions executes the updated workflow successfu
 These tests validate the investigator lifecycle and its evidence/budget/failure semantics with a fake provider. They do **not yet** validate the complete `C3ExecutionSession.run()` wrapper end-to-end with the C1/C2-authorized retained graph and its post-run source-revision/provenance checks. That is the next integration test to add after this suite passes.
 
 No live provider dispatch is authorized or performed. C3 remains a deterministic fake-provider validation stage, not an official A/B/C trial; no diagnostic-accuracy result or benchmark score is claimed.
+
+
+### 10.4 GitHub Actions validation
+
+The first run, [46067230554](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46067230554), reached the new test step but failed because `pytest` was not installed in the workflow environment. The existing C3 contract and retained-snapshot executor steps had already passed. The failure was an explicit missing test-runner dependency, not a test assertion failure.
+
+The workflow dependency installation was corrected to include pinned `pytest==8.4.2`. The corrected run then completed successfully:
+
+- Workflow run: [46067341996](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46067341996)
+- Job: `verify-candidate` ([140735768976](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46067341996/job/140735768976))
+- Validated commit: `b4bcd31f1cd3262df6139050543fc09acd825435`
+- Final conclusion: `success`
+- The fake-provider lifecycle step passed, as did the C3 execution-contract and retained-snapshot executor steps and all downstream deterministic workflow checks.
+
+This establishes that the new investigator lifecycle tests execute and pass in CI. It does not yet establish end-to-end success of `C3ExecutionSession.run()`; that wrapper-level integration test remains the next step. No live provider call was made.
