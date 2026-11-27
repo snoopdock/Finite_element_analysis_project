@@ -511,7 +511,16 @@ def run_deterministic_audit(task_projection: dict[str, Any], source_root: str | 
                                      extractor_function.lineno),
                                 extractor["sha256"],
                             ),
-                                _line_evidence("adapter.py", 1, adapter["sha256"]),
+                                _line_evidence(
+                                    adapter_path,
+                                    next((node.lineno for node in ast.walk(ast.parse(adapter["text"]))
+                                          if isinstance(node, ast.Attribute)
+                                          and isinstance(node.value, ast.Name)
+                                          and node.value.id == "self"
+                                          and node.attr in result.get("visible_provider_attributes", [])),
+                                         1),
+                                    adapter["sha256"],
+                                ),
                             ],
                         })
                         unresolved.append("The supplied evidence does not establish the complete provider contract or runtime object.")
