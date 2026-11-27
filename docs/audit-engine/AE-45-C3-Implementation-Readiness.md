@@ -197,3 +197,33 @@ The AE-32D machine-verification workflow now includes this test file and runs it
 ### 9.4 Current boundary
 
 This implementation is a provider-injected execution boundary, not a live-dispatch authorization. It does not create a provider or call `RepositoryInvestigator.run()` during preparation. A caller could only start an investigation by separately supplying a provider object and explicitly invoking the session. No live provider call, credential access, or network activity is authorized by this implementation step.
+
+
+## 10. Deterministic fake-provider execution coverage — implementation candidate (2026-11-28)
+
+### 10.1 Added tests
+
+Added `tests/semantic_audit/test_ae32d_c3_fake_provider_execution.py`. The tests use the existing deterministic AE-32C fake provider and evidence-tool fixtures; the success-path test uses a real local `RepositoryEvidenceTools` snapshot over a temporary fixture directory.
+
+The new coverage exercises:
+
+1. A complete fake-provider investigation through the real `RepositoryInvestigator.run()` loop, including repository summary, source-file tool dispatch, evidence-ledger construction, final diagnosis normalization, budget reporting, and snapshot re-verification.
+2. Tool-call budget exhaustion after the initial repository-summary call, proving that a second evidence tool is not dispatched after the ceiling is reached.
+3. Provider failure after a successful evidence retrieval, proving that prior evidence remains in the report and the investigation terminates as incomplete rather than being promoted to success.
+4. Single-use investigator termination: a second invocation on the same investigator instance is rejected.
+
+The success-path assertions bind report provenance to the local evidence-tools manifest and graph fingerprint, require `snapshot_check_status=verified`, and assert that the investigator did not execute repository code or tests. All model responses are supplied from an in-process queue. No provider factory, credentials, or network transport is involved.
+
+### 10.2 Workflow integration
+
+The AE-32D machine-verification workflow now includes the new test path and a dedicated step:
+
+`Test C3 investigator lifecycle with deterministic fake provider (no network)`.
+
+This is a candidate until GitHub Actions executes the updated workflow successfully. No local test run is claimed.
+
+### 10.3 Exact remaining boundary
+
+These tests validate the investigator lifecycle and its evidence/budget/failure semantics with a fake provider. They do **not yet** validate the complete `C3ExecutionSession.run()` wrapper end-to-end with the C1/C2-authorized retained graph and its post-run source-revision/provenance checks. That is the next integration test to add after this suite passes.
+
+No live provider dispatch is authorized or performed. C3 remains a deterministic fake-provider validation stage, not an official A/B/C trial; no diagnostic-accuracy result or benchmark score is claimed.
