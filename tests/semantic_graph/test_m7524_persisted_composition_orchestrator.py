@@ -10,6 +10,7 @@ import test_m7514_execution_obligation_reconciliation as execution_fixture
 import test_m7517_qualification_reconciliation as qualification_fixture
 
 from audit_engine.semantic_audit.epistemic.execution_obligation_reconciliation import (
+    ExecutionObligationReconciliationError,
     build_and_persist_execution_obligation_reconciliation,
 )
 from audit_engine.semantic_audit.epistemic.extractor_execution import (
@@ -111,14 +112,18 @@ class PersistedCompositionOrchestrationTests(unittest.TestCase):
                 current_qualification={},
                 current_observation_bundle={},
             )
-        execution_verify.assert_called_once()
+        execution_verify.assert_has_calls([unittest.mock.call(unittest.mock.ANY, **unittest.mock.ANY)] * 2) if False else None
+        self.assertEqual(execution_verify.call_count, 2)
         qualification_verify.assert_called_once()
         return result
 
     def test_orchestrator_retrieves_records_and_invokes_verification_apis_in_order(self):
         result = self.invoke()
         self.assertEqual(self.events, [
-            "execution_replay", "derive_current_context", "qualification_consumer"])
+            "execution_replay", "derive_current_context",
+            "qualification_consumer", "execution_replay"])
+        self.assertTrue(result["execution_replay_bracket"]["results_identical"])
+        self.assertFalse(result["execution_replay_bracket"]["atomic_cross_store_snapshot"])
         self.assertEqual(result["schema"],
                          "ae32c/orchestrated-persisted-obligation-composition/v1")
         self.assertEqual(result["composition"]["schema"],
@@ -310,6 +315,61 @@ class PersistedCompositionOrchestrationTests(unittest.TestCase):
         )
         self.assertFalse(result["authority"]["epistemic_evidence_accepted"])
         self.assertEqual(len(check_store.history()), 1)
+
+    def test_execution_dependency_drift_at_postflight_prevents_composition(self):
+        f = self.fixture
+        calls = {"count": 0}
+        def replay_with_failure(*args, **kwargs):
+            calls["count"] += 1
+            self.events.append("execution_replay")
+            if calls["count"] == 2:
+                raise ExecutionObligationReconciliationError(
+                    "coverage_dossier_not_currently_replay_verified")
+            return f.execution_replay
+
+        with (
+            patch(
+                "audit_engine.semantic_audit.epistemic.obligation_composition_orchestrator."
+                "verify_execution_obligation_reconciliation",
+                side_effect=replay_with_failure,
+            ),
+            patch(
+                "audit_engine.semantic_audit.epistemic.obligation_composition_orchestrator."
+                "qualification_consumer_current_context",
+                return_value={"source_snapshot_id": "snapshot:fixture"},
+            ),
+            patch(
+                "audit_engine.semantic_audit.epistemic.obligation_composition_orchestrator."
+                "verify_persisted_qualification_reconciliation_for_consumer",
+                return_value=f.consumer,
+            ),
+        ):
+            with self.assertRaisesRegex(
+                ObligationCompositionOrchestrationError,
+                "execution_reconciliation_changed_during_cross_layer_verification"):
+                verify_persisted_cross_layer_obligation_composition(
+                    f.execution["reconciliation_sha256"],
+                    f.qualification["reconciliation_sha256"],
+                    execution_reconciliation_store=self.execution_store,
+                    dossier_id="dossier",
+                    claim=object(),
+                    plan=object(),
+                    coverage_manifest=object(),
+                    source_manifest={},
+                    inventory={},
+                    execution_report={},
+                    repository_root=".",
+                    assurance_store=object(),
+                    epistemic_store=object(),
+                    dossier_store=object(),
+                    qualification_reconciliation_store=self.qualification_store,
+                    qualification_check_store=self.check_store,
+                    consumer_id="orchestrator-test",
+                    operation="verify",
+                    current_qualification={},
+                    current_observation_bundle={},
+                )
+        self.assertEqual(calls["count"], 2)
 
     def test_orchestration_envelope_tampering_is_detected(self):
         result = self.invoke()
