@@ -1,10 +1,11 @@
 """AE-45 A3 integration tests for deterministic condition A."""
+import ast
 import os
 import subprocess
 import unittest
 from pathlib import Path
 
-from tools.ae32d_deterministic_audit import run_deterministic_audit
+from tools.ae32d_deterministic_audit import run_deterministic_audit, _unbound_path_covered_by_contract
 from tools.ae32d_trial_contracts import build_sanitized_task_projection
 
 
@@ -147,6 +148,17 @@ class DeterministicConditionATests(unittest.TestCase):
         self.assertEqual(report["decision"], "abstain")
         self.assertTrue(any(item["classification"] == "observation" for item in report["findings"]))
         self.assertTrue(report["unresolved_questions"])
+
+    def test_unbound_decision_requires_contract_case_for_the_unassigned_branch(self):
+        function = ast.parse("""def work(flag):
+    if flag:
+        result = 5
+    return result
+""").body[0]
+        true_only = [{"arguments": [True], "expected": {"kind": "return", "value": 5}}]
+        false_case = [{"arguments": [False], "expected": {"kind": "return", "value": 0}}]
+        self.assertFalse(_unbound_path_covered_by_contract(function, "result", true_only))
+        self.assertTrue(_unbound_path_covered_by_contract(function, "result", false_case))
 
     def test_runner_rejects_non_a_condition_projection(self):
         record = task_record(
