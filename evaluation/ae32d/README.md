@@ -11,6 +11,9 @@ This directory is a **design scaffold**, not a completed benchmark or score repo
 - `cases/AE32D-CANDIDATE-BRANCH-UNBOUND-001.json` — synthetic control-flow defect candidate.
 - `cases/AE32D-CANDIDATE-NO-DEFECT-001.json` — complete-initialization negative control.
 - `cases/AE32D-CANDIDATE-AMBIGUOUS-PROVIDER-001.json` — incomplete provider evidence / abstention candidate.
+- `cases/AE32D-CANDIDATE-EXCEPTION-SWALLOW-001.json` — exception-flow defect candidate.
+- `cases/AE32D-CANDIDATE-DATAFLOW-STALE-VALUE-001.json` — stale intermediate value at output-sink defect candidate.
+- `tools/ae32d_verify_extended_cases.py` — deterministic verifier for the two additional defect families.
 - `tools/ae32d_verify_case_matrix.py` — deterministic verifier for the three pinned synthetic case families. Its report records source identity, file hashes, runtime observations, and explicit non-adjudication limits.
 
 ## Adding cases
@@ -32,4 +35,4 @@ Validate the candidate case against `case.schema.json` and the manifest against 
 
 ## Current matrix validation
 
-The three additional fixtures are pinned to `dd80be6e7a3e0a912beace92ce0fac446ea6ed61`. The AE-32D workflow successfully verified all three at run [46010190530](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46010190530). The inventory currently contains four candidate records, zero adjudicated records, and zero primary-score-eligible records. The pilot target remains 6–10 cases.
+The three additional fixtures are pinned to `dd80be6e7a3e0a912beace92ce0fac446ea6ed61`. The AE-32D workflow successfully verified all three at run [46010190530](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46010190530). The inventory currently contains six candidate records, zero adjudicated records, and zero primary-score-eligible records. The numeric lower bound of the 6–10-case pilot target is reached; the adjudication, rubric approval, and freeze gates remain open. The exception/data-flow verifier passed at [run 46010847618](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46010847618).

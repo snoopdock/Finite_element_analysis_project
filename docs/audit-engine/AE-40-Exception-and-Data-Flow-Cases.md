@@ -16,3 +16,12 @@ The inventory now has six records: provider-interface regression, branch-unbound
 ## Validation boundaries
 
 A passing verifier confirms only that the pinned synthetic fixtures exhibit their declared structural/runtime properties. It does not establish that an audit condition detects them correctly. It does not establish the correctness of a general diagnosis, and it does not turn the candidate labels into gold labels.
+
+## Executed validation record
+
+- AE-32D workflow: [run 46010847618](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46010847618) — completed successfully on verifier revision `9ac8182ac32a0d5a7cd2c99c011220810fddb1de`.
+- Extended fixture source pin: `c0d700c0a2599aabda8957f54e750a812ea2ef5d`.
+- Both added cases reported `verified`, with no verifier errors.
+- The run also passed the original three-case matrix, outcome-classifier tests, benchmark-record validator, fixed-fixture boundary tests, and provider-interface verification.
+- Artifact ID: `15204151762`; archive SHA-256: `46ac1ba5dfc427e4d4036ca771c46260e391b745c9afb69ece58ef0555ebc41b`.
+- An earlier attempt exposed an invalid runtime harness statement that combined an import and compound `try` statement on one line. The harness was corrected to separate the import from the `try` block; the successful run above verifies the corrected behavior.
