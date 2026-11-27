@@ -76,6 +76,11 @@ from .qualification_consumer_gate import (
     QualificationConsumerCheckStore, QualificationConsumerGateError,
     evaluate_qualification_reconciliation_for_consumer,
 )
+from .obligation_composition import (
+    ObligationCompositionError,
+    compose_execution_and_semantic_obligations,
+    verify_obligation_composition,
+)
 from .qualification_reconciliation_consumer import (
     QualificationConsumerReplayError, qualification_consumer_current_context,
     verify_persisted_qualification_reconciliation_for_consumer,
