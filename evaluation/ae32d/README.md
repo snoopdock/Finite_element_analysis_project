@@ -41,3 +41,15 @@ The three additional fixtures are pinned to `dd80be6e7a3e0a912beace92ce0fac446ea
 ## Machine-verification evidence ledger
 
 `machine-verification-ledger.json` and its schema map each of the six cases to the immutable source revision, verifier revision, workflow run, and artifact. The validator rejects missing/duplicate/orphan case records, mismatched source commits, or any ledger attempt to grant primary eligibility or claim independent human adjudication. Ledger validation passed at [run 46011287913](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46011287913).
+
+## AE-42 — exploratory machine-reference evaluation (not gold scoring)
+
+- `machine-reference-registry.json` stores six fixture-contract-derived provisional outcomes. It is separate from each case's `ground_truth.label`.
+- `machine-reference-registry.schema.json` constrains those records to machine-derived references, no independent adjudication, and no primary eligibility.
+- `exploratory-trials.schema.json` defines A/B/C trial records. Each record is bound to the case's immutable source commit and a configuration digest. Failed, abstaining and missing outcomes remain explicit.
+- `tools/ae32d_exploratory_evaluation.py` validates registry-to-manifest/case/ledger consistency and calculates exploratory-only metrics with raw denominators.
+- `tests/semantic_audit/test_ae32d_exploratory_evaluation.py` tests source binding, duplicate rejection, missing-trial accounting, and the non-promotion boundary.
+
+The scorer reports provisional defect detection, false-positive, abstention, ambiguous-case abstention, error and missing counts separately for A/B/C. Its output is always marked `exploratory_only_not_gold_adjudication`, sets `primary_benchmark_score=false`, and never writes case records. No A/B/C model/provider performance result is claimed until actual trial outputs are supplied and scored.
+
+The machine-reference registry is not a substitute for independent adjudication. All six case labels remain `pending_adjudication`; all six cases remain excluded from primary scoring. Rubric approval, pilot freeze and gold adjudication remain open.
