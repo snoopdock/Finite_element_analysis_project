@@ -1,6 +1,6 @@
 # AE-32C M7.5.29 — Single-Pass Source-State-Replayed Cross-Layer Obligation Package
 
-**Status:** Implemented; implementation and regression CI-validated; documentation-only exact-head revalidation pending  
+**Status:** Implemented with real-store end-to-end integration; implementation and regression CI-validated; documentation-only exact-head revalidation pending  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.28 — Source-State Replay Consumer Requirements and Integration Design  
 **Implementation baseline:** `f73d80ef526a2d5811a800bdae4943941c61bd41`  
@@ -99,7 +99,7 @@ A fresh source-state replay requires rerunning the package-producing operation w
 
 1. Real M7.5.26 Git source-state replay through the new package API.
 2. Exact object identity passed from the single-pass M7.5.24 context to M7.5.26.
-3. Exactly one retrieval from each persisted reconciliation store.
+3. One orchestration-level retrieval of each persisted record for the shared package context; no second orchestration lookup solely for provenance assembly. The focused test stubs the replay consumers to isolate this boundary.
 4. Execution replay ordering and the existing pre/post qualification bracket.
 5. Dirty-worktree rejection.
 6. Changed-commit rejection.
@@ -107,8 +107,9 @@ A fresh source-state replay requires rerunning the package-producing operation w
 8. Preservation of `BLOCKED_INVALIDATED` qualification currentness.
 9. Outer package, inner orchestration, and inner provenance tampering.
 10. Missing persisted record failure before provenance replay.
+11. A real-store end-to-end package operation using actual M7.5.14 execution reconciliation, M7.5.21 qualification-currentness consumer, M7.5.23 composition, M7.5.24 orchestration, and M7.5.26 source-state replay over a verified temporary Git repository and independent SQLite stores.
 
-The M7.5.26 test fixture supplies a real temporary Git repository and verified manifest. Existing M7.5.24–M7.5.28 and source-manifest regressions remain in the dedicated workflow.
+The isolated boundary tests use stubs for replay consumers only to verify exact object reuse and avoid conflating package assembly with the separately tested replay internals. The real-store integration test exercises the complete operation without those stubs. Existing M7.5.24–M7.5.28 and source-manifest regressions remain in the dedicated workflow.
 
 ## 7. Explicit assurance limits
 
@@ -136,15 +137,15 @@ No distributed transaction, external trust anchor, universal consumer intercepti
 ## 8. Validation record
 
 Implementation validation evidence:
-- [M7.5.29 workflow run 45985247648](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45985247648) — success on implementation revision `7f231ae83a59bc91e6aaba120eedfad3ef8de9c1`; exact triggering SHA checkout.
-- M7.5.29 package tests: 9 passed.
+- [M7.5.29 workflow run 45986043333](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45986043333) — success on implementation revision `6581063779d81278e0c7984c8c3d9db8b9be4e08`; exact triggering SHA checkout.
+- M7.5.29 package tests: 10 passed, including the real-store end-to-end operation.
 - M7.5.28 design-contract tests: 8 passed.
 - M7.5.27 consumer inventory tests: 6 passed.
 - M7.5.26 provenance behavioral tests: 9 passed.
 - M7.5.24 orchestration regression: 9 passed.
 - M7.5.25 failure-injection regression: 3 passed.
 - Source snapshot manifest regression: 8 passed.
-- Complete M7.5 regression: 284 passed.
+- Complete M7.5 regression: 285 passed.
 - Python 3.11 compilation: passed.
 
 The two documentation updates in this commit are included in the M7.5.29 workflow path filters. The workflow checks out `${{ github.sha }}`; its subsequent success is required to establish exact-head validation of this documentation revision.
