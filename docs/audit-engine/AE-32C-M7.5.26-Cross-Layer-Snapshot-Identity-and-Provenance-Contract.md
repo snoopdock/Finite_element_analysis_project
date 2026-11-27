@@ -1,6 +1,6 @@
 # AE-32C M7.5.26 — Cross-Layer Snapshot Identity and Provenance Contract
 
-**Status:** Implemented; CI validation pending  
+**Status:** Implemented and CI-validated  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.25 — Cross-Store Consistency and Failure-Injection Audit  
 **Scope:** bind persisted execution and semantic-qualification artifacts to one source snapshot, distinguishing declared identity from independently replayed source state.
@@ -61,4 +61,14 @@ The source manifest's `atomic_repository_snapshot_established` remains false; th
 
 ## 5. Validation
 
-Pending exact-head GitHub Actions validation.
+Workflow: [M7.5.26 Cross-Layer Snapshot Provenance](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45973681537)
+
+- Exact tested implementation revision: `21e282d9c6dd5816fc3c6d15570a2bdd7c018052`.
+- Python 3.11 compilation: passed.
+- M7.5.26 dedicated structural/adversarial tests: 9 passed.
+- Source snapshot manifest regression: 8 passed.
+- M7.5.24 orchestration regression: 9 passed.
+- M7.5.25 failure-injection regression: 3 passed.
+- Complete M7.5 regression: 261 passed.
+
+The workflow completed successfully. The exact tested revision includes the full-envelope seal correction after the first run identified a test gap. The documentation status update is a documentation-only follow-up; the workflow path filter causes the final documentation revision to be revalidated.
