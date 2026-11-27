@@ -233,6 +233,21 @@ def build_c3_execution_contract(
         raise ValueError("C3_graph_interaction_must_be_required")
     if requirements.get("require_complete_investigation_context") is not True:
         raise ValueError("C3_complete_context_must_be_required")
+    context_target = requirements.get("required_context_target")
+    context_paths = requirements.get("required_context_paths")
+    if not isinstance(context_target, str) or not _safe_relative_path(context_target):
+        raise ValueError("C3_required_context_target_invalid")
+    if context_target not in source_paths:
+        raise ValueError("C3_required_context_target_outside_declared_source_paths")
+    if (not isinstance(context_paths, list) or not context_paths
+            or len(context_paths) > 12
+            or len(context_paths) != len(set(context_paths))
+            or not all(_safe_relative_path(path) for path in context_paths)):
+        raise ValueError("C3_required_context_paths_invalid")
+    if context_target in context_paths or not set(context_paths).issubset(set(declared_scope)):
+        raise ValueError("C3_required_context_paths_outside_declared_scope")
+    if requirements.get("prefetch_required_context_trace") is not True:
+        raise ValueError("C3_context_trace_prefetch_must_be_required")
     if requirements.get("prefetch_required_graph_query") is not True:
         raise ValueError("C3_graph_query_prefetch_must_be_required")
 
