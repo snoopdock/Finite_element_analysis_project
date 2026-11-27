@@ -363,7 +363,9 @@ def prepare_c3_execution(
             _temporary_directory=temporary,
         )
     except Exception:
-        if evidence_tools is not None:
-            evidence_tools.close()
-        temporary.cleanup()
+        try:
+            if evidence_tools is not None:
+                evidence_tools.close()
+        finally:
+            temporary.cleanup()
         raise
