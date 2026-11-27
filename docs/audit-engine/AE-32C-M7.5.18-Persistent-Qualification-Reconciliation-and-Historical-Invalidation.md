@@ -21,6 +21,7 @@ Public APIs:
 
 - `QualificationReconciliationStore`
 - `QualificationReconciliationStoreError`
+- `qualification_reconciliation_context(...)`
 - `persist_verified_qualification_reconciliation(...)`
 - `verify_persisted_qualification_reconciliation(...)`
 
