@@ -214,8 +214,9 @@ class C3ExecutorTests(unittest.TestCase):
             provider = object()
             investigator_factory.return_value = Mock()
             session.build_investigator(provider)
+            args = investigator_factory.call_args.args
             kwargs = investigator_factory.call_args.kwargs
-            self.assertIs(kwargs["provider"], provider)
+            self.assertIs(args[1], provider)
             self.assertIs(kwargs["evidence_tools"], fake_tools)
             self.assertEqual(kwargs["source_revision"], SOURCE_SHA)
             self.assertEqual(kwargs["required_source_paths"], ("loader.py",))
@@ -228,22 +229,23 @@ class C3ExecutorTests(unittest.TestCase):
                 session.build_investigator(provider)
             session.close()
 
-    def test_scope_mismatch_closes_graph_and_fails_closed(self):
+    def test_rebuilt_graph_mismatch_closes_retained_tools_and_fails_closed(self):
         task, b_report, package, c2, authorization = inputs()
-        fake_tools = FakeEvidenceTools()
-        cost_module = SimpleNamespace(
-            build_live_cost_estimator=lambda *_args: (lambda *_values: 0.001)
-        )
+
+        class MismatchedEvidenceTools(FakeEvidenceTools):
+            def invoke(self, name, arguments):
+                response = super().invoke(name, arguments)
+                response["provenance"]["graph_fingerprint"] = "graph:" + "f" * 32
+                return response
+
+        fake_tools = MismatchedEvidenceTools()
         with tempfile.TemporaryDirectory() as root, \
              patch("tools.ae32d_c3_executor.build_c3_execution_contract", return_value=contract()), \
              patch("tools.ae32d_c3_executor._git_head", return_value=SOURCE_SHA), \
              patch("tools.ae32d_c3_executor._scope_snapshot",
-                   return_value={"digest": "0" * 64, "issues": []}), \
-             patch("tools.ae32d_c3_executor.RepositoryEvidenceTools", return_value=fake_tools), \
-             patch.dict(sys.modules, {
-                 "audit_engine.semantic_audit.ae32c.live_evaluation": cost_module
-             }):
-            with self.assertRaisesRegex(ValueError, "declared_scope_manifest_mismatch"):
+                   return_value={"digest": MANIFEST, "issues": []}), \
+             patch("tools.ae32d_c3_executor.RepositoryEvidenceTools", return_value=fake_tools):
+            with self.assertRaisesRegex(ValueError, "graph_snapshot_mismatch:graph_fingerprint"):
                 prepare_c3_execution(
                     task, b_report, package, c2, authorization, root,
                     manual_dispatch_confirmed=True,
