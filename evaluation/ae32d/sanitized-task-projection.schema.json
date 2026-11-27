@@ -86,7 +86,8 @@
     "condition": {
       "enum": [
         "A_deterministic",
-        "B_graph"
+        "B_graph",
+        "C_graph_llm"
       ]
     },
     "task_contract_digest": {
