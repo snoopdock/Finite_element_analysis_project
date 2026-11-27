@@ -334,3 +334,111 @@ class C3ExecutorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+class C3ExecutionRunWrapperTests(unittest.TestCase):
+    def _session(self, root):
+        temporary = tempfile.TemporaryDirectory(prefix="ae45-c3-run-test-")
+        tools = FakeEvidenceTools()
+        session = C3ExecutionSession(
+            contract=contract(),
+            source_root=Path(root),
+            graph_root=Path(temporary.name),
+            evidence_tools=tools,
+            limits=_build_investigator_limits(contract()["investigator_limits"]),
+            cost_estimator=lambda *_args: 0.001,
+            _temporary_directory=temporary,
+        )
+        return session, tools
+
+    def _valid_report(self):
+        return {
+            "status": "completed",
+            "snapshot_check_status": "verified",
+            "provenance": {
+                "source_revision": SOURCE_SHA,
+                "source_manifest_sha256": MANIFEST,
+                "graph_fingerprint": FINGERPRINT,
+            },
+        }
+
+    def test_run_invokes_one_investigation_and_accepts_exact_provenance(self):
+        fake_investigator = Mock()
+        fake_investigator.run.return_value = self._valid_report()
+        with tempfile.TemporaryDirectory() as root:
+            session, tools = self._session(root)
+            try:
+                with patch("tools.ae32d_c3_executor._git_head",
+                           side_effect=[SOURCE_SHA, SOURCE_SHA]), \
+                     patch("tools.ae32d_c3_executor.RepositoryInvestigator",
+                           return_value=fake_investigator) as factory:
+                    report = session.run(FakeProviderProfile())
+                self.assertEqual(report["status"], "completed")
+                fake_investigator.run.assert_called_once_with(
+                    "Inspect the pinned source."
+                )
+                factory.assert_called_once()
+                self.assertFalse(tools.closed)
+            finally:
+                session.close()
+            self.assertTrue(tools.closed)
+
+    def test_run_rejects_report_provenance_mismatch(self):
+        for field in ("source_revision", "source_manifest_sha256", "graph_fingerprint"):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as root:
+                session, _tools = self._session(root)
+                bad_report = self._valid_report()
+                bad_report["provenance"][field] = "f" * (40 if field == "source_revision" else 64)
+                fake_investigator = Mock()
+                fake_investigator.run.return_value = bad_report
+                try:
+                    with patch("tools.ae32d_c3_executor._git_head",
+                               side_effect=[SOURCE_SHA, SOURCE_SHA]), \
+                         patch("tools.ae32d_c3_executor.RepositoryInvestigator",
+                               return_value=fake_investigator):
+                        with self.assertRaisesRegex(ValueError, "report_provenance_mismatch:" + field):
+                            session.run(FakeProviderProfile())
+                finally:
+                    session.close()
+
+    def test_run_rejects_unverified_investigator_snapshot(self):
+        with tempfile.TemporaryDirectory() as root:
+            session, _tools = self._session(root)
+            bad_report = self._valid_report()
+            bad_report["snapshot_check_status"] = "not_checked"
+            fake_investigator = Mock()
+            fake_investigator.run.return_value = bad_report
+            try:
+                with patch("tools.ae32d_c3_executor._git_head",
+                           side_effect=[SOURCE_SHA, SOURCE_SHA]), \
+                     patch("tools.ae32d_c3_executor.RepositoryInvestigator",
+                           return_value=fake_investigator):
+                    with self.assertRaisesRegex(ValueError, "investigator_snapshot_not_verified"):
+                        session.run(FakeProviderProfile())
+            finally:
+                session.close()
+
+    def test_run_rejects_source_revision_change_before_or_during_investigation(self):
+        with tempfile.TemporaryDirectory() as root:
+            session, _tools = self._session(root)
+            with patch("tools.ae32d_c3_executor._git_head", return_value="f" * 40), \
+                 patch("tools.ae32d_c3_executor.RepositoryInvestigator") as factory:
+                with self.assertRaisesRegex(ValueError, "source_revision_changed_before_run"):
+                    session.run(FakeProviderProfile())
+            factory.assert_not_called()
+            session.close()
+
+        with tempfile.TemporaryDirectory() as root:
+            session, _tools = self._session(root)
+            fake_investigator = Mock()
+            fake_investigator.run.return_value = self._valid_report()
+            try:
+                with patch("tools.ae32d_c3_executor._git_head",
+                           side_effect=[SOURCE_SHA, "f" * 40]), \
+                     patch("tools.ae32d_c3_executor.RepositoryInvestigator",
+                           return_value=fake_investigator):
+                    with self.assertRaisesRegex(ValueError, "source_revision_changed_during_run"):
+                        session.run(FakeProviderProfile())
+            finally:
+                session.close()
