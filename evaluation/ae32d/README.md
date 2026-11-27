@@ -53,3 +53,7 @@ The three additional fixtures are pinned to `dd80be6e7a3e0a912beace92ce0fac446ea
 The scorer reports provisional defect detection, false-positive, abstention, ambiguous-case abstention, error and missing counts separately for A/B/C. Its output is always marked `exploratory_only_not_gold_adjudication`, sets `primary_benchmark_score=false`, and never writes case records. No A/B/C model/provider performance result is claimed until actual trial outputs are supplied and scored.
 
 The machine-reference registry is not a substitute for independent adjudication. All six case labels remain `pending_adjudication`; all six cases remain excluded from primary scoring. Rubric approval, pilot freeze and gold adjudication remain open.
+
+## AE-43 readiness gate
+
+The next stage is an offline importer/normalizer for real A/B/C trial artifacts. No qualifying AE-32D A/B/C output bundle is currently tracked. Existing AE-32C provider batch records assess protocol/evidence completion and leave diagnostic accuracy unassessed; the separate FEA provider benchmark evaluates document-generation runs. Neither can be converted into AE-32D defect outcomes. See `docs/audit-engine/AE-43-Exploratory-Trial-Integration-Readiness.md`.
