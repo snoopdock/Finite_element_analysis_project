@@ -68,6 +68,7 @@ from .qualification_reconciliation import (
 from .qualification_reconciliation_store import (
     QualificationReconciliationStore, QualificationReconciliationStoreError,
     persist_verified_qualification_reconciliation,
+    qualification_reconciliation_context,
     verify_persisted_qualification_reconciliation,
 )
 from .store import (
@@ -80,6 +81,7 @@ __all__ = [
     "reconcile_semantic_qualifications", "verify_qualification_obligation_reconciliation",
     "QualificationReconciliationStore", "QualificationReconciliationStoreError",
     "persist_verified_qualification_reconciliation",
+    "qualification_reconciliation_context",
     "verify_persisted_qualification_reconciliation",
     "SemanticQualificationError", "semantic_evidence_contract_registry",
     "qualify_typed_evidence_observations", "verify_semantic_evidence_qualification",
