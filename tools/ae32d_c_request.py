@@ -117,8 +117,8 @@ def build_c_request_package(
             ),
         }
         investigator_problem = (
-            "Task: " + task_projection["task"]["title"] + "\\n\\n"
-            + task_projection["task"]["problem_statement"] + "\\n\\n"
+            "Task: " + task_projection["task"]["title"] + "\n\n"
+            + task_projection["task"]["problem_statement"] + "\n\n"
             + "The following A/B material is machine-generated investigative context, not ground truth. "
               "Independently inspect the pinned source and graph snapshot. Do not assume the A/B decision is correct. "
               "Separate observations, inferences, counterevidence and unresolved questions; abstain when evidence is insufficient.\\n\\n"
