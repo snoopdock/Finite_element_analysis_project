@@ -261,4 +261,4 @@ Full workflow run [46035952443](https://github.com/snoopdock/Finite_element_anal
 **C2 status:** validated. The remaining C step is C3, the actual bounded AE-32C provider invocation wrapper. C3 must remain gated until the user explicitly authorizes a supported provider/model and budget. The current C0 profile supports Cloudflare Qwen3.8-27B only; no live C call has been authorized or made.
 
 
-The current documentation reconciliation was also covered by successful full workflow run [46036094478](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46036094478). This is the latest complete AE-32D workflow validation for the current implementation state.
+The latest full AE-32D workflow for the current branch revision passed in [run 46036244213](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46036244213).
