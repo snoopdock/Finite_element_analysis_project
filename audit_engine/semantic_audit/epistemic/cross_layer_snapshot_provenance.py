@@ -198,9 +198,8 @@ def verify_cross_layer_snapshot_provenance(
         "plan_sha256": execution_reconciliation.get("plan_sha256"),
         "coverage_manifest_sha256": execution_reconciliation.get("coverage_manifest_sha256"),
     }
-    return {
+    result_payload = {
         **identity_payload,
-        "cross_layer_snapshot_identity_sha256": _digest(identity_payload),
         "provenance_status": "COMPLETE", "snapshot_identity_assurance": assurance_level,
         "source_state_verification": source_state,
         "qualification_currentness": currentness["state"],
@@ -222,6 +221,8 @@ def verify_cross_layer_snapshot_provenance(
             "A later mutation can occur after source-state replay",
         ],
     }
+    return {**result_payload,
+            "cross_layer_snapshot_identity_sha256": _digest(result_payload)}
 
 
 def verify_cross_layer_snapshot_provenance_envelope(envelope: Mapping[str, Any]) -> dict[str, Any]:
@@ -229,13 +230,10 @@ def verify_cross_layer_snapshot_provenance_envelope(envelope: Mapping[str, Any])
     if not isinstance(envelope, Mapping):
         raise TypeError("provenance_envelope_must_be_a_mapping")
     identity = envelope.get("cross_layer_snapshot_identity_sha256")
-    identity_fields = {key: envelope.get(key) for key in (
-        "schema", "source_snapshot_id", "source_manifest_sha256", "source_inventory_sha256",
-        "execution_reconciliation_sha256", "qualification_reconciliation_sha256",
-        "qualification_sha256", "observation_bundle_sha256", "composition_sha256",
-        "orchestration_sha256", "claim_id", "plan_sha256", "coverage_manifest_sha256")}
+    payload = {key: value for key, value in envelope.items()
+               if key != "cross_layer_snapshot_identity_sha256"}
     if (envelope.get("schema") != SCHEMA or not isinstance(identity, str)
-            or identity != _digest(identity_fields)):
+            or identity != _digest(payload)):
         raise CrossLayerSnapshotProvenanceError("provenance_envelope_digest_mismatch")
     return {
         "cross_layer_snapshot_identity_sha256": identity,
