@@ -118,7 +118,7 @@ class CrossLayerProvenanceConsumerInventoryTests(unittest.TestCase):
             if isinstance(node, ast.ImportFrom) and node.module
         ]
         exported_names = {
-            item.value
+            node.value
             for node in ast.walk(tree)
             if isinstance(node, ast.Constant) and isinstance(node.value, str)
         }
