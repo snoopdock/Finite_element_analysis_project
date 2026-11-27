@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ae32d-c-preflight.schema.json",
+  "title": "AE-32D C preflight report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "authorization_status", "case_id",
+    "source_commit_sha", "task_contract_digest", "b_report_sha256",
+    "graph_fingerprint", "graph_backend", "prompt_source_sha256",
+    "tool_catalog_sha256", "cost_estimator_sha256", "provider_dispatch_permitted",
+    "provider_calls_attempted", "credentials_accessed", "manual_dispatch_required",
+    "blocking_reasons", "request_plan"
+  ],
+  "properties": {
+    "schema_version": {"const": "ae32d/c-preflight/v1"},
+    "status": {"enum": ["blocked_manual_authorization_required", "blocked_invalid_authorization", "blocked_incomplete_B_snapshot", "ready_for_manual_dispatch"]},
+    "authorization_status": {"enum": ["absent", "invalid", "valid"]},
+    "case_id": {"type": "string", "minLength": 1},
+    "source_commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "task_contract_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "b_report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "graph_fingerprint": {"type": "string", "pattern": "^graph:[0-9a-f]{32}$"},
+    "graph_backend": {"type": "string", "minLength": 1},
+    "prompt_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "tool_catalog_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "cost_estimator_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "provider_dispatch_permitted": {"const": false},
+    "provider_calls_attempted": {"const": 0},
+    "credentials_accessed": {"const": false},
+    "manual_dispatch_required": {"const": true},
+    "blocking_reasons": {"type": "array", "items": {"type": "string"}},
+    "request_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_name", "model_name", "authorization_id", "budget"],
+      "properties": {
+        "provider_name": {"type": ["string", "null"]},
+        "model_name": {"type": ["string", "null"]},
+        "authorization_id": {"type": ["string", "null"]},
+        "budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_model_rounds", "max_tool_calls", "max_tokens_per_call", "finalization_max_tokens_per_call", "max_total_tokens", "max_elapsed_seconds", "max_cost_usd"],
+          "properties": {
+            "max_model_rounds": {"type": ["integer", "null"]},
+            "max_tool_calls": {"type": ["integer", "null"]},
+            "max_tokens_per_call": {"type": ["integer", "null"]},
+            "finalization_max_tokens_per_call": {"type": ["integer", "null"]},
+            "max_total_tokens": {"type": ["integer", "null"]},
+            "max_elapsed_seconds": {"type": ["integer", "null"]},
+            "max_cost_usd": {"type": ["number", "null"]}
+          }
+        }
+      }
+    }
+  }
+}
