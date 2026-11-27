@@ -5,19 +5,323 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version", "status", "preflight", "request", "request_sha256",
-    "manual_dispatch_confirmed", "provider_dispatch_permitted",
-    "provider_calls_attempted", "credentials_accessed"
+    "schema_version",
+    "status",
+    "preflight",
+    "request",
+    "request_sha256",
+    "manual_dispatch_confirmed",
+    "provider_dispatch_permitted",
+    "provider_calls_attempted",
+    "credentials_accessed"
   ],
   "properties": {
-    "schema_version": {"const": "ae32d/c-request-package/v1"},
-    "status": {"enum": ["blocked", "prepared_manual_only"]},
-    "preflight": {"type": "object"},
-    "request": {"type": ["object", "null"]},
-    "request_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
-    "manual_dispatch_confirmed": {"const": false},
-    "provider_dispatch_permitted": {"const": false},
-    "provider_calls_attempted": {"const": 0},
-    "credentials_accessed": {"const": false}
+    "schema_version": {
+      "const": "ae32d/c-request-package/v1"
+    },
+    "status": {
+      "enum": [
+        "blocked",
+        "prepared_manual_only"
+      ]
+    },
+    "preflight": {
+      "$ref": "c-preflight.schema.json"
+    },
+    "request": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/request"
+        }
+      ]
+    },
+    "request_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "manual_dispatch_confirmed": {
+      "const": false
+    },
+    "provider_dispatch_permitted": {
+      "const": false
+    },
+    "provider_calls_attempted": {
+      "const": 0
+    },
+    "credentials_accessed": {
+      "const": false
+    }
+  },
+  "$defs": {
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "case_id",
+        "source_commit_sha",
+        "task_contract_digest",
+        "b_report_sha256",
+        "graph_fingerprint",
+        "provider_name",
+        "model_name",
+        "authorization_id",
+        "authorization_sha256",
+        "prompt_source_sha256",
+        "tool_catalog_sha256",
+        "cost_estimator_sha256",
+        "budget",
+        "context",
+        "investigation_requirements",
+        "dispatch"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "ae32d/c-request/v1"
+        },
+        "case_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_commit_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "task_contract_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "b_report_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "graph_fingerprint": {
+          "type": "string",
+          "pattern": "^graph:[0-9a-f]{32}$"
+        },
+        "provider_name": {
+          "const": "cloudflare"
+        },
+        "model_name": {
+          "const": "@cf/qwen/qwen3.8-27b"
+        },
+        "authorization_id": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 100
+        },
+        "authorization_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "prompt_source_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "tool_catalog_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "cost_estimator_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "budget": {
+          "$ref": "c-preflight.schema.json#/properties/request_plan/properties/budget"
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "task_title",
+            "task_problem_statement",
+            "declared_scope",
+            "a_baseline",
+            "b_graph",
+            "interpretation_rule"
+          ],
+          "properties": {
+            "task_title": {
+              "type": "string"
+            },
+            "task_problem_statement": {
+              "type": "string"
+            },
+            "declared_scope": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "a_baseline": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "decision",
+                "findings",
+                "counterevidence",
+                "unresolved_questions",
+                "limitations",
+                "config_digest"
+              ],
+              "properties": {
+                "decision": {
+                  "enum": [
+                    "defect",
+                    "no_defect",
+                    "abstain",
+                    "error"
+                  ]
+                },
+                "findings": {
+                  "type": "array"
+                },
+                "counterevidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "unresolved_questions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "config_digest": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            },
+            "b_graph": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "graph_snapshot",
+                "retrieval"
+              ],
+              "properties": {
+                "graph_snapshot": {
+                  "type": "object"
+                },
+                "retrieval": {
+                  "type": "array"
+                }
+              }
+            },
+            "interpretation_rule": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "investigation_requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required_source_paths",
+            "required_graph_target",
+            "required_graph_relation_types",
+            "required_graph_direction",
+            "require_graph_interaction",
+            "require_complete_investigation_context",
+            "prefetch_required_graph_query",
+            "required_context_target",
+            "required_context_paths",
+            "prefetch_required_context_trace"
+          ],
+          "properties": {
+            "required_source_paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "maxItems": 12
+            },
+            "required_graph_target": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required_graph_relation_types": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "maxItems": 12
+            },
+            "required_graph_direction": {
+              "enum": [
+                "incoming",
+                "outgoing",
+                "both"
+              ]
+            },
+            "require_graph_interaction": {
+              "const": true
+            },
+            "require_complete_investigation_context": {
+              "const": true
+            },
+            "prefetch_required_graph_query": {
+              "const": true
+            },
+            "required_context_target": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "required_context_paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "prefetch_required_context_trace": {
+              "type": "boolean"
+            }
+          }
+        },
+        "dispatch": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "manual_dispatch_confirmed",
+            "provider_dispatch_permitted",
+            "provider_calls_attempted",
+            "credentials_accessed"
+          ],
+          "properties": {
+            "manual_dispatch_confirmed": {
+              "const": false
+            },
+            "provider_dispatch_permitted": {
+              "const": false
+            },
+            "provider_calls_attempted": {
+              "const": 0
+            },
+            "credentials_accessed": {
+              "const": false
+            }
+          }
+        }
+      }
+    }
   }
 }
