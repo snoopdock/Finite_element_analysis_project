@@ -97,3 +97,49 @@ Use mocked providers for these tests. They must not make network calls.
 ## 7. Current disposition
 
 **C3 is not executed.** The provider-free C3 contract closes the request reconstruction, exact C2 snapshot binding, and budget-mapping layer, but the actual executor is still outstanding. The next code change must connect the validated contract to `RepositoryInvestigator` while preserving the mapped limits and lazy provider construction. C0–C2 remain the last validated execution boundary; the new C3 contract has not yet passed its GitHub Actions test. No benchmark score, diagnostic-accuracy improvement, or primary-benchmark eligibility is claimed.
+
+## 8. Follow-up after C3 contract validation — 2026-11-28
+
+### 8.1 Validation evidence
+
+The corrected provider-free C3 execution-contract suite passed in GitHub Actions:
+
+- Workflow run: [46063943140](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46063943140)
+- Job: `verify-candidate` ([140724642495](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46063943140/job/140724642495))
+- Validated commit: `bdecd3c2db606830e7266df2202d0fada8e64ffc`
+- The complete 32-step workflow succeeded, including the C3 contract tests and the downstream machine-verification, benchmark-record, fixed-fixture boundary, and artifact-publication steps.
+
+This validates the provider-free C3 contract and the workflow's existing deterministic checks. It does **not** validate investigator execution, provider construction, credential access, or a live C3 trial.
+
+### 8.2 Newly confirmed executor integration boundary
+
+Inspection of the current Stage1 implementation establishes an important lifecycle detail:
+
+- `verify_c_graph_snapshot()` in `tools/ae32d_c_snapshot.py` reconstructs the C2 graph in a temporary directory.
+- It creates `RepositoryEvidenceTools`, checks the repository summary against the B graph identity, and closes the evidence-tools instance before returning the C2 verification report.
+- Therefore, the C2 report is a verification record, **not a retained graph/evidence-tools object** that C3 can pass directly to `RepositoryInvestigator`.
+
+The C3 executor must independently reconstruct and retain the declared-scope graph for the duration of the investigation. It must repeat the exact source-revision and scope-manifest checks, compare the reconstructed graph summary against both the B report and C2 verification report, and close the evidence-tools instance only after the investigation terminates. It must not treat a successful historical C2 report as proof that a later, separately constructed graph is identical without rechecking it.
+
+The existing helper `_scope_snapshot()` in `tools/ae32d_graph_assisted_audit.py` provides the same declared-scope projection used by B and C2. The executor should reuse that projection rather than create a subtly different copy policy.
+
+### 8.3 Investigator construction contract
+
+The inspected `RepositoryInvestigator` constructor accepts the already-created evidence-tools object and an explicit `InvestigationLimits` instance. The C3 adapter can therefore avoid the unsafe generic live-limit helper and construct limits directly from the validated C3 contract.
+
+The cost estimator is available in `audit_engine/semantic_audit/ae32c/live_evaluation.py` as `build_live_cost_estimator()`. Its import and construction must remain lazy until the C3 contract and exact source/graph reconstruction have passed. The existing `build_live_investigation_limits()` must not be used unchanged: it sets `max_total_tokens=180000`, above the C3 authorization ceiling of 30720.
+
+### 8.4 Next implementation gate
+
+Implement a provider-free executor adapter with these ordered boundaries:
+
+1. Rebuild the C3 contract from the exact C1/C2 inputs; fail closed on any mismatch.
+2. Resolve the source checkout from the trusted case/source record and require its Git HEAD to equal the exact C1 source commit.
+3. Rebuild the declared-scope graph in a retained temporary directory using the shared B/C2 scope-snapshot helper.
+4. Verify the rebuilt graph's source manifest, graph fingerprint, backend, and coverage against both B and C2 before creating any provider.
+5. Map the exact C3 budget into `InvestigationLimits`; preserve smaller authorized values and never inherit the 180000-token default.
+6. Construct `RepositoryInvestigator` with that exact evidence-tools instance and the exact C1 source, graph, and context requirements.
+7. Keep provider construction behind a lazy, explicit factory boundary. Provider-free structural tests must prove that blocked or unconfirmed requests do not import the provider factory, read credentials, construct a provider, or make network calls.
+8. Test the executor with a deterministic fake provider and fault-injection cases before any live provider invocation.
+
+No live provider invocation is authorized by the successful run. The Cloudflare Qwen3.8-27B ceiling remains 11 model rounds, 12 tool calls, 2048 normal tokens per call, 6144 finalization tokens per call, 30720 total tokens, 900 seconds, and USD 0.50. A live invocation still requires separate explicit user authorization.
