@@ -308,7 +308,8 @@
           "coverage_status",
           "truncated",
           "response_digest",
-          "payload"
+          "payload",
+          "provenance"
         ],
         "properties": {
           "tool": {
@@ -349,6 +350,9 @@
           },
           "error_code": {
             "type": "string"
+          },
+          "provenance": {
+            "type": "object"
           }
         }
       }
