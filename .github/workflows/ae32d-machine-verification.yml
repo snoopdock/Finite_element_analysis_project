@@ -25,6 +25,7 @@ on:
       - tests/semantic_audit/test_ae32d_c_snapshot.py
       - tests/semantic_audit/test_ae32d_c3_execution_contract.py
       - tests/semantic_audit/test_ae32d_c3_executor.py
+      - tests/semantic_audit/test_ae32d_c3_fake_provider_execution.py
       - tools/ae32d_trial_contracts.py
       - tools/ae32d_validate_rule_catalog.py
       - tools/ae32d_deterministic_rules.py
@@ -168,6 +169,9 @@ jobs:
         env:
           AE32D_CASE_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-case-source
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_c3_executor.py' -v
+
+      - name: Test C3 investigator lifecycle with deterministic fake provider (no network)
+        run: python -m pytest tests/semantic_audit/test_ae32d_c3_fake_provider_execution.py -q
 
       - name: Test deterministic outcome classifier
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_score_outcomes.py' -v
