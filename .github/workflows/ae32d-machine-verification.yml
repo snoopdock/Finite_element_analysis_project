@@ -6,6 +6,11 @@ on:
       - stage1/section-uuids
     paths:
       - .github/workflows/ae32d-machine-verification.yml
+      - audit_engine/semantic_audit/ae32c/live_evaluation.py
+      - audit_engine/semantic_audit/ae32c/response_protocol.py
+      - audit_engine/semantic_audit/ae32c/tool_policy.py
+      - audit_engine/semantic_audit/ae32c/investigator.py
+      - audit_engine/semantic_audit/ae32b/evidence_tools.py
       - tools/ae32d_validate_benchmark.py
       - tools/ae32d_exploratory_evaluation.py
       - tests/semantic_audit/test_ae32d_exploratory_evaluation.py
@@ -15,11 +20,13 @@ on:
       - tests/semantic_audit/test_ae32d_pinned_rule_fixtures.py
       - tests/semantic_audit/test_ae32d_deterministic_audit.py
       - tests/semantic_audit/test_ae32d_graph_assisted_audit.py
+      - tests/semantic_audit/test_ae32d_c_preflight.py
       - tools/ae32d_trial_contracts.py
       - tools/ae32d_validate_rule_catalog.py
       - tools/ae32d_deterministic_rules.py
       - tools/ae32d_deterministic_audit.py
       - tools/ae32d_graph_assisted_audit.py
+      - tools/ae32d_c_preflight.py
       - evaluation/ae32d/machine-reference-registry.json
       - evaluation/ae32d/machine-reference-registry.schema.json
       - evaluation/ae32d/exploratory-trials.schema.json
@@ -128,6 +135,11 @@ jobs:
           AE32D_CASE_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-case-source
           AE32D_EXTENDED_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-extended-source
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_graph_assisted_audit.py' -v
+
+      - name: Test C manual authorization preflight (no provider calls)
+        env:
+          AE32D_CASE_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-case-source
+        run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_c_preflight.py' -v
 
       - name: Test deterministic outcome classifier
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_score_outcomes.py' -v
