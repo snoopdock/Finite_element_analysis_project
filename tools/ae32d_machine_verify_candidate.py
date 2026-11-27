@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import json
 import os
 import stat
@@ -324,7 +325,7 @@ def run_check(repository_root: Path | str) -> dict[str, Any]:
     manifest = [
         {
             "path": relative,
-            "sha256": __import__("hashlib").sha256(raw[relative]).hexdigest(),
+            "sha256": hashlib.sha256(raw[relative]).hexdigest(),
         }
         for relative in REQUIRED
     ]
