@@ -7,6 +7,8 @@ on:
     paths:
       - .github/workflows/ae32d-machine-verification.yml
       - tools/ae32d_validate_benchmark.py
+      - tools/ae32d_score_outcomes.py
+      - tests/semantic_audit/test_ae32d_score_outcomes.py
       - tests/semantic_audit/test_ae32d_benchmark_validation.py
       - evaluation/ae32d/**
       - tools/ae32d_machine_verify_candidate.py
@@ -50,6 +52,9 @@ jobs:
 
       - name: Validate AE-32D benchmark records
         run: python tools/ae32d_validate_benchmark.py --output "$RUNNER_TEMP/ae32d-machine-verification/benchmark-validation.json"
+
+      - name: Test deterministic outcome classifier
+        run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_score_outcomes.py' -v
 
       - name: Test benchmark record validation
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_benchmark_validation.py' -v
