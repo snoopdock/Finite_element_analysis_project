@@ -1,4 +1,4 @@
-"""Allowlisted AE-32D task projection builder for A/B condition runners."""
+"""Allowlisted AE-32D task projection builder for A/B/C condition runners."""
 from __future__ import annotations
 
 import hashlib
@@ -37,8 +37,8 @@ def build_sanitized_task_projection(
         raise TypeError("case_record_must_be_mapping")
     if not isinstance(experiment_id, str) or not experiment_id.strip():
         raise ValueError("experiment_id_required")
-    if condition not in {"A_deterministic", "B_graph"}:
-        raise ValueError("unsupported_deterministic_condition")
+    if condition not in {"A_deterministic", "B_graph", "C_graph_llm"}:
+        raise ValueError("unsupported_ae32d_condition")
     source, task = case_record.get("source"), case_record.get("task")
     if not isinstance(source, Mapping) or not isinstance(task, Mapping):
         raise ValueError("case_source_and_task_required")
