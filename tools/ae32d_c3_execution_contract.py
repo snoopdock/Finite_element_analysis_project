@@ -14,7 +14,7 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
-from tools.ae32d_c_preflight import build_c_preflight
+from tools.ae32d_c_request import build_c_request_package
 from tools.ae32d_trial_contracts import canonical_json_bytes
 from tools.ae32d_deterministic_audit import ROOT
 
@@ -85,6 +85,7 @@ def _validated_budget(budget: dict[str, Any]) -> dict[str, int | float]:
 
 
 def build_c3_execution_contract(
+    task_projection: dict[str, Any],
     b_report: dict[str, Any],
     request_package: dict[str, Any],
     c_snapshot_verification: dict[str, Any],
@@ -131,9 +132,10 @@ def build_c3_execution_contract(
             or c_snapshot_verification.get("credentials_accessed") is not False):
         raise ValueError("C3_C2_snapshot_contains_provider_side_effect_claims")
 
-    fresh_preflight = build_c_preflight(b_report, authorization)
-    if request_package.get("preflight") != fresh_preflight:
-        raise ValueError("C3_preflight_binding_mismatch")
+    expected_package = build_c_request_package(task_projection, b_report, authorization)
+    if expected_package != request_package:
+        raise ValueError("C3_C1_request_package_reconstruction_mismatch")
+    fresh_preflight = expected_package["preflight"]
     if fresh_preflight.get("status") != "ready_for_manual_dispatch":
         return {
             "schema_version": "ae32d/c3-execution-contract/v1",
@@ -162,6 +164,15 @@ def build_c3_execution_contract(
             raise ValueError("C3_C2_graph_snapshot_mismatch:" + key)
     if c_snapshot_verification.get("mismatches"):
         raise ValueError("C3_C2_snapshot_reports_mismatches")
+
+    if task_projection.get("condition") != "C_graph_llm":
+        raise ValueError("C3_task_projection_condition_mismatch")
+    if task_projection.get("case_id") != request["case_id"]:
+        raise ValueError("C3_task_projection_case_mismatch")
+    if task_projection.get("source", {}).get("source_commit_sha") != request["source_commit_sha"]:
+        raise ValueError("C3_task_projection_source_mismatch")
+    if task_projection.get("task_contract_digest") != request["task_contract_digest"]:
+        raise ValueError("C3_task_projection_digest_mismatch")
 
     expected_bindings = {
         "case_id": fresh_preflight["case_id"],
