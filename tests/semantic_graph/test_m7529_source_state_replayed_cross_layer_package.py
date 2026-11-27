@@ -181,7 +181,7 @@ class M7529SourceStateReplayedPackageTests(unittest.TestCase):
 
         external_raw = b"response = 'untrusted'\\n"
         (f.root / "src/external.py").write_bytes(external_raw)
-        (f.root / ".gitignore").write_text("*.sqlite*\\n", encoding="utf-8")
+        (f.root / ".gitignore").write_text("*\\n!.gitignore\\n!src/\\n!src/**\\nsrc/**/__pycache__/\\n", encoding="utf-8")
 
         def git(*args):
             return subprocess.run(
@@ -195,6 +195,7 @@ class M7529SourceStateReplayedPackageTests(unittest.TestCase):
         git("add", ".gitignore", "src/app.py", "src/external.py")
         git("commit", "-qm", "M7.5.29 integration source snapshot")
         commit = git("rev-parse", "HEAD")
+        self.assertEqual(git("status", "--porcelain"), "")
 
         captured = capture_manifest(
             f.root,
