@@ -79,6 +79,8 @@ The dedicated tests cover:
 - Coverage obligations remaining outside this semantic reconciliation.
 - Independent reconciliation replay and source-drift rejection.
 - Reconciliation digest tampering rejection.
+- Duplicate obligation/observation pair rejection, including repeated obligation bindings in a single observation.
+- Missing historical source-file handling, normalized to `QualificationReconciliationError` rather than leaking a raw filesystem exception.
 - Explicit no-mutation/no-authority fields in the output.
 
 ## 7. Explicit limitations
