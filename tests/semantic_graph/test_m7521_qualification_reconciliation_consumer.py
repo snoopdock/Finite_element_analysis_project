@@ -8,6 +8,9 @@ from audit_engine.semantic_audit.epistemic.qualification_reconciliation_store im
     QualificationReconciliationStore,
     evaluate_persisted_qualification_reconciliation_currentness,
 )
+from audit_engine.semantic_audit.epistemic.qualification_reconciliation import (
+    QualificationReconciliationError,
+)
 from audit_engine.semantic_audit.epistemic.qualification_consumer_gate import (
     QualificationConsumerCheckStore,
 )
@@ -28,7 +31,8 @@ class QualificationReconciliationConsumerTests(unittest.TestCase):
         self.reconciliation_store = QualificationReconciliationStore(
             root / "reconciliation.sqlite")
         self.check_store = QualificationConsumerCheckStore(root / "consumer.sqlite")
-        self.bundle, self.qualification = self.fixture.qualification([])
+        observation = self.fixture.syntax_observation("src/broken_a.py")
+        self.bundle, self.qualification = self.fixture.qualification([observation])
         self.reconciliation = self.fixture.reconcile(self.bundle, self.qualification)
         self.record_id = self.reconciliation["reconciliation_sha256"]
         self.reconciliation_store.record(
@@ -116,7 +120,7 @@ class QualificationReconciliationConsumerTests(unittest.TestCase):
 
     def test_source_bytes_drift_after_currentness_preflight_fails_semantic_replay(self):
         (self.fixture.root / "src/broken_a.py").write_text("import os\n")
-        with self.assertRaises(Exception):
+        with self.assertRaises(QualificationReconciliationError):
             self.consume()
         # The preflight is only a currentness assertion over supplied context;
         # semantic replay remains independently necessary and rejects source drift.
