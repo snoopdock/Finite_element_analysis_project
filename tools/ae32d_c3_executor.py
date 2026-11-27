@@ -127,8 +127,24 @@ def _validate_provider_profile(provider: Any, contract: Mapping[str, Any]) -> No
             or max_tokens < 64
             or max_tokens > contract["investigator_limits"]["max_tokens_per_call"]):
         raise ValueError("C3_executor_provider_token_ceiling_mismatch")
-    if not callable(getattr(provider, "get_stats", None)):
+    get_stats = getattr(provider, "get_stats", None)
+    if not callable(get_stats):
         raise ValueError("C3_executor_provider_stats_interface_missing")
+    stats = get_stats()
+    if not isinstance(stats, Mapping) or stats.get("provider") != expected_provider:
+        raise ValueError("C3_executor_provider_stats_identity_mismatch")
+    for key in ("logical_calls", "total_calls", "http_attempts"):
+        value = stats.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value != 0:
+            raise ValueError("C3_executor_provider_must_be_fresh:" + key)
+    usage = stats.get("usage")
+    if not isinstance(usage, Mapping):
+        raise ValueError("C3_executor_provider_usage_stats_missing")
+    for key in ("prompt_tokens", "completion_tokens", "total_tokens", "reported_cost_usd"):
+        value = usage.get(key)
+        if (isinstance(value, bool) or not isinstance(value, (int, float))
+                or value != 0):
+            raise ValueError("C3_executor_provider_must_be_fresh:" + key)
 
 
 def _build_investigator_limits(contract_limits: Mapping[str, Any]) -> InvestigationLimits:
