@@ -57,3 +57,13 @@ The machine-reference registry is not a substitute for independent adjudication.
 ## AE-43 readiness gate
 
 The next stage is an offline importer/normalizer for real A/B/C trial artifacts. No qualifying AE-32D A/B/C output bundle is currently tracked. Existing AE-32C provider batch records assess protocol/evidence completion and leave diagnostic accuracy unassessed; the separate FEA provider benchmark evaluates document-generation runs. Neither can be converted into AE-32D defect outcomes. See `docs/audit-engine/AE-43-Exploratory-Trial-Integration-Readiness.md`.
+
+
+## AE-45 — deterministic A/B condition contracts
+
+- `sanitized-task-projection.schema.json` is the allowlisted input contract for A/B. It contains the task statement, declared scope, constraints and exact source SHA, but no ground-truth, review, machine-reference or scorer fields.
+- `condition-report.schema.json` defines the evidence-bound condition report, explicit decision, coverage, counterevidence, limitations and execution trace. Failed infrastructure states cannot be represented as `no_defect`.
+- `tools/ae32d_trial_contracts.py` builds the sanitized projection by selecting approved fields and computing a canonical task-contract digest.
+- `tests/semantic_audit/test_ae32d_ab_contract_schemas.py` tests strict schemas, hidden-field exclusion, digest/source shape, explicit decisions, evidence hash constraints and abstention.
+
+These are contract-boundary components only. No A/B executor or trial output exists yet. The workflow runs the new tests; inspect the resulting Actions run before advancing to A1.
