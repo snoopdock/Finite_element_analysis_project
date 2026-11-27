@@ -36,12 +36,14 @@ C3 must not use that helper unchanged. The C3 adapter must construct the investi
 
 ### 3.2 Request-to-investigator binding
 
-The C1 request contains a bounded `investigation_requirements` object, but C3 still needs an explicit, tested mapping from those fields to the AE-32C investigator constructor. In particular, validate that:
+The first integration inspection found that C1 set `require_complete_investigation_context=true` while emitting an empty `required_context_paths` list and potentially a null `required_context_target`. The actual `RepositoryInvestigator` constructor rejects this combination. This has now been corrected in C1: it selects a trace target from the declared Python source paths and supplies the other declared-scope paths as required context paths. The C request schema now requires a nonempty target, at least one context path, and mandatory context-trace prefetch. The C1 test suite asserts the exact contract and rejects a one-file scope that cannot satisfy it.
+
+C3 now independently checks the receiving-constructor preconditions. In particular, validate that:
 
 - every required source path belongs to the exact reconstructed source snapshot;
-- the required graph target is a valid target in the reconstructed graph, not merely a nonempty string;
+- the required graph target is a declared source path and resolves to a valid target in the reconstructed graph;
 - relation types and direction are supported by the selected graph backend;
-- required context-trace fields are either complete and bound or explicitly absent;
+- the required context target and paths are nonempty, distinct, safe, within the declared scope, and passed with context-trace prefetch enabled;
 - the investigator's graph fingerprint and source manifest match the C2-verified values.
 
 C3 must reject unknown, omitted, duplicated, or mismatched requirements rather than silently weaken the investigation contract.
@@ -56,7 +58,7 @@ The provider factory and credential-bearing environment may be accessed only aft
 
 ## 4. C3 contract implementation delivered
 
-The provider-free C3 contract is implemented in `tools/ae32d_c3_execution_contract.py`. It:
+The provider-free C3 contract is implemented in `tools/ae32d_c3_execution_contract.py`. C1 context-contract compatibility has also been corrected. The contract:
 
 - reconstructs the expected C1 request package from the supplied C task projection, exact B report, and authorization; a modified request or context is rejected;
 - requires a schema-valid C2 snapshot-verification report with `status=verified`, matching case/source/task identity, matching graph fingerprint and source manifest, no mismatches, and no provider-side effects;
@@ -66,7 +68,7 @@ The provider-free C3 contract is implemented in `tools/ae32d_c3_execution_contra
 - preserves smaller authorized limits rather than replacing them with defaults;
 - imports no provider factory and does not read credentials, make network calls, or start the investigator. A separate confirmation can mark the contract ready for a later executor, but dispatch remains false.
 
-`tests/semantic_audit/test_ae32d_c3_execution_contract.py` adds mocked, provider-free tests for the C1/C2 bindings and budget contract. The Stage1 AE-32D workflow now includes this test file and its push path. Validation of the new commit is pending.
+`tests/semantic_audit/test_ae32d_c3_execution_contract.py` adds mocked, provider-free tests for the C1/C2 bindings and budget contract. `tests/semantic_audit/test_ae32d_c_request.py` now checks that the C1 package supplies the nonempty context required by the actual investigator. The Stage1 AE-32D workflow includes the C3 test file and push path. Validation of the latest commits is pending.
 
 ## 5. Remaining C3 acceptance tests
 
