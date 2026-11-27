@@ -52,7 +52,7 @@ def verify_exception_swallow(root: Path) -> dict:
         checks.append("propagation_contract_declared")
     else:
         errors.append("exception_contract_mismatch")
-    proc = runtime(folder, "import loader\\n"
+    proc = runtime(folder, "import loader\n"
                    "try: loader.load_config(loader.failing_reader)\n"
                    "except OSError: print('PROPAGATED')\n"
                    "else: print('SWALLOWED')")
