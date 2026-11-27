@@ -28,6 +28,11 @@ from .qualification_reconciliation_store import (
     QualificationReconciliationStore,
     QualificationReconciliationStoreError,
 )
+from .cross_layer_snapshot_provenance import (
+    CrossLayerSnapshotProvenanceError,
+    verify_cross_layer_snapshot_provenance,
+    verify_cross_layer_snapshot_provenance_envelope,
+)
 
 
 SCHEMA = "ae32c/orchestrated-persisted-obligation-composition/v1"
@@ -48,7 +53,7 @@ def _digest(value: Any) -> str:
     return hashlib.sha256(_canonical(value)).hexdigest()
 
 
-def verify_persisted_cross_layer_obligation_composition(
+def _run_persisted_cross_layer_obligation_composition(
     execution_reconciliation_id: str,
     qualification_record_id: str,
     *,
@@ -71,7 +76,8 @@ def verify_persisted_cross_layer_obligation_composition(
     current_qualification: Mapping[str, Any],
     current_observation_bundle: Mapping[str, Any],
     defeaters: tuple[Mapping[str, Any], ...] = (),
-) -> dict[str, Any]:
+    _include_context: bool = False,
+) -> dict[str, Any] | tuple[dict[str, Any], dict[str, Any]]:
     """Verify persisted execution and qualification records, then compose them.
 
     The execution verifier receives its original source/dossier context. The
@@ -246,7 +252,17 @@ def verify_persisted_cross_layer_obligation_composition(
             "downstream_authorization": "NOT_EVALUATED",
         },
     }
-    return {**payload, "orchestration_sha256": _digest(payload)}
+    result = {**payload, "orchestration_sha256": _digest(payload)}
+    if _include_context:
+        return result, {
+            "source_manifest": source_manifest,
+            "execution_reconciliation": execution_reconciliation,
+            "qualification_reconciliation": qualification_reconciliation,
+            "qualification": current_qualification,
+            "observation_bundle": current_observation_bundle,
+            "repository_root": repository_root,
+        }
+    return result
 
 
 def verify_orchestrated_obligation_composition(
@@ -290,5 +306,230 @@ def verify_orchestrated_obligation_composition(
         "orchestration_envelope_integrity": True,
         "composition_content_integrity": True,
         "semantic_replay_performed": False,
+        "downstream_authorization": "NOT_EVALUATED",
+    }
+
+
+
+def verify_persisted_cross_layer_obligation_composition(
+    execution_reconciliation_id: str,
+    qualification_record_id: str,
+    *,
+    execution_reconciliation_store: ExecutionObligationReconciliationStore,
+    dossier_id: str,
+    claim: Any,
+    plan: Any,
+    coverage_manifest: Any,
+    source_manifest: Mapping[str, Any],
+    inventory: Mapping[str, Any],
+    execution_report: Mapping[str, Any],
+    repository_root: str | Path,
+    assurance_store: Any,
+    epistemic_store: Any,
+    dossier_store: Any,
+    qualification_reconciliation_store: QualificationReconciliationStore,
+    qualification_check_store: Any,
+    consumer_id: str,
+    operation: str,
+    current_qualification: Mapping[str, Any],
+    current_observation_bundle: Mapping[str, Any],
+    defeaters: tuple[Mapping[str, Any], ...] = (),
+) -> dict[str, Any]:
+    """Run the original M7.5.24 v1 operation and return its unchanged result."""
+    return _run_persisted_cross_layer_obligation_composition(
+        execution_reconciliation_id,
+        qualification_record_id,
+        execution_reconciliation_store=execution_reconciliation_store,
+        dossier_id=dossier_id,
+        claim=claim,
+        plan=plan,
+        coverage_manifest=coverage_manifest,
+        source_manifest=source_manifest,
+        inventory=inventory,
+        execution_report=execution_report,
+        repository_root=repository_root,
+        assurance_store=assurance_store,
+        epistemic_store=epistemic_store,
+        dossier_store=dossier_store,
+        qualification_reconciliation_store=qualification_reconciliation_store,
+        qualification_check_store=qualification_check_store,
+        consumer_id=consumer_id,
+        operation=operation,
+        current_qualification=current_qualification,
+        current_observation_bundle=current_observation_bundle,
+        defeaters=defeaters,
+    )
+
+
+PACKAGE_SCHEMA = "ae32c/cross-layer-obligation-package/v1"
+
+
+class CrossLayerObligationPackageError(RuntimeError):
+    """A strict source-state-replayed cross-layer package could not be built or verified."""
+
+
+def verify_persisted_cross_layer_obligation_package(
+    execution_reconciliation_id: str,
+    qualification_record_id: str,
+    *,
+    execution_reconciliation_store: ExecutionObligationReconciliationStore,
+    dossier_id: str,
+    claim: Any,
+    plan: Any,
+    coverage_manifest: Any,
+    source_manifest: Mapping[str, Any],
+    inventory: Mapping[str, Any],
+    execution_report: Mapping[str, Any],
+    repository_root: str | Path,
+    assurance_store: Any,
+    epistemic_store: Any,
+    dossier_store: Any,
+    qualification_reconciliation_store: QualificationReconciliationStore,
+    qualification_check_store: Any,
+    consumer_id: str,
+    operation: str,
+    current_qualification: Mapping[str, Any],
+    current_observation_bundle: Mapping[str, Any],
+    defeaters: tuple[Mapping[str, Any], ...] = (),
+) -> dict[str, Any]:
+    """Build a strict package using the exact single-pass M7.5.24 operation context."""
+    if not isinstance(source_manifest, Mapping):
+        raise CrossLayerObligationPackageError("source_manifest_must_be_a_mapping")
+    source = source_manifest.get("source")
+    expected_revision = source.get("commit_oid") if isinstance(source, Mapping) else None
+    if not isinstance(expected_revision, str) or not expected_revision.strip():
+        raise CrossLayerObligationPackageError("verified_manifest_commit_oid_required")
+
+    orchestration, context = _run_persisted_cross_layer_obligation_composition(
+        execution_reconciliation_id,
+        qualification_record_id,
+        execution_reconciliation_store=execution_reconciliation_store,
+        dossier_id=dossier_id,
+        claim=claim,
+        plan=plan,
+        coverage_manifest=coverage_manifest,
+        source_manifest=source_manifest,
+        inventory=inventory,
+        execution_report=execution_report,
+        repository_root=repository_root,
+        assurance_store=assurance_store,
+        epistemic_store=epistemic_store,
+        dossier_store=dossier_store,
+        qualification_reconciliation_store=qualification_reconciliation_store,
+        qualification_check_store=qualification_check_store,
+        consumer_id=consumer_id,
+        operation=operation,
+        current_qualification=current_qualification,
+        current_observation_bundle=current_observation_bundle,
+        defeaters=defeaters,
+        _include_context=True,
+    )
+    try:
+        provenance = verify_cross_layer_snapshot_provenance(
+            context["source_manifest"],
+            context["execution_reconciliation"],
+            context["qualification_reconciliation"],
+            context["qualification"],
+            context["observation_bundle"],
+            orchestration,
+            repository_root=context["repository_root"],
+            expected_source_revision=expected_revision,
+        )
+    except (CrossLayerSnapshotProvenanceError, OSError, ValueError, TypeError) as exc:
+        raise CrossLayerObligationPackageError(
+            "strict_source_state_replay_or_binding_failed:" + type(exc).__name__
+        ) from exc
+
+    if provenance.get("snapshot_identity_assurance") != "SOURCE_STATE_REPLAY_VERIFIED":
+        raise CrossLayerObligationPackageError("source_state_replay_not_verified")
+    if provenance.get("source_state_verification", {}).get("status") != "SOURCE_STATE_REPLAY_VERIFIED":
+        raise CrossLayerObligationPackageError("source_state_replay_status_invalid")
+    qualification_state = orchestration["composition"]["qualification_currentness"]["state"]
+    if provenance.get("qualification_currentness") != qualification_state:
+        raise CrossLayerObligationPackageError("qualification_currentness_binding_mismatch")
+
+    package_payload = {
+        "schema": PACKAGE_SCHEMA,
+        "orchestration": orchestration,
+        "provenance": provenance,
+        "atomic_cross_store_snapshot": False,
+        "trust_anchor": "NONE",
+        "authority": {
+            "evidence_accepted": False,
+            "proposition_truth_established": False,
+            "graph_completeness_established": False,
+            "assurance_success_established": False,
+            "audit_decision_authority": False,
+            "allow_deny_authority": False,
+            "release_approval": False,
+            "production_approval": False,
+            "downstream_authorization": "NOT_EVALUATED",
+        },
+    }
+    return {**package_payload, "package_sha256": _digest(package_payload)}
+
+
+def verify_cross_layer_obligation_package_envelope(
+    package: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Verify package and inner seals only; this does not replay Git or persisted stores."""
+    if not isinstance(package, Mapping):
+        raise TypeError("cross_layer_obligation_package_must_be_a_mapping")
+    submitted = dict(package)
+    package_id = submitted.get("package_sha256")
+    payload = {key: value for key, value in submitted.items() if key != "package_sha256"}
+    if (
+        submitted.get("schema") != PACKAGE_SCHEMA
+        or not isinstance(package_id, str)
+        or package_id != _digest(payload)
+    ):
+        raise CrossLayerObligationPackageError("package_digest_mismatch")
+
+    orchestration = submitted.get("orchestration")
+    provenance = submitted.get("provenance")
+    if not isinstance(orchestration, Mapping) or not isinstance(provenance, Mapping):
+        raise CrossLayerObligationPackageError("package_inner_envelopes_missing")
+    try:
+        orchestration_check = verify_orchestrated_obligation_composition(orchestration)
+        provenance_check = verify_cross_layer_snapshot_provenance_envelope(provenance)
+    except (ObligationCompositionOrchestrationError, CrossLayerSnapshotProvenanceError) as exc:
+        raise CrossLayerObligationPackageError("package_inner_seal_invalid:" + str(exc)) from exc
+
+    if provenance.get("snapshot_identity_assurance") != "SOURCE_STATE_REPLAY_VERIFIED":
+        raise CrossLayerObligationPackageError("package_source_state_replay_not_verified")
+    if provenance.get("source_state_verification", {}).get("status") != "SOURCE_STATE_REPLAY_VERIFIED":
+        raise CrossLayerObligationPackageError("package_source_state_status_invalid")
+    if provenance.get("orchestration_sha256") != orchestration.get("orchestration_sha256"):
+        raise CrossLayerObligationPackageError("package_orchestration_binding_mismatch")
+    composition = orchestration.get("composition")
+    currentness = composition.get("qualification_currentness") if isinstance(composition, Mapping) else None
+    if not isinstance(currentness, Mapping) or provenance.get("qualification_currentness") != currentness.get("state"):
+        raise CrossLayerObligationPackageError("package_qualification_currentness_mismatch")
+    if submitted.get("atomic_cross_store_snapshot") is not False:
+        raise CrossLayerObligationPackageError("package_atomicity_claim_invalid")
+    if submitted.get("trust_anchor") != "NONE":
+        raise CrossLayerObligationPackageError("package_trust_anchor_claim_invalid")
+    authority = submitted.get("authority")
+    expected_authority = {
+        "evidence_accepted": False,
+        "proposition_truth_established": False,
+        "graph_completeness_established": False,
+        "assurance_success_established": False,
+        "audit_decision_authority": False,
+        "allow_deny_authority": False,
+        "release_approval": False,
+        "production_approval": False,
+        "downstream_authorization": "NOT_EVALUATED",
+    }
+    if authority != expected_authority:
+        raise CrossLayerObligationPackageError("package_authority_claim_invalid")
+    return {
+        "package_sha256": package_id,
+        "orchestration_sha256": orchestration_check["orchestration_sha256"],
+        "cross_layer_snapshot_identity_sha256": provenance_check["cross_layer_snapshot_identity_sha256"],
+        "package_content_integrity": True,
+        "source_state_replay_performed_by_this_check": False,
+        "qualification_currentness": provenance["qualification_currentness"],
+        "atomic_cross_store_snapshot": False,
         "downstream_authorization": "NOT_EVALUATED",
     }
