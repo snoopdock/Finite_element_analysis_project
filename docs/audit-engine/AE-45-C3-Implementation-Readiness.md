@@ -242,3 +242,34 @@ The workflow dependency installation was corrected to include pinned `pytest==8.
 - The fake-provider lifecycle step passed, as did the C3 execution-contract and retained-snapshot executor steps and all downstream deterministic workflow checks.
 
 This establishes that the new investigator lifecycle tests execute and pass in CI. It does not yet establish end-to-end success of `C3ExecutionSession.run()`; that wrapper-level integration test remains the next step. No live provider call was made.
+
+
+## 11. C3 session run-wrapper guards — implementation candidate (2026-11-28)
+
+### 11.1 Added coverage
+
+Extended `tests/semantic_audit/test_ae32d_c3_executor.py` with direct tests of `C3ExecutionSession.run()`. These tests inject a fake investigator and a fresh fake provider profile to isolate the session wrapper's own control flow. They assert that the wrapper:
+
+- checks the source revision before and after the investigator run;
+- invokes the investigator exactly once with the contract-bound problem statement;
+- rejects a report if any of source revision, source-manifest digest, or graph fingerprint differs from the authorized contract;
+- rejects a report whose snapshot status is not `verified`;
+- rejects a changed source revision before investigation and after investigation;
+- closes retained evidence tools and the temporary directory through explicit session cleanup.
+
+The underlying investigator's real run loop, evidence dispatch, report construction, and snapshot re-verification remain covered separately by Section 10's deterministic fake-provider tests. Taken together, these tests cover the investigator lifecycle and the C3 session wrapper's post-run acceptance checks, but they are not yet one single test that composes the actual C1/C2 graph reconstruction, session preparation, and investigator run in one invocation.
+
+### 11.2 CI correction and validation
+
+The first wrapper-test run, [46067504243](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46067504243), failed because the test class referenced `C3ExecutionSession` without importing it. No production code failed. The missing test import was added.
+
+The corrected workflow run succeeded:
+
+- Workflow run: [46067621348](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46067621348)
+- Job: `verify-candidate` ([140736268226](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46067621348/job/140736268226))
+- Validated commit: `74337257978234bd9e75cff89d1ea03f3dac3e9e`
+- Final conclusion: `success`
+- All 40 successful job steps completed; no failed steps.
+- C3 execution-contract tests, retained-snapshot executor tests, fake-provider investigator lifecycle tests, and C3 run-wrapper tests all passed.
+
+No live provider call was made. This is still deterministic integration-boundary verification, not an official C3 trial or A/B/C benchmark result.
