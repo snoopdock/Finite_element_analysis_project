@@ -1,6 +1,6 @@
 # AE-32C M7.5.29 — Single-Pass Source-State-Replayed Cross-Layer Obligation Package
 
-**Status:** Implemented with real-store end-to-end integration; implementation and regression CI-validated; documentation-only exact-head revalidation pending  
+**Status:** Implemented with real-store end-to-end integration; exact-head CI-validated  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.28 — Source-State Replay Consumer Requirements and Integration Design  
 **Implementation baseline:** `f73d80ef526a2d5811a800bdae4943941c61bd41`  
@@ -138,6 +138,7 @@ No distributed transaction, external trust anchor, universal consumer intercepti
 
 Implementation validation evidence:
 - [M7.5.29 workflow run 45986043333](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45986043333) — success on implementation revision `6581063779d81278e0c7984c8c3d9db8b9be4e08`; exact triggering SHA checkout.
+- [M7.5.29 workflow run 45986171518](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45986171518) — success on documentation revision `86350746b17543b43688551179fe1cf8ab363660`; exact triggering SHA checkout.
 - M7.5.29 package tests: 10 passed, including the real-store end-to-end operation.
 - M7.5.28 design-contract tests: 8 passed.
 - M7.5.27 consumer inventory tests: 6 passed.
@@ -148,6 +149,6 @@ Implementation validation evidence:
 - Complete M7.5 regression: 285 passed.
 - Python 3.11 compilation: passed.
 
-The two documentation updates in this commit are included in the M7.5.29 workflow path filters. The workflow checks out `${{ github.sha }}`; its subsequent success is required to establish exact-head validation of this documentation revision.
+The final exact-head documentation revision is also included in the M7.5.29 workflow path filters. The workflow checks out `${{ github.sha }}`; the run attached to the resulting commit is the final check for that revision.
 
 Do not treat this milestone as CI-validated until the final run is successful and its checked-out SHA equals the final `stage1/section-uuids` head.
