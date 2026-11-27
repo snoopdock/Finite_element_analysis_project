@@ -329,19 +329,19 @@
               "const": true
             },
             "required_context_target": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": "string",
+              "minLength": 1
             },
             "required_context_paths": {
               "type": "array",
               "items": {
                 "type": "string"
-              }
+              },
+              "minItems": 1,
+              "maxItems": 12
             },
             "prefetch_required_context_trace": {
-              "type": "boolean"
+              "const": true
             }
           }
         },
