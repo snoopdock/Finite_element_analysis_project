@@ -30,6 +30,8 @@ def check_case_gate(case,entry,manifest_status,rubric,pilot):
   if manifest_status!="frozen" or rubric.get("status")!="frozen" or pilot.get("status")!="frozen":errors.append("primary_scoring_requires_frozen_records")
  if mv is not None:
   if mv.get("primary_benchmark_eligible") is not False:errors.append("machine_verification_cannot_grant_primary_eligibility")
+  if eligible and (gt.get("label")=="pending_adjudication" or rv.get("status")!="adjudicated"):
+   errors.append("machine_verification_not_substitute_for_gold_adjudication")
   if mv.get("candidate_source_commit")!=case.get("source",{}).get("source_commit_sha"):errors.append("machine_source_commit_mismatch")
   if mv.get("human_independent_adjudication")!="not_performed":errors.append("machine_record_must_not_claim_human_adjudication")
   if case.get("case_status")=="machine_verified_regression" and mv.get("machine_adjudication")!="confirmed_fixture_runtime_defect":errors.append("machine_regression_requires_confirmed_machine_result")

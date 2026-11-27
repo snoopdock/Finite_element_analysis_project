@@ -11,9 +11,10 @@ class BenchmarkGateTests(unittest.TestCase):
  def test_pending_ground_truth_cannot_be_primary_eligible(self):
   c,e,r,p=self.base();c["evaluation"]["primary_benchmark_eligible"]=True;e["primary_benchmark_eligible"]=True
   errors=check_case_gate(c,e,"design_only",r,p);self.assertIn("pending_ground_truth_cannot_be_primary_eligible",errors);self.assertIn("unadjudicated_case_cannot_be_primary_eligible",errors)
- def test_machine_verification_cannot_grant_primary_eligibility(self):
-  c,e,r,p=self.base();c["evaluation"]["primary_benchmark_eligible"]=True;e["primary_benchmark_eligible"]=True;c["ground_truth"]["label"]="confirmed_defect";c["review"]["status"]="adjudicated";c["case_status"]="adjudicated";e["status"]="adjudicated"
-  errors=check_case_gate(c,e,"frozen",{"status":"frozen"},{"status":"frozen"});self.assertIn("machine_verification_cannot_grant_primary_eligibility",errors)
+ def test_machine_verification_is_not_a_gold_adjudication_substitute(self):
+  c,e,r,p=self.base();c["evaluation"]["primary_benchmark_eligible"]=True;e["primary_benchmark_eligible"]=True
+  errors=check_case_gate(c,e,"design_only",r,p)
+  self.assertIn("machine_verification_not_substitute_for_gold_adjudication",errors)
  def test_manifest_status_mismatch_is_rejected(self):
   c,e,r,p=self.base();e["status"]="candidate_not_adjudicated";self.assertIn("manifest_case_status_mismatch",check_case_gate(c,e,"design_only",r,p))
 if __name__=="__main__":unittest.main()
