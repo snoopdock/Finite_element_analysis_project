@@ -164,7 +164,7 @@ The executor exposes `prepare_c3_execution(...)`, which:
 7. Maps the seven authorization-controlled limits into an explicit `InvestigationLimits` instance, applies fixed operational bounds, and reasserts the authorized values after construction.
 8. Returns a context-managed `C3ExecutionSession` that retains the graph until explicitly closed.
 
-The session's `build_investigator(provider)` and `run(provider)` methods require the caller to supply an already-created provider object. This module does not call `providers.factory.build_provider`, construct a provider, read credentials, or perform network I/O. The cost estimator is imported lazily after validation; its current `live_evaluation` module imports provider-factory definitions but does not invoke them. Provider creation remains an external operation and must not be performed until the separate live-dispatch authorization is granted. Before the investigator is constructed, the supplied object is checked for the exact Cloudflare provider identity, the single authorized Qwen model, a logical-call ceiling no greater than the authorized model-round ceiling, a normal per-call token ceiling no greater than 2,048, and a `get_stats` interface. This prevents a caller from passing a different adapter or a looser local provider budget while labelling it as the authorized profile.
+The session's `build_investigator(provider)` and `run(provider)` methods require the caller to supply an already-created provider object. This module does not call `providers.factory.build_provider`, construct a provider, read credentials, or perform network I/O. The cost estimator is imported lazily after validation; its current `live_evaluation` module imports provider-factory definitions but does not invoke them. Provider creation remains an external operation and must not be performed until the separate live-dispatch authorization is granted. Before the investigator is constructed, the supplied object is checked for the exact Cloudflare provider identity, the single authorized Qwen model, a logical-call ceiling no greater than the authorized model-round ceiling, a normal per-call token ceiling no greater than 2,048, and a `get_stats` interface reporting zero prior logical calls, HTTP attempts, tokens and cost. This prevents a caller from passing a different adapter, a reused provider instance, or a looser local provider budget while labelling it as the authorized profile.
 
 ### 9.2 Budget mapping and enforcement
 
@@ -188,7 +188,7 @@ The new tests cover:
 - rejection of unconfirmed contracts before graph construction;
 - rejection of a mismatched source checkout before graph construction;
 - retained graph lifetime, required-path binding, investigator constructor arguments and cleanup;
-- rejection of a mismatched provider, model, logical-call ceiling or normal token ceiling;
+- rejection of a mismatched provider, model, logical-call ceiling or normal token ceiling, and rejection of a provider with prior usage;
 - cleanup and failure on declared-scope manifest mismatch;
 - absence of eager provider-factory and credential imports in the executor module.
 
