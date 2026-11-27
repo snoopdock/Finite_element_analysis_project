@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Machine-check the AE-32D provider-interface candidate without human-review claims."""
+"""Machine-check the fixed AE-32D provider-interface candidate without human-review claims."""
 from __future__ import annotations
 
 import argparse
 import ast
-import hashlib
 import json
 import os
+import stat
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -14,86 +14,219 @@ from pathlib import Path
 from typing import Any
 
 
-REQUIRED = [
+FIXTURE_RELATIVE_PATH = Path(
+    "tests/semantic_audit/fixtures/ae32c_provider_interface_incident"
+)
+REQUIRED = (
     "main.py",
     "pipeline/extractor.py",
     "providers/adapter.py",
     "providers/factory.py",
     "tests/checks.py",
-]
+)
 
 
-def sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()
+def resolve_fixture(repository_root: Path | str) -> Path:
+    """Resolve only the one declared fixture; reject symlinked path components."""
+    supplied_root = Path(repository_root).expanduser()
+    if supplied_root.is_symlink():
+        raise ValueError("repository_root_symlink_rejected")
+    try:
+        root = supplied_root.resolve(strict=True)
+    except OSError as exc:
+        raise ValueError("repository_root_missing_or_invalid") from exc
+    if not root.is_dir():
+        raise ValueError("repository_root_missing_or_invalid")
+
+    current = root
+    parts = FIXTURE_RELATIVE_PATH.parts
+    for index, part in enumerate(parts):
+        current = current / part
+        try:
+            info = current.lstat()
+        except OSError as exc:
+            raise ValueError("fixture_component_missing") from exc
+        if stat.S_ISLNK(info.st_mode):
+            raise ValueError("fixture_component_symlink_rejected")
+        if index < len(parts) - 1 and not stat.S_ISDIR(info.st_mode):
+            raise ValueError("fixture_component_not_directory")
+        if index == len(parts) - 1 and not stat.S_ISDIR(info.st_mode):
+            raise ValueError("fixture_not_directory")
+
+    resolved = current.resolve(strict=True)
+    try:
+        resolved.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("fixture_path_escape") from exc
+    if resolved != current:
+        raise ValueError("fixture_path_resolution_changed")
+    return resolved
 
 
-def line_of(node: ast.AST) -> int | None:
-    return getattr(node, "lineno", None)
+def _read_required_files(fixture: Path) -> tuple[dict[str, bytes], list[str]]:
+    raw: dict[str, bytes] = {}
+    errors: list[str] = []
+    for relative in REQUIRED:
+        current = fixture
+        components = Path(relative).parts
+        invalid = False
+        for index, component in enumerate(components):
+            current = current / component
+            try:
+                info = current.lstat()
+            except OSError:
+                errors.append(f"required_file_missing:{relative}")
+                invalid = True
+                break
+            if stat.S_ISLNK(info.st_mode):
+                errors.append(f"required_file_symlink_rejected:{relative}")
+                invalid = True
+                break
+            if index < len(components) - 1 and not stat.S_ISDIR(info.st_mode):
+                errors.append(f"required_parent_not_directory:{relative}")
+                invalid = True
+                break
+            if index == len(components) - 1 and not stat.S_ISREG(info.st_mode):
+                errors.append(f"required_file_not_regular:{relative}")
+                invalid = True
+                break
+        if not invalid:
+            try:
+                raw[relative] = current.read_bytes()
+            except OSError:
+                errors.append(f"required_file_read_failed:{relative}")
+    return raw, errors
 
 
 def attr_accesses(tree: ast.AST, attr: str) -> list[int]:
     return [
-        n.lineno for n in ast.walk(tree)
-        if isinstance(n, ast.Attribute) and n.attr == attr and isinstance(n.ctx, ast.Load)
+        node.lineno for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute)
+        and node.attr == attr
+        and isinstance(node.ctx, ast.Load)
     ]
 
 
 def self_assignments(tree: ast.AST, attr: str) -> list[int]:
     lines: list[int] = []
-    for n in ast.walk(tree):
-        if isinstance(n, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
-            targets = n.targets if isinstance(n, ast.Assign) else [n.target]
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
             for target in targets:
-                for sub in ast.walk(target):
+                for subnode in ast.walk(target):
                     if (
-                        isinstance(sub, ast.Attribute)
-                        and sub.attr == attr
-                        and isinstance(sub.value, ast.Name)
-                        and sub.value.id == "self"
+                        isinstance(subnode, ast.Attribute)
+                        and subnode.attr == attr
+                        and isinstance(subnode.value, ast.Name)
+                        and subnode.value.id == "self"
                     ):
-                        lines.append(sub.lineno)
+                        lines.append(subnode.lineno)
     return sorted(set(lines))
 
 
-def function_nodes(tree: ast.AST, name: str) -> list[ast.AST]:
-    return [
-        n for n in ast.walk(tree)
-        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == name
+def _runtime_environment() -> dict[str, str]:
+    """Pass only basic process-launch variables, never Actions tokens or secrets."""
+    allowed = ("PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP")
+    env = {key: os.environ[key] for key in allowed if key in os.environ}
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    return env
+
+
+def _run_fixture(fixture: Path) -> tuple[bool, dict[str, Any], str | None]:
+    command = [
+        sys.executable,
+        "-I",
+        "-B",
+        "-c",
+        "import runpy, sys; sys.path.insert(0, '.'); runpy.run_path('main.py', run_name='__main__')",
     ]
+    try:
+        proc = subprocess.run(
+            command,
+            cwd=fixture,
+            text=True,
+            capture_output=True,
+            stdin=subprocess.DEVNULL,
+            timeout=15,
+            check=False,
+            close_fds=True,
+            env=_runtime_environment(),
+        )
+    except subprocess.TimeoutExpired:
+        return False, {
+            "status": "TIMED_OUT",
+            "exit_code": None,
+            "expected_attribute_error_observed": False,
+            "stdout_tail": "",
+            "stderr_tail": "",
+        }, "runtime_reproduction_timed_out"
+    except OSError as exc:
+        return False, {
+            "status": "LAUNCH_FAILED",
+            "exit_code": None,
+            "expected_attribute_error_observed": False,
+            "stdout_tail": "",
+            "stderr_tail": type(exc).__name__,
+        }, "runtime_reproduction_launch_failed"
+
+    runtime_text = (proc.stdout or "") + "\n" + (proc.stderr or "")
+    matched = (
+        proc.returncode != 0
+        and "AttributeError" in runtime_text
+        and "total_calls" in runtime_text
+        and "ProviderAdapter" in runtime_text
+    )
+    return matched, {
+        "status": "EXPECTED_FAILURE_REPRODUCED" if matched else "UNEXPECTED_RUNTIME_RESULT",
+        "exit_code": proc.returncode,
+        "expected_attribute_error_observed": matched,
+        "stdout_tail": (proc.stdout or "")[-1000:],
+        "stderr_tail": (proc.stderr or "")[-2000:],
+    }, None if matched else "expected_runtime_attribute_error_not_reproduced"
 
 
-def run_check(fixture: Path) -> dict[str, Any]:
+def run_check(repository_root: Path | str) -> dict[str, Any]:
+    """Verify the fixed fixture under a repository root; callers cannot select a path."""
     findings: list[dict[str, Any]] = []
     errors: list[str] = []
-    paths = {rel: fixture / rel for rel in REQUIRED}
+    try:
+        fixture = resolve_fixture(repository_root)
+    except ValueError as exc:
+        return {
+            "passed": False,
+            "errors": [str(exc)],
+            "findings": findings,
+            "fixture_path": FIXTURE_RELATIVE_PATH.as_posix(),
+        }
 
-    for rel, path in paths.items():
-        if not path.is_file():
-            errors.append(f"required_file_missing:{rel}")
+    raw, file_errors = _read_required_files(fixture)
+    if file_errors:
+        return {
+            "passed": False,
+            "errors": file_errors,
+            "findings": findings,
+            "fixture_path": FIXTURE_RELATIVE_PATH.as_posix(),
+        }
 
-    if errors:
-        return {"passed": False, "errors": errors, "findings": findings}
-
-    raw = {rel: p.read_bytes() for rel, p in paths.items()}
     trees: dict[str, ast.AST] = {}
-    for rel, p in paths.items():
+    for relative in REQUIRED:
         try:
-            trees[rel] = ast.parse(raw[rel].decode("utf-8"), filename=rel)
+            trees[relative] = ast.parse(
+                raw[relative].decode("utf-8"), filename=relative
+            )
         except (UnicodeDecodeError, SyntaxError) as exc:
-            errors.append(f"source_parse_failed:{rel}:{type(exc).__name__}")
+            errors.append(f"source_parse_failed:{relative}:{type(exc).__name__}")
 
     if errors:
-        return {"passed": False, "errors": errors, "findings": findings}
+        return {
+            "passed": False,
+            "errors": errors,
+            "findings": findings,
+            "fixture_path": FIXTURE_RELATIVE_PATH.as_posix(),
+        }
 
     extractor = trees["pipeline/extractor.py"]
     adapter = trees["providers/adapter.py"]
-    main_tree = trees["main.py"]
-    factory = trees["providers/factory.py"]
-
     consumer_lines = attr_accesses(extractor, "total_calls")
     adapter_total_calls_writes = self_assignments(adapter, "total_calls")
     adapter_calls_writes = self_assignments(adapter, "calls")
@@ -141,8 +274,12 @@ def run_check(fixture: Path) -> dict[str, Any]:
             "check": "main_calls_extractor_with_factory_provider",
             "status": "pass",
             "file": "main.py",
-            "lines": [next(i for i, line in enumerate(main_text.splitlines(), 1)
-                           if "return extract(build_provider())" in line)],
+            "lines": [
+                next(
+                    index for index, line in enumerate(main_text.splitlines(), 1)
+                    if "return extract(build_provider())" in line
+                )
+            ],
             "evidence": "Main entry point passes the factory-built provider to extract().",
         })
 
@@ -153,75 +290,61 @@ def run_check(fixture: Path) -> dict[str, Any]:
             "check": "factory_constructs_provider_adapter",
             "status": "pass",
             "file": "providers/factory.py",
-            "lines": [next(i for i, line in enumerate(factory_text.splitlines(), 1)
-                           if "return ProviderAdapter()" in line)],
+            "lines": [
+                next(
+                    index for index, line in enumerate(factory_text.splitlines(), 1)
+                    if "return ProviderAdapter()" in line
+                )
+            ],
             "evidence": "Factory returns a ProviderAdapter instance.",
         })
 
-    # Dynamic reproduction is intentionally restricted to this known, small fixture entry point.
-    proc = subprocess.run(
-        [sys.executable, "main.py"],
-        cwd=fixture,
-        text=True,
-        capture_output=True,
-        timeout=15,
-        check=False,
-        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
-    )
-    runtime_text = (proc.stdout or "") + "\n" + (proc.stderr or "")
-    runtime_match = (
-        proc.returncode != 0
-        and "AttributeError" in runtime_text
-        and "total_calls" in runtime_text
-        and "ProviderAdapter" in runtime_text
-    )
+    runtime_match, runtime, runtime_error = _run_fixture(fixture)
     if runtime_match:
         findings.append({
             "check": "runtime_reproduces_expected_attribute_error",
             "status": "pass",
             "file": "main.py",
             "lines": [],
-            "evidence": "Executing the controlled fixture exits nonzero with AttributeError referencing ProviderAdapter.total_calls.",
-            "exit_code": proc.returncode,
+            "evidence": "The fixed fixture exits nonzero with AttributeError referencing ProviderAdapter.total_calls.",
+            "exit_code": runtime["exit_code"],
         })
     else:
-        errors.append("expected_runtime_attribute_error_not_reproduced")
+        errors.append(runtime_error or "runtime_reproduction_failed")
         findings.append({
             "check": "runtime_reproduces_expected_attribute_error",
             "status": "fail",
             "file": "main.py",
             "lines": [],
             "evidence": "Expected ProviderAdapter.total_calls AttributeError was not observed.",
-            "exit_code": proc.returncode,
-            "stderr_tail": (proc.stderr or "")[-2000:],
+            "exit_code": runtime["exit_code"],
+            "stderr_tail": runtime["stderr_tail"],
         })
 
     manifest = [
-        {"path": rel, "sha256": hashlib.sha256(raw[rel]).hexdigest()}
-        for rel in REQUIRED
+        {
+            "path": relative,
+            "sha256": __import__("hashlib").sha256(raw[relative]).hexdigest(),
+        }
+        for relative in REQUIRED
     ]
     return {
         "passed": not errors,
         "errors": errors,
         "findings": findings,
+        "fixture_path": FIXTURE_RELATIVE_PATH.as_posix(),
         "fixture_manifest": manifest,
-        "runtime": {
-            "exit_code": proc.returncode,
-            "expected_attribute_error_observed": runtime_match,
-            "stdout": (proc.stdout or "")[-1000:],
-            "stderr_tail": (proc.stderr or "")[-2000:],
-        },
+        "runtime": runtime,
     }
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--fixture", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    fixture = args.fixture.resolve()
-    result = run_check(fixture)
+    repository_root = Path(__file__).resolve().parents[1]
+    result = run_check(repository_root)
     source_revision = os.environ.get("GITHUB_SHA") or os.environ.get("SOURCE_REVISION") or "local-unset"
     workflow_run_id = os.environ.get("GITHUB_RUN_ID") or "local-run"
     workflow_revision = os.environ.get("WORKFLOW_REVISION") or source_revision
@@ -234,7 +357,8 @@ def main() -> int:
         "primary_benchmark_eligible": False,
         "human_independent_adjudication": "not_performed",
         "limitations": [
-            "This action verifies a narrow, deterministic fixture contract; it is not a human independent review.",
+            "The verifier accepts only the fixed repository fixture; no workflow input selects executable source.",
+            "The fixture process runs with Python isolated mode and a minimal environment, but this is not an operating-system sandbox.",
             "A passing result does not establish general audit-engine accuracy or benchmark eligibility.",
             "Source identity is the checked-out revision recorded below; this action does not silently equate it with the older frozen candidate commit.",
         ],
@@ -249,7 +373,7 @@ def main() -> int:
     print(json.dumps({
         "status": report["status"],
         "source_revision": source_revision,
-        "checks_passed": sum(x.get("status") == "pass" for x in result["findings"]),
+        "checks_passed": sum(item.get("status") == "pass" for item in result["findings"]),
         "errors": result["errors"],
         "report": str(args.output),
     }, indent=2))
