@@ -1,6 +1,6 @@
 # AE-36 — Machine-Verification Evidence Ledger and Benchmark Gate Validation
 
-**Status:** Implemented in source; exact-head Actions validation pending  
+**Status:** Validated; exact-head Actions workflow passed  
 **Branch:** \`stage1/section-uuids\`  
 **Scope:** AE-32D case provenance, machine-verification records, and fail-closed benchmark eligibility
 
@@ -18,6 +18,12 @@ The read-only validator checks schema validity, manifest-to-case identity and st
 
 The validator does not change case labels, score model outputs, or call an LLM.
 
-## 3. Current status
+## 3. Exact-head validation
+
+- AE-32D machine verification and record validation: [run 46005165350](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46005165350), success.
+- AE-32C source/graph regression: [run 46005165371](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46005165371), success.
+- Machine-verification artifact: ID `15201940266`, archive SHA-256 `2521601b3ef4bb479a148c7ae353968885f95167ae52b26a1f2c30968158a539`.
+
+## 4. Current status
 
 Machine-verification evidence is complete for this one fixture. The benchmark remains \`design_only\`; the rubric and pilot plan remain drafts; no primary score is permitted. Next deterministic work is to build negative-control and ambiguous fixtures and validate their declared expected outcomes before adding model comparisons.
