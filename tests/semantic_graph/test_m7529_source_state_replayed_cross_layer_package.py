@@ -217,6 +217,21 @@ class M7529SourceStateReplayedPackageTests(unittest.TestCase):
         checked = verify_cross_layer_obligation_package_envelope(package)
         self.assertEqual(checked["qualification_currentness"], "BLOCKED_INVALIDATED")
 
+    def test_resealed_orchestration_cannot_expand_v1_authority(self):
+        package = self._invoke()
+        changed_orchestration = dict(package["orchestration"])
+        changed_orchestration["authority"] = dict(
+            changed_orchestration["authority"], production_approval=True)
+        changed_orchestration = _seal(
+            changed_orchestration, "orchestration_sha256")
+        changed_package = dict(package, orchestration=changed_orchestration)
+        changed_package = _seal(changed_package, "package_sha256")
+        with self.assertRaisesRegex(
+            CrossLayerObligationPackageError,
+            "package_orchestration_authority_claim_invalid",
+        ):
+            verify_cross_layer_obligation_package_envelope(changed_package)
+
     def test_resealed_provenance_cannot_expand_authority_or_claim_atomicity(self):
         package = self._invoke()
         changed_provenance = dict(package["provenance"])
