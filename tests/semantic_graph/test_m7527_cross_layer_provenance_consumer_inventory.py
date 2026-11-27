@@ -34,7 +34,6 @@ KNOWN_INDEPENDENT_CONSUMERS = (
     "audit_engine/semantic_audit/epistemic/persisted_assurance.py",
     "audit_engine/semantic_audit/epistemic/execution_obligation_reconciliation.py",
     "audit_engine/semantic_audit/epistemic/qualification_reconciliation_consumer.py",
-    "audit_engine/semantic_audit/epistemic/obligation_composition_orchestrator.py",
 )
 
 
@@ -87,12 +86,46 @@ class CrossLayerProvenanceConsumerInventoryTests(unittest.TestCase):
                         node.value in ASSURANCE_TERMS
                         or node.value in API_NAMES
                     )
-            if path != expected_module and (imports_contract or references_contract):
+            if path not in (expected_module, ROOT / ORCHESTRATOR) and (imports_contract or references_contract):
                 violations.append(str(path.relative_to(ROOT)))
         self.assertEqual(
             violations, [],
-            "A production provenance consumer was added without updating the M7.5.27 inventory",
+            "A production provenance consumer was added outside the M7.5.29 authorized package boundary",
         )
+        tree = _parse(ORCHESTRATOR)
+        provenance_imports = [
+            node for node in ast.walk(tree)
+            if isinstance(node, ast.ImportFrom)
+            and node.module == "cross_layer_snapshot_provenance"
+        ]
+        self.assertEqual(
+            {alias.name for node in provenance_imports for alias in node.names},
+            API_NAMES,
+        )
+        for legacy_name in (
+            "verify_persisted_cross_layer_obligation_composition",
+            "_run_persisted_cross_layer_obligation_composition",
+        ):
+            function = next(
+                node for node in tree.body
+                if isinstance(node, ast.FunctionDef) and node.name == legacy_name
+            )
+            names = {node.id for node in ast.walk(function) if isinstance(node, ast.Name)}
+            self.assertTrue(API_NAMES.isdisjoint(names), legacy_name)
+        package_function = next(
+            node for node in tree.body
+            if isinstance(node, ast.FunctionDef)
+            and node.name == "verify_persisted_cross_layer_obligation_package"
+        )
+        package_names = {node.id for node in ast.walk(package_function) if isinstance(node, ast.Name)}
+        self.assertIn("verify_cross_layer_snapshot_provenance", package_names)
+        envelope_function = next(
+            node for node in tree.body
+            if isinstance(node, ast.FunctionDef)
+            and node.name == "verify_cross_layer_obligation_package_envelope"
+        )
+        envelope_names = {node.id for node in ast.walk(envelope_function) if isinstance(node, ast.Name)}
+        self.assertIn("verify_cross_layer_snapshot_provenance_envelope", envelope_names)
 
     def test_known_adjacent_consumers_remain_independent(self):
         for relative_path in KNOWN_INDEPENDENT_CONSUMERS:
@@ -125,7 +158,7 @@ class CrossLayerProvenanceConsumerInventoryTests(unittest.TestCase):
         self.assertNotIn("cross_layer_snapshot_provenance", imported_modules)
         self.assertTrue(API_NAMES.isdisjoint(exported_names))
 
-    def test_orchestrator_does_not_consume_or_promote_the_provenance_envelope(self):
+    def test_legacy_orchestration_api_does_not_consume_or_promote_the_provenance_envelope(self):
         tree = _parse(ORCHESTRATOR)
         function = next(
             node for node in tree.body
