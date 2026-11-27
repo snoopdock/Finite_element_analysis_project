@@ -1,12 +1,12 @@
 # Branch Graphify snapshot
 
 - Branch: `main`
-- Source commit: `b1199ee3bf2f4cbbc5b99f13f43f9230996d10aa`
+- Source commit: `49cc753e37c0bef3d06794bc6a9d0d5cad59e738`
 - Graphify version: `0.9.112`
-- Generated (UTC): 2026-11-26T06:44:42.485121+00:00
-- Nodes: 5964
-- Edges: 10042
-- Graph JSON SHA-256: `eefe018ddc7302399093ee002bf99c64e52e44f9179e32ad8d2df18991de59f1`
+- Generated (UTC): 2026-11-27T08:41:44.645929+00:00
+- Nodes: 5980
+- Edges: 10085
+- Graph JSON SHA-256: `02059b181415078aeb572b04b0d8140aacee6f5977daf985c7f1a35eb55766bd`
 
 ## Artifacts
 
