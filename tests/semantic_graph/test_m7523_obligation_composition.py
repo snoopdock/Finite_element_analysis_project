@@ -192,6 +192,32 @@ class ObligationCompositionTests(unittest.TestCase):
             compose_execution_and_semantic_obligations(
                 changed, self.execution_replay, self.qualification, self.consumer)
 
+    def test_source_layer_authority_expansion_is_rejected_even_with_a_valid_digest(self):
+        changed = dict(self.execution)
+        changed["authority"] = dict(changed["authority"], proposition_truth_established=True)
+        changed = seal({k: v for k, v in changed.items() if k != "reconciliation_sha256"},
+                       "reconciliation_sha256")
+        replay = dict(self.execution_replay,
+                      reconciliation_sha256=changed["reconciliation_sha256"])
+        with self.assertRaisesRegex(ObligationCompositionError,
+                                    "execution_reconciliation_authority_boundary_violation"):
+            compose_execution_and_semantic_obligations(
+                changed, replay, self.qualification, self.consumer)
+
+    def test_qualification_replay_flag_and_authority_boundary_are_required(self):
+        changed = dict(self.qualification)
+        changed["qualification_replay"] = {"semantic_replay": False}
+        changed = seal({k: v for k, v in changed.items() if k != "reconciliation_sha256"},
+                       "reconciliation_sha256")
+        consumer = self.current_consumer()
+        consumer["record_id"] = changed["reconciliation_sha256"]
+        consumer["replay_result"] = dict(consumer["replay_result"],
+                                         record_id=changed["reconciliation_sha256"])
+        with self.assertRaisesRegex(ObligationCompositionError,
+                                    "qualification_reconciliation_replay_not_verified"):
+            compose_execution_and_semantic_obligations(
+                self.execution, self.execution_replay, changed, consumer)
+
     def test_composition_can_be_independently_replayed_and_tampering_detected(self):
         result = compose_execution_and_semantic_obligations(
             self.execution, self.execution_replay, self.qualification, self.consumer)
