@@ -1,0 +1,154 @@
+{
+  "schema_version": "ae32d/deterministic-rule-catalog/v1",
+  "status": "specification_only",
+  "ground_truth_read_allowed": false,
+  "primary_benchmark_promotion_allowed": false,
+  "rules": [
+    {
+      "rule_id": "PY-CFG-UNBOUND-LOCAL-RETURN",
+      "version": "1.0.0",
+      "purpose": "Detect a local variable read at a return sink on a feasible control-flow path where no reaching assignment exists.",
+      "preconditions": [
+        "A Python function is fully available within the pinned declared scope.",
+        "The target name is a function-local variable and the relevant return is syntactically resolved.",
+        "The task contract explicitly defines the behavior for the branch or path under examination."
+      ],
+      "sufficient_evidence": [
+        "A bounded control-flow analysis identifies a feasible path to the return where the target local has no reaching definition.",
+        "The task contract requires a return value on that path, and no parameter, prior assignment, exception binding, or supported closure binding defines the name."
+      ],
+      "counterevidence": [
+        "A reaching assignment exists on every feasible path to the return.",
+        "The name is a parameter, global, nonlocal, closure binding, or valid exception target under supported semantics.",
+        "The path is infeasible under a proven condition."
+      ],
+      "abstain_when": [
+        "Control flow requires unsupported dynamic semantics, eval or exec, reflective mutation, or unresolved imports.",
+        "Path feasibility cannot be established within the declared analysis budget.",
+        "The task contract does not specify the required behavior for the path."
+      ],
+      "decision_authority": "defect_if_all_sufficient_conditions_hold",
+      "exercise_fixtures": [
+        {"source_commit_sha": "dd80be6e7a3e0a912beace92ce0fac446ea6ed61", "path": "tests/semantic_audit/fixtures/ae32d_branch_unbound_incident/branch_logic.py", "exercise": "rule_exercise"},
+        {"source_commit_sha": "dd80be6e7a3e0a912beace92ce0fac446ea6ed61", "path": "tests/semantic_audit/fixtures/ae32d_no_defect_control/control.py", "exercise": "counterexample"}
+      ]
+    },
+    {
+      "rule_id": "PY-EXCEPTION-CONTRACT-SUPPRESSION",
+      "version": "1.0.0",
+      "purpose": "Detect a caught exception that is returned as a fallback when the declared contract requires the exception to propagate.",
+      "preconditions": [
+        "The function and handler are fully available in the pinned declared scope.",
+        "A structured task-visible contract specifies the exception type and required propagation behavior.",
+        "The call that can raise the specified exception is inside the analyzed handler."
+      ],
+      "sufficient_evidence": [
+        "The handler catches the specified exception or a proven superclass.",
+        "The handler returns or otherwise completes normally without re-raising the exception.",
+        "The contract requires propagation to the caller."
+      ],
+      "counterevidence": [
+        "The handler re-raises the caught exception or raises a contractually equivalent exception.",
+        "The contract explicitly permits the fallback behavior.",
+        "The caught exception cannot originate from the contract-relevant operation."
+      ],
+      "abstain_when": [
+        "The exception type relationship cannot be resolved.",
+        "The handler or relevant call is outside the pinned scope.",
+        "The contract does not specify propagation semantics."
+      ],
+      "decision_authority": "defect_if_all_sufficient_conditions_hold",
+      "exercise_fixtures": [
+        {"source_commit_sha": "c0d700c0a2599aabda8957f54e750a812ea2ef5d", "path": "tests/semantic_audit/fixtures/ae32d_exception_swallow_incident/loader.py", "exercise": "rule_exercise"}
+      ]
+    },
+    {
+      "rule_id": "PY-DATAFLOW-STALE-INTERMEDIATE-SINK",
+      "version": "1.0.0",
+      "purpose": "Determine whether a contract-relevant intermediate value reaches the declared output sink or is bypassed by a stale input value.",
+      "preconditions": [
+        "The task-visible contract supplies a structured formula or input and output examples sufficient for bounded checking.",
+        "The relevant function body and output sink are fully available.",
+        "The supported expression subset can be interpreted without executing repository code."
+      ],
+      "sufficient_evidence": [
+        "A definition-to-sink data-flow trace shows the contract-relevant intermediate is not consumed by the output expression.",
+        "A bounded, side-effect-free interpretation of the declared input case yields a value inconsistent with the task-visible expected result.",
+        "The mismatch is attributable to the stale value path, not unsupported coercion or environment behavior."
+      ],
+      "counterevidence": [
+        "The intermediate reaches the output sink through a supported alias or helper.",
+        "The output expression satisfies the declared contract for all enumerated cases.",
+        "A supported conversion or later operation makes the apparent stale value equivalent."
+      ],
+      "abstain_when": [
+        "The contract is only implicit natural language and cannot be normalized unambiguously.",
+        "The expression uses unsupported calls, mutation, descriptors, dynamic dispatch, or external state.",
+        "The enumerated input and output evidence does not isolate the suspected data-flow cause."
+      ],
+      "decision_authority": "defect_if_all_sufficient_conditions_hold",
+      "exercise_fixtures": [
+        {"source_commit_sha": "c0d700c0a2599aabda8957f54e750a812ea2ef5d", "path": "tests/semantic_audit/fixtures/ae32d_dataflow_stale_value_incident/invoice.py", "exercise": "rule_exercise"}
+      ]
+    },
+    {
+      "rule_id": "PY-CFG-COMPLETE-INITIALIZATION-SCOPED",
+      "version": "1.0.0",
+      "purpose": "Establish that a target local is initialized on every supported path to its use and that enumerated task-visible cases satisfy the declared function contract.",
+      "preconditions": [
+        "The complete function body and task-visible input and output examples are available.",
+        "All branches and expressions are within the registered static analysis subset.",
+        "The decision is explicitly scoped to the named property and enumerated contract cases."
+      ],
+      "sufficient_evidence": [
+        "Every feasible path to the target use has a reaching assignment.",
+        "A bounded pure-expression interpreter evaluates every declared input case to its expected result.",
+        "No relevant unsupported path or side effect is omitted."
+      ],
+      "counterevidence": [
+        "Any feasible path reaches the use without assignment.",
+        "Any declared contract case produces a different value or exception behavior.",
+        "A relevant branch or dependency is outside the analyzed scope."
+      ],
+      "abstain_when": [
+        "The function uses unsupported dynamic features or external state.",
+        "The task-visible contract does not enumerate the behavior needed for the scoped decision.",
+        "The declared scope is incomplete."
+      ],
+      "decision_authority": "no_defect_for_scoped_property_only",
+      "exercise_fixtures": [
+        {"source_commit_sha": "dd80be6e7a3e0a912beace92ce0fac446ea6ed61", "path": "tests/semantic_audit/fixtures/ae32d_no_defect_control/control.py", "exercise": "rule_exercise"},
+        {"source_commit_sha": "dd80be6e7a3e0a912beace92ce0fac446ea6ed61", "path": "tests/semantic_audit/fixtures/ae32d_branch_unbound_incident/branch_logic.py", "exercise": "counterexample"}
+      ]
+    },
+    {
+      "rule_id": "PY-DYNAMIC-ATTRIBUTE-CONTRACT-UNRESOLVED",
+      "version": "1.0.0",
+      "purpose": "Preserve a visible attribute mismatch as an observation while abstaining when dynamic provider construction prevents a closed-world contract conclusion.",
+      "preconditions": [
+        "The consumer attribute read and visible provider declarations are available.",
+        "The task-visible evidence explicitly identifies an unresolved dynamic provider, wrapper, inheritance, or factory boundary."
+      ],
+      "sufficient_evidence": [
+        "The requested attribute is not declared in the visible provider class, while a related but differently named attribute is declared.",
+        "The provider construction or import path is unresolved or its implementation is outside the pinned evidence scope.",
+        "No explicit closed-world interface contract proves the attribute is forbidden."
+      ],
+      "counterevidence": [
+        "The provider or a resolved base class declares the requested attribute.",
+        "A verified dynamic wrapper or runtime contract supplies the attribute.",
+        "A complete interface schema explicitly defines the requested attribute."
+      ],
+      "abstain_when": [
+        "The dynamic provider implementation or runtime construction path is absent.",
+        "The evidence cannot distinguish a typo from supported dynamic attribute provision."
+      ],
+      "decision_authority": "observation_only_no_decision",
+      "exercise_fixtures": [
+        {"source_commit_sha": "afcb1cba064de6f3d680f6be3085a365c6687c7b", "path": "tests/semantic_audit/fixtures/ae32c_provider_interface_incident/pipeline/extractor.py", "exercise": "insufficient_context"},
+        {"source_commit_sha": "afcb1cba064de6f3d680f6be3085a365c6687c7b", "path": "tests/semantic_audit/fixtures/ae32c_provider_interface_incident/providers/adapter.py", "exercise": "insufficient_context"},
+        {"source_commit_sha": "dd80be6e7a3e0a912beace92ce0fac446ea6ed61", "path": "tests/semantic_audit/fixtures/ae32d_ambiguous_provider_contract/factory.py", "exercise": "insufficient_context"}
+      ]
+    }
+  ]
+}
