@@ -217,6 +217,32 @@ class M7529SourceStateReplayedPackageTests(unittest.TestCase):
         checked = verify_cross_layer_obligation_package_envelope(package)
         self.assertEqual(checked["qualification_currentness"], "BLOCKED_INVALIDATED")
 
+    def test_resealed_provenance_cannot_expand_authority_or_claim_atomicity(self):
+        package = self._invoke()
+        changed_provenance = dict(package["provenance"])
+        changed_provenance["authority"] = dict(
+            changed_provenance["authority"], production_approval=True)
+        changed_provenance = _seal(
+            changed_provenance, "cross_layer_snapshot_identity_sha256")
+        changed_package = dict(package, provenance=changed_provenance)
+        changed_package = _seal(changed_package, "package_sha256")
+        with self.assertRaisesRegex(
+            CrossLayerObligationPackageError,
+            "package_provenance_authority_claim_invalid",
+        ):
+            verify_cross_layer_obligation_package_envelope(changed_package)
+
+        changed_provenance = dict(package["provenance"], atomic_cross_store_snapshot=True)
+        changed_provenance = _seal(
+            changed_provenance, "cross_layer_snapshot_identity_sha256")
+        changed_package = dict(package, provenance=changed_provenance)
+        changed_package = _seal(changed_package, "package_sha256")
+        with self.assertRaisesRegex(
+            CrossLayerObligationPackageError,
+            "package_provenance_atomicity_claim_invalid",
+        ):
+            verify_cross_layer_obligation_package_envelope(changed_package)
+
     def test_package_and_each_inner_seal_detect_tampering(self):
         package = self._invoke()
         changed_outer = dict(package, trust_anchor="EXTERNAL")
