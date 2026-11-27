@@ -83,6 +83,14 @@ def _b_snapshot_issues(report: dict[str, Any]) -> list[str]:
         issues.append("graph_retrieval_error")
     if any(item.get("truncated") is True or item.get("coverage_status") == "partial" for item in retrieval):
         issues.append("graph_retrieval_incomplete")
+    for item in retrieval:
+        provenance = item.get("provenance", {})
+        if provenance.get("graph_fingerprint") != graph.get("graph_fingerprint"):
+            issues.append("graph_query_fingerprint_mismatch")
+        if provenance.get("source_manifest_sha256") != graph.get("source_manifest_sha256"):
+            issues.append("graph_query_manifest_mismatch")
+        if provenance.get("source_revision") != report.get("source_commit_sha"):
+            issues.append("graph_query_source_revision_mismatch")
     if not any(
         item.get("tool") == "graph_neighbors"
         and item.get("status") == "ok"
