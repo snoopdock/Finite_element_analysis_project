@@ -1,4 +1,5 @@
 """AE-45 C3 provider-free execution-contract tests."""
+import copy
 import hashlib
 import unittest
 from unittest.mock import patch
@@ -125,7 +126,7 @@ def valid_inputs():
         "provider_calls_attempted": 0,
         "credentials_accessed": False,
     }
-    with patch("tools.ae32d_c_request.build_c_preflight", return_value=preflight):
+    with patch("tools.ae32d_c_request.build_c_preflight", return_value=copy.deepcopy(preflight)):
         from tools.ae32d_c_request import build_c_request_package
         package = build_c_request_package(task_projection, b_report, authorization)
     return {
@@ -140,7 +141,7 @@ def valid_inputs():
 
 class C3ExecutionContractTests(unittest.TestCase):
     def call_contract(self, data, confirmed=False):
-        with patch("tools.ae32d_c_request.build_c_preflight", return_value=data["preflight"]):
+        with patch("tools.ae32d_c_request.build_c_preflight", return_value=copy.deepcopy(data["preflight"])):
             return build_c3_execution_contract(
                 data["task_projection"],
                 data["b_report"],
@@ -206,7 +207,7 @@ class C3ExecutionContractTests(unittest.TestCase):
 
     def test_request_digest_mismatch_is_rejected(self):
         data = valid_inputs()
-        data["package"]["request_sha256"] = digest("z")
+        data["package"]["request_sha256"] = digest("0")
         with self.assertRaisesRegex(ValueError, "C3_request_digest_mismatch"):
             self.call_contract(data)
 
@@ -218,7 +219,7 @@ class C3ExecutionContractTests(unittest.TestCase):
 
     def test_task_projection_source_mismatch_is_rejected(self):
         data = valid_inputs()
-        data["task_projection"]["source"]["source_commit_sha"] = "z" * 40
+        data["task_projection"]["source"]["source_commit_sha"] = "b" * 40
         with self.assertRaisesRegex(ValueError, "C_projection_source_mismatch"):
             self.call_contract(data)
 
