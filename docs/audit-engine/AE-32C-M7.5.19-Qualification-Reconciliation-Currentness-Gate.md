@@ -65,8 +65,15 @@ Dedicated tests cover:
 
 ## 6. Validation
 
-Workflow: [M7.5.19 qualification reconciliation currentness gate](https://github.com/snoopdock/Finite_element_analysis_project/actions/workflows/m7_5_19_qualification_reconciliation_currentness.yml)
+**Status:** CI-validated on exact implementation revision `745e721f03e73ff46b8c1c3a9d3aef5f6794fb70`.
 
-The workflow runs Python 3.11 compilation, dedicated M7.5.19 tests, M7.5.18 and M7.5.17 regressions, and the complete M7.5 regression against the exact triggering commit.
+- M7.5.19 workflow: [run 45958897876](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45958897876) — success.
+- M7.5.18 persistence regression: [run 45958897887](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45958897887) — success.
+- M7.5.17 reconciliation regression: [run 45958897778](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45958897778) — success.
+- Dedicated M7.5.19 tests: 10 passed.
+- M7.5.18 tests: 23 passed.
+- M7.5.17 tests: 12 passed.
+- Complete M7.5 regression: 210 passed.
+- Python 3.11 compilation: passed.
 
-Do not mark this milestone CI-validated until a successful run is confirmed for the final branch head.
+All three workflows checked out the exact implementation revision. The M7.5.19 job completed every step successfully. The validation establishes the implemented currentness behavior under the tested fixtures; it does not establish semantic replay, current artifact authenticity, downstream dossier propagation, or audit-decision authorization.
