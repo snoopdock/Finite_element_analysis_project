@@ -27,3 +27,11 @@ The inventory now has four cases, but the pilot target remains 6–10. Two furth
 ## Validation
 
 The AE-32D workflow validates the case manifest and pilot counts, tests the verifier's three case-specific behaviors, and runs the matrix verifier against the pinned source checkout. A passing run establishes fixture-level machine checks only; it does not establish model performance or independent semantic ground truth.
+
+## Executed validation record
+
+- AE-32D workflow: [run 46010190530](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46010190530) — completed successfully on verifier revision `a9ba87b36ad2f84611f2df9a86802467d9eb5860`.
+- Pinned fixture source: `dd80be6e7a3e0a912beace92ce0fac446ea6ed61`.
+- Matrix result: `machine_verified_matrix`; branch-unbound `verified`; no-defect `verified`; ambiguous-provider `ambiguity_boundary_verified`; zero verifier errors.
+- The workflow's outcome-classifier tests, three matrix tests, benchmark-record validation tests, fixed-fixture boundary tests, and existing provider-interface verification all passed.
+- An earlier run on the immediately preceding verifier revision failed because Python isolated mode excluded the fixture directory from import resolution. The runtime harness was corrected to use a reduced environment without `-I`; the subsequent run above passed. This failure and correction are retained rather than hidden.
