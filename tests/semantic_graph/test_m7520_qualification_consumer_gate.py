@@ -103,6 +103,7 @@ class QualificationConsumerGateTests(unittest.TestCase):
             "DROP TRIGGER qualification_consumer_checks_no_update")
         self.check_store._db.execute(
             "UPDATE qualification_consumer_checks SET payload='{}' WHERE sequence=1")
+        self.check_store._db.commit()
         with self.assertRaisesRegex(QualificationConsumerGateError,
                                     "consumer_ledger_integrity_failure"):
             self.evaluate(operation="another-operation")
