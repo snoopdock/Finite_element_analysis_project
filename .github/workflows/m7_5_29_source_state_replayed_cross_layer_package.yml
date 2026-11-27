@@ -16,6 +16,7 @@ on:
       - "tests/semantic_graph/test_m7525_*.py"
       - "tests/semantic_graph/test_m75*.py"
       - "docs/audit-engine/AE-32C-M7.5.29-*"
+      - "docs/audit-engine/AE-32C-M7.5.27-*"
       - ".github/workflows/ae32c_source_snapshot_manifest.yml"
   workflow_dispatch:
 
