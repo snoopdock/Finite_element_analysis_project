@@ -4,7 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
 from jsonschema import Draft202012Validator
@@ -22,9 +22,15 @@ def sha256_json(value: Any) -> str:
     return hashlib.sha256(canonical_json_bytes(value)).hexdigest()
 
 
+def _safe_repository_path(value: Any) -> bool:
+    if not isinstance(value, str) or not value.strip() or "\\\\" in value:
+        return False
+    path = PurePosixPath(value)
+    return not path.is_absolute() and all(part not in {"", ".", ".."} for part in path.parts)
+
+
 def build_sanitized_task_projection(
     case_record: Mapping[str, Any], *, experiment_id: str, condition: str,
-    approved_verification_commands: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Project only allowlisted fields; hidden benchmark fields are never read or copied."""
     if not isinstance(case_record, Mapping):
@@ -43,8 +49,8 @@ def build_sanitized_task_projection(
         raise ValueError("source_repository_required")
     if not isinstance(source_sha, str) or not _SHA40.fullmatch(source_sha):
         raise ValueError("exact_lowercase_source_commit_sha_required")
-    if not isinstance(fixture_path, str) or not fixture_path.strip():
-        raise ValueError("source_fixture_path_required")
+    if not _safe_repository_path(fixture_path):
+        raise ValueError("source_fixture_path_must_be_safe_relative_path")
     title, statement = task.get("title"), task.get("problem_statement")
     scope, constraints = task.get("declared_scope"), task.get("constraints", [])
     if not isinstance(title, str) or not title.strip():
@@ -52,7 +58,7 @@ def build_sanitized_task_projection(
     if not isinstance(statement, str) or not statement.strip():
         raise ValueError("task_problem_statement_required")
     if (not isinstance(scope, list) or not scope
-            or any(not isinstance(path, str) or not path.strip() for path in scope)
+            or any(not _safe_repository_path(path) for path in scope)
             or len(set(scope)) != len(scope)):
         raise ValueError("task_declared_scope_must_be_nonempty_unique_paths")
     if not isinstance(constraints, list) or any(not isinstance(item, str) for item in constraints):
@@ -68,8 +74,6 @@ def build_sanitized_task_projection(
         "source": source_projection, "task": task_projection, "experiment_id": experiment_id,
         "condition": condition, "task_contract_digest": sha256_json(digest_payload),
     }
-    if approved_verification_commands is not None:
-        projection["approved_verification_commands"] = approved_verification_commands
     schema = json.loads(TASK_SCHEMA_PATH.read_text(encoding="utf-8"))
     Draft202012Validator(schema).validate(projection)
     return projection
