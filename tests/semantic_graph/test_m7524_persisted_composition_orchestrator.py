@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -185,7 +186,7 @@ class PersistedCompositionOrchestrationTests(unittest.TestCase):
         f.setUp()
         self.addCleanup(f.tearDown)
 
-        external_raw = b"response = 'untrusted'\\n"
+        external_raw = b"response = 'untrusted'\n"
         (f.root / "src/external.py").write_bytes(external_raw)
         entries = []
         for relative in ("src/app.py", "src/external.py"):
@@ -230,10 +231,10 @@ class PersistedCompositionOrchestrationTests(unittest.TestCase):
             "authority": {"proposition_truth_established": False},
         }
         canonical = (
-            __import__("json").dumps(
+            json.dumps(
                 bundle_payload, sort_keys=True, separators=(",", ":"),
                 ensure_ascii=False, allow_nan=False,
-            ) + "\\n"
+            ) + "\n"
         ).encode()
         bundle = {
             **bundle_payload,
