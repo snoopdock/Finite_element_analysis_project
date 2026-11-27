@@ -39,7 +39,7 @@ def check_case_gate(case,entry,manifest_status,rubric,pilot):
 def validate_repository(root):
  errors=[];data={k:load(root,v,errors) for k,v in FILES.items()}
  if any(v is None for v in data.values()):return errors
- schemas={k:data[k] for k in ("case_schema","manifest_schema","rubric_schema","pilot_schema")}
+ schemas={k:data[k] for k in ("case_schema","manifest_schema","rubric_schema","pilot_schema","ledger_schema")}
  for k,s in schemas.items():
   try:Draft202012Validator.check_schema(s)
   except Exception as exc:errors.append(f"{k}:invalid_schema:{type(exc).__name__}")

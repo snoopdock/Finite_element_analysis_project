@@ -14,6 +14,7 @@ on:
       - tools/ae32d_score_outcomes.py
       - tests/semantic_audit/test_ae32d_score_outcomes.py
       - tests/semantic_audit/test_ae32d_benchmark_validation.py
+      - tests/semantic_audit/test_ae32d_machine_ledger.py
       - evaluation/ae32d/**
       - tools/ae32d_machine_verify_candidate.py
       - tests/semantic_audit/test_ae32d_machine_verification_boundary.py
@@ -93,6 +94,9 @@ jobs:
         env:
           AE32D_EXTENDED_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-extended-source
         run: python tools/ae32d_verify_extended_cases.py --output "$RUNNER_TEMP/ae32d-machine-verification/extended-cases.json"
+
+      - name: Test machine-verification ledger
+        run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_machine_ledger.py' -v
 
       - name: Test benchmark record validation
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_benchmark_validation.py' -v
