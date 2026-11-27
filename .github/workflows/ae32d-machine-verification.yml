@@ -21,12 +21,14 @@ on:
       - tests/semantic_audit/test_ae32d_deterministic_audit.py
       - tests/semantic_audit/test_ae32d_graph_assisted_audit.py
       - tests/semantic_audit/test_ae32d_c_preflight.py
+      - tests/semantic_audit/test_ae32d_c_request.py
       - tools/ae32d_trial_contracts.py
       - tools/ae32d_validate_rule_catalog.py
       - tools/ae32d_deterministic_rules.py
       - tools/ae32d_deterministic_audit.py
       - tools/ae32d_graph_assisted_audit.py
       - tools/ae32d_c_preflight.py
+      - tools/ae32d_c_request.py
       - evaluation/ae32d/machine-reference-registry.json
       - evaluation/ae32d/machine-reference-registry.schema.json
       - evaluation/ae32d/exploratory-trials.schema.json
@@ -140,6 +142,11 @@ jobs:
         env:
           AE32D_CASE_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-case-source
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_c_preflight.py' -v
+
+      - name: Test C request package (manual-only, no provider calls)
+        env:
+          AE32D_CASE_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-case-source
+        run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_c_request.py' -v
 
       - name: Test deterministic outcome classifier
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_score_outcomes.py' -v
