@@ -194,6 +194,7 @@ def reconcile_semantic_qualifications(
         "claim_id": claim.claim_id,
         "source_snapshot_id": plan.source_snapshot_id,
         "plan_sha256": plan.plan_sha256,
+        "rule_registry_sha256": plan.registry_sha256,
         "coverage_manifest_sha256": coverage_manifest.manifest_sha256,
         "qualification_sha256": qualification["qualification_sha256"],
         "observation_bundle_sha256": bundle["bundle_sha256"],
