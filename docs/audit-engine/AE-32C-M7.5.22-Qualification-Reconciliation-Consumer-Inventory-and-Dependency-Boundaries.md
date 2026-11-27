@@ -1,6 +1,6 @@
 # AE-32C M7.5.22 — Qualification-Reconciliation Consumer Inventory and Dependency Boundaries
 
-**Status:** Implemented; exact-head CI validation pending  
+**Status:** Implemented and CI-validated  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.21 — Currentness-Gated Qualification Replay Consumer  
 **Scope:** inventory and dependency-boundary audit; no additional consumer integration was justified by the audited contracts  
@@ -96,4 +96,15 @@ Workflow: [M7.5.22 qualification consumer inventory](https://github.com/snoopdoc
 
 The workflow checks out the exact triggering revision, compiles the epistemic package, runs the dedicated inventory tests, reruns M7.5.21 through M7.5.17, and executes the complete M7.5 regression.
 
-Do not mark this milestone CI-validated until a successful run is confirmed for the final branch head.
+Validation evidence:
+- [M7.5.22 workflow run 45963840362](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45963840362) — success on exact tested revision `7d96ca6a8f5a31dee4cd18218a445927c9ffb70e`.
+- Dedicated M7.5.22 dependency-boundary tests: 5 passed.
+- M7.5.21 gated consumer regression: 5 passed.
+- M7.5.20 consumer gate regression: 9 passed.
+- M7.5.19 currentness regression: 10 passed.
+- M7.5.18 persistence regression: 23 passed.
+- M7.5.17 semantic reconciliation regression: 12 passed.
+- Complete M7.5 regression: 229 passed.
+- Python 3.11 compilation: passed.
+
+The workflow checked out the exact triggering revision. The validation establishes the audited package-level import boundaries and existing M7.5 behavior on that revision; it does not establish universal runtime interception of external callers.
