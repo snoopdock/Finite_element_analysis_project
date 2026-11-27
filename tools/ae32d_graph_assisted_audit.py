@@ -64,7 +64,7 @@ def _runner_revision() -> str:
     return result.stdout.strip()
 
 
-def _scope_snapshot(task_projection: dict[str, Any], source_root: Path, destination: Path) -> list[str]:
+def _scope_snapshot(task_projection: dict[str, Any], source_root: Path, destination: Path) -> dict[str, Any]:
     fixture_root = _resolve_fixture_root(source_root, task_projection["source"]["fixture_path"])
     missing: list[str] = []
     copied: list[dict[str, Any]] = []
