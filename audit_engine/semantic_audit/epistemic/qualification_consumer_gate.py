@@ -132,6 +132,24 @@ class QualificationConsumerCheckStore:
         expected_id = _digest(body)
         if item.get("schema") != SCHEMA or item.get("check_id") != expected_id:
             raise QualificationConsumerGateError("consumer_check_identity_mismatch")
+        if (
+            item.get("currentness_status") not in {"CURRENT", "INVALIDATED"}
+            or item.get("consumer_preflight_status") != (
+                "CURRENTNESS_CONFIRMED"
+                if item.get("currentness_status") == "CURRENT"
+                else "BLOCKED_INVALIDATED"
+            )
+            or item.get("downstream_authorization") != "NOT_EVALUATED"
+            or not all(isinstance(item.get(key), str) and item[key].strip()
+                       for key in ("record_id", "consumer_id", "operation"))
+            or not isinstance(item.get("invalidation_ids"), list)
+            or not isinstance(item.get("reason_codes"), list)
+            or not isinstance(item.get("current_context_sha256"), str)
+            or len(item["current_context_sha256"]) != 64
+            or any(char not in "0123456789abcdef"
+                   for char in item["current_context_sha256"])
+        ):
+            raise QualificationConsumerGateError("consumer_check_payload_invalid")
         serialized = _canonical(item)
         payload_hash = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
         with self._db:
