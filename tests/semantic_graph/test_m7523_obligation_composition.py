@@ -79,6 +79,7 @@ class ObligationCompositionTests(unittest.TestCase):
                 "epistemic_assertions_created": False,
                 "proposition_truth_established": False,
                 "audit_decision_authority": False,
+                "allow_deny_authority": False,
                 "production_approval": False,
             },
         }, "reconciliation_sha256")
