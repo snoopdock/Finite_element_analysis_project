@@ -267,7 +267,7 @@
         },
         "graph_fingerprint": {
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^graph:[0-9a-f]{32}$"
         },
         "graph_projection_version": {
           "type": "string",
