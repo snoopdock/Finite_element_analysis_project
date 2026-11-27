@@ -9,14 +9,12 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
-from tools.ae32d_deterministic_audit import ROOT, TASK_SCHEMA, _git_head
+from tools.ae32d_deterministic_audit import ROOT, TASK_SCHEMA, REPORT_SCHEMA as CONDITION_REPORT_SCHEMA, _git_head
 from tools.ae32d_graph_assisted_audit import (
     GRAPH_BACKEND,
     _runner_revision,
     _scope_snapshot,
 )
-from tools.ae32d_trial_contracts import canonical_json_bytes
-import hashlib
 
 
 REPORT_SCHEMA = ROOT / "evaluation" / "ae32d" / "c-snapshot-verification.schema.json"
@@ -30,7 +28,10 @@ def verify_c_graph_snapshot(
     """Rebuild B's declared-scope graph in isolation and compare exact provenance."""
     task_schema = json.loads(TASK_SCHEMA.read_text(encoding="utf-8"))
     output_schema = json.loads(REPORT_SCHEMA.read_text(encoding="utf-8"))
+    condition_report_schema = json.loads(CONDITION_REPORT_SCHEMA.read_text(encoding="utf-8"))
     Draft202012Validator(task_schema).validate(task_projection)
+    Draft202012Validator(condition_report_schema).validate(b_report)
+    Draft202012Validator(condition_report_schema).validate(b_report["baseline_report"])
     Draft202012Validator(output_schema).check_schema(output_schema)
     if task_projection.get("condition") != "C_graph_llm":
         raise ValueError("C_snapshot_verification_requires_C_projection")
@@ -92,6 +93,8 @@ def verify_c_graph_snapshot(
                             mismatches.append("graph_snapshot_mismatch:" + key)
             finally:
                 tools.close()
+    if _git_head(root) != actual_sha:
+        mismatches.append("source_revision_changed_during_C_snapshot_verification")
 
     output = {
         "schema_version": "ae32d/c-snapshot-verification/v1",
