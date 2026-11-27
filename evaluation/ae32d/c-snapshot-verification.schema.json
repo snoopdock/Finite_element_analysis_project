@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ae32d-c-snapshot-verification.schema.json",
+  "title": "AE-32D C graph snapshot verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "case_id", "source_commit_sha",
+    "task_contract_digest", "baseline_source_manifest_digest",
+    "expected_graph_snapshot", "observed_graph_snapshot", "mismatches",
+    "provider_dispatch_permitted", "provider_calls_attempted", "credentials_accessed"
+  ],
+  "properties": {
+    "schema_version": {"const": "ae32d/c-snapshot-verification/v1"},
+    "status": {"enum": ["verified", "mismatch"]},
+    "case_id": {"type": "string", "minLength": 1},
+    "source_commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "task_contract_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "baseline_source_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "expected_graph_snapshot": {"type": "object"},
+    "observed_graph_snapshot": {"type": "object"},
+    "mismatches": {"type": "array", "items": {"type": "string"}},
+    "provider_dispatch_permitted": {"const": false},
+    "provider_calls_attempted": {"const": 0},
+    "credentials_accessed": {"const": false}
+  }
+}
