@@ -210,3 +210,12 @@ The provider-free semantic primitives are implemented in `tools/ae32d_determinis
 A2's current scope passed full workflow run [46031679281](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46031679281), including exact SHA verification of all three historical fixture checkouts and five fixture-level tests. Earlier failures remain visible and were corrected. This validates the documented subset only; it does not establish full Python semantics or an end-to-end A condition runner.
 
 **Next:** A3 should assemble a deterministic case-level baseline adapter from the sanitized task projection, explicit rule applicability, common condition-report schema, and evidence/coverage records. It must remain provider-free and fail closed on unsupported syntax. It must not read case ground truth, expected findings in case JSON, machine references or adjudication metadata.
+
+
+### AE-45.3 A3 deterministic condition A runner
+
+`tools/ae32d_deterministic_audit.py` now assembles the bounded A2 primitives into a provider-free condition-A report generator. It validates the sanitized projection, requires an exact clean pinned checkout, reads only declared fixture files with path/symlink/size limits, filters the task-visible expected-behavior contract, performs deterministic scope search, applies registered bounded rules, emits evidence-hash-bound findings and coverage, and validates the common report schema. Its config digest binds the runner, semantic-rule source, schemas and rule catalog.
+
+The runner is tested against all six pinned candidate fixtures in [run 46032688139](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46032688139), which passed in full. The six tests cover branch defect, no-defect control, exception suppression, stale dataflow, provider-interface abstention and ambiguous dynamic-provider abstention, plus wrong-condition rejection. Exact checkout SHAs and evidence paths are verified. Prior evidence-path failures remain visible and were corrected.
+
+**A3 status:** validated bounded implementation. It is not an official trial runner workflow and no trial artifact was generated. The next gate is A4: freeze A's configuration/report contract and implement B as the exact A baseline plus a fixed deterministic AE-32B retrieval policy. B must retain the complete A report and add graph evidence without changing the A config, evidence or decision rules.
