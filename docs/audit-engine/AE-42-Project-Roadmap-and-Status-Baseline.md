@@ -241,3 +241,12 @@ The preflight blocks incomplete B scope, graph provenance mismatch, unsupported 
 Full workflow run [46034654032](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46034654032) passed. **C0 status: validated.** No live C investigation has been run.
 
 **Next gate:** C1 adapter integration and manual execution boundary. Before any live invocation, it must reconstruct and verify the exact B graph fingerprint, pass the complete B report as non-gold context to the bounded AE-32C investigator, require the explicit manual authorization envelope, inject provider credentials only after validation, and preserve raw provider usage and investigator output. Do not run C until the user explicitly authorizes a specific provider/model and budget.
+
+
+### AE-45.6 C1 investigator request package
+
+C1 is implemented and validated. The C request package binds the exact task projection, B report digest, graph fingerprint, A/B context, prompt/tool/cost-estimator source digests, provider/model, authorization digest and hard budget. It renders a bounded investigator problem statement that explicitly treats A/B as machine-generated context rather than ground truth. Required source paths and graph/context interaction requirements are included for the future AE-32C investigator.
+
+The package is permanently manual-only: `manual_dispatch_confirmed=false`, `provider_dispatch_permitted=false`, zero provider calls and no credential access. Full workflow run [46035499302](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46035499302) passed.
+
+**C1 status:** validated. **C2 is not implemented:** it will reconstruct and verify the exact B graph snapshot, instantiate the bounded AE-32C investigator and invoke the selected provider only after a separate explicit manual dispatch confirmation. No provider call is authorized by the current conversation. The registered cost estimator currently supports Cloudflare Qwen3.8-27B only; a different provider/model requires its own reviewed cost estimator before authorization.
