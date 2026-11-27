@@ -72,6 +72,10 @@ from .qualification_reconciliation_store import (
     verify_persisted_qualification_reconciliation,
     evaluate_persisted_qualification_reconciliation_currentness,
 )
+from .qualification_consumer_gate import (
+    QualificationConsumerCheckStore, QualificationConsumerGateError,
+    evaluate_qualification_reconciliation_for_consumer,
+)
 from .store import (
     DuplicateRecordError, EpistemicStore, InvalidTransitionError,
     RevisionConflictError, StorageLimitError, StoreError,
@@ -85,6 +89,8 @@ __all__ = [
     "qualification_reconciliation_context",
     "verify_persisted_qualification_reconciliation",
     "evaluate_persisted_qualification_reconciliation_currentness",
+    "QualificationConsumerCheckStore", "QualificationConsumerGateError",
+    "evaluate_qualification_reconciliation_for_consumer",
     "SemanticQualificationError", "semantic_evidence_contract_registry",
     "qualify_typed_evidence_observations", "verify_semantic_evidence_qualification",
     "TypedEvidenceError", "TypedEvidenceObservationStore",
