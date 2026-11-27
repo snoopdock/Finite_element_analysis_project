@@ -368,6 +368,35 @@ class CrossLayerObligationPackageError(RuntimeError):
     """A strict source-state-replayed cross-layer package could not be built or verified."""
 
 
+def _validate_orchestration_package_contract(orchestration: Mapping[str, Any]) -> None:
+    """Reject a resealed inner orchestration that changes its v1 or authority contract."""
+    if orchestration.get("schema") != SCHEMA:
+        raise CrossLayerObligationPackageError("package_orchestration_schema_invalid")
+    composition = orchestration.get("composition")
+    currentness = composition.get("qualification_currentness") if isinstance(composition, Mapping) else None
+    if not isinstance(currentness, Mapping):
+        raise CrossLayerObligationPackageError("package_orchestration_currentness_missing")
+    state = currentness.get("state")
+    if state not in ("CURRENT_REPLAY_VERIFIED", "BLOCKED_INVALIDATED"):
+        raise CrossLayerObligationPackageError("package_orchestration_currentness_invalid")
+    expected_authority = {
+        "execution_replay_verified": True,
+        "qualification_currently_replayed": state == "CURRENT_REPLAY_VERIFIED",
+        "epistemic_evidence_accepted": False,
+        "proposition_truth_established": False,
+        "audit_decision_authority": False,
+        "allow_deny_authority": False,
+        "release_approval": False,
+        "production_approval": False,
+        "downstream_authorization": "NOT_EVALUATED",
+    }
+    if orchestration.get("authority") != expected_authority:
+        raise CrossLayerObligationPackageError("package_orchestration_authority_claim_invalid")
+    bracket = orchestration.get("execution_replay_bracket")
+    if not isinstance(bracket, Mapping) or bracket.get("atomic_cross_store_snapshot") is not False:
+        raise CrossLayerObligationPackageError("package_orchestration_atomicity_claim_invalid")
+
+
 def _validate_provenance_package_contract(provenance: Mapping[str, Any]) -> None:
     """Enforce M7.5.26's non-authority and replay claims in a sealed package."""
     if provenance.get("snapshot_identity_assurance") != "SOURCE_STATE_REPLAY_VERIFIED":
@@ -520,6 +549,7 @@ def verify_cross_layer_obligation_package_envelope(
     provenance = submitted.get("provenance")
     if not isinstance(orchestration, Mapping) or not isinstance(provenance, Mapping):
         raise CrossLayerObligationPackageError("package_inner_envelopes_missing")
+    _validate_orchestration_package_contract(orchestration)
     try:
         orchestration_check = verify_orchestrated_obligation_composition(orchestration)
         provenance_check = verify_cross_layer_snapshot_provenance_envelope(provenance)
