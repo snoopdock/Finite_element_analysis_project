@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ae32d/exploratory-trials.schema.json",
+  "title": "AE-32D exploratory trial set",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "status",
+    "records"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ae32d/exploratory-trials/v1"
+    },
+    "experiment_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "const": "exploratory_unfrozen"
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "trial_id",
+          "case_id",
+          "condition",
+          "source_commit_sha",
+          "config_digest",
+          "status",
+          "outcome"
+        ],
+        "properties": {
+          "trial_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "case_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "condition": {
+            "enum": [
+              "A_deterministic",
+              "B_graph",
+              "C_graph_llm"
+            ]
+          },
+          "source_commit_sha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "config_digest": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "completed",
+              "failed"
+            ]
+          },
+          "outcome": {
+            "enum": [
+              "defect",
+              "no_defect",
+              "abstain",
+              "error"
+            ]
+          },
+          "output_ref": {
+            "type": "string"
+          },
+          "failure_reason": {
+            "type": "string"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "failed"
+                }
+              },
+              "required": [
+                "status"
+              ]
+            },
+            "then": {
+              "properties": {
+                "outcome": {
+                  "const": "error"
+                },
+                "failure_reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "failure_reason"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "completed"
+                }
+              },
+              "required": [
+                "status"
+              ]
+            },
+            "then": {
+              "properties": {
+                "outcome": {
+                  "enum": [
+                    "defect",
+                    "no_defect",
+                    "abstain"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
