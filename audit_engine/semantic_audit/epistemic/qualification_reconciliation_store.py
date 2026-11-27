@@ -40,7 +40,7 @@ class QualificationReconciliationStoreError(RuntimeError):
 
 def _canonical(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True,
-                      separators=(",", ":"), allow_nan=False) + "\\n"
+                      separators=(",", ":"), allow_nan=False) + "\n"
 
 
 def _digest(value: Any) -> str:
