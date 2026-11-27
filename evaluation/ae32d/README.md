@@ -87,10 +87,10 @@ The next stage is an offline importer/normalizer for real A/B/C trial artifacts.
 - `tools/ae32d_c_request.py` builds a bounded AE-32C investigator request from the B report and task projection. It explicitly marks A/B as machine-generated context, not ground truth.
 - `c-request-package.schema.json` validates the request package.
 - C0 preflight passed at [run 46034654032](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46034654032); C1 request packaging passed at [run 46035499302](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46035499302).
-- Both C components are manual-only: zero provider calls, no credential access, and no dispatch permission. The registered cost estimator currently supports Cloudflare Qwen3.8-27B only.
+- C0 and C1 are manual-only: zero provider calls, no credential access, and no dispatch permission. C2 reconstructs the exact B graph snapshot and verifies source/graph provenance before any provider access. C2 passed at [run 46035952443](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46035952443). The registered cost estimator currently supports Cloudflare Qwen3.8-27B only.
 
 ### Current disposition
 
 A and B execution paths are validated against pinned synthetic fixtures. C authorization and request packaging are validated. **No official A/B/C trial artifacts have been generated, no live provider has been called, and no benchmark score has been produced.** The six provisional machine references remain separate from ground truth; all six labels remain pending adjudication and all six cases remain primary-score-ineligible.
 
-AE-43 remains blocked until actual, provenance-valid A/B/C trial artifacts exist. The next code gate is C2: a manually confirmed execution wrapper that reconstructs and verifies the exact B graph snapshot before invoking the bounded AE-32C investigator. Do not call a provider until the user explicitly authorizes the provider/model and budget.
+AE-43 remains blocked until actual, provenance-valid A/B/C trial artifacts exist. The next code gate is C3: a manually confirmed execution wrapper that invokes the bounded AE-32C investigator only after C0 authorization and C2 graph verification. Do not call a provider until the user explicitly authorizes the provider/model and budget.
