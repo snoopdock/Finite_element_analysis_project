@@ -79,7 +79,7 @@ def build_c_request_package(
             payload = item["payload"]
             if item["tool"] == "trace_execution_context":
                 target = item["arguments"].get("target")
-                if isinstance(target, str) and target:
+                if isinstance(target, str) and target in python_paths:
                     required_context_target = target
             retrieval_context.append({
                 "tool": item["tool"],
@@ -134,6 +134,20 @@ def build_c_request_package(
                 },
             }, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
         )[:16_000]
+        # RepositoryInvestigator requires a non-empty target and at least one
+        # distinct context path whenever complete context discovery is enabled.
+        # B's graph retrieval is not required to have run the C-only trace tool,
+        # so derive the deterministic context contract from the same allowlisted
+        # declared scope instead of emitting an impossible empty requirement.
+        if required_context_target is None:
+            required_context_target = python_paths[0]
+        required_context_paths = [
+            path for path in required_source_paths
+            if path != required_context_target
+        ]
+        if not required_context_paths:
+            raise ValueError("C_request_requires_at_least_one_distinct_context_path")
+
         request = {
             "schema_version": "ae32d/c-request/v1",
             "investigator_problem": investigator_problem,
@@ -160,8 +174,8 @@ def build_c_request_package(
                 "require_complete_investigation_context": True,
                 "prefetch_required_graph_query": True,
                 "required_context_target": required_context_target,
-                "required_context_paths": [],
-                "prefetch_required_context_trace": bool(required_context_target),
+                "required_context_paths": required_context_paths,
+                "prefetch_required_context_trace": True,
             },
             "dispatch": {
                 "manual_dispatch_confirmed": False,
