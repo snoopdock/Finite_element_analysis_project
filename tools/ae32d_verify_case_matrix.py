@@ -35,7 +35,7 @@ def run_python(directory: Path, code: str) -> subprocess.CompletedProcess[str]:
     env = {"PATH": os.environ.get("PATH", ""), "PYTHONPATH": str(directory),
            "PYTHONDONTWRITEBYTECODE": "1", "PYTHONIOENCODING": "utf-8"}
     return subprocess.run(
-        [sys.executable, "-I", "-c", code], cwd=directory,
+        [sys.executable, "-c", code], cwd=directory,
         capture_output=True, text=True, timeout=10, env=env,
     )
 
