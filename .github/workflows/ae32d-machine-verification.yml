@@ -10,7 +10,9 @@ on:
       - tools/ae32d_exploratory_evaluation.py
       - tests/semantic_audit/test_ae32d_exploratory_evaluation.py
       - tests/semantic_audit/test_ae32d_ab_contract_schemas.py
+      - tests/semantic_audit/test_ae32d_rule_catalog.py
       - tools/ae32d_trial_contracts.py
+      - tools/ae32d_validate_rule_catalog.py
       - evaluation/ae32d/machine-reference-registry.json
       - evaluation/ae32d/machine-reference-registry.schema.json
       - evaluation/ae32d/exploratory-trials.schema.json
@@ -89,6 +91,12 @@ jobs:
 
       - name: Test A/B contract schemas and information boundary
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_ab_contract_schemas.py' -v
+
+      - name: Validate deterministic A/B rule catalog
+        run: python tools/ae32d_validate_rule_catalog.py --output "$RUNNER_TEMP/ae32d-machine-verification/rule-catalog-validation.json"
+
+      - name: Test deterministic A/B rule catalog
+        run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_rule_catalog.py' -v
 
       - name: Test deterministic outcome classifier
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_score_outcomes.py' -v
