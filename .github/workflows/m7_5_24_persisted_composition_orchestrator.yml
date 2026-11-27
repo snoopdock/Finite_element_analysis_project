@@ -1,0 +1,64 @@
+name: AE-32C M7.5.24 Persisted Cross-Layer Composition Orchestrator
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_24_persisted_composition_orchestrator.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tests/semantic_graph/test_m7524_*.py"
+      - "tests/semantic_graph/test_m7523_*.py"
+      - "tests/semantic_graph/test_m7514_*.py"
+      - "tests/semantic_graph/test_m7517_*.py"
+      - "tests/semantic_graph/test_m7521_*.py"
+      - "tests/semantic_graph/test_m7522_*.py"
+      - "docs/audit-engine/AE-32C-M7.5.24-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7524-stage1
+  cancel-in-progress: false
+
+jobs:
+  persisted-composition-orchestrator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile epistemic implementation
+        run: python -m compileall -q audit_engine/semantic_audit/epistemic
+      - name: Dedicated M7.5.24 orchestration tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7524_*.py' -v
+      - name: M7.5.14 execution replay regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7514_*.py' -v
+      - name: M7.5.17 semantic reconciliation regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7517_*.py' -v
+      - name: M7.5.21 currentness-gated consumer regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7521_*.py' -v
+      - name: M7.5.22 dependency-boundary regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7522_*.py' -v
+      - name: M7.5.23 composition regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7523_*.py' -v
+      - name: Complete M7.5 regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
+      - name: Orchestration authority-boundary summary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.24 persisted cross-layer composition orchestrator"
+            echo "- Persisted records are retrieved and verified through M7.5.14 and M7.5.21 APIs"
+            echo "- Qualification currentness is derived from live artifacts; invalidated records are not replayed"
+            echo "- No atomic cross-store transaction or downstream authorization is claimed"
+            echo "- No evidence acceptance, proposition truth, ALLOW/DENY, release, or production authority is created"
+          } >> "$GITHUB_STEP_SUMMARY"
