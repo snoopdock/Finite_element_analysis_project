@@ -86,10 +86,17 @@ The validator cross-checks registry case IDs and source commits against the mani
 
 ## 7. Status and next steps
 
-The implementation is committed. The workflow must pass before AE-42 can be marked validated. The next work is AE-43 exploratory integration only after the scorer and registry pass the acceptance workflow. AE-43 should use retained or explicitly generated A/B/C trial outputs and must not fabricate provider/model results.
+<badge color="success">Validated</badge> AE-42 implementation and acceptance workflow completed successfully.
+
+- Workflow: [AE-32D run 46021888511](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46021888511) — success on `stage1/section-uuids`, revision `31fdc1e19956769bf478b02674daa8646a448fae`.
+- The provisional registry validator passed.
+- All five exploratory evaluation boundary tests passed.
+- Existing benchmark validation, deterministic outcome classifier, case-matrix verifier, extended-case verifier, machine-verification ledger, benchmark gate and fixed-fixture execution-boundary tests also passed.
+- Artifact: `15208357689`; SHA-256: `37a9f64404c16a63f4498a7d63513d2627ea6434083465eed016447e1f0b472f`.
+
+AE-42 is complete for its declared scope. No A/B/C provider/model performance result was generated. The next work is AE-43 exploratory integration, using retained or explicitly generated A/B/C trial outputs. Do not fabricate provider/model results.
 
 AE-43–AE-46 remain proposed sequencing from the consolidated roadmap, not pre-approved commitments. Before assigning later milestone numbers, reconcile the repository's existing roadmap records.
-
 ## 8. Non-goals and preserved backlog
 
 AE-42 does not close:
