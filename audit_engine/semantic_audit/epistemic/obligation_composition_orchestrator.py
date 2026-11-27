@@ -19,7 +19,6 @@ from .execution_obligation_reconciliation import (
 from .obligation_composition import (
     compose_execution_and_semantic_obligations,
 )
-from .qualification_consumer_gate import QualificationConsumerCheckStore
 from .qualification_reconciliation_consumer import (
     QualificationConsumerReplayError,
     qualification_consumer_current_context,
@@ -66,7 +65,7 @@ def verify_persisted_cross_layer_obligation_composition(
     epistemic_store: Any,
     dossier_store: Any,
     qualification_reconciliation_store: QualificationReconciliationStore,
-    qualification_check_store: QualificationConsumerCheckStore,
+    qualification_check_store: Any,
     consumer_id: str,
     operation: str,
     current_qualification: Mapping[str, Any],
@@ -98,6 +97,10 @@ def verify_persisted_cross_layer_obligation_composition(
     if execution_reconciliation is None:
         raise ObligationCompositionOrchestrationError(
             "execution_reconciliation_not_found"
+        )
+    if execution_reconciliation.get("reconciliation_sha256") != execution_reconciliation_id:
+        raise ObligationCompositionOrchestrationError(
+            "execution_persisted_record_identity_mismatch"
         )
 
     try:
