@@ -85,6 +85,9 @@ jobs:
       - name: Test exploratory evaluation boundaries
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_exploratory_evaluation.py' -v
 
+      - name: Test A/B contract schemas and information boundary
+        run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_ab_contract_schemas.py' -v
+
       - name: Test deterministic outcome classifier
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_score_outcomes.py' -v
 
