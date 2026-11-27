@@ -219,7 +219,7 @@ class C3ExecutionContractTests(unittest.TestCase):
     def test_task_projection_source_mismatch_is_rejected(self):
         data = valid_inputs()
         data["task_projection"]["source"]["source_commit_sha"] = "z" * 40
-        with self.assertRaisesRegex(ValueError, "C3_C1_request_package_reconstruction_mismatch"):
+        with self.assertRaisesRegex(ValueError, "C_projection_source_mismatch"):
             self.call_contract(data)
 
     def test_budget_and_investigation_requirements_are_bound_to_rebuilt_c1_package(self):
