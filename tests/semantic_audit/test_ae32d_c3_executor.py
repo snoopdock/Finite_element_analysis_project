@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from tools.ae32d_c3_executor import (
+    C3ExecutionSession,
     _build_investigator_limits,
     _compare_graph_snapshot,
     _validate_provider_profile,
