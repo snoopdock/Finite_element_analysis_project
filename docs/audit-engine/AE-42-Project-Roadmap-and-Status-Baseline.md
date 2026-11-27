@@ -194,3 +194,10 @@ The A/B boundary now has strict task-projection and condition-report schemas, an
 A0's initial failing runs [46030354050](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46030354050) and [46030419419](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46030419419) exposed the condition-report schema nesting error. The schema was corrected; [run 46030604356](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46030604356) then passed the new A/B tests and the full existing AE-32D validation job. Failures remain visible in the run history.
 
 **Next:** A1 rule catalog and semantic fixture tests. Rule specifications must be derived from pinned source, task statement, declared scope and visible contract evidence only—not from `ground_truth`, expected findings stored in case records, machine references or scorer outputs.
+
+
+### AE-45.1 A1 rule catalog
+
+Five deterministic rule specifications are registered with explicit preconditions, sufficient evidence, counterevidence, abstention conditions, decision authority and pinned fixture references. The catalog is explicitly specification-only; no labels or expected outcomes are stored. See [AE-45.1 Deterministic Rule Catalog](AE-45.1-Deterministic-Rule-Catalog.md).
+
+The validator and tests are integrated into the AE-32D workflow. A1 validation is pending the run associated with commit `1339e21928c7b1a8d4fb977e45225eb58d2b30a3` and subsequent documentation commits. A1 must not be marked complete until the relevant run concludes successfully. A2 is bounded AST/CFG and safe-expression implementation, with no rule execution or condition decisions until its semantic tests pass.
