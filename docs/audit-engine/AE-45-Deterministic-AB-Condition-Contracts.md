@@ -197,4 +197,16 @@ The task projection intentionally does **not** accept executable verification co
 
 `tests/semantic_audit/test_ae32d_ab_contract_schemas.py` checks schema validity, hidden-field exclusion, digest stability when hidden references change, source/condition validation, path traversal rejection, report decision requirements, infrastructure-error separation, evidence hash/line constraints and abstention.
 
-The existing `ae32d-machine-verification.yml` workflow now runs this test module and includes the new test and helper paths in its trigger filter. **CI status has not yet been confirmed**, so A0 is implemented but not validated until the corresponding GitHub Actions run is inspected. No A/B executor or trial output exists.
+The existing `ae32d-machine-verification.yml` workflow now runs this test module and includes the new test and helper paths in its trigger filter. **A0 validation passed** in GitHub Actions run [46030604356](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46030604356). The A/B contract test step and the full AE-32D machine-verification workflow both completed successfully. This validates schemas and task-projection isolation only; no A/B executor or trial output exists.
+
+
+## 11. A0 validation record
+
+- Workflow: `AE-32D Machine Verification and Boundary Tests`
+- Run: [46030604356](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46030604356)
+- Revision: `ef0e558ee053b10a04993487661c4c1fa180c642`
+- Conclusion: success
+- A/B contract test step: success (12 tests)
+- Existing benchmark validation, machine-reference registry validation, exploratory evaluation tests, deterministic outcome classifier, case matrix, extended-case checks, ledger, execution-boundary tests and fixed controlled-incident verification: all success in this run.
+
+The two earlier failures were caused by a schema-authoring defect: several report properties were nested under `findings`. The failing test exposed it; the schema was corrected and the full workflow passed. Failed runs remain part of the audit history and are not represented as successful.
