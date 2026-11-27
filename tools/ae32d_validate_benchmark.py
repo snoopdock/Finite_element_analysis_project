@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse,json
 from pathlib import Path
 from jsonschema import Draft202012Validator
-FILES={"case_schema":"evaluation/ae32d/case.schema.json","manifest_schema":"evaluation/ae32d/manifest.schema.json","rubric_schema":"evaluation/ae32d/scoring-rubric.schema.json","pilot_schema":"evaluation/ae32d/pilot-plan.schema.json","manifest":"evaluation/ae32d/manifest.json","rubric":"evaluation/ae32d/scoring-rubric.json","pilot":"evaluation/ae32d/pilot-plan.json"}
+FILES={"case_schema":"evaluation/ae32d/case.schema.json","manifest_schema":"evaluation/ae32d/manifest.schema.json","rubric_schema":"evaluation/ae32d/scoring-rubric.schema.json","pilot_schema":"evaluation/ae32d/pilot-plan.schema.json","ledger_schema":"evaluation/ae32d/machine-verification-ledger.schema.json","manifest":"evaluation/ae32d/manifest.json","rubric":"evaluation/ae32d/scoring-rubric.json","pilot":"evaluation/ae32d/pilot-plan.json","ledger":"evaluation/ae32d/machine-verification-ledger.json"}
 def load(root,rel,errors):
  try:return json.loads((root/rel).read_text(encoding="utf-8"))
  except (OSError,json.JSONDecodeError) as exc:
@@ -43,7 +43,7 @@ def validate_repository(root):
  for k,s in schemas.items():
   try:Draft202012Validator.check_schema(s)
   except Exception as exc:errors.append(f"{k}:invalid_schema:{type(exc).__name__}")
- validate(schemas["manifest_schema"],data["manifest"],"manifest",errors);validate(schemas["rubric_schema"],data["rubric"],"rubric",errors);validate(schemas["pilot_schema"],data["pilot"],"pilot",errors)
+ validate(schemas["manifest_schema"],data["manifest"],"manifest",errors);validate(schemas["rubric_schema"],data["rubric"],"rubric",errors);validate(schemas["pilot_schema"],data["pilot"],"pilot",errors);validate(schemas["ledger_schema"],data["ledger"],"ledger",errors)
  manifest,rubric,pilot=data["manifest"],data["rubric"],data["pilot"];ids=set();paths=set();count=0;eligible_count=0
  for entry in manifest.get("cases",[]):
   rel=entry.get("path","");p=Path(rel)
@@ -62,6 +62,20 @@ def validate_repository(root):
  listed=current.get("candidate_case_ids",[])
  if len(listed)!=len(set(listed)):errors.append("pilot_candidate_ids_duplicate")
  if set(listed)!=ids:errors.append("pilot_candidate_ids_mismatch")
+ ledger=data["ledger"];ledger_ids=set()
+ for record in ledger.get("records",[]):
+  cid=record.get("case_id")
+  if cid in ledger_ids:errors.append("duplicate_machine_ledger_case_id:"+str(cid))
+  ledger_ids.add(cid)
+  if cid not in ids:errors.append("machine_ledger_case_not_in_manifest:"+str(cid))
+  else:
+   case_path=next((e.get("path") for e in manifest.get("cases",[]) if e.get("case_id")==cid),None)
+   case=load(root,"evaluation/ae32d/"+case_path,errors) if case_path else None
+   if case and record.get("source_commit_sha")!=case.get("source",{}).get("source_commit_sha"):
+    errors.append("machine_ledger_source_commit_mismatch:"+str(cid))
+  if record.get("primary_benchmark_eligible") is not False:errors.append("machine_ledger_cannot_grant_primary_eligibility:"+str(cid))
+  if record.get("human_independent_adjudication")!="not_performed":errors.append("machine_ledger_cannot_claim_human_adjudication:"+str(cid))
+ if ledger_ids!=ids:errors.append("machine_ledger_case_set_mismatch")
  return errors
 def main(argv=None):
  parser=argparse.ArgumentParser();parser.add_argument("--repository",type=Path,default=Path(__file__).resolve().parents[1]);parser.add_argument("--output",type=Path);args=parser.parse_args(argv)

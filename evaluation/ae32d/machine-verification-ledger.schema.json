@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AE-32D machine-verification evidence ledger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "benchmark_id",
+    "status",
+    "records"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ae32d/machine-verification-ledger/v1"
+    },
+    "benchmark_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "const": "evidence_only_not_gold_adjudication"
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "verification_status",
+          "verification_class",
+          "source_commit_sha",
+          "verifier_commit",
+          "workflow_run_id",
+          "workflow_url",
+          "artifact_id",
+          "primary_benchmark_eligible",
+          "human_independent_adjudication",
+          "runtime_outcome",
+          "checks",
+          "source_files"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "verification_status": {
+            "const": "machine_verified_candidate"
+          },
+          "verification_class": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_commit_sha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "verifier_commit": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "workflow_run_id": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "workflow_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "artifact_id": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "primary_benchmark_eligible": {
+            "const": false
+          },
+          "human_independent_adjudication": {
+            "const": "not_performed"
+          },
+          "runtime_outcome": {
+            "type": "string",
+            "minLength": 1
+          },
+          "checks": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "source_files": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
