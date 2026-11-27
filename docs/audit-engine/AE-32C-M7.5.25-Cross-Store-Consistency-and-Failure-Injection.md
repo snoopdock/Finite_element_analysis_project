@@ -1,6 +1,6 @@
 # AE-32C M7.5.25 — Cross-Store Consistency and Failure-Injection Audit
 
-**Status:** Implemented; CI validation pending  
+**Status:** Implemented and CI-validated  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.24 — Persisted Cross-Layer Composition Orchestrator  
 **Scope:** deterministic TOCTOU failure injection around qualification replay and execution/qualification orchestration  
@@ -63,7 +63,24 @@ The real multi-ledger integration test remains in the M7.5.24 suite. Existing M7
 
 Workflow: [M7.5.24/M7.5.25 cross-layer consistency validation](https://github.com/snoopdock/Finite_element_analysis_project/actions/workflows/m7_5_24_persisted_composition_orchestrator.yml)
 
-## 4. Failure and interruption semantics
+## 4. Validation result
+
+Workflow: [M7.5.24/M7.5.25 cross-layer consistency validation](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45972676464)
+
+- Exact tested revision: `93416d3c63a22ab76db22eab02ac38cc8b4e3086`.
+- Python 3.11 compilation: passed.
+- M7.5.24 orchestration suite: 9 passed.
+- M7.5.14 execution reconciliation regression: 7 passed.
+- M7.5.17 qualification reconciliation regression: 12 passed.
+- M7.5.21 currentness-gated consumer regression: 5 passed.
+- M7.5.22 dependency-boundary regression: 5 passed.
+- M7.5.23 composition regression: 11 passed.
+- M7.5.25 failure-injection tests: 3 passed.
+- Complete M7.5 regression: 252 passed.
+
+The workflow completed successfully on the exact tested revision. The failure-injection tests demonstrate that invalidation between preflight and replay prevents replay, invalidation during replay prevents a current replay result from being returned, and execution-side postflight failure prevents composition.
+
+## 5. Failure and interruption semantics
 
 - If the first execution replay fails, qualification consumption and composition do not proceed.
 - If qualification preflight or replay fails, composition does not proceed.
@@ -72,7 +89,7 @@ Workflow: [M7.5.24/M7.5.25 cross-layer consistency validation](https://github.co
 - Consumer preflight and invalidation events already appended to their respective ledgers are not rolled back.
 - The orchestrator does not attempt compensation or deletion across independent stores.
 
-## 5. Explicit residual limitations
+## 6. Explicit residual limitations
 
 This is **race-window reduction and detection**, not atomicity.
 
@@ -86,6 +103,6 @@ This is **race-window reduction and detection**, not atomicity.
 
 A stronger guarantee would require a separately designed snapshot/version protocol or a single transactional authority over all relevant state. M7.5.25 deliberately does not introduce one.
 
-## 6. Authority boundaries
+## 7. Authority boundaries
 
 M7.5.25 does not establish evidence acceptance, proposition truth, graph completeness, assurance success, ALLOW/DENY, audit authorization, release approval, or production approval. A successful replay bracket remains a bounded consistency observation, not a decision.
