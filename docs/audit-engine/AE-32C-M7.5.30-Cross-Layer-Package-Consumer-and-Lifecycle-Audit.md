@@ -1,6 +1,6 @@
 # AE-32C M7.5.30 — Cross-Layer Package Consumer and Lifecycle Audit
 
-**Status:** Audit and structural guard implemented; exact-head CI validation pending  
+**Status:** Audit and structural guard implemented; implementation and regression CI-validated; documentation-only exact-head revalidation pending  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.29 — Single-Pass Source-State-Replayed Cross-Layer Obligation Package  
 **Audited revision:** `f1c9f217aeaf7dd39172ee025474363c6133cbfa`  
@@ -158,4 +158,16 @@ The workflow checks out the exact triggering revision and runs:
 - source snapshot manifest regression; and
 - complete M7.5 regression.
 
-Validation remains pending until the run succeeds on the exact final branch head.
+Implementation and regression validation:
+- [M7.5.30 workflow run 45990163308](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45990163308) — success on implementation revision `b0dabf3482847a22baa30fd88acfefdea5bd2e08`; the workflow checked out the exact triggering SHA.
+- M7.5.30 structural consumer/lifecycle audit: 5 passed.
+- M7.5.29 strict package regression: 10 passed.
+- M7.5.27 provenance consumer inventory: 6 passed.
+- M7.5.26 provenance behavioral regression: 9 passed.
+- M7.5.24 persisted orchestration regression: 9 passed.
+- M7.5.25 cross-store failure-injection regression: 3 passed.
+- Source snapshot manifest regression: 8 passed.
+- Complete M7.5 regression: 290 passed.
+- Python 3.11 compilation: passed.
+
+The documentation update is included in the M7.5.30 workflow path filters. Exact-head validation of the final documentation revision remains pending until the resulting push-triggered run succeeds and its checked-out SHA matches the final branch head.
