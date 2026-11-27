@@ -1,0 +1,82 @@
+{
+  "schema_version": "ae32d/machine-reference-registry/v1",
+  "benchmark_id": "AE32D-AUDIT-QUALITY",
+  "status": "provisional_machine_reference_only",
+  "authority": "fixture_contract_and_machine_verification",
+  "ground_truth_write_allowed": false,
+  "primary_benchmark_promotion_allowed": false,
+  "records": [
+    {
+      "case_id": "AE32D-CANDIDATE-PROVIDER-INTERFACE-001",
+      "provisional_outcome": "defect",
+      "source_commit_sha": "afcb1cba064de6f3d680f6be3085a365c6687c7b",
+      "verification_class": "provider_interface_runtime_defect",
+      "workflow_run_id": "46003755131",
+      "artifact_id": "15203213689",
+      "basis": "consumer total_calls access conflicts with adapter calls counter; runtime AttributeError reproduced on pinned fixture.",
+      "reference_kind": "machine_derived_fixture_contract",
+      "independent_adjudication": "not_performed",
+      "primary_benchmark_eligible": false
+    },
+    {
+      "case_id": "AE32D-CANDIDATE-BRANCH-UNBOUND-001",
+      "provisional_outcome": "defect",
+      "source_commit_sha": "dd80be6e7a3e0a912beace92ce0fac446ea6ed61",
+      "verification_class": "control_flow_runtime_defect",
+      "workflow_run_id": "46010190530",
+      "artifact_id": "15203791424",
+      "basis": "Conditional assignment leaves the local unbound on the false branch; runtime exception reproduced.",
+      "reference_kind": "machine_derived_fixture_contract",
+      "independent_adjudication": "not_performed",
+      "primary_benchmark_eligible": false
+    },
+    {
+      "case_id": "AE32D-CANDIDATE-NO-DEFECT-001",
+      "provisional_outcome": "no_defect",
+      "source_commit_sha": "dd80be6e7a3e0a912beace92ce0fac446ea6ed61",
+      "verification_class": "negative_control_no_defect",
+      "workflow_run_id": "46010190530",
+      "artifact_id": "15203791424",
+      "basis": "Initialization precedes the branch and both contract paths satisfy the fixture's expected behavior.",
+      "reference_kind": "machine_derived_fixture_contract",
+      "independent_adjudication": "not_performed",
+      "primary_benchmark_eligible": false
+    },
+    {
+      "case_id": "AE32D-CANDIDATE-AMBIGUOUS-PROVIDER-001",
+      "provisional_outcome": "ambiguous",
+      "source_commit_sha": "dd80be6e7a3e0a912beace92ce0fac446ea6ed61",
+      "verification_class": "incomplete_evidence_boundary",
+      "workflow_run_id": "46010190530",
+      "artifact_id": "15203791424",
+      "basis": "Provider implementation is absent; available source is insufficient to establish runtime behavior, so abstention is the expected exploratory response.",
+      "reference_kind": "machine_derived_fixture_contract",
+      "independent_adjudication": "not_performed",
+      "primary_benchmark_eligible": false
+    },
+    {
+      "case_id": "AE32D-CANDIDATE-EXCEPTION-SWALLOW-001",
+      "provisional_outcome": "defect",
+      "source_commit_sha": "c0d700c0a2599aabda8957f54e750a812ea2ef5d",
+      "verification_class": "exception_flow_contract_violation",
+      "workflow_run_id": "46010847618",
+      "artifact_id": "15204151762",
+      "basis": "OSError is swallowed despite the declared propagation contract; runtime suppression reproduced.",
+      "reference_kind": "machine_derived_fixture_contract",
+      "independent_adjudication": "not_performed",
+      "primary_benchmark_eligible": false
+    },
+    {
+      "case_id": "AE32D-CANDIDATE-DATAFLOW-STALE-VALUE-001",
+      "provisional_outcome": "defect",
+      "source_commit_sha": "c0d700c0a2599aabda8957f54e750a812ea2ef5d",
+      "verification_class": "stale_dataflow_contract_violation",
+      "workflow_run_id": "46010847618",
+      "artifact_id": "15204151762",
+      "basis": "Output sink returns the stale subtotal plus tax rather than the discounted intermediate; observed 105 versus expected 95.",
+      "reference_kind": "machine_derived_fixture_contract",
+      "independent_adjudication": "not_performed",
+      "primary_benchmark_eligible": false
+    }
+  ]
+}
