@@ -102,6 +102,33 @@ def _compare_graph_snapshot(
         raise ValueError("C3_executor_graph_backend_mismatch")
 
 
+def _validate_provider_profile(provider: Any, contract: Mapping[str, Any]) -> None:
+    """Reject a supplied adapter whose declared identity or local caps differ."""
+    expected_provider = contract["provider_name"]
+    expected_model = contract["model_name"]
+    actual_provider = getattr(provider, "provider_name", None)
+    if actual_provider != expected_provider:
+        raise ValueError("C3_executor_provider_identity_mismatch")
+    models = getattr(provider, "models", None)
+    model = getattr(provider, "model", None)
+    if isinstance(models, (list, tuple)):
+        if list(models) != [expected_model]:
+            raise ValueError("C3_executor_provider_model_mismatch")
+    elif model != expected_model:
+        raise ValueError("C3_executor_provider_model_unverifiable")
+    max_calls = getattr(provider, "max_logical_calls", None)
+    if (isinstance(max_calls, bool) or not isinstance(max_calls, int)
+            or max_calls < 1 or max_calls > contract["investigator_limits"]["max_rounds"]):
+        raise ValueError("C3_executor_provider_call_ceiling_mismatch")
+    max_tokens = getattr(provider, "max_tokens_per_call", None)
+    if (isinstance(max_tokens, bool) or not isinstance(max_tokens, int)
+            or max_tokens < 64
+            or max_tokens > contract["investigator_limits"]["max_tokens_per_call"]):
+        raise ValueError("C3_executor_provider_token_ceiling_mismatch")
+    if not callable(getattr(provider, "get_stats", None)):
+        raise ValueError("C3_executor_provider_stats_interface_missing")
+
+
 def _build_investigator_limits(contract_limits: Mapping[str, Any]) -> InvestigationLimits:
     required = {
         "max_rounds",
@@ -167,6 +194,7 @@ class C3ExecutionSession:
             raise RuntimeError("C3_execution_session_investigator_already_built")
         if provider is None:
             raise ValueError("C3_executor_provider_object_required")
+        _validate_provider_profile(provider, self.contract)
         requirements = self.contract["investigation_requirements"]
         self._investigator = RepositoryInvestigator(
             self.graph_root,
