@@ -155,9 +155,26 @@ class DeterministicRulePrimitiveTests(unittest.TestCase):
         self.assertTrue(report["sink_reads_intermediate"])
         self.assertFalse(report["stale_sink_observed"])
 
+    def test_safe_expression_interpreter_bounds_string_multiplication(self):
+        expression = ast.parse("'x' * 1000000000000", mode="eval").body
+        with self.assertRaisesRegex(UnsupportedRuleSyntax, "string_multiplication_budget_exceeded"):
+            safe_evaluate(expression, {})
+
     def test_safe_expression_interpreter_rejects_calls(self):
         with self.assertRaisesRegex(UnsupportedRuleSyntax, "unsupported_expression"):
             safe_evaluate(ast.parse("__import__('os').system('id')", mode="eval").body, {})
+
+    def test_dynamic_attribute_rule_requires_declared_provider_parameter(self):
+        consumer = """def extract(value):
+    return value.total_calls
+"""
+        provider = """class Provider:
+    def __init__(self):
+        self.calls = 0
+"""
+        report = observe_dynamic_attribute_mismatch(consumer, provider, "extract", "Provider")
+        self.assertEqual(report["status"], "unsupported")
+        self.assertEqual(report["decision"], "abstain")
 
     def test_dynamic_attribute_mismatch_is_observation_plus_abstention(self):
         consumer = """def extract(provider):
