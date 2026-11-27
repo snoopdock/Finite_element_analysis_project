@@ -10,6 +10,7 @@ from jsonschema import Draft202012Validator
 
 from audit_engine.semantic_audit.ae32b.evidence_tools import RepositoryEvidenceTools
 from tools.ae32d_deterministic_audit import ROOT, TASK_SCHEMA, REPORT_SCHEMA as CONDITION_REPORT_SCHEMA, _git_head
+from tools.ae32d_c_preflight import build_c_preflight
 from tools.ae32d_graph_assisted_audit import (
     GRAPH_BACKEND,
     _runner_revision,
@@ -49,7 +50,18 @@ def verify_c_graph_snapshot(
         raise ValueError("C_snapshot_checkout_revision_mismatch")
 
     expected = b_report["graph_snapshot"]
-    mismatches: list[str] = []
+    preflight = build_c_preflight(b_report)
+    mismatches: list[str] = [
+        "B_preflight:" + reason
+        for reason in preflight["blocking_reasons"]
+        if reason != "manual_authorization_required"
+    ]
+    if expected.get("status") != "complete":
+        mismatches.append("B_graph_snapshot_not_complete")
+    if expected.get("backend_pipeline_wired") is not True:
+        mismatches.append("B_graph_backend_not_wired")
+    if expected.get("graph_backend") != GRAPH_BACKEND:
+        mismatches.append("B_graph_backend_unexpected")
     observed: dict[str, Any] = {}
     with tempfile.TemporaryDirectory(prefix="ae32d-c-snapshot-") as temporary:
         graph_root = Path(temporary)
