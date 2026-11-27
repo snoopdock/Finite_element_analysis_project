@@ -87,7 +87,7 @@ The next stage is an offline importer/normalizer for real A/B/C trial artifacts.
 - `tools/ae32d_c_request.py` builds a bounded AE-32C investigator request from the B report and task projection. It explicitly marks A/B as machine-generated context, not ground truth.
 - `c-request-package.schema.json` validates the request package.
 - C0 preflight passed at [run 46034654032](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46034654032); C1 request packaging passed at [run 46035499302](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46035499302).
-- C0 and C1 are manual-only: zero provider calls, no credential access, and no dispatch permission. C2 reconstructs the exact B graph snapshot and verifies source/graph provenance before any provider access. C2 passed at [run 46035952443](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46035952443), and the latest full workflow passed at [run 46036094478](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46036094478). The registered cost estimator currently supports Cloudflare Qwen3.8-27B only.
+- C0 and C1 are manual-only: zero provider calls, no credential access, and no dispatch permission. C2 reconstructs the exact B graph snapshot and verifies source/graph provenance before any provider access. C2 passed at [run 46035952443](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46035952443), and the latest full workflow passed at [run 46036244213](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46036244213). The registered cost estimator currently supports Cloudflare Qwen3.8-27B only.
 
 ### Current disposition
 
