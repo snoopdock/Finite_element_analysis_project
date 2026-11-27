@@ -171,3 +171,12 @@ The design requires manual A/B dispatch and a separate explicit authorization ga
 The source-level mapping is recorded in [AE-44 G0 Executor Source Mapping](AE-44-G0-Executor-Source-Mapping.md). It confirms that AE-32A is a deterministic architecture/wiring inventory, AE-32B is a bounded evidence-tool interface (including graph queries), and AE-32C is the provider-backed investigator. None can be mechanically substituted for all three AE-32D conditions: A still lacks a case-level deterministic diagnostic executor; B still lacks a fixed deterministic retrieval policy and case-level decision output; C needs adaptation to the pinned AE-32D case/configuration and separate authorization/artifact contract.
 
 **G0 status: partially complete.** Actual component entry points and semantic gaps are identified. The next step is to specify the deterministic A diagnostic contract and deterministic B retrieval policy. No A/B/C workflow, provider invocation, or trial record has been created.
+
+
+### AE-45 deterministic A/B contracts and A0 schemas
+
+AE-45 records the formal deterministic condition contracts in [AE-45 Deterministic A/B Condition Contracts](AE-45-Deterministic-AB-Condition-Contracts.md). It distinguishes the case-level diagnostic baseline from AE-32A's architecture/wiring inventory and defines B as the exact A baseline plus a fixed, non-LLM AE-32B retrieval policy. Neither condition may receive machine-reference, ground-truth, adjudication, or scorer fields. A/B decisions require explicit evidence-backed rules; unsupported cases abstain.
+
+**A0 implementation:** added `evaluation/ae32d/sanitized-task-projection.schema.json` and `evaluation/ae32d/condition-report.schema.json`, plus `tests/semantic_audit/test_ae32d_ab_contract_schemas.py`. The test suite checks schema validity, forbidden-field rejection, exact source/digest shape, explicit decision requirements, infrastructure-error separation, evidence hash/line constraints and abstention handling. The existing AE-32D machine-verification workflow now runs these tests.
+
+**Status:** schemas and boundary tests committed; CI validation is pending. No A/B executor, trial artifact, provider call, or benchmark score has been created. Next: inspect the CI result, then implement A1 rule registration only after defining rules from the actual fixture/task contracts without reading hidden expected findings. B remains gated on A's stable report and rule semantics.
