@@ -1,6 +1,6 @@
 # AE-32C M7.5.20 — Downstream Qualification Currentness Consumer Gate
 
-**Status:** Implemented; exact-head CI validation pending  
+**Status:** Implemented and CI-validated  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.19 — Qualification Reconciliation Currentness Gate  
 **Authority:** append-only recording of consumer currentness preflights only; no semantic replay, evidence acceptance, assurance result, or authorization
@@ -67,4 +67,13 @@ Dedicated tests cover:
 
 The dedicated workflow compiles the epistemic package, runs M7.5.20 tests, M7.5.19 currentness tests, M7.5.18 persistence tests, M7.5.17 reconciliation tests, and the complete M7.5 regression on the exact triggering revision.
 
-Do not mark this milestone CI-validated until a successful run is confirmed for the final branch head.
+Validation evidence:
+- [M7.5.20 workflow run 45963213105](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45963213105) — success on exact tested revision `7038a5e87f3d44208a4d6646f2e1f1384885a47a`.
+- Dedicated M7.5.20 tests: 9 passed.
+- M7.5.19 tests: 10 passed.
+- M7.5.18 tests: 23 passed.
+- M7.5.17 tests: 12 passed.
+- Complete M7.5 regression: passed.
+- Python 3.11 compilation: passed.
+
+The M7.5.21 exact-head workflow also reruns the M7.5.20 suite and the complete M7.5 regression.
