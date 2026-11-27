@@ -108,6 +108,37 @@ def valid_inputs():
         },
         "investigator_problem": "Inspect the bounded source and graph evidence.",
     }
+    b_report = {
+        "case_id": preflight["case_id"],
+        "baseline_report": {"source_manifest_digest": digest("i")},
+        "graph_snapshot": {
+            "source_manifest_sha256": digest("i"),
+            "source_revision": preflight["source_commit_sha"],
+            "graph_fingerprint": preflight["graph_fingerprint"],
+        },
+    }
+    c2_snapshot = {
+        "schema_version": "ae32d/c-snapshot-verification/v1",
+        "status": "verified",
+        "case_id": preflight["case_id"],
+        "source_commit_sha": preflight["source_commit_sha"],
+        "task_contract_digest": preflight["task_contract_digest"],
+        "baseline_source_manifest_digest": digest("i"),
+        "expected_graph_snapshot": {
+            "source_manifest_sha256": digest("i"),
+            "source_revision": preflight["source_commit_sha"],
+            "graph_fingerprint": preflight["graph_fingerprint"],
+        },
+        "observed_graph_snapshot": {
+            "source_manifest_sha256": digest("i"),
+            "source_revision": preflight["source_commit_sha"],
+            "graph_fingerprint": preflight["graph_fingerprint"],
+        },
+        "mismatches": [],
+        "provider_dispatch_permitted": False,
+        "provider_calls_attempted": 0,
+        "credentials_accessed": False,
+    }
     request_package = {
         "schema_version": "ae32d/c-request-package/v1",
         "status": "prepared_manual_only",
@@ -120,7 +151,8 @@ def valid_inputs():
         "credentials_accessed": False,
     }
     return {"authorization": authorization, "preflight": preflight,
-            "request": request, "package": request_package}
+            "request": request, "package": request_package,
+            "b_report": b_report, "snapshot": c2_snapshot}
 
 
 class C3ExecutionContractTests(unittest.TestCase):
@@ -130,8 +162,9 @@ class C3ExecutionContractTests(unittest.TestCase):
             return_value=data["preflight"],
         ):
             return build_c3_execution_contract(
-                {"case_id": data["preflight"]["case_id"]},
+                data["b_report"],
                 data["package"],
+                data["snapshot"],
                 data["authorization"],
                 manual_dispatch_confirmed=confirmed,
             )
@@ -147,7 +180,7 @@ class C3ExecutionContractTests(unittest.TestCase):
     def test_manual_confirmation_only_authorizes_later_executor(self):
         data = valid_inputs()
         result = self.call_contract(data, confirmed=True)
-        self.assertEqual(result["status"], "authorized_for_provider_construction")
+        self.assertEqual(result["status"], "ready_for_c3_executor")
         self.assertTrue(result["manual_dispatch_confirmed"])
         self.assertFalse(result["provider_dispatch_permitted"])
         self.assertEqual(result["provider_calls_attempted"], 0)
@@ -211,6 +244,18 @@ class C3ExecutionContractTests(unittest.TestCase):
             with self.subTest(paths=paths):
                 with self.assertRaisesRegex(ValueError, "C3_required_source_paths_invalid"):
                     self.call_contract(data)
+
+    def test_unverified_or_mismatched_c2_snapshot_is_rejected(self):
+        data = valid_inputs()
+        data["snapshot"]["status"] = "mismatch"
+        with self.assertRaisesRegex(ValueError, "C3_C2_snapshot_not_verified"):
+            self.call_contract(data)
+
+    def test_c2_snapshot_must_match_the_exact_b_graph(self):
+        data = valid_inputs()
+        data["snapshot"]["observed_graph_snapshot"]["graph_fingerprint"] = "graph:" + "z" * 32
+        with self.assertRaisesRegex(ValueError, "C3_C2_graph_snapshot_mismatch:graph_fingerprint"):
+            self.call_contract(data)
 
     def test_graph_interaction_cannot_be_silently_disabled(self):
         data = valid_inputs()
