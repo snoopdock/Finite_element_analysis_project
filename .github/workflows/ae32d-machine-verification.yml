@@ -7,6 +7,8 @@ on:
     paths:
       - .github/workflows/ae32d-machine-verification.yml
       - tools/ae32d_validate_benchmark.py
+      - tools/ae32d_verify_case_matrix.py
+      - tests/semantic_audit/test_ae32d_case_matrix.py
       - tools/ae32d_score_outcomes.py
       - tests/semantic_audit/test_ae32d_score_outcomes.py
       - tests/semantic_audit/test_ae32d_benchmark_validation.py
@@ -42,6 +44,14 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Checkout immutable case-matrix source
+        uses: actions/checkout@v4
+        with:
+          ref: dd80be6e7a3e0a912beace92ce0fac446ea6ed61
+          path: .ae32d-case-source
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -55,6 +65,16 @@ jobs:
 
       - name: Test deterministic outcome classifier
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_score_outcomes.py' -v
+
+      - name: Test case-matrix verifier
+        env:
+          AE32D_CASE_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-case-source
+        run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_case_matrix.py' -v
+
+      - name: Verify pinned case matrix
+        env:
+          AE32D_CASE_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-case-source
+        run: python tools/ae32d_verify_case_matrix.py --output "$RUNNER_TEMP/ae32d-machine-verification/case-matrix.json"
 
       - name: Test benchmark record validation
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_benchmark_validation.py' -v

@@ -59,6 +59,9 @@ def validate_repository(root):
  current=pilot.get("current_case_status",{})
  if current.get("candidate_count")!=count:errors.append("pilot_candidate_count_mismatch")
  if current.get("primary_score_eligible_count")!=eligible_count:errors.append("pilot_primary_count_mismatch")
+ listed=current.get("candidate_case_ids",[])
+ if len(listed)!=len(set(listed)):errors.append("pilot_candidate_ids_duplicate")
+ if set(listed)!=ids:errors.append("pilot_candidate_ids_mismatch")
  return errors
 def main(argv=None):
  parser=argparse.ArgumentParser();parser.add_argument("--repository",type=Path,default=Path(__file__).resolve().parents[1]);parser.add_argument("--output",type=Path);args=parser.parse_args(argv)

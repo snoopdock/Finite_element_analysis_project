@@ -16,6 +16,24 @@
       "path": "cases/AE32D-CANDIDATE-PROVIDER-INTERFACE-001.json",
       "status": "machine_verified_regression",
       "primary_benchmark_eligible": false
+    },
+    {
+      "case_id": "AE32D-CANDIDATE-BRANCH-UNBOUND-001",
+      "path": "cases/AE32D-CANDIDATE-BRANCH-UNBOUND-001.json",
+      "status": "candidate",
+      "primary_benchmark_eligible": false
+    },
+    {
+      "case_id": "AE32D-CANDIDATE-NO-DEFECT-001",
+      "path": "cases/AE32D-CANDIDATE-NO-DEFECT-001.json",
+      "status": "candidate",
+      "primary_benchmark_eligible": false
+    },
+    {
+      "case_id": "AE32D-CANDIDATE-AMBIGUOUS-PROVIDER-001",
+      "path": "cases/AE32D-CANDIDATE-AMBIGUOUS-PROVIDER-001.json",
+      "status": "candidate",
+      "primary_benchmark_eligible": false
     }
   ],
   "policy": {

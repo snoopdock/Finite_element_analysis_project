@@ -4,11 +4,11 @@
   "case_status": "candidate",
   "source": {
     "repository": "snoopdock/Finite_element_analysis_project",
-    "source_commit_sha": "PENDING_SOURCE_PIN",
+    "source_commit_sha": "dd80be6e7a3e0a912beace92ce0fac446ea6ed61",
     "fixture_path": "tests/semantic_audit/fixtures/ae32d_branch_unbound_incident",
     "environment": {
       "status": "source_fixture_recorded",
-      "runtime_reproduction": "pending_workflow_verification"
+      "runtime_reproduction": "verified_by_pinned_matrix_workflow"
     }
   },
   "task": {

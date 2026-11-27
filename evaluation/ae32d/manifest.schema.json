@@ -92,7 +92,8 @@
               "adjudicated",
               "excluded",
               "holdout",
-              "machine_verified_regression"
+              "machine_verified_regression",
+              "candidate"
             ]
           },
           "primary_benchmark_eligible": {

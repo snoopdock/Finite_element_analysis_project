@@ -12,11 +12,14 @@
     "maximum": 50
   },
   "current_case_status": {
-    "candidate_count": 1,
+    "candidate_count": 4,
     "adjudicated_count": 0,
     "primary_score_eligible_count": 0,
     "candidate_case_ids": [
-      "AE32D-CANDIDATE-PROVIDER-INTERFACE-001"
+      "AE32D-CANDIDATE-PROVIDER-INTERFACE-001",
+      "AE32D-CANDIDATE-BRANCH-UNBOUND-001",
+      "AE32D-CANDIDATE-NO-DEFECT-001",
+      "AE32D-CANDIDATE-AMBIGUOUS-PROVIDER-001"
     ]
   },
   "required_case_mix": [
