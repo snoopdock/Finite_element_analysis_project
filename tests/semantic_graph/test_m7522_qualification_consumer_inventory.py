@@ -81,10 +81,10 @@ class QualificationConsumerInventoryTests(unittest.TestCase):
             node for node in ast.walk(function)
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
         ]
-        preflight = [node.lineno for node in calls
-                     if node.func.id == "evaluate_qualification_reconciliation_for_consumer"]
-        replay = [node.lineno for node in calls
-                  if node.func.id == "verify_persisted_qualification_reconciliation"]
+        preflight = sorted(node.lineno for node in calls
+                           if node.func.id == "evaluate_qualification_reconciliation_for_consumer")
+        replay = sorted(node.lineno for node in calls
+                        if node.func.id == "verify_persisted_qualification_reconciliation")
         self.assertEqual(len(preflight), 1)
         self.assertEqual(len(replay), 1)
         self.assertLess(preflight[0], replay[0])
