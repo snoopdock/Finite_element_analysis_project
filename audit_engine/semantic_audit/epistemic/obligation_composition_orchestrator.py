@@ -368,6 +368,40 @@ class CrossLayerObligationPackageError(RuntimeError):
     """A strict source-state-replayed cross-layer package could not be built or verified."""
 
 
+def _validate_provenance_package_contract(provenance: Mapping[str, Any]) -> None:
+    """Enforce M7.5.26's non-authority and replay claims in a sealed package."""
+    if provenance.get("snapshot_identity_assurance") != "SOURCE_STATE_REPLAY_VERIFIED":
+        raise CrossLayerObligationPackageError("package_source_state_replay_not_verified")
+    source_state = provenance.get("source_state_verification")
+    if (
+        not isinstance(source_state, Mapping)
+        or source_state.get("status") != "SOURCE_STATE_REPLAY_VERIFIED"
+        or source_state.get("source_state_replay_verified") is not True
+        or source_state.get("worktree_clean_at_replay") is not True
+    ):
+        raise CrossLayerObligationPackageError("package_source_state_status_invalid")
+    if provenance.get("atomic_cross_store_snapshot") is not False:
+        raise CrossLayerObligationPackageError("package_provenance_atomicity_claim_invalid")
+    if provenance.get("trust_anchor") != "NONE":
+        raise CrossLayerObligationPackageError("package_provenance_trust_anchor_claim_invalid")
+    if provenance.get("external_lfs_payload_verified") is not False:
+        raise CrossLayerObligationPackageError("package_external_lfs_claim_invalid")
+    if provenance.get("recursive_submodule_state_verified") is not False:
+        raise CrossLayerObligationPackageError("package_submodule_claim_invalid")
+    expected_authority = {
+        "evidence_accepted": False,
+        "proposition_truth_established": False,
+        "graph_completeness_established": False,
+        "assurance_success_established": False,
+        "audit_decision_authority": False,
+        "allow_deny_authority": False,
+        "release_approval": False,
+        "production_approval": False,
+    }
+    if provenance.get("authority") != expected_authority:
+        raise CrossLayerObligationPackageError("package_provenance_authority_claim_invalid")
+
+
 def verify_persisted_cross_layer_obligation_package(
     execution_reconciliation_id: str,
     qualification_record_id: str,
@@ -440,10 +474,7 @@ def verify_persisted_cross_layer_obligation_package(
             "strict_source_state_replay_or_binding_failed:" + type(exc).__name__
         ) from exc
 
-    if provenance.get("snapshot_identity_assurance") != "SOURCE_STATE_REPLAY_VERIFIED":
-        raise CrossLayerObligationPackageError("source_state_replay_not_verified")
-    if provenance.get("source_state_verification", {}).get("status") != "SOURCE_STATE_REPLAY_VERIFIED":
-        raise CrossLayerObligationPackageError("source_state_replay_status_invalid")
+    _validate_provenance_package_contract(provenance)
     qualification_state = orchestration["composition"]["qualification_currentness"]["state"]
     if provenance.get("qualification_currentness") != qualification_state:
         raise CrossLayerObligationPackageError("qualification_currentness_binding_mismatch")
@@ -495,10 +526,7 @@ def verify_cross_layer_obligation_package_envelope(
     except (ObligationCompositionOrchestrationError, CrossLayerSnapshotProvenanceError) as exc:
         raise CrossLayerObligationPackageError("package_inner_seal_invalid:" + str(exc)) from exc
 
-    if provenance.get("snapshot_identity_assurance") != "SOURCE_STATE_REPLAY_VERIFIED":
-        raise CrossLayerObligationPackageError("package_source_state_replay_not_verified")
-    if provenance.get("source_state_verification", {}).get("status") != "SOURCE_STATE_REPLAY_VERIFIED":
-        raise CrossLayerObligationPackageError("package_source_state_status_invalid")
+    _validate_provenance_package_contract(provenance)
     if provenance.get("orchestration_sha256") != orchestration.get("orchestration_sha256"):
         raise CrossLayerObligationPackageError("package_orchestration_binding_mismatch")
     composition = orchestration.get("composition")
