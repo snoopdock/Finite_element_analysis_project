@@ -7,6 +7,11 @@ on:
     paths:
       - .github/workflows/ae32d-machine-verification.yml
       - tools/ae32d_validate_benchmark.py
+      - tools/ae32d_exploratory_evaluation.py
+      - tests/semantic_audit/test_ae32d_exploratory_evaluation.py
+      - evaluation/ae32d/machine-reference-registry.json
+      - evaluation/ae32d/machine-reference-registry.schema.json
+      - evaluation/ae32d/exploratory-trials.schema.json
       - tools/ae32d_verify_case_matrix.py
       - tools/ae32d_verify_extended_cases.py
       - tests/semantic_audit/test_ae32d_extended_cases.py
@@ -73,6 +78,12 @@ jobs:
 
       - name: Validate AE-32D benchmark records
         run: python tools/ae32d_validate_benchmark.py --output "$RUNNER_TEMP/ae32d-machine-verification/benchmark-validation.json"
+
+      - name: Validate provisional machine-reference registry
+        run: python tools/ae32d_exploratory_evaluation.py --validate-only --output "$RUNNER_TEMP/ae32d-machine-verification/exploratory-reference-validation.json"
+
+      - name: Test exploratory evaluation boundaries
+        run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_exploratory_evaluation.py' -v
 
       - name: Test deterministic outcome classifier
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_score_outcomes.py' -v
