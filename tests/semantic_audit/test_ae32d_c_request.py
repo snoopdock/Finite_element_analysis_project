@@ -105,10 +105,25 @@ class CRequestPackageTests(unittest.TestCase):
         self.assertEqual(request["investigation_requirements"]["required_source_paths"],
                          ["control.py", "expected_behavior.json", "incident.md"])
         self.assertTrue(request["investigation_requirements"]["require_graph_interaction"])
+        self.assertEqual(request["investigation_requirements"]["required_context_target"], "control.py")
+        self.assertEqual(
+            request["investigation_requirements"]["required_context_paths"],
+            ["expected_behavior.json", "incident.md"],
+        )
+        self.assertTrue(request["investigation_requirements"]["prefetch_required_context_trace"])
         self.assertFalse(request["dispatch"]["manual_dispatch_confirmed"])
         self.assertFalse(request["dispatch"]["provider_dispatch_permitted"])
         self.assertEqual(request["dispatch"]["provider_calls_attempted"], 0)
         self.assertFalse(request["dispatch"]["credentials_accessed"])
+
+    def test_context_contract_is_nonempty_and_distinct_from_target(self):
+        record = case_record()
+        record["task"]["declared_scope"] = ["control.py"]
+        projection = build_sanitized_task_projection(
+            record, experiment_id="AE45-C1-SINGLE-PATH", condition="C_graph_llm"
+        )
+        with self.assertRaisesRegex(ValueError, "C_request_requires_at_least_one_distinct_context_path"):
+            build_c_request_package(projection, self.b_report, build_auth(build_c_preflight(self.b_report)))
 
     def test_request_contains_no_credential_fields(self):
         preflight = build_c_preflight(self.b_report)
