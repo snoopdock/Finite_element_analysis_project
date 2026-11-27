@@ -9,12 +9,12 @@ from audit_engine.semantic_audit.epistemic.obligation_composition_orchestrator i
     verify_orchestrated_obligation_composition,
     verify_persisted_cross_layer_obligation_composition,
 )
-from test_m7523_obligation_composition import ObligationCompositionTests
+import test_m7523_obligation_composition as composition_fixture
 
 
 class PersistedCompositionOrchestrationTests(unittest.TestCase):
     def setUp(self):
-        fixture = ObligationCompositionTests()
+        fixture = composition_fixture.ObligationCompositionTests()
         fixture.setUp()
         self.fixture = fixture
         self.execution_store = MagicMock()
@@ -142,6 +142,15 @@ class PersistedCompositionOrchestrationTests(unittest.TestCase):
         with self.assertRaisesRegex(
                 ObligationCompositionOrchestrationError,
                 "qualification_persisted_envelope_invalid"):
+            self.invoke()
+        self.assertEqual(self.events, [])
+
+    def test_execution_persisted_identity_mismatch_is_rejected(self):
+        self.execution_store.get.return_value = dict(
+            self.fixture.execution, reconciliation_sha256="different")
+        with self.assertRaisesRegex(
+                ObligationCompositionOrchestrationError,
+                "execution_persisted_record_identity_mismatch"):
             self.invoke()
         self.assertEqual(self.events, [])
 
