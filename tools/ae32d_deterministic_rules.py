@@ -208,6 +208,11 @@ def safe_evaluate(node: ast.AST, environment: dict[str, Any], *, depth: int = 0)
         right = safe_evaluate(node.right, environment, depth=depth + 1)
         if isinstance(node.op, ast.Pow) and (not isinstance(right, int) or abs(right) > 16):
             raise UnsupportedRuleSyntax("power_budget_exceeded")
+        if isinstance(node.op, ast.Mult) and (isinstance(left, str) or isinstance(right, str)):
+            string_value = left if isinstance(left, str) else right
+            multiplier = right if isinstance(left, str) else left
+            if not isinstance(multiplier, int) or multiplier < 0 or len(string_value) * multiplier > 1024:
+                raise UnsupportedRuleSyntax("string_multiplication_budget_exceeded")
         value = _BINOPS[type(node.op)](left, right)
         if isinstance(value, float) and not math.isfinite(value):
             raise UnsupportedRuleSyntax("non_finite_numeric_result")
@@ -305,6 +310,9 @@ def analyze_exception_contract_suppression(
         if not operation_present:
             continue
         for handler in node.handlers:
+            if handler.type is not None and not isinstance(handler.type, ast.Name):
+                unsupported_handler_shape = True
+                continue
             caught = handler.type.id if isinstance(handler.type, ast.Name) else None
             if caught != exception_name:
                 continue
@@ -379,6 +387,13 @@ def observe_dynamic_attribute_mismatch(
         provider_tree = ast.parse(provider_source)
     except (SyntaxError, UnsupportedRuleSyntax) as exc:
         return {"status": "unsupported", "reason": str(exc), "decision": "abstain"}
+    parameter_names = {
+        item.arg for item in (
+            list(consumer.args.posonlyargs) + list(consumer.args.args) + list(consumer.args.kwonlyargs)
+        )
+    }
+    if provider_parameter not in parameter_names:
+        return {"status": "unsupported", "reason": "provider_parameter_not_in_signature", "decision": "abstain"}
     reads = [
         node.attr for node in _walk_function_scope(consumer)
         if isinstance(node, ast.Attribute) and node.attr
