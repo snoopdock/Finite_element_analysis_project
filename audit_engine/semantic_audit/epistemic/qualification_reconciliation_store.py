@@ -230,6 +230,8 @@ class QualificationReconciliationStore:
                         return False
                     records[row["event_id"]] = payload
                 elif row["event_type"] == "INVALIDATION":
+                    if payload.get("schema") != EVENT_SCHEMA:
+                        return False
                     record = records.get(payload.get("record_id"))
                     if record is None:
                         return False
