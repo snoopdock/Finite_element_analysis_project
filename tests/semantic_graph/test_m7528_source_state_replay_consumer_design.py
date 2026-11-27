@@ -1,8 +1,7 @@
-"""M7.5.28 source-state replay consumer requirements/design tests.
+"""M7.5.28 design-contract regression tests retained after M7.5.29 integration.
 
-These tests establish the feasibility and seal topology of the proposed
-M7.5.24 package integration. They deliberately do not wire M7.5.26 into
-production orchestration; that is a separately reviewed implementation step.
+These tests preserve the original design requirements while checking that the
+later implementation uses the authorized package boundary.
 """
 from __future__ import annotations
 
