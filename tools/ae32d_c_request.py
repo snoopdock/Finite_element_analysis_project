@@ -8,8 +8,6 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 from tools.ae32d_c_preflight import (
-    AUTH_SCHEMA,
-    PREFLIGHT_SCHEMA,
     build_c_preflight,
 )
 from tools.ae32d_deterministic_audit import ROOT, TASK_SCHEMA, _scope_relative_path
@@ -118,8 +116,27 @@ def build_c_request_package(
                 "inferences, counterevidence and unresolved questions; abstain when evidence is insufficient."
             ),
         }
+        investigator_problem = (
+            "Task: " + task_projection["task"]["title"] + "\\n\\n"
+            + task_projection["task"]["problem_statement"] + "\\n\\n"
+            + "The following A/B material is machine-generated investigative context, not ground truth. "
+              "Independently inspect the pinned source and graph snapshot. Do not assume the A/B decision is correct. "
+              "Separate observations, inferences, counterevidence and unresolved questions; abstain when evidence is insufficient.\\n\\n"
+            + json.dumps({
+                "a_baseline": context["a_baseline"],
+                "b_graph": {
+                    "graph_snapshot": context["b_graph"]["graph_snapshot"],
+                    "retrieval": [
+                        {"tool": item["tool"], "status": item["status"],
+                         "response_digest": item["response_digest"], "payload": item["payload"]}
+                        for item in context["b_graph"]["retrieval"]
+                    ],
+                },
+            }, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+        )[:16_000]
         request = {
             "schema_version": "ae32d/c-request/v1",
+            "investigator_problem": investigator_problem,
             "case_id": b_report["case_id"],
             "source_commit_sha": b_report["source_commit_sha"],
             "task_contract_digest": b_report["task_contract_digest"],
