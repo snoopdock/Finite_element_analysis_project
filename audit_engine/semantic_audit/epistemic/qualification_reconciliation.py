@@ -134,7 +134,7 @@ def reconcile_semantic_qualifications(
             coverage_manifest=coverage_manifest, source_manifest=source_manifest,
             repository_root=repository_root, defeaters=defeaters,
         )
-    except (SemanticQualificationError, ValueError, TypeError, KeyError) as exc:
+    except (SemanticQualificationError, ValueError, TypeError, KeyError, OSError) as exc:
         raise QualificationReconciliationError(
             "semantic_qualification_replay_failed:" + type(exc).__name__) from exc
 
