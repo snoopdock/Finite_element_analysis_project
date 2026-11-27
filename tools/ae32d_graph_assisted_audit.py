@@ -83,6 +83,11 @@ def _scope_snapshot(task_projection: dict[str, Any], source_root: Path, destinat
         except (OSError, ValueError):
             unreadable.append(relative)
             continue
+        try:
+            data.decode("utf-8")
+        except UnicodeDecodeError:
+            unreadable.append(relative)
+            continue
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
@@ -265,6 +270,8 @@ def run_graph_assisted_audit(task_projection: dict[str, Any], source_root: str |
                     })
         finally:
             evidence_tools.close()
+    if _git_head(root) != actual_sha:
+        raise ValueError("source_revision_changed_during_B_retrieval")
 
     graph_policy_digest = _canonical_digest(GRAPH_POLICY)
     baseline_config_digest = baseline_report["config_digest"]
@@ -274,6 +281,8 @@ def run_graph_assisted_audit(task_projection: dict[str, Any], source_root: str |
         "graph_policy_digest": graph_policy_digest,
         "graph_snapshot_fingerprint": graph_snapshot["graph_fingerprint"],
         "graph_backend": GRAPH_BACKEND,
+        "runner_source_sha256": _sha256(Path(__file__).read_bytes()),
+        "ae32b_tool_source_sha256": _sha256((ROOT / "audit_engine" / "semantic_audit" / "ae32b" / "evidence_tools.py").read_bytes()),
     })
     graph_incomplete = graph_snapshot["status"] != "complete" or not graph_snapshot["backend_pipeline_wired"]
     status = "completed" if baseline_report["status"] == "completed" and not graph_truncated and not graph_errors and not graph_incomplete else "partial"
