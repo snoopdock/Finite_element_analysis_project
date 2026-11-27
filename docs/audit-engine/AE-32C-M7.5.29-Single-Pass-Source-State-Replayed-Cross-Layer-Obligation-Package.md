@@ -1,6 +1,6 @@
 # AE-32C M7.5.29 — Single-Pass Source-State-Replayed Cross-Layer Obligation Package
 
-**Status:** Implementation committed; exact-head CI validation pending  
+**Status:** Implemented; implementation and regression CI-validated; documentation-only exact-head revalidation pending  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.28 — Source-State Replay Consumer Requirements and Integration Design  
 **Implementation baseline:** `f73d80ef526a2d5811a800bdae4943941c61bd41`  
@@ -135,6 +135,18 @@ No distributed transaction, external trust anchor, universal consumer intercepti
 
 ## 8. Validation record
 
-Validation is pending until the new workflow completes on the exact final branch head. The workflow checks out `${{ github.sha }}`, compiles the implementation under Python 3.11, runs the dedicated M7.5.29 tests, and reruns the M7.5.24–M7.5.28, source-manifest, and complete M7.5 regressions.
+Implementation validation evidence:
+- [M7.5.29 workflow run 45985247648](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45985247648) — success on implementation revision `7f231ae83a59bc91e6aaba120eedfad3ef8de9c1`; exact triggering SHA checkout.
+- M7.5.29 package tests: 9 passed.
+- M7.5.28 design-contract tests: 8 passed.
+- M7.5.27 consumer inventory tests: 6 passed.
+- M7.5.26 provenance behavioral tests: 9 passed.
+- M7.5.24 orchestration regression: 9 passed.
+- M7.5.25 failure-injection regression: 3 passed.
+- Source snapshot manifest regression: 8 passed.
+- Complete M7.5 regression: 284 passed.
+- Python 3.11 compilation: passed.
+
+The two documentation updates in this commit are included in the M7.5.29 workflow path filters. The workflow checks out `${{ github.sha }}`; its subsequent success is required to establish exact-head validation of this documentation revision.
 
 Do not treat this milestone as CI-validated until the final run is successful and its checked-out SHA equals the final `stage1/section-uuids` head.
