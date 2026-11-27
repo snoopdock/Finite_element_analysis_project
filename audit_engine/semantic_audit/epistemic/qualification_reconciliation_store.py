@@ -70,9 +70,15 @@ def qualification_reconciliation_context(
 ) -> dict[str, str]:
     """Build the exact eight-field currentness token used by invalidation."""
     context = _context(reconciliation, qualification, observation_bundle)
-    if any(not isinstance(context.get(key), str) or not context[key].strip()
-           for key in _CONTEXT_KEYS):
-        raise ValueError("reconciliation_context_incomplete")
+    envelope = {
+        "schema": SCHEMA,
+        "record_id": reconciliation.get("reconciliation_sha256"),
+        "reconciliation": dict(reconciliation),
+        "qualification": dict(qualification),
+        "observation_bundle": dict(observation_bundle),
+        "context": context,
+    }
+    _validate_envelope(envelope)
     return context
 
 
