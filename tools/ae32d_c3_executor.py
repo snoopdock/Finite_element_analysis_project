@@ -28,8 +28,8 @@ from tools.ae32d_graph_assisted_audit import (
     _scope_snapshot,
 )
 
-# These are operational safeguards, not additional authority. The seven
-# authorization-controlled limits below are always copied from the C3 contract.
+# These are operational safeguards, not additional authority. All
+# authorization-controlled fields are copied from the C3 contract.
 _FIXED_INVESTIGATOR_LIMITS: dict[str, int] = {
     "max_response_chars": 40_000,
     "max_tool_response_bytes": 100_000,
@@ -157,7 +157,9 @@ def _build_investigator_limits(contract_limits: Mapping[str, Any]) -> Investigat
         value = contract_limits[key]
         if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0 or value > ceiling:
             raise ValueError("C3_executor_authorized_limit_out_of_bounds:" + key)
-    if contract_limits["temperature"] != 0.0:
+    temperature = contract_limits["temperature"]
+    if (isinstance(temperature, bool) or not isinstance(temperature, (int, float))
+            or temperature != 0.0):
         raise ValueError("C3_executor_temperature_must_be_zero")
     values = dict(_FIXED_INVESTIGATOR_LIMITS)
     values.update(dict(contract_limits))
