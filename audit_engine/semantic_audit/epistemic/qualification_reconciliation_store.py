@@ -16,8 +16,6 @@ from typing import Any, Mapping
 from .assurance import AssuranceClaim
 from .coverage import EpistemicCoverageManifest
 from .qualification_reconciliation import (
-    QualificationReconciliationError,
-    qualification_aggregation_policy_registry,
     verify_qualification_obligation_reconciliation,
 )
 from .rule_coverage import RuleCoveragePlan
@@ -42,7 +40,7 @@ class QualificationReconciliationStoreError(RuntimeError):
 
 def _canonical(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True,
-                      separators=(",", ":"), allow_nan=False)
+                      separators=(",", ":"), allow_nan=False) + "\\n"
 
 
 def _digest(value: Any) -> str:
