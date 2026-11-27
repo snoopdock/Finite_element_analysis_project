@@ -134,3 +134,13 @@ The inventory above is a point-in-time record of the M7.5.27 audit. It correctly
 This is not a retroactive change to the M7.5.27 finding. It is a separately scoped, explicit M7.5.29 integration. The original assurance and authority limits in this document remain in force.
 
 Implementation record: [M7.5.29 Single-Pass Source-State-Replayed Cross-Layer Obligation Package](AE-32C-M7.5.29-Single-Pass-Source-State-Replayed-Cross-Layer-Obligation-Package.md).
+
+
+M7.5.29 integration guard validation:
+- [M7.5.27 workflow run 45985247673](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45985247673) — success on revision `7f231ae83a59bc91e6aaba120eedfad3ef8de9c1`.
+- Updated M7.5.27 structural inventory tests: 6 passed.
+- M7.5.26 provenance regression: 9 passed.
+- M7.5.24 orchestration regression: 9 passed.
+- M7.5.25 failure-injection regression: 3 passed.
+- M7.5.22 dependency-boundary regression: 5 passed.
+- Complete M7.5 regression: 284 passed.
