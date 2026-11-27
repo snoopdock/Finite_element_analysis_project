@@ -15,6 +15,7 @@ on:
       - "tests/semantic_graph/test_m7521_*.py"
       - "tests/semantic_graph/test_m7522_*.py"
       - "docs/audit-engine/AE-32C-M7.5.24-*"
+      - "docs/audit-engine/AE-32C-M7.5.25-*"
   workflow_dispatch:
 
 permissions:
