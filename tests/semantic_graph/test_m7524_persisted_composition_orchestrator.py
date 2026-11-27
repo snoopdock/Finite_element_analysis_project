@@ -32,14 +32,6 @@ class PersistedCompositionOrchestrationTests(unittest.TestCase):
 
     def invoke(self, *, consumer_result=None):
         f = self.fixture
-        self.execution_store.get.return_value = f.execution
-        self.qualification_store.get.return_value = {
-            "record_id": f.qualification["reconciliation_sha256"],
-            "reconciliation": f.qualification,
-            "qualification": {"qualification_sha256": "fixture"},
-            "observation_bundle": {"bundle_sha256": "fixture"},
-        }
-
         def execution_replay(*args, **kwargs):
             self.events.append("execution_replay")
             return f.execution_replay
@@ -72,7 +64,7 @@ class PersistedCompositionOrchestrationTests(unittest.TestCase):
             ) as qualification_verify,
         ):
             result = verify_persisted_cross_layer_obligation_composition(
-                "execution-id",
+                f.execution["reconciliation_sha256"],
                 f.qualification["reconciliation_sha256"],
                 execution_reconciliation_store=self.execution_store,
                 dossier_id="dossier",
