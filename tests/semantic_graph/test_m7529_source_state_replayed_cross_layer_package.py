@@ -234,6 +234,18 @@ class M7529SourceStateReplayedPackageTests(unittest.TestCase):
         execution_inventory = build_source_extractor_inventory(source)
         execution_report = build_extractor_execution_report(
             source, execution_inventory, f.root)
+        execution_fixture.build_and_persist_coverage_dossier(
+            dossier_id="dossier:m7529-real",
+            claim=claim,
+            plan=plan,
+            manifest=coverage,
+            gap_to_obligations={},
+            captured_at="2026-11-27T00:00:00Z",
+            assurance_store=f.assurance,
+            epistemic_store=f.epistemic,
+            dossier_store=f.dossiers,
+        )
+
         execution_reconciliation = build_and_persist_execution_obligation_reconciliation(
             reconciliation_store=f.reconciliations,
             dossier_id="dossier:m7529-real",
@@ -244,17 +256,6 @@ class M7529SourceStateReplayedPackageTests(unittest.TestCase):
             inventory=execution_inventory,
             execution_report=execution_report,
             repository_root=f.root,
-            assurance_store=f.assurance,
-            epistemic_store=f.epistemic,
-            dossier_store=f.dossiers,
-        )
-        execution_fixture.build_and_persist_coverage_dossier(
-            dossier_id="dossier:m7529-real",
-            claim=claim,
-            plan=plan,
-            manifest=coverage,
-            gap_to_obligations={},
-            captured_at="2026-11-27T00:00:00Z",
             assurance_store=f.assurance,
             epistemic_store=f.epistemic,
             dossier_store=f.dossiers,
