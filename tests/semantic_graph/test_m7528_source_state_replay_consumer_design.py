@@ -169,7 +169,7 @@ class M7528SourceStateReplayConsumerDesignTests(unittest.TestCase):
             "DECLARED_ONLY",
             "atomic_cross_store_snapshot = false",
             "trust_anchor = NONE",
-            "does not authorize",
+            "package authority remains non-authorizing",
             "M7.5.29",
         ):
             with self.subTest(phrase=phrase):
