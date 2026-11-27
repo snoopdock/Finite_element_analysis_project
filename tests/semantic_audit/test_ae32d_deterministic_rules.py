@@ -65,6 +65,17 @@ class DeterministicRulePrimitiveTests(unittest.TestCase):
             "status": "supported", "kind": "return", "value": 0,
         })
 
+    def test_unbound_augmented_assignment_is_detected(self):
+        source = """def work(flag):
+    if flag:
+        result = 1
+    result += 1
+    return result
+"""
+        report = analyze_unbound_local_return(source, "work", "result")
+        self.assertTrue(report["unbound_return_read"])
+        self.assertIn("augmented_assignment_target", [item["context"] for item in report["evidence"]])
+
     def test_unsupported_control_flow_fails_closed(self):
         source = """def work(flag):
     try:
@@ -122,6 +133,15 @@ class DeterministicRulePrimitiveTests(unittest.TestCase):
         self.assertFalse(report["sink_reads_intermediate"])
         self.assertTrue(report["stale_sink_observed"])
         self.assertEqual(report["comparisons"][0]["actual"], 105)
+
+    def test_stale_sink_rule_rejects_empty_contract_cases(self):
+        source = """def invoice_total(subtotal, discount, tax):
+    discounted = subtotal - discount
+    return subtotal + tax
+"""
+        report = analyze_stale_intermediate_sink(source, "invoice_total", "discounted", [])
+        self.assertEqual(report["status"], "unsupported")
+        self.assertEqual(report["reason"], "input_cases_required")
 
     def test_corrected_dataflow_is_counterexample(self):
         source = """def invoice_total(subtotal, discount, tax):
