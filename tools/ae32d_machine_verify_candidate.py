@@ -125,6 +125,105 @@ def self_assignments(tree: ast.AST, attr: str) -> list[int]:
     return sorted(set(lines))
 
 
+
+def _class_node(tree: ast.AST, name: str) -> ast.ClassDef | None:
+    return next((node for node in ast.walk(tree)
+                 if isinstance(node, ast.ClassDef) and node.name == name), None)
+
+
+def _function_node(tree: ast.AST, name: str) -> ast.FunctionDef | None:
+    return next((node for node in ast.walk(tree)
+                 if isinstance(node, ast.FunctionDef) and node.name == name), None)
+
+
+def _provider_total_calls_reads(function: ast.AST) -> list[int]:
+    return [node.lineno for node in ast.walk(function)
+            if isinstance(node, ast.Attribute) and node.attr == "total_calls"
+            and isinstance(node.ctx, ast.Load)
+            and isinstance(node.value, ast.Name) and node.value.id == "provider"]
+
+
+def _method_self_assignment(function: ast.AST | None, attr: str) -> list[int]:
+    if function is None:
+        return []
+    lines: list[int] = []
+    for node in ast.walk(function):
+        targets = node.targets if isinstance(node, ast.Assign) else (
+            [node.target] if isinstance(node, ast.AnnAssign) else [])
+        for target in targets:
+            if (isinstance(target, ast.Attribute) and target.attr == attr
+                    and isinstance(target.value, ast.Name) and target.value.id == "self"):
+                lines.append(target.lineno)
+    return sorted(set(lines))
+
+
+def _method_self_increment(function: ast.AST | None, attr: str) -> list[int]:
+    if function is None:
+        return []
+    return [node.lineno for node in ast.walk(function)
+            if isinstance(node, ast.AugAssign) and isinstance(node.op, ast.Add)
+            and isinstance(node.target, ast.Attribute) and node.target.attr == attr
+            and isinstance(node.target.value, ast.Name) and node.target.value.id == "self"]
+
+
+def _direct_call(node: ast.AST, name: str) -> bool:
+    return (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+            and node.func.id == name)
+
+
+def _verify_structural_contract(trees: dict[str, ast.AST]) -> list[str]:
+    errors: list[str] = []
+    extractor, adapter, factory, main, checks = (
+        trees["pipeline/extractor.py"], trees["providers/adapter.py"],
+        trees["providers/factory.py"], trees["main.py"], trees["tests/checks.py"])
+    extract_fn = _function_node(extractor, "extract")
+    if extract_fn is None:
+        errors.append("structural_extract_function_missing")
+    else:
+        annotation = extract_fn.args.args[0].annotation if extract_fn.args.args else None
+        if not (isinstance(annotation, ast.Name) and annotation.id == "ProviderAdapter"):
+            errors.append("structural_provider_type_contract_missing")
+        if not _provider_total_calls_reads(extract_fn):
+            errors.append("structural_provider_total_calls_read_missing")
+    adapter_cls = _class_node(adapter, "ProviderAdapter")
+    if adapter_cls is None:
+        errors.append("structural_provider_adapter_class_missing")
+    else:
+        if adapter_cls.bases:
+            errors.append("structural_provider_adapter_inheritance_unverified")
+        if any(isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+               and node.name in {"__getattr__", "__getattribute__"}
+               for node in adapter_cls.body):
+            errors.append("structural_dynamic_attribute_hook_present")
+        init_fn = next((node for node in adapter_cls.body
+                        if isinstance(node, ast.FunctionDef) and node.name == "__init__"), None)
+        chat_fn = next((node for node in adapter_cls.body
+                        if isinstance(node, ast.FunctionDef) and node.name == "chat"), None)
+        if not _method_self_assignment(init_fn, "calls"):
+            errors.append("structural_adapter_calls_initialization_missing")
+        if not _method_self_increment(chat_fn, "calls"):
+            errors.append("structural_adapter_calls_increment_missing")
+        if any(isinstance(node, ast.Attribute) and node.attr == "total_calls"
+               for node in ast.walk(adapter_cls)):
+            errors.append("structural_adapter_total_calls_reference_present")
+    build_fn = _function_node(factory, "build_provider")
+    if not (build_fn and any(isinstance(node, ast.Return)
+            and _direct_call(node.value, "ProviderAdapter")
+            and not node.value.args and not node.value.keywords
+            for node in ast.walk(build_fn))):
+        errors.append("structural_factory_provider_construction_missing")
+    main_fn = _function_node(main, "main")
+    if not (main_fn and any(isinstance(node, ast.Return)
+            and _direct_call(node.value, "extract") and len(node.value.args) == 1
+            and _direct_call(node.value.args[0], "build_provider")
+            for node in ast.walk(main_fn))):
+        errors.append("structural_main_provider_call_path_missing")
+    test_fn = _function_node(checks, "check_extractor_contract")
+    if not (test_fn and any(_direct_call(node, "extract") for node in ast.walk(test_fn))):
+        errors.append("structural_fixture_contract_test_missing")
+    return errors
+
+
 def _runtime_environment() -> dict[str, str]:
     """Pass only basic process-launch variables, never Actions tokens or secrets."""
     allowed = ("PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP")
@@ -300,6 +399,13 @@ def run_check(repository_root: Path | str) -> dict[str, Any]:
             "evidence": "Factory returns a ProviderAdapter instance.",
         })
 
+    errors.extend(_verify_structural_contract(trees))
+    if errors:
+        return {
+            "passed": False, "errors": errors, "findings": findings,
+            "fixture_path": FIXTURE_RELATIVE_PATH.as_posix(),
+        }
+
     runtime_match, runtime, runtime_error = _run_fixture(fixture)
     if runtime_match:
         findings.append({
@@ -344,16 +450,32 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
 
-    repository_root = Path(__file__).resolve().parents[1]
-    result = run_check(repository_root)
+    trusted_repository_root = Path(__file__).resolve().parents[1]
+    candidate_root_value = os.environ.get("AE32D_CANDIDATE_SOURCE_ROOT")
+    candidate_root = Path(candidate_root_value) if candidate_root_value else trusted_repository_root
+    expected_candidate_sha = "afcb1cba064de6f3d680f6be3085a365c6687c7b"
+    try:
+        revision = subprocess.run(
+            ["git", "-C", str(candidate_root), "rev-parse", "--verify", "HEAD"],
+            text=True, capture_output=True, stdin=subprocess.DEVNULL, timeout=5,
+            check=False, close_fds=True, env=_runtime_environment(),
+        )
+        if revision.returncode != 0 or revision.stdout.strip() != expected_candidate_sha:
+            raise ValueError("candidate_source_revision_mismatch")
+        result = run_check(candidate_root)
+    except (OSError, ValueError) as exc:
+        result = {"passed": False, "errors": [str(exc)], "findings": [],
+                  "fixture_path": FIXTURE_RELATIVE_PATH.as_posix()}
     source_revision = os.environ.get("GITHUB_SHA") or os.environ.get("SOURCE_REVISION") or "local-unset"
     workflow_run_id = os.environ.get("GITHUB_RUN_ID") or "local-run"
     workflow_revision = os.environ.get("WORKFLOW_REVISION") or source_revision
 
     report = {
-        "schema_version": "ae32d/machine-verification/v1",
+        "schema_version": "ae32d/machine-verification/v2",
         "case_id": "AE32D-CANDIDATE-PROVIDER-INTERFACE-001",
-        "verification_mode": "deterministic_static_checks_plus_controlled_runtime_reproduction",
+        "verification_mode": "pinned_source_ast_contract_and_controlled_runtime_reproduction",
+        "machine_adjudication": "confirmed_fixture_runtime_defect" if result["passed"] else "not_confirmed",
+        "candidate_source_revision": expected_candidate_sha,
         "status": "machine_verified_candidate" if result["passed"] else "machine_verification_failed",
         "primary_benchmark_eligible": False,
         "human_independent_adjudication": "not_performed",

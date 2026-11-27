@@ -35,6 +35,14 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
 
+      - name: Checkout immutable candidate source
+        uses: actions/checkout@v4
+        with:
+          ref: afcb1cba064de6f3d680f6be3085a365c6687c7b
+          path: .ae32d-candidate-source
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -49,8 +57,8 @@ jobs:
 
       - name: Verify the fixed controlled incident
         id: verify
-        if: github.event_name == 'workflow_dispatch' && inputs.acknowledge == true
         env:
+          AE32D_CANDIDATE_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-candidate-source
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           WORKFLOW_REVISION: ${{ github.workflow_sha }}
@@ -60,7 +68,7 @@ jobs:
             --output "$RUNNER_TEMP/ae32d-machine-verification/machine-verification.json"
 
       - name: Publish result in job summary
-        if: always() && github.event_name == 'workflow_dispatch'
+        if: always()
         env:
           REPORT: ${{ runner.temp }}/ae32d-machine-verification/machine-verification.json
         run: |
@@ -84,7 +92,7 @@ jobs:
           PY
 
       - name: Upload machine-verification report
-        if: always() && github.event_name == 'workflow_dispatch' && inputs.acknowledge == true
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ae32d-machine-verification-${{ github.run_id }}

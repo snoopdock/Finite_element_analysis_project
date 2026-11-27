@@ -159,5 +159,47 @@ class AE32DMachineVerifierBoundaryTests(unittest.TestCase):
             self.assertFalse(output.exists())
 
 
+    def test_unrelated_attribute_access_does_not_satisfy_provider_contract(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture = self._repository(root)
+            (fixture / "pipeline" / "extractor.py").write_text(
+                "def extract(provider):\n    return wrapper.total_calls\n", encoding="utf-8"
+            )
+            report = run_check(root)
+            self.assertFalse(report["passed"])
+            self.assertIn("structural_provider_type_contract_missing", report["errors"])
+            self.assertIn("structural_provider_total_calls_read_missing", report["errors"])
+            self.assertNotIn("runtime", report)
+
+    def test_dynamic_getattr_prevents_negative_member_inference(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture = self._repository(root)
+            (fixture / "providers" / "adapter.py").write_text(
+                "class ProviderAdapter:\n"
+                "    def __init__(self): self.calls = 0\n"
+                "    def chat(self, messages): self.calls += 1\n"
+                "    def __getattr__(self, name): return self.calls\n", encoding="utf-8"
+            )
+            report = run_check(root)
+            self.assertFalse(report["passed"])
+            self.assertIn("structural_dynamic_attribute_hook_present", report["errors"])
+
+    def test_counter_in_unrelated_class_does_not_satisfy_adapter_contract(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture = self._repository(root)
+            (fixture / "providers" / "adapter.py").write_text(
+                "class ProviderAdapter: pass\n"
+                "class Other:\n"
+                "    def __init__(self): self.calls = 0\n"
+                "    def chat(self, messages): self.calls += 1\n", encoding="utf-8"
+            )
+            report = run_check(root)
+            self.assertFalse(report["passed"])
+            self.assertIn("structural_adapter_calls_initialization_missing", report["errors"])
+
+
 if __name__ == "__main__":
     unittest.main()
