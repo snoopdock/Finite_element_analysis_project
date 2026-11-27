@@ -14,7 +14,7 @@
     {
       "case_id": "AE32D-CANDIDATE-PROVIDER-INTERFACE-001",
       "path": "cases/AE32D-CANDIDATE-PROVIDER-INTERFACE-001.json",
-      "status": "candidate_not_adjudicated",
+      "status": "machine_verified_regression",
       "primary_benchmark_eligible": false
     }
   ],

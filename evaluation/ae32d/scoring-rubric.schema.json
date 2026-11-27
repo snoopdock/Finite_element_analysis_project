@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AE-32D scoring rubric",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "benchmark_id",
+    "protocol_version",
+    "primary_metric",
+    "secondary_dimensions",
+    "review_policy",
+    "conditions",
+    "freeze_requirements"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ae32d/scoring-rubric/v1"
+    },
+    "status": {
+      "enum": [
+        "draft_pending_approval",
+        "frozen",
+        "retired"
+      ]
+    },
+    "benchmark_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "protocol_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "primary_metric": {
+      "type": "object",
+      "required": [
+        "name",
+        "unit",
+        "definition",
+        "categories",
+        "report_all_categories",
+        "raw_denominators_required"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "definition": {
+          "type": "string"
+        },
+        "categories": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "report_all_categories": {
+          "type": "boolean"
+        },
+        "raw_denominators_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "secondary_dimensions": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "review_policy": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": [
+          "boolean",
+          "integer"
+        ]
+      }
+    },
+    "conditions": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "freeze_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

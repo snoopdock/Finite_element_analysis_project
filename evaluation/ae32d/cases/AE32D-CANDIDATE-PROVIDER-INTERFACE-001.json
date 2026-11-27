@@ -1,7 +1,7 @@
 {
   "schema_version": "ae32d/case/v1",
   "case_id": "AE32D-CANDIDATE-PROVIDER-INTERFACE-001",
-  "case_status": "candidate",
+  "case_status": "machine_verified_regression",
   "source": {
     "repository": "snoopdock/Finite_element_analysis_project",
     "source_commit_sha": "afcb1cba064de6f3d680f6be3085a365c6687c7b",
@@ -67,7 +67,7 @@
         "tests/semantic_audit/fixtures/ae32c_provider_interface_incident/pipeline/extractor.py",
         "tests/semantic_audit/fixtures/ae32c_provider_interface_incident/providers/adapter.py"
       ],
-      "notes": "This is a candidate regression case only. It is not a scored gold case and must not be included in the primary benchmark until independently reviewed."
+      "notes": "The pinned source fixture was machine-verified at workflow run 46003755131. The ground-truth label remains pending under the current primary-benchmark policy; this is a regression verification, not a primary gold label."
     },
     "notes": "Retain this known incident as one case among several defect families. Avoid tuning the benchmark solely to the two required textual anchors."
   },
@@ -87,6 +87,25 @@
       "B_graph",
       "C_graph_llm"
     ],
-    "exclusion_reason": "Candidate case; independent ground-truth adjudication and reproducibility check are pending."
+    "exclusion_reason": "Machine verification confirms the fixture-level runtime defect. The case remains excluded from primary scoring because benchmark gold-label and freeze requirements are not satisfied."
+  },
+  "machine_verification": {
+    "schema_version": "ae32d/machine-verification-record/v1",
+    "status": "machine_verified_candidate",
+    "machine_adjudication": "confirmed_fixture_runtime_defect",
+    "candidate_source_commit": "afcb1cba064de6f3d680f6be3085a365c6687c7b",
+    "verifier_commit": "842adb25fd0ff280d8b21984137ed0c8354b237a",
+    "workflow_run_id": "46003755131",
+    "workflow_url": "https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46003755131",
+    "artifact_id": "15199671056",
+    "artifact_archive_sha256": "05789c5839a418bc5f533e46b5592c710a966b39a26d8cec4b19c5612f698402",
+    "boundary_tests": {
+      "passed": 9,
+      "failed": 0
+    },
+    "machine_checks_passed": 6,
+    "runtime_status": "EXPECTED_FAILURE_REPRODUCED",
+    "primary_benchmark_eligible": false,
+    "human_independent_adjudication": "not_performed"
   }
 }

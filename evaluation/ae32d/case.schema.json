@@ -29,7 +29,8 @@
         "adjudication_pending",
         "adjudicated",
         "excluded",
-        "holdout"
+        "holdout",
+        "machine_verified_regression"
       ]
     },
     "source": {
@@ -369,6 +370,103 @@
             "string",
             "null"
           ]
+        }
+      }
+    },
+    "machine_verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "status",
+        "machine_adjudication",
+        "candidate_source_commit",
+        "verifier_commit",
+        "workflow_run_id",
+        "workflow_url",
+        "artifact_id",
+        "artifact_archive_sha256",
+        "boundary_tests",
+        "machine_checks_passed",
+        "runtime_status",
+        "primary_benchmark_eligible",
+        "human_independent_adjudication"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "ae32d/machine-verification-record/v1"
+        },
+        "status": {
+          "enum": [
+            "machine_verified_candidate",
+            "machine_verification_failed"
+          ]
+        },
+        "machine_adjudication": {
+          "enum": [
+            "confirmed_fixture_runtime_defect",
+            "not_confirmed"
+          ]
+        },
+        "candidate_source_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "verifier_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "workflow_run_id": {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        },
+        "workflow_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "artifact_id": {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        },
+        "artifact_archive_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "boundary_tests": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "passed",
+            "failed"
+          ],
+          "properties": {
+            "passed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "failed": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "machine_checks_passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "runtime_status": {
+          "enum": [
+            "EXPECTED_FAILURE_REPRODUCED",
+            "NOT_REPRODUCED",
+            "TIMED_OUT",
+            "LAUNCH_FAILED"
+          ]
+        },
+        "primary_benchmark_eligible": {
+          "const": false
+        },
+        "human_independent_adjudication": {
+          "const": "not_performed"
         }
       }
     }
