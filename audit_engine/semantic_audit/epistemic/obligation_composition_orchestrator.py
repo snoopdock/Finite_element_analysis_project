@@ -549,12 +549,12 @@ def verify_cross_layer_obligation_package_envelope(
     provenance = submitted.get("provenance")
     if not isinstance(orchestration, Mapping) or not isinstance(provenance, Mapping):
         raise CrossLayerObligationPackageError("package_inner_envelopes_missing")
-    _validate_orchestration_package_contract(orchestration)
     try:
         orchestration_check = verify_orchestrated_obligation_composition(orchestration)
         provenance_check = verify_cross_layer_snapshot_provenance_envelope(provenance)
     except (ObligationCompositionOrchestrationError, CrossLayerSnapshotProvenanceError) as exc:
         raise CrossLayerObligationPackageError("package_inner_seal_invalid:" + str(exc)) from exc
+    _validate_orchestration_package_contract(orchestration)
 
     _validate_provenance_package_contract(provenance)
     if provenance.get("orchestration_sha256") != orchestration.get("orchestration_sha256"):
