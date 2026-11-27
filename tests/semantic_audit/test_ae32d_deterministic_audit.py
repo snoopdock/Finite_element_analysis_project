@@ -67,6 +67,7 @@ class DeterministicConditionATests(unittest.TestCase):
         self.assertEqual(report["decision"], "defect")
         self.assertTrue(any(item["finding_id"].startswith("A-CFG-") for item in report["findings"]))
         self.assertEqual(report["condition"], "A_deterministic")
+        self.assertEqual(report["status"], "partial")
 
     def test_complete_initialization_control_produces_scoped_no_defect(self):
         record = task_record(
@@ -81,6 +82,8 @@ class DeterministicConditionATests(unittest.TestCase):
         report = self.run_case("case", record)
         self.assertEqual(report["decision"], "no_defect")
         self.assertTrue(report["counterevidence"])
+        self.assertEqual(report["status"], "completed")
+        self.assertTrue(report["coverage"]["declared_scope_complete"])
 
     def test_exception_contract_produces_defect(self):
         record = task_record(
@@ -126,6 +129,9 @@ class DeterministicConditionATests(unittest.TestCase):
         self.assertEqual(report["decision"], "abstain")
         self.assertTrue(any(item["classification"] == "observation" for item in report["findings"]))
         self.assertTrue(report["unresolved_questions"])
+        evidence_paths = {e["path"] for f in report["findings"] for e in f["evidence"]}
+        self.assertIn("pipeline/extractor.py", evidence_paths)
+        self.assertIn("providers/adapter.py", evidence_paths)
 
     def test_ambiguous_dynamic_provider_contract_abstains(self):
         record = task_record(
