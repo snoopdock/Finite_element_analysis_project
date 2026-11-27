@@ -26,7 +26,7 @@
       ]
     },
     "preflight": {
-      "$ref": "c-preflight.schema.json"
+      "type": "object"
     },
     "request": {
       "oneOf": [
@@ -133,7 +133,54 @@
           "pattern": "^[0-9a-f]{64}$"
         },
         "budget": {
-          "$ref": "c-preflight.schema.json#/properties/request_plan/properties/budget"
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max_model_rounds",
+            "max_tool_calls",
+            "max_tokens_per_call",
+            "finalization_max_tokens_per_call",
+            "max_total_tokens",
+            "max_elapsed_seconds",
+            "max_cost_usd"
+          ],
+          "properties": {
+            "max_model_rounds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 11
+            },
+            "max_tool_calls": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12
+            },
+            "max_tokens_per_call": {
+              "type": "integer",
+              "minimum": 64,
+              "maximum": 2048
+            },
+            "finalization_max_tokens_per_call": {
+              "type": "integer",
+              "minimum": 64,
+              "maximum": 6144
+            },
+            "max_total_tokens": {
+              "type": "integer",
+              "minimum": 256,
+              "maximum": 30720
+            },
+            "max_elapsed_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 900
+            },
+            "max_cost_usd": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 0.5
+            }
+          }
         },
         "context": {
           "type": "object",
