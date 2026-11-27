@@ -145,9 +145,13 @@ def analyze_unbound_local_return(source: str, function_name: str, variable_name:
             elif isinstance(statement, ast.If):
                 for state in current:
                     read_check(statement.test, state, "branch_test")
-                body_states = block(statement.body, current)
-                else_states = block(statement.orelse, current) if statement.orelse else [set(x) for x in current]
-                current = body_states + else_states
+                if isinstance(statement.test, ast.Constant) and isinstance(statement.test.value, (bool, int, float, str, type(None))):
+                    selected = statement.body if bool(statement.test.value) else statement.orelse
+                    current = block(selected, current)
+                else:
+                    body_states = block(statement.body, current)
+                    else_states = block(statement.orelse, current) if statement.orelse else [set(x) for x in current]
+                    current = body_states + else_states
                 if len(current) > 64:
                     unsupported.append("control_flow_path_budget_exceeded")
                     return current
@@ -286,7 +290,7 @@ def analyze_exception_contract_suppression(
                 (isinstance(child.func, ast.Name) and child.func.id == operation_name)
                 or (isinstance(child.func, ast.Attribute) and child.func.attr == operation_name)
             )
-            for statement in node.body for child in ast.walk(statement)
+            for statement in node.body for child in _walk_function_scope(statement)
         )
         if not operation_present:
             continue
@@ -373,14 +377,18 @@ def observe_dynamic_attribute_mismatch(
     if len(classes) != 1:
         return {"status": "unsupported", "reason": "provider_class_not_unique", "decision": "abstain"}
     declared: set[str] = set()
-    for node in _walk_function_scope(classes[0]):
-        if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == "self":
-            if isinstance(node.ctx, ast.Store):
-                declared.add(node.attr)
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and any(
-            isinstance(decorator, ast.Name) and decorator.id == "property" for decorator in node.decorator_list
+    for member in classes[0].body:
+        if not isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        if any(
+            isinstance(decorator, ast.Name) and decorator.id == "property"
+            for decorator in member.decorator_list
         ):
-            declared.add(node.name)
+            declared.add(member.name)
+        for node in _walk_function_scope(member):
+            if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == "self":
+                if isinstance(node.ctx, ast.Store):
+                    declared.add(node.attr)
     missing = sorted(set(reads) - declared)
     return {
         "status": "supported",
