@@ -9,6 +9,8 @@ on:
       - tools/ae32d_validate_benchmark.py
       - tools/ae32d_exploratory_evaluation.py
       - tests/semantic_audit/test_ae32d_exploratory_evaluation.py
+      - tests/semantic_audit/test_ae32d_ab_contract_schemas.py
+      - tools/ae32d_trial_contracts.py
       - evaluation/ae32d/machine-reference-registry.json
       - evaluation/ae32d/machine-reference-registry.schema.json
       - evaluation/ae32d/exploratory-trials.schema.json
