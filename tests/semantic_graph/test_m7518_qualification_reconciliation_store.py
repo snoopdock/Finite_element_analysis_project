@@ -84,6 +84,13 @@ class QualificationReconciliationLedgerTests(unittest.TestCase):
             "observation_bundle_sha256",
         })
 
+    def test_context_helper_rejects_unbound_or_tampered_current_artifacts(self):
+        reconciliation, qualification, bundle = artifacts()
+        tampered = dict(qualification, contract_registry_sha256="f" * 64)
+        with self.assertRaisesRegex(QualificationReconciliationStoreError,
+                                    "qualification_digest_mismatch"):
+            qualification_reconciliation_context(reconciliation, tampered, bundle)
+
     def test_record_is_content_addressed_idempotent_and_restartable(self):
         reconciliation, qualification, bundle = artifacts()
         self.assertTrue(self.store.record(reconciliation, qualification, bundle))
