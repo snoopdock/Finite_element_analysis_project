@@ -186,6 +186,11 @@ AE-45 records the formal deterministic condition contracts in [AE-45 Determinist
 
 The A/B boundary now has strict task-projection and condition-report schemas, an allowlisted projection builder (`tools/ae32d_trial_contracts.py`), and a boundary test suite (`tests/semantic_audit/test_ae32d_ab_contract_schemas.py`). The builder binds case/source/task fields into a canonical digest and rejects unsafe declared-scope/fixture paths. It does not accept arbitrary verification commands. The AE-32D workflow executes the new tests and its path filter includes the helper and test files.
 
-**A0 status:** implemented; GitHub Actions validation still needs inspection. A1 rule registration has not begun. No deterministic A/B executor, trial output, provider invocation or score exists. Do not proceed to B until A's rule semantics and report behavior are validated.
+**A0 status:** implemented and validated by successful full workflow run [46030604356](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46030604356), including all 12 A/B contract tests. A1 rule registration has not begun. No deterministic A/B executor, trial output, provider invocation or score exists. Do not proceed to B until A's rule semantics and report behavior are validated.
 
 **Branch integrity:** `main` is restored to the recorded baseline `6db56ee2281577c034c0a15a2d27a9a9fa55c0e3`; all current AE-44/45 artifacts and code are on `stage1/section-uuids`.
+
+
+A0's initial failing runs [46030354050](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46030354050) and [46030419419](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46030419419) exposed the condition-report schema nesting error. The schema was corrected; [run 46030604356](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46030604356) then passed the new A/B tests and the full existing AE-32D validation job. Failures remain visible in the run history.
+
+**Next:** A1 rule catalog and semantic fixture tests. Rule specifications must be derived from pinned source, task statement, declared scope and visible contract evidence only—not from `ground_truth`, expected findings stored in case records, machine references or scorer outputs.
