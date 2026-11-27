@@ -153,8 +153,8 @@ class ABContractSchemaTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exact_lowercase_source_commit_sha_required"):
             build_sanitized_task_projection(record, experiment_id="AE45-UNIT-TEST", condition="A_deterministic")
         record = self.case_record_with_hidden_fields()
-        with self.assertRaisesRegex(ValueError, "unsupported_deterministic_condition"):
-            build_sanitized_task_projection(record, experiment_id="AE45-UNIT-TEST", condition="C_graph_llm")
+        with self.assertRaisesRegex(ValueError, "unsupported_ae32d_condition"):
+            build_sanitized_task_projection(record, experiment_id="AE45-UNIT-TEST", condition="D_unregistered")
 
     def test_completed_report_requires_explicit_decision(self):
         candidate = self.valid_report()
