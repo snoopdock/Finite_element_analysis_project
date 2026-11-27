@@ -12,7 +12,7 @@
       "source_commit_sha": "afcb1cba064de6f3d680f6be3085a365c6687c7b",
       "verification_class": "provider_interface_runtime_defect",
       "workflow_run_id": "46003755131",
-      "artifact_id": "15203213689",
+      "artifact_id": "15199671056",
       "basis": "consumer total_calls access conflicts with adapter calls counter; runtime AttributeError reproduced on pinned fixture.",
       "reference_kind": "machine_derived_fixture_contract",
       "independent_adjudication": "not_performed",
