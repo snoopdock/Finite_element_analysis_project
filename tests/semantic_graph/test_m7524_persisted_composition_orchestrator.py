@@ -16,7 +16,6 @@ class PersistedCompositionOrchestrationTests(unittest.TestCase):
     def setUp(self):
         fixture = ObligationCompositionTests()
         fixture.setUp()
-        self.addCleanup(fixture.tearDown)
         self.fixture = fixture
         self.execution_store = MagicMock()
         self.qualification_store = MagicMock()
@@ -89,7 +88,7 @@ class PersistedCompositionOrchestrationTests(unittest.TestCase):
         qualification_verify.assert_called_once()
         return result
 
-    def test_orchestrator_retrieves_records_and_invokes_real_verifier_contracts_in_order(self):
+    def test_orchestrator_retrieves_records_and_invokes_verification_apis_in_order(self):
         result = self.invoke()
         self.assertEqual(self.events, [
             "execution_replay", "derive_current_context", "qualification_consumer"])
