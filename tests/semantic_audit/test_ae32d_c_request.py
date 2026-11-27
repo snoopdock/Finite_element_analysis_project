@@ -119,11 +119,16 @@ class CRequestPackageTests(unittest.TestCase):
     def test_context_contract_is_nonempty_and_distinct_from_target(self):
         record = case_record()
         record["task"]["declared_scope"] = ["control.py"]
+        b_projection = build_sanitized_task_projection(
+            record, experiment_id="AE45-C1-SINGLE-PATH", condition="B_graph"
+        )
+        b_report = run_graph_assisted_audit(b_projection, self.root)
         projection = build_sanitized_task_projection(
             record, experiment_id="AE45-C1-SINGLE-PATH", condition="C_graph_llm"
         )
+        authorization = build_auth(build_c_preflight(b_report))
         with self.assertRaisesRegex(ValueError, "C_request_requires_at_least_one_distinct_context_path"):
-            build_c_request_package(projection, self.b_report, build_auth(build_c_preflight(self.b_report)))
+            build_c_request_package(projection, b_report, authorization)
 
     def test_request_contains_no_credential_fields(self):
         preflight = build_c_preflight(self.b_report)
