@@ -24,6 +24,30 @@ class DeterministicRulePrimitiveTests(unittest.TestCase):
         self.assertEqual(report["status"], "supported")
         self.assertTrue(report["unbound_return_read"])
 
+    def test_constant_infeasible_branch_does_not_create_unbound_path(self):
+        source = """def work():
+    if False:
+        result = 5
+    else:
+        result = 0
+    return result
+"""
+        report = analyze_unbound_local_return(source, "work", "result")
+        self.assertEqual(report["status"], "supported")
+        self.assertFalse(report["unbound_return_read"])
+
+    def test_nested_function_assignment_does_not_bind_outer_local(self):
+        source = """def work(flag):
+    def nested():
+        result = 9
+    if flag:
+        result = 5
+    return result
+"""
+        report = analyze_unbound_local_return(source, "work", "result")
+        self.assertEqual(report["status"], "supported")
+        self.assertTrue(report["unbound_return_read"])
+
     def test_complete_initialization_is_counterexample(self):
         source = """def work(flag):
     result = 0
@@ -59,9 +83,20 @@ class DeterministicRulePrimitiveTests(unittest.TestCase):
     except OSError:
         return {}
 """
-        report = analyze_exception_contract_suppression(source, "load_config", "OSError", "raise")
+        report = analyze_exception_contract_suppression(source, "load_config", "OSError", "raise", "reader")
         self.assertEqual(report["status"], "supported")
         self.assertTrue(report["suppression_observed"])
+
+    def test_unrelated_try_handler_does_not_satisfy_operation_contract(self):
+        source = """def load_config(reader):
+    try:
+        cleanup()
+    except OSError:
+        return {}
+    return reader()
+"""
+        report = analyze_exception_contract_suppression(source, "load_config", "OSError", "raise", "reader")
+        self.assertFalse(report["suppression_observed"])
 
     def test_exception_reraise_is_counterevidence(self):
         source = """def load_config(reader):
