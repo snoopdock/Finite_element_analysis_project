@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ae32d-deterministic-rule-catalog.schema.json",
+  "title": "AE-32D deterministic rule catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "ground_truth_read_allowed", "primary_benchmark_promotion_allowed", "rules"],
+  "properties": {
+    "schema_version": {"const": "ae32d/deterministic-rule-catalog/v1"},
+    "status": {"const": "specification_only"},
+    "ground_truth_read_allowed": {"const": false},
+    "primary_benchmark_promotion_allowed": {"const": false},
+    "rules": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule_id", "version", "purpose", "preconditions", "sufficient_evidence", "counterevidence", "abstain_when", "decision_authority", "exercise_fixtures"],
+        "properties": {
+          "rule_id": {"type": "string", "pattern": "^[A-Z0-9-]+$"},
+          "version": {"type": "string", "minLength": 1},
+          "purpose": {"type": "string", "minLength": 20},
+          "preconditions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 5}},
+          "sufficient_evidence": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 5}},
+          "counterevidence": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 5}},
+          "abstain_when": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 5}},
+          "decision_authority": {"enum": ["defect_if_all_sufficient_conditions_hold", "no_defect_for_scoped_property_only", "abstain_only", "observation_only_no_decision"]},
+          "exercise_fixtures": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["source_commit_sha", "path", "exercise"],
+              "properties": {
+                "source_commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+                "path": {"type": "string", "minLength": 1},
+                "exercise": {"enum": ["rule_exercise", "counterexample", "insufficient_context"]}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
