@@ -41,7 +41,7 @@ def _digest(value):
 class M7528SourceStateReplayConsumerDesignTests(unittest.TestCase):
     def test_persisted_orchestrator_has_the_complete_candidate_context(self):
         tree = _tree(ORCHESTRATOR)
-        function = _function(tree, "verify_persisted_cross_layer_obligation_composition")
+        function = _function(tree, "_run_persisted_cross_layer_obligation_composition")
         args = {arg.arg for arg in function.args.args + function.args.kwonlyargs}
         required = {
             "source_manifest", "repository_root", "current_qualification",
@@ -146,19 +146,18 @@ class M7528SourceStateReplayConsumerDesignTests(unittest.TestCase):
         self.assertIn("Verify source identity after graph projection", workflow)
         self.assertNotIn("cross_layer_snapshot_provenance", workflow)
 
-    def test_existing_m7524_contract_remains_unmodified_until_separate_integration(self):
+    def test_m7524_v1_path_remains_separate_from_the_m7529_package_integration(self):
         tree = _tree(ORCHESTRATOR)
-        imports = [
-            node.module for node in ast.walk(tree)
-            if isinstance(node, ast.ImportFrom) and node.module
-        ]
-        self.assertNotIn(
-            "audit_engine.semantic_audit.epistemic.cross_layer_snapshot_provenance",
-            imports,
-        )
-        self.assertNotIn("verify_cross_layer_snapshot_provenance", {
-            node.id for node in ast.walk(tree) if isinstance(node, ast.Name)
-        })
+        legacy = _function(tree, "verify_persisted_cross_layer_obligation_composition")
+        helper = _function(tree, "_run_persisted_cross_layer_obligation_composition")
+        package = _function(tree, "verify_persisted_cross_layer_obligation_package")
+        legacy_names = {node.id for node in ast.walk(legacy) if isinstance(node, ast.Name)}
+        helper_names = {node.id for node in ast.walk(helper) if isinstance(node, ast.Name)}
+        package_names = {node.id for node in ast.walk(package) if isinstance(node, ast.Name)}
+        self.assertNotIn("verify_cross_layer_snapshot_provenance", legacy_names)
+        self.assertNotIn("verify_cross_layer_snapshot_provenance", helper_names)
+        self.assertIn("verify_cross_layer_snapshot_provenance", package_names)
+        self.assertIn("_run_persisted_cross_layer_obligation_composition", package_names)
 
     def test_design_document_records_non_authority_and_versioned_package_boundary(self):
         doc = (ROOT / DESIGN_DOC).read_text(encoding="utf-8")
