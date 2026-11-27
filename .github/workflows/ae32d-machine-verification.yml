@@ -85,7 +85,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install benchmark record validator
-        run: python -m pip install --disable-pip-version-check "jsonschema==4.25.1"
+        run: python -m pip install --disable-pip-version-check "jsonschema==4.25.1" "PyYAML>=6.0,<7" "networkx>=3.2,<4"
 
       - name: Validate AE-32D benchmark records
         run: python tools/ae32d_validate_benchmark.py --output "$RUNNER_TEMP/ae32d-machine-verification/benchmark-validation.json"
