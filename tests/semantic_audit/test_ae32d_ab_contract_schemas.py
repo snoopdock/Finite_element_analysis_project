@@ -137,6 +137,16 @@ class ABContractSchemaTests(unittest.TestCase):
         )
         self.assertEqual(repeated["task_contract_digest"], digest)
 
+    def test_projection_builder_rejects_path_traversal_and_backslash_paths(self):
+        for unsafe_path in ("../outside", "/absolute/path", "folder\\\\escape", "a/../b"):
+            record = self.case_record_with_hidden_fields()
+            record["task"]["declared_scope"] = [unsafe_path]
+            with self.subTest(path=unsafe_path):
+                with self.assertRaisesRegex(ValueError, "task_declared_scope_must_be_nonempty_unique_paths"):
+                    build_sanitized_task_projection(
+                        record, experiment_id="AE45-UNIT-TEST", condition="A_deterministic"
+                    )
+
     def test_projection_builder_rejects_wrong_source_sha_and_condition(self):
         record = self.case_record_with_hidden_fields()
         record["source"]["source_commit_sha"] = "not-a-sha"
