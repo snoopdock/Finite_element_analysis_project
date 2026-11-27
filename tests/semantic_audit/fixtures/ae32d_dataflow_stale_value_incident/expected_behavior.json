@@ -1,0 +1,21 @@
+{
+  "schema_version": "ae32d/expected-behavior/v1",
+  "case_id": "AE32D-CANDIDATE-DATAFLOW-STALE-VALUE-001",
+  "function": "invoice_total",
+  "input_cases": [
+    {
+      "arguments": [
+        100,
+        10,
+        5
+      ],
+      "expected": {
+        "kind": "return",
+        "value": 95
+      }
+    }
+  ],
+  "scope": "complete local synthetic data-flow fixture",
+  "runtime_reproduction_allowed_for_verification_action": true,
+  "primary_benchmark_eligible": false
+}
