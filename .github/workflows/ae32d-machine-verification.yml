@@ -10,12 +10,6 @@ on:
       - tests/semantic_audit/test_ae32d_machine_verification_boundary.py
       - tests/semantic_audit/fixtures/ae32c_provider_interface_incident/**
   workflow_dispatch:
-    inputs:
-      acknowledge:
-        description: "Confirm this is machine verification, not human independent adjudication"
-        required: true
-        type: boolean
-        default: true
 
 permissions:
   contents: read

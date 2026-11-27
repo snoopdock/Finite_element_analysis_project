@@ -25,13 +25,18 @@ class AE32DMachineVerifierBoundaryTests(unittest.TestCase):
         (fixture / "providers").mkdir()
         (fixture / "tests").mkdir()
         (fixture / "pipeline" / "extractor.py").write_text(
-            "def extract(provider):\n    return provider.total_calls\n",
+            "from providers.adapter import ProviderAdapter\n"
+            "def extract(provider: ProviderAdapter):\n"
+            "    return provider.total_calls\n",
             encoding="utf-8",
         )
         (fixture / "providers" / "adapter.py").write_text(
             "class ProviderAdapter:\n"
             "    def __init__(self):\n"
-            "        self.calls = 0\n",
+            "        self.calls = 0\n"
+            "    def chat(self, messages):\n"
+            "        self.calls += 1\n"
+            "        return 'fixture response'\n",
             encoding="utf-8",
         )
         (fixture / "providers" / "factory.py").write_text(
