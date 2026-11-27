@@ -60,19 +60,19 @@ Workflow: [M7.5.24 persisted composition orchestrator](https://github.com/snoopd
 
 ## 6. Validation result
 
-Workflow: [M7.5.24 persisted composition orchestrator](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45970247185)
+Workflow: [M7.5.24 persisted composition orchestrator](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45970582158)
 
-- Exact tested revision: `72d080294dbcb00322b57cd6f1a577ba856d12e1`.
+- Exact tested revision: `92d4715c990e24158dac01e9fc13e2d67fb10eac`.
 - Python 3.11 compilation: passed.
-- Dedicated M7.5.24 orchestration tests: 7 passed.
+- Dedicated M7.5.24 orchestration tests: 8 passed, including a real multi-ledger integration test.
 - M7.5.14 execution reconciliation regression: 7 passed.
 - M7.5.17 qualification reconciliation regression: 12 passed.
 - M7.5.21 currentness-gated consumer regression: 5 passed.
 - M7.5.22 dependency-boundary regression: 5 passed.
 - M7.5.23 composition regression: 11 passed.
-- Complete M7.5 regression: 247 passed.
+- Complete M7.5 regression: 248 passed.
 
-The dedicated orchestration tests cover retrieval and identity binding, invocation ordering, invalidated qualification behavior, missing records, and envelope tampering. The existing M7.5.14/M7.5.17/M7.5.21 suites separately exercise the underlying verifier and ledger behavior. The orchestrator tests use controlled verifier results to isolate the orchestration contract; they are not an end-to-end multi-ledger production deployment test.
+The dedicated orchestration tests cover retrieval and identity binding, invocation ordering, invalidated qualification behavior, missing records, envelope tampering, and a true integration path using real M7.5.14 and M7.5.18 SQLite ledgers with the actual M7.5.14 and M7.5.21 verification APIs. Additional controlled-result tests isolate the orchestration call order and failure paths. This is a test-fixture integration, not a production deployment or cross-store atomicity test.
 
 ## 7. Authority boundaries
 
