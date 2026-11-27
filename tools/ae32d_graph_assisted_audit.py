@@ -93,7 +93,7 @@ def _scope_snapshot(task_projection: dict[str, Any], source_root: Path, destinat
         "unreadable_paths": sorted(unreadable),
         "scope_descriptors": sorted(descriptors),
     })
-    return missing + unreadable + (["snapshot_digest:" + snapshot_digest] if not copied else [])
+    return {"digest": snapshot_digest, "issues": missing + unreadable, "file_count": len(copied)}
 
 
 def _tool_record(tool: str, arguments: dict[str, Any], response: dict[str, Any]) -> dict[str, Any]:
@@ -133,9 +133,13 @@ def run_graph_assisted_audit(task_projection: dict[str, Any], source_root: str |
 
     with tempfile.TemporaryDirectory(prefix="ae32d-b-scope-") as temporary:
         graph_root = Path(temporary)
-        scope_issues = _scope_snapshot(task_projection, root, graph_root)
-        if scope_issues:
-            raise ValueError("graph_scope_snapshot_failed:" + ",".join(scope_issues))
+        scope_snapshot = _scope_snapshot(task_projection, root, graph_root)
+        if scope_snapshot["issues"]:
+            raise ValueError("graph_scope_snapshot_failed:" + ",".join(scope_snapshot["issues"]))
+        if scope_snapshot["digest"] != baseline_report["source_manifest_digest"]:
+            raise ValueError("graph_scope_snapshot_does_not_match_A_manifest")
+        if _git_head(root) != actual_sha:
+            raise ValueError("source_revision_changed_during_B_snapshot")
 
         evidence_tools = RepositoryEvidenceTools(
             graph_root,
@@ -271,8 +275,7 @@ def run_graph_assisted_audit(task_projection: dict[str, Any], source_root: str |
         "graph_snapshot_fingerprint": graph_snapshot["graph_fingerprint"],
         "graph_backend": GRAPH_BACKEND,
     })
-    graph_incomplete = graph_snapshot["status"] != "complete" or not graph_snapshot["backend_pipeline_wired"
-    ]
+    graph_incomplete = graph_snapshot["status"] != "complete" or not graph_snapshot["backend_pipeline_wired"]
     status = "completed" if baseline_report["status"] == "completed" and not graph_truncated and not graph_errors and not graph_incomplete else "partial"
     report = {
         "schema_version": "ae32d/condition-report/v1",
