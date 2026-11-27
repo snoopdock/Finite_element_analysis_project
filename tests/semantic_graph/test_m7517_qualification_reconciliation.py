@@ -245,6 +245,30 @@ class QualificationReconciliationTests(unittest.TestCase):
                 coverage_manifest=self.coverage_manifest, source_manifest=self.source_manifest,
                 repository_root=self.root)
 
+    def test_missing_historical_source_is_reported_as_reconciliation_error(self):
+        bundle, qualification = self.qualification([
+            self.syntax_observation("src/broken_a.py")])
+        (self.root / "src/broken_a.py").unlink()
+        with self.assertRaisesRegex(
+                QualificationReconciliationError,
+                "semantic_qualification_replay_failed:FileNotFoundError"):
+            self.reconcile(bundle, qualification)
+
+    def test_duplicate_obligation_observation_pair_is_rejected(self):
+        obs = self.syntax_observation("src/broken_a.py")
+        payload = {key: value for key, value in obs.items()
+                   if key != "evidence_observation_id"}
+        payload["rule_obligation_ids"] = [
+            "rule:AE32A-INCOMPLETE-PYTHON-SCAN:evidence:python_syntax_error",
+            "rule:AE32A-INCOMPLETE-PYTHON-SCAN:evidence:python_syntax_error",
+        ]
+        duplicated = {**payload, "evidence_observation_id": digest(payload)}
+        bundle, qualification = self.qualification([duplicated])
+        with self.assertRaisesRegex(
+                QualificationReconciliationError,
+                "duplicate_obligation_observation_qualification"):
+            self.reconcile(bundle, qualification)
+
     def test_reconciliation_digest_tampering_rejected(self):
         bundle, qualification = self.qualification([self.syntax_observation("src/broken_a.py")])
         result = self.reconcile(bundle, qualification)
