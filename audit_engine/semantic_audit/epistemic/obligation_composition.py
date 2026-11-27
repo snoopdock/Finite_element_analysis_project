@@ -131,6 +131,31 @@ def compose_execution_and_semantic_obligations(
         raise ObligationCompositionError("execution_reconciliation_schema_invalid")
     if qualification.get("schema") != QUALIFICATION_SCHEMA:
         raise ObligationCompositionError("qualification_reconciliation_schema_invalid")
+    if not isinstance(qualification.get("qualification_replay"), Mapping) or (
+        qualification["qualification_replay"].get("semantic_replay") is not True
+    ):
+        raise ObligationCompositionError("qualification_reconciliation_replay_not_verified")
+    execution_authority = execution.get("authority")
+    qualification_authority = qualification.get("authority")
+    if not isinstance(execution_authority, Mapping) or not isinstance(qualification_authority, Mapping):
+        raise ObligationCompositionError("source_reconciliation_authority_contract_missing")
+    if any(execution_authority.get(key) is not False for key in (
+        "semantic_evidence_sufficiency_established", "proposition_truth_established",
+        "graph_completeness_established", "audit_decision_authority", "production_approval",
+    )):
+        raise ObligationCompositionError("execution_reconciliation_authority_boundary_violation")
+    if any(qualification_authority.get(key) is not False for key in (
+        "all_evidence_obligations_satisfied", "epistemic_coverage_manifest_mutated",
+        "epistemic_assertions_created", "proposition_truth_established",
+        "audit_decision_authority", "allow_deny_authority", "production_approval",
+    )):
+        raise ObligationCompositionError("qualification_reconciliation_authority_boundary_violation")
+    execution_summary = execution.get("summary")
+    if not isinstance(execution_summary, Mapping) or any(
+        execution_summary.get(key) is not False
+        for key in ("epistemic_coverage_upgraded", "coverage_dossier_mutated")
+    ):
+        raise ObligationCompositionError("execution_reconciliation_summary_boundary_violation")
     _validate_execution_replay(execution, execution_replay)
     qualification_state, preflight_status = _qualification_consumer_state(
         qualification, qualification_consumer_result
@@ -202,9 +227,9 @@ def compose_execution_and_semantic_obligations(
             "semantic_qualification": semantic_assessment,
         })
 
-    execution_complete = bool(execution.get("summary", {}).get(
-        "extractor_execution_complete_for_declared_coverage", False
-    ))
+    execution_complete = execution_summary.get(
+        "extractor_execution_complete_for_declared_coverage"
+    ) is True
     payload = {
         "schema": SCHEMA,
         "claim_id": execution["claim_id"],
