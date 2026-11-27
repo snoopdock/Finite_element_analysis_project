@@ -1,6 +1,6 @@
 # AE-32C M7.5.28 — Source-State Replay Consumer Requirements and Integration Design
 
-**Status:** Design completed; design tests and CI validation pending  
+**Status:** Design completed; exact-head design and regression CI-validated  
 **Branch:** `stage1/section-uuids`  
 **Parent:** M7.5.27 — Cross-Layer Provenance Consumer Inventory and Enforcement Boundaries  
 **Baseline revision:** `fa62909719665bbc97b2824a1b868b0c1a4807e1`  
@@ -226,7 +226,18 @@ The design tests inspect:
 - absence of premature M7.5.26 wiring into M7.5.24; and
 - the documented non-authority and M7.5.29 implementation requirements.
 
-Validation status and exact final revision are recorded after CI completes.
+Validation evidence:
+- [M7.5.28 workflow run 45983543634](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/45983543634) — success on design/test revision `58a511475c4a0a261ceaf4d318d94d91ed064edb`.
+- M7.5.28 design tests: 8 passed.
+- M7.5.27 consumer inventory regression: 6 passed.
+- M7.5.26 provenance behavioral regression: 9 passed.
+- M7.5.24 persisted orchestration regression: 9 passed.
+- M7.5.25 cross-store failure-injection regression: 3 passed.
+- Source snapshot manifest regression: 8 passed.
+- Complete M7.5 regression: 275 passed.
+- Python 3.11 compilation: passed.
+
+The workflow checked out the exact triggering revision. This documentation-only validation update is included in the workflow path filter and is revalidated on the resulting final branch head.
 
 ## 11. Next milestone
 
