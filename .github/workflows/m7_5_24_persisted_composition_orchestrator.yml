@@ -8,6 +8,7 @@ on:
       - ".github/workflows/m7_5_24_persisted_composition_orchestrator.yml"
       - "audit_engine/semantic_audit/epistemic/**"
       - "tests/semantic_graph/test_m7524_*.py"
+      - "tests/semantic_graph/test_m7525_*.py"
       - "tests/semantic_graph/test_m7523_*.py"
       - "tests/semantic_graph/test_m7514_*.py"
       - "tests/semantic_graph/test_m7517_*.py"
@@ -50,13 +51,18 @@ jobs:
         run: python -m unittest discover -s tests/semantic_graph -p 'test_m7522_*.py' -v
       - name: M7.5.23 composition regression
         run: python -m unittest discover -s tests/semantic_graph -p 'test_m7523_*.py' -v
+      - name: M7.5.25 cross-store failure-injection tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7525_*.py' -v
       - name: Complete M7.5 regression
         run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
       - name: Orchestration authority-boundary summary
         if: always()
         run: |
           {
-            echo "## M7.5.24 persisted cross-layer composition orchestrator"
+            echo "## M7.5.24/M7.5.25 persisted cross-layer composition and consistency"
+            echo "- Qualification currentness is checked before replay, immediately before replay, and after replay"
+            echo "- Execution reconciliation is replay-verified before and after qualification consumption"
+            echo "- These checks reduce TOCTOU exposure but do not create an atomic multi-store snapshot"
             echo "- Persisted records are retrieved and verified through M7.5.14 and M7.5.21 APIs"
             echo "- Qualification currentness is derived from live artifacts; invalidated records are not replayed"
             echo "- No atomic cross-store transaction or downstream authorization is claimed"
