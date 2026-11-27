@@ -8,6 +8,28 @@ from unittest.mock import MagicMock, patch
 import test_m7514_execution_obligation_reconciliation as execution_fixture
 import test_m7517_qualification_reconciliation as qualification_fixture
 
+from audit_engine.semantic_audit.epistemic.execution_obligation_reconciliation import (
+    build_and_persist_execution_obligation_reconciliation,
+)
+from audit_engine.semantic_audit.epistemic.extractor_execution import (
+    build_extractor_execution_report,
+)
+from audit_engine.semantic_audit.epistemic.source_inventory import (
+    build_source_extractor_inventory,
+)
+from audit_engine.semantic_audit.epistemic.semantic_qualification import (
+    qualify_typed_evidence_observations,
+)
+from audit_engine.semantic_audit.epistemic.qualification_reconciliation import (
+    reconcile_semantic_qualifications,
+)
+from audit_engine.semantic_audit.epistemic.qualification_reconciliation_store import (
+    QualificationReconciliationStore,
+    persist_verified_qualification_reconciliation,
+)
+from audit_engine.semantic_audit.epistemic.qualification_consumer_gate import (
+    QualificationConsumerCheckStore,
+)
 from audit_engine.semantic_audit.epistemic.obligation_composition_orchestrator import (
     ObligationCompositionOrchestrationError,
     verify_orchestrated_obligation_composition,
