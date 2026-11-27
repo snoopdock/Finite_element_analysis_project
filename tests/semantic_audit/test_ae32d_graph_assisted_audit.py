@@ -81,6 +81,10 @@ class GraphAssistedConditionBTests(unittest.TestCase):
         self.assertIn("graph_neighbors", [item["tool"] for item in b_report["graph_retrieval"]])
         self.assertIn("search_symbols", [item["tool"] for item in b_report["graph_retrieval"]])
         self.assertIn("graph_path", [item["tool"] for item in b_report["graph_retrieval"]])
+        neighbors = [item for item in b_report["graph_retrieval"] if item["tool"] == "graph_neighbors"]
+        self.assertTrue(any(item["status"] == "ok" and item["payload"].get("discovered_nodes") for item in neighbors))
+        paths = [item for item in b_report["graph_retrieval"] if item["tool"] == "graph_path"]
+        self.assertTrue(any(item["status"] == "ok" and item["payload"].get("path_found") and item["payload"].get("path") for item in paths))
         self.assertFalse(any(item["payload"].get("network_calls_performed", False)
                              for item in b_report["graph_retrieval"]))
 
