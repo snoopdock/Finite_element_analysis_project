@@ -2,7 +2,7 @@
 
 **Branch:** `stage1/section-uuids`  
 **Baseline:** `600e1239791e6c2944a8c9edad64f08c3e04d683`  
-**Status:** C0–C2 validated; C3 implementation integration audit in progress; no provider call authorized or executed.
+**Status:** C0–C2 validated; provider-free C3 execution-contract layer committed; live C3 executor not implemented; no provider call authorized or executed.
 
 ## 1. Verified state
 
@@ -54,7 +54,21 @@ C3 must derive its source/fixture root from the trusted case record and exact pi
 
 The provider factory and credential-bearing environment may be accessed only after all offline checks pass and explicit manual dispatch confirmation is present. Timeouts, cost exhaustion, provider errors, malformed responses, incomplete evidence, and stale snapshot identity must remain explicit non-success outcomes. A late response must not be committed after cancellation or snapshot invalidation.
 
-## 4. Required C3 acceptance tests
+## 4. C3 contract implementation delivered
+
+The provider-free C3 contract is implemented in `tools/ae32d_c3_execution_contract.py`. It:
+
+- reconstructs the expected C1 request package from the supplied C task projection, exact B report, and authorization; a modified request or context is rejected;
+- requires a schema-valid C2 snapshot-verification report with `status=verified`, matching case/source/task identity, matching graph fingerprint and source manifest, no mismatches, and no provider-side effects;
+- revalidates the C0 authorization through the C1 package builder;
+- accepts only the registered Cloudflare Qwen3.8-27B profile;
+- maps the exact authorized limits to investigator-limit field names and rejects any value above 11 rounds, 12 tool calls, 2,048 tokens per normal call, 6,144 finalization tokens, 30,720 total tokens, 900 seconds, or USD 0.50;
+- preserves smaller authorized limits rather than replacing them with defaults;
+- imports no provider factory and does not read credentials, make network calls, or start the investigator. A separate confirmation can mark the contract ready for a later executor, but dispatch remains false.
+
+`tests/semantic_audit/test_ae32d_c3_execution_contract.py` adds mocked, provider-free tests for the C1/C2 bindings and budget contract. The Stage1 AE-32D workflow now includes this test file and its push path. Validation of the new commit is pending.
+
+## 5. Remaining C3 acceptance tests
 
 Before any live invocation, add tests proving:
 
@@ -69,7 +83,7 @@ Before any live invocation, add tests proving:
 
 Use mocked providers for these tests. They must not make network calls.
 
-## 5. Next implementation sequence
+## 6. Next implementation sequence
 
 1. Implement a provider-free C3 request/authorization validator and a single explicit budget-mapping function.
 2. Add mocked execution tests for all authorization, snapshot, and budget boundaries.
@@ -78,6 +92,6 @@ Use mocked providers for these tests. They must not make network calls.
 5. Only after the user separately authorizes the provider/model and budget may a live C3 execution be attempted.
 6. Retain the raw C3 artifact and normalize it as a C-condition trial only after its provenance and outcome contract validate.
 
-## 6. Current disposition
+## 7. Current disposition
 
-**C3 is not executed.** The next code change must close the token-budget and request-to-investigator binding gaps before any provider call. C0–C2 remain the last validated AE-45 boundary. No benchmark score, diagnostic-accuracy improvement, or primary-benchmark eligibility is claimed.
+**C3 is not executed.** The provider-free C3 contract closes the request reconstruction, exact C2 snapshot binding, and budget-mapping layer, but the actual executor is still outstanding. The next code change must connect the validated contract to `RepositoryInvestigator` while preserving the mapped limits and lazy provider construction. C0–C2 remain the last validated execution boundary; the new C3 contract has not yet passed its GitHub Actions test. No benchmark score, diagnostic-accuracy improvement, or primary-benchmark eligibility is claimed.
