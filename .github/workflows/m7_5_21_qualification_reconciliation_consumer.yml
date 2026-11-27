@@ -1,0 +1,63 @@
+name: AE-32C M7.5.21 Currentness-Gated Qualification Replay Consumer
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_21_qualification_reconciliation_consumer.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tests/semantic_graph/test_m7521_*.py"
+      - "tests/semantic_graph/test_m7520_*.py"
+      - "tests/semantic_graph/test_m7519_*.py"
+      - "tests/semantic_graph/test_m7518_*.py"
+      - "tests/semantic_graph/test_m7517_*.py"
+      - "docs/audit-engine/AE-32C-M7.5.21-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7521-stage1
+  cancel-in-progress: false
+
+jobs:
+  qualification-replay-consumer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile epistemic implementation
+        run: python -m compileall -q audit_engine/semantic_audit/epistemic
+      - name: Dedicated M7.5.21 consumer integration tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7521_*.py' -v
+      - name: M7.5.20 consumer gate regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7520_*.py' -v
+      - name: M7.5.19 currentness regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7519_*.py' -v
+      - name: M7.5.18 persistence regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7518_*.py' -v
+      - name: M7.5.17 semantic reconciliation regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7517_*.py' -v
+      - name: Complete M7.5 regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
+      - name: Consumer enforcement boundary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.21 currentness-gated qualification replay consumer"
+            echo "- The consumer derives all eight context dimensions from live artifacts"
+            echo "- Caller-supplied context must exactly match the derived context"
+            echo "- INVALIDATED records are blocked before semantic replay"
+            echo "- CURRENT records proceed only to independent historical semantic replay"
+            echo "- Replay verification is not evidence acceptance or audit authorization"
+            echo "- Other consumers and legacy replay entry points are not globally intercepted"
+          } >> "$GITHUB_STEP_SUMMARY"
