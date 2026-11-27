@@ -1,0 +1,64 @@
+name: AE-32C M7.5.22 Qualification Consumer Inventory and Dependency Boundaries
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_22_qualification_consumer_inventory.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tests/semantic_graph/test_m7522_*.py"
+      - "tests/semantic_graph/test_m7521_*.py"
+      - "tests/semantic_graph/test_m7520_*.py"
+      - "tests/semantic_graph/test_m7519_*.py"
+      - "tests/semantic_graph/test_m7518_*.py"
+      - "tests/semantic_graph/test_m7517_*.py"
+      - "docs/audit-engine/AE-32C-M7.5.22-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7522-stage1
+  cancel-in-progress: false
+
+jobs:
+  qualification-consumer-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile epistemic implementation
+        run: python -m compileall -q audit_engine/semantic_audit/epistemic
+      - name: Dedicated M7.5.22 dependency-boundary tests
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7522_*.py' -v
+      - name: M7.5.21 gated consumer regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7521_*.py' -v
+      - name: M7.5.20 consumer gate regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7520_*.py' -v
+      - name: M7.5.19 currentness regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7519_*.py' -v
+      - name: M7.5.18 persistence regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7518_*.py' -v
+      - name: M7.5.17 semantic reconciliation regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7517_*.py' -v
+      - name: Complete M7.5 regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
+      - name: Dependency-boundary summary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.22 qualification-reconciliation consumer inventory"
+            echo "- M7.5.21 remains the only identified persisted qualification consumer"
+            echo "- Coverage dossier, dossier replay, persisted assurance, and M7.5.14 remain independent"
+            echo "- No semantic qualification is promoted to EVIDENCE_BOUND or audit authorization"
+            echo "- AST guards are source-structure checks, not universal runtime interception"
+          } >> "$GITHUB_STEP_SUMMARY"
