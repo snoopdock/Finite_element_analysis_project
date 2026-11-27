@@ -61,13 +61,13 @@ from .semantic_qualification import (
     qualify_typed_evidence_observations, verify_semantic_evidence_qualification,
 )
 from .persisted_assurance import PersistedAssuranceResult, evaluate_persisted_assurance
-from .store import (
+from .qualification_reconciliation import (\n    QualificationReconciliationError, qualification_aggregation_policy_registry,\n    reconcile_semantic_qualifications, verify_qualification_obligation_reconciliation,\n)\nfrom .store import (
     DuplicateRecordError, EpistemicStore, InvalidTransitionError,
     RevisionConflictError, StorageLimitError, StoreError,
 )
 
 __all__ = [
-    "SemanticQualificationError", "semantic_evidence_contract_registry",
+    "QualificationReconciliationError", "qualification_aggregation_policy_registry",\n    "reconcile_semantic_qualifications", "verify_qualification_obligation_reconciliation",\n    "SemanticQualificationError", "semantic_evidence_contract_registry",
     "qualify_typed_evidence_observations", "verify_semantic_evidence_qualification",
     "TypedEvidenceError", "TypedEvidenceObservationStore",
     "derive_typed_evidence_observations",
