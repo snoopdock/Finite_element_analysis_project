@@ -14,6 +14,7 @@ from tools.ae32d_machine_verify_candidate import (
     FIXTURE_RELATIVE_PATH,
     resolve_fixture,
     run_check,
+    _run_fixture,
     main,
 )
 
@@ -207,6 +208,41 @@ class AE32DMachineVerifierBoundaryTests(unittest.TestCase):
             report = run_check(root)
             self.assertFalse(report["passed"])
             self.assertIn("structural_adapter_calls_initialization_missing", report["errors"])
+
+
+    def test_negative_control_runtime_succeeds_without_attribute_error(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture = self._repository(root)
+            (fixture / "pipeline" / "extractor.py").write_text(
+                "from providers.adapter import ProviderAdapter\n"
+                "def extract(provider: ProviderAdapter):\n"
+                "    return provider.calls\n", encoding="utf-8"
+            )
+            matched, runtime, error = _run_fixture(fixture, expect_attribute_error=False)
+            self.assertTrue(matched, error)
+            self.assertEqual(runtime["status"], "EXPECTED_SUCCESS_REPRODUCED")
+            self.assertTrue(runtime["expected_success_observed"])
+            self.assertFalse(runtime["expected_attribute_error_observed"])
+
+    def test_dynamic_attribute_case_runs_but_verifier_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture = self._repository(root)
+            (fixture / "providers" / "adapter.py").write_text(
+                "class ProviderAdapter:\n"
+                "    def __init__(self): self.calls = 0\n"
+                "    def chat(self, messages): self.calls += 1\n"
+                "    def __getattr__(self, name):\n"
+                "        if name == 'total_calls': return self.calls\n"
+                "        raise AttributeError(name)\n", encoding="utf-8"
+            )
+            matched, runtime, error = _run_fixture(fixture, expect_attribute_error=False)
+            self.assertTrue(matched, error)
+            report = run_check(root)
+            self.assertFalse(report["passed"])
+            self.assertIn("structural_dynamic_attribute_hook_present", report["errors"])
+            self.assertNotIn("runtime", report)
 
 
 if __name__ == "__main__":

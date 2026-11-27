@@ -1,6 +1,6 @@
 # AE-35 — Deterministic AE-32D Candidate Verification Against Immutable Source
 
-**Status:** Implemented in source; exact-head Actions validation pending  
+**Status:** Validated; exact-head Actions workflow passed  
 **Branch:** \`stage1/section-uuids\`  
 **Scope:** AE-32D provider-interface candidate only
 
@@ -28,7 +28,14 @@ It does not establish general Audit Engine accuracy, a provider ranking, benchma
 
 Python isolated mode and a reduced environment are not an operating-system sandbox; the child retains the hosted runner's filesystem and network capabilities. The workflow grants only \`contents: read\` and supplies no application secrets.
 
-## 5. Acceptance and next work
+## 5. Exact-head validation
+
+- Commit: `842adb25fd0ff280d8b21984137ed0c8354b237a`
+- Workflow: [AE-32D Machine Verification and Boundary Tests — run 46003755131](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46003755131)
+- Result: success; 9/9 boundary tests passed; verifier returned `machine_verified_candidate` with zero errors; artifact ID `15199671056`, archive SHA-256 `05789c5839a418bc5f533e46b5592c710a966b39a26d8cec4b19c5612f698402`.
+- Same-head source/graph regression: [run 46003755241](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46003755241), success.
+
+## 6. Acceptance and next work
 
 The Stage1 push workflow runs the adversarial tests and immutable-source verification automatically. Acceptance requires the exact-head workflow run to pass; a commit alone is not execution evidence.
 

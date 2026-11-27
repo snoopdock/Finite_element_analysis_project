@@ -232,7 +232,7 @@ def _runtime_environment() -> dict[str, str]:
     return env
 
 
-def _run_fixture(fixture: Path) -> tuple[bool, dict[str, Any], str | None]:
+def _run_fixture(fixture: Path, *, expect_attribute_error: bool = True) -> tuple[bool, dict[str, Any], str | None]:
     command = [
         sys.executable,
         "-I",
@@ -270,19 +270,27 @@ def _run_fixture(fixture: Path) -> tuple[bool, dict[str, Any], str | None]:
         }, "runtime_reproduction_launch_failed"
 
     runtime_text = (proc.stdout or "") + "\n" + (proc.stderr or "")
-    matched = (
-        proc.returncode != 0
-        and "AttributeError" in runtime_text
-        and "total_calls" in runtime_text
-        and "ProviderAdapter" in runtime_text
-    )
+    if expect_attribute_error:
+        matched = (
+            proc.returncode != 0
+            and "AttributeError" in runtime_text
+            and "total_calls" in runtime_text
+            and "ProviderAdapter" in runtime_text
+        )
+        status = "EXPECTED_FAILURE_REPRODUCED" if matched else "UNEXPECTED_RUNTIME_RESULT"
+        error = None if matched else "expected_runtime_attribute_error_not_reproduced"
+    else:
+        matched = proc.returncode == 0
+        status = "EXPECTED_SUCCESS_REPRODUCED" if matched else "UNEXPECTED_RUNTIME_RESULT"
+        error = None if matched else "expected_successful_runtime_not_observed"
     return matched, {
-        "status": "EXPECTED_FAILURE_REPRODUCED" if matched else "UNEXPECTED_RUNTIME_RESULT",
+        "status": status,
         "exit_code": proc.returncode,
-        "expected_attribute_error_observed": matched,
+        "expected_attribute_error_observed": expect_attribute_error and matched,
+        "expected_success_observed": (not expect_attribute_error) and matched,
         "stdout_tail": (proc.stdout or "")[-1000:],
         "stderr_tail": (proc.stderr or "")[-2000:],
-    }, None if matched else "expected_runtime_attribute_error_not_reproduced"
+    }, error
 
 
 def run_check(repository_root: Path | str) -> dict[str, Any]:
