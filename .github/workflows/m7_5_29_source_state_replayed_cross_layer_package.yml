@@ -1,0 +1,71 @@
+name: AE-32C M7.5.29 Source-State-Replayed Cross-Layer Package
+
+on:
+  push:
+    branches:
+      - stage1/section-uuids
+    paths:
+      - ".github/workflows/m7_5_29_source_state_replayed_cross_layer_package.yml"
+      - "audit_engine/semantic_audit/epistemic/**"
+      - "tools/ae32c_source_snapshot_manifest.py"
+      - "tests/semantic_graph/test_m7529_*.py"
+      - "tests/semantic_graph/test_m7528_*.py"
+      - "tests/semantic_graph/test_m7527_*.py"
+      - "tests/semantic_graph/test_m7526_*.py"
+      - "tests/semantic_graph/test_m7524_*.py"
+      - "tests/semantic_graph/test_m7525_*.py"
+      - "tests/semantic_graph/test_m75*.py"
+      - "docs/audit-engine/AE-32C-M7.5.29-*"
+      - ".github/workflows/ae32c_source_snapshot_manifest.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ae32c-m7529-stage1
+  cancel-in-progress: false
+
+jobs:
+  source-state-replayed-cross-layer-package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile epistemic and snapshot implementation
+        run: python -m compileall -q audit_engine/semantic_audit/epistemic tools/ae32c_source_snapshot_manifest.py
+      - name: M7.5.29 strict package regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7529_*.py' -v
+      - name: M7.5.28 source-state replay consumer design regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7528_*.py' -v
+      - name: M7.5.27 consumer inventory regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7527_*.py' -v
+      - name: M7.5.26 provenance behavioral regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7526_*.py' -v
+      - name: M7.5.24 persisted orchestration regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7524_*.py' -v
+      - name: M7.5.25 cross-store failure-injection regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m7525_*.py' -v
+      - name: Source snapshot manifest regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_ae32c_source_snapshot_manifest.py' -v
+      - name: Complete M7.5 regression
+        run: python -m unittest discover -s tests/semantic_graph -p 'test_m75*.py' -v
+      - name: M7.5.29 boundary summary
+        if: always()
+        run: |
+          {
+            echo "## M7.5.29 source-state-replayed cross-layer package"
+            echo "- M7.5.24 v1 API remains the compatibility path"
+            echo "- Strict package API reuses one in-process retrieval/replay context"
+            echo "- Package creation requires SOURCE_STATE_REPLAY_VERIFIED"
+            echo "- Qualification currentness remains independent"
+            echo "- Envelope verification checks seals only; it does not replay Git or stores"
+            echo "- No atomic cross-store transaction, trust anchor, or authorization authority"
+          } >> "$GITHUB_STEP_SUMMARY"
