@@ -230,3 +230,14 @@ B v0.1 passed full workflow run [46034117729](https://github.com/snoopdock/Finit
 **A4 status:** validated as retrieval-only B. No graph-specific diagnostic rule is enabled; B deliberately preserves A's decision. Therefore this milestone validates graph retrieval and provenance, not diagnostic-quality improvement. No official A/B trial artifact has been generated.
 
 **Next:** C0 provider investigation request/authorization preflight. It must consume the B report, preserve all A and graph evidence, and validate a manual authorization envelope and hard budgets without making any provider call. Live C execution remains disabled until separately authorized.
+
+
+### AE-45.5 C0 provider authorization preflight
+
+C0 is implemented and validated. The strict manual authorization envelope binds the exact B report digest, source SHA, task digest, graph fingerprint, prompt/investigator source, AE-32B/AE-32C tool policy and cost-estimator implementation. It enforces hard limits of 11 model rounds, 12 tool calls, 2,048 tokens per evidence call, 6,144 finalization tokens, 30,720 total tokens, 900 seconds and USD 0.50. The initial registered cost profile is Cloudflare Qwen3.8-27B only; other providers require a reviewed estimator profile.
+
+The preflight blocks incomplete B scope, graph provenance mismatch, unsupported backend, missing manual authorization and over-budget or incorrectly bound envelopes. It never imports the provider factory, reads credentials, dispatches a workflow or calls a model. Even the ready state has `provider_dispatch_permitted=false`.
+
+Full workflow run [46034654032](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46034654032) passed. **C0 status: validated.** No live C investigation has been run.
+
+**Next gate:** C1 adapter integration and manual execution boundary. Before any live invocation, it must reconstruct and verify the exact B graph fingerprint, pass the complete B report as non-gold context to the bounded AE-32C investigator, require the explicit manual authorization envelope, inject provider credentials only after validation, and preserve raw provider usage and investigator output. Do not run C until the user explicitly authorizes a specific provider/model and budget.
