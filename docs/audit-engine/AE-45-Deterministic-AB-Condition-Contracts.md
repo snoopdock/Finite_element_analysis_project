@@ -210,3 +210,12 @@ The existing `ae32d-machine-verification.yml` workflow now runs this test module
 - Existing benchmark validation, machine-reference registry validation, exploratory evaluation tests, deterministic outcome classifier, case matrix, extended-case checks, ledger, execution-boundary tests and fixed controlled-incident verification: all success in this run.
 
 The two earlier failures were caused by a schema-authoring defect: several report properties were nested under `findings`. The failing test exposed it; the schema was corrected and the full workflow passed. Failed runs remain part of the audit history and are not represented as successful.
+
+
+## 12. A1 rule catalog specification
+
+Five deterministic rule families are now registered in `evaluation/ae32d/deterministic-rule-catalog.json`: unbound-local control flow, exception-contract suppression, stale intermediate at output sink, complete initialization for a scoped property, and unresolved dynamic attribute/provider contract. The catalog records preconditions, sufficient evidence, counterevidence, abstention conditions, decision authority and exact fixture/source references. It contains no expected diagnostic labels.
+
+The rule catalog and validator are documented in [AE-45.1 Deterministic Rule Catalog](AE-45.1-Deterministic-Rule-Catalog.md). Validation code and tests are `tools/ae32d_validate_rule_catalog.py` and `tests/semantic_audit/test_ae32d_rule_catalog.py`.
+
+**A1 status:** specification and validator implemented; the workflow result for the latest revision is pending. No rule has been executed and no diagnosis has been emitted. A2 must implement a bounded AST/CFG subset and safe expression interpreter with tests for sufficient evidence, counterevidence and abstention before any A/B condition runner can claim a completed outcome.
