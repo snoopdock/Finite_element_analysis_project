@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ae32d-c-authorization.schema.json",
+  "title": "AE-32D C manual authorization envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "authorization_id", "approved", "confirmation_phrase",
+    "provider_name", "model_name", "max_model_rounds", "max_tool_calls",
+    "max_tokens_per_call", "finalization_max_tokens_per_call", "max_total_tokens",
+    "max_elapsed_seconds", "max_cost_usd", "cost_estimator_id", "cost_estimator_sha256",
+    "prompt_source_sha256", "tool_catalog_sha256", "case_id", "source_commit_sha",
+    "task_contract_digest", "b_report_sha256", "graph_fingerprint"
+  ],
+  "properties": {
+    "schema_version": {"const": "ae32d/c-authorization/v1"},
+    "authorization_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{8,100}$"},
+    "approved": {"const": true},
+    "confirmation_phrase": {"const": "I_AUTHORIZE_ONE_AE32D_C_PROVIDER_RUN"},
+    "provider_name": {"const": "cloudflare"},
+    "model_name": {"const": "@cf/qwen/qwen3.8-27b"},
+    "max_model_rounds": {"type": "integer", "minimum": 1, "maximum": 11},
+    "max_tool_calls": {"type": "integer", "minimum": 1, "maximum": 12},
+    "max_tokens_per_call": {"type": "integer", "minimum": 64, "maximum": 2048},
+    "finalization_max_tokens_per_call": {"type": "integer", "minimum": 64, "maximum": 6144},
+    "max_total_tokens": {"type": "integer", "minimum": 256, "maximum": 30720},
+    "max_elapsed_seconds": {"type": "integer", "minimum": 1, "maximum": 900},
+    "max_cost_usd": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.5},
+    "cost_estimator_id": {"const": "cloudflare-qwen3.8-live-estimator/v1"},
+    "cost_estimator_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "prompt_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "tool_catalog_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "case_id": {"type": "string", "minLength": 1},
+    "source_commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "task_contract_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "b_report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "graph_fingerprint": {"type": "string", "pattern": "^graph:[0-9a-f]{32}$"}
+  }
+}
