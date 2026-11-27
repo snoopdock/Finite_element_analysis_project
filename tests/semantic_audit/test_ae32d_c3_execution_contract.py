@@ -3,10 +3,7 @@ import hashlib
 import unittest
 from unittest.mock import patch
 
-from tools.ae32d_c3_execution_contract import (
-    _validated_budget,
-    build_c3_execution_contract,
-)
+from tools.ae32d_c3_execution_contract import _validated_budget, build_c3_execution_contract
 from tools.ae32d_trial_contracts import canonical_json_bytes
 
 
@@ -26,16 +23,74 @@ def valid_budget():
     }
 
 
-def valid_preflight(budget):
-    return {
+def valid_inputs():
+    authorization = {
+        "approved": True,
+        "authorization_id": "AE45-AUTH-0001",
+        "confirmation_phrase": "I_AUTHORIZE_ONE_AE32D_C_PROVIDER_RUN",
+    }
+    budget = valid_budget()
+    case_id = "AE32D-CANDIDATE-EXCEPTION-SWALLOW-001"
+    source_sha = "a" * 40
+    task_digest = digest("b")
+    graph_fingerprint = "graph:" + "d" * 32
+    source_manifest = digest("i")
+    task_projection = {
+        "schema_version": "ae32d/sanitized-task-projection/v1",
+        "case_id": case_id,
+        "source": {
+            "repository": "snoopdock/Finite_element_analysis_project",
+            "source_commit_sha": source_sha,
+            "fixture_path": "tests/semantic_audit/fixtures/ae32d_exception_swallow_incident",
+        },
+        "task": {
+            "title": "Suppressed I/O exception",
+            "problem_statement": "Determine whether the handler suppresses OSError.",
+            "declared_scope": ["loader.py", "expected_behavior.json", "incident.md"],
+            "constraints": ["Do not modify source."],
+        },
+        "experiment_id": "AE45-C3-TEST",
+        "condition": "C_graph_llm",
+        "task_contract_digest": task_digest,
+    }
+    baseline = {
+        "decision": "defect",
+        "findings": [],
+        "counterevidence": [],
+        "unresolved_questions": [],
+        "limitations": [],
+        "config_digest": digest("h"),
+        "source_manifest_digest": source_manifest,
+    }
+    graph_snapshot = {
+        "status": "complete",
+        "source_revision": source_sha,
+        "source_manifest_sha256": source_manifest,
+        "graph_fingerprint": graph_fingerprint,
+        "graph_projection_version": "test-v1",
+        "evidence_index_status": "complete",
+        "graph_backend": "networkx",
+        "graph_node_count": 3,
+        "graph_edge_count": 2,
+        "backend_pipeline_wired": True,
+    }
+    b_report = {
+        "case_id": case_id,
+        "source_commit_sha": source_sha,
+        "task_contract_digest": task_digest,
+        "baseline_report": baseline,
+        "graph_snapshot": graph_snapshot,
+        "graph_retrieval": [],
+    }
+    preflight = {
         "schema_version": "ae32d/c-preflight/v1",
         "status": "ready_for_manual_dispatch",
         "authorization_status": "valid",
-        "case_id": "AE32D-CANDIDATE-EXCEPTION-SWALLOW-001",
-        "source_commit_sha": "a" * 40,
-        "task_contract_digest": digest("b"),
+        "case_id": case_id,
+        "source_commit_sha": source_sha,
+        "task_contract_digest": task_digest,
         "b_report_sha256": digest("c"),
-        "graph_fingerprint": "graph:" + "d" * 32,
+        "graph_fingerprint": graph_fingerprint,
         "graph_backend": "networkx",
         "prompt_source_sha256": digest("e"),
         "tool_catalog_sha256": digest("f"),
@@ -52,116 +107,42 @@ def valid_preflight(budget):
             "budget": dict(budget),
         },
     }
-
-
-def valid_inputs():
-    authorization = {"approved": True, "authorization_id": "AE45-AUTH-0001"}
-    budget = valid_budget()
-    preflight = valid_preflight(budget)
-    request = {
-        "schema_version": "ae32d/c-request/v1",
-        "case_id": preflight["case_id"],
-        "source_commit_sha": preflight["source_commit_sha"],
-        "task_contract_digest": preflight["task_contract_digest"],
-        "b_report_sha256": preflight["b_report_sha256"],
-        "graph_fingerprint": preflight["graph_fingerprint"],
-        "provider_name": "cloudflare",
-        "model_name": "@cf/qwen/qwen3.8-27b",
-        "authorization_id": "AE45-AUTH-0001",
-        "authorization_sha256": hashlib.sha256(canonical_json_bytes(authorization)).hexdigest(),
-        "prompt_source_sha256": preflight["prompt_source_sha256"],
-        "tool_catalog_sha256": preflight["tool_catalog_sha256"],
-        "cost_estimator_sha256": preflight["cost_estimator_sha256"],
-        "budget": dict(budget),
-        "context": {
-            "task_title": "Suppressed I/O exception",
-            "task_problem_statement": "Determine whether the handler suppresses OSError.",
-            "declared_scope": ["loader.py"],
-            "a_baseline": {
-                "decision": "defect",
-                "findings": [],
-                "counterevidence": [],
-                "unresolved_questions": [],
-                "limitations": [],
-                "config_digest": digest("h"),
-            },
-            "b_graph": {"graph_snapshot": {}, "retrieval": []},
-            "interpretation_rule": "A/B are investigative context, not ground truth.",
-        },
-        "investigation_requirements": {
-            "required_source_paths": ["loader.py"],
-            "required_graph_target": "path:loader.py",
-            "required_graph_relation_types": ["CALLS"],
-            "required_graph_direction": "both",
-            "require_graph_interaction": True,
-            "require_complete_investigation_context": True,
-            "prefetch_required_graph_query": True,
-            "required_context_target": "loader.py",
-            "required_context_paths": [],
-            "prefetch_required_context_trace": False,
-        },
-        "dispatch": {
-            "manual_dispatch_confirmed": False,
-            "provider_dispatch_permitted": False,
-            "provider_calls_attempted": 0,
-            "credentials_accessed": False,
-        },
-        "investigator_problem": "Inspect the bounded source and graph evidence.",
-    }
-    b_report = {
-        "case_id": preflight["case_id"],
-        "baseline_report": {"source_manifest_digest": digest("i")},
-        "graph_snapshot": {
-            "source_manifest_sha256": digest("i"),
-            "source_revision": preflight["source_commit_sha"],
-            "graph_fingerprint": preflight["graph_fingerprint"],
-        },
-    }
     c2_snapshot = {
         "schema_version": "ae32d/c-snapshot-verification/v1",
         "status": "verified",
-        "case_id": preflight["case_id"],
-        "source_commit_sha": preflight["source_commit_sha"],
-        "task_contract_digest": preflight["task_contract_digest"],
-        "baseline_source_manifest_digest": digest("i"),
-        "expected_graph_snapshot": {
-            "source_manifest_sha256": digest("i"),
-            "source_revision": preflight["source_commit_sha"],
-            "graph_fingerprint": preflight["graph_fingerprint"],
-        },
+        "case_id": case_id,
+        "source_commit_sha": source_sha,
+        "task_contract_digest": task_digest,
+        "baseline_source_manifest_digest": source_manifest,
+        "expected_graph_snapshot": dict(graph_snapshot),
         "observed_graph_snapshot": {
-            "source_manifest_sha256": digest("i"),
-            "source_revision": preflight["source_commit_sha"],
-            "graph_fingerprint": preflight["graph_fingerprint"],
+            "source_revision": source_sha,
+            "source_manifest_sha256": source_manifest,
+            "graph_fingerprint": graph_fingerprint,
         },
         "mismatches": [],
         "provider_dispatch_permitted": False,
         "provider_calls_attempted": 0,
         "credentials_accessed": False,
     }
-    request_package = {
-        "schema_version": "ae32d/c-request-package/v1",
-        "status": "prepared_manual_only",
+    with patch("tools.ae32d_c_request.build_c_preflight", return_value=preflight):
+        from tools.ae32d_c_request import build_c_request_package
+        package = build_c_request_package(task_projection, b_report, authorization)
+    return {
+        "authorization": authorization,
         "preflight": preflight,
-        "request": request,
-        "request_sha256": hashlib.sha256(canonical_json_bytes(request)).hexdigest(),
-        "manual_dispatch_confirmed": False,
-        "provider_dispatch_permitted": False,
-        "provider_calls_attempted": 0,
-        "credentials_accessed": False,
+        "task_projection": task_projection,
+        "b_report": b_report,
+        "snapshot": c2_snapshot,
+        "package": package,
     }
-    return {"authorization": authorization, "preflight": preflight,
-            "request": request, "package": request_package,
-            "b_report": b_report, "snapshot": c2_snapshot}
 
 
 class C3ExecutionContractTests(unittest.TestCase):
     def call_contract(self, data, confirmed=False):
-        with patch(
-            "tools.ae32d_c3_execution_contract.build_c_preflight",
-            return_value=data["preflight"],
-        ):
+        with patch("tools.ae32d_c_request.build_c_preflight", return_value=data["preflight"]):
             return build_c3_execution_contract(
+                data["task_projection"],
                 data["b_report"],
                 data["package"],
                 data["snapshot"],
@@ -170,16 +151,14 @@ class C3ExecutionContractTests(unittest.TestCase):
             )
 
     def test_valid_contract_is_provider_free_until_separate_confirmation(self):
-        data = valid_inputs()
-        result = self.call_contract(data)
+        result = self.call_contract(valid_inputs())
         self.assertEqual(result["status"], "ready_for_manual_confirmation")
         self.assertFalse(result["provider_dispatch_permitted"])
         self.assertEqual(result["provider_calls_attempted"], 0)
         self.assertFalse(result["credentials_accessed"])
 
     def test_manual_confirmation_only_authorizes_later_executor(self):
-        data = valid_inputs()
-        result = self.call_contract(data, confirmed=True)
+        result = self.call_contract(valid_inputs(), confirmed=True)
         self.assertEqual(result["status"], "ready_for_c3_executor")
         self.assertTrue(result["manual_dispatch_confirmed"])
         self.assertFalse(result["provider_dispatch_permitted"])
@@ -213,39 +192,7 @@ class C3ExecutionContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "C3_budget_exceeds_hard_limit:max_total_tokens"):
             _validated_budget(budget)
 
-    def test_request_digest_mismatch_is_rejected(self):
-        data = valid_inputs()
-        data["package"]["request_sha256"] = digest("z")
-        with self.assertRaisesRegex(ValueError, "C3_request_digest_mismatch"):
-            self.call_contract(data)
-
-    def test_preflight_mismatch_is_rejected(self):
-        data = valid_inputs()
-        data["package"]["preflight"]["graph_fingerprint"] = "graph:" + "z" * 32
-        with self.assertRaisesRegex(ValueError, "C3_preflight_binding_mismatch"):
-            self.call_contract(data)
-
-    def test_request_source_binding_mismatch_is_rejected(self):
-        data = valid_inputs()
-        data["request"]["source_commit_sha"] = "z" * 40
-        data["package"]["request_sha256"] = hashlib.sha256(
-            canonical_json_bytes(data["request"])
-        ).hexdigest()
-        with self.assertRaisesRegex(ValueError, "C3_request_binding_mismatch:source_commit_sha"):
-            self.call_contract(data)
-
-    def test_duplicate_and_unsafe_source_paths_are_rejected(self):
-        for paths in (["loader.py", "loader.py"], ["../outside.py"]):
-            data = valid_inputs()
-            data["request"]["investigation_requirements"]["required_source_paths"] = paths
-            data["package"]["request_sha256"] = hashlib.sha256(
-                canonical_json_bytes(data["request"])
-            ).hexdigest()
-            with self.subTest(paths=paths):
-                with self.assertRaisesRegex(ValueError, "C3_required_source_paths_invalid"):
-                    self.call_contract(data)
-
-    def test_unverified_or_mismatched_c2_snapshot_is_rejected(self):
+    def test_unverified_c2_snapshot_is_rejected(self):
         data = valid_inputs()
         data["snapshot"]["status"] = "mismatch"
         with self.assertRaisesRegex(ValueError, "C3_C2_snapshot_not_verified"):
@@ -257,13 +204,31 @@ class C3ExecutionContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "C3_C2_graph_snapshot_mismatch:graph_fingerprint"):
             self.call_contract(data)
 
-    def test_graph_interaction_cannot_be_silently_disabled(self):
+    def test_request_digest_mismatch_is_rejected(self):
         data = valid_inputs()
-        data["request"]["investigation_requirements"]["require_graph_interaction"] = False
+        data["package"]["request_sha256"] = digest("z")
+        with self.assertRaisesRegex(ValueError, "C3_request_digest_mismatch"):
+            self.call_contract(data)
+
+    def test_preflight_mismatch_is_rejected(self):
+        data = valid_inputs()
+        data["package"]["preflight"]["graph_fingerprint"] = "graph:" + "z" * 32
+        with self.assertRaisesRegex(ValueError, "C3_C1_request_package_reconstruction_mismatch"):
+            self.call_contract(data)
+
+    def test_task_projection_source_mismatch_is_rejected(self):
+        data = valid_inputs()
+        data["task_projection"]["source"]["source_commit_sha"] = "z" * 40
+        with self.assertRaisesRegex(ValueError, "C3_C1_request_package_reconstruction_mismatch"):
+            self.call_contract(data)
+
+    def test_budget_and_investigation_requirements_are_bound_to_rebuilt_c1_package(self):
+        data = valid_inputs()
+        data["package"]["request"]["budget"]["max_total_tokens"] = 2048
         data["package"]["request_sha256"] = hashlib.sha256(
-            canonical_json_bytes(data["request"])
+            canonical_json_bytes(data["package"]["request"])
         ).hexdigest()
-        with self.assertRaisesRegex(ValueError, "C3_graph_interaction_must_be_required"):
+        with self.assertRaisesRegex(ValueError, "C3_C1_request_package_reconstruction_mismatch"):
             self.call_contract(data)
 
 
