@@ -98,6 +98,10 @@ def verify_persisted_cross_layer_obligation_composition(
         raise ObligationCompositionOrchestrationError(
             "execution_reconciliation_not_found"
         )
+    if not isinstance(execution_reconciliation, Mapping):
+        raise ObligationCompositionOrchestrationError(
+            "execution_persisted_record_invalid"
+        )
     if execution_reconciliation.get("reconciliation_sha256") != execution_reconciliation_id:
         raise ObligationCompositionOrchestrationError(
             "execution_persisted_record_identity_mismatch"
