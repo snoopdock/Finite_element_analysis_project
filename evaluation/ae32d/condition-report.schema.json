@@ -227,6 +227,131 @@
     },
     "error_message": {
       "type": "string"
+    },
+    "baseline_report": {
+      "type": "object"
+    },
+    "baseline_config_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "graph_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "source_revision",
+        "source_manifest_sha256",
+        "graph_fingerprint",
+        "graph_projection_version",
+        "evidence_index_status",
+        "graph_backend",
+        "graph_node_count",
+        "graph_edge_count",
+        "backend_pipeline_wired"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "complete",
+            "incomplete"
+          ]
+        },
+        "source_revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "source_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "graph_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "graph_projection_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_index_status": {
+          "enum": [
+            "complete",
+            "incomplete"
+          ]
+        },
+        "graph_backend": {
+          "type": "string",
+          "minLength": 1
+        },
+        "graph_node_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "graph_edge_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "backend_pipeline_wired": {
+          "type": "boolean"
+        }
+      }
+    },
+    "graph_retrieval": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tool",
+          "arguments",
+          "status",
+          "coverage_status",
+          "truncated",
+          "response_digest",
+          "payload"
+        ],
+        "properties": {
+          "tool": {
+            "enum": [
+              "repository_summary",
+              "graph_neighbors",
+              "search_symbols",
+              "graph_path",
+              "find_related_tests",
+              "trace_execution_context"
+            ]
+          },
+          "arguments": {
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "error"
+            ]
+          },
+          "coverage_status": {
+            "enum": [
+              "complete_for_query",
+              "partial",
+              "unknown"
+            ]
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "response_digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "payload": {
+            "type": "object"
+          },
+          "error_code": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "allOf": [
@@ -305,6 +430,26 @@
             ]
           }
         }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "condition": {
+            "const": "B_graph"
+          }
+        },
+        "required": [
+          "condition"
+        ]
+      },
+      "then": {
+        "required": [
+          "baseline_report",
+          "baseline_config_digest",
+          "graph_snapshot",
+          "graph_retrieval"
+        ]
       }
     }
   ]
