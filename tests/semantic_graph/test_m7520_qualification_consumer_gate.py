@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from audit_engine.semantic_audit.epistemic.qualification_reconciliation_store import (
-    QualificationReconciliationStore,
+    QualificationReconciliationStore, QualificationReconciliationStoreError,
 )
 from audit_engine.semantic_audit.epistemic.qualification_consumer_gate import (
     QualificationConsumerCheckStore,
@@ -112,7 +112,8 @@ class QualificationConsumerGateTests(unittest.TestCase):
             self.evaluate(consumer_id=" ")
 
     def test_missing_reconciliation_fails_before_any_consumer_event(self):
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(QualificationReconciliationStoreError,
+                                    "reconciliation_record_not_found"):
             self.evaluate(record_id="missing-record")
         self.assertEqual(len(self.check_store.history()), 0)
 
