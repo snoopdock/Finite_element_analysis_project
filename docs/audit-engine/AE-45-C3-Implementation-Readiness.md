@@ -393,3 +393,12 @@ No live provider, credential or network dispatch is performed by this change.
 The compact-prompt run reduced the first two accepted requests to 46,078 cumulative prompt characters (11,520 estimated prompt tokens). A third request required 6,211 prompt tokens plus its 512-token response reservation. With three finalization rounds each protecting 1,024 prompt tokens plus a 4,096-token response, the total projected reservation was 34,627 tokens and correctly exceeded the 30,720 ceiling.
 
 The deterministic integration authorization now uses a **2,048-token finalization cap** rather than 4,096. This is a stricter test-only cap, not a raised total-token budget or a reduction in the number of protected finalization rounds: all three rounds remain reserved, each retaining 1,024 prompt tokens plus 2,048 response tokens. The resulting protected reserve is 9,216 tokens. The final diagnosis fixture is deliberately concise and should fit this allowance. The production authorization maximum remains 6,144 tokens; no live authorization or provider profile has been changed. The next Actions run must confirm the complete composed test finishes within 30,720 tokens.
+
+
+### 13.2 Complete-context discovery is orchestrator-prefetched
+
+The prior completed-prompt attempt still rejected the fake final diagnosis because the investigator's complete-context validator requires three discovery families: `trace_execution_context`, `find_related_tests`, and `discover_case_context`. C3 already prefetched the first family, but left the other two as model-dispatched work. The fake's final response was therefore rejected, requiring another provider turn after the token reserve was exhausted.
+
+The investigator now performs bounded, read-only `find_related_tests` and `discover_case_context` queries before its first model turn whenever complete-context mode is enabled and those tools are available. Their evidence IDs and bounded model views are supplied in the initial prompt. The model is instructed not to repeat complete queries and must still inspect any surfaced candidate paths. Completeness is measured from the same evidence ledger and the same exact query/result requirements; prefetch does not mark an incomplete or truncated result as complete.
+
+This is an orchestration optimization, not a relaxation: all three required discovery tools remain mandatory, every result must be complete and non-truncated, and surfaced candidates still require inspection. The end-to-end test now asserts both additional prefetch operations explicitly.
