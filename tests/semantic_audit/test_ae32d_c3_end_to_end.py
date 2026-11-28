@@ -6,8 +6,6 @@ credentials, provider factory, network transport, or live dispatch are used.
 """
 from __future__ import annotations
 
-import json
-
 from tests.semantic_audit.test_ae32c_investigator import (
     FakeProvider,
     final_action,
@@ -76,7 +74,7 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
     authorization.update(
         max_model_rounds=11,
         max_tool_calls=12,
-        finalization_max_tokens_per_call=6_144,
+        finalization_max_tokens_per_call=4_096,
         max_total_tokens=30_720,
         max_elapsed_seconds=900,
         max_cost_usd=0.50,
@@ -122,12 +120,12 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
         assert session.evidence_tools.graph_fingerprint == b_report["graph_snapshot"]["graph_fingerprint"]
         assert session.limits.max_rounds == authorization["max_model_rounds"]
         assert session.limits.max_tool_calls == authorization["max_tool_calls"]
+        assert session.limits.finalization_max_tokens_per_call == authorization["finalization_max_tokens_per_call"]
         assert session.limits.max_total_tokens == authorization["max_total_tokens"]
         assert session.limits.max_elapsed_seconds == authorization["max_elapsed_seconds"]
         assert session.limits.max_cost_usd == authorization["max_cost_usd"]
 
         report = session.run(provider)
-        print("C3_RESERVATION=" + json.dumps(report.get("budget", {}).get("last_provider_reservation_check"), sort_keys=True))
 
         assert report["status"] == "completed", {
             "stop_reason": report.get("stop_reason"),
