@@ -237,6 +237,7 @@ class C3ExecutionSession:
             required_graph_direction=requirements["required_graph_direction"],
             prefetch_required_graph_query=True,
             graph_query_max_depth=2,
+            graph_query_max_results=20,
             prefetch_required_context_trace=True,
             limits=self.limits,
             cost_estimator=self.cost_estimator,
