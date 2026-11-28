@@ -103,7 +103,7 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
         manual_dispatch_confirmed=True,
     ) as session:
         assert session.contract["source_commit_sha"] == CASE_SHA
-        assert session.evidence_tools.manifest_sha256 == b_report["baseline_report"]["source_manifest_digest"]
+        assert session.evidence_tools.manifest_sha256 == b_report["graph_snapshot"]["source_manifest_sha256"]
         assert session.evidence_tools.graph_fingerprint == b_report["graph_snapshot"]["graph_fingerprint"]
         assert session.limits.max_rounds == authorization["max_model_rounds"]
         assert session.limits.max_tool_calls == authorization["max_tool_calls"]
