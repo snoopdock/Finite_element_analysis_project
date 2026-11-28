@@ -67,6 +67,18 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
     b_report = run_graph_assisted_audit(b_projection, root)
     preflight = build_c_preflight(b_report)
     authorization = build_auth(preflight)
+    # Use the full permitted deterministic-test envelope: the smaller generic
+    # C1 fixture budget cannot reserve the mandatory finalization tokens after
+    # the complete B/C context is prefetched. This authorization is test-only;
+    # the provider below is an in-process fake and cannot dispatch externally.
+    authorization.update(
+        max_model_rounds=11,
+        max_tool_calls=12,
+        finalization_max_tokens_per_call=6_144,
+        max_total_tokens=30_720,
+        max_elapsed_seconds=900,
+        max_cost_usd=0.50,
+    )
     request_package = build_c_request_package(
         c_projection, b_report, authorization
     )
