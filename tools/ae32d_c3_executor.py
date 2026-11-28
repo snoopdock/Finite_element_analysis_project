@@ -356,7 +356,7 @@ def prepare_c3_execution(
         # Import the pricing estimator only after C0/C1/C2, checkout, scope and
         # retained graph checks have succeeded. The module import is not a
         # provider construction or credential access.
-        from audit_engine.semantic_audit.ae32c.live_evaluation import (
+        from audit_engine.semantic_audit.ae32c.cost_estimation import (
             build_live_cost_estimator,
         )
 
