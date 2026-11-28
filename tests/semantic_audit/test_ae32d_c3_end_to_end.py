@@ -85,7 +85,7 @@ def _make_isolated_source(root: Path) -> str:
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
     subprocess.run(["git", "config", "user.name", "C3 Integration Fixture"], cwd=root, check=True)
     subprocess.run(["git", "config", "user.email", "c3-fixture@example.invalid"], cwd=root, check=True)
-    subprocess.run(["git", "add", "control.py", "helper.py", "expected_behavior.json"], cwd=root, check=True)
+    subprocess.run(["git", "add", "src/control.py", "src/helper.py", "src/expected_behavior.json"], cwd=root, check=True)
     env = os.environ.copy()
     env.update({
         "GIT_AUTHOR_DATE": "2026-01-01T00:00:00+00:00",
