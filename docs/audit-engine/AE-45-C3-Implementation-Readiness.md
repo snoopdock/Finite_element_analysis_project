@@ -426,3 +426,22 @@ The integration diagnostics also exposed a context-contract classification error
 
 
 The latest budget trace was within 490 tokens of the ceiling before the final fake response: two accepted evidence turns reserved 14,362 tokens; the final turn required 7,632; the 2,048-token/round finalization reserve was 9,216, yielding a 31,210-token projection. The fake-only finalization cap is therefore tightened to 1,536 tokens (three protected rounds remain, each with 1,024 prompt tokens plus 1,536 completion tokens). This makes the projected total 29,674 tokens, retaining 1,046 tokens of headroom under the unchanged 30,720 ceiling. The cap is test-specific and comfortably exceeds the concise fake diagnosis; the production maximum is still 6,144 tokens.
+
+
+### 13.5 Composed C3 integration validated
+
+GitHub Actions run [46128558321](https://github.com/snoopdock/Finite_element_analysis_project/actions/runs/46128558321) completed successfully on `stage1/section-uuids`, commit `5c72c12d45c415f0d5a3cbdacdfe3cbf41a81a31`. The workflow's C3 contract, retained-snapshot executor, deterministic investigator lifecycle, and new full B→C1→C2→C3 integration steps all passed.
+
+The integration now demonstrates, in one isolated temporary Git repository:
+
+- real B graph construction and C2 independent reconstruction over the same committed source;
+- exact C1 package reconstruction and C3 retained-snapshot binding;
+- depth-two graph prefetch surfacing the `CALLS` relationship from `control.work` to `helper.normalize`;
+- source-prefetch reads excluded from graph-follow-through accounting;
+- a model-requested, manifest/hash-verified read of `helper.py` after the graph query;
+- complete trace, related-test and case-context discovery;
+- complete direct reads and root-cause citations for every required source path;
+- a completed deterministic diagnosis within the unchanged 30,720-token total ceiling, with three protected finalization rounds and a test-only 1,536-token per-round finalization cap;
+- source revision, manifest, graph fingerprint, session termination and cleanup checks.
+
+This is a successful **deterministic fake-provider integration**, not a live C3 provider trial. The test's narrower 1,536-token finalization cap is below the production authorization maximum of 6,144 tokens. The live profile still requires separate explicit authorization and budget-fit validation. No provider credentials were read and no network/model dispatch occurred. AE-43 remains blocked pending valid A/B/C trial artifacts and independent evaluation.
