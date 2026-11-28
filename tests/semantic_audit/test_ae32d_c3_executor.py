@@ -251,7 +251,7 @@ class C3ExecutorTests(unittest.TestCase):
              patch("tools.ae32d_c3_executor.RepositoryEvidenceTools", return_value=fake_tools), \
              patch("tools.ae32d_c3_executor._runner_revision", return_value="f" * 40), \
              patch.dict(sys.modules, {
-                 "audit_engine.semantic_audit.ae32c.live_evaluation": cost_module
+                 "audit_engine.semantic_audit.ae32c.cost_estimation": cost_module
              }), \
              patch("tools.ae32d_c3_executor.RepositoryInvestigator") as investigator_factory:
             session = prepare_c3_execution(
@@ -331,6 +331,7 @@ class C3ExecutorTests(unittest.TestCase):
                 imported.append(node.module or "")
         self.assertFalse(any(name == "providers" or name.startswith("providers.") for name in imported))
         self.assertFalse(any("credential" in name.casefold() for name in imported))
+        self.assertFalse(any("live_evaluation" in name for name in imported))
 
 
 if __name__ == "__main__":
