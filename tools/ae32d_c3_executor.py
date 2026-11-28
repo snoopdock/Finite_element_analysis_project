@@ -33,7 +33,7 @@ from tools.ae32d_graph_assisted_audit import (
 _FIXED_INVESTIGATOR_LIMITS: dict[str, int] = {
     "max_response_chars": 40_000,
     "max_tool_response_bytes": 100_000,
-    "max_tool_context_chars": 10_000,
+    "max_tool_context_chars": 2_500,
     "max_total_evidence_bytes": 300_000,
     "max_total_prompt_chars": 350_000,
     "max_snapshot_files": 100,
