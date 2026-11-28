@@ -255,6 +255,13 @@ def test_real_c1_c2_retained_c3_session_completes_within_budget():
             assert any(item["tool"] == "graph_neighbors" for item in report["tool_calls"])
             graph_coverage = report["graph_interaction_coverage"]
             assert graph_coverage["graph_follow_through_complete"] is True
+            assert "helper.py" in graph_coverage["cross_module_graph_source_paths"]
+            assert any(
+                query["target"] == "control.py"
+                and query["initiator"] == "orchestrator_prefetch"
+                and "helper.py" in query["source_paths"]
+                for query in graph_coverage["graph_queries"]
+            )
             assert "helper.py" in graph_coverage["cross_module_graph_derived_verified_read_paths"]
 
         assert session._closed is True
