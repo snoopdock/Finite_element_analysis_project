@@ -116,24 +116,64 @@ def build_c_request_package(
                 "inferences, counterevidence and unresolved questions; abstain when evidence is insufficient."
             ),
         }
+        def _brief_items(items: list[Any], *, maximum: int = 2, limit: int = 220) -> list[str]:
+            """Create a small prompt-only synopsis; the full records remain in context."""
+            result = []
+            for item in items[:maximum]:
+                if isinstance(item, dict):
+                    candidate = next((
+                        item[key] for key in (
+                            "statement", "summary", "finding", "question", "description", "limitation"
+                        ) if isinstance(item.get(key), str) and item[key].strip()
+                    ), None)
+                else:
+                    candidate = item if isinstance(item, str) else None
+                if candidate is None:
+                    candidate = json.dumps(item, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+                result.append(str(candidate)[:limit])
+            return result
+
+        graph_snapshot = context["b_graph"]["graph_snapshot"]
+        graph_retrieval_briefs = []
+        for item in context["b_graph"]["retrieval"]:
+            payload = item["payload"] if isinstance(item.get("payload"), dict) else {}
+            graph_retrieval_briefs.append({
+                "tool": item["tool"],
+                "status": item["status"],
+                "coverage_status": item["coverage_status"],
+                "response_digest": item["response_digest"],
+                "relation_types": payload.get("observed_relation_types", [])[:6],
+                "source_paths": payload.get("source_paths", [])[:6],
+                "observation_count": payload.get("observation_count"),
+                "truncated": item["truncated"],
+            })
+        prompt_context = {
+            "a_baseline": {
+                "decision": baseline["decision"],
+                "findings": _brief_items(baseline["findings"]),
+                "counterevidence": _brief_items(baseline["counterevidence"]),
+                "unresolved_questions": _brief_items(baseline["unresolved_questions"]),
+                "limitations": _brief_items(baseline["limitations"]),
+            },
+            "b_graph": {
+                "graph_fingerprint": graph_snapshot["graph_fingerprint"],
+                "projection_version": graph_snapshot.get("graph_projection_version"),
+                "backend": graph_snapshot.get("graph_backend"),
+                "node_count": graph_snapshot.get("graph_node_count"),
+                "edge_count": graph_snapshot.get("graph_edge_count"),
+                "retrieval": graph_retrieval_briefs,
+            },
+        }
         investigator_problem = (
-            "Task: " + task_projection["task"]["title"] + "\n\n"
-            + task_projection["task"]["problem_statement"] + "\n\n"
-            + "The following A/B material is machine-generated investigative context, not ground truth. "
-              "Independently inspect the pinned source and graph snapshot. Do not assume the A/B decision is correct. "
-              "Separate observations, inferences, counterevidence and unresolved questions; abstain when evidence is insufficient.\\n\\n"
-            + json.dumps({
-                "a_baseline": context["a_baseline"],
-                "b_graph": {
-                    "graph_snapshot": context["b_graph"]["graph_snapshot"],
-                    "retrieval": [
-                        {"tool": item["tool"], "status": item["status"],
-                         "response_digest": item["response_digest"], "payload": item["payload"]}
-                        for item in context["b_graph"]["retrieval"]
-                    ],
-                },
-            }, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
-        )[:16_000]
+            "Task: " + task_projection["task"]["title"] + "\\n"
+            + task_projection["task"]["problem_statement"] + "\\n"
+            + "A/B are machine-generated investigative context, not ground truth. Independently inspect "
+              "the pinned source and graph evidence; do not assume their decisions are correct. "
+              "Separate observations, inferences, counterevidence and unresolved questions; abstain "
+              "when evidence is insufficient. The complete A/B records remain in the request package; "
+              "the following is only a compact orientation.\\n"
+            + json.dumps(prompt_context, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+        )
         # RepositoryInvestigator requires a non-empty target and at least one
         # distinct context path whenever complete context discovery is enabled.
         # B's graph retrieval is not required to have run the C-only trace tool,
