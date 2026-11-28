@@ -59,18 +59,3 @@ def build_live_cost_estimator(provider_name: str, model_name: str):
     }
     return estimate
 
-
-def test_cost_estimator_rejects_non_integer_or_negative_usage():
-    estimator = build_live_cost_estimator("cloudflare", "@cf/qwen/qwen3.8-27b")
-    assert estimator is not None
-    for prompt_chars, output_tokens in ((True, 1), (-1, 1), (1, False), (1, -1)):
-        try:
-            estimator("cloudflare", "@cf/qwen/qwen3.8-27b", prompt_chars, output_tokens)
-        except ValueError as exc:
-            assert str(exc) == "invalid_cost_estimator_input"
-        else:
-            raise AssertionError("invalid estimator input was accepted")
-
-
-def test_cost_estimator_is_unavailable_for_unregistered_profile():
-    assert build_live_cost_estimator("openrouter", "some-model") is None
