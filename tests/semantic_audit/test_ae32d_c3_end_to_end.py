@@ -9,6 +9,7 @@ from __future__ import annotations
 from tests.semantic_audit.test_ae32c_investigator import (
     FakeProvider,
     action_tool,
+    final_action,
 )
 from tests.semantic_audit.test_ae32d_c_request import (
     CASE_SHA,
@@ -131,6 +132,15 @@ def test_real_c1_c2_retained_c3_session_enforces_budget_and_cleanup():
         action_tool("read_source_file", {
             "path": "control.py", "start_line": 1, "end_line": 5,
         }),
+        action_tool("read_source_file", {
+            "path": "expected_behavior.json", "start_line": 1, "end_line": 24,
+        }),
+        final_action(
+            evidence_id="E0002",
+            source_reference=False,
+            summary="The pinned source and expected-behavior evidence were inspected.",
+            claim_statement="The retained C3 evidence supports a bounded static observation.",
+        ),
     ])
     provider.max_logical_calls = authorization["max_model_rounds"]
     provider.max_tokens_per_call = authorization["max_tokens_per_call"]
@@ -157,7 +167,7 @@ def test_real_c1_c2_retained_c3_session_enforces_budget_and_cleanup():
         report = session.run(provider)
 
         # The real C3 system prompt plus retained evidence consumes the available
-        # normal-turn reservation after one read. The investigator must stop
+        # normal-turn reservation after two reads. The investigator must stop
         # before exceeding the authorized total-token ceiling; this test proves
         # the composed path and its fail-closed budget behavior, not a live run.
         assert report["status"] == "incomplete"
@@ -174,7 +184,7 @@ def test_real_c1_c2_retained_c3_session_enforces_budget_and_cleanup():
         assert reservation["reason"] == "estimated_token_budget_exhausted"
         assert reservation["projected_reserved_tokens"] > authorization["max_total_tokens"]
         assert report["budget"]["reserved_token_estimate"] <= authorization["max_total_tokens"]
-        assert provider.calls == 1
+        assert provider.calls == 2
         assert any(item["tool"] == "repository_summary" for item in report["tool_calls"])
         assert any(item["tool"] == "read_source_file" for item in report["tool_calls"])
         assert any(item["tool"] == "trace_execution_context" for item in report["tool_calls"])
