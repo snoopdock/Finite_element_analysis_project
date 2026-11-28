@@ -159,7 +159,7 @@ class C3ExecutorTests(unittest.TestCase):
         self.assertEqual(limits.temperature, 0.0)
         self.assertEqual(limits.max_snapshot_files, 100)
         self.assertEqual(limits.max_snapshot_bytes, 2_000_000)
-        self.assertEqual(limits.max_tool_context_chars, 2_500)
+        self.assertEqual(limits.max_tool_context_chars, 1_000)
 
     def test_limit_mapping_rejects_missing_or_extra_contract_fields(self):
         values = contract()["investigator_limits"]
