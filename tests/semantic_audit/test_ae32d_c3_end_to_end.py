@@ -76,7 +76,11 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
     # evidence-tools instance before the C3 executor creates its retained copy.
     c2_report = verify_c_graph_snapshot(c_projection, b_report, root)
     assert c2_report["status"] == "verified"
-    assert all(\n        c2_report["observed_graph_snapshot"][key] == value\n        for key, value in c2_report["expected_graph_snapshot"].items()\n        if key != "status"\n    )
+    assert all(
+        c2_report["observed_graph_snapshot"][key] == value
+        for key, value in c2_report["expected_graph_snapshot"].items()
+        if key != "status"
+    )
 
     # This confirmation is confined to a deterministic test using an injected
     # fake. It does not authorize or perform any live provider dispatch.
