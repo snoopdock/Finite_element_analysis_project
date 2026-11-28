@@ -386,3 +386,10 @@ C3's operational `max_tool_context_chars` is now 1,000 instead of 10,000. This i
 The integration test now requires a **completed** deterministic fake-provider investigation, including the two evidence-read actions and final diagnosis, while preserving the original 30,720-token total ceiling, three reserved finalization rounds, 512-token fake normal-response cap, 4,096-token fake finalization cap, and all other authorization bounds. The next GitHub Actions run must establish whether the compacted prompt actually fits; until that run succeeds, this is an implementation candidate, not a validated result.
 
 No live provider, credential or network dispatch is performed by this change.
+
+
+### 13.1 Reservation fit and bounded finalization output
+
+The compact-prompt run reduced the first two accepted requests to 46,078 cumulative prompt characters (11,520 estimated prompt tokens). A third request required 6,211 prompt tokens plus its 512-token response reservation. With three finalization rounds each protecting 1,024 prompt tokens plus a 4,096-token response, the total projected reservation was 34,627 tokens and correctly exceeded the 30,720 ceiling.
+
+The deterministic integration authorization now uses a **2,048-token finalization cap** rather than 4,096. This is a stricter test-only cap, not a raised total-token budget or a reduction in the number of protected finalization rounds: all three rounds remain reserved, each retaining 1,024 prompt tokens plus 2,048 response tokens. The resulting protected reserve is 9,216 tokens. The final diagnosis fixture is deliberately concise and should fit this allowance. The production authorization maximum remains 6,144 tokens; no live authorization or provider profile has been changed. The next Actions run must confirm the complete composed test finishes within 30,720 tokens.
