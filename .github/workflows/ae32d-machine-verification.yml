@@ -10,6 +10,7 @@ on:
       - audit_engine/semantic_audit/ae32c/response_protocol.py
       - audit_engine/semantic_audit/ae32c/tool_policy.py
       - audit_engine/semantic_audit/ae32c/investigator.py
+      - audit_engine/semantic_audit/ae32c/cost_estimation.py
       - audit_engine/semantic_audit/ae32b/evidence_tools.py
       - tools/ae32d_validate_benchmark.py
       - tools/ae32d_exploratory_evaluation.py
@@ -27,6 +28,7 @@ on:
       - tests/semantic_audit/test_ae32d_c3_executor.py
       - tests/semantic_audit/test_ae32d_c3_fake_provider_execution.py
       - tests/semantic_audit/test_ae32d_c3_end_to_end.py
+      - tests/semantic_audit/test_ae32c_cost_estimation.py
       - tools/ae32d_trial_contracts.py
       - tools/ae32d_validate_rule_catalog.py
       - tools/ae32d_deterministic_rules.py
@@ -160,6 +162,9 @@ jobs:
         env:
           AE32D_CASE_SOURCE_ROOT: ${{ github.workspace }}/.ae32d-case-source
         run: python -m unittest discover -s tests/semantic_audit -p 'test_ae32d_c_snapshot.py' -v
+
+      - name: Test provider-independent cost estimator (no provider imports)
+        run: python -m pytest tests/semantic_audit/test_ae32c_cost_estimation.py -q
 
       - name: Test C3 execution contract (provider-free; exact C1/C2 bindings)
         env:
