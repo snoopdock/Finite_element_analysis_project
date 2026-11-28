@@ -213,7 +213,7 @@ def test_real_c1_c2_retained_c3_session_completes_within_budget():
             assert session.limits.max_total_tokens == authorization["max_total_tokens"]
             assert session.limits.max_elapsed_seconds == authorization["max_elapsed_seconds"]
             assert session.limits.max_cost_usd == authorization["max_cost_usd"]
-            tool_catalog = session.investigator._tool_catalog_for_prompt()
+            tool_catalog = session._investigator._tool_catalog_for_prompt()
             assert len(json.dumps(tool_catalog, sort_keys=True)) < 20_000
             assert {item["name"] for item in tool_catalog} >= {
                 "read_source_file", "graph_neighbors", "graph_path",
