@@ -14,7 +14,6 @@ from pathlib import Path
 from tests.semantic_audit.test_ae32c_investigator import (
     FakeProvider,
     action_tool,
-    final_action,
 )
 from tests.semantic_audit.test_ae32d_c_request import (
     build_auth,
@@ -292,6 +291,11 @@ def test_real_c1_c2_retained_c3_session_completes_within_budget():
             assert report["budget"]["max_tool_calls"] == authorization["max_tool_calls"]
             assert report["budget"]["max_total_tokens"] == authorization["max_total_tokens"]
             assert report["budget"]["reserved_token_estimate"] <= authorization["max_total_tokens"]
+            source_coverage = report["required_source_coverage"]
+            assert source_coverage["status"] == "complete"
+            assert set(source_coverage["root_cause_direct_citation_paths"]) == {
+                "control.py", "helper.py", "expected_behavior.json"
+            }
             assert provider.calls == 3
             assert any(item["tool"] == "repository_summary" for item in report["tool_calls"])
             assert any(item["tool"] == "read_source_file" for item in report["tool_calls"])
