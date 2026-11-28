@@ -254,6 +254,17 @@ def test_real_c1_c2_retained_c3_session_completes_within_budget():
             assert any(item["tool"] == "discover_case_context" for item in report["tool_calls"])
             assert any(item["tool"] == "graph_neighbors" for item in report["tool_calls"])
             graph_coverage = report["graph_interaction_coverage"]
+            context_coverage = report["investigation_context_coverage"]
+            assert context_coverage["status"] == "complete_for_available_static_context"
+            context_contract = context_coverage["required_context_contract"]
+            assert context_contract["status"] == "complete"
+            expected_behavior_path = next(
+                item for item in context_contract["required_paths"]
+                if item["path"] == "expected_behavior.json"
+            )
+            assert expected_behavior_path["read"] is True
+            assert expected_behavior_path["surfaced"] is False
+            assert expected_behavior_path["status"] == "read_not_surfaced"
             assert graph_coverage["graph_follow_through_complete"] is True
             assert "helper.py" in graph_coverage["cross_module_graph_source_paths"]
             assert any(
