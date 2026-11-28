@@ -4249,12 +4249,15 @@ class RepositoryInvestigator:
                     "path": path,
                     "surfaced": surfaced,
                     "read": read,
-                    "status": "not_surfaced" if not surfaced else ("read" if read else "unread"),
+                    "status": (
+                        "read" if read and surfaced
+                        else "read_not_surfaced" if read
+                        else "surfaced_not_read" if surfaced
+                        else "unread_not_surfaced"
+                    ),
                 })
             if not target_trace_results:
                 contract_status = "trace_not_completed"
-            elif any(not item["surfaced"] for item in required_context_path_status):
-                contract_status = "required_context_path_not_surfaced"
             elif any(not item["read"] for item in required_context_path_status):
                 contract_status = "required_context_path_unread"
             else:
@@ -4275,8 +4278,11 @@ class RepositoryInvestigator:
                 "required_paths": required_context_path_status,
                 "interpretation": (
                     "This benchmark contract requires a successful, complete, non-truncated trace for the exact "
-                    "target and a complete direct read of every required context path. These reads are context "
-                    "coverage requirements, not causal-proof or runtime-execution claims."
+                    "target and a complete direct read of every required context path. A required path need not "
+                    "also be surfaced by the trace: explicit task context and graph-derived relationships are separate "
+                    "sources of path requirements. All paths surfaced by the trace are still subject to the independent "
+                    "candidate read/unread accounting. These reads are context coverage requirements, not causal-proof "
+                    "or runtime-execution claims."
                 ),
             }
         else:
