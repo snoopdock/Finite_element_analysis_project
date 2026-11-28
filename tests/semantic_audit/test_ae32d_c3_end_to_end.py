@@ -92,6 +92,7 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
             claim_statement="The investigator completed against the C1/C2-bound source snapshot.",
         )
     ])
+    provider.max_logical_calls = authorization["max_model_rounds"]
 
     with prepare_c3_execution(
         c_projection,
