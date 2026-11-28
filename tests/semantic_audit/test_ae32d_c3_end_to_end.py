@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from tests.semantic_audit.test_ae32c_investigator import (
     FakeProvider,
+    action_tool,
     final_action,
 )
 from tests.semantic_audit.test_ae32d_c_request import (
@@ -55,6 +56,9 @@ class CloudflareDeterministicFakeProvider(FakeProvider):
 def test_real_c1_c2_retained_c3_session_and_investigator_run():
     root = pinned_root()
     record = case_record()
+    record["task"]["title"] = "C3 end-to-end"
+    record["task"]["problem_statement"] = "Inspect the declared source and graph evidence."
+    record["task"]["declared_scope"] = ["control.py", "expected_behavior.json"]
     b_projection = build_sanitized_task_projection(
         record, experiment_id="AE45-C3-E2E", condition="B_graph"
     )
@@ -65,6 +69,24 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
     # Rebuild the real B evidence and C1 authorization package from the pinned
     # source fixture rather than using synthetic digests or patched contracts.
     b_report = run_graph_assisted_audit(b_projection, root)
+    # Keep the actual B graph snapshot and the two retrieval records required
+    # by C0, but bound the context passed into C1 to one graph-neighbor result.
+    # This is a derived request-context view; it does not alter the pinned source
+    # or the graph snapshot that C2/C3 independently reconstruct.
+    summary_record = next(
+        item for item in b_report["graph_retrieval"]
+        if item["tool"] == "repository_summary" and item["status"] == "ok"
+    )
+    neighbor_record = next(
+        item for item in b_report["graph_retrieval"]
+        if item["tool"] == "graph_neighbors"
+        and item["status"] == "ok"
+        and item["payload"].get("discovered_nodes")
+    )
+    neighbor_record = dict(neighbor_record)
+    neighbor_record["payload"] = dict(neighbor_record["payload"])
+    neighbor_record["payload"]["discovered_nodes"] = neighbor_record["payload"]["discovered_nodes"][:1]
+    b_report["graph_retrieval"] = [summary_record, neighbor_record]
     preflight = build_c_preflight(b_report)
     authorization = build_auth(preflight)
     # Use the full permitted deterministic-test envelope: the smaller generic
@@ -74,6 +96,7 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
     authorization.update(
         max_model_rounds=11,
         max_tool_calls=12,
+        max_tokens_per_call=1_024,
         finalization_max_tokens_per_call=4_096,
         max_total_tokens=30_720,
         max_elapsed_seconds=900,
@@ -97,6 +120,12 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
     # This confirmation is confined to a deterministic test using an injected
     # fake. It does not authorize or perform any live provider dispatch.
     provider = CloudflareDeterministicFakeProvider([
+        action_tool("read_source_file", {
+            "path": "control.py", "start_line": 1, "end_line": 200,
+        }),
+        action_tool("read_source_file", {
+            "path": "expected_behavior.json", "start_line": 1, "end_line": 100,
+        }),
         final_action(
             evidence_id="E0002",
             source_reference=False,
@@ -105,6 +134,7 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
         )
     ])
     provider.max_logical_calls = authorization["max_model_rounds"]
+    provider.max_tokens_per_call = authorization["max_tokens_per_call"]
 
     with prepare_c3_execution(
         c_projection,
@@ -156,7 +186,7 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
         assert report["budget"]["max_tool_calls"] == authorization["max_tool_calls"]
         assert report["execution_assessment"]["repository_code_executed"] is False
         assert report["execution_assessment"]["tests_executed_by_investigator"] is False
-        assert provider.calls == 1
+        assert provider.calls == 3
         assert report["tool_calls"][0]["tool"] == "repository_summary"
         assert any(item["tool"] == "trace_execution_context" for item in report["tool_calls"])
         assert any(item["tool"] == "query_graph" for item in report["tool_calls"])
