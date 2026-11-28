@@ -261,21 +261,6 @@ def test_real_c1_c2_retained_c3_session_completes_within_budget():
                 "trace_execution_context", "find_related_tests", "discover_case_context",
             }
 
-            print("C3_BUDGET_DIAGNOSTIC=" + json.dumps({
-                key: report.get("budget", {}).get(key)
-                for key in (
-                    "reserved_token_estimate", "last_provider_reservation_check",
-                    "total_prompt_chars", "estimated_cost_usd_reserved",
-                )
-            }, sort_keys=True))
-            print("C3_ACCEPTANCE_DIAGNOSTIC=" + json.dumps({
-                key: report.get(key)
-                for key in (
-                    "errors", "investigation_context_coverage",
-                    "graph_interaction_coverage", "events", "model_action_trace",
-                )
-            }, sort_keys=True, default=str))
-
             assert report["status"] == "completed", {
                 "stop_reason": report.get("stop_reason"),
                 "errors": report.get("errors"),
