@@ -6,12 +6,9 @@ credentials, provider factory, network transport, or live dispatch are used.
 """
 from __future__ import annotations
 
-import json
-
 from tests.semantic_audit.test_ae32c_investigator import (
     FakeProvider,
     action_tool,
-    final_action,
 )
 from tests.semantic_audit.test_ae32d_c_request import (
     CASE_SHA,
