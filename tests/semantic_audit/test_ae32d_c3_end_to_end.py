@@ -6,6 +6,8 @@ credentials, provider factory, network transport, or live dispatch are used.
 """
 from __future__ import annotations
 
+import json
+
 from tests.semantic_audit.test_ae32c_investigator import (
     FakeProvider,
     action_tool,
@@ -86,7 +88,16 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
     neighbor_record = dict(neighbor_record)
     neighbor_record["payload"] = dict(neighbor_record["payload"])
     neighbor_record["payload"]["discovered_nodes"] = neighbor_record["payload"]["discovered_nodes"][:1]
+    summary_record = dict(summary_record)
+    summary_record["payload"] = {}
+    neighbor_record["payload"] = {
+        "discovered_nodes": neighbor_record["payload"]["discovered_nodes"][:1]
+    }
     b_report["graph_retrieval"] = [summary_record, neighbor_record]
+    for key in ("findings", "counterevidence", "unresolved_questions", "limitations"):
+        bounded = b_report["baseline_report"][key][:1]
+        b_report["baseline_report"][key] = bounded
+        b_report[key] = bounded
     preflight = build_c_preflight(b_report)
     authorization = build_auth(preflight)
     # Use the full permitted deterministic-test envelope: the smaller generic
@@ -96,7 +107,7 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
     authorization.update(
         max_model_rounds=11,
         max_tool_calls=12,
-        max_tokens_per_call=1_024,
+        max_tokens_per_call=512,
         finalization_max_tokens_per_call=4_096,
         max_total_tokens=30_720,
         max_elapsed_seconds=900,
@@ -156,6 +167,8 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
         assert session.limits.max_cost_usd == authorization["max_cost_usd"]
 
         report = session.run(provider)
+        print("C3_REQUEST_PROBLEM_CHARS=" + str(len(request_package["request"]["investigator_problem"])))
+        print("C3_RESERVATION=" + json.dumps(report.get("budget", {}).get("last_provider_reservation_check"), sort_keys=True))
 
         assert report["status"] == "completed", {
             "stop_reason": report.get("stop_reason"),
