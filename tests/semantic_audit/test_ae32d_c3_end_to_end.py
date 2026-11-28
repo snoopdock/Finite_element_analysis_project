@@ -166,12 +166,15 @@ def test_real_c1_c2_retained_c3_session_enforces_budget_and_cleanup():
 
         report = session.run(provider)
 
-        # The real C3 system prompt plus retained evidence consumes the available
-        # normal-turn reservation after two reads. The investigator must stop
-        # before exceeding the authorized total-token ceiling; this test proves
-        # the composed path and its fail-closed budget behavior, not a live run.
-        assert report["status"] == "incomplete"
-        assert report["stop_reason"] == "estimated_token_budget_exhausted"
+        # Compact C1 orientation plus bounded model-facing evidence views allow
+        # the fake investigation to finish inside the same authorized ceiling.
+        assert report["status"] == "completed", {
+            "stop_reason": report.get("stop_reason"),
+            "errors": report.get("errors"),
+            "provider_calls": provider.calls,
+            "budget": report.get("budget"),
+        }
+        assert report["diagnosis"] is not None
         assert report["snapshot_check_status"] == "verified"
         assert report["provenance"]["source_revision"] == CASE_SHA
         assert report["provenance"]["source_manifest_sha256"] == session.contract["source_manifest_sha256"]
@@ -179,15 +182,12 @@ def test_real_c1_c2_retained_c3_session_enforces_budget_and_cleanup():
         assert report["budget"]["max_rounds"] == authorization["max_model_rounds"]
         assert report["budget"]["max_tool_calls"] == authorization["max_tool_calls"]
         assert report["budget"]["max_total_tokens"] == authorization["max_total_tokens"]
-        reservation = report["budget"]["last_provider_reservation_check"]
-        assert reservation["decision"] == "rejected"
-        assert reservation["reason"] == "estimated_token_budget_exhausted"
-        assert reservation["projected_reserved_tokens"] > authorization["max_total_tokens"]
         assert report["budget"]["reserved_token_estimate"] <= authorization["max_total_tokens"]
-        assert provider.calls == 2
+        assert provider.calls == 3
         assert any(item["tool"] == "repository_summary" for item in report["tool_calls"])
         assert any(item["tool"] == "read_source_file" for item in report["tool_calls"])
         assert any(item["tool"] == "trace_execution_context" for item in report["tool_calls"])
         assert any(item["tool"] == "graph_neighbors" for item in report["tool_calls"])
+
 
     assert session._closed is True
