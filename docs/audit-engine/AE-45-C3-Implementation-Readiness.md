@@ -2,7 +2,7 @@
 
 **Branch:** `stage1/section-uuids`  
 **Baseline:** `600e1239791e6c2944a8c9edad64f08c3e04d683`  
-**Status:** C0–C2 validated; provider-free C3 execution-contract layer committed; live C3 executor not implemented; no provider call authorized or executed.
+**Status:** C0–C2 validated; retained-snapshot C3 executor and deterministic B→C1→C2→C3 integration implemented; live provider dispatch remains separately unauthorized.
 
 ## 1. Verified state
 
@@ -369,3 +369,20 @@ The integration test is therefore scoped to prove the real B/C1/C2/C3 reconstruc
 
 
 The final assertion was aligned with the investigator's actual orchestrator-prefetch tool name: `graph_neighbors` (not `query_graph`). The graph query is explicitly recorded as orchestrator-prefetched, while `trace_execution_context` is the separate context-trace operation. The composed test expects two fake model turns: a read of the graph target and a read of the distinct context file; the subsequent model turn is rejected by the protected token reservation.
+
+
+## 13. C3 prompt/context compaction
+
+The end-to-end test exposed a real composition issue: C1 embedded a large serialization of A/B findings, the full B graph snapshot, and raw graph-retrieval payloads inside `investigator_problem`. The C3 investigator then received the same source/graph/context evidence again through its independently reconstructed evidence tools. This duplicated evidence in the model prompt without adding new provenance or authority.
+
+C1 now separates the **full request context** from the **prompt orientation**:
+
+- `request.context` retains the complete bounded A/B baseline, B graph snapshot, retrieval payloads, arguments, provenance and response digests. It remains part of the request digest and C1 reconstruction.
+- `request.investigator_problem` contains the task statement, the non-ground-truth rule, a compact synopsis of at most two baseline items per category, and graph metadata/retrieval summaries. It does not copy raw retrieval payloads or repeat the full graph snapshot.
+- The investigator still obtains source, graph and context evidence from the C3 retained snapshot. The compact orientation does not replace evidence, remove a required tool, change the graph query contract, or relax citation/provenance checks.
+
+C3's operational `max_tool_context_chars` is now 2,500 instead of 10,000. This is a model-facing presentation bound only: complete tool responses remain in the immutable evidence ledger and final report. A truncated model view is explicitly marked; the investigator can request a narrower source range if more detail is needed. It does not reduce the source snapshot, graph data, evidence byte ceiling, or authorization token/call/time/cost ceilings.
+
+The integration test now requires a **completed** deterministic fake-provider investigation, including the two evidence-read actions and final diagnosis, while preserving the original 30,720-token total ceiling, three reserved finalization rounds, 512-token fake normal-response cap, 4,096-token fake finalization cap, and all other authorization bounds. The next GitHub Actions run must establish whether the compacted prompt actually fits; until that run succeeds, this is an implementation candidate, not a validated result.
+
+No live provider, credential or network dispatch is performed by this change.
