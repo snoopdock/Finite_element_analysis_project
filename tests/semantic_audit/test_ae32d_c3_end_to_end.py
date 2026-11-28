@@ -106,7 +106,7 @@ def test_real_c1_c2_retained_c3_session_enforces_budget_and_cleanup():
         max_model_rounds=11,
         max_tool_calls=12,
         max_tokens_per_call=512,
-        finalization_max_tokens_per_call=4_096,
+        finalization_max_tokens_per_call=2_048,
         max_total_tokens=30_720,
         max_elapsed_seconds=900,
         max_cost_usd=0.50,
