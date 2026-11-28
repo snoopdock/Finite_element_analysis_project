@@ -303,3 +303,21 @@ The AE-32D machine-verification workflow now includes the new test path in its p
 A successful run will establish that real B/C1/C2 artifacts can be composed with a freshly reconstructed, retained C3 graph and that the actual investigator can complete against it using a deterministic fake provider. It will not establish live-provider behavior, credential safety for a production provider, diagnostic accuracy, an official C3 trial, or A/B/C benchmark eligibility.
 
 No live provider invocation is authorized or performed by this change.
+
+
+### 12.4 CI findings and estimator-import correction
+
+The first end-to-end attempt exposed a comparison-shape issue: C2's expected snapshot includes the status marker `complete`, while the observed runtime snapshot contains the nine graph-identity fields and omits that marker. The assertion was corrected to compare the shared graph-identity fields; the verifier's own status and mismatch checks remain authoritative.
+
+The next attempt reached C3 preparation and failed while importing `build_live_cost_estimator` from `live_evaluation.py`. That module imports `providers.factory` at module scope, which transitively imported the Cloudflare adapter and failed in the deterministic workflow environment because `requests` is not installed. No provider was constructed and no network call was attempted, but the import coupling violated the intended provider-independent preparation boundary.
+
+Corrective refactor:
+
+- Added `audit_engine/semantic_audit/ae32c/cost_estimation.py` as a provider-independent module containing the shared Cloudflare Qwen estimator and pricing metadata.
+- Changed `tools/ae32d_c3_executor.py` to import the estimator from that module, not from `live_evaluation.py`.
+- Kept the existing live-evaluation module API available; this change does not alter its live-dispatch behavior.
+- Strengthened the executor AST test to reject imports of `live_evaluation` as well as provider factories and credential modules.
+- Added `tests/semantic_audit/test_ae32c_cost_estimation.py` for profile selection, invalid-usage rejection, conservative pricing metadata, and the absence of provider/live-evaluation imports.
+- Added the new module and test to the AE-32D workflow path filter and deterministic test steps.
+
+The end-to-end test has not yet passed. The next Actions run must validate both the pure estimator suite and the complete C1/C2/C3 fake-provider composition before this milestone can be marked complete.
