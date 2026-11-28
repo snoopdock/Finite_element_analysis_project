@@ -416,3 +416,10 @@ This closes the earlier false-positive risk: orchestrator prefetch alone cannot 
 
 
 C3's required graph prefetch now uses a bounded depth of two rather than the investigator's generic depth-one default. The isolated fixture demonstrated why: a file-node query at depth one returned only the file's `DEFINES` edge and did not surface the imported helper module. The depth-two query follows the file-to-symbol and symbol-to-helper relationship, while remaining within the graph tool's supported depth ceiling. The test explicitly requires the orchestrator graph query to surface `helper.py` before the model-requested read.
+
+
+### 13.4 Compact tool catalog and explicit-context semantics
+
+The C3 prompt now receives the same registered tool names and JSON argument constraints, but parameter descriptions are capped at 80 characters and tool descriptions at 200. Schema structure, types, required keys, enums, bounds, patterns and defaults are retained. This removes verbose prose without removing a tool or changing its executable contract. The integration test checks that the catalog remains below 20,000 serialized characters and still contains the graph, source-read and context-discovery tools.
+
+The integration diagnostics also exposed a context-contract classification error. A required context file such as `expected_behavior.json` is explicitly declared by the task and must be read, but it need not be surfaced as a static caller/dependency by `trace_execution_context`. The contract now distinguishes `read_not_surfaced` from `unread_not_surfaced`: every explicitly required path must have a complete, hash-verified direct read, while every path actually surfaced by trace/discovery remains subject to the independent candidate-read accounting. A complete trace for the exact target is still mandatory. This preserves the distinction between caller-declared context and graph-derived paths rather than forcing them to be the same set.
