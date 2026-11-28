@@ -273,3 +273,33 @@ The corrected workflow run succeeded:
 - C3 execution-contract tests, retained-snapshot executor tests, fake-provider investigator lifecycle tests, and C3 run-wrapper tests all passed.
 
 No live provider call was made. This is still deterministic integration-boundary verification, not an official C3 trial or A/B/C benchmark result.
+
+
+## 12. End-to-end retained C3 session composition — implementation candidate (2026-11-28)
+
+### 12.1 Scope
+
+Added `tests/semantic_audit/test_ae32d_c3_end_to_end.py`. Unlike the earlier executor tests, this test does not patch the C1/C2 contract builder, source revision, scope snapshot, graph backend, or evidence-tools factory. It uses the immutable pinned AE-32D negative-control case already checked out by the machine-verification workflow.
+
+The test composes the actual sequence:
+
+1. Build the B graph report from the pinned case and sanitized B projection.
+2. Build the C0 preflight, authorization fixture, and C1 request package.
+3. Run the real C2 graph snapshot verifier and require exact expected/observed graph equality.
+4. Call `prepare_c3_execution()` with the same pinned source checkout, causing a second declared-scope reconstruction that is retained for the session.
+5. Supply a deterministic in-process fake with the exact Cloudflare/Qwen profile identity and fresh zero-usage statistics.
+6. Call `C3ExecutionSession.run()`, exercising the actual investigator lifecycle and the session's pre/post source-revision and report-provenance checks.
+7. Assert completed diagnosis, verified snapshot, exact source/manifest/graph provenance, authorized budgets, graph/context discovery, and read-only execution assessment.
+8. Exit the session context and assert cleanup.
+
+The test's `manual_dispatch_confirmed=True` is a test-only readiness input for an injected fake. It does not represent user authorization for a live model call. No production provider factory, credentials, or network transport is used.
+
+### 12.2 Workflow integration
+
+The AE-32D machine-verification workflow now includes the new test path in its push filter and a dedicated pytest step with `AE32D_CASE_SOURCE_ROOT` pointing to the immutable case checkout. This test is an implementation candidate until the corresponding GitHub Actions run succeeds.
+
+### 12.3 Acceptance boundary
+
+A successful run will establish that real B/C1/C2 artifacts can be composed with a freshly reconstructed, retained C3 graph and that the actual investigator can complete against it using a deterministic fake provider. It will not establish live-provider behavior, credential safety for a production provider, diagnostic accuracy, an official C3 trial, or A/B/C benchmark eligibility.
+
+No live provider invocation is authorized or performed by this change.
