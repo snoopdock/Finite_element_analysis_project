@@ -402,3 +402,14 @@ The prior completed-prompt attempt still rejected the fake final diagnosis becau
 The investigator now performs bounded, read-only `find_related_tests` and `discover_case_context` queries before its first model turn whenever complete-context mode is enabled and those tools are available. Their evidence IDs and bounded model views are supplied in the initial prompt. The model is instructed not to repeat complete queries and must still inspect any surfaced candidate paths. Completeness is measured from the same evidence ledger and the same exact query/result requirements; prefetch does not mark an incomplete or truncated result as complete.
 
 This is an orchestration optimization, not a relaxation: all three required discovery tools remain mandatory, every result must be complete and non-truncated, and surfaced candidates still require inspection. The end-to-end test now asserts both additional prefetch operations explicitly.
+
+
+### 13.3 Graph-first prefetch and model-attributed graph follow-through
+
+The acceptance diagnostics identified a second composition defect in the earlier test fixture: the only graph path was `control.py`, but C3 read it before issuing the required graph query. The graph query therefore surfaced only a path already present in the pre-query read set, and the graph-follow-through validator correctly rejected the final diagnosis. The fixture had no second Python module and could not demonstrate a cross-module read.
+
+C3 orchestration now runs the required graph query **before** required-source prefetch. Required source files are still read and provenance-checked before the first model turn. Their evidence remains in the ledger and counts toward required-source coverage. However, orchestrator-prefetched source reads are explicitly excluded from graph-follow-through accounting; only a subsequent model-requested `read_source_file` action can satisfy that requirement. The prompt explicitly identifies this graph-follow-through read as an exception to the ordinary no-reread instruction.
+
+The end-to-end fixture is now an isolated temporary Git repository with two Python modules: `control.py` imports and calls `helper.normalize`. The commit is created deterministically during the GitHub Actions test. B, C1, C2, and C3 all operate on that same exact commit and retained source snapshot. The fake provider must read the graph-surfaced `helper.py` after the required graph query, inspect the expected-behavior record, and submit a diagnosis. The test asserts that the verified cross-module path appears in `cross_module_graph_derived_verified_read_paths`.
+
+This closes the earlier false-positive risk: orchestrator prefetch alone cannot claim model graph use. The next Actions run is the first validation of this stricter graph-first implementation.
