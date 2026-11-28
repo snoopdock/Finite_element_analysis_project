@@ -102,6 +102,9 @@ class CRequestPackageTests(unittest.TestCase):
         request = result["request"]
         self.assertIn("complete initialization negative control", request["investigator_problem"].lower())
         self.assertIn("not ground truth", request["investigator_problem"].lower())
+        self.assertLess(len(request["investigator_problem"]), 5_000)
+        self.assertNotIn('"payload":', request["investigator_problem"])
+        self.assertIn("payload", request["context"]["b_graph"]["retrieval"][0])
         self.assertEqual(request["investigation_requirements"]["required_source_paths"],
                          ["control.py", "expected_behavior.json", "incident.md"])
         self.assertTrue(request["investigation_requirements"]["require_graph_interaction"])
