@@ -2376,8 +2376,7 @@ class RepositoryInvestigator:
         observed: dict[str, set[str]] = {path: set() for path in self._required_source_paths}
         complete: dict[str, set[str]] = {path: set() for path in self._required_source_paths}
         for entry in self._ledger:
-            if (entry.tool != "read_source_file" or entry.status != "ok"
-                    or entry.evidence_id in self._orchestrator_prefetched_source_evidence_ids):
+            if entry.tool != "read_source_file" or entry.status != "ok":
                 continue
             result = entry.response.get("result", {})
             if not isinstance(result, Mapping):
@@ -3646,7 +3645,8 @@ class RepositoryInvestigator:
         read_entries: list[tuple[int, Any, str, Mapping[str, Any]]] = []
 
         for index, entry in enumerate(self._ledger):
-            if entry.tool != "read_source_file" or entry.status != "ok":
+            if (entry.tool != "read_source_file" or entry.status != "ok"
+                    or entry.evidence_id in self._orchestrator_prefetched_source_evidence_ids):
                 continue
             result = entry.response.get("result", {}) if isinstance(entry.response, Mapping) else {}
             if isinstance(result, Mapping) and isinstance(result.get("path"), str):
