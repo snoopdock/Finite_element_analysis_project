@@ -352,3 +352,10 @@ Rather than increasing the hard ceiling or weakening the three-round finalizatio
 The composed test now derives a smaller task projection over `control.py` and `expected_behavior.json`, retaining one actual B `repository_summary` record and one nonempty `graph_neighbors` record in the C1 request-context view. The B graph snapshot itself is unchanged and remains the exact input to C2 reconstruction and C3 retained-snapshot comparison. This isolates the C3 composition test from unrelated B retrieval volume while retaining the two retrieval records required by C0.
 
 The deterministic fake now follows the actual evidence contract instead of attempting a premature final response: it reads the graph target `control.py`, reads the single distinct required context path `expected_behavior.json`, then emits a final diagnosis. The normal response-token ceiling is tightened to 1,024 for this fake-only integration; finalization remains 4,096 and all other authorization ceilings remain bounded as recorded above. The next Actions run will establish whether this compact request permits the required three-turn investigation within the protected finalization reserve.
+
+
+### 12.10 Minimal C1 evidence context and tighter fake response cap
+
+The prior attempt completed one real fake-provider request and then stopped at the next token reservation. The fixture now keeps the B report's actual graph snapshot and required C0 retrieval records, but minimizes the copied C1 context payload: one discovered graph node, empty summary payload (the authoritative graph snapshot remains separate), and at most one item in each duplicated baseline evidence array. This is a context projection for the integration test, not a change to the pinned source or graph identity.
+
+The fake-only normal response cap is reduced to 512 tokens; finalization remains 4,096. Diagnostic output now records the exact C1 problem length and final reservation decision so a remaining budget stop can be distinguished from evidence-contract or protocol failure.
