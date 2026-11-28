@@ -58,18 +58,20 @@ class CloudflareDeterministicFakeProvider(FakeProvider):
 
 def _make_isolated_source(root: Path) -> str:
     """Create a tiny, committed two-module graph with one cross-module call."""
-    (root / "control.py").write_text(
+    fixture = root / "src"
+    fixture.mkdir()
+    (fixture / "control.py").write_text(
         "from helper import normalize\n\n"
         "def work(flag):\n"
         "    return normalize(flag)\n",
         encoding="utf-8",
     )
-    (root / "helper.py").write_text(
+    (fixture / "helper.py").write_text(
         "def normalize(flag):\n"
         "    return 5 if flag else 0\n",
         encoding="utf-8",
     )
-    (root / "expected_behavior.json").write_text(
+    (fixture / "expected_behavior.json").write_text(
         json.dumps({
             "schema_version": "ae32d/expected-behavior/v1",
             "function": "work",
@@ -105,14 +107,14 @@ def test_real_c1_c2_retained_c3_session_completes_within_budget():
         source_sha = _make_isolated_source(root)
         record = case_record()
         record["source"]["source_commit_sha"] = source_sha
-        record["source"]["fixture_path"] = "."
+        record["source"]["fixture_path"] = "src"
         record["task"]["title"] = "C3 end-to-end graph follow-through"
         record["task"]["problem_statement"] = (
             "Inspect the declared source and determine whether work delegates "
             "its behavior through the imported helper."
         )
         record["task"]["declared_scope"] = [
-            "control.py", "helper.py", "expected_behavior.json"
+            "src/control.py", "src/helper.py", "src/expected_behavior.json"
         ]
         b_projection = build_sanitized_task_projection(
             record, experiment_id="AE45-C3-E2E", condition="B_graph"
