@@ -338,3 +338,10 @@ The next CI attempt passed the estimator boundary and retained-manifest assertio
 With the fake provider cap aligned, the integration reached the real investigator and correctly stopped before any provider call with `estimated_token_budget_exhausted`. The C1 helper's generic test authorization used 24,576 total tokens and 4,096 finalization tokens, which did not leave enough reservation headroom for the complete C1 problem context plus the mandatory three-round finalization reserve. This was not a provider failure; `provider_calls=0`.
 
 The end-to-end fixture now derives its authorization from the real C0 preflight and raises only the test envelope to the already-defined C3 profile maxima: 11 rounds, 12 tool calls, 2,048 normal tokens/call, 6,144 finalization tokens/call, 30,720 total tokens, 900 seconds, and USD 0.50. The injected provider remains an in-process fake. No live dispatch is permitted by this test. The next Actions run must confirm that the authorized token reservation is sufficient and that the fake investigation completes.
+
+
+### 12.8 Prompt reservation fit without weakening ceilings
+
+The reservation diagnostic quantified the failure: the first investigator request was 33,998 characters (8,500 estimated prompt tokens), with 2,048 normal-response tokens and a protected finalization reserve of 21,504 tokens. The projected 32,052 tokens exceeded the 30,720 authorization ceiling by 1,332 tokens, so the investigator correctly stopped before calling the fake provider.
+
+Rather than increasing the hard ceiling or weakening the three-round finalization reserve, the deterministic integration fixture now authorizes a tighter 4,096-token finalization cap (the schema and executor permit any positive value up to 6,144). This reduces the protected reserve by 6,144 tokens while preserving the normal 2,048-token cap, 30,720 total-token ceiling, 11-round ceiling, 12-tool-call ceiling, 900-second ceiling, and USD 0.50 ceiling. The fake final response is intentionally short. The next Actions run must confirm that this narrower finalization allowance is sufficient and that the actual investigator completes the C3 session.
