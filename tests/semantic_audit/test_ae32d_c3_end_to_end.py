@@ -20,6 +20,7 @@ from tests.semantic_audit.test_ae32d_c_request import (
     build_auth,
     case_record,
 )
+from audit_engine.semantic_audit.ae32c.investigator import _source_reference_candidate_id
 from tools.ae32d_c3_executor import prepare_c3_execution
 from tools.ae32d_c_preflight import build_c_preflight
 from tools.ae32d_c_request import build_c_request_package
@@ -99,6 +100,51 @@ def _make_isolated_source(root: Path) -> str:
         ["git", "rev-parse", "HEAD"], cwd=root, check=True,
         capture_output=True, text=True,
     ).stdout.strip()
+
+
+def _final_action_with_required_source_refs(root: Path) -> str:
+    source_records = (
+        ("E0003", "control.py"),
+        ("E0004", "expected_behavior.json"),
+        ("E0005", "helper.py"),
+    )
+    references = []
+    evidence_ids = []
+    for evidence_id, path in source_records:
+        source_hash = __import__("hashlib").sha256(
+            (root / "src" / path).read_bytes()
+        ).hexdigest()
+        references.append({
+            "candidate_id": _source_reference_candidate_id({
+                "evidence_id": evidence_id,
+                "path": path,
+                "line": 1,
+                "source_sha256": source_hash,
+            })
+        })
+        evidence_ids.append(evidence_id)
+    return json.dumps({
+        "action": "final",
+        "diagnosis": {
+            "summary": "The graph and direct source evidence establish a cross-module delegation.",
+            "root_cause": {
+                "statement": "control.work delegates to helper.normalize through the statically resolved import call.",
+                "confidence": "high",
+                "evidence_refs": evidence_ids,
+                "source_references": references,
+            },
+            "claims": [{
+                "statement": "The CALLS graph edge from control.work resolves to helper.normalize, and both source files were directly inspected.",
+                "kind": "static_inference",
+                "confidence": "high",
+                "evidence_refs": evidence_ids,
+                "source_references": references,
+            }],
+            "proposed_corrective_action": "No source correction is indicated by this bounded fixture; preserve the explicit helper delegation.",
+            "limitations": ["Static graph and source evidence do not establish runtime execution."],
+            "next_steps": ["Validate runtime behavior separately if an execution claim is required."],
+        },
+    })
 
 
 def test_real_c1_c2_retained_c3_session_completes_within_budget():
@@ -185,12 +231,7 @@ def test_real_c1_c2_retained_c3_session_completes_within_budget():
             action_tool("read_source_file", {
                 "path": "expected_behavior.json", "start_line": 1, "end_line": 40,
             }),
-            final_action(
-                evidence_id="E0003",
-                source_reference=False,
-                summary="The retained graph and direct source reads establish the delegation path.",
-                claim_statement="The work function delegates to normalize in the imported helper module.",
-            ),
+            _final_action_with_required_source_refs(root),
         ])
         provider.max_logical_calls = authorization["max_model_rounds"]
         provider.max_tokens_per_call = authorization["max_tokens_per_call"]
