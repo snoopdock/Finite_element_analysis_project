@@ -166,6 +166,8 @@ def test_real_c1_c2_retained_c3_session_enforces_budget_and_cleanup():
 
         report = session.run(provider)
 
+        print("C3_BUDGET_DIAGNOSTIC=" + __import__("json").dumps({key: report.get("budget", {}).get(key) for key in ("reserved_token_estimate", "last_provider_reservation_check", "total_prompt_chars", "estimated_cost_usd_reserved")}, sort_keys=True))
+
         # Compact C1 orientation plus bounded model-facing evidence views allow
         # the fake investigation to finish inside the same authorized ceiling.
         assert report["status"] == "completed", {
