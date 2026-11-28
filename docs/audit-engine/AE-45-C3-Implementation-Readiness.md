@@ -331,3 +331,10 @@ After the provider-independent estimator refactor, the end-to-end test progresse
 ### 12.6 Fake-provider ceiling correction
 
 The next CI attempt passed the estimator boundary and retained-manifest assertions, then correctly rejected the fake provider because its local logical-call ceiling was 11 while the actual C1 authorization fixture grants 8 model rounds. The executor's check is intentional: a provider adapter must not advertise a looser call ceiling than the authorized contract. The integration fixture now sets the fake provider's local ceiling from the exact authorized `max_model_rounds` value rather than the profile's absolute hard ceiling. Production validation was not weakened.
+
+
+### 12.7 Full C3 token-reservation envelope in the deterministic fixture
+
+With the fake provider cap aligned, the integration reached the real investigator and correctly stopped before any provider call with `estimated_token_budget_exhausted`. The C1 helper's generic test authorization used 24,576 total tokens and 4,096 finalization tokens, which did not leave enough reservation headroom for the complete C1 problem context plus the mandatory three-round finalization reserve. This was not a provider failure; `provider_calls=0`.
+
+The end-to-end fixture now derives its authorization from the real C0 preflight and raises only the test envelope to the already-defined C3 profile maxima: 11 rounds, 12 tool calls, 2,048 normal tokens/call, 6,144 finalization tokens/call, 30,720 total tokens, 900 seconds, and USD 0.50. The injected provider remains an in-process fake. No live dispatch is permitted by this test. The next Actions run must confirm that the authorized token reservation is sufficient and that the fake investigation completes.
