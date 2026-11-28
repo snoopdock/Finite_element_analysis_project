@@ -157,7 +157,7 @@ def test_real_c1_c2_retained_c3_session_completes_within_budget():
             max_model_rounds=11,
             max_tool_calls=12,
             max_tokens_per_call=512,
-            finalization_max_tokens_per_call=2_048,
+            finalization_max_tokens_per_call=1_536,
             max_total_tokens=30_720,
             max_elapsed_seconds=900,
             max_cost_usd=0.50,
