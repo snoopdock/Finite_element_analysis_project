@@ -189,6 +189,8 @@ def test_real_c1_c2_retained_c3_session_enforces_budget_and_cleanup():
         assert any(item["tool"] == "repository_summary" for item in report["tool_calls"])
         assert any(item["tool"] == "read_source_file" for item in report["tool_calls"])
         assert any(item["tool"] == "trace_execution_context" for item in report["tool_calls"])
+        assert any(item["tool"] == "find_related_tests" for item in report["tool_calls"])
+        assert any(item["tool"] == "discover_case_context" for item in report["tool_calls"])
         assert any(item["tool"] == "graph_neighbors" for item in report["tool_calls"])
 
 
