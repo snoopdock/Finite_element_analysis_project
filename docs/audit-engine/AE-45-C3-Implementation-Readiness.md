@@ -326,3 +326,8 @@ The end-to-end test has not yet passed. The next Actions run must validate both 
 ### 12.5 Retained graph-manifest assertion correction
 
 After the provider-independent estimator refactor, the end-to-end test progressed through C3 session preparation and exposed an incorrect test assertion. The B baseline's `source_manifest_digest` is the declared-scope snapshot digest checked by `_scope_snapshot()`; the retained `RepositoryEvidenceTools.manifest_sha256` is the graph evidence manifest recorded in B's `graph_snapshot.source_manifest_sha256`. They are distinct digest fields with distinct contracts. The executor checks both at their respective boundaries. The test now binds the retained evidence-tools manifest to the B graph snapshot field and continues to assert the baseline declared-scope digest through the executor's successful preparation. The next Actions run must confirm this correction and the remaining investigator assertions.
+
+
+### 12.6 Fake-provider ceiling correction
+
+The next CI attempt passed the estimator boundary and retained-manifest assertions, then correctly rejected the fake provider because its local logical-call ceiling was 11 while the actual C1 authorization fixture grants 8 model rounds. The executor's check is intentional: a provider adapter must not advertise a looser call ceiling than the authorized contract. The integration fixture now sets the fake provider's local ceiling from the exact authorized `max_model_rounds` value rather than the profile's absolute hard ceiling. Production validation was not weakened.
