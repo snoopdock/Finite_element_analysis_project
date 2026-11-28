@@ -114,7 +114,17 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
 
         report = session.run(provider)
 
-        assert report["status"] == "completed"
+        assert report["status"] == "completed", {
+            "stop_reason": report.get("stop_reason"),
+            "errors": report.get("errors"),
+            "tool_calls": [
+                {"tool": item.get("tool"), "status": item.get("status"),
+                 "summary": item.get("summary"), "error": item.get("error")}
+                for item in report.get("tool_calls", [])
+            ],
+            "provider_calls": provider.calls,
+            "investigation_continuity": report.get("investigation_continuity"),
+        }
         assert report["diagnosis"] is not None
         assert report["snapshot_check_status"] == "verified"
         assert report["provenance"]["source_revision"] == CASE_SHA
