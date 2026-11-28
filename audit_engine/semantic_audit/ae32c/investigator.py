@@ -468,6 +468,7 @@ class RepositoryInvestigator:
         # orchestrator prefetch to LLM-requested graph usage.
         self._orchestrator_prefetched_graph_evidence_ids: set[str] = set()
         self._orchestrator_prefetched_context_evidence_ids: set[str] = set()
+        self._orchestrator_prefetched_discovery_evidence_ids: dict[str, str] = {}
         self._events: list[dict[str, Any]] = []
         self._messages: list[dict[str, str]] = []
         self._tool_calls = 0
@@ -1368,6 +1369,50 @@ class RepositoryInvestigator:
             "truncated": result.get("truncated") if isinstance(result, Mapping) else None,
         })
 
+    def _prefetch_required_discovery_evidence(self) -> None:
+        """Run bounded test/case discovery before model turns when those tools are required.
+
+        These deterministic read-only queries are part of the complete-context
+        contract. Prefetching them avoids spending scarce model rounds merely to
+        dispatch fixed discovery operations; the model still receives their
+        bounded results and must inspect every surfaced candidate path.
+        """
+        if not self._require_complete_investigation_context:
+            return
+        queries = (
+            ("find_related_tests", {"target": self._required_context_target, "max_results": 20}),
+            ("discover_case_context", {"max_results": 20}),
+        )
+        for tool_name, arguments in queries:
+            if tool_name not in self._tool_schemas:
+                continue
+            if self._tool_calls >= self.limits.max_tool_calls:
+                self._events.append({
+                    "event": "required_discovery_prefetch_skipped",
+                    "tool": tool_name,
+                    "reason": "tool_call_budget_exhausted",
+                })
+                continue
+            entry = self._invoke_tool(tool_name, arguments)
+            self._orchestrator_prefetched_discovery_evidence_ids[tool_name] = entry.evidence_id
+            result = entry.response.get("result", {}) if isinstance(entry.response, Mapping) else {}
+            required_fields = ("tests",) if tool_name == "find_related_tests" else ("metadata_candidates",)
+            complete = (
+                entry.status == "ok"
+                and isinstance(result, Mapping)
+                and result.get("coverage_status") == "complete_for_query"
+                and result.get("truncated") is False
+                and all(isinstance(result.get(key), list) for key in required_fields)
+            )
+            self._events.append({
+                "event": "required_discovery_prefetched" if complete else "required_discovery_prefetch_incomplete",
+                "tool": tool_name,
+                "evidence_id": entry.evidence_id,
+                "status": entry.status,
+                "coverage_status": result.get("coverage_status") if isinstance(result, Mapping) else None,
+                "truncated": result.get("truncated") if isinstance(result, Mapping) else None,
+            })
+
     def _initial_messages(self, problem: str, summary: _EvidenceEntry) -> list[dict[str, str]]:
         system = SYSTEM_INSTRUCTIONS + "\n\nApproved evidence-tool catalog (schemas are authoritative):\n" + self._canonical_json(self._tool_catalog_for_prompt())
         user_payload = {
@@ -1385,6 +1430,18 @@ class RepositoryInvestigator:
                     if entry.evidence_id in self._orchestrator_prefetched_context_evidence_ids
                 )),
             } if self._orchestrator_prefetched_context_evidence_ids else {}),
+            **({
+                "prefetched_related_tests": self._model_view(next(
+                    entry for entry in self._ledger
+                    if entry.evidence_id == self._orchestrator_prefetched_discovery_evidence_ids.get("find_related_tests")
+                )),
+            } if "find_related_tests" in self._orchestrator_prefetched_discovery_evidence_ids else {}),
+            **({
+                "prefetched_case_context": self._model_view(next(
+                    entry for entry in self._ledger
+                    if entry.evidence_id == self._orchestrator_prefetched_discovery_evidence_ids.get("discover_case_context")
+                )),
+            } if "discover_case_context" in self._orchestrator_prefetched_discovery_evidence_ids else {}),
             "required_source_textual_anchors": self._required_source_anchors,
             "required_source_inspection": {
                 "paths": list(self._required_source_paths),
@@ -1434,8 +1491,10 @@ class RepositoryInvestigator:
                             "workflow path, including every required_context_path. "
                         )
                     ) + (
-                        "Also complete find_related_tests and discover_case_context and inspect all surfaced candidates. "
-                        "A final diagnosis is rejected until discovery is complete, non-truncated, and all "
+                        "The auditor has also prefetched find_related_tests and discover_case_context when those tools "
+                        "are available; inspect prefetched_related_tests and prefetched_case_context and do not repeat "
+                        "complete, non-truncated queries. Read every surfaced candidate path that is in the retained "
+                        "snapshot. A final diagnosis is rejected until discovery is complete, non-truncated, and all "
                         "surfaced/required paths are inspected. Static relationships do not prove runtime execution."
                     ),
                 }
@@ -4941,6 +5000,7 @@ class RepositoryInvestigator:
             # graph paths and read newly surfaced source files itself.
             self._prefetch_required_graph_evidence()
             self._prefetch_required_context_evidence()
+            self._prefetch_required_discovery_evidence()
             self._messages = self._initial_messages(problem, summary)
             self._tool_calls_before_first_model_turn = self._tool_calls
 
