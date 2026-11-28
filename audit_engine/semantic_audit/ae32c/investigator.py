@@ -1188,14 +1188,31 @@ class RepositoryInvestigator:
         }
 
     def _tool_catalog_for_prompt(self) -> list[dict[str, Any]]:
-        return [
-            {
-                "name": item["function"]["name"],
-                "description": item["function"].get("description", ""),
-                "parameters": item["function"].get("parameters", {}),
-            }
-            for item in self._tool_definitions
-        ]
+        """Return compact schemas without dropping names, types, bounds, or enums."""
+        def compact_schema(value: Any) -> Any:
+            if isinstance(value, Mapping):
+                compact: dict[str, Any] = {}
+                for key, item in value.items():
+                    if key in {"title", "examples", "example"}:
+                        continue
+                    if key == "description" and isinstance(item, str):
+                        compact[key] = item[:80]
+                    else:
+                        compact[key] = compact_schema(item)
+                return compact
+            if isinstance(value, list):
+                return [compact_schema(item) for item in value]
+            return value
+
+        catalog = []
+        for item in self._tool_definitions:
+            function = item["function"]
+            catalog.append({
+                "name": function["name"],
+                "description": str(function.get("description", ""))[:200],
+                "parameters": compact_schema(function.get("parameters", {})),
+            })
+        return catalog
 
     def _required_source_evidence_view(self, entry: _EvidenceEntry) -> dict[str, Any]:
         """Expose the bounded, redacted direct-read result for a required path up front.
