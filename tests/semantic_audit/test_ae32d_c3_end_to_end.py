@@ -114,7 +114,7 @@ def test_real_c1_c2_retained_c3_session_completes_within_budget():
             "its behavior through the imported helper."
         )
         record["task"]["declared_scope"] = [
-            "src/control.py", "src/helper.py", "src/expected_behavior.json"
+            "control.py", "helper.py", "expected_behavior.json"
         ]
         b_projection = build_sanitized_task_projection(
             record, experiment_id="AE45-C3-E2E", condition="B_graph"
