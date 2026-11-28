@@ -467,6 +467,7 @@ class RepositoryInvestigator:
         # model turn. Keep its origin explicit so telemetry never attributes an
         # orchestrator prefetch to LLM-requested graph usage.
         self._orchestrator_prefetched_graph_evidence_ids: set[str] = set()
+        self._orchestrator_prefetched_source_evidence_ids: set[str] = set()
         self._orchestrator_prefetched_context_evidence_ids: set[str] = set()
         self._orchestrator_prefetched_discovery_evidence_ids: dict[str, str] = {}
         self._events: list[dict[str, Any]] = []
@@ -1275,6 +1276,7 @@ class RepositoryInvestigator:
             entry = self._invoke_tool("read_source_file", {
                 "path": path, "start_line": 1, "end_line": max(1, len(lines)),
             })
+            self._orchestrator_prefetched_source_evidence_ids.add(entry.evidence_id)
             result = entry.response.get("result", {})
             complete = (
                 entry.status == "ok" and isinstance(result, Mapping)
@@ -1458,6 +1460,8 @@ class RepositoryInvestigator:
                     "in root_cause.evidence_refs and claims.evidence_refs; do not spend another model "
                     "turn rereading a complete prefetched path unless a specific missing range requires it. "
                     "A search hit or graph relation is not a substitute for direct inspection. "
+                    "Graph follow-through is a deliberate exception to the prefetch no-reread rule: after the required graph query, "
+                    "request one direct read of a newly surfaced source path; orchestrator-prefetched reads do not satisfy that model action. "
                     "If a required path is absent from prefetched_evidence_ids, read it with "
                     "read_source_file or state the limitation. Never invent a source line or hash."
                 ) if self._required_source_paths else "not_configured",
@@ -2372,7 +2376,8 @@ class RepositoryInvestigator:
         observed: dict[str, set[str]] = {path: set() for path in self._required_source_paths}
         complete: dict[str, set[str]] = {path: set() for path in self._required_source_paths}
         for entry in self._ledger:
-            if entry.tool != "read_source_file" or entry.status != "ok":
+            if (entry.tool != "read_source_file" or entry.status != "ok"
+                    or entry.evidence_id in self._orchestrator_prefetched_source_evidence_ids):
                 continue
             result = entry.response.get("result", {})
             if not isinstance(result, Mapping):
@@ -4994,11 +4999,11 @@ class RepositoryInvestigator:
             if summary.status != "ok":
                 self._events.append({"event": "initial_summary_failed", "evidence_id": summary.evidence_id})
                 return self._finalize_report(report, "incomplete", "initial_evidence_unavailable")
-            self._prefetch_required_source_evidence()
-            # Stable, bounded discovery runs before the model spends turns on
-            # routine target lookup. The model must still inspect the returned
-            # graph paths and read newly surfaced source files itself.
+            # Query the graph before required source prefetch so its surfaced
+            # paths are distinguishable from files already inspected. Only a
+            # subsequent model-requested read can satisfy graph follow-through.
             self._prefetch_required_graph_evidence()
+            self._prefetch_required_source_evidence()
             self._prefetch_required_context_evidence()
             self._prefetch_required_discovery_evidence()
             self._messages = self._initial_messages(problem, summary)
