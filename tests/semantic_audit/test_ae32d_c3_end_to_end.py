@@ -135,6 +135,15 @@ def test_real_c1_c2_retained_c3_session_and_investigator_run():
                 for item in report.get("tool_calls", [])
             ],
             "provider_calls": provider.calls,
+            "budget": {
+                key: report.get("budget", {}).get(key)
+                for key in (
+                    "reserved_token_estimate", "max_total_tokens",
+                    "last_provider_reservation_check", "total_prompt_chars",
+                    "max_total_prompt_chars", "estimated_cost_usd_reserved",
+                    "max_cost_usd",
+                )
+            },
             "investigation_continuity": report.get("investigation_continuity"),
         }
         assert report["diagnosis"] is not None
